@@ -78,3 +78,31 @@ The compliance posture is chosen **per tenant tier**, not hard-coded globally. S
 ## QuoteIQ posture
 
 Reference + connector, not system-of-record. Public integration surface is outbound webhook events (estimate/schedule) plus Zapier-mediated Google Calendar sync. Architect so QuoteIQ, GHL, HubSpot, or CSV import can all act as downstream systems. Until deeper private API access is confirmed, do not assume bidirectional QuoteIQ writes.
+
+## Voice provider lanes (future)
+
+Primary voice layer:
+- Twilio
+- Retell
+- Vapi
+- Bland
+
+Experimental voice layer:
+- Grok Voice API
+
+Workflow layer:
+- ResponseOS
+
+Optional sandboxed agent gateway:
+- OpenClaw
+
+Architecture note: Grok Voice must be treated as an experimental provider until:
+- direct xAI docs/pricing are verified
+- telephony integration path is confirmed
+- webhook behavior is tested
+- session limits and concurrency are tested
+- transcript/recording handling is reviewed
+- escalation/handoff behavior is validated
+- compliance posture is reviewed
+
+Until those gates are met, Grok Voice stays behind the same provider abstraction the primary lane uses, and is selectable only for non-regulated experiments (website/app voice assistants, internal operator copilot, sales qualification pilots). The primary live phone-answering lane remains Twilio / Retell / Vapi / Bland.

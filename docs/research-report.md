@@ -67,6 +67,14 @@ This is the canonical internal mapping. The marketing version (Revenue Leak Dete
 2. **HIPAA vendor allowlist.** Lock per-tier vendor allowlist (especially TTS) before onboarding any healthcare-adjacent tenant.
 3. **Disclosure rules.** Call-recording disclosure and outbound rules vary by jurisdiction. Treat as tenant policy objects, not hard-coded defaults.
 
+## Grok Voice API Consideration
+
+- Grok Voice appears attractive because of realtime voice-agent capability, potential tool use, and aggressive per-minute pricing.
+- May fit ResponseOS for voice experiments, website/app assistants, and sales qualification pilots.
+- Should not change the core architecture.
+- ResponseOS should remain provider-agnostic.
+- Grok belongs in the experimental provider lane until field-tested.
+
 ## How this report maps into our docs
 
 - `product-spec.md` — RECOVER operational mapping, buy-vs-build, MVP scope, 30-day plan, roadmap.

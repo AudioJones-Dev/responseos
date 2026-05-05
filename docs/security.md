@@ -48,6 +48,14 @@ The compliance posture is chosen **per tenant tier**, not hard-coded globally. S
 
 Maintain an explicit **vendor allowlist per compliance tier**. Onboarding a healthcare-adjacent client requires lock-in of allowlist + storage policy before go-live.
 
+### Grok Voice / xAI — pre-production review
+
+- Grok Voice / xAI must be reviewed before production use.
+- BAA / compliance eligibility must be verified directly before regulated workflows.
+- Do NOT use for HIPAA, medical, legal, or sensitive workflows until compliance review is complete.
+- Review covers: data retention, transcript storage, recording access, model training / data usage policy, webhook security, provider incident response.
+- Treat as experimental until vendor documentation is stable and tested.
+
 ## Webhook signature validation
 
 | Provider | Header | Validation |
