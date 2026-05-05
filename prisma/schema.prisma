@@ -1,0 +1,384 @@
+// ResponseOS — schema stub for v0.1.
+// Mirrors the 11 TypeScript models in /types. No migrations generated yet.
+//
+// Conventions:
+// - snake_case columns to match the API/JSON shapes already used by the app.
+// - Tenant isolation: every per-tenant table carries organization_id.
+// - Money is stored in cents (Int).
+// - JSON fields use the database Json type so config payloads stay flexible.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  // Use DIRECT_URL when running migrations through a non-pooled connection.
+  directUrl = env("DIRECT_URL")
+}
+
+enum OrganizationStatus {
+  lead
+  active
+  paused
+  cancelled
+}
+
+enum UserRole {
+  aj_admin
+  operator
+  client_admin
+  client_viewer
+}
+
+enum ContactSource {
+  call
+  sms
+  form
+  manual
+  crm_sync
+}
+
+enum CallProvider {
+  twilio
+  retell
+  vapi
+  bland
+  manual
+}
+
+enum CallDirection {
+  inbound
+  outbound
+}
+
+enum CallStatus {
+  answered
+  missed
+  voicemail
+  spam
+  failed
+  completed
+}
+
+enum CallSentiment {
+  positive
+  neutral
+  negative
+}
+
+enum LeadEventSource {
+  phone
+  sms
+  website
+  manual
+  outbound
+}
+
+enum LeadEventType {
+  missed_call
+  answered_call
+  quote_request
+  booking_request
+  qualified_lead
+  spam
+  follow_up_needed
+  appointment_booked
+  quote_sent
+  job_won
+  job_lost
+}
+
+enum LeadEventStatus {
+  new
+  qualified
+  unqualified
+  booked
+  quoted
+  won
+  lost
+  archived
+}
+
+enum LeadUrgency {
+  low
+  medium
+  high
+}
+
+enum QualificationTimeline {
+  same_day
+  this_week
+  this_month
+  unknown
+}
+
+enum QualificationStatus {
+  qualified
+  maybe
+  unqualified
+  spam
+}
+
+enum CalendarProvider {
+  google
+  calcom
+  ghl
+  manual
+}
+
+enum BookingStatus {
+  scheduled
+  confirmed
+  completed
+  cancelled
+  no_show
+}
+
+enum QuoteStatus {
+  requested
+  reviewing
+  sent
+  accepted
+  declined
+}
+
+enum AutomationTriggerType {
+  missed_call
+  after_hours_call
+  new_lead
+  quote_requested
+  booking_created
+  no_response
+  job_completed
+}
+
+enum AutomationStatus {
+  active
+  paused
+  draft
+}
+
+enum WorkflowProvider {
+  n8n
+  make
+  internal
+}
+
+enum NotificationChannel {
+  sms
+  email
+  in_app
+  slack
+}
+
+enum NotificationStatus {
+  queued
+  sent
+  failed
+}
+
+model Organization {
+  id            String             @id @default(cuid())
+  name          String
+  slug          String             @unique
+  industry      String
+  website_url   String?
+  primary_phone String?
+  timezone      String
+  status        OrganizationStatus @default(lead)
+  created_at    DateTime           @default(now())
+  updated_at    DateTime           @updatedAt
+}
+
+model User {
+  id              String   @id @default(cuid())
+  organization_id String?
+  role            UserRole
+  name            String
+  email           String   @unique
+  phone           String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  @@index([organization_id])
+}
+
+model Contact {
+  id              String        @id @default(cuid())
+  organization_id String
+  first_name      String?
+  last_name       String?
+  phone           String?
+  email           String?
+  address         String?
+  city            String?
+  state           String?
+  zip             String?
+  source          ContactSource
+  created_at      DateTime      @default(now())
+  updated_at      DateTime      @updatedAt
+
+  @@index([organization_id])
+  @@index([phone])
+  @@index([email])
+}
+
+model Call {
+  id               String         @id @default(cuid())
+  organization_id  String
+  contact_id       String?
+  provider         CallProvider
+  provider_call_id String?
+  direction        CallDirection
+  status           CallStatus
+  from_number      String
+  to_number        String
+  started_at       DateTime
+  ended_at         DateTime?
+  duration_seconds Int?
+  recording_url    String?
+  transcript       String?
+  summary          String?
+  sentiment        CallSentiment?
+  spam_score       Float?
+  lead_score       Int?
+  created_at       DateTime       @default(now())
+
+  @@index([organization_id])
+  @@index([contact_id])
+  @@index([started_at])
+}
+
+model LeadEvent {
+  id              String          @id @default(cuid())
+  organization_id String
+  contact_id      String?
+  call_id         String?
+  source          LeadEventSource
+  event_type      LeadEventType
+  status          LeadEventStatus @default(new)
+  urgency         LeadUrgency     @default(medium)
+  estimated_value Int?
+  recovered_value Int?
+  notes           String?
+  created_at      DateTime        @default(now())
+  updated_at      DateTime        @updatedAt
+
+  @@index([organization_id])
+  @@index([contact_id])
+  @@index([call_id])
+  @@index([status])
+}
+
+model LeadQualification {
+  id                       String                 @id @default(cuid())
+  lead_event_id            String                 @unique
+  service_needed           String?
+  service_area_match       Boolean
+  budget_range             String?
+  timeline                 QualificationTimeline?
+  property_type            String?
+  decision_maker           Boolean?
+  qualification_score      Int
+  qualification_status     QualificationStatus
+  disqualification_reason  String?
+  created_at               DateTime               @default(now())
+}
+
+model Booking {
+  id                String           @id @default(cuid())
+  organization_id   String
+  contact_id        String
+  lead_event_id     String?
+  calendar_provider CalendarProvider
+  external_event_id String?
+  title             String
+  start_time        DateTime
+  end_time          DateTime
+  status            BookingStatus    @default(scheduled)
+  location          String?
+  notes             String?
+  created_at        DateTime         @default(now())
+  updated_at        DateTime         @updatedAt
+
+  @@index([organization_id])
+  @@index([contact_id])
+  @@index([lead_event_id])
+  @@index([start_time])
+}
+
+model QuoteRequest {
+  id                String      @id @default(cuid())
+  organization_id   String
+  contact_id        String
+  lead_event_id     String?
+  service_type      String
+  description       String?
+  photos            String[]
+  property_address  String?
+  estimated_value   Int?
+  status            QuoteStatus @default(requested)
+  created_at        DateTime    @default(now())
+  updated_at        DateTime    @updatedAt
+
+  @@index([organization_id])
+  @@index([contact_id])
+}
+
+model Automation {
+  id                String                @id @default(cuid())
+  organization_id   String
+  name              String
+  trigger_type      AutomationTriggerType
+  status            AutomationStatus      @default(draft)
+  workflow_provider WorkflowProvider
+  webhook_url       String?
+  config_json       Json
+  created_at        DateTime              @default(now())
+  updated_at        DateTime              @updatedAt
+
+  @@index([organization_id])
+  @@index([trigger_type])
+}
+
+model Notification {
+  id              String              @id @default(cuid())
+  organization_id String
+  lead_event_id   String?
+  channel         NotificationChannel
+  recipient       String
+  subject         String?
+  message         String
+  status          NotificationStatus  @default(queued)
+  sent_at         DateTime?
+  created_at      DateTime            @default(now())
+
+  @@index([organization_id])
+  @@index([lead_event_id])
+}
+
+model RevenueMetrics {
+  id                          String   @id @default(cuid())
+  organization_id             String
+  period_start                DateTime
+  period_end                  DateTime
+  total_calls                 Int      @default(0)
+  missed_calls                Int      @default(0)
+  calls_answered_by_ai        Int      @default(0)
+  qualified_leads             Int      @default(0)
+  appointments_booked         Int      @default(0)
+  quotes_requested            Int      @default(0)
+  quotes_sent                 Int      @default(0)
+  jobs_won                    Int      @default(0)
+  estimated_recovered_revenue Int      @default(0)
+  verified_recovered_revenue  Int      @default(0)
+  admin_hours_saved           Int      @default(0)
+  response_time_avg_seconds   Int      @default(0)
+  roi_multiple                Float?
+  created_at                  DateTime @default(now())
+
+  @@unique([organization_id, period_start, period_end])
+  @@index([organization_id])
+}
