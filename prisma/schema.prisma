@@ -1,5 +1,8 @@
-// ResponseOS — schema stub for v0.1.
-// Mirrors the 11 TypeScript models in /types. No migrations generated yet.
+// ResponseOS — schema for v0.2.
+// v0.1 baseline: 11 TypeScript models in /types mirrored as Prisma models.
+// v0.2 delta: adds 4 new models (AssessmentReport, Engagement, AuditLog, WebhookEvent)
+// + 4 new enum families per docs/v0.2-implementation-spec.md §2.
+// Existing v0.1 models and enums are preserved unchanged.
 //
 // Conventions:
 // - snake_case columns to match the API/JSON shapes already used by the app.
@@ -12,8 +15,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   // Use DIRECT_URL when running migrations through a non-pooled connection.
   directUrl = env("DIRECT_URL")
 }
@@ -273,18 +276,18 @@ model LeadEvent {
 }
 
 model LeadQualification {
-  id                       String                 @id @default(cuid())
-  lead_event_id            String                 @unique
-  service_needed           String?
-  service_area_match       Boolean
-  budget_range             String?
-  timeline                 QualificationTimeline?
-  property_type            String?
-  decision_maker           Boolean?
-  qualification_score      Int
-  qualification_status     QualificationStatus
-  disqualification_reason  String?
-  created_at               DateTime               @default(now())
+  id                      String                 @id @default(cuid())
+  lead_event_id           String                 @unique
+  service_needed          String?
+  service_area_match      Boolean
+  budget_range            String?
+  timeline                QualificationTimeline?
+  property_type           String?
+  decision_maker          Boolean?
+  qualification_score     Int
+  qualification_status    QualificationStatus
+  disqualification_reason String?
+  created_at              DateTime               @default(now())
 }
 
 model Booking {
@@ -310,18 +313,18 @@ model Booking {
 }
 
 model QuoteRequest {
-  id                String      @id @default(cuid())
-  organization_id   String
-  contact_id        String
-  lead_event_id     String?
-  service_type      String
-  description       String?
-  photos            String[]
-  property_address  String?
-  estimated_value   Int?
-  status            QuoteStatus @default(requested)
-  created_at        DateTime    @default(now())
-  updated_at        DateTime    @updatedAt
+  id               String      @id @default(cuid())
+  organization_id  String
+  contact_id       String
+  lead_event_id    String?
+  service_type     String
+  description      String?
+  photos           String[]
+  property_address String?
+  estimated_value  Int?
+  status           QuoteStatus @default(requested)
+  created_at       DateTime    @default(now())
+  updated_at       DateTime    @updatedAt
 
   @@index([organization_id])
   @@index([contact_id])
@@ -381,4 +384,161 @@ model RevenueMetrics {
 
   @@unique([organization_id, period_start, period_end])
   @@index([organization_id])
+}
+
+// --- v0.2 additions (docs/v0.2-implementation-spec.md §2) -------------------
+
+enum AssessmentStatus {
+  draft
+  in_review
+  delivered
+  signed
+  declined
+  expired
+}
+
+enum FitDiagnosis {
+  ai_fit
+  borderline
+  no_fit
+}
+
+enum EngagementTier {
+  recovery_core
+  recovery_pro
+  recovery_performance
+}
+
+enum EngagementStatus {
+  active
+  paused
+  cancelled
+  completed
+}
+
+enum OutcomeFeeKind {
+  per_qualified_appointment
+  per_verified_recovered_lead
+  pct_recovered_revenue
+  threshold_bonus
+}
+
+enum UsageModel {
+  bundled_with_cap
+  passthrough_with_margin
+}
+
+enum ActorType {
+  user
+  system
+  webhook
+}
+
+enum WebhookProcessStatus {
+  received
+  processed
+  rejected
+  duplicate
+  error
+}
+
+model AssessmentReport {
+  id              String           @id @default(cuid())
+  organization_id String
+  status          AssessmentStatus @default(draft)
+
+  inputs_json Json
+
+  readiness_score          Int?
+  revenue_leak_estimate    Int?
+  fit_diagnosis            FitDiagnosis?
+  current_workflow_map     Json?
+  recommended_workflow_map Json?
+  implementation_scope     String?
+  projected_roi_multiple   Float?
+
+  proposed_tier          EngagementTier?
+  proposed_setup_cents   Int?
+  proposed_monthly_cents Int?
+  proposed_outcome_terms Json?
+
+  delivered_at DateTime?
+  signed_at    DateTime?
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  @@index([organization_id])
+  @@index([status])
+  @@index([created_at])
+}
+
+model Engagement {
+  id                   String @id @default(cuid())
+  organization_id      String
+  assessment_report_id String @unique
+
+  tier   EngagementTier
+  status EngagementStatus @default(active)
+
+  setup_fee_cents        Int
+  monthly_fee_cents      Int
+  outcome_fee_kind       OutcomeFeeKind?
+  outcome_fee_terms_json Json?
+
+  usage_model            UsageModel
+  included_voice_minutes Int?
+  passthrough_margin_pct Int?
+
+  is_founding_pilot Boolean   @default(false)
+  pilot_ends_at     DateTime?
+
+  signed_at  DateTime
+  started_at DateTime?
+  ended_at   DateTime?
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+
+  @@index([organization_id])
+  @@index([status])
+  @@index([signed_at])
+}
+
+model AuditLog {
+  id              String    @id @default(cuid())
+  organization_id String?
+  actor_user_id   String?
+  actor_type      ActorType
+  action          String
+  target_type     String?
+  target_id       String?
+  metadata_json   Json?
+  ip_address      String?
+  user_agent      String?
+  created_at      DateTime  @default(now())
+
+  @@index([organization_id])
+  @@index([actor_user_id])
+  @@index([action])
+  @@index([created_at])
+}
+
+model WebhookEvent {
+  id                String               @id @default(cuid())
+  organization_id   String?
+  provider          String
+  provider_event_id String
+  event_type        String
+  raw_body          String
+  signature_header  String?
+  signature_valid   Boolean              @default(false)
+  dedupe_hash       String               @unique
+  received_at       DateTime             @default(now())
+  processed_at      DateTime?
+  process_status    WebhookProcessStatus @default(received)
+  process_error     String?
+
+  @@index([organization_id])
+  @@index([provider])
+  @@index([received_at])
+  @@index([process_status])
 }
