@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { Result } from "@/lib/data/result";
 
 interface ApiError {
   code: string;
@@ -11,6 +12,46 @@ export function errorResponse(
   error: ApiError,
 ): Response {
   return NextResponse.json({ ok: false, error }, { status });
+}
+
+/**
+ * Maps a `lib/data/*` Result<T> envelope to an HTTP response using the
+ * canonical envelope from docs/api-spec.md. Status codes follow the same
+ * spec: 401 for no_session, 403 for role/tenant denials, 404 for not_found,
+ * 422 for validation, 500 for everything else.
+ *
+ * Pass `transform` to reshape the success payload (e.g. wrap a list in
+ * `{ organization_id, metrics }`) while keeping the error envelope mapping.
+ */
+export function respondWithResult<T, U = T>(
+  result: Result<T>,
+  options: { successStatus?: number; transform?: (data: T) => U } = {},
+): Response {
+  const { successStatus = 200, transform } = options;
+  if (result.ok) {
+    const data = (transform ? transform(result.data) : result.data) as T | U;
+    return NextResponse.json({ ok: true, data }, { status: successStatus });
+  }
+  return errorResponse(statusForCode(result.error.code), result.error);
+}
+
+export function statusForCode(code: string): number {
+  switch (code) {
+    case "no_session":
+      return 401;
+    case "role_denied":
+    case "tenant_scope_denied":
+      return 403;
+    case "not_found":
+      return 404;
+    case "invalid_json":
+      return 400;
+    case "validation_failed":
+    case "invalid_input":
+      return 422;
+    default:
+      return 500;
+  }
 }
 
 export function methodNotAllowed(): Response {

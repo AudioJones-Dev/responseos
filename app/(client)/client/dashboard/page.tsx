@@ -1,5 +1,6 @@
 import StatCard from "@/components/dashboard/StatCard";
-import { getCurrentMockRevenueMetrics } from "@/lib/mock/revenueMetrics";
+import { getCurrentOrganization } from "@/lib/auth/session";
+import { RevenueMetrics } from "@/lib/data";
 
 const formatUsd = (cents: number): string =>
   (cents / 100).toLocaleString("en-US", {
@@ -11,8 +12,28 @@ const formatUsd = (cents: number): string =>
 const formatSeconds = (s: number): string =>
   s < 60 ? `${s}s` : `${Math.round(s / 60)}m ${s % 60}s`;
 
-export default function ClientDashboard() {
-  const m = getCurrentMockRevenueMetrics();
+const FALLBACK_ORG_ID = "org_mock_1";
+
+export default async function ClientDashboard() {
+  const org = await getCurrentOrganization();
+  const result = await RevenueMetrics.getCurrentRevenueMetrics({
+    organizationId: org?.id ?? FALLBACK_ORG_ID,
+  });
+  const m = result.ok ? result.data : null;
+
+  if (!m) {
+    return (
+      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-12">
+        <header className="mb-8 flex flex-col gap-1">
+          <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
+            Client Dashboard
+          </p>
+          <h1 className="text-3xl font-semibold">This Month</h1>
+          <p className="text-sm text-zinc-600">No revenue metrics available.</p>
+        </header>
+      </main>
+    );
+  }
 
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-12">

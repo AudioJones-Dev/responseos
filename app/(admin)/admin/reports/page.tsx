@@ -1,4 +1,4 @@
-import { getMockRevenueMetrics } from "@/lib/mock/revenueMetrics";
+import { RevenueMetrics } from "@/lib/data";
 
 const formatUsd = (cents: number): string =>
   (cents / 100).toLocaleString("en-US", {
@@ -7,8 +7,9 @@ const formatUsd = (cents: number): string =>
     maximumFractionDigits: 0,
   });
 
-export default function AdminReportsPage() {
-  const metrics = getMockRevenueMetrics();
+export default async function AdminReportsPage() {
+  const result = await RevenueMetrics.listRevenueMetrics({});
+  const metrics = result.ok ? result.data : [];
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
       <h1 className="text-2xl font-semibold">Reports</h1>

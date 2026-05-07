@@ -1,10 +1,6 @@
-import { NextResponse } from "next/server";
-import { getCurrentMockRevenueMetrics } from "@/lib/mock/revenueMetrics";
+import { RevenueMetrics } from "@/lib/data";
+import { respondWithResult } from "@/lib/providers/webhook-helpers";
 
 export async function GET() {
-  return NextResponse.json({
-    ok: true,
-    mock: true,
-    data: getCurrentMockRevenueMetrics(),
-  });
+  return respondWithResult(await RevenueMetrics.getCurrentRevenueMetrics({}));
 }

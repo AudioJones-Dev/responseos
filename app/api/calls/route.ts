@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
-import { getMockCalls } from "@/lib/mock/calls";
+import { Calls } from "@/lib/data";
+import { respondWithResult } from "@/lib/providers/webhook-helpers";
 
 export async function GET() {
-  return NextResponse.json({ ok: true, mock: true, data: getMockCalls() });
+  return respondWithResult(await Calls.listCalls({}));
 }

@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
-import { getMockQuoteRequests } from "@/lib/mock/quotes";
+import { Quotes } from "@/lib/data";
+import { respondWithResult } from "@/lib/providers/webhook-helpers";
 
 export async function GET() {
-  return NextResponse.json({ ok: true, mock: true, data: getMockQuoteRequests() });
+  return respondWithResult(await Quotes.listQuoteRequests({}));
 }

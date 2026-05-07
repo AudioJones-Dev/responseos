@@ -1,4 +1,4 @@
-import { getMockLeadEvents } from "@/lib/mock/leads";
+import { Leads } from "@/lib/data";
 
 const formatUsd = (cents?: number): string =>
   typeof cents === "number"
@@ -9,8 +9,9 @@ const formatUsd = (cents?: number): string =>
       })
     : "—";
 
-export default function AdminLeadsPage() {
-  const leads = getMockLeadEvents();
+export default async function AdminLeadsPage() {
+  const result = await Leads.listLeads({});
+  const leads = result.ok ? result.data : [];
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-12">
       <h1 className="text-2xl font-semibold">Lead Events</h1>

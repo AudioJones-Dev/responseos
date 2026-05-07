@@ -1,7 +1,8 @@
-import { getMockOrganizations } from "@/lib/mock/organizations";
+import { Organizations } from "@/lib/data";
 
-export default function AdminClientsPage() {
-  const orgs = getMockOrganizations();
+export default async function AdminClientsPage() {
+  const result = await Organizations.listOrganizations();
+  const orgs = result.ok ? result.data : [];
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
       <h1 className="text-2xl font-semibold">Clients</h1>
