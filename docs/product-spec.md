@@ -16,6 +16,15 @@ It is **not** an AI receptionist clone. The receptionist is one input. The produ
 - Owner/operator or office manager who feels the pain of missed calls but does not want to hire a 24/7 receptionist.
 - Currently using a CRM (often GoHighLevel or HubSpot) plus disconnected tools (a VoIP, a calendar, a quoting doc, a follow-up Google Sheet).
 
+## Commercial motion
+
+ResponseOS is sold in two phases:
+
+1. **Phase 1 — Readiness & Revenue Leak Assessment** ($1,000 flat; $750–$1,500 range). A paid diagnostic that determines AI-readiness, revenue leak size, and fit/no-fit before any implementation conversation.
+2. **Phase 2 — Implementation + Monthly Revenue Recovery Retainer.** Setup fee + monthly retainer in one of three tiers (Recovery Core / Recovery Pro / Recovery Performance), with optional outcome fees layered on top.
+
+Implementation only proceeds when minimum qualification gates are met: average job value ~$300+, ~20+ missed calls/month, a clear booking or quote process, owner/staff buy-in, CRM/calendar access, low compliance risk, and a measurable ROI path. Medical, legal, HIPAA-regulated, and other sensitive workflows are excluded from first pilots until the compliance lane is hardened. Full commercial strategy and onboarding workflow lives in `docs/pricing-and-onboarding.md`; the buyer-facing summary lives in `docs/client-facing-offer.md`.
+
 ## Two surfaces
 
 ### Internal — AJ Digital Operator Console (v0.1, ships first)
