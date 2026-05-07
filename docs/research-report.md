@@ -87,3 +87,68 @@ This is the canonical internal mapping. The marketing version (Revenue Leak Dete
 - `client-facing-offer.md` — three pricing tiers, outcome-fee structure, SLA defaults, sample contract clause.
 
 For deeper context on any specific decision, the original report has the vendor-doc citations.
+
+## Future Knowledge Layer / Agent Grounding Layer
+
+ResponseOS may later add a client-specific knowledge layer that grounds AI voice, SMS, booking, quote, and support workflows in approved business knowledge. **This is a roadmap concept for v0.4 or later, not part of v0.2 and not part of the current database/auth foundation.**
+
+### Why it matters strategically
+
+The knowledge layer is how the AI voice/SMS layer gets meaningfully smarter without hallucinating. Over time it becomes a competitive moat: ResponseOS will not just answer calls, it will answer from approved client knowledge and tie the result to recovered revenue. That tie-back is what justifies outcome-based pricing on top of the carrier-grade infrastructure described in the buy-vs-build matrix above.
+
+### Potential future knowledge sources
+
+- client FAQs
+- service descriptions
+- pricing rules
+- service areas
+- business hours
+- escalation policies
+- approved scripts
+- objection handling
+- quote rules
+- warranty policies
+- CRM notes
+- call transcripts
+- client SOPs
+- uploaded documents
+- product/service manuals
+- internal implementation notes
+
+### Product distinction (load-bearing)
+
+ResponseOS is **not** a generic second-brain or personal-knowledge product. The knowledge layer is a **workflow grounding layer** scoped to revenue-recovery use cases. If a knowledge source does not improve qualification, booking, quoting, escalation, or ROI reporting, it does not belong in the layer.
+
+This distinction matters because the buy-vs-build matrix above already commits ResponseOS to building the canonical model, prompt governance, ROI analytics, and white-label OS. The knowledge layer is an extension of that "build" column, not a pivot into a different product category.
+
+### Roadmap placement
+
+| Version | Theme |
+|---|---|
+| v0.2 | DB / auth / data-access foundation |
+| v0.3 | Retell / Twilio provider pilot + webhook event ledger |
+| v0.4 | Client knowledge base + agent grounding layer |
+| v0.5 | Billing / outcome-fee ledger |
+| v1.0 | Client-ready Revenue Recovery OS |
+
+### Required security and compliance gates
+
+Before any client-facing knowledge ingestion ships, ResponseOS must support:
+
+- tenant isolation
+- source ownership
+- upload permissions
+- audit logging
+- retention policy
+- transcript / recording controls
+- PII minimization
+- deletion / export workflow
+- approved-source controls
+- human review for sensitive knowledge
+- regulated-workflow restrictions
+
+These align with the deployment-lane and BAA matrix posture in `security.md`. The knowledge layer cannot ship faster than the tenant whose data it would ingest — regulated-vertical tenants only get knowledge ingestion once their compliance lane is fully in force.
+
+### Out of scope for v0.2 and v0.3
+
+Documenting the roadmap does not authorize any of: RAG implementation, vector search, embeddings indexes, file-upload surfaces, Obsidian integration, Codex automations, new dependencies, new database models, new provider SDKs, new secrets, or production deployment. Architectural placement is in `architecture.md`; future model candidates are in `data-schema.md`; roadmap placement is in `v0.2-planning-spec.md`.
