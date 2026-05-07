@@ -106,3 +106,43 @@ Architecture note: Grok Voice must be treated as an experimental provider until:
 - compliance posture is reviewed
 
 Until those gates are met, Grok Voice stays behind the same provider abstraction the primary lane uses, and is selectable only for non-regulated experiments (website/app voice assistants, internal operator copilot, sales qualification pilots). The primary live phone-answering lane remains Twilio / Retell / Vapi / Bland.
+
+## Future Knowledge Layer / Agent Grounding Layer (v0.4+)
+
+ResponseOS may later add a client-specific **knowledge layer** that grounds AI voice, SMS, booking, quote, and support workflows in approved business knowledge instead of free-form generation. This is a **roadmap target for v0.4 or later**. It is not implemented now, not part of v0.2, and not part of the current database/auth foundation.
+
+### Architectural placement
+
+The future knowledge layer sits **behind** ResponseOS workflows as a grounding layer — never as a free-standing chat product:
+
+```
+Voice / SMS / Web lead
+   → ResponseOS workflow engine
+   → Client knowledge layer (grounding)
+   → grounded response / qualification / booking / escalation
+   → ROI reporting
+```
+
+The workflow engine remains the system of record. The knowledge layer is consulted by the engine, scoped to the tenant's approved sources, and never bypasses the existing tenant-isolation, audit, and retention controls described elsewhere in this document.
+
+### Product distinction
+
+ResponseOS is **not** a generic second-brain or personal-knowledge app. The knowledge layer exists only to improve revenue-recovery workflows: better qualification, fewer hallucinations on pricing or service areas, better escalation, better booking accuracy, and more defensible AI-assisted answers. Knowledge that does not serve those workflows does not belong in the layer.
+
+### Out of scope for current versions
+
+Until the v0.4 work is explicitly scheduled, the architecture must not assume:
+
+- a vector index, embeddings store, or RAG runtime
+- a file-upload pipeline for client documents
+- an Obsidian (or similar) personal-KB integration
+- a knowledge-authoring UI
+- any new provider SDKs or secrets dedicated to knowledge
+
+Provider adapters under `lib/providers/*` and the event-ledger design above remain unchanged by this roadmap entry.
+
+### Cross-references
+
+- Roadmap placement and required gates: `docs/v0.2-planning-spec.md` § Future Knowledge Layer.
+- Future data model candidates (planning only): `docs/data-schema.md` § Future Knowledge Layer.
+- Product positioning and security gates: `docs/research-report.md` § Future Knowledge Layer.

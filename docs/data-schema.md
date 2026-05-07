@@ -237,3 +237,39 @@ Storing the raw event before mutating any business object means we can:
 7. Keep `revenue_metrics` running alongside `roi_metrics` until the new mart proves out, then deprecate.
 
 The v0.1 schema is forward-compatible: nothing in v0.1 blocks the v0.2 expansion. Renames happen via Prisma migrations once the data volumes and product surface make the lift worth it.
+
+---
+
+## Future Knowledge Layer (v0.4+) — planning only
+
+ResponseOS may later add a client-specific **knowledge layer** that grounds AI voice, SMS, booking, quote, and support workflows in approved business knowledge. **These tables are roadmap candidates for v0.4 or later. Do not implement them in v0.2 or v0.3.** They are not present in `prisma/schema.prisma`, not represented as TypeScript types, and not wired into any API surface.
+
+Architectural placement and product framing are documented in `architecture.md` and `research-report.md`. Roadmap gating and required security controls are documented in `v0.2-planning-spec.md` and `security.md`.
+
+### Future tables (planning candidates)
+
+| Table | Purpose |
+|---|---|
+| `knowledge_sources` | Per-tenant registry of approved knowledge sources (FAQs, SOPs, scripts, manuals, CRM notes, transcripts) with source ownership, ingestion mode, and approval status. |
+| `knowledge_documents` | Document-level records under a source, with title, version, language, sensitivity, retention class, and approval state. |
+| `knowledge_chunks` | Sub-document units used for retrieval; structure is intentionally undefined until v0.4 picks an embedding/retrieval strategy. |
+| `knowledge_tags` | Tenant-scoped tags for routing knowledge to specific workflows (booking, quoting, escalation, after-hours). |
+| `knowledge_links` | Edges between knowledge documents and other ResponseOS entities (services, locations, pricing rules, scripts, automations) so retrieval is workflow-aware. |
+| `knowledge_ingestion_runs` | Per-source ingestion job log: started_at, ended_at, status, error, counts, source-version, ingestor identity. |
+| `knowledge_review_status` | Human-review state for sensitive knowledge: reviewer, decision, expires_at, review_notes. |
+| `knowledge_usage_events` | Per-call / per-message record of which knowledge was consulted to ground a response, joined to the event ledger for ROI and audit. |
+
+### Modeling rules these future tables must follow
+
+- Every knowledge table carries `account_id` (the v0.2 tenant root) and respects the same tenant-isolation rules as every other per-tenant table.
+- Every knowledge document has an explicit owner, an explicit approval state, and an explicit retention policy before it is eligible for retrieval.
+- Knowledge consulted during a workflow is recorded against the immutable event ledger (`events`) so any AI-grounded answer is auditable and replayable.
+- PII minimization rules in `security.md` apply to ingested transcripts and CRM notes; raw and redacted variants live under different storage paths and access policies.
+- No knowledge ingestion path is enabled for a tenant until that tenant's deployment lane (Standard / Privacy-hardened / HIPAA-ready) has the controls listed in `v0.2-planning-spec.md` § Future Knowledge Layer in force.
+
+### Explicitly out of scope right now
+
+- No vector / embeddings columns are committed to. The retrieval substrate is a v0.4 decision.
+- No file-upload schema is committed to. Uploads are gated on the `files` / `media` model already on the v0.2 roadmap above.
+- No third-party knowledge integrations (Obsidian, Notion, Confluence, etc.) are committed to.
+- No Prisma models, migrations, or TypeScript types ship from this roadmap entry.
