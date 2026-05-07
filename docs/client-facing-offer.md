@@ -42,16 +42,43 @@ ResponseOS is the AI Revenue Recovery Platform for service businesses. Built on 
 
 ## Pricing
 
+ResponseOS is sold in two phases — a paid Readiness Assessment first, then implementation + monthly retainer. Full commercial strategy lives in `docs/pricing-and-onboarding.md`; the table below is the buyer-facing summary.
+
+### Phase 1 — Readiness & Revenue Leak Assessment
+
+| Item | Amount |
+|---|---|
+| Standard assessment | $1,000 flat |
+| Range by size and complexity | $750–$1,500 |
+| Optional credit toward implementation | If client signs within 14–30 days |
+
+The assessment delivers a Readiness Score, Revenue Leak Estimate, AI Fit / No-Fit Diagnosis, current and recommended workflow maps, implementation scope, projected ROI, and a Pricing Proposal.
+
+### Phase 2 — Implementation + Monthly Recovery Retainer
+
 | Package | Setup fee | Monthly fee | Variable / outcome fee |
 |---|---|---|---|
-| Recovery Core | $2,000–$4,000 | $750–$1,500 | Pass-through SMS/voice optional |
-| Recovery Pro | $4,000–$8,000 | $1,500–$3,000 | Usage pass-through or blended |
-| Recovery Performance | $8,000–$15,000 | $3,000–$6,000 | Per booked job, per qualified lead, or revenue-share kicker |
+| Recovery Core | $2,500–$4,000 | $750–$1,250 | Pass-through SMS/voice optional |
+| Recovery Pro | $5,000–$8,500 | $1,500–$2,500 | Usage pass-through or blended |
+| Recovery Performance | $8,500–$15,000+ | $2,500–$5,000+ | Per booked job, per qualified lead, or revenue-share kicker |
+
+**Founding Client Pilot (optional, 90 days):** $1,000 assessment + $3,500 implementation + $1,250/month, with an optional $50 per qualified booked appointment after the first 10 per month.
 
 **Outcome fee structure:**
 - **Fixed platform fee** covers setup, maintenance, monitoring, optimization.
 - **Variable fee** covers minutes, messages, premium integrations.
 - **Outcome fee** applies only to **verified** booked appointments or **verified** recovered revenue above a historical baseline.
+- Pick **one** outcome structure per engagement. No performance-only pricing — every engagement carries a base setup and monthly fee.
+
+### Suggested included AI voice usage
+
+| Tier | Included minutes / month | Overage |
+|---|---|---|
+| Recovery Core | up to 300 | cost + 20% management margin |
+| Recovery Pro | up to 750 | cost + 20% management margin |
+| Recovery Performance | up to 1,500 | cost + 20% management margin |
+
+Alternative: software / usage billed separately at cost + management fee. The model in force is recorded on each Pricing Proposal.
 
 ## SLA defaults
 
