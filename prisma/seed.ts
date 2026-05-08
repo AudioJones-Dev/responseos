@@ -22,9 +22,33 @@
  * generated client (`npx prisma generate`) at run time, not at typecheck time.
  */
 
+import { pathToFileURL } from "node:url";
 import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
+export const EXPECTED_SEED_COUNTS = {
+  organizations: 2,
+  users: 3,
+  contacts: 3,
+  calls: 4,
+  leadEvents: 11,
+  leadQualifications: 3,
+  bookings: 2,
+  quoteRequests: 2,
+  revenueMetrics: 3,
+  assessmentReports: 1,
+  engagements: 1,
+  auditLogs: 6,
+  webhookEvents: 0,
+  automations: 0,
+  notifications: 0,
+} as const;
+
+let prisma: PrismaClient;
+
+function getPrisma(): PrismaClient {
+  prisma ??= new PrismaClient();
+  return prisma;
+}
 
 // Stable timestamp anchors that match lib/mock/calls.ts and lib/mock/leads.ts
 // so DB-backed dashboards line up with the existing in-memory fixtures.
@@ -249,7 +273,8 @@ async function seedCalls() {
       started_at: at(120),
       ended_at: at(123),
       duration_seconds: 145,
-      transcript: "Outbound recovery call after missed inbound. Booked an estimate.",
+      transcript:
+        "Outbound recovery call after missed inbound. Booked an estimate.",
       summary: "Recovery success: estimate booked.",
       sentiment: "positive",
       spam_score: 0,
@@ -404,7 +429,9 @@ async function seedLeadEvents() {
 }
 
 async function seedLeadQualifications() {
-  const rows: Array<Parameters<typeof prisma.leadQualification.create>[0]["data"]> = [
+  const rows: Array<
+    Parameters<typeof prisma.leadQualification.create>[0]["data"]
+  > = [
     {
       id: "qual_mock_lead_2",
       lead_event_id: "lead_mock_2",
@@ -762,6 +789,8 @@ async function seedAuditLogs() {
 }
 
 async function main() {
+  prisma = getPrisma();
+
   await seedOrganizations();
   await seedUsers();
   await seedContacts();
@@ -778,12 +807,18 @@ async function main() {
   // is the first writer.
 }
 
-main()
-  .then(async () => {
-    await prisma.$disconnect();
-  })
-  .catch(async (err) => {
-    console.error(err);
-    await prisma.$disconnect();
-    process.exit(1);
-  });
+const isDirectExecution =
+  process.argv[1] !== undefined &&
+  import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (isDirectExecution) {
+  main()
+    .then(async () => {
+      await getPrisma().$disconnect();
+    })
+    .catch(async (err) => {
+      console.error(err);
+      await getPrisma().$disconnect();
+      process.exit(1);
+    });
+}
