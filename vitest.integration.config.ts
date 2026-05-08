@@ -10,11 +10,12 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    include: ["tests/unit/**/*.test.ts"],
+    include: ["tests/integration/**/*.test.ts"],
     exclude: ["tests/e2e/**", "node_modules/**"],
+    fileParallelism: false,
     coverage: {
       provider: "v8",
-      include: ["lib/auth/**", "lib/data/**", "lib/db/**", "lib/validation/**"],
+      include: ["lib/auth/**", "lib/data/**", "lib/db/**"],
       reporter: ["text", "lcov"],
     },
   },
