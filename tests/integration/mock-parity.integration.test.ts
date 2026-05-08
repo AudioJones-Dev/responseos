@@ -89,8 +89,12 @@ describe("seeded mock fixture parity", () => {
       "updated_at",
     ];
     const rows = await prisma.leadEvent.findMany({ orderBy: { id: "asc" } });
+    const fixtureRows = [...getMockLeadEvents()].sort((a, b) =>
+      a.id.localeCompare(b.id),
+    );
+
     expect(clean(normalize(rows.map((row) => pick(row, keys))))).toEqual(
-      clean(getMockLeadEvents().map((row) => pick(row, keys))),
+      clean(fixtureRows.map((row) => pick(row, keys))),
     );
   });
 
