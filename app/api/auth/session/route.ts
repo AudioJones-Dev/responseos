@@ -1,14 +1,24 @@
 import { NextResponse } from "next/server";
+import { getCurrentSession } from "@/lib/auth/session";
 
-// TODO: replace with Clerk session lookup once CLERK_SECRET_KEY is wired.
 export async function GET() {
+  const session = await getCurrentSession();
+  if (!session) {
+    return NextResponse.json({
+      ok: true,
+      data: {
+        authenticated: false,
+        user: null,
+        organization: null,
+      },
+    });
+  }
   return NextResponse.json({
     ok: true,
-    mock: true,
     data: {
-      authenticated: false,
-      user: null,
-      organization: null,
+      authenticated: true,
+      user: session.user,
+      organization: session.organization,
     },
   });
 }

@@ -1,7 +1,14 @@
-import { getMockBookings } from "@/lib/mock/bookings";
+import { getCurrentOrganization } from "@/lib/auth/session";
+import { Bookings } from "@/lib/data";
 
-export default function ClientBookingsPage() {
-  const bookings = getMockBookings().filter((b) => b.organization_id === "org_mock_1");
+const FALLBACK_ORG_ID = "org_mock_1";
+
+export default async function ClientBookingsPage() {
+  const org = await getCurrentOrganization();
+  const result = await Bookings.listBookings({
+    organizationId: org?.id ?? FALLBACK_ORG_ID,
+  });
+  const bookings = result.ok ? result.data : [];
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
       <h1 className="text-2xl font-semibold">Bookings</h1>

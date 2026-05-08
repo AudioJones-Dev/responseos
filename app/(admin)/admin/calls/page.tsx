@@ -1,7 +1,8 @@
-import { getMockCalls } from "@/lib/mock/calls";
+import { Calls } from "@/lib/data";
 
-export default function AdminCallsPage() {
-  const calls = getMockCalls();
+export default async function AdminCallsPage() {
+  const result = await Calls.listCalls({});
+  const calls = result.ok ? result.data : [];
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-12">
       <h1 className="text-2xl font-semibold">Calls</h1>

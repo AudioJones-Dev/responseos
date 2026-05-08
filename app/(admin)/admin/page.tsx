@@ -1,10 +1,12 @@
 import StatCard from "@/components/dashboard/StatCard";
-import { getMockOrganizations } from "@/lib/mock/organizations";
-import { getMockCalls } from "@/lib/mock/calls";
-import { getMockLeadEvents } from "@/lib/mock/leads";
-import { getMockBookings } from "@/lib/mock/bookings";
-import { getMockQuoteRequests } from "@/lib/mock/quotes";
-import { getCurrentMockRevenueMetrics } from "@/lib/mock/revenueMetrics";
+import {
+  Bookings,
+  Calls,
+  Leads,
+  Organizations,
+  Quotes,
+  RevenueMetrics,
+} from "@/lib/data";
 
 const formatUsd = (cents: number): string =>
   (cents / 100).toLocaleString("en-US", {
@@ -13,13 +15,22 @@ const formatUsd = (cents: number): string =>
     maximumFractionDigits: 0,
   });
 
-export default function AdminHome() {
-  const organizations = getMockOrganizations();
-  const calls = getMockCalls();
-  const leads = getMockLeadEvents();
-  const bookings = getMockBookings();
-  const quotes = getMockQuoteRequests();
-  const revenue = getCurrentMockRevenueMetrics();
+export default async function AdminHome() {
+  const [orgsR, callsR, leadsR, bookingsR, quotesR, revenueR] = await Promise.all([
+    Organizations.listOrganizations(),
+    Calls.listCalls({}),
+    Leads.listLeads({}),
+    Bookings.listBookings({}),
+    Quotes.listQuoteRequests({}),
+    RevenueMetrics.getCurrentRevenueMetrics({}),
+  ]);
+
+  const organizations = orgsR.ok ? orgsR.data : [];
+  const calls = callsR.ok ? callsR.data : [];
+  const leads = leadsR.ok ? leadsR.data : [];
+  const bookings = bookingsR.ok ? bookingsR.data : [];
+  const quotes = quotesR.ok ? quotesR.data : [];
+  const revenue = revenueR.ok ? revenueR.data : null;
 
   const missed = calls.filter((c) => c.status === "missed").length;
   const aiAnswered = calls.filter(
@@ -71,13 +82,13 @@ export default function AdminHome() {
         <StatCard label="Quote Requests Created" value={quoteCount} />
         <StatCard
           label="Estimated Recovered Revenue"
-          value={formatUsd(revenue.estimated_recovered_revenue)}
+          value={revenue ? formatUsd(revenue.estimated_recovered_revenue) : "—"}
           hint="This month (mock)"
           accent="primary"
         />
         <StatCard
           label="ROI Multiple"
-          value={revenue.roi_multiple ? `${revenue.roi_multiple.toFixed(1)}x` : "—"}
+          value={revenue?.roi_multiple ? `${revenue.roi_multiple.toFixed(1)}x` : "—"}
           hint="Estimated recovered revenue / monthly cost"
         />
       </section>

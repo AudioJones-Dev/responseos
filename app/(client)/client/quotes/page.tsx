@@ -1,4 +1,7 @@
-import { getMockQuoteRequests } from "@/lib/mock/quotes";
+import { getCurrentOrganization } from "@/lib/auth/session";
+import { Quotes } from "@/lib/data";
+
+const FALLBACK_ORG_ID = "org_mock_1";
 
 const formatUsd = (cents?: number): string =>
   typeof cents === "number"
@@ -9,10 +12,12 @@ const formatUsd = (cents?: number): string =>
       })
     : "—";
 
-export default function ClientQuotesPage() {
-  const quotes = getMockQuoteRequests().filter(
-    (q) => q.organization_id === "org_mock_1",
-  );
+export default async function ClientQuotesPage() {
+  const org = await getCurrentOrganization();
+  const result = await Quotes.listQuoteRequests({
+    organizationId: org?.id ?? FALLBACK_ORG_ID,
+  });
+  const quotes = result.ok ? result.data : [];
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
       <h1 className="text-2xl font-semibold">Quote Requests</h1>

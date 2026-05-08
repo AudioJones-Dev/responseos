@@ -1,17 +1,16 @@
-import { NextResponse } from "next/server";
-import { getMockRevenueMetrics } from "@/lib/mock/revenueMetrics";
+import { RevenueMetrics } from "@/lib/data";
+import { respondWithResult } from "@/lib/providers/webhook-helpers";
 
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ organizationId: string }> },
 ) {
   const { organizationId } = await params;
-  const metrics = getMockRevenueMetrics().filter(
-    (m) => m.organization_id === organizationId,
-  );
-  return NextResponse.json({
-    ok: true,
-    mock: true,
-    data: { organization_id: organizationId, metrics },
+  const result = await RevenueMetrics.listRevenueMetrics({ organizationId });
+  return respondWithResult(result, {
+    transform: (metrics) => ({
+      organization_id: organizationId,
+      metrics,
+    }),
   });
 }

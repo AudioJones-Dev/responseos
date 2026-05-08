@@ -1,4 +1,7 @@
-import { getMockRevenueMetrics } from "@/lib/mock/revenueMetrics";
+import { getCurrentOrganization } from "@/lib/auth/session";
+import { RevenueMetrics } from "@/lib/data";
+
+const FALLBACK_ORG_ID = "org_mock_1";
 
 const formatUsd = (cents: number): string =>
   (cents / 100).toLocaleString("en-US", {
@@ -7,10 +10,12 @@ const formatUsd = (cents: number): string =>
     maximumFractionDigits: 0,
   });
 
-export default function ClientRevenuePage() {
-  const trend = getMockRevenueMetrics().filter(
-    (m) => m.organization_id === "org_mock_1",
-  );
+export default async function ClientRevenuePage() {
+  const org = await getCurrentOrganization();
+  const result = await RevenueMetrics.listRevenueMetrics({
+    organizationId: org?.id ?? FALLBACK_ORG_ID,
+  });
+  const trend = result.ok ? result.data : [];
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
       <h1 className="text-2xl font-semibold">Revenue Recovered</h1>

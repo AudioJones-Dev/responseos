@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { Notifications } from "@/lib/data";
+import { respondWithResult } from "@/lib/providers/webhook-helpers";
 
 export async function GET() {
-  return NextResponse.json({ ok: true, mock: true, data: [] });
+  return respondWithResult(await Notifications.listNotifications({}));
 }

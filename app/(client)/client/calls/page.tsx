@@ -1,7 +1,14 @@
-import { getMockCalls } from "@/lib/mock/calls";
+import { getCurrentOrganization } from "@/lib/auth/session";
+import { Calls } from "@/lib/data";
 
-export default function ClientCallsPage() {
-  const calls = getMockCalls().filter((c) => c.organization_id === "org_mock_1");
+const FALLBACK_ORG_ID = "org_mock_1";
+
+export default async function ClientCallsPage() {
+  const org = await getCurrentOrganization();
+  const result = await Calls.listCalls({
+    organizationId: org?.id ?? FALLBACK_ORG_ID,
+  });
+  const calls = result.ok ? result.data : [];
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
       <h1 className="text-2xl font-semibold">Calls</h1>
