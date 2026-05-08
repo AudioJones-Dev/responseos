@@ -1,4 +1,5 @@
 import { afterAll, beforeEach, describe, expect, test } from "vitest";
+import { getMockBookings } from "@/lib/mock/bookings";
 import { getMockCalls } from "@/lib/mock/calls";
 import { getMockContacts } from "@/lib/mock/contacts";
 import { getMockLeadEvents } from "@/lib/mock/leads";
@@ -40,11 +41,7 @@ describe("seeded mock fixture parity", () => {
     expect(clean(normalize(rows))).toEqual(clean(getMockOrganizations()));
   });
 
-  test.skip("contacts match lib/mock contacts field-for-field", async () => {
-    // Skip: drift between MockContact() default `address: "123 Main St"` in
-    // types/contact.ts and prisma/seed.ts which omits `address` on every
-    // contact. Phase D documents this drift without changing lib/mock or
-    // prisma/seed per the hard rules; reconciliation lands in a follow-up.
+  test("contacts match lib/mock contacts field-for-field", async () => {
     const rows = await prisma.contact.findMany({ orderBy: { id: "asc" } });
     expect(clean(normalize(rows))).toEqual(clean(getMockContacts()));
   });
@@ -75,12 +72,7 @@ describe("seeded mock fixture parity", () => {
     );
   });
 
-  test.skip("lead events match lib/mock leads field-for-field", async () => {
-    // Skip: lib/mock/leads.ts and prisma/seed.ts have ordering and field-set
-    // drift on lead_mock_4/7/10/11 (missing contact_id and estimated_value
-    // on the mock side, plus different default ordering). Phase D documents
-    // this drift without changing lib/mock or prisma/seed per the hard rules;
-    // reconciliation lands in a follow-up.
+  test("lead events match lib/mock leads field-for-field", async () => {
     const keys = [
       "id",
       "organization_id",
@@ -102,9 +94,25 @@ describe("seeded mock fixture parity", () => {
     );
   });
 
-  test.skip("bookings match lib/mock bookings field-for-field", () => {
-    // Existing booking mock fixtures derive times from Date.now(), while the seed uses fixed anchors.
-    // Phase D documents this drift without changing lib/mock or prisma/seed per the hard rules.
+  test("bookings match lib/mock bookings field-for-field", async () => {
+    const keys = [
+      "id",
+      "organization_id",
+      "contact_id",
+      "lead_event_id",
+      "calendar_provider",
+      "external_event_id",
+      "title",
+      "start_time",
+      "end_time",
+      "status",
+      "location",
+      "notes",
+    ];
+    const rows = await prisma.booking.findMany({ orderBy: { id: "asc" } });
+    expect(clean(normalize(rows.map((row) => pick(row, keys))))).toEqual(
+      clean(getMockBookings().map((row) => pick(row, keys))),
+    );
   });
 
   test("quote requests match lib/mock quotes field-for-field", async () => {
