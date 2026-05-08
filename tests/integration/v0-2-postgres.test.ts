@@ -1,9 +1,18 @@
-import { execFileSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { PrismaClient } from "@prisma/client";
-import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  test,
+  vi,
+} from "vitest";
 
 const DATABASE_URL = process.env.DATABASE_URL;
 const DIRECT_URL = process.env.DIRECT_URL ?? DATABASE_URL;
+const ORIGINAL_ENV = { ...process.env };
 
 const REQUIRED_DATABASE_URL_MESSAGE =
   "DATABASE_URL must point at a disposable local Postgres database, for example postgresql://postgres:postgres@localhost:5432/responseos_test?schema=public";
@@ -21,6 +30,8 @@ const prismaEnv = {
   DATABASE_URL,
   DIRECT_URL,
 };
+
+const importedDataClients = new Set<{ $disconnect: () => Promise<void> }>();
 
 interface ModelCounts {
   organizations: number;
@@ -87,11 +98,20 @@ async function getCoreCounts(): Promise<ModelCounts> {
 }
 
 function runPrisma(args: string[]) {
-  execFileSync("npx", ["prisma", ...args], {
+  const executable = process.platform === "win32" ? "npx.cmd" : "npx";
+  const result = spawnSync(executable, ["prisma", ...args], {
     cwd: process.cwd(),
     env: prismaEnv,
-    stdio: "inherit",
+    encoding: "utf8",
   });
+
+  if (result.status !== 0) {
+    if (result.stdout) process.stdout.write(result.stdout);
+    if (result.stderr) process.stderr.write(result.stderr);
+    throw new Error(
+      `npx prisma ${args.join(" ")} failed with exit code ${result.status}`,
+    );
+  }
 }
 
 async function importData(session?: string) {
@@ -103,7 +123,15 @@ async function importData(session?: string) {
   process.env.DATABASE_URL = DATABASE_URL;
   process.env.DIRECT_URL = DIRECT_URL;
   vi.resetModules();
-  return import("@/lib/data/index");
+
+  const [data, dbModule] = await Promise.all([
+    import("@/lib/data/index"),
+    import("@/lib/db/client"),
+  ]);
+  if (dbModule.db) {
+    importedDataClients.add(dbModule.db);
+  }
+  return data;
 }
 
 describe("v0.2 Postgres integration coverage", () => {
@@ -112,15 +140,27 @@ describe("v0.2 Postgres integration coverage", () => {
     runPrisma(["db", "seed"]);
   }, 120_000);
 
+  afterEach(async () => {
+    process.env = { ...ORIGINAL_ENV, DATABASE_URL, DIRECT_URL };
+    vi.resetModules();
+
+    await prisma.webhookEvent.deleteMany({
+      where: { provider: "phase-d-test-provider" },
+    });
+  });
+
   afterAll(async () => {
+    await Promise.all(
+      [...importedDataClients].map((client) => client.$disconnect()),
+    );
     await prisma.$disconnect();
-    const { db } = await import("@/lib/db/client");
-    await db?.$disconnect();
   });
 
   test("deterministic seed is idempotent and preserves core seeded counts", async () => {
     const firstCounts = await getCoreCounts();
 
+    // Snapshot must match prisma/seed.ts exactly; update both together when
+    // intentional seed fixture changes land.
     expect(firstCounts).toEqual({
       organizations: 2,
       users: 3,
@@ -140,6 +180,24 @@ describe("v0.2 Postgres integration coverage", () => {
     runPrisma(["db", "seed"]);
     await expect(getCoreCounts()).resolves.toEqual(firstCounts);
   }, 120_000);
+
+  test("aj_admin reads across tenants through lib/data accessors", async () => {
+    const { Calls, Contacts } = await importData("aj_admin");
+
+    const contacts = await Contacts.listContacts({});
+    expect(contacts.ok).toBe(true);
+    if (!contacts.ok) return;
+    expect(new Set(contacts.data.map((row) => row.organization_id))).toEqual(
+      new Set(["org_mock_1", "org_mock_2"]),
+    );
+
+    const calls = await Calls.listCalls({});
+    expect(calls.ok).toBe(true);
+    if (!calls.ok) return;
+    expect(new Set(calls.data.map((row) => row.organization_id))).toEqual(
+      new Set(["org_mock_1", "org_mock_2"]),
+    );
+  });
 
   test("tenant-scoped reads flow through lib/data accessors", async () => {
     const { Calls, Contacts, Leads, Bookings, Quotes, RevenueMetrics } =
