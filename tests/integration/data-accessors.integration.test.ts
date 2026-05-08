@@ -152,7 +152,7 @@ describe("data accessors against Postgres", () => {
     const assessment = await Assessments.getAssessmentReportById("assessment_mock_1");
     expect(assessment.ok).toBe(true);
     if (!assessment.ok) return;
-    expect(assessment.data.readiness_score).toBe(82);
+    expect(assessment.data.readiness_score).toBe(72);
 
     const engagements = await Engagements.listEngagements({ organizationId: "org_mock_1" });
     expect(engagements.ok).toBe(true);

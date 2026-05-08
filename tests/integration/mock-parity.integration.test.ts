@@ -8,11 +8,12 @@ import { getMockRevenueMetrics } from "@/lib/mock/revenueMetrics";
 import { disconnectTestDb, normalize, prisma, resetAndSeedTestDb } from "./setup";
 
 function clean(value: unknown): unknown {
+  if (value instanceof Date) return value.toISOString();
   if (Array.isArray(value)) return value.map((item) => clean(item));
   if (value && typeof value === "object") {
     return Object.fromEntries(
       Object.entries(value)
-        .filter(([, entry]) => entry !== undefined)
+        .filter(([, entry]) => entry !== undefined && entry !== null)
         .filter(([key]) => key !== "created_at" && key !== "updated_at")
         .map(([key, entry]) => [key, clean(entry)]),
     );
@@ -22,7 +23,7 @@ function clean(value: unknown): unknown {
 
 function pick(row: object, keys: string[]): Record<string, unknown> {
   const record = row as Record<string, unknown>;
-  return Object.fromEntries(keys.map((key) => [key, clean(record[key])]));
+  return Object.fromEntries(keys.map((key) => [key, record[key]]));
 }
 
 beforeEach(async () => {

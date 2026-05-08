@@ -19,7 +19,7 @@ describe("audit log integration", () => {
       {
         action: "lead.qualified",
         target_type: "LeadEvent",
-        target_id: "lead_mock_2",
+        target_id: "lead_test_audit_001",
         metadata_json: { before: { status: "new" }, after: { status: "qualified" } },
         ip_address: "203.0.113.10",
         user_agent: "vitest-audit-log",
@@ -40,7 +40,7 @@ describe("audit log integration", () => {
     expect(result).toEqual({ ok: true, data: { recorded: true } });
 
     const row = await prisma.auditLog.findFirstOrThrow({
-      where: { action: "lead.qualified", target_id: "lead_mock_2" },
+      where: { action: "lead.qualified", target_id: "lead_test_audit_001" },
     });
     expect(row).toMatchObject({
       organization_id: "org_mock_1",
@@ -48,7 +48,7 @@ describe("audit log integration", () => {
       actor_type: "user",
       action: "lead.qualified",
       target_type: "LeadEvent",
-      target_id: "lead_mock_2",
+      target_id: "lead_test_audit_001",
       metadata_json: { before: { status: "new" }, after: { status: "qualified" } },
       ip_address: "203.0.113.10",
       user_agent: "vitest-audit-log",
