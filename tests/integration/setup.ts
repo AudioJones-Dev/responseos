@@ -1,0 +1,71 @@
+import { execFileSync } from "node:child_process";
+import { PrismaClient } from "@prisma/client";
+import { resetFactoryCounters } from "../factories";
+
+export const prisma = new PrismaClient();
+
+const TABLES = [
+  "WebhookEvent",
+  "AuditLog",
+  "Engagement",
+  "AssessmentReport",
+  "RevenueMetrics",
+  "Notification",
+  "Automation",
+  "QuoteRequest",
+  "Booking",
+  "LeadQualification",
+  "LeadEvent",
+  "Call",
+  "Contact",
+  "User",
+  "Organization",
+];
+
+export async function connectTestDb(): Promise<PrismaClient> {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL is required for integration tests.");
+  }
+  await prisma.$connect();
+  return prisma;
+}
+
+export async function resetTestDb(): Promise<void> {
+  await connectTestDb();
+  await prisma.$executeRawUnsafe(
+    `TRUNCATE TABLE ${TABLES.map((table) => `"${table}"`).join(", ")} RESTART IDENTITY CASCADE`,
+  );
+  resetFactoryCounters();
+}
+
+export async function seedTestDb(): Promise<void> {
+  execFileSync("npx", ["prisma", "db", "seed"], {
+    cwd: process.cwd(),
+    env: process.env,
+    stdio: "pipe",
+  });
+}
+
+export async function resetAndSeedTestDb(): Promise<void> {
+  await resetTestDb();
+  seedTestDb();
+}
+
+export async function disconnectTestDb(): Promise<void> {
+  await prisma.$disconnect();
+}
+
+export function setDevSession(session: string): void {
+  process.env.RESPONSEOS_DEV_SESSION = session;
+}
+
+export function normalize(value: unknown): unknown {
+  if (value instanceof Date) return value.toISOString();
+  if (Array.isArray(value)) return value.map((item) => normalize(item));
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, entry]) => [key, normalize(entry)]),
+    );
+  }
+  return value;
+}
