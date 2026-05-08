@@ -25,3 +25,37 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+
+  integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: responseos
+          POSTGRES_PASSWORD: responseos
+          POSTGRES_DB: responseos_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U responseos"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://responseos:responseos@localhost:5432/responseos_test
+      DIRECT_URL: postgresql://responseos:responseos@localhost:5432/responseos_test
+      SHADOW_DATABASE_URL: postgresql://responseos:responseos@localhost:5432/responseos_shadow
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: echo "CREATE DATABASE responseos_shadow;" | npx prisma db execute --url postgresql://responseos:responseos@localhost:5432/postgres --stdin
+      - run: npx prisma migrate diff --from-schema-datamodel prisma/schema.prisma --to-migrations prisma/migrations --shadow-database-url "$SHADOW_DATABASE_URL" --exit-code
+      - run: npx prisma migrate deploy
+      - run: npx prisma db seed
+      - run: npm run test:integration
+      - run: npm run build
