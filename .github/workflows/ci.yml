@@ -52,7 +52,11 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npx prisma migrate diff --from-schema-datamodel prisma/schema.prisma --to-migrations prisma/migrations --shadow-database-url "$DATABASE_URL" --exit-code
+      - name: Provision dedicated Prisma shadow database
+        run: |
+          PGPASSWORD=responseos psql -h localhost -U responseos \
+            -d responseos_test -c 'CREATE DATABASE responseos_shadow;'
+      - run: npx prisma migrate diff --from-schema-datamodel prisma/schema.prisma --to-migrations prisma/migrations --shadow-database-url "postgresql://responseos:responseos@localhost:5432/responseos_shadow" --exit-code
       - run: npx prisma migrate deploy
       - run: npx prisma db seed
       - run: npm run test:integration

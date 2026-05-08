@@ -2,6 +2,23 @@ import { execFileSync } from "node:child_process";
 import { afterAll, describe, expect, test } from "vitest";
 import { disconnectTestDb, normalize, prisma } from "./setup";
 
+function assertLocalDatabase(): void {
+  const url = process.env.DATABASE_URL;
+  if (!url) {
+    throw new Error(
+      "DATABASE_URL must be set to a local Postgres before running seed-determinism integration tests.",
+    );
+  }
+  const host = new URL(url).hostname;
+  if (host !== "localhost" && host !== "127.0.0.1") {
+    throw new Error(
+      `Refusing to run prisma migrate reset against non-local database (host=${host}). DATABASE_URL must point at localhost or 127.0.0.1.`,
+    );
+  }
+}
+
+assertLocalDatabase();
+
 const TABLE_READS = {
   organizations: () => prisma.organization.findMany({ orderBy: { id: "asc" } }),
   users: () => prisma.user.findMany({ orderBy: { id: "asc" } }),
