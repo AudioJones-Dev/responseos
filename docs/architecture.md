@@ -73,7 +73,7 @@ ResponseOS is designed to ship in three compliance lanes selectable per tenant. 
 ### HIPAA-ready mode
 **AWS-hosted (CloudFront + Route 53 + ECS/Fargate + RDS + S3 + KMS) + Twilio HIPAA account + Retell BAA + BAA-backed database.** Vendor allowlist enforced per compliance tier. Avoid non-BAA TTS/STT options.
 
-The compliance posture is chosen **per tenant tier**, not hard-coded globally. See `security.md` for the full vendor BAA matrix and `deployment.md` for infrastructure topology per lane.
+The compliance posture is chosen **per tenant tier**, not hard-coded globally. See `SECURITY.md` for the full vendor BAA matrix and `DEPLOYMENT.md` for infrastructure topology per lane.
 
 ## QuoteIQ posture
 
@@ -143,6 +143,6 @@ Provider adapters under `lib/providers/*` and the event-ledger design above rema
 
 ### Cross-references
 
-- Roadmap placement and required gates: `docs/v0.2-planning-spec.md` § Future Knowledge Layer.
+- Roadmap placement and required gates: `docs/ROADMAP.md` (and historical detail in `docs/archive/v0.2-planning-spec.md` § Future Knowledge Layer).
 - Future data model candidates (planning only): `docs/data-schema.md` § Future Knowledge Layer.
 - Product positioning and security gates: `docs/research-report.md` § Future Knowledge Layer.

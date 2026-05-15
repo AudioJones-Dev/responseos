@@ -163,7 +163,7 @@ Do not run first pilots in:
 - HIPAA-regulated workflows.
 - Sensitive regulated workflows.
 
-These verticals are off the menu unless the compliance lane is explicitly hardened and reviewed (BAA chain in force, recording / retention policy reviewed, jurisdictional consent rules confirmed). See `docs/security.md` and `docs/product-spec.md` "Vertical roadmap" for the gating rules.
+These verticals are off the menu unless the compliance lane is explicitly hardened and reviewed (BAA chain in force, recording / retention policy reviewed, jurisdictional consent rules confirmed). See `docs/SECURITY.md` and `docs/product-spec.md` "Vertical roadmap" for the gating rules.
 
 ## Client-facing positioning
 
@@ -192,4 +192,4 @@ This document is **commercial strategy only**. The following are explicitly out 
 - Client invoice logic.
 - In-app pricing tier selectors.
 
-These belong in a later milestone — currently roadmapped for **v0.5** — once the v0.2 data foundation, the v0.3 live integrations, and at least one production pilot are in place. See `docs/v0.2-planning-spec.md` for the v0.2 boundary and the v0.3 preview, and `docs/client-facing-offer.md` for the buyer-facing summary of these tiers.
+These belong in a later milestone — currently roadmapped for **v0.5** — once the v0.2 data foundation, the v0.3 live integrations, and at least one production pilot are in place. See `docs/ROADMAP.md` for the v0.2 boundary and the v0.3 preview, and `docs/client-facing-offer.md` for the buyer-facing summary of these tiers.

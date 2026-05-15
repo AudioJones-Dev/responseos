@@ -706,7 +706,7 @@ Every major page must implement all three states. **No exceptions.**
 | v0.5 | Billing and outcome-fee UX. Invoice views, fee calculation display, outcome attribution. |
 | v1.0 | Polished, client-ready SaaS experience. Onboarding flow complete. All views production-grade. White-label-ready. |
 
-This design-maturity ladder maps onto the engineering roadmap documented in [`docs/research-report.md`](./docs/research-report.md#roadmap-placement) and [`docs/v0.2-planning-spec.md`](./docs/v0.2-planning-spec.md): v0.2 DB / auth / data-access foundation → v0.3 Retell / Twilio provider pilot + webhook event ledger → v0.4 client knowledge base + agent grounding layer → v0.5 billing / outcome-fee ledger → v1.0 client-ready Revenue Recovery OS.
+This design-maturity ladder maps onto the engineering roadmap documented in [`ROADMAP.md`](./ROADMAP.md) (and historical detail in [`research-report.md`](./research-report.md#roadmap-placement) / [`archive/v0.2-planning-spec.md`](./archive/v0.2-planning-spec.md)): v0.2 DB / auth / data-access foundation → v0.3 Retell / Twilio provider pilot + webhook event ledger → v0.4 client knowledge base + agent grounding layer → v0.5 billing / outcome-fee ledger → v1.0 client-ready Revenue Recovery OS.
 
 ---
 

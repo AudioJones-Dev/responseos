@@ -244,7 +244,7 @@ The v0.1 schema is forward-compatible: nothing in v0.1 blocks the v0.2 expansion
 
 ResponseOS may later add a client-specific **knowledge layer** that grounds AI voice, SMS, booking, quote, and support workflows in approved business knowledge. **These tables are roadmap candidates for v0.4 or later. Do not implement them in v0.2 or v0.3.** They are not present in `prisma/schema.prisma`, not represented as TypeScript types, and not wired into any API surface.
 
-Architectural placement and product framing are documented in `architecture.md` and `research-report.md`. Roadmap gating and required security controls are documented in `v0.2-planning-spec.md` and `security.md`.
+Architectural placement and product framing are documented in `architecture.md` and `research-report.md`. Roadmap gating and required security controls are documented in `ROADMAP.md` and `SECURITY.md`.
 
 ### Future tables (planning candidates)
 
@@ -264,8 +264,8 @@ Architectural placement and product framing are documented in `architecture.md` 
 - Every knowledge table carries `account_id` (the v0.2 tenant root) and respects the same tenant-isolation rules as every other per-tenant table.
 - Every knowledge document has an explicit owner, an explicit approval state, and an explicit retention policy before it is eligible for retrieval.
 - Knowledge consulted during a workflow is recorded against the immutable event ledger (`events`) so any AI-grounded answer is auditable and replayable.
-- PII minimization rules in `security.md` apply to ingested transcripts and CRM notes; raw and redacted variants live under different storage paths and access policies.
-- No knowledge ingestion path is enabled for a tenant until that tenant's deployment lane (Standard / Privacy-hardened / HIPAA-ready) has the controls listed in `v0.2-planning-spec.md` § Future Knowledge Layer in force.
+- PII minimization rules in `SECURITY.md` apply to ingested transcripts and CRM notes; raw and redacted variants live under different storage paths and access policies.
+- No knowledge ingestion path is enabled for a tenant until that tenant's deployment lane (Standard / Privacy-hardened / HIPAA-ready) has the controls listed in `ROADMAP.md` § Future Knowledge Layer in force.
 
 ### Explicitly out of scope right now
 
