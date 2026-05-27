@@ -4,6 +4,11 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — Exec 0A repo-grounded preflight report
+
+- **Added** `docs/product/RESPONSEOS_EXEC_0A_PREFLIGHT.md` — the Exec 0A implementation-sequencing preflight: a repo-grounded readiness report covering current repo state, the validated dependency order (`A1 → A2 → B1 → B3/B4 → T1 → T2a → T3`), a risk register, an EX0B/EX1 file impact map (with the `Organization`→`Account` rename blast radius measured against the live tree), the local + CI validation commands, the recommended first implementation PR (EX1-T1), carried blockers/open questions, and an explicit **SAFE TO PROCEED** recommendation.
+- Planning only — **no production code, no schema changes, no live integrations, no deploys.** Mock-first, tenant-aware, event-ledger-first architecture preserved; v0.3 live work remains gated per ADR-0001.
+
 ## Unreleased — implementation plan (Execution Phases 0A → 1)
 
 - **Added** `docs/product/RESPONSEOS_IMPLEMENTATION_PLAN.md` — fine-grained, planning-only decomposition of the front of the canonical phase plan into **Exec 0A** (implementation sequencing), **Exec 0B** (foundational architecture setup), and **Exec 1** (tenant model + event schema + mock voice-gateway skeleton). Includes milestone breakdown, dependency map, MVP scope lock, implementation ordering, issue-ready task decomposition (`EX-*` IDs mapped to backlog epics), acceptance gates, validation workflow, a Codex repo-execution protocol, and risks/blockers/open questions.
