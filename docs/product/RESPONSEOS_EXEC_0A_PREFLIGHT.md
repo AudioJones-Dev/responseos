@@ -8,9 +8,9 @@
 
 ## 1) Current repo state
 
-- **Git state at inspection start:** branch `work`, HEAD `829d858`, working tree clean.
-- **Default-branch parity check:** no upstream/default-branch ref is configured in this local checkout (`origin/HEAD` and upstream branch are unset), so latest-default verification cannot be proven from local git metadata.
-- **Entry gate (Exec 0A):** `RESPONSEOS_IMPLEMENTATION_PLAN.md` records A1/PR #17 merged and places Exec 0A as sequencing/protocol work. This preflight assumes the human-provided gate condition (PR #17 + PR #18 merged) is authoritative for proceeding with planning.
+- **Git state at inspection start:** branch `work`, HEAD `829d858` (base inspected for this preflight), working tree clean.
+- **Default-branch parity check:** this local checkout has no upstream tracking configured for `work`, but git history includes `e208c61` (PR #17 docs set) and `829d858` (PR #18 implementation-plan docs), matching the Exec 0A entry-gate statement.
+- **Entry gate (Exec 0A):** confirmed in local history as met (`#17` then `#18` merged commits present), consistent with `RESPONSEOS_IMPLEMENTATION_PLAN.md` sequencing assumptions.
 
 ### Observed top-level layout
 
@@ -51,7 +51,7 @@ Validated against `RESPONSEOS_IMPLEMENTATION_PLAN.md` §7/§8 critical path:
 | R2 | Ledger writer scope creep | No ledger module exists yet; risk is first implementation absorbs domain/provider logic. | Keep EX1-T2a writer narrowly scoped to envelope write, dedupe key/idempotency, minimal emit API; provider-specific transforms stay at adapter boundary (ADR-0012). |
 | R3 | Gateway skeleton drifts into realtime implementation | No gateway entrypoint exists; new code could overreach into sockets/audio/Redis/live adapters. | Enforce EX1-T3 acceptance literally: health + mock provider resolution + single mock ledger write only; reject audio/socket/Redis runtime/live provider code. |
 | R4 | Premature service split beyond sanctioned gateway | Modular monolith is current shape; uncontrolled extra split increases ops complexity before readiness. | Restrict split work to the single sanctioned voice gateway boundary (ADR-0013); keep other capabilities in-monolith for this arc. |
-| R5 (new) | Local branch/default-branch ambiguity | This checkout has no upstream/default reference metadata; sequencing work can accidentally target stale base. | Before EX0B implementation PRs, require explicit `origin` default-branch fetch/compare in contributor workflow and PR template checklist. |
+| R5 (new) | Local branch/default-branch ambiguity | This checkout has no upstream/default reference metadata; sequencing work can accidentally target stale base. | Before EX0B implementation PRs, require explicit fetch/rebase check against the repo default branch in contributor workflow and PR checklist. |
 
 ## 4) File impact map
 
