@@ -4,6 +4,13 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — canonical `RESPONSEOS_*` documentation set + go-forward stack
+
+- **Added** 24 canonical docs under `docs/{product,architecture,ops,brand,research}/`, indexed by `docs/product/RESPONSEOS_BUILD_SOURCE.md`. Defines ResponseOS as multi-tenant Revenue Recovery Infrastructure and specifies the go-forward stack: Twilio edge, a dedicated Node.js **voice gateway**, **Grok Voice (primary) / OpenAI Realtime (fallback)**, n8n async orchestration, **HubSpot as CRM system of record**, Redis realtime session state, PostHog + Sentry + Better Stack observability, and Obsidian as the internal SOP/brand-knowledge layer.
+- **Added** ADR-0011 → ADR-0018 to `docs/DECISIONS.md` reconciling the new stack with prior decisions. **Superseded** ADR-0008 (Grok was experimental; now primary realtime voice via ADR-0012). New ADRs cover the voice gateway (0013), Redis session state (0014), HubSpot CRM SoR (0015), Obsidian SOP layer (0016), n8n async-only boundary (0017), and the observability stack (0018). Retained disciplines: mock-first, event-ledger-first, signature validation, three compliance lanes, billing-in-v0.5.
+- **Updated** `docs/README.md` with an index of the canonical `RESPONSEOS_*` set and the reconciliation note.
+- Documentation only — no application code, no live integrations, no deploys. ResponseOS remains not HIPAA-certified.
+
 ## Unreleased — docs readiness pass
 
 - **Added** `docs/PRD.md`, `docs/ROADMAP.md`, `docs/DECISIONS.md`, `docs/CHANGELOG.md` — single forward source of truth for product scope, milestones, and architectural decisions.

@@ -2,6 +2,18 @@
 
 ResponseOS is the AI Revenue Recovery Platform built by AJ Digital LLC. This `docs/` directory is the canonical product source of truth: positioning, data models, API contracts, automation flows, environment, deployment posture, and security stance.
 
+## Canonical `RESPONSEOS_*` doc set (go-forward)
+
+A complete canonical documentation set lives under `product/`, `architecture/`, `ops/`, `brand/`, and `research/`, indexed by **[`product/RESPONSEOS_BUILD_SOURCE.md`](./product/RESPONSEOS_BUILD_SOURCE.md)** — start there. It defines the go-forward stack (Twilio edge · Node.js voice gateway · Grok Voice primary / OpenAI Realtime fallback · n8n async · HubSpot CRM SoR · Redis · PostHog/Sentry/Better Stack · Obsidian SOP layer) and is reconciled against the original docs via [ADR-0011 → ADR-0018](./DECISIONS.md). Where the new set conflicts with an earlier prose doc, the new ADRs win; the original `docs/*.md` files below remain authoritative for anything the new set does not restate.
+
+| Area | Docs |
+|---|---|
+| Product | [`BUILD_SOURCE`](./product/RESPONSEOS_BUILD_SOURCE.md) · [`PRD`](./product/RESPONSEOS_PRD.md) · [`ROADMAP`](./product/RESPONSEOS_ROADMAP.md) · [`PHASE_PLAN`](./product/RESPONSEOS_PHASE_PLAN.md) · [`BACKLOG`](./product/RESPONSEOS_BACKLOG.md) |
+| Architecture | [`SYSTEM_ARCHITECTURE`](./architecture/RESPONSEOS_SYSTEM_ARCHITECTURE.md) · [`FRONTEND_SPEC`](./architecture/RESPONSEOS_FRONTEND_SPEC.md) · [`BACKEND_SPEC`](./architecture/RESPONSEOS_BACKEND_SPEC.md) · [`DATA_MODEL`](./architecture/RESPONSEOS_DATA_MODEL.md) · [`API_CONTRACTS`](./architecture/RESPONSEOS_API_CONTRACTS.md) · [`EVENT_SCHEMA`](./architecture/RESPONSEOS_EVENT_SCHEMA.md) · [`INTEGRATION_MAP`](./architecture/RESPONSEOS_INTEGRATION_MAP.md) |
+| Ops | [`OBSERVABILITY_AND_GOVERNANCE`](./ops/RESPONSEOS_OBSERVABILITY_AND_GOVERNANCE.md) · [`SECURITY_AND_COMPLIANCE`](./ops/RESPONSEOS_SECURITY_AND_COMPLIANCE.md) · [`RUNBOOK`](./ops/RESPONSEOS_RUNBOOK.md) · [`QA_VALIDATION_PLAN`](./ops/RESPONSEOS_QA_VALIDATION_PLAN.md) · [`DEPLOYMENT_PLAN`](./ops/RESPONSEOS_DEPLOYMENT_PLAN.md) |
+| Brand | [`POSITIONING`](./brand/RESPONSEOS_POSITIONING.md) · [`BRAND_VOICE`](./brand/RESPONSEOS_BRAND_VOICE.md) · [`SALES_NARRATIVE`](./brand/RESPONSEOS_SALES_NARRATIVE.md) · [`WEBSITE_COPY_SPEC`](./brand/RESPONSEOS_WEBSITE_COPY_SPEC.md) |
+| Research | [`MARKET_RESEARCH`](./research/RESPONSEOS_MARKET_RESEARCH.md) · [`NAMING_RISK_RESEARCH`](./research/RESPONSEOS_NAMING_RISK_RESEARCH.md) · [`COMPETITOR_RESEARCH`](./research/RESPONSEOS_COMPETITOR_RESEARCH.md) |
+
 ## Start here
 
 1. [`PRD.md`](./PRD.md) — short product source of truth (what it is, who it's for, current scope).
