@@ -27,7 +27,7 @@ describe("MockVoiceProvider", () => {
       }))
 
       const session = await provider.startSession({
-        organizationId: "org-1",
+        accountId: "org-1",
         sessionId: "session-1",
       })
 

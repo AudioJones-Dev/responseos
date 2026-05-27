@@ -35,8 +35,8 @@ export class MockVoiceProvider implements VoiceProvider {
 
   async startSession(ctx: SessionContext): Promise<ProviderSession> {
     return {
-      providerSessionId: `${ctx.organizationId}:${ctx.sessionId}`,
-      organizationId: ctx.organizationId,
+      providerSessionId: `${ctx.accountId}:${ctx.sessionId}`,
+      accountId: ctx.accountId,
       sessionId: ctx.sessionId,
       startedAt: FIXED_STARTED_AT,
       eventType: "voice.session_started",
@@ -74,7 +74,7 @@ export class MockVoiceProvider implements VoiceProvider {
   async endSession(session: ProviderSession): Promise<SessionSummary> {
     return {
       providerSessionId: session.providerSessionId,
-      organizationId: session.organizationId,
+      accountId: session.accountId,
       sessionId: session.sessionId,
       endedAt: FIXED_ENDED_AT,
       turnCount: FIXED_TURNS.length,

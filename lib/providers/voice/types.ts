@@ -1,13 +1,13 @@
 export type VoiceEventType = "voice.session_started" | "voice.session_ended"
 
 export interface SessionContext {
-  organizationId: string
+  accountId: string
   sessionId: string
 }
 
 export interface ProviderSession {
   providerSessionId: string
-  organizationId: string
+  accountId: string
   sessionId: string
   startedAt: string
   eventType: VoiceEventType
@@ -41,7 +41,7 @@ export interface Turn {
 
 export interface SessionSummary {
   providerSessionId: string
-  organizationId: string
+  accountId: string
   sessionId: string
   endedAt: string
   turnCount: number
