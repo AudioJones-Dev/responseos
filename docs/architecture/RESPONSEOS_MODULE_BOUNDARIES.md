@@ -65,7 +65,7 @@ Current `lib/providers/*` stubs observed: `bland`, `ghl`, `hubspot`, `n8n`, `res
 
 Expected by plan and intentionally **not created** in EX0B-1:
 
-- `lib/providers/voice/` — home for `VoiceProvider` interface + deterministic mock (**EX0B-2**).
+- `lib/providers/voice/` — present: `VoiceProvider` interface + deterministic mock implementation (**EX0B-2**).
 - Typed config loader under `lib/config/` — canonical env/config contract module (**EX0B-3**).
 - Event-ledger writer canonical home: `lib/ledger/` (proposed path) for idempotent ledger write module (**EX1-T2a**).
 

@@ -4,6 +4,15 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — Exec 0B-2 VoiceProvider interface + mock adapter
+
+- **Added** `lib/providers/voice/types.ts` with a provider-neutral `VoiceProvider` interface and minimal supporting shapes (`SessionContext`, `ProviderSession`, `AudioFrame`, `PartialTranscript`, `ToolCall`, `ToolResult`, `Turn`, `SessionSummary`) aligned to Backend Spec §4.
+- **Added** `lib/providers/voice/mock.ts` with deterministic `MockVoiceProvider` fixtures (stable session ids, fixed timestamps, ordered callback emission, deterministic `SessionSummary`) that run with zero env keys and no network or persistence.
+- **Added** `lib/providers/voice/index.ts` barrel exports for future gateway import stability.
+- **Added** `tests/unit/voice-provider-mock.test.ts` to assert interface conformance, deterministic repeated runs, callback ordering, and deterministic session summary output.
+- **Updated** `docs/architecture/RESPONSEOS_MODULE_BOUNDARIES.md` to mark `lib/providers/voice/` as present for EX0B-2.
+- Scope kept mock-only: no live provider adapters, no gateway server, no Redis, no schema/data-layer changes, no `.env.example` changes, and no new dependencies.
+
 ## Unreleased — Exec 0B-2 Codex execution prompt
 
 - **Added** `docs/product/RESPONSEOS_EXEC_0B2_PROMPT.md` — the Codex-ready execution prompt for **Exec 0B-2** (`VoiceProvider` interface + deterministic mock adapter). Instructs Codex to start from the merged EX0B-1 default branch, inspect the real tree (confirm `lib/providers/voice/` is still absent), read Backend Spec §4 for the interface shape, and author **mock-only** runtime code under `lib/providers/voice/`: a provider-neutral `VoiceProvider` interface plus minimal supporting shapes (`SessionContext`, `ProviderSession`, `AudioFrame`, `PartialTranscript`, `ToolCall`, `ToolResult`, `Turn`, `SessionSummary`), a single deterministic `MockVoiceProvider` that boots with zero keys, and unit tests asserting interface conformance, determinism (stable ids, no `Math.random`/wall-clock leaks), and zero-key boot. Constrains the run to the new `lib/providers/voice/*` files, one `tests/unit/*` test, a mandatory CHANGELOG entry, and a one-bullet `RESPONSEOS_MODULE_BOUNDARIES.md` status update; explicitly forbids any Grok/OpenAI/Twilio Media Streams adapter, Redis, a gateway server/entrypoint, live provider calls, new dependencies, schema/`.env.example` changes, secrets, and Firebase; and keeps EX0B-3, EX0B-4, and all Exec 1 work out of scope.
