@@ -124,9 +124,9 @@ Validated against `RESPONSEOS_IMPLEMENTATION_PLAN.md` §7/§8 critical path:
 
 ## 6) Recommended first implementation PR
 
-**Recommendation:** Start Exec 1 with **EX1-T1 (`Organization`→`Account` rename + tenant-scoping hardening)** as a single atomic PR.
+**Recommendation:** The first **Exec 1** PR should be **EX1-T1 (`Organization`→`Account` rename + tenant-scoping hardening)** as a single atomic PR — opened only **after Exec 0B (A1 → A2 → B1 → B3/B4) is complete**, per the §2 critical path. EX1-T1 is not the first *implementation* PR overall; Exec 0B groundwork (config loader, voice-provider mock, test/isolation conventions) lands first.
 
-**Why:** It is the highest-fan-out blocker evidenced by current schema/type/data/test usage counts and is explicitly the plan’s critical-path pivot before T2a/T3.
+**Why:** Within Exec 1, T1 is the highest-fan-out blocker evidenced by current schema/type/data/test usage counts and is explicitly the plan’s critical-path pivot before T2a/T3. Sequencing it after Exec 0B keeps the rename from running ahead of the config and isolation-test prerequisites it depends on.
 
 **Atomic PR scope (and only this scope):**
 
