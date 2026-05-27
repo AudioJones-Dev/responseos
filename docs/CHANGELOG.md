@@ -4,6 +4,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — implementation plan (Execution Phases 0A → 1)
+
+- **Added** `docs/product/RESPONSEOS_IMPLEMENTATION_PLAN.md` — fine-grained, planning-only decomposition of the front of the canonical phase plan into **Exec 0A** (implementation sequencing), **Exec 0B** (foundational architecture setup), and **Exec 1** (tenant model + event schema + mock voice-gateway skeleton). Includes milestone breakdown, dependency map, MVP scope lock, implementation ordering, issue-ready task decomposition (`EX-*` IDs mapped to backlog epics), acceptance gates, validation workflow, a Codex repo-execution protocol, and risks/blockers/open questions.
+- **Indexed** the new doc in `docs/README.md`.
+- Planning only — **no production implementation, no live integrations, no deploys.** The arc stops at a mock, deterministic, zero-key state; v0.3 live work remains gated per ADR-0001. Canonical docs and ADR-0011→0018 are unchanged.
+
 ## Unreleased — canonical `RESPONSEOS_*` documentation set + go-forward stack
 
 - **Added** 24 canonical docs under `docs/{product,architecture,ops,brand,research}/`, indexed by `docs/product/RESPONSEOS_BUILD_SOURCE.md`. Defines ResponseOS as multi-tenant Revenue Recovery Infrastructure and specifies the go-forward stack: Twilio edge, a dedicated Node.js **voice gateway**, **Grok Voice (primary) / OpenAI Realtime (fallback)**, n8n async orchestration, **HubSpot as CRM system of record**, Redis realtime session state, PostHog + Sentry + Better Stack observability, and Obsidian as the internal SOP/brand-knowledge layer.
