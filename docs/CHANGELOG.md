@@ -4,6 +4,11 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — Exec 0A repo-grounded preflight report
+
+- **Added** `docs/product/RESPONSEOS_EXEC_0A_PREFLIGHT.md` — the Exec 0A implementation-sequencing preflight: a repo-grounded readiness report covering current repo state, the validated dependency order (`A1 → A2 → B1 → B3/B4 → T1 → T2a → T3`), a risk register, an EX0B/EX1 file impact map (with the `Organization`→`Account` rename blast radius measured against the live tree), the local + CI validation commands, the recommended first implementation PR (EX1-T1), carried blockers/open questions, and an explicit **SAFE TO PROCEED** recommendation.
+- Planning only — **no production code, no schema changes, no live integrations, no deploys.** Mock-first, tenant-aware, event-ledger-first architecture preserved; v0.3 live work remains gated per ADR-0001.
+
 ## Unreleased — Exec 0A Codex execution prompt
 
 - **Added** `docs/product/RESPONSEOS_EXEC_0A_PROMPT.md` — the Codex-ready execution prompt for **Exec 0A** (implementation sequencing + repo-grounded preflight). Instructs Codex to inspect the repo from master, read the canonical `RESPONSEOS_*` source/plan/phase docs plus `DECISIONS.md`/`README.md`/`CHANGELOG.md`, confirm file structure and validation commands, map the files Exec 0B/1 will touch, and emit a single planning report (`docs/product/RESPONSEOS_EXEC_0A_PREFLIGHT.md`) with current repo state, dependency order, risk register, file impact map, validation commands, recommended first PR, blockers/open questions, and an explicit safe/not-safe-to-proceed call. Constrains the run to exactly two permitted changed files (the preflight report + a mandatory CHANGELOG entry), keeps GitHub issues/milestones out of scope, and forbids code, scaffolding, live integrations, secrets, and Firebase.
