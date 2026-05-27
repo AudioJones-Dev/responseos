@@ -4,6 +4,11 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — Exec 0B-1 Codex execution prompt
+
+- **Added** `docs/product/RESPONSEOS_EXEC_0B1_PROMPT.md` — the Codex-ready execution prompt for **Exec 0B-1** (module-boundary map for `lib/*`). Instructs Codex to start from master, inspect the real `lib/` tree, confirm the merged Exec 0A **SAFE TO PROCEED** recommendation, and emit a single architecture artifact (`docs/architecture/RESPONSEOS_MODULE_BOUNDARIES.md`) giving every `lib/*` area a one-line responsibility, a does-not-own boundary, a provider mock-fallback note, and a tenant-scope obligation — plus a "planned but absent today" section that names (without creating) the homes for `lib/providers/voice/` (EX0B-2), the `lib/config/` loader (EX0B-3), and the event-ledger writer (EX1-T2a). Constrains the run to exactly three permitted changed files (the boundary map + a `docs/README.md` index entry + a mandatory CHANGELOG entry), keeps EX0B-2/3/4 and Exec 1 explicitly out of scope, and forbids runtime code, placeholder `.ts` files, schema changes, live integrations, secrets, and Firebase.
+- Planning only — **no production implementation, no runtime code, no schema changes, no live integrations, no deploys.** Mock-first, tenant-aware, event-ledger-first architecture preserved; v0.3 live work remains gated per ADR-0001.
+
 ## Unreleased — Exec 0A repo-grounded preflight report
 
 - **Added** `docs/product/RESPONSEOS_EXEC_0A_PREFLIGHT.md` — the Exec 0A implementation-sequencing preflight: a repo-grounded readiness report covering current repo state, the validated dependency order (`A1 → A2 → B1 → B3/B4 → T1 → T2a → T3`), a risk register, an EX0B/EX1 file impact map (with the `Organization`→`Account` rename blast radius measured against the live tree), the local + CI validation commands, the recommended first implementation PR (EX1-T1), carried blockers/open questions, and an explicit **SAFE TO PROCEED** recommendation.
