@@ -1,6 +1,8 @@
 # Deployment
 
-> **v0.1 hard rule:** do NOT deploy this scaffold. No Vercel deploy, no GitHub remote, no CI yet. This document captures **future** deployment posture so we can move fast when we're ready.
+> **v0.2 hard rule:** do NOT deploy from this repo. No Vercel deploy, no AWS deploy — production deploys are gated to v0.3 readiness. This document captures the **target** deployment posture so we can move fast when v0.3 unlocks.
+>
+> **Current state.** GitHub remote is live (`audiojones-dev/responseos`) and CI runs on every push and PR — `validate` (lint + typecheck + unit test + build) and `integration` (Postgres 16 service container, `prisma migrate diff`, `prisma migrate deploy`, `prisma db seed`, integration tests, DB-backed build). No deploy jobs yet.
 
 ## Three deployment lanes
 

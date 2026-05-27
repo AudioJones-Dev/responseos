@@ -1,0 +1,91 @@
+# Changelog — ResponseOS
+
+All notable changes to this repo. Newest first. Format is a lightweight take on Keep-a-Changelog. Each entry links to the merge commit; PR numbers reference `audiojones-dev/responseos`.
+
+> Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
+
+## Unreleased — Exec 0B-2 VoiceProvider interface + mock adapter
+
+- **Added** `lib/providers/voice/types.ts` with a provider-neutral `VoiceProvider` interface and minimal supporting shapes (`SessionContext`, `ProviderSession`, `AudioFrame`, `PartialTranscript`, `ToolCall`, `ToolResult`, `Turn`, `SessionSummary`) aligned to Backend Spec §4.
+- **Added** `lib/providers/voice/mock.ts` with deterministic `MockVoiceProvider` fixtures (stable session ids, fixed timestamps, ordered callback emission, deterministic `SessionSummary`) that run with zero env keys and no network or persistence.
+- **Added** `lib/providers/voice/index.ts` barrel exports for future gateway import stability.
+- **Added** `tests/unit/voice-provider-mock.test.ts` to assert interface conformance, deterministic repeated runs, callback ordering, and deterministic session summary output.
+- **Updated** `docs/architecture/RESPONSEOS_MODULE_BOUNDARIES.md` to mark `lib/providers/voice/` as present for EX0B-2.
+- Scope kept mock-only: no live provider adapters, no gateway server, no Redis, no schema/data-layer changes, no `.env.example` changes, and no new dependencies.
+
+## Unreleased — Exec 0B-2 Codex execution prompt
+
+- **Added** `docs/product/RESPONSEOS_EXEC_0B2_PROMPT.md` — the Codex-ready execution prompt for **Exec 0B-2** (`VoiceProvider` interface + deterministic mock adapter). Instructs Codex to start from the merged EX0B-1 default branch, inspect the real tree (confirm `lib/providers/voice/` is still absent), read Backend Spec §4 for the interface shape, and author **mock-only** runtime code under `lib/providers/voice/`: a provider-neutral `VoiceProvider` interface plus minimal supporting shapes (`SessionContext`, `ProviderSession`, `AudioFrame`, `PartialTranscript`, `ToolCall`, `ToolResult`, `Turn`, `SessionSummary`), a single deterministic `MockVoiceProvider` that boots with zero keys, and unit tests asserting interface conformance, determinism (stable ids, no `Math.random`/wall-clock leaks), and zero-key boot. Constrains the run to the new `lib/providers/voice/*` files, one `tests/unit/*` test, a mandatory CHANGELOG entry, and a one-bullet `RESPONSEOS_MODULE_BOUNDARIES.md` status update; explicitly forbids any Grok/OpenAI/Twilio Media Streams adapter, Redis, a gateway server/entrypoint, live provider calls, new dependencies, schema/`.env.example` changes, secrets, and Firebase; and keeps EX0B-3, EX0B-4, and all Exec 1 work out of scope.
+- Planning artifact only — **the prompt authorizes mock-first runtime code for EX0B-2 when executed, but adds no production implementation, no live integrations, and no deploys itself.** Mock-first, tenant-aware, event-ledger-first, provider-abstraction, and modular-monolith invariants preserved; v0.3 live work remains gated per ADR-0001 / ADR-0012.
+
+## Unreleased — Exec 0B-1 module-boundary map
+
+- **Added** `docs/architecture/RESPONSEOS_MODULE_BOUNDARIES.md` — canonical EX0B-1 module-boundary map for the current `lib/*` tree. Documents each existing `lib/*` area with responsibility, explicit does-not-own boundary, tenant-scope obligation, and provider mock-fallback obligations where applicable; confirms Exec 0A **SAFE TO PROCEED** context and preserves mock-first, tenant-aware, event-ledger-first, provider-abstraction, and modular-monolith invariants.
+- **Updated** `docs/README.md` architecture index to include `RESPONSEOS_MODULE_BOUNDARIES.md` in the canonical `RESPONSEOS_*` listing.
+- Documentation-only scope: no runtime code, no schema/migration/seed changes, no dependency changes, no secrets, no Firebase, and no EX0B-2/3/4 or Exec 1 implementation work.
+
+## Unreleased — Exec 0B-1 Codex execution prompt
+
+- **Added** `docs/product/RESPONSEOS_EXEC_0B1_PROMPT.md` — the Codex-ready execution prompt for **Exec 0B-1** (module-boundary map for `lib/*`). Instructs Codex to start from master, inspect the real `lib/` tree, confirm the merged Exec 0A **SAFE TO PROCEED** recommendation, and emit a single architecture artifact (`docs/architecture/RESPONSEOS_MODULE_BOUNDARIES.md`) giving every `lib/*` area a one-line responsibility, a does-not-own boundary, a provider mock-fallback note, and a tenant-scope obligation — plus a "planned but absent today" section that names (without creating) the homes for `lib/providers/voice/` (EX0B-2), the `lib/config/` loader (EX0B-3), and the event-ledger writer (EX1-T2a). Constrains the run to exactly three permitted changed files (the boundary map + a `docs/README.md` index entry + a mandatory CHANGELOG entry), keeps EX0B-2/3/4 and Exec 1 explicitly out of scope, and forbids runtime code, placeholder `.ts` files, schema changes, live integrations, secrets, and Firebase.
+- Planning only — **no production implementation, no runtime code, no schema changes, no live integrations, no deploys.** Mock-first, tenant-aware, event-ledger-first architecture preserved; v0.3 live work remains gated per ADR-0001.
+
+## Unreleased — Exec 0A repo-grounded preflight report
+
+- **Added** `docs/product/RESPONSEOS_EXEC_0A_PREFLIGHT.md` — the Exec 0A implementation-sequencing preflight: a repo-grounded readiness report covering current repo state, the validated dependency order (`A1 → A2 → B1 → B3/B4 → T1 → T2a → T3`), a risk register, an EX0B/EX1 file impact map (with the `Organization`→`Account` rename blast radius measured against the live tree), the local + CI validation commands, the recommended first implementation PR (EX1-T1), carried blockers/open questions, and an explicit **SAFE TO PROCEED** recommendation.
+- Planning only — **no production code, no schema changes, no live integrations, no deploys.** Mock-first, tenant-aware, event-ledger-first architecture preserved; v0.3 live work remains gated per ADR-0001.
+
+## Unreleased — Exec 0A Codex execution prompt
+
+- **Added** `docs/product/RESPONSEOS_EXEC_0A_PROMPT.md` — the Codex-ready execution prompt for **Exec 0A** (implementation sequencing + repo-grounded preflight). Instructs Codex to inspect the repo from master, read the canonical `RESPONSEOS_*` source/plan/phase docs plus `DECISIONS.md`/`README.md`/`CHANGELOG.md`, confirm file structure and validation commands, map the files Exec 0B/1 will touch, and emit a single planning report (`docs/product/RESPONSEOS_EXEC_0A_PREFLIGHT.md`) with current repo state, dependency order, risk register, file impact map, validation commands, recommended first PR, blockers/open questions, and an explicit safe/not-safe-to-proceed call. Constrains the run to exactly two permitted changed files (the preflight report + a mandatory CHANGELOG entry), keeps GitHub issues/milestones out of scope, and forbids code, scaffolding, live integrations, secrets, and Firebase.
+- Planning only — **no production implementation, no live integrations, no deploys.** Mock-first, tenant-aware, event-ledger-first architecture preserved; v0.3 live work remains gated per ADR-0001.
+
+## Unreleased — implementation plan (Execution Phases 0A → 1)
+
+- **Added** `docs/product/RESPONSEOS_IMPLEMENTATION_PLAN.md` — fine-grained, planning-only decomposition of the front of the canonical phase plan into **Exec 0A** (implementation sequencing), **Exec 0B** (foundational architecture setup), and **Exec 1** (tenant model + event schema + mock voice-gateway skeleton). Includes milestone breakdown, dependency map, MVP scope lock, implementation ordering, issue-ready task decomposition (`EX-*` IDs mapped to backlog epics), acceptance gates, validation workflow, a Codex repo-execution protocol, and risks/blockers/open questions.
+- **Indexed** the new doc in `docs/README.md`.
+- Planning only — **no production implementation, no live integrations, no deploys.** The arc stops at a mock, deterministic, zero-key state; v0.3 live work remains gated per ADR-0001. Canonical docs and ADR-0011→0018 are unchanged.
+
+## Unreleased — canonical `RESPONSEOS_*` documentation set + go-forward stack
+
+- **Added** 24 canonical docs under `docs/{product,architecture,ops,brand,research}/`, indexed by `docs/product/RESPONSEOS_BUILD_SOURCE.md`. Defines ResponseOS as multi-tenant Revenue Recovery Infrastructure and specifies the go-forward stack: Twilio edge, a dedicated Node.js **voice gateway**, **Grok Voice (primary) / OpenAI Realtime (fallback)**, n8n async orchestration, **HubSpot as CRM system of record**, Redis realtime session state, PostHog + Sentry + Better Stack observability, and Obsidian as the internal SOP/brand-knowledge layer.
+- **Added** ADR-0011 → ADR-0018 to `docs/DECISIONS.md` reconciling the new stack with prior decisions. **Superseded** ADR-0008 (Grok was experimental; now primary realtime voice via ADR-0012). New ADRs cover the voice gateway (0013), Redis session state (0014), HubSpot CRM SoR (0015), Obsidian SOP layer (0016), n8n async-only boundary (0017), and the observability stack (0018). Retained disciplines: mock-first, event-ledger-first, signature validation, three compliance lanes, billing-in-v0.5.
+- **Updated** `docs/README.md` with an index of the canonical `RESPONSEOS_*` set and the reconciliation note.
+- Documentation only — no application code, no live integrations, no deploys. ResponseOS remains not HIPAA-certified.
+
+## Unreleased — docs readiness pass
+
+- **Added** `docs/PRD.md`, `docs/ROADMAP.md`, `docs/DECISIONS.md`, `docs/CHANGELOG.md` — single forward source of truth for product scope, milestones, and architectural decisions.
+- **Renamed** `docs/security.md` → `docs/SECURITY.md`; `docs/deployment.md` → `docs/DEPLOYMENT.md`; root `DESIGN.md` → `docs/DESIGN.md`. All product docs now live under `docs/`.
+- **Archived** `docs/v0.2-implementation-spec.md`, `docs/v0.2-phase-d-brief.md`, `docs/v0.2-planning-spec.md` to `docs/archive/`. Their implementation has shipped; they remain as historical artifacts and may have stale relative links.
+- **Updated** `README.md`, `docs/README.md`, `docs/DEPLOYMENT.md`, `AGENTS.md` to reflect current repo state (13 commits, remote on `audiojones-dev/responseos`, CI live, v0.2 Phase A–D merged).
+
+## v0.2 Phase D — Integration tests + CI hardening
+
+- **`8a8c6a0`** — test: add v0.2 integration suite + CI integration job ([PR #12](https://github.com/audiojones-dev/responseos/pull/12)). Adds `tests/integration/*`, `tests/factories/*`, `vitest.integration.config.ts`, and a second CI job that runs a Postgres 16 service container, `prisma migrate diff`, `prisma migrate deploy`, `prisma db seed`, `npm run test:integration`, and `npm run build` against the seeded DB.
+- **`c32ec1c`** — docs: add v0.2 Phase D brief ([PR #11](https://github.com/audiojones-dev/responseos/pull/11)). Implementation brief for the test + CI work above. Archived under `docs/archive/v0.2-phase-d-brief.md`.
+
+## v0.2 Phase C — Route consumers through the v0.2 data layer
+
+- **`c681134`** — feat: route consumers through v0.2 data layer ([PR #7](https://github.com/audiojones-dev/responseos/pull/7)). Admin pages, client portal pages, and API routes now read through `lib/data/*` with tenant scoping enforced at the data layer.
+
+## v0.2 Phase B — Auth + data access
+
+- **`f6cfaf8`** — feat: add v0.2 auth and data access layer ([PR #6](https://github.com/audiojones-dev/responseos/pull/6)). `lib/auth/*` scaffold, `lib/data/*` accessors with `organizationId` filter on every read/write, role-aware access checks for `aj_admin` / `operator` / `client_admin` / `client_viewer`.
+
+## v0.2 Phase A — Schema + deterministic seed
+
+- **`07cb14e`** — feat: add v0.2 schema and deterministic seed ([PR #5](https://github.com/audiojones-dev/responseos/pull/5)). `prisma/schema.prisma` expansion, first migration under `prisma/migrations/0001_v0_2_foundation/`, `prisma/seed.ts` keyed off `lib/mock/*` fixtures for byte-deterministic IDs.
+
+## v0.2 planning + design
+
+- **`386801a`** — docs: add v0.2 DB/Auth/Data Layer implementation spec ([PR #4](https://github.com/audiojones-dev/responseos/pull/4)). Archived under `docs/archive/v0.2-implementation-spec.md`.
+- **`2cc4b4c`** — docs: add ResponseOS design system spine ([PR #3](https://github.com/audiojones-dev/responseos/pull/3)). Now `docs/DESIGN.md`.
+- **`e362ba8`** — docs: add pricing and onboarding strategy ([PR #2](https://github.com/audiojones-dev/responseos/pull/2)). Now `docs/pricing-and-onboarding.md`.
+- **`5cc9027`** — docs: add future knowledge layer roadmap ([PR #1](https://github.com/audiojones-dev/responseos/pull/1)).
+- **`761464d`** — ci: add validation workflow. `.github/workflows/ci.yml` with the `validate` job (lint + typecheck + test + build).
+- **`b456bd9`** — docs: add Grok Voice provider roadmap.
+- **`0646f83`** — docs: add ResponseOS v0.2 planning spec. Archived under `docs/archive/v0.2-planning-spec.md`.
+
+## v0.1 — Initial scaffold
+
+- **`6987c59`** — chore: initialize ResponseOS v0.1 foundation. Next.js 16 App Router, route groups for marketing / admin / client, TypeScript strict, Tailwind v4, Prisma schema stub, 11 typed domain models in `types/`, mock provider adapters in `lib/providers/*`, mock fixtures in `lib/mock/*`, revenue + scoring math, full product + architecture docs under `docs/`.

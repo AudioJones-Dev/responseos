@@ -82,8 +82,8 @@ This is the canonical internal mapping. The marketing version (Revenue Leak Dete
 - `data-schema.md` — v0.1 11 models (current); v0.2 expansion to canonical event-ledger model.
 - `api-spec.md` — rate limits, error envelope, webhook signatures, idempotency.
 - `automation-flows.md` — five RECOVER playbooks.
-- `deployment.md` — three lanes, Terraform, GitHub OIDC, OpenTelemetry, SLOs.
-- `security.md` — vendor BAA matrix, signature validation, RBAC, retention modes, incident response.
+- `DEPLOYMENT.md` — three lanes, Terraform, GitHub OIDC, OpenTelemetry, SLOs.
+- `SECURITY.md` — vendor BAA matrix, signature validation, RBAC, retention modes, incident response.
 - `client-facing-offer.md` — three pricing tiers, outcome-fee structure, SLA defaults, sample contract clause.
 
 For deeper context on any specific decision, the original report has the vendor-doc citations.
@@ -147,8 +147,8 @@ Before any client-facing knowledge ingestion ships, ResponseOS must support:
 - human review for sensitive knowledge
 - regulated-workflow restrictions
 
-These align with the deployment-lane and BAA matrix posture in `security.md`. The knowledge layer cannot ship faster than the tenant whose data it would ingest — regulated-vertical tenants only get knowledge ingestion once their compliance lane is fully in force.
+These align with the deployment-lane and BAA matrix posture in `SECURITY.md`. The knowledge layer cannot ship faster than the tenant whose data it would ingest — regulated-vertical tenants only get knowledge ingestion once their compliance lane is fully in force.
 
 ### Out of scope for v0.2 and v0.3
 
-Documenting the roadmap does not authorize any of: RAG implementation, vector search, embeddings indexes, file-upload surfaces, Obsidian integration, Codex automations, new dependencies, new database models, new provider SDKs, new secrets, or production deployment. Architectural placement is in `architecture.md`; future model candidates are in `data-schema.md`; roadmap placement is in `v0.2-planning-spec.md`.
+Documenting the roadmap does not authorize any of: RAG implementation, vector search, embeddings indexes, file-upload surfaces, Obsidian integration, Codex automations, new dependencies, new database models, new provider SDKs, new secrets, or production deployment. Architectural placement is in `architecture.md`; future model candidates are in `data-schema.md`; roadmap placement is in `ROADMAP.md`.
