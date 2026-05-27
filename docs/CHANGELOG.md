@@ -4,6 +4,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — Exec 0B-1 module-boundary map
+
+- **Added** `docs/architecture/RESPONSEOS_MODULE_BOUNDARIES.md` — canonical EX0B-1 module-boundary map for the current `lib/*` tree. Documents each existing `lib/*` area with responsibility, explicit does-not-own boundary, tenant-scope obligation, and provider mock-fallback obligations where applicable; confirms Exec 0A **SAFE TO PROCEED** context and preserves mock-first, tenant-aware, event-ledger-first, provider-abstraction, and modular-monolith invariants.
+- **Updated** `docs/README.md` architecture index to include `RESPONSEOS_MODULE_BOUNDARIES.md` in the canonical `RESPONSEOS_*` listing.
+- Documentation-only scope: no runtime code, no schema/migration/seed changes, no dependency changes, no secrets, no Firebase, and no EX0B-2/3/4 or Exec 1 implementation work.
+
 ## Unreleased — Exec 0B-1 Codex execution prompt
 
 - **Added** `docs/product/RESPONSEOS_EXEC_0B1_PROMPT.md` — the Codex-ready execution prompt for **Exec 0B-1** (module-boundary map for `lib/*`). Instructs Codex to start from master, inspect the real `lib/` tree, confirm the merged Exec 0A **SAFE TO PROCEED** recommendation, and emit a single architecture artifact (`docs/architecture/RESPONSEOS_MODULE_BOUNDARIES.md`) giving every `lib/*` area a one-line responsibility, a does-not-own boundary, a provider mock-fallback note, and a tenant-scope obligation — plus a "planned but absent today" section that names (without creating) the homes for `lib/providers/voice/` (EX0B-2), the `lib/config/` loader (EX0B-3), and the event-ledger writer (EX1-T2a). Constrains the run to exactly three permitted changed files (the boundary map + a `docs/README.md` index entry + a mandatory CHANGELOG entry), keeps EX0B-2/3/4 and Exec 1 explicitly out of scope, and forbids runtime code, placeholder `.ts` files, schema changes, live integrations, secrets, and Firebase.
