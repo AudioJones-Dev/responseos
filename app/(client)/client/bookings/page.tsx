@@ -1,12 +1,12 @@
-import { getCurrentOrganization } from "@/lib/auth/session";
+import { getCurrentAccount } from "@/lib/auth/session";
 import { Bookings } from "@/lib/data";
 
-const FALLBACK_ORG_ID = "org_mock_1";
+const FALLBACK_ACCOUNT_ID = "org_mock_1";
 
 export default async function ClientBookingsPage() {
-  const org = await getCurrentOrganization();
+  const org = await getCurrentAccount();
   const result = await Bookings.listBookings({
-    organizationId: org?.id ?? FALLBACK_ORG_ID,
+    accountId: org?.id ?? FALLBACK_ACCOUNT_ID,
   });
   const bookings = result.ok ? result.data : [];
   return (

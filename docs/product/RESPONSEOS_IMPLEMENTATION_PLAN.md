@@ -55,7 +55,7 @@ These are the load-bearing constraints from [`RESPONSEOS_BUILD_SOURCE.md`](./RES
 |---|---|---|
 | **Provider abstraction boundaries** | ADR-0012 | All provider behavior behind `lib/providers/*` adapters and the gateway's `VoiceProvider` interface; no provider-specific logic above the boundary; only mock adapters exist in this arc. |
 | **Realtime vs async separation** | ADR-0013, ADR-0017 | Gateway entrypoint is a *separate* runnable surface from the Next.js app; n8n is not touched in this arc; nothing async is wired into the (not-yet-built) audio loop. |
-| **Multi-tenant architecture** | SECURITY.md, ADR-0011 | Every new table is tenant-scoped by `account_id`/`organization_id` derived from session; isolation tests required per table. |
+| **Multi-tenant architecture** | SECURITY.md, ADR-0011 | Every new table is tenant-scoped by `account_id`/`account_id` derived from session; isolation tests required per table. |
 | **Event-ledger discipline** | ADR-0002 | The ledger lands first; business state derives from it; every write path carries a provider-stable dedupe key. |
 | **Mock-first policy** | ADR-0001 | App + gateway boot and pass tests with **zero** secrets; adapters fall back to mock when env vars are missing. |
 | **No hardcoded secrets** | BUILD_SOURCE §6.9 | `.env.example` placeholders only; tenant credentials encrypted in DB; secret-scan in the validation workflow. |

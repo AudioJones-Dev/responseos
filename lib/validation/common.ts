@@ -25,7 +25,7 @@ export const centsSchema = z
   .int("cents must be an integer")
   .nonnegative("cents must be >= 0");
 
-export const organizationIdSchema = idSchema;
+export const accountIdSchema = idSchema;
 
 export const cursorSchema = z.string().min(1).optional();
 export const limitSchema = z.number().int().min(1).max(200).optional();

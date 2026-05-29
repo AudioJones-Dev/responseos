@@ -7,14 +7,14 @@ function dedupeHash(provider: string, providerEventId: string): string {
 }
 
 export function makeWebhookEvent(
-  params: { provider: string; organizationId?: string | null },
+  params: { provider: string; accountId?: string | null },
   overrides: Partial<Prisma.WebhookEventCreateInput> = {},
 ): Prisma.WebhookEventCreateInput {
   const provider_event_id = String(overrides.provider_event_id ?? nextTestId("provider_event"));
   const provider = String(overrides.provider ?? params.provider);
   const base: Prisma.WebhookEventCreateInput = {
     id: overrides.id ?? nextTestId("webhook"),
-    organization_id: params.organizationId ?? null,
+    account_id: params.accountId ?? null,
     provider,
     provider_event_id,
     event_type: "test.event",

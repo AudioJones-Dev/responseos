@@ -7,7 +7,7 @@ const at = (offsetMinutes: number): string =>
 export const mockCalls: Call[] = [
   MockCall({
     id: "call_mock_1",
-    organization_id: "org_mock_1",
+    account_id: "org_mock_1",
     contact_id: "contact_mock_1",
     provider: "twilio",
     direction: "inbound",
@@ -23,7 +23,7 @@ export const mockCalls: Call[] = [
   }),
   MockCall({
     id: "call_mock_2",
-    organization_id: "org_mock_1",
+    account_id: "org_mock_1",
     contact_id: "contact_mock_2",
     provider: "retell",
     direction: "inbound",
@@ -42,7 +42,7 @@ export const mockCalls: Call[] = [
   }),
   MockCall({
     id: "call_mock_3",
-    organization_id: "org_mock_1",
+    account_id: "org_mock_1",
     contact_id: undefined,
     provider: "twilio",
     direction: "inbound",
@@ -58,7 +58,7 @@ export const mockCalls: Call[] = [
   }),
   MockCall({
     id: "call_mock_4",
-    organization_id: "org_mock_2",
+    account_id: "org_mock_2",
     contact_id: "contact_mock_3",
     provider: "vapi",
     direction: "outbound",

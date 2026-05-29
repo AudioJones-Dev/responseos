@@ -88,7 +88,7 @@ flowchart LR
 
 ### 4.8 Suspected cross-tenant exposure (P0)
 1. Freeze writes if active; page on-call; open P0.
-2. Identify scope via audit logs + ledger (`organization_id` on every row).
+2. Identify scope via audit logs + ledger (`account_id` on every row).
 3. Contain; preserve evidence; notify per contract/jurisdiction (HIPAA 60d / GDPR 72h where applicable).
 4. Postmortem with corrective isolation-test additions.
 

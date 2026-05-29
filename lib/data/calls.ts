@@ -17,7 +17,7 @@ import {
 
 interface CallRow {
   id: string;
-  organization_id: string;
+  account_id: string;
   contact_id: string | null;
   provider: string;
   provider_call_id: string | null;
@@ -40,7 +40,7 @@ interface CallRow {
 function rowToCall(row: CallRow): Call {
   return {
     id: row.id,
-    organization_id: row.organization_id,
+    account_id: row.account_id,
     contact_id: row.contact_id ?? undefined,
     provider: row.provider as CallProvider,
     provider_call_id: row.provider_call_id ?? undefined,
@@ -62,23 +62,23 @@ function rowToCall(row: CallRow): Call {
 }
 
 export async function listCalls(params: {
-  organizationId?: string;
+  accountId?: string;
 }): Promise<Result<Call[]>> {
-  const scope = await withTenantScope(params.organizationId);
+  const scope = await withTenantScope(params.accountId);
   if (!scope.ok) return err(scope.error.code, scope.error.message);
 
   if (db === null) {
     const all = getMockCalls();
-    if (scope.effectiveOrgId) {
-      return ok(all.filter((c) => c.organization_id === scope.effectiveOrgId));
+    if (scope.effectiveAccountId) {
+      return ok(all.filter((c) => c.account_id === scope.effectiveAccountId));
     }
     return ok(all);
   }
 
   try {
     const rows = await db.call.findMany({
-      where: scope.effectiveOrgId
-        ? { organization_id: scope.effectiveOrgId }
+      where: scope.effectiveAccountId
+        ? { account_id: scope.effectiveAccountId }
         : undefined,
       orderBy: { started_at: "desc" },
     });
@@ -97,7 +97,7 @@ export async function getCallById(id: string): Promise<Result<Call>> {
     if (!found) return err("not_found", `Call ${id} not found.`);
     const scoped = assertRowInScope(
       found,
-      scope.effectiveOrgId,
+      scope.effectiveAccountId,
       isCrossTenantRole(scope.session),
     );
     return scoped.ok ? ok(found) : err(scoped.error.code, scoped.error.message);
@@ -109,7 +109,7 @@ export async function getCallById(id: string): Promise<Result<Call>> {
     const call = rowToCall(row);
     const scoped = assertRowInScope(
       call,
-      scope.effectiveOrgId,
+      scope.effectiveAccountId,
       isCrossTenantRole(scope.session),
     );
     return scoped.ok ? ok(call) : err(scoped.error.code, scoped.error.message);

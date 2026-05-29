@@ -11,7 +11,7 @@ export type BookingStatus =
 
 export interface Booking {
   id: UUID;
-  organization_id: UUID;
+  account_id: UUID;
   contact_id: UUID;
   lead_event_id?: UUID;
   calendar_provider: CalendarProvider;
@@ -32,7 +32,7 @@ export function MockBooking(overrides: Partial<Booking> = {}): Booking {
   const end = new Date(Date.now() + 86_400_000 + 60 * 60_000).toISOString();
   return {
     id: newId(),
-    organization_id: "org_mock_1",
+    account_id: "org_mock_1",
     contact_id: "contact_mock_1",
     lead_event_id: "lead_mock_1",
     calendar_provider: "manual",

@@ -3,7 +3,7 @@ import { getMockBookings } from "@/lib/mock/bookings";
 import { getMockCalls } from "@/lib/mock/calls";
 import { getMockContacts } from "@/lib/mock/contacts";
 import { getMockLeadEvents } from "@/lib/mock/leads";
-import { getMockOrganizations } from "@/lib/mock/organizations";
+import { getMockAccounts } from "@/lib/mock/accounts";
 import { getMockQuoteRequests } from "@/lib/mock/quotes";
 import { getMockRevenueMetrics } from "@/lib/mock/revenueMetrics";
 import { disconnectTestDb, normalize, prisma, resetAndSeedTestDb } from "./setup";
@@ -36,9 +36,9 @@ afterAll(async () => {
 });
 
 describe("seeded mock fixture parity", () => {
-  test("organizations match lib/mock organizations field-for-field", async () => {
-    const rows = await prisma.organization.findMany({ orderBy: { id: "asc" } });
-    expect(clean(normalize(rows))).toEqual(clean(getMockOrganizations()));
+  test("accounts match lib/mock accounts field-for-field", async () => {
+    const rows = await prisma.account.findMany({ orderBy: { id: "asc" } });
+    expect(clean(normalize(rows))).toEqual(clean(getMockAccounts()));
   });
 
   test("contacts match lib/mock contacts field-for-field", async () => {
@@ -49,7 +49,7 @@ describe("seeded mock fixture parity", () => {
   test("calls match lib/mock calls field-for-field", async () => {
     const keys = [
       "id",
-      "organization_id",
+      "account_id",
       "contact_id",
       "provider",
       "direction",
@@ -75,7 +75,7 @@ describe("seeded mock fixture parity", () => {
   test("lead events match lib/mock leads field-for-field", async () => {
     const keys = [
       "id",
-      "organization_id",
+      "account_id",
       "contact_id",
       "call_id",
       "source",
@@ -101,7 +101,7 @@ describe("seeded mock fixture parity", () => {
   test("bookings match lib/mock bookings field-for-field", async () => {
     const keys = [
       "id",
-      "organization_id",
+      "account_id",
       "contact_id",
       "lead_event_id",
       "calendar_provider",
@@ -122,7 +122,7 @@ describe("seeded mock fixture parity", () => {
   test("quote requests match lib/mock quotes field-for-field", async () => {
     const keys = [
       "id",
-      "organization_id",
+      "account_id",
       "contact_id",
       "lead_event_id",
       "service_type",
@@ -141,7 +141,7 @@ describe("seeded mock fixture parity", () => {
   test("revenue metrics match lib/mock revenue metrics field-for-field", async () => {
     const keys = [
       "id",
-      "organization_id",
+      "account_id",
       "period_start",
       "period_end",
       "total_calls",

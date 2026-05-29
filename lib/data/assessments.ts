@@ -24,7 +24,7 @@ export type EngagementTier =
 
 export interface AssessmentReport {
   id: string;
-  organization_id: string;
+  account_id: string;
   status: AssessmentStatus;
   inputs_json: unknown;
   readiness_score?: number;
@@ -46,7 +46,7 @@ export interface AssessmentReport {
 
 interface AssessmentRow {
   id: string;
-  organization_id: string;
+  account_id: string;
   status: string;
   inputs_json: unknown;
   readiness_score: number | null;
@@ -69,7 +69,7 @@ interface AssessmentRow {
 function rowToAssessment(row: AssessmentRow): AssessmentReport {
   return {
     id: row.id,
-    organization_id: row.organization_id,
+    account_id: row.account_id,
     status: row.status as AssessmentStatus,
     inputs_json: row.inputs_json,
     readiness_score: row.readiness_score ?? undefined,
@@ -91,10 +91,10 @@ function rowToAssessment(row: AssessmentRow): AssessmentReport {
 }
 
 export async function listAssessmentReports(params: {
-  organizationId?: string;
+  accountId?: string;
   status?: AssessmentStatus;
 }): Promise<Result<AssessmentReport[]>> {
-  const scope = await withTenantScope(params.organizationId);
+  const scope = await withTenantScope(params.accountId);
   if (!scope.ok) return err(scope.error.code, scope.error.message);
 
   if (db === null) {
@@ -104,8 +104,8 @@ export async function listAssessmentReports(params: {
   try {
     const rows = await db.assessmentReport.findMany({
       where: {
-        ...(scope.effectiveOrgId
-          ? { organization_id: scope.effectiveOrgId }
+        ...(scope.effectiveAccountId
+          ? { account_id: scope.effectiveAccountId }
           : {}),
         ...(params.status ? { status: params.status } : {}),
       },
@@ -133,7 +133,7 @@ export async function getAssessmentReportById(
     const report = rowToAssessment(row);
     const scoped = assertRowInScope(
       report,
-      scope.effectiveOrgId,
+      scope.effectiveAccountId,
       isCrossTenantRole(scope.session),
     );
     return scoped.ok

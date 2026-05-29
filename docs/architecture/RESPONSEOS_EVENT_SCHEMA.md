@@ -48,7 +48,7 @@ Every ledger row shares one envelope. Payloads vary by `type`; the envelope does
 {
   "id": "evt_01JABCDEF...",
   "type": "call.missed",
-  "organization_id": "acct_aj_roofing_01",
+  "account_id": "acct_aj_roofing_01",
   "occurred_at": "2026-05-27T18:42:10.123Z",
   "received_at": "2026-05-27T18:42:10.456Z",
   "source": "twilio",
@@ -68,7 +68,7 @@ Every ledger row shares one envelope. Payloads vary by `type`; the envelope does
 |---|---|---|
 | `id` | yes | `evt_` + cuid; ledger PK |
 | `type` | yes | from the catalog (§3) |
-| `organization_id` | yes | tenant scope; from session/route/connection, never client body |
+| `account_id` | yes | tenant scope; from session/route/connection, never client body |
 | `occurred_at` | yes | provider/source timestamp |
 | `received_at` | yes | when ResponseOS ingested it |
 | `source` | yes | `twilio` \| `grok` \| `openai` \| `hubspot` \| `stripe` \| `n8n` \| `internal` \| `web` |
@@ -179,7 +179,7 @@ Failed runs are retried with backoff; poison runs go to a dead-letter queue and 
 
 ## 7. Audit structures
 
-Audit events (`audit.*`) and `audit_logs` capture admin actions, prompt/profile changes, break-glass entries, and data exports. Each audit row: `organization_id`, `actor` (user id + role), `action`, `target`, `reason` (required for break-glass), `before`/`after` refs, `created_at`. Break-glass is time-boxed and notifies the tenant `client_admin` (see [`../ops/RESPONSEOS_SECURITY_AND_COMPLIANCE.md`](../ops/RESPONSEOS_SECURITY_AND_COMPLIANCE.md)). Audit logs are immutable and retained ≥ 1 year.
+Audit events (`audit.*`) and `audit_logs` capture admin actions, prompt/profile changes, break-glass entries, and data exports. Each audit row: `account_id`, `actor` (user id + role), `action`, `target`, `reason` (required for break-glass), `before`/`after` refs, `created_at`. Break-glass is time-boxed and notifies the tenant `client_admin` (see [`../ops/RESPONSEOS_SECURITY_AND_COMPLIANCE.md`](../ops/RESPONSEOS_SECURITY_AND_COMPLIANCE.md)). Audit logs are immutable and retained ≥ 1 year.
 
 ---
 

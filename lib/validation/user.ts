@@ -10,7 +10,7 @@ export const UserRoleSchema = z.enum([
 export type UserRoleValidated = z.infer<typeof UserRoleSchema>;
 
 export const CreateUserInputSchema = z.object({
-  organization_id: idSchema.optional(),
+  account_id: idSchema.optional(),
   role: UserRoleSchema,
   name: z.string().min(1).max(120),
   email: z.string().email(),

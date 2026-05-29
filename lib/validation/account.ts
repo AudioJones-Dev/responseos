@@ -1,14 +1,14 @@
 import { z } from "zod";
 import { e164PhoneSchema, isoDateSchema, idSchema } from "./common";
 
-export const OrganizationStatusSchema = z.enum([
+export const AccountStatusSchema = z.enum([
   "lead",
   "active",
   "paused",
   "cancelled",
 ]);
 
-export const CreateOrganizationInputSchema = z.object({
+export const CreateAccountInputSchema = z.object({
   name: z.string().min(1).max(120),
   slug: z
     .string()
@@ -19,20 +19,20 @@ export const CreateOrganizationInputSchema = z.object({
   website_url: z.string().url().optional(),
   primary_phone: e164PhoneSchema.optional(),
   timezone: z.string().min(1),
-  status: OrganizationStatusSchema.optional(),
+  status: AccountStatusSchema.optional(),
 });
-export type CreateOrganizationInput = z.infer<
-  typeof CreateOrganizationInputSchema
+export type CreateAccountInput = z.infer<
+  typeof CreateAccountInputSchema
 >;
 
-export const UpdateOrganizationInputSchema = CreateOrganizationInputSchema.partial().extend({
+export const UpdateAccountInputSchema = CreateAccountInputSchema.partial().extend({
   id: idSchema,
 });
-export type UpdateOrganizationInput = z.infer<
-  typeof UpdateOrganizationInputSchema
+export type UpdateAccountInput = z.infer<
+  typeof UpdateAccountInputSchema
 >;
 
-export const OrganizationSchema = z.object({
+export const AccountSchema = z.object({
   id: idSchema,
   name: z.string(),
   slug: z.string(),
@@ -40,8 +40,8 @@ export const OrganizationSchema = z.object({
   website_url: z.string().nullable().optional(),
   primary_phone: z.string().nullable().optional(),
   timezone: z.string(),
-  status: OrganizationStatusSchema,
+  status: AccountStatusSchema,
   created_at: isoDateSchema,
   updated_at: isoDateSchema,
 });
-export type ValidatedOrganization = z.infer<typeof OrganizationSchema>;
+export type ValidatedAccount = z.infer<typeof AccountSchema>;

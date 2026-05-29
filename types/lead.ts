@@ -34,7 +34,7 @@ export type LeadUrgency = "low" | "medium" | "high";
 
 export interface LeadEvent {
   id: UUID;
-  organization_id: UUID;
+  account_id: UUID;
   contact_id?: UUID;
   call_id?: UUID;
   source: LeadEventSource;
@@ -52,7 +52,7 @@ export function MockLeadEvent(overrides: Partial<LeadEvent> = {}): LeadEvent {
   const now = nowIso();
   return {
     id: newId(),
-    organization_id: "org_mock_1",
+    account_id: "org_mock_1",
     contact_id: "contact_mock_1",
     call_id: undefined,
     source: "phone",

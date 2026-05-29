@@ -6,7 +6,7 @@
 //
 // Conventions:
 // - snake_case columns to match the API/JSON shapes already used by the app.
-// - Tenant isolation: every per-tenant table carries organization_id.
+// - Tenant isolation: every per-tenant table carries account_id.
 // - Money is stored in cents (Int).
 // - JSON fields use the database Json type so config payloads stay flexible.
 
@@ -21,7 +21,7 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-enum OrganizationStatus {
+enum AccountStatus {
   lead
   active
   paused
@@ -182,7 +182,7 @@ enum NotificationStatus {
   failed
 }
 
-model Organization {
+model Account {
   id            String             @id @default(cuid())
   name          String
   slug          String             @unique
@@ -190,14 +190,14 @@ model Organization {
   website_url   String?
   primary_phone String?
   timezone      String
-  status        OrganizationStatus @default(lead)
+  status        AccountStatus @default(lead)
   created_at    DateTime           @default(now())
   updated_at    DateTime           @updatedAt
 }
 
 model User {
   id              String   @id @default(cuid())
-  organization_id String?
+  account_id String?
   role            UserRole
   name            String
   email           String   @unique
@@ -205,12 +205,12 @@ model User {
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 
-  @@index([organization_id])
+  @@index([account_id])
 }
 
 model Contact {
   id              String        @id @default(cuid())
-  organization_id String
+  account_id String
   first_name      String?
   last_name       String?
   phone           String?
@@ -223,14 +223,14 @@ model Contact {
   created_at      DateTime      @default(now())
   updated_at      DateTime      @updatedAt
 
-  @@index([organization_id])
+  @@index([account_id])
   @@index([phone])
   @@index([email])
 }
 
 model Call {
   id               String         @id @default(cuid())
-  organization_id  String
+  account_id  String
   contact_id       String?
   provider         CallProvider
   provider_call_id String?
@@ -249,14 +249,14 @@ model Call {
   lead_score       Int?
   created_at       DateTime       @default(now())
 
-  @@index([organization_id])
+  @@index([account_id])
   @@index([contact_id])
   @@index([started_at])
 }
 
 model LeadEvent {
   id              String          @id @default(cuid())
-  organization_id String
+  account_id String
   contact_id      String?
   call_id         String?
   source          LeadEventSource
@@ -269,7 +269,7 @@ model LeadEvent {
   created_at      DateTime        @default(now())
   updated_at      DateTime        @updatedAt
 
-  @@index([organization_id])
+  @@index([account_id])
   @@index([contact_id])
   @@index([call_id])
   @@index([status])
@@ -292,7 +292,7 @@ model LeadQualification {
 
 model Booking {
   id                String           @id @default(cuid())
-  organization_id   String
+  account_id   String
   contact_id        String
   lead_event_id     String?
   calendar_provider CalendarProvider
@@ -306,7 +306,7 @@ model Booking {
   created_at        DateTime         @default(now())
   updated_at        DateTime         @updatedAt
 
-  @@index([organization_id])
+  @@index([account_id])
   @@index([contact_id])
   @@index([lead_event_id])
   @@index([start_time])
@@ -314,7 +314,7 @@ model Booking {
 
 model QuoteRequest {
   id               String      @id @default(cuid())
-  organization_id  String
+  account_id  String
   contact_id       String
   lead_event_id    String?
   service_type     String
@@ -326,13 +326,13 @@ model QuoteRequest {
   created_at       DateTime    @default(now())
   updated_at       DateTime    @updatedAt
 
-  @@index([organization_id])
+  @@index([account_id])
   @@index([contact_id])
 }
 
 model Automation {
   id                String                @id @default(cuid())
-  organization_id   String
+  account_id   String
   name              String
   trigger_type      AutomationTriggerType
   status            AutomationStatus      @default(draft)
@@ -342,13 +342,13 @@ model Automation {
   created_at        DateTime              @default(now())
   updated_at        DateTime              @updatedAt
 
-  @@index([organization_id])
+  @@index([account_id])
   @@index([trigger_type])
 }
 
 model Notification {
   id              String              @id @default(cuid())
-  organization_id String
+  account_id String
   lead_event_id   String?
   channel         NotificationChannel
   recipient       String
@@ -358,13 +358,13 @@ model Notification {
   sent_at         DateTime?
   created_at      DateTime            @default(now())
 
-  @@index([organization_id])
+  @@index([account_id])
   @@index([lead_event_id])
 }
 
 model RevenueMetrics {
   id                          String   @id @default(cuid())
-  organization_id             String
+  account_id             String
   period_start                DateTime
   period_end                  DateTime
   total_calls                 Int      @default(0)
@@ -382,8 +382,8 @@ model RevenueMetrics {
   roi_multiple                Float?
   created_at                  DateTime @default(now())
 
-  @@unique([organization_id, period_start, period_end])
-  @@index([organization_id])
+  @@unique([account_id, period_start, period_end])
+  @@index([account_id])
 }
 
 // --- v0.2 additions (docs/v0.2-implementation-spec.md §2) -------------------
@@ -444,7 +444,7 @@ enum WebhookProcessStatus {
 
 model AssessmentReport {
   id              String           @id @default(cuid())
-  organization_id String
+  account_id String
   status          AssessmentStatus @default(draft)
 
   inputs_json Json
@@ -467,14 +467,14 @@ model AssessmentReport {
   created_at   DateTime  @default(now())
   updated_at   DateTime  @updatedAt
 
-  @@index([organization_id])
+  @@index([account_id])
   @@index([status])
   @@index([created_at])
 }
 
 model Engagement {
   id                   String @id @default(cuid())
-  organization_id      String
+  account_id      String
   assessment_report_id String @unique
 
   tier   EngagementTier
@@ -498,14 +498,14 @@ model Engagement {
   created_at DateTime  @default(now())
   updated_at DateTime  @updatedAt
 
-  @@index([organization_id])
+  @@index([account_id])
   @@index([status])
   @@index([signed_at])
 }
 
 model AuditLog {
   id              String    @id @default(cuid())
-  organization_id String?
+  account_id String?
   actor_user_id   String?
   actor_type      ActorType
   action          String
@@ -516,7 +516,7 @@ model AuditLog {
   user_agent      String?
   created_at      DateTime  @default(now())
 
-  @@index([organization_id])
+  @@index([account_id])
   @@index([actor_user_id])
   @@index([action])
   @@index([created_at])
@@ -524,7 +524,7 @@ model AuditLog {
 
 model WebhookEvent {
   id                String               @id @default(cuid())
-  organization_id   String?
+  account_id   String?
   provider          String
   provider_event_id String
   event_type        String
@@ -537,7 +537,7 @@ model WebhookEvent {
   process_status    WebhookProcessStatus @default(received)
   process_error     String?
 
-  @@index([organization_id])
+  @@index([account_id])
   @@index([provider])
   @@index([received_at])
   @@index([process_status])

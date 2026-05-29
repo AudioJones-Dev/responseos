@@ -4,6 +4,19 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — v0.2 closeout step 1: Organization → Account rename
+
+- **Renamed** the Prisma model `Organization` → `Account`, the enum `OrganizationStatus` → `AccountStatus`, and the FK column `organization_id` → `account_id` on every dependent table (`User`, `Contact`, `Call`, `LeadEvent`, `Booking`, `QuoteRequest`, `Automation`, `Notification`, `RevenueMetrics`, `AssessmentReport`, `Engagement`, `AuditLog`, `WebhookEvent`).
+- **Added** Prisma migration `prisma/migrations/0002_organization_to_account_rename/migration.sql` — pure `ALTER TYPE / ALTER TABLE / ALTER INDEX / RENAME CONSTRAINT` (no data shape changes; no foreign-key constraints exist in the schema since Prisma uses logical FKs without `@relation`).
+- **Cascaded** the rename through `types/*`, `lib/data/*`, `lib/mock/*`, `lib/validation/*`, `lib/auth/session.ts` (variable/type/field names only — no auth functionality changed), `prisma/seed.ts` (including `target_type: "Account"` and `action: "account.created"` on the seeded `AuditLog` row), and `tests/*` (factories, integration, unit).
+- **Renamed** files: `types/organization.ts` → `types/account.ts`, `lib/data/organizations.ts` → `lib/data/accounts.ts`, `lib/mock/organizations.ts` → `lib/mock/accounts.ts`, `lib/validation/organization.ts` → `lib/validation/account.ts`, `tests/factories/organizations.ts` → `tests/factories/accounts.ts`.
+- **Renamed** API route directories: `app/api/organizations/` → `app/api/accounts/`, `app/api/reports/client/[organizationId]/` → `app/api/reports/client/[accountId]/` (route parameter rename — public URL surface).
+- **Cascaded** the rename through active `docs/*` files that document the schema/API contracts (`docs/data-schema.md`, `docs/api-spec.md`, `docs/SECURITY.md`, `docs/architecture.md`, `docs/architecture/RESPONSEOS_*`, `docs/ops/RESPONSEOS_*`, `AGENTS.md`).
+- **Preserved** stable mock IDs (`org_mock_1`, `org_mock_2`, etc.) as opaque data identifiers — they are not model-name references and renaming them would break seed/mock parity without semantic benefit. Local-scope variable abbreviations (`const org`, `.map((org) => …)`) are also preserved to avoid opportunistic refactors.
+- **Preserved** historical records unchanged: `prisma/migrations/0001_v0_2_foundation/migration.sql`, `docs/archive/*`, `docs/research/*`, and the `Organization`/`Account` prose inside ADR-0019, the existing CHANGELOG entries, `docs/ROADMAP.md`, `README.md`, and `docs/product/RESPONSEOS_*` planning docs (status drift in those docs is a separate doc-sweep concern; not opportunistic).
+- **Scope checklist:** no auth work, no deploy work, no UI rebuild, no `Booking`→`Appointment` rename, no remaining v0.2-spec models, no seed idempotency cleanup beyond what the rename requires, no opportunistic refactors.
+- Per ADR-0019 step 2.1. Tracks roadmap checkpoint issue #27.
+
 ## Unreleased — ADR-0019 v0.3 demo deploy sequencing (closeout-first; Clerk stands)
 
 - **Added** ADR-0019 in `docs/DECISIONS.md` recording the operator decision that **v0.2 closeout precedes any v0.3 demo deploy**. PR #14 (`feat/v0.3-demo-deploy`) stays draft until the v0.2 closeout sequence lands on `master`: `Organization`→`Account` rename → `Booking`→`Appointment` rename → remaining v0.2-spec models (`provider_connections`, `conversations`, `sms_messages`, `call_segments`, `call_transcripts`, `workflow_runs`, `qa_logs`, expanded `audit_logs`) → **Clerk auth integration / alignment per ADR-0005** → UI rebuild against `DESIGN.md` tokens. The deployment *pattern* in PR #14 (Vercel + Neon, one-shot provisioning, edge gate, `/api/health` allowlist, rollback shape) is preserved as reference for the eventual v0.3 demo deploy; the basic-auth shim is replaced with real Clerk-authenticated login before that deploy goes live.
@@ -78,7 +91,7 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 ## v0.2 Phase B — Auth + data access
 
-- **`f6cfaf8`** — feat: add v0.2 auth and data access layer ([PR #6](https://github.com/audiojones-dev/responseos/pull/6)). `lib/auth/*` scaffold, `lib/data/*` accessors with `organizationId` filter on every read/write, role-aware access checks for `aj_admin` / `operator` / `client_admin` / `client_viewer`.
+- **`f6cfaf8`** — feat: add v0.2 auth and data access layer ([PR #6](https://github.com/audiojones-dev/responseos/pull/6)). `lib/auth/*` scaffold, `lib/data/*` accessors with `accountId` filter on every read/write, role-aware access checks for `aj_admin` / `operator` / `client_admin` / `client_viewer`.
 
 ## v0.2 Phase A — Schema + deterministic seed
 

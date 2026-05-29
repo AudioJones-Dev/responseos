@@ -12,15 +12,15 @@ import { err, errFromThrown, type Result } from "./result";
  * non-tenant roles through their cross-tenant path. Used by every per-tenant
  * accessor in lib/data/*.
  *
- * - aj_admin / operator: returns `{ session, effectiveOrgId: callerSuppliedId }`.
- * - client_admin / client_viewer: returns `{ session, effectiveOrgId: session.org.id }`,
+ * - aj_admin / operator: returns `{ session, effectiveAccountId: callerSuppliedId }`.
+ * - client_admin / client_viewer: returns `{ session, effectiveAccountId: session.org.id }`,
  *   ignoring caller-supplied input (per spec §3 + §4).
  *
  * Returns an error envelope when there is no session OR when a tenant user
  * supplies an org id that does not match their session.
  */
 export async function withTenantScope(callerSuppliedId?: string): Promise<
-  | { ok: true; session: Session; effectiveOrgId: string | undefined }
+  | { ok: true; session: Session; effectiveAccountId: string | undefined }
   | { ok: false; error: { code: string; message: string } }
 > {
   try {
@@ -31,7 +31,7 @@ export async function withTenantScope(callerSuppliedId?: string): Promise<
         error: { code: "no_session", message: "No active session." },
       };
     }
-    const effectiveOrgId = await resolveTenantScope(callerSuppliedId);
+    const effectiveAccountId = await resolveTenantScope(callerSuppliedId);
 
     // Defense-in-depth: tenant users who pass a different organization id
     // than their session must not silently get scoped to their own org —
@@ -40,14 +40,14 @@ export async function withTenantScope(callerSuppliedId?: string): Promise<
       (session.user.role === "client_admin" ||
         session.user.role === "client_viewer") &&
       callerSuppliedId !== undefined &&
-      callerSuppliedId !== effectiveOrgId
+      callerSuppliedId !== effectiveAccountId
     ) {
       throw new TenantScopeError(
         "Caller is not in the resource's tenant scope.",
       );
     }
 
-    return { ok: true, session, effectiveOrgId };
+    return { ok: true, session, effectiveAccountId };
   } catch (thrown) {
     const result = errFromThrown<never>(thrown);
     if (result.ok === false) {
@@ -61,22 +61,22 @@ export async function withTenantScope(callerSuppliedId?: string): Promise<
 }
 
 /**
- * Wraps a row's organization_id check for accessors that fetched a record
- * by id (e.g. getOrganizationById). Returns an error envelope when the
+ * Wraps a row's account_id check for accessors that fetched a record
+ * by id (e.g. getAccountById). Returns an error envelope when the
  * tenant scope mismatch is detected.
  */
-export function assertRowInScope<T extends { organization_id?: string | null }>(
+export function assertRowInScope<T extends { account_id?: string | null }>(
   row: T,
-  effectiveOrgId: string | undefined,
+  effectiveAccountId: string | undefined,
   isCrossTenantRole: boolean,
 ): Result<T> {
   if (isCrossTenantRole) {
     return { ok: true, data: row };
   }
-  if (!effectiveOrgId) {
+  if (!effectiveAccountId) {
     return err("no_session", "No tenant scope on session.");
   }
-  if (row.organization_id !== effectiveOrgId) {
+  if (row.account_id !== effectiveAccountId) {
     return err(
       "tenant_scope_denied",
       "Caller is not in the resource's tenant scope.",

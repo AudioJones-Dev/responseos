@@ -11,7 +11,7 @@ import { withTenantScope } from "./session-helpers";
 
 interface AutomationRow {
   id: string;
-  organization_id: string;
+  account_id: string;
   name: string;
   trigger_type: string;
   status: string;
@@ -25,7 +25,7 @@ interface AutomationRow {
 function rowToAutomation(row: AutomationRow): Automation {
   return {
     id: row.id,
-    organization_id: row.organization_id,
+    account_id: row.account_id,
     name: row.name,
     trigger_type: row.trigger_type as AutomationTriggerType,
     status: row.status as AutomationStatus,
@@ -38,9 +38,9 @@ function rowToAutomation(row: AutomationRow): Automation {
 }
 
 export async function listAutomations(params: {
-  organizationId?: string;
+  accountId?: string;
 }): Promise<Result<Automation[]>> {
-  const scope = await withTenantScope(params.organizationId);
+  const scope = await withTenantScope(params.accountId);
   if (!scope.ok) return err(scope.error.code, scope.error.message);
 
   if (db === null) {
@@ -50,8 +50,8 @@ export async function listAutomations(params: {
 
   try {
     const rows = await db.automation.findMany({
-      where: scope.effectiveOrgId
-        ? { organization_id: scope.effectiveOrgId }
+      where: scope.effectiveAccountId
+        ? { account_id: scope.effectiveAccountId }
         : undefined,
       orderBy: { created_at: "desc" },
     });

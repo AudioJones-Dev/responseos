@@ -141,7 +141,7 @@ Future-target Terraform layout (per `../DEPLOYMENT.md`): `infra/terraform/{modul
 - [ ] Tenant-isolation + signature-validation tests green.
 - [ ] Secrets in the secret store (none in repo); tenant creds DB-encrypted.
 - [ ] Rollback paths verified (profile + both service deploys + ledger replay).
-- [ ] Observability + alerting wired (PostHog/Sentry/Better Stack), tagged `organization_id`.
+- [ ] Observability + alerting wired (PostHog/Sentry/Better Stack), tagged `account_id`.
 - [ ] Standard lane only; regulated lanes deferred; voice blocked on HIPAA lane.
 - [ ] Human approval recorded.
 

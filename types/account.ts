@@ -1,8 +1,8 @@
 import { ISODate, UUID, newId, nowIso } from "./common";
 
-export type OrganizationStatus = "lead" | "active" | "paused" | "cancelled";
+export type AccountStatus = "lead" | "active" | "paused" | "cancelled";
 
-export interface Organization {
+export interface Account {
   id: UUID;
   name: string;
   slug: string;
@@ -10,12 +10,12 @@ export interface Organization {
   website_url?: string;
   primary_phone?: string;
   timezone: string;
-  status: OrganizationStatus;
+  status: AccountStatus;
   created_at: ISODate;
   updated_at: ISODate;
 }
 
-export function MockOrganization(overrides: Partial<Organization> = {}): Organization {
+export function MockAccount(overrides: Partial<Account> = {}): Account {
   const now = nowIso();
   return {
     id: newId(),

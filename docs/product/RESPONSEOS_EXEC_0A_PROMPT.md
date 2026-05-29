@@ -101,7 +101,7 @@ task ID (EX0B-*, EX1-*). Cover at least:
   - EX1-T1 `Organization`→`Account` rename + scoping: `prisma/schema.prisma`,
     `prisma/migrations/` [new], regenerated client, `lib/data/*`, `lib/auth/*`,
     `prisma/seed.ts`, affected tests. Grep for every current `Organization` /
-    `organizationId` reference and report the count + locations as rename blast radius.
+    `accountId` reference and report the count + locations as rename blast radius.
   - EX1-T2a event ledger + idempotent writer: `prisma/schema.prisma`, new migration,
     new ledger-writer module under `lib/`, `prisma/seed.ts`, tests.
   - EX1-T2b go-forward tables (`call_sessions`, `tool_calls`, profile tables,

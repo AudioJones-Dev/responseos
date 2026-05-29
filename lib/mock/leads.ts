@@ -7,7 +7,7 @@ const at = (offsetMinutes: number): string =>
 export const mockLeadEvents: LeadEvent[] = [
   MockLeadEvent({
     id: "lead_mock_1",
-    organization_id: "org_mock_1",
+    account_id: "org_mock_1",
     contact_id: "contact_mock_1",
     call_id: "call_mock_1",
     source: "phone",
@@ -20,7 +20,7 @@ export const mockLeadEvents: LeadEvent[] = [
   }),
   MockLeadEvent({
     id: "lead_mock_2",
-    organization_id: "org_mock_1",
+    account_id: "org_mock_1",
     contact_id: "contact_mock_2",
     call_id: "call_mock_2",
     source: "phone",
@@ -33,7 +33,7 @@ export const mockLeadEvents: LeadEvent[] = [
   }),
   MockLeadEvent({
     id: "lead_mock_3",
-    organization_id: "org_mock_1",
+    account_id: "org_mock_1",
     contact_id: "contact_mock_2",
     source: "phone",
     event_type: "appointment_booked",
@@ -45,7 +45,7 @@ export const mockLeadEvents: LeadEvent[] = [
   }),
   MockLeadEvent({
     id: "lead_mock_4",
-    organization_id: "org_mock_1",
+    account_id: "org_mock_1",
     contact_id: "contact_mock_1",
     source: "phone",
     event_type: "spam",
@@ -58,7 +58,7 @@ export const mockLeadEvents: LeadEvent[] = [
   }),
   MockLeadEvent({
     id: "lead_mock_5",
-    organization_id: "org_mock_2",
+    account_id: "org_mock_2",
     contact_id: "contact_mock_3",
     call_id: "call_mock_4",
     source: "outbound",
@@ -72,7 +72,7 @@ export const mockLeadEvents: LeadEvent[] = [
   }),
   MockLeadEvent({
     id: "lead_mock_6",
-    organization_id: "org_mock_1",
+    account_id: "org_mock_1",
     contact_id: "contact_mock_1",
     source: "website",
     event_type: "quote_request",
@@ -84,7 +84,7 @@ export const mockLeadEvents: LeadEvent[] = [
   }),
   MockLeadEvent({
     id: "lead_mock_7",
-    organization_id: "org_mock_1",
+    account_id: "org_mock_1",
     contact_id: "contact_mock_1",
     source: "phone",
     event_type: "follow_up_needed",
@@ -96,7 +96,7 @@ export const mockLeadEvents: LeadEvent[] = [
   }),
   MockLeadEvent({
     id: "lead_mock_8",
-    organization_id: "org_mock_2",
+    account_id: "org_mock_2",
     contact_id: "contact_mock_3",
     source: "outbound",
     event_type: "quote_sent",
@@ -108,7 +108,7 @@ export const mockLeadEvents: LeadEvent[] = [
   }),
   MockLeadEvent({
     id: "lead_mock_9",
-    organization_id: "org_mock_1",
+    account_id: "org_mock_1",
     contact_id: "contact_mock_2",
     source: "phone",
     event_type: "job_won",
@@ -121,7 +121,7 @@ export const mockLeadEvents: LeadEvent[] = [
   }),
   MockLeadEvent({
     id: "lead_mock_10",
-    organization_id: "org_mock_1",
+    account_id: "org_mock_1",
     contact_id: "contact_mock_1",
     source: "phone",
     event_type: "job_lost",
@@ -134,7 +134,7 @@ export const mockLeadEvents: LeadEvent[] = [
   }),
   MockLeadEvent({
     id: "lead_mock_11",
-    organization_id: "org_mock_1",
+    account_id: "org_mock_1",
     contact_id: "contact_mock_1",
     source: "sms",
     event_type: "qualified_lead",

@@ -40,14 +40,14 @@ Validated against `RESPONSEOS_IMPLEMENTATION_PLAN.md` §7/§8 critical path:
 `A1 → A2 → B1 → B3/B4 → T1 → T2a → T3`
 
 - This path is consistent with current repo state and missing artifacts: B1/B3/B4 are prerequisite groundwork before schema-level and gateway work.
-- T1 (`Organization`→`Account`) remains the major unblocker: current schema/types/data/tests still center `Organization` + `organizationId`, confirming large dependency fan-out into T2a/T3.
+- T1 (`Organization`→`Account`) remains the major unblocker: current schema/types/data/tests still center `Organization` + `accountId`, confirming large dependency fan-out into T2a/T3.
 - No repo evidence contradicts running B2 in parallel after B1, or T2b in parallel after T2a/T1 dependencies clear.
 
 ## 3) Risk register
 
 | ID | Risk | Repo-grounded impact | Mitigation |
 |---|---|---|---|
-| R1 | Rename blast radius (`Organization`→`Account`) | Current codebase has broad `Organization` and `organizationId` usage across schema, types, data accessors, tests, and routes. Partial rename will break compile/tests and tenant semantics. | Land EX1-T1 as one atomic PR: migration + schema/types/data/auth/tests + stale-reference sweep + gates green. No piggyback features. |
+| R1 | Rename blast radius (`Organization`→`Account`) | Current codebase has broad `Organization` and `accountId` usage across schema, types, data accessors, tests, and routes. Partial rename will break compile/tests and tenant semantics. | Land EX1-T1 as one atomic PR: migration + schema/types/data/auth/tests + stale-reference sweep + gates green. No piggyback features. |
 | R2 | Ledger writer scope creep | No ledger module exists yet; risk is first implementation absorbs domain/provider logic. | Keep EX1-T2a writer narrowly scoped to envelope write, dedupe key/idempotency, minimal emit API; provider-specific transforms stay at adapter boundary (ADR-0012). |
 | R3 | Gateway skeleton drifts into realtime implementation | No gateway entrypoint exists; new code could overreach into sockets/audio/Redis/live adapters. | Enforce EX1-T3 acceptance literally: health + mock provider resolution + single mock ledger write only; reject audio/socket/Redis runtime/live provider code. |
 | R4 | Premature service split beyond sanctioned gateway | Modular monolith is current shape; uncontrolled extra split increases ops complexity before readiness. | Restrict split work to the single sanctioned voice gateway boundary (ADR-0013); keep other capabilities in-monolith for this arc. |
@@ -77,10 +77,10 @@ Validated against `RESPONSEOS_IMPLEMENTATION_PLAN.md` §7/§8 critical path:
 | EX1-T1 | `prisma/schema.prisma` | [exists] | high | Root tenant model rename + relation propagation is structurally invasive. |
 | EX1-T1 | `prisma/migrations/*` | [new] | high | Rename migration correctness and deploy safety are critical. |
 | EX1-T1 | `prisma/seed.ts` | [exists] | high | Seed must follow renamed model/fields to keep integration booting. |
-| EX1-T1 | `lib/data/*` | [exists] | high | Tenant scope API contracts currently keyed by `organizationId`. |
+| EX1-T1 | `lib/data/*` | [exists] | high | Tenant scope API contracts currently keyed by `accountId`. |
 | EX1-T1 | `lib/auth/*` | [exists] | high | Session-derived scope must stay authoritative and renamed consistently. |
 | EX1-T1 | `types/*` (notably `types/organization.ts`) | [exists] | high | Domain type rename ripples through compile boundary. |
-| EX1-T1 | affected routes/tests/factories | [exists] | high | API param names and fixture shapes currently include `organizationId`. |
+| EX1-T1 | affected routes/tests/factories | [exists] | high | API param names and fixture shapes currently include `accountId`. |
 | EX1-T2a | `prisma/schema.prisma` + migration | [exists]/[new] | high | Ledger table is foundational persistence primitive. |
 | EX1-T2a | new ledger writer module under `lib/` | [new] | high | Must be idempotent and architecture-constrained. |
 | EX1-T2a | `prisma/seed.ts` + tests | [exists] | med | Seed and replay/idempotency tests validate envelope assumptions. |
@@ -92,14 +92,14 @@ Validated against `RESPONSEOS_IMPLEMENTATION_PLAN.md` §7/§8 critical path:
 ### EX1-T1 rename blast radius (current-state evidence)
 
 - `Organization` literal references (repo-wide searched scope: `prisma`, `lib`, `tests`, `types`, `app`, `docs`): **43** matches.
-- `organizationId` references in the same scope: **112** matches.
+- `accountId` references in the same scope: **112** matches.
 - High-impact locations include:
   - `prisma/schema.prisma` model definition.
   - `prisma/migrations/0001_v0_2_foundation/migration.sql`.
   - `types/organization.ts` and `lib/data/organizations.ts`.
   - `lib/auth/session.ts` tenant-scope enforcement and `lib/data/*` accessor parameters.
-  - Route `app/api/reports/client/[organizationId]/route.ts`.
-  - Integration/unit tests and factories keyed on `organizationId`.
+  - Route `app/api/reports/client/[accountId]/route.ts`.
+  - Integration/unit tests and factories keyed on `accountId`.
 
 ## 5) Validation commands
 
@@ -137,7 +137,7 @@ Validated against `RESPONSEOS_IMPLEMENTATION_PLAN.md` §7/§8 critical path:
 
 **Acceptance criteria:**
 
-- No stale `Organization`/`organizationId` identifiers where the canonical model should be `Account`/`accountId`.
+- No stale `Organization`/`accountId` identifiers where the canonical model should be `Account`/`accountId`.
 - Tenant scope derived from session remains authoritative; client-supplied cross-tenant attempts denied.
 - Lint/typecheck/unit/build/integration gates green in CI (`validate` + `integration`).
 

@@ -2,12 +2,12 @@ import type { Prisma } from "@prisma/client";
 import { nextTestId } from "./ids";
 
 export function makeAuditLog(
-  params: { organizationId?: string | null; actorUserId?: string | null },
+  params: { accountId?: string | null; actorUserId?: string | null },
   overrides: Partial<Prisma.AuditLogCreateInput> = {},
 ): Prisma.AuditLogCreateInput {
   const base: Prisma.AuditLogCreateInput = {
     id: overrides.id ?? nextTestId("audit"),
-    organization_id: params.organizationId ?? null,
+    account_id: params.accountId ?? null,
     actor_user_id: params.actorUserId ?? null,
     actor_type: "user",
     action: "test.action",

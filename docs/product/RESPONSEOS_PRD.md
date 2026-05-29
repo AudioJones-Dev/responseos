@@ -211,7 +211,7 @@ Tiers (buyer-facing summary): **Recovery Core** ($2,500–$4,000 / $750–$1,250
 
 In scope for MVP:
 
-- Multi-tenant data layer (tenant-scoped, `organization_id` from session) — **shipped (v0.2)**.
+- Multi-tenant data layer (tenant-scoped, `account_id` from session) — **shipped (v0.2)**.
 - Operator console + read-only tenant portal — **shipped (v0.2), rebuilt against DESIGN.md in closeout**.
 - Event ledger + signed webhook ingest foundation — **shipped (v0.2 foundation)**.
 - Node.js voice gateway with Grok Voice (primary) + OpenAI Realtime (fallback) behind the provider abstraction — **v0.3**.
@@ -261,7 +261,7 @@ MVP (v0.2 done → v0.3) → Phase 2 (v0.4 knowledge grounding, v0.5 billing) �
 | ID | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|---|
 | R-01 | Grok Voice / OpenAI Realtime not production-ready for telephony (concurrency, barge-in, webhooks) | Med | High | v0.3 provider-readiness gate before live traffic; transparent failover; abstraction allows re-swap (ADR-0012) |
-| R-02 | Cross-tenant data leak | Low | Critical | `organization_id` from session on every path; integration tests assert isolation; break-glass logging |
+| R-02 | Cross-tenant data leak | Low | Critical | `account_id` from session on every path; integration tests assert isolation; break-glass logging |
 | R-03 | Voice-provider compliance posture (retention/training data) unverified for regulated tenants | Med | High | Block Grok/OpenAI on HIPAA lane until BAA/retention verified; Standard lane only for MVP |
 | R-04 | Voice gateway is a new operational surface (latency, scaling) | Med | Med | Isolated service + own SLOs; Redis-backed session continuity; load test before go-live |
 | R-05 | HubSpot-default friction for GHL-native tenants | Med | Med | Keep CRM pluggable; GHL connector retained (ADR-0015) |

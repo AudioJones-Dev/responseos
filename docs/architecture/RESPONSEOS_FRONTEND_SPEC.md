@@ -95,7 +95,7 @@ Output: a provisioned (or assessed-only) tenant + a Readiness packet (Score, Lea
 
 - Operator: cross-tenant portfolio analytics + provider/failover health; powered by ROI marts + PostHog (operator-side product analytics).
 - Client: outcome-only analytics (the 9 KPIs), business-language, per `../DESIGN.md` data-viz rules (every chart answers a business question; no vanity charts).
-- **No raw PII in analytics** (PostHog tagged by `organization_id` only, ADR-0018).
+- **No raw PII in analytics** (PostHog tagged by `account_id` only, ADR-0018).
 
 ---
 

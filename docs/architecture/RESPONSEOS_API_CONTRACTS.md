@@ -22,12 +22,12 @@ All new routes below use this same envelope and rules.
 
 | Caller | Auth | Tenant scope |
 |---|---|---|
-| Browser (console/portal) | Session cookie (Auth provider) | `organization_id` derived from session |
-| Public/partner REST | API key (per tenant) | key → `organization_id` |
-| Provider webhooks | Signature validation (ADR-0009) | route/connection → `organization_id` |
-| Gateway ↔ core (internal) | mTLS or signed service token | `organization_id` in the signed event payload |
+| Browser (console/portal) | Session cookie (Auth provider) | `account_id` derived from session |
+| Public/partner REST | API key (per tenant) | key → `account_id` |
+| Provider webhooks | Signature validation (ADR-0009) | route/connection → `account_id` |
+| Gateway ↔ core (internal) | mTLS or signed service token | `account_id` in the signed event payload |
 
-**Rule:** `organization_id` is never read from a client-supplied body or query param. A mismatch → `403 TENANT_SCOPE_DENIED`.
+**Rule:** `account_id` is never read from a client-supplied body or query param. A mismatch → `403 TENANT_SCOPE_DENIED`.
 
 ---
 
@@ -69,7 +69,7 @@ Existing routes (`/api/calls`, `/api/leads`, `/api/bookings`, `/api/quotes`, `/a
 | Method | Route | Purpose |
 |---|---|---|
 | GET | `/api/reports/revenue` | Current-period metrics (existing) |
-| GET | `/api/reports/client/:organizationId` | Per-workspace metrics (existing) |
+| GET | `/api/reports/client/:accountId` | Per-workspace metrics (existing) |
 | POST | `/api/reports/generate` | Trigger monthly report generation (idempotent per period) |
 
 ---
@@ -94,7 +94,7 @@ Internal, service-authenticated (mTLS/signed token), tenant-scoped via signed pa
 Tool execution contract (example):
 ```http
 POST /internal/tools/check_availability
-{ "organization_id": "acct_...", "session_id": "sess_...",
+{ "account_id": "acct_...", "session_id": "sess_...",
   "service_duration_minutes": 120, "window_start": "...", "window_end": "..." }
 -> 200 { "ok": true, "data": { "slots": [ { "start": "...", "end": "..." } ] } }
 ```

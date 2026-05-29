@@ -56,7 +56,7 @@ const TIER_FEE_RANGES = {
 
 export const CreateEngagementInputSchema = z
   .object({
-    organization_id: idSchema,
+    account_id: idSchema,
     assessment_report_id: idSchema,
     tier: EngagementTierSchema,
     setup_fee_cents: centsSchema,

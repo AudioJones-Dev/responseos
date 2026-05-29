@@ -73,7 +73,7 @@ The **core orchestration layer and the event ledger are always platform-owned** 
 
 - **Platform credentials** (Grok, OpenAI, Twilio infra, Resend, observability, storage) live in the platform secret store (Vercel env / AWS Secrets Manager) — **never** in the repo (`../env-spec.md`). Mock fallback when absent (ADR-0001).
 - **Tenant credentials** (HubSpot/Google OAuth tokens, alt-CRM keys, future BYO keys) live **encrypted at rest in the database** (`provider_connections`), decrypted at request time — **never** in `.env`, never in the repo.
-- Tenant-specific keys are scoped to the tenant's `organization_id`; no cross-tenant credential access.
+- Tenant-specific keys are scoped to the tenant's `account_id`; no cross-tenant credential access.
 - Rotation: platform keys rotate quarterly / on provider config change; tenant OAuth refresh handled per provider; webhook signing secrets rotate with provider config.
 
 ---

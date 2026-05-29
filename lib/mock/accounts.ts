@@ -1,7 +1,7 @@
-import { MockOrganization, Organization } from "@/types/organization";
+import { MockAccount, Account } from "@/types/account";
 
-export const mockOrganizations: Organization[] = [
-  MockOrganization({
+export const mockAccounts: Account[] = [
+  MockAccount({
     id: "org_mock_1",
     name: "Sunshine HVAC",
     slug: "sunshine-hvac",
@@ -11,7 +11,7 @@ export const mockOrganizations: Organization[] = [
     timezone: "America/New_York",
     status: "active",
   }),
-  MockOrganization({
+  MockAccount({
     id: "org_mock_2",
     name: "Coastal Roofing Co.",
     slug: "coastal-roofing",
@@ -23,6 +23,6 @@ export const mockOrganizations: Organization[] = [
   }),
 ];
 
-export function getMockOrganizations(): Organization[] {
-  return mockOrganizations;
+export function getMockAccounts(): Account[] {
+  return mockAccounts;
 }

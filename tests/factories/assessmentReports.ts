@@ -2,12 +2,12 @@ import type { AssessmentStatus, Prisma } from "@prisma/client";
 import { nextTestId } from "./ids";
 
 export function makeAssessmentReport(
-  params: { organizationId: string; status?: AssessmentStatus },
+  params: { accountId: string; status?: AssessmentStatus },
   overrides: Partial<Prisma.AssessmentReportCreateInput> = {},
 ): Prisma.AssessmentReportCreateInput {
   const base: Prisma.AssessmentReportCreateInput = {
     id: overrides.id ?? nextTestId("assessment"),
-    organization_id: params.organizationId,
+    account_id: params.accountId,
     status: params.status ?? "draft",
     inputs_json: { missedCallsPerMonth: 20, averageJobValueCents: 120_000 },
     readiness_score: 78,

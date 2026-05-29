@@ -3,7 +3,7 @@ import {
   Bookings,
   Calls,
   Leads,
-  Organizations,
+  Accounts,
   Quotes,
   RevenueMetrics,
 } from "@/lib/data";
@@ -17,7 +17,7 @@ const formatUsd = (cents: number): string =>
 
 export default async function AdminHome() {
   const [orgsR, callsR, leadsR, bookingsR, quotesR, revenueR] = await Promise.all([
-    Organizations.listOrganizations(),
+    Accounts.listAccounts(),
     Calls.listCalls({}),
     Leads.listLeads({}),
     Bookings.listBookings({}),
@@ -25,7 +25,7 @@ export default async function AdminHome() {
     RevenueMetrics.getCurrentRevenueMetrics({}),
   ]);
 
-  const organizations = orgsR.ok ? orgsR.data : [];
+  const accounts = orgsR.ok ? orgsR.data : [];
   const calls = callsR.ok ? callsR.data : [];
   const leads = leadsR.ok ? leadsR.data : [];
   const bookings = bookingsR.ok ? bookingsR.data : [];
@@ -58,8 +58,8 @@ export default async function AdminHome() {
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Active Clients"
-          value={organizations.filter((o) => o.status === "active").length}
-          hint={`${organizations.length} total workspaces`}
+          value={accounts.filter((o) => o.status === "active").length}
+          hint={`${accounts.length} total workspaces`}
           accent="primary"
         />
         <StatCard

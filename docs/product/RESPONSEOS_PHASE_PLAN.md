@@ -11,7 +11,7 @@
 ## Phase 0 — Foundation (DONE)
 
 **Status:** ✅ v0.1 + v0.2 A–D shipped.
-**Delivered:** Next.js App Router scaffold; 11 typed models; mock adapters; Postgres schema + deterministic seed; tenant-aware data layer (`organization_id` from session); integration tests + Postgres-backed CI; webhook event-ledger foundation; audit-log foundation.
+**Delivered:** Next.js App Router scaffold; 11 typed models; mock adapters; Postgres schema + deterministic seed; tenant-aware data layer (`account_id` from session); integration tests + Postgres-backed CI; webhook event-ledger foundation; audit-log foundation.
 **Exit gate (met):** CI green; tenant scoping enforced at the data layer; app boots without secrets.
 
 ---
@@ -22,7 +22,7 @@
 **Owner:** core/platform.
 **Work:**
 1. `Organization` → `Account` rename (migration + types + data layer).
-2. Real auth provider wiring (session → `organization_id` + role).
+2. Real auth provider wiring (session → `account_id` + role).
 3. UI rebuild against [`../DESIGN.md`](../DESIGN.md) tokens.
 4. Remaining model expansion: `provider_connections`, `conversations`/`sms_messages`, `call_segments`/`call_transcripts`, `workflow_runs`, `qa_logs`, `audit_logs`.
 5. Add go-forward tables forward-compatibly: `call_sessions`, `tool_calls`, profile tables (`routing_/prompt_/policy_/workflow_profiles`), `crm_mappings` (see [`../architecture/RESPONSEOS_DATA_MODEL.md`](../architecture/RESPONSEOS_DATA_MODEL.md) § 4).

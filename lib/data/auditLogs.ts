@@ -7,7 +7,7 @@ export type ActorType = "user" | "system" | "webhook";
 
 export interface AuditLog {
   id: string;
-  organization_id?: string;
+  account_id?: string;
   actor_user_id?: string;
   actor_type: ActorType;
   action: string;
@@ -21,7 +21,7 @@ export interface AuditLog {
 
 interface AuditLogRow {
   id: string;
-  organization_id: string | null;
+  account_id: string | null;
   actor_user_id: string | null;
   actor_type: string;
   action: string;
@@ -36,7 +36,7 @@ interface AuditLogRow {
 function rowToAuditLog(row: AuditLogRow): AuditLog {
   return {
     id: row.id,
-    organization_id: row.organization_id ?? undefined,
+    account_id: row.account_id ?? undefined,
     actor_user_id: row.actor_user_id ?? undefined,
     actor_type: row.actor_type as ActorType,
     action: row.action,
@@ -57,7 +57,7 @@ function rowToAuditLog(row: AuditLogRow): AuditLog {
  * block the underlying mutation.
  */
 export async function recordAuditLog(entry: {
-  organization_id?: string;
+  account_id?: string;
   actor_user_id?: string;
   actor_type: ActorType;
   action: string;
@@ -75,7 +75,7 @@ export async function recordAuditLog(entry: {
   try {
     await db.auditLog.create({
       data: {
-        organization_id: entry.organization_id ?? null,
+        account_id: entry.account_id ?? null,
         actor_user_id: entry.actor_user_id ?? null,
         actor_type: entry.actor_type,
         action: entry.action,
@@ -93,11 +93,11 @@ export async function recordAuditLog(entry: {
 }
 
 export async function listAuditLogs(params: {
-  organizationId?: string;
+  accountId?: string;
   action?: string;
   limit?: number;
 }): Promise<Result<AuditLog[]>> {
-  const scope = await withTenantScope(params.organizationId);
+  const scope = await withTenantScope(params.accountId);
   if (!scope.ok) return err(scope.error.code, scope.error.message);
 
   if (db === null) {
@@ -107,8 +107,8 @@ export async function listAuditLogs(params: {
   try {
     const rows = await db.auditLog.findMany({
       where: {
-        ...(scope.effectiveOrgId
-          ? { organization_id: scope.effectiveOrgId }
+        ...(scope.effectiveAccountId
+          ? { account_id: scope.effectiveAccountId }
           : {}),
         ...(params.action ? { action: params.action } : {}),
       },
@@ -116,11 +116,11 @@ export async function listAuditLogs(params: {
       take: params.limit ?? 100,
     });
 
-    // Cross-tenant readers see system rows (organization_id null);
+    // Cross-tenant readers see system rows (account_id null);
     // tenant readers do not.
     const filtered = isCrossTenantRole(scope.session)
       ? rows
-      : rows.filter((r) => r.organization_id !== null);
+      : rows.filter((r) => r.account_id !== null);
 
     return ok(filtered.map(rowToAuditLog));
   } catch (e) {

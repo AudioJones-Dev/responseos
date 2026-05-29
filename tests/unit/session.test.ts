@@ -25,16 +25,16 @@ describe("lib/auth/session.ts", () => {
     const { getCurrentSession } = await freshSession();
     const session = await getCurrentSession();
     expect(session?.user.role).toBe("aj_admin");
-    expect(session?.organization).toBeNull();
+    expect(session?.account).toBeNull();
   });
 
   test("RESPONSEOS_DEV_SESSION=client_admin@org_mock_1 yields tenant session", async () => {
     process.env.RESPONSEOS_DEV_SESSION = "client_admin@org_mock_1";
-    const { getCurrentSession, getCurrentOrganization } = await freshSession();
+    const { getCurrentSession, getCurrentAccount } = await freshSession();
     const session = await getCurrentSession();
     expect(session?.user.role).toBe("client_admin");
-    expect(session?.organization?.id).toBe("org_mock_1");
-    const org = await getCurrentOrganization();
+    expect(session?.account?.id).toBe("org_mock_1");
+    const org = await getCurrentAccount();
     expect(org?.slug).toBe("sunshine-hvac");
   });
 

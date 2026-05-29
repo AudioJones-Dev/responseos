@@ -7,7 +7,7 @@
 
 export * from "./common";
 export * from "./labels";
-export * from "./organization";
+export * from "./account";
 export * from "./user";
 export * from "./contact";
 export * from "./lead";

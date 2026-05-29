@@ -2,12 +2,12 @@ import type { Prisma } from "@prisma/client";
 import { nextTestId } from "./ids";
 
 export function makeEngagement(
-  params: { organizationId: string; assessmentReportId: string },
+  params: { accountId: string; assessmentReportId: string },
   overrides: Partial<Prisma.EngagementCreateInput> = {},
 ): Prisma.EngagementCreateInput {
   const base: Prisma.EngagementCreateInput = {
     id: overrides.id ?? nextTestId("engagement"),
-    organization_id: params.organizationId,
+    account_id: params.accountId,
     assessment_report_id: params.assessmentReportId,
     tier: "recovery_core",
     status: "active",

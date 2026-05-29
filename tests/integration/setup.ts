@@ -19,7 +19,7 @@ const TABLES = [
   "Call",
   "Contact",
   "User",
-  "Organization",
+  "Account",
 ];
 
 export async function connectTestDb(): Promise<PrismaClient> {

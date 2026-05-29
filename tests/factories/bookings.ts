@@ -2,12 +2,12 @@ import type { Prisma } from "@prisma/client";
 import { nextTestId } from "./ids";
 
 export function makeBooking(
-  params: { organizationId: string; leadId?: string | null; contactId?: string },
+  params: { accountId: string; leadId?: string | null; contactId?: string },
   overrides: Partial<Prisma.BookingCreateInput> = {},
 ): Prisma.BookingCreateInput {
   const base: Prisma.BookingCreateInput = {
     id: overrides.id ?? nextTestId("booking"),
-    organization_id: params.organizationId,
+    account_id: params.accountId,
     contact_id: params.contactId ?? "contact_mock_1",
     lead_event_id: params.leadId ?? null,
     calendar_provider: "google",

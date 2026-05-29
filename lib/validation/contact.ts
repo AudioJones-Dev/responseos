@@ -10,7 +10,7 @@ export const ContactSourceSchema = z.enum([
 ]);
 
 export const CreateContactInputSchema = z.object({
-  organization_id: idSchema,
+  account_id: idSchema,
   first_name: z.string().max(120).optional(),
   last_name: z.string().max(120).optional(),
   phone: e164PhoneSchema.optional(),

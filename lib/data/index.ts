@@ -9,7 +9,7 @@
 export type { Result } from "./result";
 export { ok, err, errFromThrown } from "./result";
 
-export * as Organizations from "./organizations";
+export * as Accounts from "./accounts";
 export * as Users from "./users";
 export * as Contacts from "./contacts";
 export * as Calls from "./calls";

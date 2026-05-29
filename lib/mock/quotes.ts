@@ -3,7 +3,7 @@ import { MockQuoteRequest, QuoteRequest } from "@/types/quote";
 export const mockQuoteRequests: QuoteRequest[] = [
   MockQuoteRequest({
     id: "quote_mock_1",
-    organization_id: "org_mock_1",
+    account_id: "org_mock_1",
     contact_id: "contact_mock_1",
     lead_event_id: "lead_mock_6",
     service_type: "AC tune-up + repair",
@@ -14,7 +14,7 @@ export const mockQuoteRequests: QuoteRequest[] = [
   }),
   MockQuoteRequest({
     id: "quote_mock_2",
-    organization_id: "org_mock_2",
+    account_id: "org_mock_2",
     contact_id: "contact_mock_3",
     lead_event_id: "lead_mock_8",
     service_type: "Roof replacement",

@@ -11,7 +11,7 @@ import {
 
 interface QuoteRow {
   id: string;
-  organization_id: string;
+  account_id: string;
   contact_id: string;
   lead_event_id: string | null;
   service_type: string;
@@ -27,7 +27,7 @@ interface QuoteRow {
 function rowToQuote(row: QuoteRow): QuoteRequest {
   return {
     id: row.id,
-    organization_id: row.organization_id,
+    account_id: row.account_id,
     contact_id: row.contact_id,
     lead_event_id: row.lead_event_id ?? undefined,
     service_type: row.service_type,
@@ -42,23 +42,23 @@ function rowToQuote(row: QuoteRow): QuoteRequest {
 }
 
 export async function listQuoteRequests(params: {
-  organizationId?: string;
+  accountId?: string;
 }): Promise<Result<QuoteRequest[]>> {
-  const scope = await withTenantScope(params.organizationId);
+  const scope = await withTenantScope(params.accountId);
   if (!scope.ok) return err(scope.error.code, scope.error.message);
 
   if (db === null) {
     const all = getMockQuoteRequests();
-    if (scope.effectiveOrgId) {
-      return ok(all.filter((q) => q.organization_id === scope.effectiveOrgId));
+    if (scope.effectiveAccountId) {
+      return ok(all.filter((q) => q.account_id === scope.effectiveAccountId));
     }
     return ok(all);
   }
 
   try {
     const rows = await db.quoteRequest.findMany({
-      where: scope.effectiveOrgId
-        ? { organization_id: scope.effectiveOrgId }
+      where: scope.effectiveAccountId
+        ? { account_id: scope.effectiveAccountId }
         : undefined,
       orderBy: { created_at: "desc" },
     });
@@ -79,7 +79,7 @@ export async function getQuoteRequestById(
     if (!found) return err("not_found", `QuoteRequest ${id} not found.`);
     const scoped = assertRowInScope(
       found,
-      scope.effectiveOrgId,
+      scope.effectiveAccountId,
       isCrossTenantRole(scope.session),
     );
     return scoped.ok ? ok(found) : err(scoped.error.code, scoped.error.message);
@@ -91,7 +91,7 @@ export async function getQuoteRequestById(
     const quote = rowToQuote(row);
     const scoped = assertRowInScope(
       quote,
-      scope.effectiveOrgId,
+      scope.effectiveAccountId,
       isCrossTenantRole(scope.session),
     );
     return scoped.ok ? ok(quote) : err(scoped.error.code, scoped.error.message);
