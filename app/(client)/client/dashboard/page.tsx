@@ -1,5 +1,5 @@
 import StatCard from "@/components/dashboard/StatCard";
-import { getCurrentOrganization } from "@/lib/auth/session";
+import { getCurrentAccount } from "@/lib/auth/session";
 import { RevenueMetrics } from "@/lib/data";
 
 const formatUsd = (cents: number): string =>
@@ -12,12 +12,12 @@ const formatUsd = (cents: number): string =>
 const formatSeconds = (s: number): string =>
   s < 60 ? `${s}s` : `${Math.round(s / 60)}m ${s % 60}s`;
 
-const FALLBACK_ORG_ID = "org_mock_1";
+const FALLBACK_ACCOUNT_ID = "org_mock_1";
 
 export default async function ClientDashboard() {
-  const org = await getCurrentOrganization();
+  const org = await getCurrentAccount();
   const result = await RevenueMetrics.getCurrentRevenueMetrics({
-    organizationId: org?.id ?? FALLBACK_ORG_ID,
+    accountId: org?.id ?? FALLBACK_ACCOUNT_ID,
   });
   const m = result.ok ? result.data : null;
 

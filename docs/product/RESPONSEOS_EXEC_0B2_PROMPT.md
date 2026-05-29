@@ -139,7 +139,7 @@ Define the **minimum** typed shapes the interface and mock need, co-located in
   names (e.g. `voice.session_started`, `voice.session_ended`) in a type union or comment
   for forward alignment, but emit nothing to any ledger.
 - `SessionContext` should carry the tenant scope the gateway will pass (e.g. an
-  `accountId`/`organizationId` field and a session id) so the shape is tenant-aware by
+  `accountId`/`accountId` field and a session id) so the shape is tenant-aware by
   construction — but **derive nothing from client input** and **persist nothing**. This is
   a pure in-memory shape; tenant *enforcement* remains the data layer's job (ADR-0011),
   not this interface's.

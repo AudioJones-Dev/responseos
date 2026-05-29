@@ -225,7 +225,7 @@ Until the gate passes, the gateway runs on the mock adapter. The gate is owned b
 
 ## 13. Observability hooks
 
-The gateway and core emit through OpenTelemetry to Sentry (errors/release health), Better Stack (uptime/logs/on-call), and PostHog (product analytics) — all tagged with `organization_id`, never raw PII (ADR-0018). Realtime-specific signals: concurrent sessions, barge-in latency, provider-failover rate, tool-call latency, normalization lag. Detail in [`../ops/RESPONSEOS_OBSERVABILITY_AND_GOVERNANCE.md`](../ops/RESPONSEOS_OBSERVABILITY_AND_GOVERNANCE.md).
+The gateway and core emit through OpenTelemetry to Sentry (errors/release health), Better Stack (uptime/logs/on-call), and PostHog (product analytics) — all tagged with `account_id`, never raw PII (ADR-0018). Realtime-specific signals: concurrent sessions, barge-in latency, provider-failover rate, tool-call latency, normalization lag. Detail in [`../ops/RESPONSEOS_OBSERVABILITY_AND_GOVERNANCE.md`](../ops/RESPONSEOS_OBSERVABILITY_AND_GOVERNANCE.md).
 
 ---
 

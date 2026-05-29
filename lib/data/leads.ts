@@ -17,7 +17,7 @@ import {
 
 interface LeadEventRow {
   id: string;
-  organization_id: string;
+  account_id: string;
   contact_id: string | null;
   call_id: string | null;
   source: string;
@@ -34,7 +34,7 @@ interface LeadEventRow {
 function rowToLeadEvent(row: LeadEventRow): LeadEvent {
   return {
     id: row.id,
-    organization_id: row.organization_id,
+    account_id: row.account_id,
     contact_id: row.contact_id ?? undefined,
     call_id: row.call_id ?? undefined,
     source: row.source as LeadEventSource,
@@ -50,16 +50,16 @@ function rowToLeadEvent(row: LeadEventRow): LeadEvent {
 }
 
 export async function listLeads(params: {
-  organizationId?: string;
+  accountId?: string;
   status?: LeadEventStatus;
 }): Promise<Result<LeadEvent[]>> {
-  const scope = await withTenantScope(params.organizationId);
+  const scope = await withTenantScope(params.accountId);
   if (!scope.ok) return err(scope.error.code, scope.error.message);
 
   if (db === null) {
     let all = getMockLeadEvents();
-    if (scope.effectiveOrgId) {
-      all = all.filter((l) => l.organization_id === scope.effectiveOrgId);
+    if (scope.effectiveAccountId) {
+      all = all.filter((l) => l.account_id === scope.effectiveAccountId);
     }
     if (params.status) {
       all = all.filter((l) => l.status === params.status);
@@ -70,8 +70,8 @@ export async function listLeads(params: {
   try {
     const rows = await db.leadEvent.findMany({
       where: {
-        ...(scope.effectiveOrgId
-          ? { organization_id: scope.effectiveOrgId }
+        ...(scope.effectiveAccountId
+          ? { account_id: scope.effectiveAccountId }
           : {}),
         ...(params.status ? { status: params.status } : {}),
       },
@@ -92,7 +92,7 @@ export async function getLeadById(id: string): Promise<Result<LeadEvent>> {
     if (!found) return err("not_found", `LeadEvent ${id} not found.`);
     const scoped = assertRowInScope(
       found,
-      scope.effectiveOrgId,
+      scope.effectiveAccountId,
       isCrossTenantRole(scope.session),
     );
     return scoped.ok ? ok(found) : err(scoped.error.code, scoped.error.message);
@@ -104,7 +104,7 @@ export async function getLeadById(id: string): Promise<Result<LeadEvent>> {
     const lead = rowToLeadEvent(row);
     const scoped = assertRowInScope(
       lead,
-      scope.effectiveOrgId,
+      scope.effectiveAccountId,
       isCrossTenantRole(scope.session),
     );
     return scoped.ok ? ok(lead) : err(scoped.error.code, scoped.error.message);

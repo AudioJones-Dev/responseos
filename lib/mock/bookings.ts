@@ -9,7 +9,7 @@ const BOOKING_2_END = "2026-05-09T18:00:00.000Z";
 export const mockBookings: Booking[] = [
   MockBooking({
     id: "booking_mock_1",
-    organization_id: "org_mock_1",
+    account_id: "org_mock_1",
     contact_id: "contact_mock_2",
     lead_event_id: "lead_mock_3",
     calendar_provider: "google",
@@ -21,7 +21,7 @@ export const mockBookings: Booking[] = [
   }),
   MockBooking({
     id: "booking_mock_2",
-    organization_id: "org_mock_2",
+    account_id: "org_mock_2",
     contact_id: "contact_mock_3",
     lead_event_id: "lead_mock_5",
     calendar_provider: "calcom",

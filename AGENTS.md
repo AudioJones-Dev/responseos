@@ -22,7 +22,7 @@ This file is the contract for any AI agent (Claude Code, Codex, etc.) working in
 - **No real secrets in the repo.** `.env.example` is placeholders only. If you need a credential to test, ask the human — don't paste one in.
 - **No Firebase.**
 - **No production deploys** from this repo until v0.3 readiness gates clear.
-- **Tenant isolation is non-negotiable.** Every read/write filters by `organizationId` derived from the session, never from client input. See [`docs/SECURITY.md`](./docs/SECURITY.md).
+- **Tenant isolation is non-negotiable.** Every read/write filters by `accountId` derived from the session, never from client input. See [`docs/SECURITY.md`](./docs/SECURITY.md).
 - **Webhook signature validation is mandatory** before any business mutation. See ADR-0009 in [`docs/DECISIONS.md`](./docs/DECISIONS.md).
 - **Provider adapters must fall back to mock** when env vars are missing. The app boots and runs without secrets at every version.
 - **ResponseOS is not HIPAA-certified.** Don't represent it as compliant in copy, comments, or commits.

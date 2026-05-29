@@ -101,22 +101,22 @@ describe("API routes use canonical Result<T> envelope", () => {
     if (body.ok) expect(body.data.id).toBe(fixture.id);
   });
 
-  test("GET /api/reports/client/:organizationId preserves wrapper shape", async () => {
+  test("GET /api/reports/client/:accountId preserves wrapper shape", async () => {
     await asAjAdmin();
     const { GET } = await import(
-      "@/app/api/reports/client/[organizationId]/route"
+      "@/app/api/reports/client/[accountId]/route"
     );
     const res = await GET(new Request("http://x/"), {
-      params: Promise.resolve({ organizationId: "org_mock_1" }),
+      params: Promise.resolve({ accountId: "org_mock_1" }),
     });
     expect(res.status).toBe(200);
     const body = await bodyOf<{
-      organization_id: string;
+      account_id: string;
       metrics: unknown[];
     }>(res);
     expect(body.ok).toBe(true);
     if (body.ok) {
-      expect(body.data.organization_id).toBe("org_mock_1");
+      expect(body.data.account_id).toBe("org_mock_1");
       expect(Array.isArray(body.data.metrics)).toBe(true);
     }
   });
@@ -127,12 +127,12 @@ describe("API routes use canonical Result<T> envelope", () => {
     const res = await GET();
     const body = await bodyOf<{
       authenticated: boolean;
-      organization: { id: string } | null;
+      account: { id: string } | null;
     }>(res);
     expect(body.ok).toBe(true);
     if (body.ok) {
       expect(body.data.authenticated).toBe(true);
-      expect(body.data.organization?.id).toBe("org_mock_1");
+      expect(body.data.account?.id).toBe("org_mock_1");
     }
   });
 });
@@ -144,12 +144,12 @@ describe("API routes honor session tenant scope", () => {
     await asClientAdminOrg1();
     const { GET } = await import("@/app/api/calls/route");
     const res = await GET();
-    const body = await bodyOf<{ organization_id: string }[]>(res);
+    const body = await bodyOf<{ account_id: string }[]>(res);
     expect(body.ok).toBe(true);
     if (body.ok) {
       expect(body.data.length).toBeGreaterThan(0);
       expect(
-        body.data.every((c) => c.organization_id === "org_mock_1"),
+        body.data.every((c) => c.account_id === "org_mock_1"),
       ).toBe(true);
     }
   });
@@ -158,22 +158,22 @@ describe("API routes honor session tenant scope", () => {
     await asAjAdmin();
     const { GET } = await import("@/app/api/calls/route");
     const res = await GET();
-    const body = await bodyOf<{ organization_id: string }[]>(res);
+    const body = await bodyOf<{ account_id: string }[]>(res);
     expect(body.ok).toBe(true);
     if (body.ok) {
-      const orgs = new Set(body.data.map((c) => c.organization_id));
+      const orgs = new Set(body.data.map((c) => c.account_id));
       expect(orgs.has("org_mock_1")).toBe(true);
       expect(orgs.has("org_mock_2")).toBe(true);
     }
   });
 
-  test("GET /api/reports/client/:organizationId across tenants → 403", async () => {
+  test("GET /api/reports/client/:accountId across tenants → 403", async () => {
     await asClientAdminOrg1();
     const { GET } = await import(
-      "@/app/api/reports/client/[organizationId]/route"
+      "@/app/api/reports/client/[accountId]/route"
     );
     const res = await GET(new Request("http://x/"), {
-      params: Promise.resolve({ organizationId: "org_mock_2" }),
+      params: Promise.resolve({ accountId: "org_mock_2" }),
     });
     expect(res.status).toBe(403);
     const body = await bodyOf<unknown>(res);
@@ -185,15 +185,15 @@ describe("API routes honor session tenant scope", () => {
 // ---- Mock fallback preserved --------------------------------------------
 
 describe("DATABASE_URL unset preserves mock fallback", () => {
-  test("admin clients page renders the mock organization roster", async () => {
+  test("admin clients page renders the mock account roster", async () => {
     delete (process.env as MutableEnv).DATABASE_URL;
     await asAjAdmin();
     const Page = (await import("@/app/(admin)/admin/clients/page")).default;
     const tree = await Page();
     // Render server-component output via React Server Components is not in
     // scope; sanity-check the data path by re-running the underlying accessor.
-    const { Organizations } = await import("@/lib/data");
-    const result = await Organizations.listOrganizations();
+    const { Accounts } = await import("@/lib/data");
+    const result = await Accounts.listAccounts();
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.data.map((o) => o.id)).toEqual(

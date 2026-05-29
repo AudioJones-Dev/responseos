@@ -90,7 +90,7 @@ flowchart LR
 
 ResponseOS is a **multi-tenant SaaS platform** built on **one shared codebase** serving **many client tenants** — never a repo-per-client or a deploy-per-customer. The MVP may launch with one internal tenant and one pilot client, but the architecture supports many tenants without cloning the app.
 
-Every major entity is tenant-aware (scoped by `organization_id`, derived from the authenticated session, never from client input): calls, transcripts, contacts, deals, tickets, workflows, tool calls, audit logs, notifications, booking requests, integrations, API credentials, provider configs.
+Every major entity is tenant-aware (scoped by `account_id`, derived from the authenticated session, never from client input): calls, transcripts, contacts, deals, tickets, workflows, tool calls, audit logs, notifications, booking requests, integrations, API credentials, provider configs.
 
 The platform supports: per-tenant Twilio numbers · per-tenant prompts/policies · per-tenant workflows · per-tenant CRM integrations · per-tenant calendars · per-tenant reporting · future white-labeling · future SaaS billing. See [`RESPONSEOS_SYSTEM_ARCHITECTURE.md`](../architecture/RESPONSEOS_SYSTEM_ARCHITECTURE.md) § Tenancy and [`RESPONSEOS_DATA_MODEL.md`](../architecture/RESPONSEOS_DATA_MODEL.md).
 
@@ -183,7 +183,7 @@ These constrain every implementation phase:
 2. **Keep the event ledger as the internal system of record;** HubSpot is the external CRM system of record. (ADR-0002, ADR-0015)
 3. **No provider-specific business logic.** All provider behavior sits behind adapters; Grok↔OpenAI failover is transparent. (ADR-0012)
 4. **Support provider swapping and future multi-provider expansion** via the abstraction layer.
-5. **Tenant isolation is mandatory** — every read/write scoped by session-derived `organization_id`. (`SECURITY.md`)
+5. **Tenant isolation is mandatory** — every read/write scoped by session-derived `account_id`. (`SECURITY.md`)
 6. **Typed contracts** everywhere (TypeScript + Prisma + Zod at boundaries).
 7. **Auditability + replayable workflows** — facts recompute from the ledger; n8n runs are logged.
 8. **Webhook signature validation is mandatory before any business mutation.** (ADR-0009)

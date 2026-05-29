@@ -2,12 +2,12 @@ import type { Prisma } from "@prisma/client";
 import { nextTestId } from "./ids";
 
 export function makeLead(
-  params: { organizationId: string },
+  params: { accountId: string },
   overrides: Partial<Prisma.LeadEventCreateInput> = {},
 ): Prisma.LeadEventCreateInput {
   const base: Prisma.LeadEventCreateInput = {
     id: overrides.id ?? nextTestId("lead"),
-    organization_id: params.organizationId,
+    account_id: params.accountId,
     source: "phone",
     event_type: "qualified_lead",
     status: "qualified",

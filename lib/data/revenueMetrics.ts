@@ -14,7 +14,7 @@ import {
 
 interface RevRow {
   id: string;
-  organization_id: string;
+  account_id: string;
   period_start: Date;
   period_end: Date;
   total_calls: number;
@@ -36,7 +36,7 @@ interface RevRow {
 function rowToRev(row: RevRow): RevenueMetrics {
   return {
     id: row.id,
-    organization_id: row.organization_id,
+    account_id: row.account_id,
     period_start: row.period_start.toISOString(),
     period_end: row.period_end.toISOString(),
     total_calls: row.total_calls,
@@ -57,23 +57,23 @@ function rowToRev(row: RevRow): RevenueMetrics {
 }
 
 export async function listRevenueMetrics(params: {
-  organizationId?: string;
+  accountId?: string;
 }): Promise<Result<RevenueMetrics[]>> {
-  const scope = await withTenantScope(params.organizationId);
+  const scope = await withTenantScope(params.accountId);
   if (!scope.ok) return err(scope.error.code, scope.error.message);
 
   if (db === null) {
     const all = getMockRevenueMetrics();
-    if (scope.effectiveOrgId) {
-      return ok(all.filter((r) => r.organization_id === scope.effectiveOrgId));
+    if (scope.effectiveAccountId) {
+      return ok(all.filter((r) => r.account_id === scope.effectiveAccountId));
     }
     return ok(all);
   }
 
   try {
     const rows = await db.revenueMetrics.findMany({
-      where: scope.effectiveOrgId
-        ? { organization_id: scope.effectiveOrgId }
+      where: scope.effectiveAccountId
+        ? { account_id: scope.effectiveAccountId }
         : undefined,
       orderBy: { period_start: "desc" },
     });
@@ -84,16 +84,16 @@ export async function listRevenueMetrics(params: {
 }
 
 export async function getCurrentRevenueMetrics(params: {
-  organizationId?: string;
+  accountId?: string;
 }): Promise<Result<RevenueMetrics | null>> {
-  const scope = await withTenantScope(params.organizationId);
+  const scope = await withTenantScope(params.accountId);
   if (!scope.ok) return err(scope.error.code, scope.error.message);
 
   if (db === null) {
     const current = getCurrentMockRevenueMetrics();
     if (
-      scope.effectiveOrgId &&
-      current.organization_id !== scope.effectiveOrgId
+      scope.effectiveAccountId &&
+      current.account_id !== scope.effectiveAccountId
     ) {
       return ok(null);
     }
@@ -102,8 +102,8 @@ export async function getCurrentRevenueMetrics(params: {
 
   try {
     const row = await db.revenueMetrics.findFirst({
-      where: scope.effectiveOrgId
-        ? { organization_id: scope.effectiveOrgId }
+      where: scope.effectiveAccountId
+        ? { account_id: scope.effectiveAccountId }
         : undefined,
       orderBy: { period_start: "desc" },
     });
@@ -111,7 +111,7 @@ export async function getCurrentRevenueMetrics(params: {
     const metric = rowToRev(row);
     const scoped = assertRowInScope(
       metric,
-      scope.effectiveOrgId,
+      scope.effectiveAccountId,
       isCrossTenantRole(scope.session),
     );
     return scoped.ok

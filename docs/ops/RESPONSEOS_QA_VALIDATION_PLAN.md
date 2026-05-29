@@ -38,7 +38,7 @@ CI runs **`validate`** (lint + typecheck + unit test + build) and **`integration
 
 | Category | What it asserts |
 |---|---|
-| **Tenant isolation** | Every tenant-scoped route/table: no cross-tenant read/write; `organization_id` from session only; mismatch → `403 TENANT_SCOPE_DENIED` |
+| **Tenant isolation** | Every tenant-scoped route/table: no cross-tenant read/write; `account_id` from session only; mismatch → `403 TENANT_SCOPE_DENIED` |
 | **Signature validation** | Each webhook (Twilio, Grok, OpenAI, HubSpot, n8n, Stripe): invalid sig → 401, no parse, no mutation; valid sig → ledger write |
 | **Idempotency / dedupe** | Replayed webhook = no-op; same `Idempotency-Key` + diff body → 409; same `workflowRunId` = replay |
 | **Event-ledger discipline** | No business mutation precedes its ledger write; facts recompute from ledger |

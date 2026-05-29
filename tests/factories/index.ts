@@ -1,5 +1,5 @@
 export { nextTestId, resetFactoryCounters } from "./ids";
-export { makeOrganization } from "./organizations";
+export { makeAccount } from "./accounts";
 export { makeUser } from "./users";
 export { makeAssessmentReport } from "./assessmentReports";
 export { makeEngagement } from "./engagements";

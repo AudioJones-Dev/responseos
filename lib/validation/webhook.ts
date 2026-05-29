@@ -67,6 +67,6 @@ export const WebhookIngestEnvelopeSchema = z.object({
   event_type: z.string().min(1),
   raw_body: z.string(),
   signature_header: z.string().nullable().optional(),
-  organization_id: z.string().optional(),
+  account_id: z.string().optional(),
 });
 export type WebhookIngestEnvelope = z.infer<typeof WebhookIngestEnvelopeSchema>;

@@ -3,7 +3,7 @@
 The schema mirrors `types/*.ts` and `prisma/schema.prisma`. Conventions:
 
 - snake_case columns to match API/JSON shapes already used by the app.
-- Tenant isolation: every per-tenant table carries `organization_id`.
+- Tenant isolation: every per-tenant table carries `account_id`.
 - Money is stored in **cents** (Int).
 - JSON fields use Postgres `jsonb` so config payloads stay flexible.
 - IDs are `cuid()` strings; timestamps are ISO 8601.
@@ -33,7 +33,7 @@ Operator + tenant users.
 | field | type | notes |
 |---|---|---|
 | id | string | PK |
-| organization_id | string? | nullable for AJ-internal staff |
+| account_id | string? | nullable for AJ-internal staff |
 | role | enum | `aj_admin` \| `operator` \| `client_admin` \| `client_viewer` |
 | name, email, phone | strings | email unique |
 | created_at, updated_at | timestamp | |
@@ -43,7 +43,7 @@ Customer/prospect record per workspace.
 
 | field | type | notes |
 |---|---|---|
-| id, organization_id | string | tenant-scoped |
+| id, account_id | string | tenant-scoped |
 | first_name, last_name, phone, email | optional | |
 | address, city, state, zip | optional | |
 | source | enum | `call` \| `sms` \| `form` \| `manual` \| `crm_sync` |
@@ -54,7 +54,7 @@ One logical phone interaction.
 
 | field | type | notes |
 |---|---|---|
-| id, organization_id | string | |
+| id, account_id | string | |
 | contact_id | string? | nullable for spam/anonymous |
 | provider | enum | `twilio` \| `retell` \| `vapi` \| `bland` \| `manual` |
 | provider_call_id | string? | external id |
@@ -73,7 +73,7 @@ One logical phone interaction.
 
 | field | type | notes |
 |---|---|---|
-| id, organization_id | string | |
+| id, account_id | string | |
 | contact_id, call_id | string? | optional links |
 | source | enum | `phone` \| `sms` \| `website` \| `manual` \| `outbound` |
 | event_type | enum | `missed_call` \| `answered_call` \| `quote_request` \| `booking_request` \| `qualified_lead` \| `spam` \| `follow_up_needed` \| `appointment_booked` \| `quote_sent` \| `job_won` \| `job_lost` |
@@ -104,7 +104,7 @@ Appointment / job visit.
 
 | field | type | notes |
 |---|---|---|
-| id, organization_id, contact_id | string | |
+| id, account_id, contact_id | string | |
 | lead_event_id | string? | |
 | calendar_provider | enum | `google` \| `calcom` \| `ghl` \| `manual` |
 | external_event_id | string? | |
@@ -118,7 +118,7 @@ Quote/estimate header.
 
 | field | type | notes |
 |---|---|---|
-| id, organization_id, contact_id | string | |
+| id, account_id, contact_id | string | |
 | lead_event_id | string? | |
 | service_type | string | |
 | description | string? | |
@@ -132,7 +132,7 @@ Trigger-driven workflow definitions.
 
 | field | type | notes |
 |---|---|---|
-| id, organization_id | string | |
+| id, account_id | string | |
 | name | string | |
 | trigger_type | enum | `missed_call` \| `after_hours_call` \| `new_lead` \| `quote_requested` \| `booking_created` \| `no_response` \| `job_completed` |
 | status | enum | `active` \| `paused` \| `draft` |
@@ -145,7 +145,7 @@ Outbound dispatch record.
 
 | field | type | notes |
 |---|---|---|
-| id, organization_id | string | |
+| id, account_id | string | |
 | lead_event_id | string? | |
 | channel | enum | `sms` \| `email` \| `in_app` \| `slack` |
 | recipient | string | |
@@ -158,7 +158,7 @@ Aggregated KPI facts per period per workspace.
 
 | field | type | notes |
 |---|---|---|
-| id, organization_id | string | |
+| id, account_id | string | |
 | period_start, period_end | timestamp | unique together with org |
 | total_calls, missed_calls, calls_answered_by_ai | int | |
 | qualified_leads, appointments_booked, quotes_requested, quotes_sent, jobs_won | int | |
@@ -169,7 +169,7 @@ Aggregated KPI facts per period per workspace.
 
 ## Modeling rules (apply to all tables, current and future)
 
-- Every mutable business table carries `organization_id`, `created_at`, `updated_at`, and (where applicable) `external_ids`/`source_system` references.
+- Every mutable business table carries `account_id`, `created_at`, `updated_at`, and (where applicable) `external_ids`/`source_system` references.
 - Every provider callback should land first in the immutable event ledger (v0.2) with a durable dedupe key.
 - Every user-visible metric is computed from normalized facts, not directly from provider payloads.
 

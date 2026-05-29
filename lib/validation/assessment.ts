@@ -36,7 +36,7 @@ export const AssessmentInputsSchema = z.object({
 export type AssessmentInputs = z.infer<typeof AssessmentInputsSchema>;
 
 export const CreateAssessmentInputSchema = z.object({
-  organization_id: idSchema,
+  account_id: idSchema,
   inputs_json: AssessmentInputsSchema,
 });
 export type CreateAssessmentInput = z.infer<typeof CreateAssessmentInputSchema>;

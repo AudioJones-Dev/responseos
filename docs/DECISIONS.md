@@ -64,7 +64,7 @@ The compliance posture is a per-tenant tier, not a global default. Provider adap
 
 **Context.** Need multi-tenant auth with role-aware sessions for `aj_admin`, `operator`, `client_admin`, `client_viewer`. Need SSO support for AJ Digital staff and per-tenant invite flows for client users. Building this in-house is months of work that doesn't differentiate.
 
-**Decision.** Clerk for auth in the Standard lane. `lib/auth/*` wraps Clerk and exposes a single function that derives the `organizationId` and role from the session — every data accessor in `lib/data/*` takes the session-derived `organizationId`, never trusting client-supplied input. HIPAA lane will swap Clerk for Cognito (or equivalent BAA-eligible auth) when the lane ships.
+**Decision.** Clerk for auth in the Standard lane. `lib/auth/*` wraps Clerk and exposes a single function that derives the `accountId` and role from the session — every data accessor in `lib/data/*` takes the session-derived `accountId`, never trusting client-supplied input. HIPAA lane will swap Clerk for Cognito (or equivalent BAA-eligible auth) when the lane ships.
 
 **Consequences.** Faster v0.2 → v1.0 path. Cost: Clerk pricing scales with MAU; budget item per tenant. Lock-in is bounded because the integration is one module (`lib/auth/*`).
 
@@ -76,7 +76,7 @@ The compliance posture is a per-tenant tier, not a global default. Provider adap
 
 **Context.** Need S3-compatible object storage for call recordings, quote photos, and report exports. Egress costs on AWS S3 are punitive for repeated dashboard exports and client-portal media. HIPAA lane requires S3 anyway (BAA, KMS, lifecycle policies).
 
-**Decision.** Cloudflare R2 in Standard and Privacy-hardened lanes (zero egress, S3-compatible API). AWS S3 in HIPAA-ready lane (BAA, KMS, versioning, lifecycle policies). Storage keys carry `organization_id` prefixes for tenant isolation at the bucket-policy level.
+**Decision.** Cloudflare R2 in Standard and Privacy-hardened lanes (zero egress, S3-compatible API). AWS S3 in HIPAA-ready lane (BAA, KMS, versioning, lifecycle policies). Storage keys carry `account_id` prefixes for tenant isolation at the bucket-policy level.
 
 **Consequences.** Lower egress cost for client portals at scale. Tenant isolation via key prefix + IAM policy. HIPAA lane requires a separate code path for credentials and bucket selection — handled in `lib/providers/storage/*` (planned).
 
@@ -197,7 +197,7 @@ Both providers sit behind a single provider-abstraction interface in `lib/provid
 
 **Context.** A live call needs fast, short-lived shared state — partial transcript, current turn, qualification facts gathered so far, active tool-call context, provider/session handles, failover bookkeeping — accessible across gateway workers and during a provider failover, but not durable business data.
 
-**Decision.** **Redis** holds ephemeral realtime session state for the voice gateway (and is the backing store for queues/rate-limit counters where useful). Redis is never the system of record: every fact that must survive the call is written to the canonical event ledger (Postgres). Session keys are namespaced by `organization_id` and `session_id` and carry a TTL so abandoned sessions self-expire.
+**Decision.** **Redis** holds ephemeral realtime session state for the voice gateway (and is the backing store for queues/rate-limit counters where useful). Redis is never the system of record: every fact that must survive the call is written to the canonical event ledger (Postgres). Session keys are namespaced by `account_id` and `session_id` and carry a TTL so abandoned sessions self-expire.
 
 **Consequences.** Fast cross-worker session continuity and clean failover. Redis loss degrades in-flight calls only (no durable data loss) because the ledger is authoritative. Tenant isolation is enforced via key namespacing; no cross-tenant key access. Adds Redis to the Standard-lane infra footprint and to the secrets/observability surface.
 
@@ -254,7 +254,7 @@ CRM remains pluggable per tenant: HubSpot is the default, GoHighLevel and others
 
 **Context.** The platform needs product analytics (funnel, activation, feature usage), error/release health, and uptime/log monitoring across the Next.js app, the voice gateway, and async workers — with per-tenant scoping.
 
-**Decision.** **PostHog** for product analytics, **Sentry** for error tracking and release health, **Better Stack** for uptime monitoring, log management, and incident/on-call alerting — all emitting through an **OpenTelemetry** instrumentation spine where practical. Telemetry is tagged with `organization_id` (never raw PII) so analytics and dashboards are tenant-scoped. Voice-gateway realtime metrics (concurrency, barge-in latency, provider-failover rate) are first-class signals.
+**Decision.** **PostHog** for product analytics, **Sentry** for error tracking and release health, **Better Stack** for uptime monitoring, log management, and incident/on-call alerting — all emitting through an **OpenTelemetry** instrumentation spine where practical. Telemetry is tagged with `account_id` (never raw PII) so analytics and dashboards are tenant-scoped. Voice-gateway realtime metrics (concurrency, barge-in latency, provider-failover rate) are first-class signals.
 
 **Consequences.** Clear separation of product analytics from operational monitoring. Per-tenant observability without leaking PII into third-party analytics. Cost: three observability vendors to manage plus the OTel pipeline; secrets and data-processing terms for each must be tracked in `RESPONSEOS_SECURITY_AND_COMPLIANCE.md`. Mock-first applies: in dev/test these emit to no-op/local sinks when keys are absent.
 

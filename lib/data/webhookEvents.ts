@@ -13,7 +13,7 @@ export type WebhookProcessStatus =
 
 export interface WebhookEvent {
   id: string;
-  organization_id?: string;
+  account_id?: string;
   provider: string;
   provider_event_id: string;
   event_type: string;
@@ -29,7 +29,7 @@ export interface WebhookEvent {
 
 interface WebhookRow {
   id: string;
-  organization_id: string | null;
+  account_id: string | null;
   provider: string;
   provider_event_id: string;
   event_type: string;
@@ -46,7 +46,7 @@ interface WebhookRow {
 function rowToWebhook(row: WebhookRow): WebhookEvent {
   return {
     id: row.id,
-    organization_id: row.organization_id ?? undefined,
+    account_id: row.account_id ?? undefined,
     provider: row.provider,
     provider_event_id: row.provider_event_id,
     event_type: row.event_type,
@@ -80,7 +80,7 @@ export function computeDedupeHash(
  * return process_status = "duplicate" and do not insert again.
  */
 export async function recordWebhookEvent(entry: {
-  organization_id?: string;
+  account_id?: string;
   provider: string;
   provider_event_id: string;
   event_type: string;
@@ -107,7 +107,7 @@ export async function recordWebhookEvent(entry: {
 
     const created = await db.webhookEvent.create({
       data: {
-        organization_id: entry.organization_id ?? null,
+        account_id: entry.account_id ?? null,
         provider: entry.provider,
         provider_event_id: entry.provider_event_id,
         event_type: entry.event_type,

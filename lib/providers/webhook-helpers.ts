@@ -21,7 +21,7 @@ export function errorResponse(
  * 422 for validation, 500 for everything else.
  *
  * Pass `transform` to reshape the success payload (e.g. wrap a list in
- * `{ organization_id, metrics }`) while keeping the error envelope mapping.
+ * `{ account_id, metrics }`) while keeping the error envelope mapping.
  */
 export function respondWithResult<T, U = T>(
   result: Result<T>,

@@ -45,7 +45,7 @@ The following are **separate, later tasks**. Do not start, stub, or pre-build th
 4. **Do NOT add secrets.** No real keys anywhere; do not touch `.env.example` in this task.
 5. **Do NOT introduce Firebase** — no dependency, import, or config, ever.
 6. **Preserve the architecture invariants** and describe the map in their terms:
-   mock-first (ADR-0001), tenant-aware / `organization_id`(→`account_id`)-scoped derived
+   mock-first (ADR-0001), tenant-aware / `account_id`(→`account_id`)-scoped derived
    from session (SECURITY.md, ADR-0011), event-ledger-first (ADR-0002),
    provider-abstraction boundaries with no provider logic above the adapter (ADR-0012),
    modular monolith with the voice gateway as the **only** sanctioned service split
@@ -94,7 +94,7 @@ For **each** `lib/*` area that exists today, give exactly:
 - whether it **integrates a provider** and, if so, a note that the integration **falls
   back to a mock** when env vars are absent (ADR-0001), and
 - its **tenant-scope obligation** where relevant (e.g. `lib/data/*` filters by
-  session-derived `organization_id`; ADR-0011 / SECURITY.md).
+  session-derived `account_id`; ADR-0011 / SECURITY.md).
 
 Cover at minimum the areas observed in the tree:
 `lib/auth/`, `lib/automations/`, `lib/config/`, `lib/data/`, `lib/db/`, `lib/mock/`,

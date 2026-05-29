@@ -52,7 +52,7 @@ tests/                   ← unit / integration / e2e
 
 ## Multi-tenancy
 
-Every per-workspace row carries `organization_id`. All read/write paths filter by `organization_id` derived from the authenticated session. Operator (AJ Digital `aj_admin` / `operator`) roles can cross workspaces; client roles (`client_admin` / `client_viewer`) cannot.
+Every per-workspace row carries `account_id`. All read/write paths filter by `account_id` derived from the authenticated session. Operator (AJ Digital `aj_admin` / `operator`) roles can cross workspaces; client roles (`client_admin` / `client_viewer`) cannot.
 
 For larger or regulated tenants, the platform supports per-tenant database isolation (own DB, own VPC). Smaller tenants share the main cluster with strict tenant scoping.
 

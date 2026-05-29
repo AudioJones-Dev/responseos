@@ -67,9 +67,9 @@ export async function getLeadQualificationByLeadId(
     if (!isCrossTenantRole(scope.session)) {
       const lead = await db.leadEvent.findUnique({
         where: { id: leadEventId },
-        select: { organization_id: true },
+        select: { account_id: true },
       });
-      if (!lead || lead.organization_id !== scope.effectiveOrgId) {
+      if (!lead || lead.account_id !== scope.effectiveAccountId) {
         return err(
           "tenant_scope_denied",
           "Caller is not in the resource's tenant scope.",

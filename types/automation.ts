@@ -15,7 +15,7 @@ export type WorkflowProvider = "n8n" | "make" | "internal";
 
 export interface Automation {
   id: UUID;
-  organization_id: UUID;
+  account_id: UUID;
   name: string;
   trigger_type: AutomationTriggerType;
   status: AutomationStatus;
@@ -30,7 +30,7 @@ export function MockAutomation(overrides: Partial<Automation> = {}): Automation 
   const now = nowIso();
   return {
     id: newId(),
-    organization_id: "org_mock_1",
+    account_id: "org_mock_1",
     name: "Missed Call Recovery",
     trigger_type: "missed_call",
     status: "active",

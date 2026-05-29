@@ -11,7 +11,7 @@ import {
 
 interface BookingRow {
   id: string;
-  organization_id: string;
+  account_id: string;
   contact_id: string;
   lead_event_id: string | null;
   calendar_provider: string;
@@ -29,7 +29,7 @@ interface BookingRow {
 function rowToBooking(row: BookingRow): Booking {
   return {
     id: row.id,
-    organization_id: row.organization_id,
+    account_id: row.account_id,
     contact_id: row.contact_id,
     lead_event_id: row.lead_event_id ?? undefined,
     calendar_provider: row.calendar_provider as CalendarProvider,
@@ -46,23 +46,23 @@ function rowToBooking(row: BookingRow): Booking {
 }
 
 export async function listBookings(params: {
-  organizationId?: string;
+  accountId?: string;
 }): Promise<Result<Booking[]>> {
-  const scope = await withTenantScope(params.organizationId);
+  const scope = await withTenantScope(params.accountId);
   if (!scope.ok) return err(scope.error.code, scope.error.message);
 
   if (db === null) {
     const all = getMockBookings();
-    if (scope.effectiveOrgId) {
-      return ok(all.filter((b) => b.organization_id === scope.effectiveOrgId));
+    if (scope.effectiveAccountId) {
+      return ok(all.filter((b) => b.account_id === scope.effectiveAccountId));
     }
     return ok(all);
   }
 
   try {
     const rows = await db.booking.findMany({
-      where: scope.effectiveOrgId
-        ? { organization_id: scope.effectiveOrgId }
+      where: scope.effectiveAccountId
+        ? { account_id: scope.effectiveAccountId }
         : undefined,
       orderBy: { start_time: "asc" },
     });
@@ -81,7 +81,7 @@ export async function getBookingById(id: string): Promise<Result<Booking>> {
     if (!found) return err("not_found", `Booking ${id} not found.`);
     const scoped = assertRowInScope(
       found,
-      scope.effectiveOrgId,
+      scope.effectiveAccountId,
       isCrossTenantRole(scope.session),
     );
     return scoped.ok ? ok(found) : err(scoped.error.code, scoped.error.message);
@@ -93,7 +93,7 @@ export async function getBookingById(id: string): Promise<Result<Booking>> {
     const booking = rowToBooking(row);
     const scoped = assertRowInScope(
       booking,
-      scope.effectiveOrgId,
+      scope.effectiveAccountId,
       isCrossTenantRole(scope.session),
     );
     return scoped.ok

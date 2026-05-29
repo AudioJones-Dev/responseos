@@ -10,7 +10,7 @@ import {
   LeadQualifications,
   Leads,
   Notifications,
-  Organizations,
+  Accounts,
   Quotes,
   RevenueMetrics,
   Users,
@@ -28,20 +28,20 @@ describe("data accessors against Postgres", () => {
     await disconnectTestDb();
   });
 
-  test("organization accessors list and fetch seeded tenants", async () => {
-    const list = await Organizations.listOrganizations();
+  test("account accessors list and fetch seeded tenants", async () => {
+    const list = await Accounts.listAccounts();
     expect(list.ok).toBe(true);
     if (!list.ok) return;
     expect(list.data.map((org) => org.id)).toEqual(["org_mock_1", "org_mock_2"]);
 
-    const found = await Organizations.getOrganizationById("org_mock_1");
+    const found = await Accounts.getAccountById("org_mock_1");
     expect(found.ok).toBe(true);
     if (!found.ok) return;
     expect(found.data.slug).toBe("sunshine-hvac");
   });
 
   test("user accessors list and fetch users", async () => {
-    const list = await Users.listUsers({ organizationId: "org_mock_1" });
+    const list = await Users.listUsers({ accountId: "org_mock_1" });
     expect(list.ok).toBe(true);
     if (!list.ok) return;
     expect(list.data.map((user) => user.id)).toEqual(["user_acme_owner_1", "user_acme_viewer_1"]);
@@ -53,7 +53,7 @@ describe("data accessors against Postgres", () => {
   });
 
   test("contact accessors list and fetch contacts", async () => {
-    const list = await Contacts.listContacts({ organizationId: "org_mock_1" });
+    const list = await Contacts.listContacts({ accountId: "org_mock_1" });
     expect(list.ok).toBe(true);
     if (!list.ok) return;
     expect(list.data).toHaveLength(2);
@@ -65,7 +65,7 @@ describe("data accessors against Postgres", () => {
   });
 
   test("call accessors preserve default ordering and fetch calls", async () => {
-    const list = await Calls.listCalls({ organizationId: "org_mock_1" });
+    const list = await Calls.listCalls({ accountId: "org_mock_1" });
     expect(list.ok).toBe(true);
     if (!list.ok) return;
     expect(list.data.map((call) => call.id)).toEqual(["call_mock_3", "call_mock_2", "call_mock_1"]);
@@ -77,7 +77,7 @@ describe("data accessors against Postgres", () => {
   });
 
   test("lead accessors list and fetch leads", async () => {
-    const list = await Leads.listLeads({ organizationId: "org_mock_1" });
+    const list = await Leads.listLeads({ accountId: "org_mock_1" });
     expect(list.ok).toBe(true);
     if (!list.ok) return;
     expect(list.data[0].id).toBe("lead_mock_11");
@@ -96,7 +96,7 @@ describe("data accessors against Postgres", () => {
   });
 
   test("booking accessors list and fetch bookings", async () => {
-    const list = await Bookings.listBookings({ organizationId: "org_mock_1" });
+    const list = await Bookings.listBookings({ accountId: "org_mock_1" });
     expect(list.ok).toBe(true);
     if (!list.ok) return;
     expect(list.data.map((booking) => booking.id)).toEqual(["booking_mock_1"]);
@@ -108,7 +108,7 @@ describe("data accessors against Postgres", () => {
   });
 
   test("quote accessors list and fetch quote requests", async () => {
-    const list = await Quotes.listQuoteRequests({ organizationId: "org_mock_2" });
+    const list = await Quotes.listQuoteRequests({ accountId: "org_mock_2" });
     expect(list.ok).toBe(true);
     if (!list.ok) return;
     expect(list.data.map((quote) => quote.id)).toEqual(["quote_mock_2"]);
@@ -120,31 +120,31 @@ describe("data accessors against Postgres", () => {
   });
 
   test("automation and notification list accessors read seeded rows", async () => {
-    const automations = await Automations.listAutomations({ organizationId: "org_mock_1" });
+    const automations = await Automations.listAutomations({ accountId: "org_mock_1" });
     expect(automations.ok).toBe(true);
     if (!automations.ok) return;
     expect(Array.isArray(automations.data)).toBe(true);
 
-    const notifications = await Notifications.listNotifications({ organizationId: "org_mock_1" });
+    const notifications = await Notifications.listNotifications({ accountId: "org_mock_1" });
     expect(notifications.ok).toBe(true);
     if (!notifications.ok) return;
     expect(Array.isArray(notifications.data)).toBe(true);
   });
 
   test("revenue metric accessors list and fetch current metrics", async () => {
-    const list = await RevenueMetrics.listRevenueMetrics({ organizationId: "org_mock_1" });
+    const list = await RevenueMetrics.listRevenueMetrics({ accountId: "org_mock_1" });
     expect(list.ok).toBe(true);
     if (!list.ok) return;
     expect(list.data.map((row) => row.id)).toEqual(["rev_mock_current", "rev_mock_prev_1", "rev_mock_prev_2"]);
 
-    const current = await RevenueMetrics.getCurrentRevenueMetrics({ organizationId: "org_mock_1" });
+    const current = await RevenueMetrics.getCurrentRevenueMetrics({ accountId: "org_mock_1" });
     expect(current.ok).toBe(true);
     if (!current.ok) return;
     expect(current.data?.id).toBe("rev_mock_current");
   });
 
   test("assessment and engagement accessors list and fetch v0.2 records", async () => {
-    const assessments = await Assessments.listAssessmentReports({ organizationId: "org_mock_1" });
+    const assessments = await Assessments.listAssessmentReports({ accountId: "org_mock_1" });
     expect(assessments.ok).toBe(true);
     if (!assessments.ok) return;
     expect(assessments.data.map((assessment) => assessment.id)).toEqual(["assessment_mock_1"]);
@@ -154,7 +154,7 @@ describe("data accessors against Postgres", () => {
     if (!assessment.ok) return;
     expect(assessment.data.readiness_score).toBe(72);
 
-    const engagements = await Engagements.listEngagements({ organizationId: "org_mock_1" });
+    const engagements = await Engagements.listEngagements({ accountId: "org_mock_1" });
     expect(engagements.ok).toBe(true);
     if (!engagements.ok) return;
     expect(engagements.data.map((engagement) => engagement.id)).toEqual(["engagement_mock_1"]);
@@ -167,7 +167,7 @@ describe("data accessors against Postgres", () => {
 
   test("audit log accessors record and list rows", async () => {
     const recorded = await AuditLogs.recordAuditLog({
-      organization_id: "org_mock_1",
+      account_id: "org_mock_1",
       actor_user_id: "user_aj_admin_1",
       actor_type: "user",
       action: "integration.audit.recorded",
@@ -179,7 +179,7 @@ describe("data accessors against Postgres", () => {
     });
     expect(recorded).toEqual({ ok: true, data: { recorded: true } });
 
-    const list = await AuditLogs.listAuditLogs({ organizationId: "org_mock_1", action: "integration.audit.recorded" });
+    const list = await AuditLogs.listAuditLogs({ accountId: "org_mock_1", action: "integration.audit.recorded" });
     expect(list.ok).toBe(true);
     if (!list.ok) return;
     expect(list.data).toHaveLength(1);
@@ -191,7 +191,7 @@ describe("data accessors against Postgres", () => {
     expect(hash).toMatch(/^[a-f0-9]{64}$/);
 
     const first = await WebhookEvents.recordWebhookEvent({
-      organization_id: "org_mock_1",
+      account_id: "org_mock_1",
       provider: "twilio",
       provider_event_id: "event_test_001",
       event_type: "call.completed",

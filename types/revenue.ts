@@ -2,7 +2,7 @@ import { Cents, ISODate, UUID, newId, nowIso } from "./common";
 
 export interface RevenueMetrics {
   id: UUID;
-  organization_id: UUID;
+  account_id: UUID;
   period_start: ISODate;
   period_end: ISODate;
   total_calls: number;
@@ -27,7 +27,7 @@ export function MockRevenueMetrics(
   const now = nowIso();
   return {
     id: newId(),
-    organization_id: "org_mock_1",
+    account_id: "org_mock_1",
     period_start: "2026-05-01T00:00:00.000Z",
     period_end: "2026-05-31T23:59:59.999Z",
     total_calls: 87,

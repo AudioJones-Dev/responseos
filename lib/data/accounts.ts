@@ -1,7 +1,7 @@
 import "@/lib/serverOnlyGuard";
 import { db } from "@/lib/db/client";
-import { getMockOrganizations } from "@/lib/mock/organizations";
-import type { Organization } from "@/types/organization";
+import { getMockAccounts } from "@/lib/mock/accounts";
+import type { Account } from "@/types/account";
 import { err, errFromThrown, ok, type Result } from "./result";
 import {
   assertRowInScope,
@@ -9,7 +9,7 @@ import {
   withTenantScope,
 } from "./session-helpers";
 
-function rowToOrganization(row: {
+function rowToAccount(row: {
   id: string;
   name: string;
   slug: string;
@@ -20,7 +20,7 @@ function rowToOrganization(row: {
   status: string;
   created_at: Date;
   updated_at: Date;
-}): Organization {
+}): Account {
   return {
     id: row.id,
     name: row.name,
@@ -29,47 +29,47 @@ function rowToOrganization(row: {
     website_url: row.website_url ?? undefined,
     primary_phone: row.primary_phone ?? undefined,
     timezone: row.timezone,
-    status: row.status as Organization["status"],
+    status: row.status as Account["status"],
     created_at: row.created_at.toISOString(),
     updated_at: row.updated_at.toISOString(),
   };
 }
 
-export async function listOrganizations(): Promise<Result<Organization[]>> {
+export async function listAccounts(): Promise<Result<Account[]>> {
   const scope = await withTenantScope(undefined);
   if (!scope.ok) return err(scope.error.code, scope.error.message);
 
   // Tenant users only ever see their own org via this accessor.
-  if (!isCrossTenantRole(scope.session) && scope.effectiveOrgId) {
-    const single = await getOrganizationById(scope.effectiveOrgId);
+  if (!isCrossTenantRole(scope.session) && scope.effectiveAccountId) {
+    const single = await getAccountById(scope.effectiveAccountId);
     if (!single.ok) return single;
     return ok([single.data]);
   }
 
   if (db === null) {
-    return ok(getMockOrganizations());
+    return ok(getMockAccounts());
   }
 
   try {
-    const rows = await db.organization.findMany({ orderBy: { created_at: "asc" } });
-    return ok(rows.map(rowToOrganization));
+    const rows = await db.account.findMany({ orderBy: { created_at: "asc" } });
+    return ok(rows.map(rowToAccount));
   } catch (e) {
-    return errFromThrown<Organization[]>(e);
+    return errFromThrown<Account[]>(e);
   }
 }
 
-export async function getOrganizationById(
+export async function getAccountById(
   id: string,
-): Promise<Result<Organization>> {
+): Promise<Result<Account>> {
   const scope = await withTenantScope(id);
   if (!scope.ok) return err(scope.error.code, scope.error.message);
 
   if (db === null) {
-    const found = getMockOrganizations().find((o) => o.id === id);
-    if (!found) return err("not_found", `Organization ${id} not found.`);
+    const found = getMockAccounts().find((o) => o.id === id);
+    if (!found) return err("not_found", `Account ${id} not found.`);
     return assertRowInScope(
-      { ...found, organization_id: found.id },
-      scope.effectiveOrgId,
+      { ...found, account_id: found.id },
+      scope.effectiveAccountId,
       isCrossTenantRole(scope.session),
     ).ok
       ? ok(found)
@@ -80,16 +80,16 @@ export async function getOrganizationById(
   }
 
   try {
-    const row = await db.organization.findUnique({ where: { id } });
-    if (!row) return err("not_found", `Organization ${id} not found.`);
-    const org = rowToOrganization(row);
+    const row = await db.account.findUnique({ where: { id } });
+    if (!row) return err("not_found", `Account ${id} not found.`);
+    const org = rowToAccount(row);
     const scoped = assertRowInScope(
-      { ...org, organization_id: org.id },
-      scope.effectiveOrgId,
+      { ...org, account_id: org.id },
+      scope.effectiveAccountId,
       isCrossTenantRole(scope.session),
     );
     return scoped.ok ? ok(org) : err(scoped.error.code, scoped.error.message);
   } catch (e) {
-    return errFromThrown<Organization>(e);
+    return errFromThrown<Account>(e);
   }
 }

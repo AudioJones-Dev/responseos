@@ -4,7 +4,7 @@ export type ContactSource = "call" | "sms" | "form" | "manual" | "crm_sync";
 
 export interface Contact {
   id: UUID;
-  organization_id: UUID;
+  account_id: UUID;
   first_name?: string;
   last_name?: string;
   phone?: string;
@@ -22,7 +22,7 @@ export function MockContact(overrides: Partial<Contact> = {}): Contact {
   const now = nowIso();
   return {
     id: newId(),
-    organization_id: "org_mock_1",
+    account_id: "org_mock_1",
     first_name: "Pat",
     last_name: "Customer",
     phone: "+15555550199",

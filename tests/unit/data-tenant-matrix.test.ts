@@ -44,7 +44,7 @@ describe("listContacts tenant matrix", () => {
     const result = await Contacts.listContacts({});
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    const orgs = new Set(result.data.map((c) => c.organization_id));
+    const orgs = new Set(result.data.map((c) => c.account_id));
     expect(orgs.has("org_mock_1")).toBe(true);
     expect(orgs.has("org_mock_2")).toBe(true);
   });
@@ -55,13 +55,13 @@ describe("listContacts tenant matrix", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(
-      result.data.every((c) => c.organization_id === "org_mock_1"),
+      result.data.every((c) => c.account_id === "org_mock_1"),
     ).toBe(true);
   });
 
   test("client_admin of org_mock_1 reading org_mock_2 → tenant_scope_denied", async () => {
     const { Contacts } = await asClientAdminOrg1();
-    const result = await Contacts.listContacts({ organizationId: "org_mock_2" });
+    const result = await Contacts.listContacts({ accountId: "org_mock_2" });
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error.code).toBe("tenant_scope_denied");
@@ -75,7 +75,7 @@ describe("listCalls tenant matrix", () => {
     const result = await Calls.listCalls({});
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    const orgs = new Set(result.data.map((c) => c.organization_id));
+    const orgs = new Set(result.data.map((c) => c.account_id));
     expect(orgs.has("org_mock_1")).toBe(true);
     expect(orgs.has("org_mock_2")).toBe(true);
   });
@@ -86,13 +86,13 @@ describe("listCalls tenant matrix", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(
-      result.data.every((c) => c.organization_id === "org_mock_1"),
+      result.data.every((c) => c.account_id === "org_mock_1"),
     ).toBe(true);
   });
 
   test("client_admin cross-tenant request denied", async () => {
     const { Calls } = await asClientAdminOrg1();
-    const result = await Calls.listCalls({ organizationId: "org_mock_2" });
+    const result = await Calls.listCalls({ accountId: "org_mock_2" });
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error.code).toBe("tenant_scope_denied");
@@ -106,7 +106,7 @@ describe("listLeads tenant matrix", () => {
     const result = await Leads.listLeads({});
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    const orgs = new Set(result.data.map((l) => l.organization_id));
+    const orgs = new Set(result.data.map((l) => l.account_id));
     expect(orgs.size).toBeGreaterThanOrEqual(2);
   });
 
@@ -116,13 +116,13 @@ describe("listLeads tenant matrix", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(
-      result.data.every((l) => l.organization_id === "org_mock_1"),
+      result.data.every((l) => l.account_id === "org_mock_1"),
     ).toBe(true);
   });
 
   test("client_admin cross-tenant request denied", async () => {
     const { Leads } = await asClientAdminOrg1();
-    const result = await Leads.listLeads({ organizationId: "org_mock_2" });
+    const result = await Leads.listLeads({ accountId: "org_mock_2" });
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error.code).toBe("tenant_scope_denied");
@@ -136,7 +136,7 @@ describe("listBookings tenant matrix", () => {
     const result = await Bookings.listBookings({});
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    const orgs = new Set(result.data.map((b) => b.organization_id));
+    const orgs = new Set(result.data.map((b) => b.account_id));
     expect(orgs.has("org_mock_1")).toBe(true);
     expect(orgs.has("org_mock_2")).toBe(true);
   });
@@ -147,13 +147,13 @@ describe("listBookings tenant matrix", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(
-      result.data.every((b) => b.organization_id === "org_mock_1"),
+      result.data.every((b) => b.account_id === "org_mock_1"),
     ).toBe(true);
   });
 
   test("client_admin cross-tenant request denied", async () => {
     const { Bookings } = await asClientAdminOrg1();
-    const result = await Bookings.listBookings({ organizationId: "org_mock_2" });
+    const result = await Bookings.listBookings({ accountId: "org_mock_2" });
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error.code).toBe("tenant_scope_denied");
@@ -167,7 +167,7 @@ describe("listQuoteRequests tenant matrix", () => {
     const result = await Quotes.listQuoteRequests({});
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    const orgs = new Set(result.data.map((q) => q.organization_id));
+    const orgs = new Set(result.data.map((q) => q.account_id));
     expect(orgs.has("org_mock_1")).toBe(true);
     expect(orgs.has("org_mock_2")).toBe(true);
   });
@@ -178,13 +178,13 @@ describe("listQuoteRequests tenant matrix", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(
-      result.data.every((q) => q.organization_id === "org_mock_1"),
+      result.data.every((q) => q.account_id === "org_mock_1"),
     ).toBe(true);
   });
 
   test("client_admin cross-tenant request denied", async () => {
     const { Quotes } = await asClientAdminOrg1();
-    const result = await Quotes.listQuoteRequests({ organizationId: "org_mock_2" });
+    const result = await Quotes.listQuoteRequests({ accountId: "org_mock_2" });
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error.code).toBe("tenant_scope_denied");
@@ -207,14 +207,14 @@ describe("listRevenueMetrics tenant matrix", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(
-      result.data.every((r) => r.organization_id === "org_mock_1"),
+      result.data.every((r) => r.account_id === "org_mock_1"),
     ).toBe(true);
   });
 
   test("client_admin cross-tenant request denied", async () => {
     const { RevenueMetrics } = await asClientAdminOrg1();
     const result = await RevenueMetrics.listRevenueMetrics({
-      organizationId: "org_mock_2",
+      accountId: "org_mock_2",
     });
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -223,10 +223,10 @@ describe("listRevenueMetrics tenant matrix", () => {
 });
 
 // ---- organizations ------------------------------------------------------
-describe("listOrganizations tenant matrix", () => {
+describe("listAccounts tenant matrix", () => {
   test("aj_admin sees both orgs", async () => {
-    const { Organizations } = await asAjAdmin();
-    const result = await Organizations.listOrganizations();
+    const { Accounts } = await asAjAdmin();
+    const result = await Accounts.listAccounts();
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     const ids = new Set(result.data.map((o) => o.id));
@@ -235,17 +235,17 @@ describe("listOrganizations tenant matrix", () => {
   });
 
   test("client_admin only sees own org", async () => {
-    const { Organizations } = await asClientAdminOrg1();
-    const result = await Organizations.listOrganizations();
+    const { Accounts } = await asClientAdminOrg1();
+    const result = await Accounts.listAccounts();
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.length).toBe(1);
     expect(result.data[0].id).toBe("org_mock_1");
   });
 
-  test("client_admin cross-tenant getOrganizationById denied", async () => {
-    const { Organizations } = await asClientAdminOrg1();
-    const result = await Organizations.getOrganizationById("org_mock_2");
+  test("client_admin cross-tenant getAccountById denied", async () => {
+    const { Accounts } = await asClientAdminOrg1();
+    const result = await Accounts.getAccountById("org_mock_2");
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error.code).toBe("tenant_scope_denied");

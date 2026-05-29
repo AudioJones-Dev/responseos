@@ -1,12 +1,12 @@
-import { getCurrentOrganization } from "@/lib/auth/session";
+import { getCurrentAccount } from "@/lib/auth/session";
 import { Calls } from "@/lib/data";
 
-const FALLBACK_ORG_ID = "org_mock_1";
+const FALLBACK_ACCOUNT_ID = "org_mock_1";
 
 export default async function ClientCallsPage() {
-  const org = await getCurrentOrganization();
+  const org = await getCurrentAccount();
   const result = await Calls.listCalls({
-    organizationId: org?.id ?? FALLBACK_ORG_ID,
+    accountId: org?.id ?? FALLBACK_ACCOUNT_ID,
   });
   const calls = result.ok ? result.data : [];
   return (

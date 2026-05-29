@@ -20,7 +20,7 @@ function assertLocalDatabase(): void {
 assertLocalDatabase();
 
 const TABLE_READS = {
-  organizations: () => prisma.organization.findMany({ orderBy: { id: "asc" } }),
+  accounts: () => prisma.account.findMany({ orderBy: { id: "asc" } }),
   users: () => prisma.user.findMany({ orderBy: { id: "asc" } }),
   contacts: () => prisma.contact.findMany({ orderBy: { id: "asc" } }),
   calls: () => prisma.call.findMany({ orderBy: { id: "asc" } }),

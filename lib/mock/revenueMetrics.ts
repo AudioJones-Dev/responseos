@@ -4,7 +4,7 @@ export const mockRevenueMetrics: RevenueMetrics[] = [
   // Current month — these are the numbers shown on the client dashboard hero.
   MockRevenueMetrics({
     id: "rev_mock_current",
-    organization_id: "org_mock_1",
+    account_id: "org_mock_1",
     period_start: "2026-05-01T00:00:00.000Z",
     period_end: "2026-05-31T23:59:59.999Z",
     total_calls: 87,
@@ -23,7 +23,7 @@ export const mockRevenueMetrics: RevenueMetrics[] = [
   }),
   MockRevenueMetrics({
     id: "rev_mock_prev_1",
-    organization_id: "org_mock_1",
+    account_id: "org_mock_1",
     period_start: "2026-04-01T00:00:00.000Z",
     period_end: "2026-04-30T23:59:59.999Z",
     total_calls: 71,
@@ -42,7 +42,7 @@ export const mockRevenueMetrics: RevenueMetrics[] = [
   }),
   MockRevenueMetrics({
     id: "rev_mock_prev_2",
-    organization_id: "org_mock_1",
+    account_id: "org_mock_1",
     period_start: "2026-03-01T00:00:00.000Z",
     period_end: "2026-03-31T23:59:59.999Z",
     total_calls: 64,

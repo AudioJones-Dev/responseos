@@ -11,11 +11,11 @@
 ## 1. Conventions (inherited from `../data-schema.md`)
 
 - **snake_case columns** to match JSON/API shapes.
-- **Tenant isolation:** every per-tenant table carries `organization_id` (the v0.2 tenant root, renamed `account_id` in the expanded model). Always derived from session.
+- **Tenant isolation:** every per-tenant table carries `account_id` (the v0.2 tenant root, renamed `account_id` in the expanded model). Always derived from session.
 - **Money in cents** (Int).
 - **JSON config** uses Postgres `jsonb`.
 - **IDs are `cuid()` strings**; timestamps are ISO 8601.
-- **Modeling rules:** every mutable table has `organization_id`, `created_at`, `updated_at`; every provider callback lands in the immutable ledger first with a durable dedupe key; every user-visible metric is computed from normalized facts, not raw provider payloads.
+- **Modeling rules:** every mutable table has `account_id`, `created_at`, `updated_at`; every provider callback lands in the immutable ledger first with a durable dedupe key; every user-visible metric is computed from normalized facts, not raw provider payloads.
 
 ---
 
@@ -24,7 +24,7 @@
 | ID | Form | Notes |
 |---|---|---|
 | Internal entity id | `cuid()` | All ResponseOS rows |
-| Tenant root | `organization_id` / `account_id` | Scopes everything |
+| Tenant root | `account_id` / `account_id` | Scopes everything |
 | Provider-stable dedupe id | provider-native | Twilio `CallSid`/`MessageSid`, voice-provider `session_id`/`call_id`, Stripe `event.id`, HubSpot `eventId` |
 | Event id | `evt_` + cuid | Ledger primary key |
 | Realtime session id | `sess_` + cuid | Voice gateway; mirrored in Redis key + ledger |
@@ -74,7 +74,7 @@ erDiagram
 
 ## 4. New / clarified entities for the go-forward stack
 
-These extend the v0.2 set to support the voice gateway, provider abstraction, and HubSpot-as-CRM-SoR. All carry `organization_id`, `created_at`, `updated_at`.
+These extend the v0.2 set to support the voice gateway, provider abstraction, and HubSpot-as-CRM-SoR. All carry `account_id`, `created_at`, `updated_at`.
 
 ### 4.1 `call_sessions` (realtime session, durable shadow of Redis)
 
@@ -83,7 +83,7 @@ The durable record of a realtime voice session. Redis holds the *ephemeral* work
 | field | type | notes |
 |---|---|---|
 | id | string | `sess_` cuid; matches Redis key suffix |
-| organization_id | string | tenant |
+| account_id | string | tenant |
 | call_id | string? | FK to `calls` |
 | voice_provider | enum | `grok` \| `openai` \| `retell` \| `vapi` \| `bland` \| `mock` |
 | provider_session_id | string? | external id |
@@ -99,7 +99,7 @@ The durable record of a realtime voice session. Redis holds the *ephemeral* work
 
 | field | type | notes |
 |---|---|---|
-| id, organization_id | string | |
+| id, account_id | string | |
 | call_session_id | string | FK |
 | tool_name | string | `check_availability` \| `create_quote` \| `escalate_to_human` \| `lookup_contact` … |
 | args_json | jsonb | redacted per lane |
@@ -126,7 +126,7 @@ Already on the v0.2 roadmap; the go-forward stack uses it for HubSpot, calendar,
 
 | field | type | notes |
 |---|---|---|
-| id, organization_id | string | |
+| id, account_id | string | |
 | provider | enum | `hubspot` \| `google_calendar` \| `calcom` \| `twilio` \| `grok` \| `openai` \| `stripe` |
 | credentials_encrypted | bytes/jsonb | encrypted at rest, decrypted at request time |
 | oauth_refresh_token_encrypted | bytes? | for OAuth providers (HubSpot, Google) |
@@ -141,7 +141,7 @@ Maps internal entities to HubSpot objects so the ledger stays canonical while Hu
 
 | field | type | notes |
 |---|---|---|
-| id, organization_id | string | |
+| id, account_id | string | |
 | entity_type | enum | `contact` \| `deal` \| `ticket` |
 | entity_id | string | internal cuid |
 | hubspot_object_type | string | `contacts` \| `deals` \| `tickets` |
@@ -206,7 +206,7 @@ The normalizer applies the tenant's lane **before** persistence (see System Arch
 | Redacted transcripts | Per lane | QA/operator access |
 | Audit logs | ≥ 1 year (incident evidence) | Immutable |
 | CRM mappings | Lifetime of tenant | Cleared on offboarding/export |
-| PII in analytics (PostHog) | None — `organization_id` + non-PII metrics only | ADR-0018 |
+| PII in analytics (PostHog) | None — `account_id` + non-PII metrics only | ADR-0018 |
 
 Deletion/export workflows are tenant-scoped (offboarding): see [`../ops/RESPONSEOS_SECURITY_AND_COMPLIANCE.md`](../ops/RESPONSEOS_SECURITY_AND_COMPLIANCE.md).
 

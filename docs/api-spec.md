@@ -95,7 +95,7 @@ v0.1 stubs include a `mock: true` flag inside the success envelope (`{ ok: true,
 
 ### Reports
 - `GET /api/reports/revenue` → current period revenue_metrics
-- `GET /api/reports/client/:organizationId` → metrics list for one workspace
+- `GET /api/reports/client/:accountId` → metrics list for one workspace
 
 ## Webhook routes
 

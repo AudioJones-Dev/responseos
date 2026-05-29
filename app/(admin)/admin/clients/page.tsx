@@ -1,7 +1,7 @@
-import { Organizations } from "@/lib/data";
+import { Accounts } from "@/lib/data";
 
 export default async function AdminClientsPage() {
-  const result = await Organizations.listOrganizations();
+  const result = await Accounts.listAccounts();
   const orgs = result.ok ? result.data : [];
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">

@@ -3,7 +3,7 @@ import { Contact, MockContact } from "@/types/contact";
 export const mockContacts: Contact[] = [
   MockContact({
     id: "contact_mock_1",
-    organization_id: "org_mock_1",
+    account_id: "org_mock_1",
     first_name: "Jordan",
     last_name: "Reyes",
     phone: "+15555550199",
@@ -15,7 +15,7 @@ export const mockContacts: Contact[] = [
   }),
   MockContact({
     id: "contact_mock_2",
-    organization_id: "org_mock_1",
+    account_id: "org_mock_1",
     first_name: "Avery",
     last_name: "Klein",
     phone: "+15555550288",
@@ -27,7 +27,7 @@ export const mockContacts: Contact[] = [
   }),
   MockContact({
     id: "contact_mock_3",
-    organization_id: "org_mock_2",
+    account_id: "org_mock_2",
     first_name: "Sam",
     last_name: "Patel",
     phone: "+15555550377",

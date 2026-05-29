@@ -14,7 +14,7 @@
 | Tool | Purpose | Scope |
 |---|---|---|
 | **OpenTelemetry** | Instrumentation spine (traces, metrics, logs) across Next.js app, voice gateway, async workers | platform |
-| **PostHog** | Product analytics (funnels, activation, feature usage) | tenant-scoped by `organization_id` |
+| **PostHog** | Product analytics (funnels, activation, feature usage) | tenant-scoped by `account_id` |
 | **Sentry** | Error tracking + release health + source-mapped traces | app + gateway |
 | **Better Stack** | Uptime monitoring, log management, incident/on-call alerting | platform |
 
@@ -22,7 +22,7 @@
 
 ### A2. Tenant-scoped, PII-free telemetry
 
-- Every signal is tagged with `organization_id` — **never** raw PII (no names, phone numbers, transcript text in analytics/monitoring).
+- Every signal is tagged with `account_id` — **never** raw PII (no names, phone numbers, transcript text in analytics/monitoring).
 - Transcripts/recordings stay in tenant storage under retention policy; only IDs/metrics flow to observability.
 - Per-tenant dashboards (volume, recovery rate, response time, failover rate) for operator analytics; client portal shows outcome KPIs only.
 
@@ -54,7 +54,7 @@
 
 - **Page (P0/P1):** data exposure; signature-validation failures across tenants; gateway down / mass call failures; provider double-outage (Grok **and** OpenAI). Routed via Better Stack to on-call.
 - **Ticket (P2/P3):** single-tenant degradation; elevated failover rate; queue backlog; OAuth expiries.
-- Alerts carry `organization_id` context where tenant-specific, never PII.
+- Alerts carry `account_id` context where tenant-specific, never PII.
 
 ### A6. Dashboards
 

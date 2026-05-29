@@ -13,7 +13,7 @@
 | ID | Story | Acceptance criteria |
 |---|---|---|
 | E1-S1 | `Organization` → `Account` rename | Migration applied; types + `lib/data/*` updated; no stale `Organization` refs; CI green |
-| E1-S2 | Real auth provider wiring | Session resolves `organization_id` + role for all four roles; client never supplies `organization_id`; `403 TENANT_SCOPE_DENIED` on mismatch |
+| E1-S2 | Real auth provider wiring | Session resolves `account_id` + role for all four roles; client never supplies `account_id`; `403 TENANT_SCOPE_DENIED` on mismatch |
 | E1-S3 | UI rebuild vs `../DESIGN.md` tokens | Dark-first tokens applied; empty/loading/error states on every major page; accessibility checks pass |
 | E1-S4 | Model expansion (v0.2 remaining) | `provider_connections`, `conversations`, `sms_messages`, `call_segments`, `call_transcripts`, `workflow_runs`, `qa_logs`, `audit_logs` migrated + seeded; isolation tests per table |
 | E1-S5 | Go-forward tables | `call_sessions`, `tool_calls`, profile tables, `crm_mappings` added forward-compatibly (Data Model § 4); seeded; tested |
@@ -100,7 +100,7 @@
 | ID | Story | Acceptance criteria |
 |---|---|---|
 | E8-S1 | Tenant isolation tests | Every tenant-scoped route/table asserts no cross-tenant read/write |
-| E8-S2 | Observability wiring | OTel → PostHog/Sentry/Better Stack; tagged `organization_id`, no raw PII; realtime signals (concurrency, failover, latency) |
+| E8-S2 | Observability wiring | OTel → PostHog/Sentry/Better Stack; tagged `account_id`, no raw PII; realtime signals (concurrency, failover, latency) |
 | E8-S3 | Security gates | Signature validation tests per provider; secrets only in env/DB-encrypted; RBAC enforced server-side |
 | E8-S4 | Golden-call regression | Regression pack runs before each prompt/profile release (QA plan) |
 | E8-S5 | Docs hygiene | New decision → ADR; milestone → roadmap; merged PR → CHANGELOG line |

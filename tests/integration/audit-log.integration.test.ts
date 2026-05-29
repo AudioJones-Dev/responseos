@@ -15,7 +15,7 @@ describe("audit log integration", () => {
 
   test("recordAuditLog writes the documented append-only row shape", async () => {
     const entry = makeAuditLog(
-      { organizationId: "org_mock_1", actorUserId: "user_aj_admin_1" },
+      { accountId: "org_mock_1", actorUserId: "user_aj_admin_1" },
       {
         action: "lead.qualified",
         target_type: "LeadEvent",
@@ -27,7 +27,7 @@ describe("audit log integration", () => {
     );
 
     const result = await AuditLogs.recordAuditLog({
-      organization_id: entry.organization_id ?? undefined,
+      account_id: entry.account_id ?? undefined,
       actor_user_id: entry.actor_user_id ?? undefined,
       actor_type: entry.actor_type,
       action: entry.action,
@@ -43,7 +43,7 @@ describe("audit log integration", () => {
       where: { action: "lead.qualified", target_id: "lead_test_audit_001" },
     });
     expect(row).toMatchObject({
-      organization_id: "org_mock_1",
+      account_id: "org_mock_1",
       actor_user_id: "user_aj_admin_1",
       actor_type: "user",
       action: "lead.qualified",
@@ -58,11 +58,11 @@ describe("audit log integration", () => {
 
   test("tenant-scoped audit reads deny cross-tenant client admins", async () => {
     await prisma.auditLog.create({
-      data: makeAuditLog({ organizationId: "org_mock_2", actorUserId: "user_aj_admin_1" }),
+      data: makeAuditLog({ accountId: "org_mock_2", actorUserId: "user_aj_admin_1" }),
     });
 
     setDevSession("client_admin@org_mock_1");
-    const result = await AuditLogs.listAuditLogs({ organizationId: "org_mock_2" });
+    const result = await AuditLogs.listAuditLogs({ accountId: "org_mock_2" });
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error.code).toBe("tenant_scope_denied");

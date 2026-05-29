@@ -38,8 +38,8 @@ const ASSESSMENT_SIGNED_AT = new Date("2026-04-23T17:30:00.000Z");
 const ENGAGEMENT_STARTED_AT = new Date("2026-04-24T13:00:00.000Z");
 const PILOT_ENDS_AT = new Date("2026-07-23T17:30:00.000Z");
 
-async function seedOrganizations() {
-  await prisma.organization.upsert({
+async function seedAccounts() {
+  await prisma.account.upsert({
     where: { id: "org_mock_1" },
     update: {},
     create: {
@@ -54,7 +54,7 @@ async function seedOrganizations() {
     },
   });
 
-  await prisma.organization.upsert({
+  await prisma.account.upsert({
     where: { id: "org_mock_2" },
     update: {},
     create: {
@@ -71,13 +71,13 @@ async function seedOrganizations() {
 }
 
 async function seedUsers() {
-  // AJ Digital super-admin (cross-tenant; organization_id null).
+  // AJ Digital super-admin (cross-tenant; account_id null).
   await prisma.user.upsert({
     where: { id: "user_aj_admin_1" },
     update: {},
     create: {
       id: "user_aj_admin_1",
-      organization_id: null,
+      account_id: null,
       role: "aj_admin",
       name: "AJ Admin",
       email: "aj@responseos.example",
@@ -91,7 +91,7 @@ async function seedUsers() {
     update: {},
     create: {
       id: "user_acme_owner_1",
-      organization_id: "org_mock_1",
+      account_id: "org_mock_1",
       role: "client_admin",
       name: "Sunshine Owner",
       email: "owner@sunshine-hvac.example",
@@ -105,7 +105,7 @@ async function seedUsers() {
     update: {},
     create: {
       id: "user_acme_viewer_1",
-      organization_id: "org_mock_1",
+      account_id: "org_mock_1",
       role: "client_viewer",
       name: "Sunshine Office Manager",
       email: "manager@sunshine-hvac.example",
@@ -120,7 +120,7 @@ async function seedContacts() {
     update: {},
     create: {
       id: "contact_mock_1",
-      organization_id: "org_mock_1",
+      account_id: "org_mock_1",
       first_name: "Jordan",
       last_name: "Reyes",
       phone: "+15555550199",
@@ -138,7 +138,7 @@ async function seedContacts() {
     update: {},
     create: {
       id: "contact_mock_2",
-      organization_id: "org_mock_1",
+      account_id: "org_mock_1",
       first_name: "Avery",
       last_name: "Klein",
       phone: "+15555550288",
@@ -156,7 +156,7 @@ async function seedContacts() {
     update: {},
     create: {
       id: "contact_mock_3",
-      organization_id: "org_mock_2",
+      account_id: "org_mock_2",
       first_name: "Sam",
       last_name: "Patel",
       phone: "+15555550377",
@@ -176,7 +176,7 @@ async function seedCalls() {
     update: {},
     create: {
       id: "call_mock_1",
-      organization_id: "org_mock_1",
+      account_id: "org_mock_1",
       contact_id: "contact_mock_1",
       provider: "twilio",
       direction: "inbound",
@@ -197,7 +197,7 @@ async function seedCalls() {
     update: {},
     create: {
       id: "call_mock_2",
-      organization_id: "org_mock_1",
+      account_id: "org_mock_1",
       contact_id: "contact_mock_2",
       provider: "retell",
       direction: "inbound",
@@ -221,7 +221,7 @@ async function seedCalls() {
     update: {},
     create: {
       id: "call_mock_3",
-      organization_id: "org_mock_1",
+      account_id: "org_mock_1",
       contact_id: null,
       provider: "twilio",
       direction: "inbound",
@@ -242,7 +242,7 @@ async function seedCalls() {
     update: {},
     create: {
       id: "call_mock_4",
-      organization_id: "org_mock_2",
+      account_id: "org_mock_2",
       contact_id: "contact_mock_3",
       provider: "vapi",
       direction: "outbound",
@@ -265,7 +265,7 @@ async function seedLeadEvents() {
   const events: Array<Parameters<typeof prisma.leadEvent.create>[0]["data"]> = [
     {
       id: "lead_mock_1",
-      organization_id: "org_mock_1",
+      account_id: "org_mock_1",
       contact_id: "contact_mock_1",
       call_id: "call_mock_1",
       source: "phone",
@@ -278,7 +278,7 @@ async function seedLeadEvents() {
     },
     {
       id: "lead_mock_2",
-      organization_id: "org_mock_1",
+      account_id: "org_mock_1",
       contact_id: "contact_mock_2",
       call_id: "call_mock_2",
       source: "phone",
@@ -291,7 +291,7 @@ async function seedLeadEvents() {
     },
     {
       id: "lead_mock_3",
-      organization_id: "org_mock_1",
+      account_id: "org_mock_1",
       contact_id: "contact_mock_2",
       source: "phone",
       event_type: "appointment_booked",
@@ -303,7 +303,7 @@ async function seedLeadEvents() {
     },
     {
       id: "lead_mock_4",
-      organization_id: "org_mock_1",
+      account_id: "org_mock_1",
       contact_id: "contact_mock_1",
       source: "phone",
       event_type: "spam",
@@ -316,7 +316,7 @@ async function seedLeadEvents() {
     },
     {
       id: "lead_mock_5",
-      organization_id: "org_mock_2",
+      account_id: "org_mock_2",
       contact_id: "contact_mock_3",
       call_id: "call_mock_4",
       source: "outbound",
@@ -330,7 +330,7 @@ async function seedLeadEvents() {
     },
     {
       id: "lead_mock_6",
-      organization_id: "org_mock_1",
+      account_id: "org_mock_1",
       contact_id: "contact_mock_1",
       source: "website",
       event_type: "quote_request",
@@ -342,7 +342,7 @@ async function seedLeadEvents() {
     },
     {
       id: "lead_mock_7",
-      organization_id: "org_mock_1",
+      account_id: "org_mock_1",
       contact_id: "contact_mock_1",
       source: "phone",
       event_type: "follow_up_needed",
@@ -354,7 +354,7 @@ async function seedLeadEvents() {
     },
     {
       id: "lead_mock_8",
-      organization_id: "org_mock_2",
+      account_id: "org_mock_2",
       contact_id: "contact_mock_3",
       source: "outbound",
       event_type: "quote_sent",
@@ -366,7 +366,7 @@ async function seedLeadEvents() {
     },
     {
       id: "lead_mock_9",
-      organization_id: "org_mock_1",
+      account_id: "org_mock_1",
       contact_id: "contact_mock_2",
       source: "phone",
       event_type: "job_won",
@@ -379,7 +379,7 @@ async function seedLeadEvents() {
     },
     {
       id: "lead_mock_10",
-      organization_id: "org_mock_1",
+      account_id: "org_mock_1",
       contact_id: "contact_mock_1",
       source: "phone",
       event_type: "job_lost",
@@ -392,7 +392,7 @@ async function seedLeadEvents() {
     },
     {
       id: "lead_mock_11",
-      organization_id: "org_mock_1",
+      account_id: "org_mock_1",
       contact_id: "contact_mock_1",
       source: "sms",
       event_type: "qualified_lead",
@@ -475,7 +475,7 @@ async function seedBookings() {
     update: {},
     create: {
       id: "booking_mock_1",
-      organization_id: "org_mock_1",
+      account_id: "org_mock_1",
       contact_id: "contact_mock_2",
       lead_event_id: "lead_mock_3",
       calendar_provider: "google",
@@ -492,7 +492,7 @@ async function seedBookings() {
     update: {},
     create: {
       id: "booking_mock_2",
-      organization_id: "org_mock_2",
+      account_id: "org_mock_2",
       contact_id: "contact_mock_3",
       lead_event_id: "lead_mock_5",
       calendar_provider: "calcom",
@@ -511,7 +511,7 @@ async function seedQuoteRequests() {
     update: {},
     create: {
       id: "quote_mock_1",
-      organization_id: "org_mock_1",
+      account_id: "org_mock_1",
       contact_id: "contact_mock_1",
       lead_event_id: "lead_mock_6",
       service_type: "AC tune-up + repair",
@@ -528,7 +528,7 @@ async function seedQuoteRequests() {
     update: {},
     create: {
       id: "quote_mock_2",
-      organization_id: "org_mock_2",
+      account_id: "org_mock_2",
       contact_id: "contact_mock_3",
       lead_event_id: "lead_mock_8",
       service_type: "Roof replacement",
@@ -547,7 +547,7 @@ async function seedRevenueMetrics() {
     update: {},
     create: {
       id: "rev_mock_current",
-      organization_id: "org_mock_1",
+      account_id: "org_mock_1",
       period_start: new Date("2026-05-01T00:00:00.000Z"),
       period_end: new Date("2026-05-31T23:59:59.999Z"),
       total_calls: 87,
@@ -571,7 +571,7 @@ async function seedRevenueMetrics() {
     update: {},
     create: {
       id: "rev_mock_prev_1",
-      organization_id: "org_mock_1",
+      account_id: "org_mock_1",
       period_start: new Date("2026-04-01T00:00:00.000Z"),
       period_end: new Date("2026-04-30T23:59:59.999Z"),
       total_calls: 71,
@@ -595,7 +595,7 @@ async function seedRevenueMetrics() {
     update: {},
     create: {
       id: "rev_mock_prev_2",
-      organization_id: "org_mock_1",
+      account_id: "org_mock_1",
       period_start: new Date("2026-03-01T00:00:00.000Z"),
       period_end: new Date("2026-03-31T23:59:59.999Z"),
       total_calls: 64,
@@ -621,7 +621,7 @@ async function seedAssessmentReport() {
     update: {},
     create: {
       id: "assessment_mock_1",
-      organization_id: "org_mock_1",
+      account_id: "org_mock_1",
       status: "signed",
       inputs_json: {
         missed_call_volume_per_month: 31,
@@ -676,7 +676,7 @@ async function seedEngagement() {
     update: {},
     create: {
       id: "engagement_mock_1",
-      organization_id: "org_mock_1",
+      account_id: "org_mock_1",
       assessment_report_id: "assessment_mock_1",
       tier: "recovery_pro",
       status: "active",
@@ -702,17 +702,17 @@ async function seedAuditLogs() {
   const rows: Array<Parameters<typeof prisma.auditLog.create>[0]["data"]> = [
     {
       id: "audit_mock_1",
-      organization_id: "org_mock_1",
+      account_id: "org_mock_1",
       actor_user_id: "user_aj_admin_1",
       actor_type: "user",
-      action: "organization.created",
-      target_type: "Organization",
+      action: "account.created",
+      target_type: "Account",
       target_id: "org_mock_1",
       created_at: new Date("2026-04-10T12:00:00.000Z"),
     },
     {
       id: "audit_mock_2",
-      organization_id: "org_mock_1",
+      account_id: "org_mock_1",
       actor_user_id: "user_aj_admin_1",
       actor_type: "user",
       action: "assessment.delivered",
@@ -722,7 +722,7 @@ async function seedAuditLogs() {
     },
     {
       id: "audit_mock_3",
-      organization_id: "org_mock_1",
+      account_id: "org_mock_1",
       actor_user_id: "user_acme_owner_1",
       actor_type: "user",
       action: "assessment.signed",
@@ -732,7 +732,7 @@ async function seedAuditLogs() {
     },
     {
       id: "audit_mock_4",
-      organization_id: "org_mock_1",
+      account_id: "org_mock_1",
       actor_user_id: null,
       actor_type: "system",
       action: "engagement.created",
@@ -742,7 +742,7 @@ async function seedAuditLogs() {
     },
     {
       id: "audit_mock_5",
-      organization_id: "org_mock_1",
+      account_id: "org_mock_1",
       actor_user_id: null,
       actor_type: "system",
       action: "lead.qualified",
@@ -752,7 +752,7 @@ async function seedAuditLogs() {
     },
     {
       id: "audit_mock_6",
-      organization_id: "org_mock_1",
+      account_id: "org_mock_1",
       actor_user_id: null,
       actor_type: "system",
       action: "booking.confirmed",
@@ -772,7 +772,7 @@ async function seedAuditLogs() {
 }
 
 async function main() {
-  await seedOrganizations();
+  await seedAccounts();
   await seedUsers();
   await seedContacts();
   await seedCalls();

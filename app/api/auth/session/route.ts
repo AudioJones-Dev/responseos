@@ -9,7 +9,7 @@ export async function GET() {
       data: {
         authenticated: false,
         user: null,
-        organization: null,
+        account: null,
       },
     });
   }
@@ -18,7 +18,7 @@ export async function GET() {
     data: {
       authenticated: true,
       user: session.user,
-      organization: session.organization,
+      account: session.account,
     },
   });
 }

@@ -4,7 +4,7 @@ export type UserRole = "aj_admin" | "operator" | "client_admin" | "client_viewer
 
 export interface User {
   id: UUID;
-  organization_id?: UUID;
+  account_id?: UUID;
   role: UserRole;
   name: string;
   email: string;
@@ -17,7 +17,7 @@ export function MockUser(overrides: Partial<User> = {}): User {
   const now = nowIso();
   return {
     id: newId(),
-    organization_id: undefined,
+    account_id: undefined,
     role: "client_admin",
     name: "Jane Operator",
     email: "jane@example.com",

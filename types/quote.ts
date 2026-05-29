@@ -9,7 +9,7 @@ export type QuoteStatus =
 
 export interface QuoteRequest {
   id: UUID;
-  organization_id: UUID;
+  account_id: UUID;
   contact_id: UUID;
   lead_event_id?: UUID;
   service_type: string;
@@ -28,7 +28,7 @@ export function MockQuoteRequest(
   const now = nowIso();
   return {
     id: newId(),
-    organization_id: "org_mock_1",
+    account_id: "org_mock_1",
     contact_id: "contact_mock_1",
     lead_event_id: "lead_mock_1",
     service_type: "Roof inspection",

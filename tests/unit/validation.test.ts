@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
   CreateEngagementInputSchema,
-  CreateOrganizationInputSchema,
+  CreateAccountInputSchema,
   e164PhoneSchema,
   LeadStatusLabel,
   internalLeadStatusToLabel,
@@ -52,9 +52,9 @@ describe("validation/labels: LeadStatusLabel brand enum (DESIGN.md §11)", () =>
   });
 });
 
-describe("validation/organization", () => {
-  test("CreateOrganizationInputSchema rejects non-kebab slug", () => {
-    const result = CreateOrganizationInputSchema.safeParse({
+describe("validation/account", () => {
+  test("CreateAccountInputSchema rejects non-kebab slug", () => {
+    const result = CreateAccountInputSchema.safeParse({
       name: "Acme",
       slug: "Acme HVAC",
       industry: "home-services",
@@ -66,7 +66,7 @@ describe("validation/organization", () => {
 
 describe("validation/engagement: tier ↔ fee range matrix", () => {
   const baseValid = {
-    organization_id: "org_mock_1",
+    account_id: "org_mock_1",
     assessment_report_id: "assessment_mock_1",
     setup_fee_cents: 650_000,
     monthly_fee_cents: 200_000,

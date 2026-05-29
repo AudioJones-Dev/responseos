@@ -11,7 +11,7 @@
 
 | Goal | How it's met |
 |---|---|
-| Multi-tenant SaaS on one codebase | Tenant root + `organization_id` scoping on every entity; no repo/deploy per client |
+| Multi-tenant SaaS on one codebase | Tenant root + `account_id` scoping on every entity; no repo/deploy per client |
 | Separate realtime audio from async workflows | Dedicated Node.js voice gateway (realtime) vs n8n (async); they never share the audio loop (ADR-0013, ADR-0017) |
 | Provider-agnostic | All providers behind adapters; Grok↔OpenAI failover transparent; no provider logic above the boundary (ADR-0012) |
 | Auditable + replayable | Event-ledger-first; facts recompute from the ledger (ADR-0002) |
@@ -141,10 +141,10 @@ erDiagram
   ACCOUNT ||--o{ EVENT : "scopes"
 ```
 
-- **Account** = tenant root (the v0.2 rename of `organizations`). Every per-tenant row carries `organization_id` (mapped to `account_id` in the v0.2 model). **Workspace** = optional sub-tenant grouping for multi-location/multi-brand operators.
-- **Isolation rule:** `organization_id` is **always** derived from the authenticated session, **never** trusted from client input. Enforced at the data-access layer (`lib/data/*`) so no surface can bypass it.
+- **Account** = tenant root (the v0.2 rename of `organizations`). Every per-tenant row carries `account_id` (mapped to `account_id` in the v0.2 model). **Workspace** = optional sub-tenant grouping for multi-location/multi-brand operators.
+- **Isolation rule:** `account_id` is **always** derived from the authenticated session, **never** trusted from client input. Enforced at the data-access layer (`lib/data/*`) so no surface can bypass it.
 - **Roles:** `aj_admin` (full cross-tenant; AJ staff), `operator` (cross-tenant operational; AJ staff), `client_admin` (own workspace, full), `client_viewer` (own workspace, read-only). Cross-tenant access is staff-only; break-glass into a tenant is logged, time-boxed, and notified.
-- **Storage isolation:** object-storage keys are prefixed with `organization_id`; Redis session keys are namespaced by `organization_id` + `session_id`.
+- **Storage isolation:** object-storage keys are prefixed with `account_id`; Redis session keys are namespaced by `account_id` + `session_id`.
 - **Isolation tiers:** small tenants share the cluster with strict scoping; larger/regulated tenants can get their own DB and optionally VPC (ADR-0004, original `architecture.md`).
 
 ### Per-tenant configuration profiles

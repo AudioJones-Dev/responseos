@@ -6,7 +6,7 @@ export type NotificationStatus = "queued" | "sent" | "failed";
 
 export interface Notification {
   id: UUID;
-  organization_id: UUID;
+  account_id: UUID;
   lead_event_id?: UUID;
   channel: NotificationChannel;
   recipient: string;
@@ -22,7 +22,7 @@ export function MockNotification(
 ): Notification {
   return {
     id: newId(),
-    organization_id: "org_mock_1",
+    account_id: "org_mock_1",
     lead_event_id: "lead_mock_1",
     channel: "sms",
     recipient: "+15555550199",

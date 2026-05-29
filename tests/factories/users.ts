@@ -2,13 +2,13 @@ import type { Prisma, UserRole } from "@prisma/client";
 import { nextTestId } from "./ids";
 
 export function makeUser(
-  params: { role: UserRole; organizationId?: string | null },
+  params: { role: UserRole; accountId?: string | null },
   overrides: Partial<Prisma.UserCreateInput> = {},
 ): Prisma.UserCreateInput {
   const id = overrides.id ?? nextTestId("user");
   const base: Prisma.UserCreateInput = {
     id,
-    organization_id: params.organizationId ?? null,
+    account_id: params.accountId ?? null,
     role: params.role,
     name: `Test User ${id}`,
     email: `${id}@example.test`,

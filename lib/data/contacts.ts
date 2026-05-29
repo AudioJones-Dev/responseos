@@ -11,7 +11,7 @@ import {
 
 interface ContactRow {
   id: string;
-  organization_id: string;
+  account_id: string;
   first_name: string | null;
   last_name: string | null;
   phone: string | null;
@@ -28,7 +28,7 @@ interface ContactRow {
 function rowToContact(row: ContactRow): Contact {
   return {
     id: row.id,
-    organization_id: row.organization_id,
+    account_id: row.account_id,
     first_name: row.first_name ?? undefined,
     last_name: row.last_name ?? undefined,
     phone: row.phone ?? undefined,
@@ -44,23 +44,23 @@ function rowToContact(row: ContactRow): Contact {
 }
 
 export async function listContacts(params: {
-  organizationId?: string;
+  accountId?: string;
 }): Promise<Result<Contact[]>> {
-  const scope = await withTenantScope(params.organizationId);
+  const scope = await withTenantScope(params.accountId);
   if (!scope.ok) return err(scope.error.code, scope.error.message);
 
   if (db === null) {
     const all = getMockContacts();
-    if (scope.effectiveOrgId) {
-      return ok(all.filter((c) => c.organization_id === scope.effectiveOrgId));
+    if (scope.effectiveAccountId) {
+      return ok(all.filter((c) => c.account_id === scope.effectiveAccountId));
     }
     return ok(all);
   }
 
   try {
     const rows = await db.contact.findMany({
-      where: scope.effectiveOrgId
-        ? { organization_id: scope.effectiveOrgId }
+      where: scope.effectiveAccountId
+        ? { account_id: scope.effectiveAccountId }
         : undefined,
       orderBy: { created_at: "asc" },
     });
@@ -79,7 +79,7 @@ export async function getContactById(id: string): Promise<Result<Contact>> {
     if (!found) return err("not_found", `Contact ${id} not found.`);
     const scoped = assertRowInScope(
       found,
-      scope.effectiveOrgId,
+      scope.effectiveAccountId,
       isCrossTenantRole(scope.session),
     );
     return scoped.ok ? ok(found) : err(scoped.error.code, scoped.error.message);
@@ -91,7 +91,7 @@ export async function getContactById(id: string): Promise<Result<Contact>> {
     const contact = rowToContact(row);
     const scoped = assertRowInScope(
       contact,
-      scope.effectiveOrgId,
+      scope.effectiveAccountId,
       isCrossTenantRole(scope.session),
     );
     return scoped.ok

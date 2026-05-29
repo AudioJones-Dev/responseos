@@ -12,7 +12,7 @@
 
 - **No hardcoded secrets.** `.env.example` is placeholders only. Platform secrets in env/Secrets Manager; tenant credentials encrypted in the DB.
 - **Webhook signatures verified before any business mutation** (ADR-0009).
-- **Tenant isolation** at every read/write — `organization_id` from session, never client input.
+- **Tenant isolation** at every read/write — `account_id` from session, never client input.
 - **Payment boundary:** never store card data; Stripe hosted pages / Payment Intents only (v0.5).
 - **Audit logging** on every admin action, profile change, break-glass, and data export.
 - **No Firebase.** **Not HIPAA-certified.**
@@ -28,7 +28,7 @@
 | Raw transcript/recording | Object storage `org_id/raw/...` | Restricted to `aj_admin` break-glass; per-lane retention |
 | Redacted transcript | Object storage `org_id/redacted/...` | QA/operator; per lane |
 | Canonical PII (contact) | Postgres, tenant-scoped | RBAC; mirrored to HubSpot per tenant |
-| Analytics | PostHog | `organization_id` + metrics only; **no raw PII** (ADR-0018) |
+| Analytics | PostHog | `account_id` + metrics only; **no raw PII** (ADR-0018) |
 
 **Voice-provider PII rule:** Grok Voice and OpenAI Realtime receive call audio/text in real time. Before any **regulated-lane** tenant uses them, each provider's retention + training-data + BAA posture must be verified (ADR-0012). On the Standard lane (non-PHI home services), use is permitted with disclosure + consent; the data-processing posture is still documented and reviewed.
 
@@ -79,7 +79,7 @@ Never in the repo, ever. `NEXT_PUBLIC_*` vars are treated as public; tenant-spec
 
 ## 6. OAuth strategy
 
-- HubSpot + Google use OAuth 2.0; tokens encrypted in `provider_connections` scoped to `organization_id`.
+- HubSpot + Google use OAuth 2.0; tokens encrypted in `provider_connections` scoped to `account_id`.
 - Scopes are least-privilege (only what the connector needs).
 - Token expiry → mark `expired`, prompt re-connect, queue dependent jobs (no silent failures).
 - Disconnect revokes + marks disconnected; offboarding clears tenant credentials.

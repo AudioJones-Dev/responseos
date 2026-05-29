@@ -6,7 +6,7 @@ The compliance posture is chosen **per tenant tier**, not hard-coded globally. S
 
 - **No hardcoded secrets** anywhere in the repo. `.env.example` is placeholders only.
 - **Webhook signatures verified** before any business mutation (v0.3 wires; v0.1 marks TODO).
-- **Tenant isolation** enforced at every read/write — `organization_id` derived from session, never trusted from client input.
+- **Tenant isolation** enforced at every read/write — `account_id` derived from session, never trusted from client input.
 - **Payment boundary:** never store card data. Stripe hosted pages or Payment Intents only.
 - **Audit logging** on every admin action, prompt change, and data export.
 

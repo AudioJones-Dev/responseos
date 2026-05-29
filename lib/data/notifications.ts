@@ -10,7 +10,7 @@ import { withTenantScope } from "./session-helpers";
 
 interface NotificationRow {
   id: string;
-  organization_id: string;
+  account_id: string;
   lead_event_id: string | null;
   channel: string;
   recipient: string;
@@ -24,7 +24,7 @@ interface NotificationRow {
 function rowToNotification(row: NotificationRow): Notification {
   return {
     id: row.id,
-    organization_id: row.organization_id,
+    account_id: row.account_id,
     lead_event_id: row.lead_event_id ?? undefined,
     channel: row.channel as NotificationChannel,
     recipient: row.recipient,
@@ -37,9 +37,9 @@ function rowToNotification(row: NotificationRow): Notification {
 }
 
 export async function listNotifications(params: {
-  organizationId?: string;
+  accountId?: string;
 }): Promise<Result<Notification[]>> {
-  const scope = await withTenantScope(params.organizationId);
+  const scope = await withTenantScope(params.accountId);
   if (!scope.ok) return err(scope.error.code, scope.error.message);
 
   if (db === null) {
@@ -48,8 +48,8 @@ export async function listNotifications(params: {
 
   try {
     const rows = await db.notification.findMany({
-      where: scope.effectiveOrgId
-        ? { organization_id: scope.effectiveOrgId }
+      where: scope.effectiveAccountId
+        ? { account_id: scope.effectiveAccountId }
         : undefined,
       orderBy: { created_at: "desc" },
     });

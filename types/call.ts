@@ -16,7 +16,7 @@ export type CallSentiment = "positive" | "neutral" | "negative";
 
 export interface Call {
   id: UUID;
-  organization_id: UUID;
+  account_id: UUID;
   contact_id?: UUID;
   provider: CallProvider;
   provider_call_id?: string;
@@ -40,7 +40,7 @@ export function MockCall(overrides: Partial<Call> = {}): Call {
   const now = nowIso();
   return {
     id: newId(),
-    organization_id: "org_mock_1",
+    account_id: "org_mock_1",
     contact_id: "contact_mock_1",
     provider: "twilio",
     provider_call_id: "CA" + Math.random().toString(36).slice(2, 12),

@@ -1,5 +1,5 @@
 export * from "./common";
-export * from "./organization";
+export * from "./account";
 export * from "./user";
 export * from "./contact";
 export * from "./call";

@@ -24,7 +24,7 @@ export type UsageModel = "bundled_with_cap" | "passthrough_with_margin";
 
 export interface Engagement {
   id: string;
-  organization_id: string;
+  account_id: string;
   assessment_report_id: string;
   tier: EngagementTier;
   status: EngagementStatus;
@@ -46,7 +46,7 @@ export interface Engagement {
 
 interface EngagementRow {
   id: string;
-  organization_id: string;
+  account_id: string;
   assessment_report_id: string;
   tier: string;
   status: string;
@@ -69,7 +69,7 @@ interface EngagementRow {
 function rowToEngagement(row: EngagementRow): Engagement {
   return {
     id: row.id,
-    organization_id: row.organization_id,
+    account_id: row.account_id,
     assessment_report_id: row.assessment_report_id,
     tier: row.tier as EngagementTier,
     status: row.status as EngagementStatus,
@@ -93,10 +93,10 @@ function rowToEngagement(row: EngagementRow): Engagement {
 }
 
 export async function listEngagements(params: {
-  organizationId?: string;
+  accountId?: string;
   status?: EngagementStatus;
 }): Promise<Result<Engagement[]>> {
-  const scope = await withTenantScope(params.organizationId);
+  const scope = await withTenantScope(params.accountId);
   if (!scope.ok) return err(scope.error.code, scope.error.message);
 
   if (db === null) {
@@ -106,8 +106,8 @@ export async function listEngagements(params: {
   try {
     const rows = await db.engagement.findMany({
       where: {
-        ...(scope.effectiveOrgId
-          ? { organization_id: scope.effectiveOrgId }
+        ...(scope.effectiveAccountId
+          ? { account_id: scope.effectiveAccountId }
           : {}),
         ...(params.status ? { status: params.status } : {}),
       },
@@ -135,7 +135,7 @@ export async function getEngagementById(
     const engagement = rowToEngagement(row);
     const scoped = assertRowInScope(
       engagement,
-      scope.effectiveOrgId,
+      scope.effectiveAccountId,
       isCrossTenantRole(scope.session),
     );
     return scoped.ok

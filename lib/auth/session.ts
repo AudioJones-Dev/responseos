@@ -20,7 +20,7 @@ export interface SessionUser {
   role: UserRole;
 }
 
-export interface SessionOrganization {
+export interface SessionAccount {
   id: string;
   slug: string;
   name: string;
@@ -28,13 +28,13 @@ export interface SessionOrganization {
 
 export interface Session {
   user: SessionUser;
-  organization: SessionOrganization | null;
+  account: SessionAccount | null;
   expires_at: string;
 }
 
 interface DevSessionConfig {
   user: SessionUser;
-  organization: SessionOrganization | null;
+  account: SessionAccount | null;
 }
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
@@ -47,7 +47,7 @@ const DEV_SESSIONS: Record<string, DevSessionConfig> = {
       name: "AJ Admin",
       role: "aj_admin",
     },
-    organization: null,
+    account: null,
   },
   operator: {
     user: {
@@ -56,7 +56,7 @@ const DEV_SESSIONS: Record<string, DevSessionConfig> = {
       name: "AJ Operator",
       role: "operator",
     },
-    organization: null,
+    account: null,
   },
   "client_admin@org_mock_1": {
     user: {
@@ -65,7 +65,7 @@ const DEV_SESSIONS: Record<string, DevSessionConfig> = {
       name: "Sunshine Owner",
       role: "client_admin",
     },
-    organization: {
+    account: {
       id: "org_mock_1",
       slug: "sunshine-hvac",
       name: "Sunshine HVAC",
@@ -78,7 +78,7 @@ const DEV_SESSIONS: Record<string, DevSessionConfig> = {
       name: "Sunshine Office Manager",
       role: "client_viewer",
     },
-    organization: {
+    account: {
       id: "org_mock_1",
       slug: "sunshine-hvac",
       name: "Sunshine HVAC",
@@ -138,7 +138,7 @@ export async function getCurrentSession(): Promise<Session | null> {
   const config = resolveDevSession();
   return {
     user: config.user,
-    organization: config.organization,
+    account: config.account,
     expires_at: new Date(Date.now() + ONE_HOUR_MS).toISOString(),
   };
 }
@@ -148,9 +148,9 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
   return session?.user ?? null;
 }
 
-export async function getCurrentOrganization(): Promise<SessionOrganization | null> {
+export async function getCurrentAccount(): Promise<SessionAccount | null> {
   const session = await getCurrentSession();
-  return session?.organization ?? null;
+  return session?.account ?? null;
 }
 
 export async function requireRole(
@@ -170,7 +170,7 @@ export async function requireRole(
 }
 
 export async function requireTenantScope(
-  organizationId: string,
+  accountId: string,
 ): Promise<void> {
   const session = await getCurrentSession();
   if (!session) {
@@ -180,7 +180,7 @@ export async function requireTenantScope(
   if (session.user.role === "aj_admin" || session.user.role === "operator") {
     return;
   }
-  if (!session.organization || session.organization.id !== organizationId) {
+  if (!session.account || session.account.id !== accountId) {
     throw new TenantScopeError();
   }
 }
@@ -188,7 +188,7 @@ export async function requireTenantScope(
 /**
  * Resolves the tenant id a query should be scoped to.
  *
- * - aj_admin / operator: use the caller-supplied organizationId (may be undefined for
+ * - aj_admin / operator: use the caller-supplied accountId (may be undefined for
  *   cross-tenant reads).
  * - client_admin / client_viewer: ignore caller input and return the session
  *   organization id.
@@ -205,8 +205,8 @@ export async function resolveTenantScope(
   if (session.user.role === "aj_admin" || session.user.role === "operator") {
     return callerSuppliedId;
   }
-  if (!session.organization) {
-    throw new TenantScopeError("Tenant user has no organization context.");
+  if (!session.account) {
+    throw new TenantScopeError("Tenant user has no account context.");
   }
-  return session.organization.id;
+  return session.account.id;
 }

@@ -6,7 +6,7 @@ import { isCrossTenantRole, withTenantScope } from "./session-helpers";
 
 interface UserRow {
   id: string;
-  organization_id: string | null;
+  account_id: string | null;
   role: string;
   name: string;
   email: string;
@@ -18,7 +18,7 @@ interface UserRow {
 function rowToUser(row: UserRow): User {
   return {
     id: row.id,
-    organization_id: row.organization_id ?? undefined,
+    account_id: row.account_id ?? undefined,
     role: row.role as UserRole,
     name: row.name,
     email: row.email,
@@ -33,9 +33,9 @@ function rowToUser(row: UserRow): User {
  * of truth). Mock fallback returns an empty list so callers degrade safely.
  */
 export async function listUsers(params: {
-  organizationId?: string;
+  accountId?: string;
 }): Promise<Result<User[]>> {
-  const scope = await withTenantScope(params.organizationId);
+  const scope = await withTenantScope(params.accountId);
   if (!scope.ok) return err(scope.error.code, scope.error.message);
 
   if (db === null) {
@@ -44,8 +44,8 @@ export async function listUsers(params: {
 
   try {
     const rows = await db.user.findMany({
-      where: scope.effectiveOrgId
-        ? { organization_id: scope.effectiveOrgId }
+      where: scope.effectiveAccountId
+        ? { account_id: scope.effectiveAccountId }
         : undefined,
       orderBy: { created_at: "asc" },
     });
@@ -68,7 +68,7 @@ export async function getUserById(id: string): Promise<Result<User>> {
     if (!row) return err("not_found", `User ${id} not found.`);
     if (
       !isCrossTenantRole(scope.session) &&
-      row.organization_id !== scope.effectiveOrgId
+      row.account_id !== scope.effectiveAccountId
     ) {
       return err(
         "tenant_scope_denied",
