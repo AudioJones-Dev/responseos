@@ -13,3 +13,6 @@ export * from "./revenue";
 export * from "./providerConnection";
 export * from "./conversation";
 export * from "./smsMessage";
+export * from "./callSegment";
+export * from "./callTranscript";
+export * from "./qaLog";

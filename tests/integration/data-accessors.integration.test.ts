@@ -4,6 +4,8 @@ import {
   AuditLogs,
   Automations,
   Appointments,
+  CallSegments,
+  CallTranscripts,
   Calls,
   Contacts,
   Conversations,
@@ -13,6 +15,7 @@ import {
   Notifications,
   Accounts,
   ProviderConnections,
+  QaLogs,
   Quotes,
   RevenueMetrics,
   SmsMessages,
@@ -331,5 +334,107 @@ describe("data accessors against Postgres", () => {
         where: { provider: "twilio", provider_message_id: "SM_test_new" },
       }),
     ).toBe(1);
+  });
+
+  test("call segment accessors list ordered turns and idempotent record on (call_id, sequence)", async () => {
+    const list = await CallSegments.listCallSegmentsByCall({
+      accountId: "org_mock_1",
+      callId: "call_mock_2",
+    });
+    expect(list.ok).toBe(true);
+    if (!list.ok) return;
+    expect(list.data.map((s) => s.sequence)).toEqual([1, 2]);
+    expect(list.data.map((s) => s.speaker)).toEqual(["caller", "agent"]);
+
+    const first = await CallSegments.recordCallSegment({
+      account_id: "org_mock_1",
+      call_id: "call_mock_2",
+      sequence: 3,
+      speaker: "caller",
+      text: "Follow-up question text",
+      started_at: new Date("2026-05-04T15:15:20.000Z"),
+      ended_at: new Date("2026-05-04T15:15:25.000Z"),
+    });
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+    expect(first.data.sequence).toBe(3);
+
+    const duplicate = await CallSegments.recordCallSegment({
+      account_id: "org_mock_1",
+      call_id: "call_mock_2",
+      sequence: 3,
+      speaker: "caller",
+      text: "follow-up duplicate write",
+      started_at: new Date("2026-05-04T15:15:20.000Z"),
+      ended_at: new Date("2026-05-04T15:15:25.000Z"),
+    });
+    expect(duplicate.ok).toBe(true);
+    if (!duplicate.ok) return;
+    expect(duplicate.data.id).toBe(first.data.id);
+    // The original text wins because the writer is a true no-op on
+    // (call_id, sequence) collision — re-runs of the normalizer must
+    // not silently overwrite earlier turn content.
+    expect(duplicate.data.text).toBe("Follow-up question text");
+  });
+
+  test("call transcript accessor returns public shape only — no raw_ref or redacted_ref exposed", async () => {
+    const found = await CallTranscripts.getCallTranscriptByCall({
+      accountId: "org_mock_1",
+      callId: "call_mock_2",
+    });
+    expect(found.ok).toBe(true);
+    if (!found.ok) return;
+    expect(found.data).not.toBeNull();
+    if (!found.data) return;
+    expect(found.data.inline_text).toContain("Caller asked");
+    // Hard guardrail: privileged raw-transcript surface must not exist
+    // in 31B. The public shape strips both object-storage pointers.
+    expect("raw_ref" in (found.data as object)).toBe(false);
+    expect("redacted_ref" in (found.data as object)).toBe(false);
+
+    const missing = await CallTranscripts.getCallTranscriptByCall({
+      accountId: "org_mock_1",
+      callId: "call_mock_1",
+    });
+    expect(missing.ok).toBe(true);
+    if (!missing.ok) return;
+    expect(missing.data).toBeNull();
+  });
+
+  test("qa log accessors list ordered by reviewed_at desc and record allows multiple per (call_id, rubric_version)", async () => {
+    const list = await QaLogs.listQaLogsByCall({
+      accountId: "org_mock_1",
+      callId: "call_mock_2",
+    });
+    expect(list.ok).toBe(true);
+    if (!list.ok) return;
+    expect(list.data.length).toBe(1);
+    expect(list.data[0].id).toBe("qa_mock_1");
+
+    // A second review under the same rubric version is allowed
+    // (planning Q10 — latest wins).
+    const recorded = await QaLogs.recordQaLog({
+      account_id: "org_mock_1",
+      call_id: "call_mock_2",
+      rubric_version: "v1",
+      reviewer_type: "human",
+      reviewer_user_id: "user_acme_owner_1",
+      score: 92,
+      findings_json: { reviewer_note: "test second pass" },
+      reviewed_at: new Date("2026-05-05T09:00:00.000Z"),
+    });
+    expect(recorded.ok).toBe(true);
+    if (!recorded.ok) return;
+
+    const reread = await QaLogs.listQaLogsByCall({
+      accountId: "org_mock_1",
+      callId: "call_mock_2",
+    });
+    expect(reread.ok).toBe(true);
+    if (!reread.ok) return;
+    expect(reread.data.length).toBe(2);
+    // Ordered by reviewed_at desc — the newly recorded human review is first.
+    expect(reread.data[0].reviewer_type).toBe("human");
+    expect(reread.data[1].reviewer_type).toBe("system");
   });
 });

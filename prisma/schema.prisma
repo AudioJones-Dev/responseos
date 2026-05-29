@@ -654,3 +654,82 @@ model SmsMessage {
   @@index([conversation_id])
   @@index([created_at])
 }
+
+// --- v0.2 closeout step 2.3, PR 31B — call intelligence substrate ---------
+
+enum CallSegmentSpeaker {
+  caller
+  agent
+  system
+}
+
+enum TranscriptRetentionLane {
+  full
+  redacted_only
+  metadata_only
+}
+
+enum QaReviewerType {
+  human
+  system
+  automated_llm
+}
+
+model CallSegment {
+  id            String             @id @default(cuid())
+  account_id    String
+  call_id       String
+  sequence      Int
+  speaker       CallSegmentSpeaker
+  text          String
+  redacted_text String?
+  confidence    Float?
+  started_at    DateTime
+  ended_at      DateTime
+  created_at    DateTime           @default(now())
+
+  @@unique([call_id, sequence])
+  @@index([account_id])
+  @@index([call_id])
+  @@index([created_at])
+}
+
+model CallTranscript {
+  // Object-storage refs `raw_ref` and `redacted_ref` are columns on this
+  // model but they are NOT exposed by the lib/data/* accessor in v0.2.
+  // Privileged raw-transcript read lands after 31D ships
+  // `audit_logs.category = "break_glass"` so every elevated read is
+  // recorded. See ADR-0019 step 2.3 + planning artifact Q7.
+  id              String                  @id @default(cuid())
+  account_id      String
+  call_id         String                  @unique
+  raw_ref         String?
+  redacted_ref    String?
+  inline_text     String?
+  language        String                  @default("en")
+  retention_lane  TranscriptRetentionLane @default(full)
+  expires_at      DateTime?
+  redacted_at     DateTime?
+  created_at      DateTime                @default(now())
+
+  @@index([account_id])
+  @@index([expires_at])
+}
+
+model QaLog {
+  id                String         @id @default(cuid())
+  account_id        String
+  call_id           String
+  rubric_version    String
+  reviewer_type     QaReviewerType
+  reviewer_user_id  String?
+  score             Int?
+  findings_json     Json
+  notes             String?
+  reviewed_at       DateTime
+  created_at        DateTime       @default(now())
+
+  @@index([account_id])
+  @@index([call_id])
+  @@index([reviewed_at])
+}

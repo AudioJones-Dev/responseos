@@ -27,3 +27,6 @@ export * as WebhookEvents from "./webhookEvents";
 export * as ProviderConnections from "./providerConnections";
 export * as Conversations from "./conversations";
 export * as SmsMessages from "./smsMessages";
+export * as CallSegments from "./callSegments";
+export * as CallTranscripts from "./callTranscripts";
+export * as QaLogs from "./qaLogs";
