@@ -30,3 +30,4 @@ export * as SmsMessages from "./smsMessages";
 export * as CallSegments from "./callSegments";
 export * as CallTranscripts from "./callTranscripts";
 export * as QaLogs from "./qaLogs";
+export * as WorkflowRuns from "./workflowRuns";

@@ -41,6 +41,7 @@ const TABLE_READS = {
   callTranscripts: () =>
     prisma.callTranscript.findMany({ orderBy: { id: "asc" } }),
   qaLogs: () => prisma.qaLog.findMany({ orderBy: { id: "asc" } }),
+  workflowRuns: () => prisma.workflowRun.findMany({ orderBy: { id: "asc" } }),
 };
 
 function migrateResetAndSeed(): void {
