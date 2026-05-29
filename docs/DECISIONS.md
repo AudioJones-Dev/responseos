@@ -257,3 +257,31 @@ CRM remains pluggable per tenant: HubSpot is the default, GoHighLevel and others
 **Decision.** **PostHog** for product analytics, **Sentry** for error tracking and release health, **Better Stack** for uptime monitoring, log management, and incident/on-call alerting — all emitting through an **OpenTelemetry** instrumentation spine where practical. Telemetry is tagged with `organization_id` (never raw PII) so analytics and dashboards are tenant-scoped. Voice-gateway realtime metrics (concurrency, barge-in latency, provider-failover rate) are first-class signals.
 
 **Consequences.** Clear separation of product analytics from operational monitoring. Per-tenant observability without leaking PII into third-party analytics. Cost: three observability vendors to manage plus the OTel pipeline; secrets and data-processing terms for each must be tracked in `RESPONSEOS_SECURITY_AND_COMPLIANCE.md`. Mock-first applies: in dev/test these emit to no-op/local sinks when keys are absent.
+
+---
+
+## ADR-0019 — v0.3 demo deploy sequencing: v0.2 closeout precedes any v0.3 demo deploy
+
+**Status:** Accepted (2026-05-29). Tracks roadmap checkpoint issue #27.
+
+**Context.** PR #14 (`feat/v0.3-demo-deploy`) proposes a password-gated Vercel + Neon demo deploy of the current `master` surface using an HTTP basic-auth shim, a one-shot `prisma migrate deploy` + `prisma db seed`, and a uniform `aj_admin` session behind the gate. Its diff is tight (proxy.ts, runbook, `.env.example`) and merges cleanly. Three problems:
+
+1. **Label conflict.** `ROADMAP.md` (L14, L23) places `Organization`→`Account` and `Booking`→`Appointment` renames in **v0.2 closeout**; PR #14's runbook §7 lists them as "deferred to v0.3." ROADMAP is the source of truth; PR #14 is misaligned.
+2. **Architectural fit.** Real auth-provider wiring is a v0.2 closeout item (ADR-0005). Shipping a basic-auth-shim demo on the eve of real auth wiring entrenches a temporary pattern as the first public-facing surface of ResponseOS — the wrong reference point for future docs, reviewers, and agents.
+3. **Roadmap integrity.** v0.2 closeout is currently "🟡 In flight" (ROADMAP L14). A demo deploy now either ships a known-incomplete surface or implicitly redefines what v0.2 closeout includes.
+
+**Decision.** **v0.2 closeout precedes any v0.3 demo deploy.**
+
+1. PR #14 stays draft. No rebase, no draft→ready transition, no continued implementation on `feat/v0.3-demo-deploy` until v0.2 closeout lands on `master`.
+2. The v0.2 closeout execution sequence (separate, scoped PRs, in order, each merging green to `master`):
+    1. `Organization` → `Account` rename.
+    2. `Booking` → `Appointment` rename.
+    3. Remaining v0.2-spec models: `provider_connections`, `conversations`, `sms_messages`, `call_segments`, `call_transcripts`, `workflow_runs`, `qa_logs`, expanded `audit_logs`.
+    4. Real auth-provider wiring (see Open Question below).
+    5. UI rebuild against `DESIGN.md` tokens, using the finalized naming, auth surface, and data contracts.
+3. Once steps 2.1–2.5 land on `master`, the v0.3 demo deploy is unlocked. PR #14's deployment *pattern* (Vercel + Neon, one-shot provisioning, edge gate, `/api/health` allowlist, rollback shape) is preserved as reference material; the **basic-auth shim is replaced with real authenticated login** before that deploy goes live.
+4. Issue #26 (seed idempotency) remains P2/non-blocking unless the eventual v0.3 demo deploy adopts a re-seed-without-truncate flow. If it does, #26 is promoted before the demo goes live.
+
+**Open question — resolve before step 2.4 begins.** The operator directive and PR #14 both reference "Auth.js" for real auth wiring; ADR-0005 names **Clerk** for the Standard lane (currently the only lane in use). ADR-0011 / ADR-0012 reversed other earlier stack decisions, but no ADR has explicitly superseded ADR-0005. Before step 2.4 begins, either: (a) file an ADR superseding ADR-0005 (Standard-lane auth → Auth.js) with the rationale, tenant-RBAC implications, and Clerk-removal plan, or (b) confirm ADR-0005 stands and proceed with Clerk wiring. Not resolving this before step 2.4 means closeout work would be done against an unwritten decision.
+
+**Consequences.** v0.2 closeout becomes a hard prerequisite for any production-facing deploy. Time-to-demo is longer, but the eventual demo presents real auth, finalized naming, and the full v0.2-spec data surface — a product milestone rather than a temporary scaffold. PR #14 absorbs an indefinite rebase debt and may be closed in favor of a fresh PR once closeout completes; either is acceptable. Mock-first (ADR-0001), tenant-isolation (ADR-0009, AGENTS.md), and event-ledger-first (ADR-0002) invariants are unchanged.
