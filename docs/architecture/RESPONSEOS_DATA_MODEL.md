@@ -122,18 +122,20 @@ Provisioning a tenant is data-only (no code). Each profile is versioned (history
 
 ### 4.4 `provider_connections` (per-tenant credentials)
 
-Already on the v0.2 roadmap; the go-forward stack uses it for HubSpot, calendar, Twilio (future BYO), and voice-provider keys when a tenant brings their own.
+Shipped in v0.2 closeout step 2.3 PR 31A. Used for HubSpot, calendar, Twilio (future BYO), and voice-provider keys when a tenant brings their own. **Credential encryption posture is fixed by [ADR-0020](../DECISIONS.md#adr-0020--provider-credential-encryption-app-layer-env-managed-key-opaque-ciphertext-v02-substrate):** AES-256-GCM with `(account_id, provider)` AAD; opaque `Bytes` column with `[version | algorithm | nonce]` envelope header; env-managed key contract (`RESPONSEOS_PROVIDER_KEY`); mock-fallback to a redacted sentinel when the key is absent.
 
 | field | type | notes |
 |---|---|---|
 | id, account_id | string | |
-| provider | enum | `hubspot` \| `google_calendar` \| `calcom` \| `twilio` \| `grok` \| `openai` \| `stripe` |
-| credentials_encrypted | bytes/jsonb | encrypted at rest, decrypted at request time |
-| oauth_refresh_token_encrypted | bytes? | for OAuth providers (HubSpot, Google) |
+| provider | enum | `twilio` \| `grok` \| `openai` \| `retell` \| `vapi` \| `bland` \| `hubspot` \| `google_calendar` \| `calcom` \| `stripe` |
+| credentials_encrypted | bytes | opaque AES-256-GCM ciphertext per ADR-0020; never returned by `lib/data/*` accessors |
+| oauth_refresh_token_encrypted | bytes? | for OAuth providers (HubSpot, Google); same encryption posture |
 | status | enum | `connected` \| `disconnected` \| `error` \| `expired` |
 | scopes | string[] | granted OAuth scopes |
 | connected_by | string | user id |
 | last_verified_at | timestamp? | |
+
+Unique index on `(account_id, provider)` — one connection per provider per tenant in v0.2 (planning artifact Q2 recommendation).
 
 ### 4.5 `crm_mappings` (HubSpot SoR linkage)
 

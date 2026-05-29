@@ -24,3 +24,6 @@ export * as Assessments from "./assessments";
 export * as Engagements from "./engagements";
 export * as AuditLogs from "./auditLogs";
 export * as WebhookEvents from "./webhookEvents";
+export * as ProviderConnections from "./providerConnections";
+export * as Conversations from "./conversations";
+export * as SmsMessages from "./smsMessages";

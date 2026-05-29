@@ -10,3 +10,6 @@ export * from "./quote";
 export * from "./automation";
 export * from "./notification";
 export * from "./revenue";
+export * from "./providerConnection";
+export * from "./conversation";
+export * from "./smsMessage";

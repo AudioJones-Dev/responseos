@@ -542,3 +542,115 @@ model WebhookEvent {
   @@index([received_at])
   @@index([process_status])
 }
+
+// --- v0.2 closeout step 2.3, PR 31A — communication substrate -------------
+
+enum ProviderConnectionProvider {
+  twilio
+  grok
+  openai
+  retell
+  vapi
+  bland
+  hubspot
+  google_calendar
+  calcom
+  stripe
+}
+
+enum ProviderConnectionStatus {
+  connected
+  disconnected
+  error
+  expired
+}
+
+enum ConversationStatus {
+  open
+  archived
+  blocked
+  spam
+}
+
+enum SmsProvider {
+  twilio
+  manual
+}
+
+enum SmsDirection {
+  inbound
+  outbound
+}
+
+enum SmsMessageStatus {
+  queued
+  sending
+  sent
+  delivered
+  failed
+  received
+}
+
+model ProviderConnection {
+  id                              String                     @id @default(cuid())
+  account_id                      String
+  provider                        ProviderConnectionProvider
+  // Opaque AES-256-GCM ciphertext with envelope framing per ADR-0020:
+  //   [version: u8 | algorithm: u8 | nonce: 12 bytes | ciphertext+tag]
+  // Never logged; never returned as JSON. Decryption happens in
+  // lib/providers/encryption/* at the adapter boundary, never in
+  // lib/data/* accessors.
+  credentials_encrypted           Bytes
+  oauth_refresh_token_encrypted   Bytes?
+  status                          ProviderConnectionStatus   @default(connected)
+  scopes                          String[]
+  connected_by                    String
+  last_verified_at                DateTime?
+  created_at                      DateTime                   @default(now())
+  updated_at                      DateTime                   @updatedAt
+
+  @@unique([account_id, provider])
+  @@index([account_id])
+  @@index([status])
+}
+
+model Conversation {
+  id              String             @id @default(cuid())
+  account_id      String
+  contact_id      String?
+  business_number String
+  peer_number     String
+  status          ConversationStatus @default(open)
+  last_message_at DateTime
+  created_at      DateTime           @default(now())
+  updated_at      DateTime           @updatedAt
+
+  @@unique([account_id, business_number, peer_number])
+  @@index([account_id])
+  @@index([contact_id])
+  @@index([last_message_at])
+}
+
+model SmsMessage {
+  id                  String           @id @default(cuid())
+  account_id          String
+  conversation_id     String
+  provider            SmsProvider
+  provider_message_id String?
+  direction           SmsDirection
+  from_number         String
+  to_number           String
+  body                String
+  status              SmsMessageStatus
+  segment_count       Int              @default(1)
+  error_code          String?
+  error_message       String?
+  sent_at             DateTime?
+  delivered_at        DateTime?
+  created_at          DateTime         @default(now())
+
+  @@unique([provider, provider_message_id])
+  @@index([account_id])
+  @@index([conversation_id])
+  @@index([created_at])
+}

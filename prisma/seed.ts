@@ -771,6 +771,173 @@ async function seedAuditLogs() {
   }
 }
 
+// --- v0.2 closeout step 2.3, PR 31A — communication substrate seeds --------
+
+// Mock-sentinel bytes per ADR-0020. Stored verbatim in
+// `credentials_encrypted` when no `RESPONSEOS_PROVIDER_KEY` is set.
+// The bytes are the UTF-8 encoding of the literal string "<MOCK_REDACTED>".
+const MOCK_CREDENTIAL_SENTINEL = Buffer.from("<MOCK_REDACTED>", "utf8");
+const CONNECTION_VERIFIED_AT = new Date("2026-05-04T14:30:00.000Z");
+const CONV_1_LAST_MESSAGE = new Date("2026-05-04T15:45:00.000Z");
+const CONV_2_LAST_MESSAGE = new Date("2026-05-04T17:30:00.000Z");
+const SMS_1_AT = new Date("2026-05-04T15:43:00.000Z");
+const SMS_2_AT = new Date("2026-05-04T15:45:00.000Z");
+const SMS_3_AT = new Date("2026-05-04T17:25:00.000Z");
+const SMS_4_AT = new Date("2026-05-04T17:30:00.000Z");
+
+async function seedProviderConnections() {
+  await prisma.providerConnection.upsert({
+    where: { id: "pconn_mock_1" },
+    update: {},
+    create: {
+      id: "pconn_mock_1",
+      account_id: "org_mock_1",
+      provider: "twilio",
+      credentials_encrypted: MOCK_CREDENTIAL_SENTINEL,
+      status: "connected",
+      scopes: [],
+      connected_by: "user_acme_owner_1",
+      last_verified_at: CONNECTION_VERIFIED_AT,
+      created_at: CONNECTION_VERIFIED_AT,
+    },
+  });
+
+  await prisma.providerConnection.upsert({
+    where: { id: "pconn_mock_2" },
+    update: {},
+    create: {
+      id: "pconn_mock_2",
+      account_id: "org_mock_1",
+      provider: "hubspot",
+      credentials_encrypted: MOCK_CREDENTIAL_SENTINEL,
+      status: "connected",
+      scopes: [
+        "crm.objects.contacts.read",
+        "crm.objects.contacts.write",
+        "crm.objects.deals.read",
+        "crm.objects.deals.write",
+      ],
+      connected_by: "user_acme_owner_1",
+      last_verified_at: CONNECTION_VERIFIED_AT,
+      created_at: CONNECTION_VERIFIED_AT,
+    },
+  });
+}
+
+async function seedConversations() {
+  await prisma.conversation.upsert({
+    where: { id: "conv_mock_1" },
+    update: {},
+    create: {
+      id: "conv_mock_1",
+      account_id: "org_mock_1",
+      contact_id: "contact_mock_1",
+      business_number: "+15555550100",
+      peer_number: "+15555550199",
+      status: "open",
+      last_message_at: CONV_1_LAST_MESSAGE,
+      created_at: CONV_1_LAST_MESSAGE,
+    },
+  });
+
+  await prisma.conversation.upsert({
+    where: { id: "conv_mock_2" },
+    update: {},
+    create: {
+      id: "conv_mock_2",
+      account_id: "org_mock_2",
+      contact_id: "contact_mock_3",
+      business_number: "+15555550200",
+      peer_number: "+15555550377",
+      status: "open",
+      last_message_at: CONV_2_LAST_MESSAGE,
+      created_at: CONV_2_LAST_MESSAGE,
+    },
+  });
+}
+
+async function seedSmsMessages() {
+  await prisma.smsMessage.upsert({
+    where: { id: "sms_mock_1" },
+    update: {},
+    create: {
+      id: "sms_mock_1",
+      account_id: "org_mock_1",
+      conversation_id: "conv_mock_1",
+      provider: "twilio",
+      provider_message_id: "SM_mock_1",
+      direction: "inbound",
+      from_number: "+15555550199",
+      to_number: "+15555550100",
+      body: "Hi — looking for an AC tune-up quote this week.",
+      status: "received",
+      segment_count: 1,
+      created_at: SMS_1_AT,
+    },
+  });
+
+  await prisma.smsMessage.upsert({
+    where: { id: "sms_mock_2" },
+    update: {},
+    create: {
+      id: "sms_mock_2",
+      account_id: "org_mock_1",
+      conversation_id: "conv_mock_1",
+      provider: "twilio",
+      provider_message_id: "SM_mock_2",
+      direction: "outbound",
+      from_number: "+15555550100",
+      to_number: "+15555550199",
+      body: "Thanks for reaching out. We can be on-site Thursday at 3pm.",
+      status: "delivered",
+      segment_count: 1,
+      sent_at: SMS_2_AT,
+      delivered_at: SMS_2_AT,
+      created_at: SMS_2_AT,
+    },
+  });
+
+  await prisma.smsMessage.upsert({
+    where: { id: "sms_mock_3" },
+    update: {},
+    create: {
+      id: "sms_mock_3",
+      account_id: "org_mock_2",
+      conversation_id: "conv_mock_2",
+      provider: "twilio",
+      provider_message_id: "SM_mock_3",
+      direction: "inbound",
+      from_number: "+15555550377",
+      to_number: "+15555550200",
+      body: "Need a roof inspection — any availability this week?",
+      status: "received",
+      segment_count: 1,
+      created_at: SMS_3_AT,
+    },
+  });
+
+  await prisma.smsMessage.upsert({
+    where: { id: "sms_mock_4" },
+    update: {},
+    create: {
+      id: "sms_mock_4",
+      account_id: "org_mock_2",
+      conversation_id: "conv_mock_2",
+      provider: "twilio",
+      provider_message_id: "SM_mock_4",
+      direction: "outbound",
+      from_number: "+15555550200",
+      to_number: "+15555550377",
+      body: "We can stop by Friday at 10am — confirming via email shortly.",
+      status: "delivered",
+      segment_count: 1,
+      sent_at: SMS_4_AT,
+      delivered_at: SMS_4_AT,
+      created_at: SMS_4_AT,
+    },
+  });
+}
+
 async function main() {
   await seedAccounts();
   await seedUsers();
@@ -784,6 +951,9 @@ async function main() {
   await seedAssessmentReport();
   await seedEngagement();
   await seedAuditLogs();
+  await seedProviderConnections();
+  await seedConversations();
+  await seedSmsMessages();
   // WebhookEvent intentionally seeded empty per spec §5; the v0.3 ingest path
   // is the first writer.
 }
