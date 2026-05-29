@@ -290,3 +290,53 @@ CRM remains pluggable per tenant: HubSpot is the default, GoHighLevel and others
 - Future closeout prompts, runbooks, and PR descriptions must not quietly drift the repo toward Auth.js by implication.
 
 **Consequences.** v0.2 closeout becomes a hard prerequisite for any production-facing deploy. Time-to-demo is longer, but the eventual demo presents real Clerk-authenticated login, finalized naming, and the full v0.2-spec data surface — a product milestone rather than a temporary scaffold. PR #14 absorbs an indefinite rebase debt and may be closed in favor of a fresh PR once closeout completes; either is acceptable. Mock-first (ADR-0001), tenant-isolation (ADR-0009, AGENTS.md), event-ledger-first (ADR-0002), and the Clerk auth direction (ADR-0005) are unchanged.
+
+---
+
+## ADR-0020 — Provider credential encryption: app-layer, env-managed key, opaque ciphertext (v0.2 substrate)
+
+**Status:** Accepted (2026-05-29). Resolves Q1 of [`docs/product/RESPONSEOS_V0_2_REMAINING_MODELS_IMPLEMENTATION_PLAN.md`](../product/RESPONSEOS_V0_2_REMAINING_MODELS_IMPLEMENTATION_PLAN.md). Precondition for v0.2 closeout step 2.3 PR 31A (`provider_connections`).
+
+**Context.** The v0.2 step 2.3 planning artifact identifies `provider_connections` as a new model holding per-tenant credentials for Twilio, Grok, OpenAI, HubSpot, Google Calendar, Cal.com, Stripe, etc. `RESPONSEOS_DATA_MODEL.md` §4.4 states credentials are "encrypted at rest, decrypted at request time" but does not pick a mechanism. The planning artifact flagged this as Q1 and said an ADR was needed before 31A. The choice space is bounded by three constraints already in force:
+
+- **ADR-0001 (mock-first)** — substrate ships without live provider integration. Credentials are not actively used until v0.3, but a real schema and a real ciphertext column must exist now so 31A can land.
+- **ADR-0004 (three compliance lanes)** — HIPAA-ready lane requires a per-tenant KMS posture that v0.2 does not establish. Standard lane is the only lane in use today.
+- **ADR-0019 (closeout-first)** — no production-facing deploy until v0.2 closeout completes. Whatever encryption posture v0.2 picks must have a clean upgrade path to KMS/Vault in v0.3, without a schema migration.
+
+**Decision.**
+
+1. **Plaintext storage of provider credentials is prohibited.** No JSON column ever holds an unencrypted access token, secret, OAuth refresh token, API key, signing key, or any other credential material.
+2. **v0.2 uses application-layer encryption** with an env-managed key contract. The encryption / decryption happens in a single module (planned: `lib/providers/encryption/*`) — never inline in `lib/data/*` accessors.
+3. **Algorithm:** AES-256-GCM (authenticated encryption with associated data) with a 12-byte random nonce per ciphertext. AAD includes `account_id` + `provider` to bind a ciphertext to the tenant + provider context (defeats cross-row swap attacks).
+4. **Storage shape:** the encrypted credential payload is stored as opaque ciphertext — Prisma type `Bytes` (Postgres `bytea`). **Not** as queryable JSON. Indexing on credential contents is explicitly out of scope.
+5. **Envelope framing:** a fixed-size header precedes the ciphertext bytes — `[version: u8 | algorithm: u8 | nonce: 12 bytes]`. This keeps the schema simple (one `Bytes` column per encrypted artifact) while supporting key rotation (the `version` byte indexes the active key).
+6. **Key contract:** the encryption key is read from a single env var (placeholder name for v0.2: `RESPONSEOS_PROVIDER_KEY`, expected base64-encoded 32 bytes). When the env var is absent, the encryption module **falls back to mock** per ADR-0001: a redacted-sentinel string (`"<MOCK_REDACTED>"`) is stored, no real key derivation is performed, and decryption returns a deterministic mock-credential map shaped per provider. App boots and runs with zero credentials.
+7. **Scope of "credentials" covered:** the same posture applies to any encrypted column 31A introduces — at minimum `credentials_encrypted` and (where the provider is OAuth-based) `oauth_refresh_token_encrypted`. Both are `Bytes` with the same envelope framing.
+8. **What 31A may implement against this ADR:**
+    - A `credentials_encrypted Bytes` column (and `oauth_refresh_token_encrypted Bytes?` where applicable) on `provider_connections`.
+    - A `lib/providers/encryption/*` module exposing `encryptCredentials(plaintext, { accountId, provider }) → Bytes` and `decryptCredentials(ciphertext, { accountId, provider }) → plaintext` with the mock-fallback behavior above.
+    - Unit tests that round-trip a known plaintext through encrypt → store → fetch → decrypt without exposing plaintext in any log line, error message, or test snapshot.
+    - Integration tests asserting that the `credentials_encrypted` column never contains the literal plaintext, and that mock-mode returns the redacted sentinel.
+
+**Explicitly out of scope for v0.2.**
+
+- **KMS / Vault / live secret-manager integration.** No AWS KMS, no GCP KMS, no HashiCorp Vault, no Supabase Vault, no Doppler. Those land per the v0.3 deploy-lane decision (likely a future ADR).
+- **Per-tenant key isolation.** The env-managed key is global in v0.2. Per-tenant key derivation requires KMS-backed key wrapping and is HIPAA-ready-lane gated per ADR-0004.
+- **Key rotation procedure.** Acknowledged as future work — the envelope's `version` byte enables it, but the rotation runbook itself is not specified here.
+- **Live provider wiring.** No Twilio / HubSpot / Grok / OpenAI / Stripe / Cal.com / Google API calls. Credentials may be encrypted and stored, but no consumer reads them in v0.2.
+- **Break-glass decryption audit.** Once 31D ships `audit_logs.category = "break_glass"`, any `aj_admin`-initiated decryption with elevated context is to be logged via that path. Until 31D lands, no privileged decryption surface is exposed.
+
+**Consequences.**
+
+- **Pros.** Substrate ships now without coupling v0.2 to KMS/Vault decisions. v0.3 has a clean upgrade path — the `Bytes` column shape is unchanged when the key source moves from env to KMS; only the key-fetching contract changes. Mock-first invariant (ADR-0001) is preserved: the app boots with no key. Tenant-isolation (ADR-0009, AGENTS.md) is unchanged — `account_id` scoping at the data layer is independent of the global encryption key.
+- **Cons.** A single env-managed key is a weaker security posture than per-tenant KMS-backed keys. **This ADR is explicit that the v0.2 posture is not acceptable for live tenant traffic.** Live traffic gates on v0.3, which requires a follow-up ADR establishing the production key posture. Compromise of the env key in v0.2 (a development/preview-only environment per ADR-0019) exposes all stored credentials — which in v0.2 are mock or placeholder values anyway.
+- **Compliance-lane posture.** Standard lane: acceptable for v0.2 substrate. Privacy-hardened lane: same as Standard for v0.2 substrate; live traffic requires v0.3 posture review. HIPAA-ready lane (ADR-0004): **blocked** from using `provider_connections` until KMS-backed key derivation lands.
+- **Operational invariant.** A future ADR superseding this one (Standard-lane KMS posture for v0.3) is expected. This ADR does not block that supersession; it specifies the substrate the supersession will upgrade.
+
+**Future work — acknowledged.**
+
+- KMS / Vault integration ADR (likely ADR-0021+), aligned with v0.3 deploy lane.
+- Key rotation runbook (envelope `version` byte already supports it; procedure spec is pending).
+- Per-tenant key derivation for HIPAA-ready lane per ADR-0004.
+- Break-glass decryption audit, integrating with `audit_logs.category = "break_glass"` once 31D ships.
+- Compliance-lane review at the v0.3 provider-readiness gate per ADR-0012 §"Provider readiness gate".
