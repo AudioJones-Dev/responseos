@@ -37,6 +37,10 @@ const TABLE_READS = {
     prisma.providerConnection.findMany({ orderBy: { id: "asc" } }),
   conversations: () => prisma.conversation.findMany({ orderBy: { id: "asc" } }),
   smsMessages: () => prisma.smsMessage.findMany({ orderBy: { id: "asc" } }),
+  callSegments: () => prisma.callSegment.findMany({ orderBy: { id: "asc" } }),
+  callTranscripts: () =>
+    prisma.callTranscript.findMany({ orderBy: { id: "asc" } }),
+  qaLogs: () => prisma.qaLog.findMany({ orderBy: { id: "asc" } }),
 };
 
 function migrateResetAndSeed(): void {

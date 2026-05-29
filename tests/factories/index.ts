@@ -10,3 +10,6 @@ export { makeAppointment } from "./appointments";
 export { makeProviderConnection } from "./providerConnections";
 export { makeConversation } from "./conversations";
 export { makeSmsMessage } from "./smsMessages";
+export { makeCallSegment } from "./callSegments";
+export { makeCallTranscript } from "./callTranscripts";
+export { makeQaLog } from "./qaLogs";

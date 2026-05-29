@@ -9,6 +9,9 @@ import { getMockRevenueMetrics } from "@/lib/mock/revenueMetrics";
 import { getMockProviderConnections } from "@/lib/mock/providerConnections";
 import { getMockConversations } from "@/lib/mock/conversations";
 import { getMockSmsMessages } from "@/lib/mock/smsMessages";
+import { getMockCallSegments } from "@/lib/mock/callSegments";
+import { getMockCallTranscripts } from "@/lib/mock/callTranscripts";
+import { getMockQaLogs } from "@/lib/mock/qaLogs";
 import { disconnectTestDb, normalize, prisma, resetAndSeedTestDb } from "./setup";
 
 function clean(value: unknown): unknown {
@@ -213,6 +216,90 @@ describe("seeded mock fixture parity", () => {
     for (const row of rows) {
       expect(Buffer.from(row.credentials_encrypted).equals(sentinel)).toBe(true);
     }
+  });
+
+  test("call segments match lib/mock call segments field-for-field", async () => {
+    const keys = [
+      "id",
+      "account_id",
+      "call_id",
+      "sequence",
+      "speaker",
+      "text",
+      "redacted_text",
+      "confidence",
+      "started_at",
+      "ended_at",
+    ];
+    const rows = await prisma.callSegment.findMany({ orderBy: { id: "asc" } });
+    expect(clean(normalize(rows.map((row) => pick(row, keys))))).toEqual(
+      clean(getMockCallSegments().map((row) => pick(row, keys))),
+    );
+  });
+
+  test("call transcripts match lib/mock call transcripts field-for-field (public shape)", async () => {
+    // raw_ref and redacted_ref are deliberately excluded — the public
+    // mock type does not expose them and the lib/data/* accessor in
+    // 31B does not return them (Q7 + ADR-0019 step 2.3 guardrail).
+    const keys = [
+      "id",
+      "account_id",
+      "call_id",
+      "inline_text",
+      "language",
+      "retention_lane",
+      "expires_at",
+      "redacted_at",
+    ];
+    const rows = await prisma.callTranscript.findMany({
+      orderBy: { id: "asc" },
+      select: {
+        id: true,
+        account_id: true,
+        call_id: true,
+        inline_text: true,
+        language: true,
+        retention_lane: true,
+        expires_at: true,
+        redacted_at: true,
+      },
+    });
+    expect(clean(normalize(rows.map((row) => pick(row, keys))))).toEqual(
+      clean(getMockCallTranscripts().map((row) => pick(row, keys))),
+    );
+  });
+
+  test("call transcript raw_ref / redacted_ref are stored at the DB level but never exposed by the public accessor", async () => {
+    // Direct DB read may surface the columns (they exist on the row);
+    // but the public-shape accessor must not project them. The seed
+    // intentionally leaves both null in v0.2 — object storage is not
+    // wired. This test asserts both invariants together.
+    const row = await prisma.callTranscript.findUnique({
+      where: { call_id: "call_mock_2" },
+      select: { raw_ref: true, redacted_ref: true },
+    });
+    expect(row).not.toBeNull();
+    expect(row?.raw_ref).toBeNull();
+    expect(row?.redacted_ref).toBeNull();
+  });
+
+  test("qa logs match lib/mock qa logs field-for-field", async () => {
+    const keys = [
+      "id",
+      "account_id",
+      "call_id",
+      "rubric_version",
+      "reviewer_type",
+      "reviewer_user_id",
+      "score",
+      "findings_json",
+      "notes",
+      "reviewed_at",
+    ];
+    const rows = await prisma.qaLog.findMany({ orderBy: { id: "asc" } });
+    expect(clean(normalize(rows.map((row) => pick(row, keys))))).toEqual(
+      clean(getMockQaLogs().map((row) => pick(row, keys))),
+    );
   });
 
   test("revenue metrics match lib/mock revenue metrics field-for-field", async () => {

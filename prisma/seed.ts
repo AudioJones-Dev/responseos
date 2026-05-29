@@ -938,6 +938,94 @@ async function seedSmsMessages() {
   });
 }
 
+// --- v0.2 closeout step 2.3, PR 31B — call intelligence substrate seeds ---
+
+// Anchored to call_mock_2 (the seeded "answered" call) so the seeded
+// segments / transcript / qa log all attach to the only call in the
+// fixtures that has a transcript body.
+const SEG_1_START = new Date("2026-05-04T15:15:00.000Z");
+const SEG_1_END = new Date("2026-05-04T15:15:08.000Z");
+const SEG_2_START = new Date("2026-05-04T15:15:08.000Z");
+const SEG_2_END = new Date("2026-05-04T15:15:18.000Z");
+const TRANSCRIPT_CREATED_AT = new Date("2026-05-04T15:18:30.000Z");
+const QA_REVIEWED_AT = new Date("2026-05-04T16:00:00.000Z");
+
+async function seedCallSegments() {
+  await prisma.callSegment.upsert({
+    where: { id: "seg_mock_1" },
+    update: {},
+    create: {
+      id: "seg_mock_1",
+      account_id: "org_mock_1",
+      call_id: "call_mock_2",
+      sequence: 1,
+      speaker: "caller",
+      text: "Hi, I'm looking for an AC tune-up quote for my single-family home in Tampa.",
+      confidence: 0.92,
+      started_at: SEG_1_START,
+      ended_at: SEG_1_END,
+      created_at: SEG_1_END,
+    },
+  });
+
+  await prisma.callSegment.upsert({
+    where: { id: "seg_mock_2" },
+    update: {},
+    create: {
+      id: "seg_mock_2",
+      account_id: "org_mock_1",
+      call_id: "call_mock_2",
+      sequence: 2,
+      speaker: "agent",
+      text: "Happy to help. About what year was the unit installed, and what's the square footage?",
+      confidence: 0.95,
+      started_at: SEG_2_START,
+      ended_at: SEG_2_END,
+      created_at: SEG_2_END,
+    },
+  });
+}
+
+async function seedCallTranscripts() {
+  await prisma.callTranscript.upsert({
+    where: { id: "xcr_mock_1" },
+    update: {},
+    create: {
+      id: "xcr_mock_1",
+      account_id: "org_mock_1",
+      call_id: "call_mock_2",
+      inline_text:
+        "Caller asked for AC quote on a 1,800 sq ft single-family home. Wants service this week.",
+      language: "en",
+      retention_lane: "full",
+      created_at: TRANSCRIPT_CREATED_AT,
+    },
+  });
+}
+
+async function seedQaLogs() {
+  await prisma.qaLog.upsert({
+    where: { id: "qa_mock_1" },
+    update: {},
+    create: {
+      id: "qa_mock_1",
+      account_id: "org_mock_1",
+      call_id: "call_mock_2",
+      rubric_version: "v1",
+      reviewer_type: "system",
+      score: 84,
+      findings_json: {
+        greeting: "pass",
+        qualification: "pass",
+        next_step: "pass",
+      },
+      notes: "Caller qualified; estimate visit scheduled.",
+      reviewed_at: QA_REVIEWED_AT,
+      created_at: QA_REVIEWED_AT,
+    },
+  });
+}
+
 async function main() {
   await seedAccounts();
   await seedUsers();
@@ -954,6 +1042,9 @@ async function main() {
   await seedProviderConnections();
   await seedConversations();
   await seedSmsMessages();
+  await seedCallSegments();
+  await seedCallTranscripts();
+  await seedQaLogs();
   // WebhookEvent intentionally seeded empty per spec §5; the v0.3 ingest path
   // is the first writer.
 }

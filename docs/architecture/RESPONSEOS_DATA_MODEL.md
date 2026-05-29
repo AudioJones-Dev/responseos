@@ -185,6 +185,9 @@ Transcripts are PII-bearing and lane-sensitive. Two artifacts per call, in **sep
 | Raw transcript | `org_id/raw/...` (object storage) + `call_transcripts.raw_ref` | `aj_admin` with break-glass only |
 | Redacted transcript | `org_id/redacted/...` + `call_transcripts.redacted_ref` | QA reviewers, operators; clients per profile |
 | Turn-by-turn segments | `call_segments` (speaker, sequence, text, confidence, redacted_text) | per lane |
+| Inline transcript text (v0.2 substrate) | `call_transcripts.inline_text` | per lane via the standard tenant-scoped accessor |
+
+**v0.2 substrate status (PR 31B):** `call_transcripts.raw_ref` and `call_transcripts.redacted_ref` columns exist on the model — they are the object-storage pointers the v0.3 normalizer will populate. **They are deliberately excluded from the `lib/data/callTranscripts.ts` public projection in 31B.** The privileged raw-transcript read accessor (which must record a `break_glass` audit-log entry on every elevated read) lands **after 31D** ships `audit_logs.category = "break_glass"`. In the interim, `inline_text` is the substrate read path and serves the seeded fixtures.
 
 Retention by tenant lane (from `SECURITY.md`):
 
