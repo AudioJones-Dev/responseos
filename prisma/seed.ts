@@ -760,6 +760,27 @@ async function seedAuditLogs() {
       target_id: "booking_mock_1",
       created_at: at(60),
     },
+    // 31D — exercises the expanded AuditLog substrate (actor_role,
+    // category, reason, before_ref, after_ref, expires_at). This row
+    // is the canonical example of the break-glass category. The
+    // privileged read accessor that will write rows like this lands
+    // in a separate PR after 31D is merged + reviewed.
+    {
+      id: "audit_mock_7",
+      account_id: "org_mock_1",
+      actor_user_id: "user_aj_admin_1",
+      actor_type: "user",
+      actor_role: "aj_admin",
+      action: "transcript.break_glass.read",
+      category: "break_glass",
+      target_type: "CallTranscript",
+      target_id: "xcr_mock_1",
+      reason: "Incident #demo investigation",
+      before_ref: { artifact_state: "redacted_only_visible" },
+      after_ref: { artifact_state: "raw_briefly_revealed" },
+      expires_at: new Date("2026-05-04T17:30:00.000Z"),
+      created_at: new Date("2026-05-04T16:30:00.000Z"),
+    },
   ];
 
   for (const data of rows) {
