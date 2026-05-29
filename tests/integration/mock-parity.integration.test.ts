@@ -207,9 +207,11 @@ describe("seeded mock fixture parity", () => {
       select: { id: true, credentials_encrypted: true },
     });
     const sentinel = Buffer.from("<MOCK_REDACTED>", "utf8");
+    // Prisma 6 maps the `Bytes` scalar to `Uint8Array` (not Node `Buffer`),
+    // so wrap before calling Buffer.equals. The wrap preserves the byte
+    // contents — it does not change what is stored or compared.
     for (const row of rows) {
-      const bytes = row.credentials_encrypted as Buffer;
-      expect(bytes.equals(sentinel)).toBe(true);
+      expect(Buffer.from(row.credentials_encrypted).equals(sentinel)).toBe(true);
     }
   });
 
