@@ -131,7 +131,7 @@ enum CalendarProvider {
   manual
 }
 
-enum BookingStatus {
+enum AppointmentStatus {
   scheduled
   confirmed
   completed
@@ -290,7 +290,7 @@ model LeadQualification {
   created_at              DateTime               @default(now())
 }
 
-model Booking {
+model Appointment {
   id                String           @id @default(cuid())
   account_id   String
   contact_id        String
@@ -300,7 +300,7 @@ model Booking {
   title             String
   start_time        DateTime
   end_time          DateTime
-  status            BookingStatus    @default(scheduled)
+  status            AppointmentStatus    @default(scheduled)
   location          String?
   notes             String?
   created_at        DateTime         @default(now())

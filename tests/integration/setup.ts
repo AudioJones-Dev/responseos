@@ -13,7 +13,7 @@ const TABLES = [
   "Notification",
   "Automation",
   "QuoteRequest",
-  "Booking",
+  "Appointment",
   "LeadQualification",
   "LeadEvent",
   "Call",

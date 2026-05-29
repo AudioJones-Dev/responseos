@@ -109,7 +109,7 @@ Current CI (unchanged): `validate` + `integration`. Target deploy pipeline (v0.3
 | Inbound call → agent handoff | < 3s avg |
 | Voice provider failover completes call | > 99% |
 | Calendar-slot response latency | < 1.5s p95 |
-| Booking success after slot selection | > 98% |
+| Appointment success after slot selection | > 98% |
 | Monthly report generation | > 99% |
 | Client portal uptime | 99.5% |
 | Voice gateway availability | target defined at gate (new service) |

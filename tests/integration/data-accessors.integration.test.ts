@@ -3,7 +3,7 @@ import {
   Assessments,
   AuditLogs,
   Automations,
-  Bookings,
+  Appointments,
   Calls,
   Contacts,
   Engagements,
@@ -95,13 +95,13 @@ describe("data accessors against Postgres", () => {
     expect(result.data?.qualification_status).toBe("qualified");
   });
 
-  test("booking accessors list and fetch bookings", async () => {
-    const list = await Bookings.listBookings({ accountId: "org_mock_1" });
+  test("appointment accessors list and fetch appointments", async () => {
+    const list = await Appointments.listAppointments({ accountId: "org_mock_1" });
     expect(list.ok).toBe(true);
     if (!list.ok) return;
     expect(list.data.map((booking) => booking.id)).toEqual(["booking_mock_1"]);
 
-    const found = await Bookings.getBookingById("booking_mock_1");
+    const found = await Appointments.getAppointmentById("booking_mock_1");
     expect(found.ok).toBe(true);
     if (!found.ok) return;
     expect(found.data.status).toBe("confirmed");

@@ -45,7 +45,7 @@ Existing routes: `/client/dashboard`, `/client/calls`, `/client/leads`, `/client
 | Dashboard | "How much did we recover this month? ROI? Anything needs me?" | Hero: Recovered Revenue; supporting row: leads/bookings/response time/ROI |
 | Calls | "What happened on our calls?" | Outcome labels in business language; recording/transcript per lane |
 | Leads | "What leads came in and where are they?" | StatusBadge: Recovered/Booked/Needs Review/Archived |
-| Bookings | "What's on the calendar from recovered leads?" | revenue attribution |
+| Appointments | "What's on the calendar from recovered leads?" | revenue attribution |
 | Quotes | "What quotes are out and their status?" | |
 | Revenue | "Show me the recovered-revenue trend + attribution" | line/bar charts per `../DESIGN.md` § 10 |
 | Reports | "Monthly proof artifact" | PDF export + period summaries |
@@ -65,7 +65,7 @@ Onboarding doubles as the Readiness Assessment data capture (commercial Phase 1)
 4. CRM & calendar (connect HubSpot + Google/Cal.com via OAuth)
 5. Average job value
 6. Missed-call estimate
-7. Booking process + durations/blocked slots
+7. Appointment process + durations/blocked slots
 8. Quote process (on-call vs after-visit)
 9. Escalation contacts + transfer numbers + disclosure language by state
 10. Brand voice / red-flag questions → seeds the prompt profile
@@ -99,11 +99,11 @@ Output: a provisioned (or assessed-only) tenant + a Readiness packet (Score, Lea
 
 ---
 
-## 8. Booking UI
+## 8. Appointment UI
 
 - Slot selection (SMS link, web widget, or live-during-call hand-back) computed from tenant hours + blocked windows + calendar `freeBusy`.
 - Confirmation + reminder cadence surfaced; status: Scheduled / Confirmed / Completed / Cancelled / No-show.
-- Booking holds respect the 10-concurrent-holds/tenant limit (API Contracts §6) to prevent oversubscription.
+- Appointment holds respect the 10-concurrent-holds/tenant limit (API Contracts §6) to prevent oversubscription.
 
 ---
 

@@ -33,7 +33,7 @@ All new routes below use this same envelope and rules.
 
 ## 3. REST routes (go-forward additions)
 
-Existing routes (`/api/calls`, `/api/leads`, `/api/bookings`, `/api/quotes`, `/api/automations`, `/api/contacts`, `/api/organizations`, `/api/notifications`, `/api/reports/*`, `/api/health`, `/api/auth/session`) are retained per `../api-spec.md`. Additions:
+Existing routes (`/api/calls`, `/api/leads`, `/api/appointments`, `/api/quotes`, `/api/automations`, `/api/contacts`, `/api/organizations`, `/api/notifications`, `/api/reports/*`, `/api/health`, `/api/auth/session`) are retained per `../api-spec.md`. Additions:
 
 ### Tenant provisioning & config (operator / `aj_admin`)
 | Method | Route | Purpose |
@@ -126,7 +126,7 @@ All webhooks: POST only (405 otherwise), signature-validated **before** body par
 |---|---|---|
 | Public REST API | 120 req/min/key | soft burst 30/10s (inherited) |
 | Quote generation | 20 creates/min/tenant | queue excess `202` |
-| Booking | 10 concurrent holds/tenant | prevent oversubscription |
+| Appointment | 10 concurrent holds/tenant | prevent oversubscription |
 | Report endpoints | 30 req/min/user | cache heavily |
 | Internal gateway tool calls | per-tenant concurrency cap = concurrent-call ceiling | protects core during call spikes |
 | Webhooks | no user-facing limit | dedupe by event key; reject invalid signatures |

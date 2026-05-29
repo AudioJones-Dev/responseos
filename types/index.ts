@@ -5,7 +5,7 @@ export * from "./contact";
 export * from "./call";
 export * from "./lead";
 export * from "./leadQualification";
-export * from "./booking";
+export * from "./appointment";
 export * from "./quote";
 export * from "./automation";
 export * from "./notification";

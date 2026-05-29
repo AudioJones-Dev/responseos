@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, test } from "vitest";
-import { getMockBookings } from "@/lib/mock/bookings";
+import { getMockAppointments } from "@/lib/mock/appointments";
 import { getMockCalls } from "@/lib/mock/calls";
 import { getMockContacts } from "@/lib/mock/contacts";
 import { getMockLeadEvents } from "@/lib/mock/leads";
@@ -98,7 +98,7 @@ describe("seeded mock fixture parity", () => {
     );
   });
 
-  test("bookings match lib/mock bookings field-for-field", async () => {
+  test("appointments match lib/mock appointments field-for-field", async () => {
     const keys = [
       "id",
       "account_id",
@@ -113,9 +113,9 @@ describe("seeded mock fixture parity", () => {
       "location",
       "notes",
     ];
-    const rows = await prisma.booking.findMany({ orderBy: { id: "asc" } });
+    const rows = await prisma.appointment.findMany({ orderBy: { id: "asc" } });
     expect(clean(normalize(rows.map((row) => pick(row, keys))))).toEqual(
-      clean(getMockBookings().map((row) => pick(row, keys))),
+      clean(getMockAppointments().map((row) => pick(row, keys))),
     );
   });
 

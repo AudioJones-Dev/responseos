@@ -63,11 +63,11 @@ v0.1 stubs include a `mock: true` flag inside the success envelope (`{ ok: true,
 - `POST /api/leads/:id/qualify` — body: `LeadQualificationInput` → `{ lead_event_id, qualification_score }`
 - `POST /api/leads/:id/status` — body: `{ status: LeadEventStatus, notes? }`
 
-### Bookings
-- `GET /api/bookings` → list
-- `GET /api/bookings/:id` → single
-- `POST /api/bookings/sync/google` — stub for Google Calendar sync
-- `POST /api/bookings/sync/calcom` — stub for Cal.com sync
+### Appointments
+- `GET /api/appointments` → list
+- `GET /api/appointments/:id` → single
+- `POST /api/appointments/sync/google` — stub for Google Calendar sync
+- `POST /api/appointments/sync/calcom` — stub for Cal.com sync
 
 ### Quotes
 - `GET /api/quotes` → list

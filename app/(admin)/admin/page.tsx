@@ -1,6 +1,6 @@
 import StatCard from "@/components/dashboard/StatCard";
 import {
-  Bookings,
+  Appointments,
   Calls,
   Leads,
   Accounts,
@@ -16,11 +16,11 @@ const formatUsd = (cents: number): string =>
   });
 
 export default async function AdminHome() {
-  const [orgsR, callsR, leadsR, bookingsR, quotesR, revenueR] = await Promise.all([
+  const [orgsR, callsR, leadsR, appointmentsR, quotesR, revenueR] = await Promise.all([
     Accounts.listAccounts(),
     Calls.listCalls({}),
     Leads.listLeads({}),
-    Bookings.listBookings({}),
+    Appointments.listAppointments({}),
     Quotes.listQuoteRequests({}),
     RevenueMetrics.getCurrentRevenueMetrics({}),
   ]);
@@ -28,7 +28,7 @@ export default async function AdminHome() {
   const accounts = orgsR.ok ? orgsR.data : [];
   const calls = callsR.ok ? callsR.data : [];
   const leads = leadsR.ok ? leadsR.data : [];
-  const bookings = bookingsR.ok ? bookingsR.data : [];
+  const appointments = appointmentsR.ok ? appointmentsR.data : [];
   const quotes = quotesR.ok ? quotesR.data : [];
   const revenue = revenueR.ok ? revenueR.data : null;
 
@@ -39,7 +39,7 @@ export default async function AdminHome() {
       ["retell", "vapi", "bland"].includes(c.provider),
   ).length;
   const qualified = leads.filter((l) => l.status === "qualified").length;
-  const booked = bookings.length;
+  const booked = appointments.length;
   const quoteCount = quotes.length;
 
   return (
