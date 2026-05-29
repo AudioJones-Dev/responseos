@@ -1,16 +1,27 @@
 import "@/lib/serverOnlyGuard";
+import { auth } from "@clerk/nextjs/server";
+import { db } from "@/lib/db/client";
 import type { UserRole } from "@/types/user";
 
 /**
- * v0.2 placeholder session contract per docs/v0.2-implementation-spec.md §3.
+ * v0.2 session contract per docs/v0.2-implementation-spec.md §3 and the
+ * Clerk alignment plan (docs/product/RESPONSEOS_V0_2_CLERK_ALIGNMENT_PLAN.md).
  *
- * The five exports below are the public surface that pages, route handlers,
- * and `lib/data/*` accessors call today. v0.3 swaps the implementation behind
- * the same contract for a real auth provider (Auth.js per §11 Q2).
+ * The exports below are the public surface that pages, route handlers, and
+ * `lib/data/*` accessors call. 32B wires Clerk's server-side `auth()` behind
+ * this contract without changing any signature, type, or error class.
  *
- * Hard production guard: setting RESPONSEOS_DEV_SESSION while
- * NODE_ENV === "production" throws on every session lookup. The placeholder
- * is dev-mode only.
+ * Dispatch (see `getCurrentSession`):
+ *   1. Production guard — RESPONSEOS_DEV_SESSION under NODE_ENV=production throws.
+ *   2. Explicit dev override — RESPONSEOS_DEV_SESSION set in non-production wins
+ *      (the test/CI bypass per plan §4.7).
+ *   3. Clerk path — when CLERK_SECRET_KEY is set, derive from Clerk `auth()`.
+ *   4. Placeholder fallback — no Clerk env: existing dev-session behavior
+ *      (defaults to aj_admin), preserved unchanged.
+ *
+ * The Clerk path resolves only existing `User`/`Account` rows. There is no
+ * just-in-time provisioning in 32B — an unmapped Clerk identity or org resolves
+ * to no session (32C owns webhook-driven provisioning).
  */
 
 export interface SessionUser {
@@ -119,28 +130,150 @@ class DevSessionInProductionError extends Error {
 
 export { TenantScopeError, RoleDeniedError, DevSessionInProductionError };
 
-function resolveDevSession(): DevSessionConfig {
+/**
+ * Resolves the dev/placeholder session config.
+ *
+ * - Always throws `DevSessionInProductionError` when RESPONSEOS_DEV_SESSION is
+ *   set under NODE_ENV=production (the production hard guard).
+ * - When `requireExplicit` is true, returns null unless RESPONSEOS_DEV_SESSION
+ *   is explicitly set — used for the non-production override step.
+ * - Otherwise falls back to the default (`aj_admin`) — the placeholder behavior
+ *   preserved from before Clerk wiring.
+ */
+function resolveDevSession(
+  { requireExplicit }: { requireExplicit: boolean } = { requireExplicit: false },
+): DevSessionConfig | null {
   const requested = process.env.RESPONSEOS_DEV_SESSION;
 
   if (process.env.NODE_ENV === "production" && requested) {
     throw new DevSessionInProductionError();
   }
 
-  const key = requested && requested.length > 0 ? requested : DEFAULT_DEV_SESSION_KEY;
-  const config = DEV_SESSIONS[key];
-  if (!config) {
-    return DEV_SESSIONS[DEFAULT_DEV_SESSION_KEY];
+  if (requireExplicit && !(requested && requested.length > 0)) {
+    return null;
   }
-  return config;
+
+  const key = requested && requested.length > 0 ? requested : DEFAULT_DEV_SESSION_KEY;
+  return DEV_SESSIONS[key] ?? DEV_SESSIONS[DEFAULT_DEV_SESSION_KEY];
+}
+
+function buildSession(
+  user: SessionUser,
+  account: SessionAccount | null,
+): Session {
+  return {
+    user,
+    account,
+    expires_at: new Date(Date.now() + ONE_HOUR_MS).toISOString(),
+  };
+}
+
+function clerkEnabled(): boolean {
+  return Boolean(process.env.CLERK_SECRET_KEY);
+}
+
+/**
+ * Conservative role mapping (operator decision Q4).
+ *
+ * - Control context (active org is the AJ Digital control org): the DB role is
+ *   authoritative; `aj_admin` / `operator` are permitted. We never elevate
+ *   beyond the DB grant.
+ * - Tenant context (active org maps to a client `Account`): `aj_admin` is never
+ *   granted here, and `client_admin` requires an explicit DB grant. Anything
+ *   else resolves no higher than `client_viewer`.
+ *
+ * Clerk's generic org membership role is intentionally NOT used to widen
+ * privileges — the DB row is the source of truth for the grant.
+ */
+function resolveSessionRole(
+  dbRole: UserRole,
+  context: "control" | "tenant",
+): UserRole {
+  if (context === "control") {
+    return dbRole;
+  }
+  return dbRole === "client_admin" ? "client_admin" : "client_viewer";
+}
+
+/**
+ * Derives a session from Clerk's server-side `auth()`.
+ *
+ * Resolves only existing rows — no JIT provisioning (operator decision Q1):
+ * an unauthenticated Clerk request, an unmapped `clerk_user_id`, or an active
+ * org with no mapped `Account` all resolve to `null` (the existing
+ * unauthenticated pathway). Multi-org membership uses the active Clerk org
+ * first, falling back to the AJ Digital control org only for control context
+ * (operator decisions Q15 / Q4).
+ */
+async function deriveClerkSession(): Promise<Session | null> {
+  const { userId, orgId } = await auth();
+  if (!userId || !db) {
+    return null;
+  }
+
+  const user = await db.user.findUnique({ where: { clerk_user_id: userId } });
+  if (!user) {
+    return null;
+  }
+
+  const sessionUser = (role: UserRole): SessionUser => ({
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role,
+  });
+
+  const ajControlOrgId = process.env.AJ_DIGITAL_CLERK_ORG_ID;
+  const activeOrgId = orgId ?? null;
+
+  const isActiveControlOrg =
+    Boolean(ajControlOrgId) && activeOrgId === ajControlOrgId;
+  // Fallback only for control context: no active org, but the DB user is an
+  // AJ control-plane user and a control org is configured.
+  const isControlFallback =
+    !activeOrgId &&
+    Boolean(ajControlOrgId) &&
+    (user.role === "aj_admin" || user.role === "operator");
+
+  if (isActiveControlOrg || isControlFallback) {
+    return buildSession(sessionUser(resolveSessionRole(user.role, "control")), null);
+  }
+
+  // Tenant context requires an active org that maps to an existing Account. We
+  // never guess a tenant when no active org can be resolved (operator Q15).
+  if (!activeOrgId) {
+    return null;
+  }
+
+  const account = await db.account.findUnique({
+    where: { clerk_org_id: activeOrgId },
+  });
+  if (!account) {
+    return null;
+  }
+
+  return buildSession(sessionUser(resolveSessionRole(user.role, "tenant")), {
+    id: account.id,
+    slug: account.slug,
+    name: account.name,
+  });
 }
 
 export async function getCurrentSession(): Promise<Session | null> {
-  const config = resolveDevSession();
-  return {
-    user: config.user,
-    account: config.account,
-    expires_at: new Date(Date.now() + ONE_HOUR_MS).toISOString(),
-  };
+  // 1 + 2. Production guard, then explicit non-production dev override.
+  const explicitDev = resolveDevSession({ requireExplicit: true });
+  if (explicitDev) {
+    return buildSession(explicitDev.user, explicitDev.account);
+  }
+
+  // 3. Clerk path when configured.
+  if (clerkEnabled()) {
+    return deriveClerkSession();
+  }
+
+  // 4. Placeholder fallback — preserves pre-Clerk dev-session behavior.
+  const fallback = resolveDevSession();
+  return buildSession(fallback!.user, fallback!.account);
 }
 
 export async function getCurrentUser(): Promise<SessionUser | null> {
