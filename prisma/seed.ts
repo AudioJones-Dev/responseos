@@ -462,7 +462,7 @@ async function seedLeadQualifications() {
   }
 }
 
-async function seedBookings() {
+async function seedAppointments() {
   // Static start/end so seed is fully deterministic (mock fixtures use Date.now()
   // but the seed uses fixed anchors to satisfy strict fixture parity at rest).
   const BOOKING_1_START = new Date("2026-05-08T15:00:00.000Z");
@@ -470,7 +470,7 @@ async function seedBookings() {
   const BOOKING_2_START = new Date("2026-05-09T17:00:00.000Z");
   const BOOKING_2_END = new Date("2026-05-09T18:00:00.000Z");
 
-  await prisma.booking.upsert({
+  await prisma.appointment.upsert({
     where: { id: "booking_mock_1" },
     update: {},
     create: {
@@ -487,7 +487,7 @@ async function seedBookings() {
     },
   });
 
-  await prisma.booking.upsert({
+  await prisma.appointment.upsert({
     where: { id: "booking_mock_2" },
     update: {},
     create: {
@@ -755,8 +755,8 @@ async function seedAuditLogs() {
       account_id: "org_mock_1",
       actor_user_id: null,
       actor_type: "system",
-      action: "booking.confirmed",
-      target_type: "Booking",
+      action: "appointment.confirmed",
+      target_type: "Appointment",
       target_id: "booking_mock_1",
       created_at: at(60),
     },
@@ -778,7 +778,7 @@ async function main() {
   await seedCalls();
   await seedLeadEvents();
   await seedLeadQualifications();
-  await seedBookings();
+  await seedAppointments();
   await seedQuoteRequests();
   await seedRevenueMetrics();
   await seedAssessmentReport();

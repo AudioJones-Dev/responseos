@@ -153,7 +153,7 @@ Every ledger row shares one envelope. Payloads vary by `type`; the envelope does
 ```mermaid
 flowchart LR
   E[(Events ledger)] -->|replay by tenant + time + type| RB[Rebuilder]
-  RB --> FACTS[Contacts / Leads / Bookings / ROI]
+  RB --> FACTS[Contacts / Leads / Appointments / ROI]
   RB --> CRMOUT[Re-mirror to HubSpot / new CRM]
 ```
 

@@ -76,7 +76,7 @@ flowchart LR
 2. Inspect dead-letter for poison jobs; fix root cause; re-drive.
 3. Confirm n8n is not in any realtime path (it must not be).
 
-### 4.6 Booking collision / oversubscription
+### 4.6 Appointment collision / oversubscription
 1. Verify the 10-concurrent-holds/tenant limit is enforced.
 2. Re-read calendar `freeBusy`; reconcile from ledger; notify affected customers; offer next slot.
 

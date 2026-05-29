@@ -1,19 +1,19 @@
 import { getCurrentAccount } from "@/lib/auth/session";
-import { Bookings } from "@/lib/data";
+import { Appointments } from "@/lib/data";
 
 const FALLBACK_ACCOUNT_ID = "org_mock_1";
 
-export default async function ClientBookingsPage() {
+export default async function ClientAppointmentsPage() {
   const org = await getCurrentAccount();
-  const result = await Bookings.listBookings({
+  const result = await Appointments.listAppointments({
     accountId: org?.id ?? FALLBACK_ACCOUNT_ID,
   });
-  const bookings = result.ok ? result.data : [];
+  const appointments = result.ok ? result.data : [];
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
-      <h1 className="text-2xl font-semibold">Bookings</h1>
+      <h1 className="text-2xl font-semibold">Appointments</h1>
       <ul className="mt-6 divide-y divide-zinc-200">
-        {bookings.map((b) => (
+        {appointments.map((b) => (
           <li key={b.id} className="py-3 text-sm">
             <p className="font-medium text-zinc-900">{b.title}</p>
             <p className="text-xs text-zinc-500">

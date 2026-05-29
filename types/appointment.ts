@@ -2,14 +2,14 @@ import { ISODate, UUID, newId, nowIso } from "./common";
 
 export type CalendarProvider = "google" | "calcom" | "ghl" | "manual";
 
-export type BookingStatus =
+export type AppointmentStatus =
   | "scheduled"
   | "confirmed"
   | "completed"
   | "cancelled"
   | "no_show";
 
-export interface Booking {
+export interface Appointment {
   id: UUID;
   account_id: UUID;
   contact_id: UUID;
@@ -19,14 +19,14 @@ export interface Booking {
   title: string;
   start_time: ISODate;
   end_time: ISODate;
-  status: BookingStatus;
+  status: AppointmentStatus;
   location?: string;
   notes?: string;
   created_at: ISODate;
   updated_at: ISODate;
 }
 
-export function MockBooking(overrides: Partial<Booking> = {}): Booking {
+export function MockAppointment(overrides: Partial<Appointment> = {}): Appointment {
   const now = nowIso();
   const start = new Date(Date.now() + 86_400_000).toISOString();
   const end = new Date(Date.now() + 86_400_000 + 60 * 60_000).toISOString();

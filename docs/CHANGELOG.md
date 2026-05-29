@@ -4,6 +4,20 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — v0.2 closeout step 2: Booking → Appointment rename
+
+- **Renamed** the Prisma model `Booking` → `Appointment` and the enum `BookingStatus` → `AppointmentStatus`. No other table holds a `booking_id` FK column, so the rename is fully contained within the `Booking`/`Appointment` surface.
+- **Added** Prisma migration `prisma/migrations/0003_booking_to_appointment_rename/migration.sql` — pure `ALTER TYPE / ALTER TABLE / ALTER INDEX / RENAME CONSTRAINT` (no data shape changes; no foreign-key constraints since the Prisma schema uses logical FKs).
+- **Cascaded** the rename through `types/*`, `lib/data/*`, `lib/mock/*`, `prisma/seed.ts` (including `target_type: "Appointment"` and `action: "appointment.confirmed"` on the seeded `AuditLog` row), and `tests/*` (factories, integration, unit).
+- **Renamed** files: `types/booking.ts` → `types/appointment.ts`, `lib/data/bookings.ts` → `lib/data/appointments.ts`, `lib/mock/bookings.ts` → `lib/mock/appointments.ts`, `tests/factories/bookings.ts` → `tests/factories/appointments.ts`.
+- **Renamed** API/page route directories: `app/api/bookings/` → `app/api/appointments/`, `app/(client)/client/bookings/` → `app/(client)/client/appointments/`.
+- **Cascaded** the rename through active `docs/*` files that document the schema/API contracts (`docs/data-schema.md`, `docs/api-spec.md`, `docs/SECURITY.md`, `docs/architecture.md`, `docs/architecture/RESPONSEOS_*`, `docs/ops/RESPONSEOS_*`, `AGENTS.md`).
+- **Preserved** stable mock IDs (`booking_mock_1`, `booking_mock_2`) and the `"booking"` test-id prefix in `tests/factories/appointments.ts` as opaque identifiers. Local-scope variable abbreviations (`const booking`, `.map((booking) => …)`, `.map((b) => …)`) preserved to avoid opportunistic refactors.
+- **Preserved** historical records and narrative prose: `prisma/migrations/0001_v0_2_foundation/migration.sql`, `prisma/migrations/0002_organization_to_account_rename/migration.sql`, `docs/archive/*`, `docs/research/*`, ADR-0019 narrative, prior CHANGELOG entries, `README.md`, `docs/ROADMAP.md`, `docs/product/RESPONSEOS_*`, `docs/PRD.md`, `docs/DEPLOYMENT.md`, `docs/automation-flows.md`, `docs/client-facing-offer.md`, `docs/pricing-and-onboarding.md`, `docs/brand/*` — product/narrative prose drift is out of scope for this PR per the operator authorization.
+- **Preserved** enum *values* `LeadEventType.booking_request` and `AutomationTriggerType.booking_created` — these are event/trigger labels (data semantics), not model-name references.
+- **Scope checklist:** no auth work, no deploy work, no UI rebuild, no `Organization`→`Account` follow-up cleanup (already shipped in step 1), no remaining v0.2-spec models, no seed idempotency cleanup, no opportunistic refactors.
+- Per ADR-0019 step 2.2. Tracks roadmap checkpoint issue #27.
+
 ## Unreleased — v0.2 closeout step 1: Organization → Account rename
 
 - **Renamed** the Prisma model `Organization` → `Account`, the enum `OrganizationStatus` → `AccountStatus`, and the FK column `organization_id` → `account_id` on every dependent table (`User`, `Contact`, `Call`, `LeadEvent`, `Booking`, `QuoteRequest`, `Automation`, `Notification`, `RevenueMetrics`, `AssessmentReport`, `Engagement`, `AuditLog`, `WebhookEvent`).

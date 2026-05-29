@@ -1,7 +1,7 @@
 import "@/lib/serverOnlyGuard";
 import { db } from "@/lib/db/client";
-import { getMockBookings } from "@/lib/mock/bookings";
-import type { Booking, BookingStatus, CalendarProvider } from "@/types/booking";
+import { getMockAppointments } from "@/lib/mock/appointments";
+import type { Appointment, AppointmentStatus, CalendarProvider } from "@/types/appointment";
 import { err, errFromThrown, ok, type Result } from "./result";
 import {
   assertRowInScope,
@@ -9,7 +9,7 @@ import {
   withTenantScope,
 } from "./session-helpers";
 
-interface BookingRow {
+interface AppointmentRow {
   id: string;
   account_id: string;
   contact_id: string;
@@ -26,7 +26,7 @@ interface BookingRow {
   updated_at: Date;
 }
 
-function rowToBooking(row: BookingRow): Booking {
+function rowToAppointment(row: AppointmentRow): Appointment {
   return {
     id: row.id,
     account_id: row.account_id,
@@ -37,7 +37,7 @@ function rowToBooking(row: BookingRow): Booking {
     title: row.title,
     start_time: row.start_time.toISOString(),
     end_time: row.end_time.toISOString(),
-    status: row.status as BookingStatus,
+    status: row.status as AppointmentStatus,
     location: row.location ?? undefined,
     notes: row.notes ?? undefined,
     created_at: row.created_at.toISOString(),
@@ -45,14 +45,14 @@ function rowToBooking(row: BookingRow): Booking {
   };
 }
 
-export async function listBookings(params: {
+export async function listAppointments(params: {
   accountId?: string;
-}): Promise<Result<Booking[]>> {
+}): Promise<Result<Appointment[]>> {
   const scope = await withTenantScope(params.accountId);
   if (!scope.ok) return err(scope.error.code, scope.error.message);
 
   if (db === null) {
-    const all = getMockBookings();
+    const all = getMockAppointments();
     if (scope.effectiveAccountId) {
       return ok(all.filter((b) => b.account_id === scope.effectiveAccountId));
     }
@@ -60,25 +60,25 @@ export async function listBookings(params: {
   }
 
   try {
-    const rows = await db.booking.findMany({
+    const rows = await db.appointment.findMany({
       where: scope.effectiveAccountId
         ? { account_id: scope.effectiveAccountId }
         : undefined,
       orderBy: { start_time: "asc" },
     });
-    return ok(rows.map(rowToBooking));
+    return ok(rows.map(rowToAppointment));
   } catch (e) {
-    return errFromThrown<Booking[]>(e);
+    return errFromThrown<Appointment[]>(e);
   }
 }
 
-export async function getBookingById(id: string): Promise<Result<Booking>> {
+export async function getAppointmentById(id: string): Promise<Result<Appointment>> {
   const scope = await withTenantScope(undefined);
   if (!scope.ok) return err(scope.error.code, scope.error.message);
 
   if (db === null) {
-    const found = getMockBookings().find((b) => b.id === id);
-    if (!found) return err("not_found", `Booking ${id} not found.`);
+    const found = getMockAppointments().find((b) => b.id === id);
+    if (!found) return err("not_found", `Appointment ${id} not found.`);
     const scoped = assertRowInScope(
       found,
       scope.effectiveAccountId,
@@ -88,9 +88,9 @@ export async function getBookingById(id: string): Promise<Result<Booking>> {
   }
 
   try {
-    const row = await db.booking.findUnique({ where: { id } });
-    if (!row) return err("not_found", `Booking ${id} not found.`);
-    const booking = rowToBooking(row);
+    const row = await db.appointment.findUnique({ where: { id } });
+    if (!row) return err("not_found", `Appointment ${id} not found.`);
+    const booking = rowToAppointment(row);
     const scoped = assertRowInScope(
       booking,
       scope.effectiveAccountId,
@@ -100,6 +100,6 @@ export async function getBookingById(id: string): Promise<Result<Booking>> {
       ? ok(booking)
       : err(scoped.error.code, scoped.error.message);
   } catch (e) {
-    return errFromThrown<Booking>(e);
+    return errFromThrown<Appointment>(e);
   }
 }

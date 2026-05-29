@@ -46,7 +46,7 @@
 | Inbound call → agent handoff | < 3s avg |
 | Voice provider failover completes call | > 99% of failovers |
 | Calendar-slot response latency | < 1.5s p95 |
-| Booking success after slot selection | > 98% |
+| Appointment success after slot selection | > 98% |
 | Monthly report generation completion | > 99% |
 | Client portal uptime | 99.5% |
 

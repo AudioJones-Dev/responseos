@@ -232,7 +232,7 @@ Overview         ← Default landing; portfolio health at a glance
 Clients          ← Client list, status, health indicators
 Calls            ← All call events across clients
 Leads            ← All leads, filterable by client/status/quality
-Bookings         ← Confirmed bookings, revenue attribution
+Appointments         ← Confirmed bookings, revenue attribution
 Quotes           ← Quote requests in progress or responded
 Automations      ← Sequence status, follow-up cadence review
 Reports          ← Cross-client performance, ROI summaries
@@ -269,7 +269,7 @@ The client portal is simpler than admin. Clients are business owners — not ope
 Dashboard   ← Recovered revenue, leads, bookings, ROI at a glance
 Calls       ← Call log with outcomes
 Leads       ← Lead list with status
-Bookings    ← Confirmed bookings
+Appointments    ← Confirmed bookings
 Quotes      ← Quote requests and status
 Revenue     ← Recovery attribution and revenue tracking
 Reports     ← Monthly / period summaries
@@ -308,7 +308,7 @@ Settings    ← (future) preferences, notification settings
 ### Client Dashboard
 
 - **Hero metric:** Recovered Revenue (large, prominent, current period)
-- **Supporting row:** Qualified Leads | Bookings | Response Time | ROI Multiple
+- **Supporting row:** Qualified Leads | Appointments | Response Time | ROI Multiple
 - **Lead status summary:** count by status (Recovered / Booked / In Progress / Needs Review)
 - **Recent call/lead list:** last 5 events with outcome labels
 - **Period comparison:** this month vs last month (simple delta)
@@ -444,7 +444,7 @@ See [Section 12](#12-onboarding-ux).
 ### DataTable
 
 - **Purpose:** Display paginated, filterable lists of records
-- **Usage:** Calls, Leads, Bookings, Quotes, Clients
+- **Usage:** Calls, Leads, Appointments, Quotes, Clients
 - **Rules:** Sticky header on scroll. Row-level hover highlight. Inline quick-actions (icon buttons, not text links). Filter bar above table, not inside a modal. Sort by column headers.
 
 ### DetailPanel
@@ -482,7 +482,7 @@ See [Section 12](#12-onboarding-ux).
 
 - **Purpose:** Summarize a period's performance metrics
 - **Usage:** Revenue report, client summary, weekly email export
-- **Rules:** Period label prominent. Metrics in clear order: Revenue > Leads > Bookings > Response Time > ROI.
+- **Rules:** Period label prominent. Metrics in clear order: Revenue > Leads > Appointments > Response Time > ROI.
 
 ### WorkflowStepCard
 

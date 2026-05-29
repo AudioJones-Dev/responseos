@@ -130,10 +130,10 @@ describe("listLeads tenant matrix", () => {
 });
 
 // ---- bookings -----------------------------------------------------------
-describe("listBookings tenant matrix", () => {
+describe("listAppointments tenant matrix", () => {
   test("aj_admin sees both orgs", async () => {
-    const { Bookings } = await asAjAdmin();
-    const result = await Bookings.listBookings({});
+    const { Appointments } = await asAjAdmin();
+    const result = await Appointments.listAppointments({});
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     const orgs = new Set(result.data.map((b) => b.account_id));
@@ -142,8 +142,8 @@ describe("listBookings tenant matrix", () => {
   });
 
   test("client_admin only sees own org", async () => {
-    const { Bookings } = await asClientAdminOrg1();
-    const result = await Bookings.listBookings({});
+    const { Appointments } = await asClientAdminOrg1();
+    const result = await Appointments.listAppointments({});
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(
@@ -152,8 +152,8 @@ describe("listBookings tenant matrix", () => {
   });
 
   test("client_admin cross-tenant request denied", async () => {
-    const { Bookings } = await asClientAdminOrg1();
-    const result = await Bookings.listBookings({ accountId: "org_mock_2" });
+    const { Appointments } = await asClientAdminOrg1();
+    const result = await Appointments.listAppointments({ accountId: "org_mock_2" });
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error.code).toBe("tenant_scope_denied");

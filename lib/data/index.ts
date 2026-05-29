@@ -15,7 +15,7 @@ export * as Contacts from "./contacts";
 export * as Calls from "./calls";
 export * as Leads from "./leads";
 export * as LeadQualifications from "./leadQualifications";
-export * as Bookings from "./bookings";
+export * as Appointments from "./appointments";
 export * as Quotes from "./quotes";
 export * as Automations from "./automations";
 export * as Notifications from "./notifications";

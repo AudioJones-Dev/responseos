@@ -46,7 +46,7 @@ tests/                   ← unit / integration / e2e
 2. **Evaluate.** `lib/scoring/leadQualificationScore.ts` produces a 0–100 score from service-area match, urgency, decision-maker, budget timeline, known service. A `LeadQualification` row is attached to the `LeadEvent`.
 3. **Capture.** Normalized customer + job + transcript + attribution data lands in `Contact`, `Call`, and `LeadEvent`. The v0.2 expansion adds `events`, `call_segments`, and `call_transcripts` for replay + audit.
 4. **Offer.** Trigger-based automations dispatch SMS / email / Slack via `lib/notifications/*`. `QuoteRequest` rows track service type, photos, estimated value.
-5. **Verify.** `Booking` rows confirm appointment, consent, routing. Sync to Google Calendar or Cal.com via `POST /api/bookings/sync/*`.
+5. **Verify.** `Appointment` rows confirm appointment, consent, routing. Sync to Google Calendar or Cal.com via `POST /api/appointments/sync/*`.
 6. **Escalate.** High-value or edge-case lead events flag `follow_up_needed` and notify operators. v0.3 wires warm-transfer rules.
 7. **Report.** `lib/revenue/calculateRecoveredRevenue.ts` and `calculateRoiMultiple.ts` aggregate into `RevenueMetrics` rows per period per workspace. Admin and client surfaces read from these.
 

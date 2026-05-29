@@ -1,4 +1,4 @@
-import { Bookings } from "@/lib/data";
+import { Appointments } from "@/lib/data";
 import { respondWithResult } from "@/lib/providers/webhook-helpers";
 
 export async function GET(
@@ -6,5 +6,5 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  return respondWithResult(await Bookings.getBookingById(id));
+  return respondWithResult(await Appointments.getAppointmentById(id));
 }

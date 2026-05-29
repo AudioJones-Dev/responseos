@@ -36,7 +36,7 @@ Implementation only proceeds when minimum qualification gates are met: average j
 
 ### Client-facing — Workspace Portal (v0.2, roadmap)
 - "Recovered Revenue This Month" hero.
-- Calls / Leads / Bookings / Quotes / Revenue tabs.
+- Calls / Leads / Appointments / Quotes / Revenue tabs.
 - Monthly business review export.
 
 ## Frameworks
