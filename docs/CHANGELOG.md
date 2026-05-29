@@ -4,6 +4,14 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — v0.2 closeout step 2.3 planning artifact: remaining models implementation plan
+
+- **Added** `docs/product/RESPONSEOS_V0_2_REMAINING_MODELS_IMPLEMENTATION_PLAN.md` — a planning-only artifact covering the eight remaining v0.2-spec model targets (`provider_connections`, `conversations`, `sms_messages`, `call_segments`, `call_transcripts`, `qa_logs`, `workflow_runs`, expanded `audit_logs`). For each target the plan specifies Prisma model name, table name, purpose, required fields, new enums, indexes, logical FKs, seed/mock impact, data-layer impact, API impact, test impact, and migration risk. The `audit_logs` expansion is treated separately (additive columns + new enum + new index; nullable defaults so existing seeded rows stay valid).
+- **Recommended** a four-PR implementation split: 31A (provider_connections + conversations + sms_messages) → 31B (call_segments + call_transcripts + qa_logs) → 31C (workflow_runs) → 31D (audit_logs expansion). Each step-2.3 implementation PR ships substrate only (model + migration + accessor + mocks + factory + seed + tests + active-schema doc cross-references) and explicitly does NOT ship live integrations, API routes, UI surfaces, or any auth/deploy/UI work.
+- **Surfaced** 16 open questions that require explicit operator decisions before the corresponding implementation PR opens — covering encryption mechanism (Q1), conversation/SMS shape (Q2–Q4), partial-vs-final transcripts (Q5), inline-vs-object-storage transcripts (Q6), break-glass audit ordering with §31D (Q7), `Call.transcript` deprecation (Q8), QA rubric versioning (Q9–Q10), workflow_run identity (Q11–Q12), audit immutability (Q13), `AuditCategory` enum set (Q14), and integration-test truncation timing (Q15).
+- **Confirmed** non-goals per the operator authorization: no auth work, no deploy work, no UI rebuild, no seed idempotency cleanup (#26 stays P2), no `events` ledger table in step 2.3, no object storage integration, no live integrations, no doc sweeps unrelated to the contract, no opportunistic refactors.
+- Planning only — **no `prisma/schema.prisma` changes, no migration files, no generated Prisma client changes, no runtime code, no tests, no seed changes, no auth/deploy/UI work.** Per ADR-0019 step 2.3; tracks roadmap checkpoint issue #27.
+
 ## Unreleased — v0.2 closeout step 2: Booking → Appointment rename
 
 - **Renamed** the Prisma model `Booking` → `Appointment` and the enum `BookingStatus` → `AppointmentStatus`. No other table holds a `booking_id` FK column, so the rename is fully contained within the `Booking`/`Appointment` surface.
