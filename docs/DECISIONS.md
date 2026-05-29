@@ -277,11 +277,16 @@ CRM remains pluggable per tenant: HubSpot is the default, GoHighLevel and others
     1. `Organization` → `Account` rename.
     2. `Booking` → `Appointment` rename.
     3. Remaining v0.2-spec models: `provider_connections`, `conversations`, `sms_messages`, `call_segments`, `call_transcripts`, `workflow_runs`, `qa_logs`, expanded `audit_logs`.
-    4. Real auth-provider wiring (see Open Question below).
+    4. **Clerk auth integration / alignment per ADR-0005** (see Auth-direction note below).
     5. UI rebuild against `DESIGN.md` tokens, using the finalized naming, auth surface, and data contracts.
-3. Once steps 2.1–2.5 land on `master`, the v0.3 demo deploy is unlocked. PR #14's deployment *pattern* (Vercel + Neon, one-shot provisioning, edge gate, `/api/health` allowlist, rollback shape) is preserved as reference material; the **basic-auth shim is replaced with real authenticated login** before that deploy goes live.
+3. Once steps 2.1–2.5 land on `master`, the v0.3 demo deploy is unlocked. PR #14's deployment *pattern* (Vercel + Neon, one-shot provisioning, edge gate, `/api/health` allowlist, rollback shape) is preserved as reference material; the **basic-auth shim is replaced with real Clerk-authenticated login** before that deploy goes live.
 4. Issue #26 (seed idempotency) remains P2/non-blocking unless the eventual v0.3 demo deploy adopts a re-seed-without-truncate flow. If it does, #26 is promoted before the demo goes live.
 
-**Open question — resolve before step 2.4 begins.** The operator directive and PR #14 both reference "Auth.js" for real auth wiring; ADR-0005 names **Clerk** for the Standard lane (currently the only lane in use). ADR-0011 / ADR-0012 reversed other earlier stack decisions, but no ADR has explicitly superseded ADR-0005. Before step 2.4 begins, either: (a) file an ADR superseding ADR-0005 (Standard-lane auth → Auth.js) with the rationale, tenant-RBAC implications, and Clerk-removal plan, or (b) confirm ADR-0005 stands and proceed with Clerk wiring. Not resolving this before step 2.4 means closeout work would be done against an unwritten decision.
+**Auth direction — resolved.** Earlier "Auth.js" language in the operator directive and PR #14's runbook is **stale / inaccurate relative to the repo's current ADR record** and is not authoritative. **Clerk remains the standing auth direction** because ADR-0005 names Clerk for Standard-lane auth and has not been superseded. Implications for closeout step 2.4:
 
-**Consequences.** v0.2 closeout becomes a hard prerequisite for any production-facing deploy. Time-to-demo is longer, but the eventual demo presents real auth, finalized naming, and the full v0.2-spec data surface — a product milestone rather than a temporary scaffold. PR #14 absorbs an indefinite rebase debt and may be closed in favor of a fresh PR once closeout completes; either is acceptable. Mock-first (ADR-0001), tenant-isolation (ADR-0009, AGENTS.md), and event-ledger-first (ADR-0002) invariants are unchanged.
+- Closeout step 2.4 is Clerk integration / alignment per ADR-0005.
+- No Auth.js implementation work is authorized.
+- Any future Auth.js (or other auth-provider) pivot requires a dedicated superseding ADR that includes (a) the rationale for replacing Clerk, (b) tenant-RBAC implications across `aj_admin` / `operator` / `client_admin` / `client_viewer`, and (c) a concrete Clerk-removal / migration plan.
+- Future closeout prompts, runbooks, and PR descriptions must not quietly drift the repo toward Auth.js by implication.
+
+**Consequences.** v0.2 closeout becomes a hard prerequisite for any production-facing deploy. Time-to-demo is longer, but the eventual demo presents real Clerk-authenticated login, finalized naming, and the full v0.2-spec data surface — a product milestone rather than a temporary scaffold. PR #14 absorbs an indefinite rebase debt and may be closed in favor of a fresh PR once closeout completes; either is acceptable. Mock-first (ADR-0001), tenant-isolation (ADR-0009, AGENTS.md), event-ledger-first (ADR-0002), and the Clerk auth direction (ADR-0005) are unchanged.
