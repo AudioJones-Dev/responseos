@@ -4,6 +4,20 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — v0.2 closeout step 2.3 PR 31C: workflow execution substrate (`workflow_runs`)
+
+- **Added** one new Prisma model — `WorkflowRun` — with one new enum (`WorkflowRunStatus`: `started`, `completed`, `failed`, `cancelled`, `dead_letter`). The existing `WorkflowProvider` enum (`n8n`, `make`, `internal`) is **reused** for the `provider` column per planning artifact Q12 — the semantic set already matches workflow-run ownership; no new provider enum was created.
+- **Added** Prisma migration `prisma/migrations/0006_workflow_run_substrate/migration.sql` — purely additive: one `CREATE TYPE` + one `CREATE TABLE` + indexes and the `workflow_run_id` unique constraint. Zero impact on existing rows; zero foreign-key constraints introduced (continues the Prisma logical-FK discipline from 0001–0005).
+- **Added** data accessor `lib/data/workflowRuns.ts`: `listWorkflowRuns({ accountId?, status?, workflowId? })`, `getWorkflowRunByRunId(workflowRunId)`, `recordWorkflowRun(...)` (idempotent on `workflow_run_id` per ADR-0009 replay-safety + EVENT_SCHEMA §4 dedupe spine), and `finalizeWorkflowRun(...)` (monotonic transition from `started` to a terminal state; already-terminal calls are no-ops). All accessors enforce tenant scope via `withTenantScope` and return the `Result<T>` envelope.
+- **Added** TypeScript type `types/workflowRun.ts` (plus barrel re-export). `WorkflowProvider` is re-imported from the existing `types/automation.ts` — no duplicate type.
+- **Added** mocks + factory + seed: `lib/mock/workflowRuns.ts` (two stable rows — one `completed` `missed_call_recovery` run on `org_mock_1`, one `failed` `new_lead_followup` run on `org_mock_2` with `error_message: "vendor_unavailable"`), `tests/factories/workflowRuns.ts`, `seedWorkflowRuns()` in `prisma/seed.ts`. Stable mock IDs (`wfr_mock_*`).
+- **Added** tests — 1 new mock-parity test (field-for-field) + 1 new accessor test (filter by `status`, filter by `workflow_id`, dedupe on `workflow_run_id` replay, `finalize` monotonic guarantee). Updated `tests/integration/setup.ts` `TABLES` truncation list and `tests/integration/seed-determinism.integration.test.ts` `TABLE_READS`.
+- **Hard guardrail — substrate only.** Per ADR-0019 step 2.3 + the operator authorization: `workflow_runs` is **execution-state storage substrate only**. This PR does NOT add a runtime orchestrator, a scheduler, a retry engine, an n8n callback handler, queue/worker runtime, or any external webhook execution. Per ADR-0017, n8n stays out of the realtime audio loop; the substrate ships now and the async writer (the n8n callback handler) wires up in v0.3.
+- **Q11 confirmation:** `workflow_id` ships as `String` (workflow definition label, e.g. `missed_call_recovery`). Not a FK — workflow definitions live in n8n / Git, not in ResponseOS (ADR-0017). A `workflows` table is not introduced.
+- **Q12 confirmation:** existing `WorkflowProvider` enum reused (`n8n` / `make` / `internal`). No new provider enum.
+- **Scope checklist:** no 31D `audit_logs` expansion; no 31A / 31B follow-up cleanup; no privileged raw-transcript read accessor; no break-glass audit flow; no Clerk / auth wiring; no deploy / UI / object-storage / live integrations; no KMS / Vault; no n8n callback handler; no queue/worker runtime; no webhook execution; no seed-idempotency cleanup; no opportunistic refactors; no doc sweeps unrelated to 31C contracts.
+- Per ADR-0019 step 2.3. Tracks roadmap checkpoint issue #27.
+
 ## Unreleased — v0.2 closeout step 2.3 PR 31B: call intelligence substrate (`call_segments` + `call_transcripts` + `qa_logs`)
 
 - **Added** three new Prisma models — `CallSegment`, `CallTranscript`, `QaLog` — and three new enums (`CallSegmentSpeaker`, `TranscriptRetentionLane`, `QaReviewerType`).

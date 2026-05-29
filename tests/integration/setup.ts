@@ -5,6 +5,7 @@ import { resetFactoryCounters } from "../factories";
 export const prisma = new PrismaClient();
 
 const TABLES = [
+  "WorkflowRun",
   "QaLog",
   "CallTranscript",
   "CallSegment",

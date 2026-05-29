@@ -733,3 +733,44 @@ model QaLog {
   @@index([call_id])
   @@index([reviewed_at])
 }
+
+// --- v0.2 closeout step 2.3, PR 31C — workflow execution substrate --------
+
+enum WorkflowRunStatus {
+  started
+  completed
+  failed
+  cancelled
+  dead_letter
+}
+
+model WorkflowRun {
+  id                String            @id @default(cuid())
+  account_id        String
+  // Provider-stable idempotency / dedupe spine per
+  // RESPONSEOS_EVENT_SCHEMA.md §4. A replay of the same `workflow_run_id`
+  // is a no-op on the writer, not a duplicate row.
+  workflow_run_id   String            @unique
+  // Workflow definition label (e.g. `missed_call_recovery`). Not a FK
+  // in v0.2 — workflow definitions live in n8n / Git, not in
+  // ResponseOS. See ADR-0017 and planning artifact Q11.
+  workflow_id       String
+  // Reuses the existing `WorkflowProvider` enum (n8n / make / internal)
+  // per planning artifact Q12 — the semantic set already matches.
+  provider          WorkflowProvider
+  // Forward-compat hook for a future link into the events ledger; held
+  // as a string today (no FK enforced) so the substrate is ready
+  // without coupling to ledger persistence.
+  trigger_event_id  String?
+  status            WorkflowRunStatus @default(started)
+  started_at        DateTime
+  ended_at          DateTime?
+  error_message     String?
+  payload_json      Json?
+  created_at        DateTime          @default(now())
+
+  @@index([account_id])
+  @@index([workflow_id])
+  @@index([status])
+  @@index([started_at])
+}

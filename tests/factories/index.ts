@@ -13,3 +13,4 @@ export { makeSmsMessage } from "./smsMessages";
 export { makeCallSegment } from "./callSegments";
 export { makeCallTranscript } from "./callTranscripts";
 export { makeQaLog } from "./qaLogs";
+export { makeWorkflowRun } from "./workflowRuns";

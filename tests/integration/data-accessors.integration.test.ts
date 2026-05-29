@@ -21,6 +21,7 @@ import {
   SmsMessages,
   Users,
   WebhookEvents,
+  WorkflowRuns,
 } from "@/lib/data";
 import { disconnectTestDb, prisma, resetAndSeedTestDb, setDevSession } from "./setup";
 
@@ -399,6 +400,85 @@ describe("data accessors against Postgres", () => {
     expect(missing.ok).toBe(true);
     if (!missing.ok) return;
     expect(missing.data).toBeNull();
+  });
+
+  test("workflow run accessors list seeded runs, filter by status, dedupe on workflow_run_id, and finalize is monotonic", async () => {
+    const list = await WorkflowRuns.listWorkflowRuns({});
+    expect(list.ok).toBe(true);
+    if (!list.ok) return;
+    expect(list.data.map((r) => r.id).sort()).toEqual(["wfr_mock_1", "wfr_mock_2"]);
+
+    const failed = await WorkflowRuns.listWorkflowRuns({ status: "failed" });
+    expect(failed.ok).toBe(true);
+    if (!failed.ok) return;
+    expect(failed.data.map((r) => r.id)).toEqual(["wfr_mock_2"]);
+
+    const byWorkflow = await WorkflowRuns.listWorkflowRuns({
+      workflowId: "missed_call_recovery",
+    });
+    expect(byWorkflow.ok).toBe(true);
+    if (!byWorkflow.ok) return;
+    expect(byWorkflow.data.map((r) => r.id)).toEqual(["wfr_mock_1"]);
+
+    // Dedupe: re-recording the same workflow_run_id is a no-op.
+    const first = await WorkflowRuns.recordWorkflowRun({
+      account_id: "org_mock_1",
+      workflow_run_id: "n8n_run_test_dedupe",
+      workflow_id: "test_dedupe",
+      provider: "n8n",
+      started_at: new Date("2026-05-04T18:00:00.000Z"),
+    });
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+    expect(first.data.status).toBe("started");
+
+    const replay = await WorkflowRuns.recordWorkflowRun({
+      account_id: "org_mock_1",
+      workflow_run_id: "n8n_run_test_dedupe",
+      workflow_id: "test_dedupe",
+      provider: "n8n",
+      started_at: new Date("2026-05-04T18:00:00.000Z"),
+    });
+    expect(replay.ok).toBe(true);
+    if (!replay.ok) return;
+    expect(replay.data.id).toBe(first.data.id);
+
+    // Monotonic finalize: started -> completed.
+    const finalized = await WorkflowRuns.finalizeWorkflowRun({
+      workflow_run_id: "n8n_run_test_dedupe",
+      status: "completed",
+      ended_at: new Date("2026-05-04T18:00:05.000Z"),
+    });
+    expect(finalized.ok).toBe(true);
+    if (!finalized.ok) return;
+    expect(finalized.data.status).toBe("completed");
+    expect(finalized.data.ended_at).toBe("2026-05-04T18:00:05.000Z");
+
+    // Already-terminal finalize is a no-op (status stays `completed`,
+    // attempted `failed` does not overwrite).
+    const noop = await WorkflowRuns.finalizeWorkflowRun({
+      workflow_run_id: "n8n_run_test_dedupe",
+      status: "failed",
+      ended_at: new Date("2026-05-04T18:00:10.000Z"),
+      error_message: "should not overwrite",
+    });
+    expect(noop.ok).toBe(true);
+    if (!noop.ok) return;
+    expect(noop.data.status).toBe("completed");
+    expect(noop.data.error_message).toBeUndefined();
+
+    const fetched = await WorkflowRuns.getWorkflowRunByRunId(
+      "n8n_run_test_dedupe",
+    );
+    expect(fetched.ok).toBe(true);
+    if (!fetched.ok) return;
+    expect(fetched.data?.status).toBe("completed");
+
+    expect(
+      await prisma.workflowRun.count({
+        where: { workflow_run_id: "n8n_run_test_dedupe" },
+      }),
+    ).toBe(1);
   });
 
   test("qa log accessors list ordered by reviewed_at desc and record allows multiple per (call_id, rubric_version)", async () => {

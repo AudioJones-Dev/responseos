@@ -1026,6 +1026,50 @@ async function seedQaLogs() {
   });
 }
 
+// --- v0.2 closeout step 2.3, PR 31C — workflow execution substrate seeds --
+
+const WFR_1_STARTED = new Date("2026-05-04T15:18:30.000Z");
+const WFR_1_ENDED = new Date("2026-05-04T15:18:33.000Z");
+const WFR_2_STARTED = new Date("2026-05-04T17:30:00.000Z");
+const WFR_2_ENDED = new Date("2026-05-04T17:30:04.000Z");
+
+async function seedWorkflowRuns() {
+  await prisma.workflowRun.upsert({
+    where: { id: "wfr_mock_1" },
+    update: {},
+    create: {
+      id: "wfr_mock_1",
+      account_id: "org_mock_1",
+      workflow_run_id: "n8n_run_mock_1",
+      workflow_id: "missed_call_recovery",
+      provider: "n8n",
+      trigger_event_id: "call_mock_1",
+      status: "completed",
+      started_at: WFR_1_STARTED,
+      ended_at: WFR_1_ENDED,
+      created_at: WFR_1_STARTED,
+    },
+  });
+
+  await prisma.workflowRun.upsert({
+    where: { id: "wfr_mock_2" },
+    update: {},
+    create: {
+      id: "wfr_mock_2",
+      account_id: "org_mock_2",
+      workflow_run_id: "n8n_run_mock_2",
+      workflow_id: "new_lead_followup",
+      provider: "n8n",
+      trigger_event_id: "lead_mock_5",
+      status: "failed",
+      started_at: WFR_2_STARTED,
+      ended_at: WFR_2_ENDED,
+      error_message: "vendor_unavailable",
+      created_at: WFR_2_STARTED,
+    },
+  });
+}
+
 async function main() {
   await seedAccounts();
   await seedUsers();
@@ -1045,6 +1089,7 @@ async function main() {
   await seedCallSegments();
   await seedCallTranscripts();
   await seedQaLogs();
+  await seedWorkflowRuns();
   // WebhookEvent intentionally seeded empty per spec §5; the v0.3 ingest path
   // is the first writer.
 }
