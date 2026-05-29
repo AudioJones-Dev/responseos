@@ -4,6 +4,14 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — ADR-0019 v0.3 demo deploy sequencing (closeout-first; Clerk stands)
+
+- **Added** ADR-0019 in `docs/DECISIONS.md` recording the operator decision that **v0.2 closeout precedes any v0.3 demo deploy**. PR #14 (`feat/v0.3-demo-deploy`) stays draft until the v0.2 closeout sequence lands on `master`: `Organization`→`Account` rename → `Booking`→`Appointment` rename → remaining v0.2-spec models (`provider_connections`, `conversations`, `sms_messages`, `call_segments`, `call_transcripts`, `workflow_runs`, `qa_logs`, expanded `audit_logs`) → **Clerk auth integration / alignment per ADR-0005** → UI rebuild against `DESIGN.md` tokens. The deployment *pattern* in PR #14 (Vercel + Neon, one-shot provisioning, edge gate, `/api/health` allowlist, rollback shape) is preserved as reference for the eventual v0.3 demo deploy; the basic-auth shim is replaced with real Clerk-authenticated login before that deploy goes live.
+- **Resolved** the auth direction question inside ADR-0019: **Clerk stands** because ADR-0005 names Clerk for Standard-lane auth and has not been superseded. Earlier "Auth.js" references in the operator directive and PR #14's runbook are recorded as stale / inaccurate relative to the current ADR record; no Auth.js implementation is authorized. Any future auth-provider pivot requires a dedicated superseding ADR including rationale, tenant-RBAC implications, and a Clerk-removal / migration plan.
+- **Issue #26** (seed idempotency) remains P2/non-blocking unless the eventual v0.3 demo deploy adopts a re-seed-without-truncate flow.
+- Tracks roadmap checkpoint issue #27.
+- Planning only — **no production implementation, no runtime code, no schema changes, no live integrations, no deploys.** Mock-first, tenant-aware, event-ledger-first, provider-abstraction, and modular-monolith invariants preserved; v0.3 live work remains gated per ADR-0001 / ADR-0012; Clerk auth direction preserved per ADR-0005.
+
 ## Unreleased — Exec 0B-2 VoiceProvider interface + mock adapter
 
 - **Added** `lib/providers/voice/types.ts` with a provider-neutral `VoiceProvider` interface and minimal supporting shapes (`SessionContext`, `ProviderSession`, `AudioFrame`, `PartialTranscript`, `ToolCall`, `ToolResult`, `Turn`, `SessionSummary`) aligned to Backend Spec §4.
