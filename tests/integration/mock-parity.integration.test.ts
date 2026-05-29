@@ -12,6 +12,7 @@ import { getMockSmsMessages } from "@/lib/mock/smsMessages";
 import { getMockCallSegments } from "@/lib/mock/callSegments";
 import { getMockCallTranscripts } from "@/lib/mock/callTranscripts";
 import { getMockQaLogs } from "@/lib/mock/qaLogs";
+import { getMockWorkflowRuns } from "@/lib/mock/workflowRuns";
 import { disconnectTestDb, normalize, prisma, resetAndSeedTestDb } from "./setup";
 
 function clean(value: unknown): unknown {
@@ -299,6 +300,26 @@ describe("seeded mock fixture parity", () => {
     const rows = await prisma.qaLog.findMany({ orderBy: { id: "asc" } });
     expect(clean(normalize(rows.map((row) => pick(row, keys))))).toEqual(
       clean(getMockQaLogs().map((row) => pick(row, keys))),
+    );
+  });
+
+  test("workflow runs match lib/mock workflow runs field-for-field", async () => {
+    const keys = [
+      "id",
+      "account_id",
+      "workflow_run_id",
+      "workflow_id",
+      "provider",
+      "trigger_event_id",
+      "status",
+      "started_at",
+      "ended_at",
+      "error_message",
+      "payload_json",
+    ];
+    const rows = await prisma.workflowRun.findMany({ orderBy: { id: "asc" } });
+    expect(clean(normalize(rows.map((row) => pick(row, keys))))).toEqual(
+      clean(getMockWorkflowRuns().map((row) => pick(row, keys))),
     );
   });
 

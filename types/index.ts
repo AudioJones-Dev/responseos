@@ -16,3 +16,4 @@ export * from "./smsMessage";
 export * from "./callSegment";
 export * from "./callTranscript";
 export * from "./qaLog";
+export * from "./workflowRun";
