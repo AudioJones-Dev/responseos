@@ -6,6 +6,9 @@ import { getMockLeadEvents } from "@/lib/mock/leads";
 import { getMockAccounts } from "@/lib/mock/accounts";
 import { getMockQuoteRequests } from "@/lib/mock/quotes";
 import { getMockRevenueMetrics } from "@/lib/mock/revenueMetrics";
+import { getMockProviderConnections } from "@/lib/mock/providerConnections";
+import { getMockConversations } from "@/lib/mock/conversations";
+import { getMockSmsMessages } from "@/lib/mock/smsMessages";
 import { disconnectTestDb, normalize, prisma, resetAndSeedTestDb } from "./setup";
 
 function clean(value: unknown): unknown {
@@ -136,6 +139,78 @@ describe("seeded mock fixture parity", () => {
     expect(clean(normalize(rows.map((row) => pick(row, keys))))).toEqual(
       clean(getMockQuoteRequests().map((row) => pick(row, keys))),
     );
+  });
+
+  test("provider connections match lib/mock provider connections field-for-field", async () => {
+    // credentials_encrypted and oauth_refresh_token_encrypted are
+    // deliberately excluded — the public mock type does not expose them
+    // (ADR-0020 puts ciphertext behind the encryption-module boundary).
+    const keys = [
+      "id",
+      "account_id",
+      "provider",
+      "status",
+      "scopes",
+      "connected_by",
+      "last_verified_at",
+    ];
+    const rows = await prisma.providerConnection.findMany({ orderBy: { id: "asc" } });
+    expect(clean(normalize(rows.map((row) => pick(row, keys))))).toEqual(
+      clean(getMockProviderConnections().map((row) => pick(row, keys))),
+    );
+  });
+
+  test("conversations match lib/mock conversations field-for-field", async () => {
+    const keys = [
+      "id",
+      "account_id",
+      "contact_id",
+      "business_number",
+      "peer_number",
+      "status",
+      "last_message_at",
+    ];
+    const rows = await prisma.conversation.findMany({ orderBy: { id: "asc" } });
+    expect(clean(normalize(rows.map((row) => pick(row, keys))))).toEqual(
+      clean(getMockConversations().map((row) => pick(row, keys))),
+    );
+  });
+
+  test("sms messages match lib/mock sms messages field-for-field", async () => {
+    const keys = [
+      "id",
+      "account_id",
+      "conversation_id",
+      "provider",
+      "provider_message_id",
+      "direction",
+      "from_number",
+      "to_number",
+      "body",
+      "status",
+      "segment_count",
+      "error_code",
+      "error_message",
+      "sent_at",
+      "delivered_at",
+    ];
+    const rows = await prisma.smsMessage.findMany({ orderBy: { id: "asc" } });
+    expect(clean(normalize(rows.map((row) => pick(row, keys))))).toEqual(
+      clean(getMockSmsMessages().map((row) => pick(row, keys))),
+    );
+  });
+
+  test("provider credentials are stored as mock-sentinel bytes in mock mode", async () => {
+    const rows = await prisma.providerConnection.findMany({
+      where: { id: { in: ["pconn_mock_1", "pconn_mock_2"] } },
+      orderBy: { id: "asc" },
+      select: { id: true, credentials_encrypted: true },
+    });
+    const sentinel = Buffer.from("<MOCK_REDACTED>", "utf8");
+    for (const row of rows) {
+      const bytes = row.credentials_encrypted as Buffer;
+      expect(bytes.equals(sentinel)).toBe(true);
+    }
   });
 
   test("revenue metrics match lib/mock revenue metrics field-for-field", async () => {

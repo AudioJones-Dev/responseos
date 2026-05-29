@@ -6,13 +6,16 @@ import {
   Appointments,
   Calls,
   Contacts,
+  Conversations,
   Engagements,
   LeadQualifications,
   Leads,
   Notifications,
   Accounts,
+  ProviderConnections,
   Quotes,
   RevenueMetrics,
+  SmsMessages,
   Users,
   WebhookEvents,
 } from "@/lib/data";
@@ -218,5 +221,115 @@ describe("data accessors against Postgres", () => {
     expect(list.data.map((event) => event.id)).toContain(first.data.id);
 
     expect(await prisma.webhookEvent.count({ where: { dedupe_hash: hash } })).toBe(1);
+  });
+
+  test("provider connection accessors list seeded rows and never return ciphertext", async () => {
+    const list = await ProviderConnections.listProviderConnections({
+      accountId: "org_mock_1",
+    });
+    expect(list.ok).toBe(true);
+    if (!list.ok) return;
+    expect(list.data.map((c) => c.provider).sort()).toEqual(["hubspot", "twilio"]);
+
+    // Public shape never carries ciphertext bytes; the type-level guarantee
+    // is reinforced here as a runtime assertion.
+    for (const row of list.data) {
+      expect("credentials_encrypted" in (row as object)).toBe(false);
+      expect("oauth_refresh_token_encrypted" in (row as object)).toBe(false);
+    }
+
+    const found = await ProviderConnections.getProviderConnectionByProvider({
+      accountId: "org_mock_1",
+      provider: "twilio",
+    });
+    expect(found.ok).toBe(true);
+    if (!found.ok) return;
+    expect(found.data?.id).toBe("pconn_mock_1");
+
+    const missing = await ProviderConnections.getProviderConnectionByProvider({
+      accountId: "org_mock_2",
+      provider: "twilio",
+    });
+    expect(missing.ok).toBe(true);
+    if (!missing.ok) return;
+    expect(missing.data).toBeNull();
+  });
+
+  test("conversation accessors list seeded threads and find-or-create is idempotent", async () => {
+    const list = await Conversations.listConversations({ accountId: "org_mock_1" });
+    expect(list.ok).toBe(true);
+    if (!list.ok) return;
+    expect(list.data.map((c) => c.id)).toEqual(["conv_mock_1"]);
+
+    const found = await Conversations.getConversationById("conv_mock_1");
+    expect(found.ok).toBe(true);
+    if (!found.ok) return;
+    expect(found.data.peer_number).toBe("+15555550199");
+
+    const first = await Conversations.findOrCreateConversation({
+      accountId: "org_mock_1",
+      businessNumber: "+15555550100",
+      peerNumber: "+15555550199",
+      contactId: "contact_mock_1",
+    });
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+    expect(first.data.id).toBe("conv_mock_1");
+
+    const second = await Conversations.findOrCreateConversation({
+      accountId: "org_mock_1",
+      businessNumber: "+15555550100",
+      peerNumber: "+15555550199",
+      contactId: "contact_mock_1",
+    });
+    expect(second.ok).toBe(true);
+    if (!second.ok) return;
+    expect(second.data.id).toBe(first.data.id);
+  });
+
+  test("sms message accessors list per conversation and dedupe on provider_message_id", async () => {
+    const list = await SmsMessages.listSmsMessagesByConversation({
+      accountId: "org_mock_1",
+      conversationId: "conv_mock_1",
+    });
+    expect(list.ok).toBe(true);
+    if (!list.ok) return;
+    expect(list.data.map((m) => m.id)).toEqual(["sms_mock_1", "sms_mock_2"]);
+
+    const first = await SmsMessages.recordSmsMessage({
+      account_id: "org_mock_1",
+      conversation_id: "conv_mock_1",
+      provider: "twilio",
+      provider_message_id: "SM_test_new",
+      direction: "inbound",
+      from_number: "+15555550199",
+      to_number: "+15555550100",
+      body: "follow-up question",
+      status: "received",
+    });
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+    expect(first.data.provider_message_id).toBe("SM_test_new");
+
+    const duplicate = await SmsMessages.recordSmsMessage({
+      account_id: "org_mock_1",
+      conversation_id: "conv_mock_1",
+      provider: "twilio",
+      provider_message_id: "SM_test_new",
+      direction: "inbound",
+      from_number: "+15555550199",
+      to_number: "+15555550100",
+      body: "follow-up question",
+      status: "received",
+    });
+    expect(duplicate.ok).toBe(true);
+    if (!duplicate.ok) return;
+    expect(duplicate.data.id).toBe(first.data.id);
+
+    expect(
+      await prisma.smsMessage.count({
+        where: { provider: "twilio", provider_message_id: "SM_test_new" },
+      }),
+    ).toBe(1);
   });
 });

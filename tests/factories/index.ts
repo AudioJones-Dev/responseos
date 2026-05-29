@@ -7,3 +7,6 @@ export { makeAuditLog } from "./auditLogs";
 export { makeWebhookEvent } from "./webhookEvents";
 export { makeLead } from "./leads";
 export { makeAppointment } from "./appointments";
+export { makeProviderConnection } from "./providerConnections";
+export { makeConversation } from "./conversations";
+export { makeSmsMessage } from "./smsMessages";
