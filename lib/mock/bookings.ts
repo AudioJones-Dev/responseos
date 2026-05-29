@@ -1,7 +1,10 @@
 import { Booking, MockBooking } from "@/types/booking";
 
-const day = (offset: number): string =>
-  new Date(Date.now() + offset * 86_400_000).toISOString();
+// Fixed anchors mirror prisma/seed.ts so parity tests stay deterministic.
+const BOOKING_1_START = "2026-05-08T15:00:00.000Z";
+const BOOKING_1_END = "2026-05-08T16:30:00.000Z";
+const BOOKING_2_START = "2026-05-09T17:00:00.000Z";
+const BOOKING_2_END = "2026-05-09T18:00:00.000Z";
 
 export const mockBookings: Booking[] = [
   MockBooking({
@@ -11,8 +14,8 @@ export const mockBookings: Booking[] = [
     lead_event_id: "lead_mock_3",
     calendar_provider: "google",
     title: "AC repair estimate — Avery Klein",
-    start_time: day(1),
-    end_time: new Date(Date.now() + 86_400_000 + 90 * 60_000).toISOString(),
+    start_time: BOOKING_1_START,
+    end_time: BOOKING_1_END,
     status: "confirmed",
     location: "1500 Bay St, St. Petersburg, FL 33701",
   }),
@@ -23,8 +26,8 @@ export const mockBookings: Booking[] = [
     lead_event_id: "lead_mock_5",
     calendar_provider: "calcom",
     title: "Roof inspection — Sam Patel",
-    start_time: day(2),
-    end_time: new Date(Date.now() + 2 * 86_400_000 + 60 * 60_000).toISOString(),
+    start_time: BOOKING_2_START,
+    end_time: BOOKING_2_END,
     status: "scheduled",
     location: "880 Gulf Blvd, Clearwater, FL 33755",
   }),
