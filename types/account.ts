@@ -11,6 +11,12 @@ export interface Account {
   primary_phone?: string;
   timezone: string;
   status: AccountStatus;
+  /**
+   * 32A — Clerk external organization identity. Nullable for seeded
+   * fixture accounts and for any pre-Clerk row that has not yet been
+   * linked. Wiring lands in 32B/32C.
+   */
+  clerk_org_id?: string;
   created_at: ISODate;
   updated_at: ISODate;
 }

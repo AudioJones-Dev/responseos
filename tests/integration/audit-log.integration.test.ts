@@ -164,6 +164,71 @@ describe("audit log integration", () => {
     expect(security.data).toHaveLength(0);
   });
 
+  // ---- 32A expansion (Clerk identity columns) --------------------------
+
+  test("32A expansion: existing seeded users and accounts have null clerk identity columns", async () => {
+    const users = await prisma.user.findMany({
+      where: { id: { in: ["user_aj_admin_1", "user_acme_owner_1", "user_acme_viewer_1"] } },
+      orderBy: { id: "asc" },
+      select: { id: true, clerk_user_id: true },
+    });
+    expect(users).toHaveLength(3);
+    for (const u of users) {
+      expect(u.clerk_user_id).toBeNull();
+    }
+
+    const accounts = await prisma.account.findMany({
+      where: { id: { in: ["org_mock_1", "org_mock_2"] } },
+      orderBy: { id: "asc" },
+      select: { id: true, clerk_org_id: true },
+    });
+    expect(accounts).toHaveLength(2);
+    for (const a of accounts) {
+      expect(a.clerk_org_id).toBeNull();
+    }
+  });
+
+  test("32A expansion: clerk_user_id and clerk_org_id are independently writable + unique", async () => {
+    // Smoke-test the schema: a write through Prisma sets the columns
+    // and the unique constraint rejects duplicates.
+    await prisma.user.update({
+      where: { id: "user_aj_admin_1" },
+      data: { clerk_user_id: "user_clerk_test_001" },
+    });
+    await prisma.account.update({
+      where: { id: "org_mock_1" },
+      data: { clerk_org_id: "org_clerk_test_001" },
+    });
+
+    const updatedUser = await prisma.user.findUnique({
+      where: { id: "user_aj_admin_1" },
+      select: { clerk_user_id: true },
+    });
+    expect(updatedUser?.clerk_user_id).toBe("user_clerk_test_001");
+
+    const updatedAccount = await prisma.account.findUnique({
+      where: { id: "org_mock_1" },
+      select: { clerk_org_id: true },
+    });
+    expect(updatedAccount?.clerk_org_id).toBe("org_clerk_test_001");
+
+    // Unique constraint: a second user cannot claim the same clerk_user_id.
+    await expect(
+      prisma.user.update({
+        where: { id: "user_acme_owner_1" },
+        data: { clerk_user_id: "user_clerk_test_001" },
+      }),
+    ).rejects.toThrow();
+
+    // Unique constraint: a second account cannot claim the same clerk_org_id.
+    await expect(
+      prisma.account.update({
+        where: { id: "org_mock_2" },
+        data: { clerk_org_id: "org_clerk_test_001" },
+      }),
+    ).rejects.toThrow();
+  });
+
   test("31D expansion: legacy recordAuditLog calls without new fields still succeed", async () => {
     // Backwards-compatibility: pre-31D call sites continue to work
     // unchanged. The new columns default to null when omitted.
