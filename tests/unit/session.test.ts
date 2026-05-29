@@ -160,6 +160,7 @@ describe("lib/auth/session.ts — Clerk path", () => {
 
   const clientUser = {
     id: "user_db_1",
+    account_id: "acct_db_1",
     email: "owner@sunshine-hvac.example",
     name: "Sunshine Owner",
     role: "client_admin",
@@ -256,6 +257,24 @@ describe("lib/auth/session.ts — Clerk path", () => {
     // Active client org wins → tenant session, and aj_admin is NOT granted here.
     expect(result?.account?.id).toBe("acct_db_1");
     expect(result?.user.role).toBe("client_viewer");
+  });
+
+  test("does not reuse a tenant admin grant across orgs the user does not belong to", async () => {
+    // DB client_admin of account A; Clerk reports an active org mapped to a
+    // different account B. The session must NOT be granted for B.
+    process.env.CLERK_SECRET_KEY = "sk_test_123";
+    const { session, auth, userFindUnique, accountFindUnique } =
+      await loadClerkSession();
+    auth.mockResolvedValue({ userId: "clerk_user_1", orgId: "org_clerk_client_2" });
+    userFindUnique.mockResolvedValue({ ...clientUser, account_id: "acct_A" });
+    accountFindUnique.mockResolvedValue({
+      id: "acct_B",
+      slug: "other-tenant",
+      name: "Other Tenant",
+      clerk_org_id: "org_clerk_client_2",
+    });
+
+    expect(await session.getCurrentSession()).toBeNull();
   });
 
   test("AJ control org → cross-tenant session with null account", async () => {

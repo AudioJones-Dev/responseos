@@ -252,6 +252,15 @@ async function deriveClerkSession(): Promise<Session | null> {
     return null;
   }
 
+  // Tenant isolation: the mapped user must actually belong to this account.
+  // `User.account_id` is the authoritative tenant binding (kept current by the
+  // 32C webhook membership sync). When Clerk's active org maps to a different
+  // account than the user's own, fail closed rather than reusing the user's
+  // global role for a tenant they don't belong to (cross-tenant escalation).
+  if (user.account_id !== account.id) {
+    return null;
+  }
+
   return buildSession(sessionUser(resolveSessionRole(user.role, "tenant")), {
     id: account.id,
     slug: account.slug,
