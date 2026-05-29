@@ -73,8 +73,9 @@ export function computeDedupeHash(
 }
 
 /**
- * Append-only ingest writer. v0.2 keeps signature_valid = false (no real
- * verification yet). Real provider routing lands in v0.3.
+ * Append-only ingest writer. `signature_valid` defaults to false; callers that
+ * verify the signature before recording (the Clerk webhook handler, ADR-0009)
+ * pass `signature_valid: true`.
  *
  * Idempotent on the (provider, provider_event_id) dedupe hash: replays
  * return process_status = "duplicate" and do not insert again.
@@ -86,6 +87,7 @@ export async function recordWebhookEvent(entry: {
   event_type: string;
   raw_body: string;
   signature_header?: string;
+  signature_valid?: boolean;
 }): Promise<Result<{ id: string; process_status: WebhookProcessStatus }>> {
   if (db === null) {
     return err(
@@ -113,7 +115,7 @@ export async function recordWebhookEvent(entry: {
         event_type: entry.event_type,
         raw_body: entry.raw_body,
         signature_header: entry.signature_header ?? null,
-        signature_valid: false,
+        signature_valid: entry.signature_valid ?? false,
         dedupe_hash,
         process_status: "received",
       },
