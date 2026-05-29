@@ -442,6 +442,22 @@ enum WebhookProcessStatus {
   error
 }
 
+// --- v0.2 closeout step 2.3, PR 31D — audit_logs expansion ----------------
+//
+// Adds the `AuditCategory` enum and the six new nullable columns
+// (actor_role, category, reason, before_ref, after_ref, expires_at)
+// to the existing AuditLog model. Everything additive; no existing
+// row needs migration. See ADR-0019 step 2.3 + planning artifact §4
+// + RESPONSEOS_EVENT_SCHEMA.md §7.
+enum AuditCategory {
+  security
+  data_access
+  break_glass
+  integration
+  workflow
+  system
+}
+
 model AssessmentReport {
   id              String           @id @default(cuid())
   account_id String
@@ -504,13 +520,23 @@ model Engagement {
 }
 
 model AuditLog {
-  id              String    @id @default(cuid())
+  id              String         @id @default(cuid())
   account_id String?
   actor_user_id   String?
   actor_type      ActorType
+  // 31D additions — all nullable so existing seeded rows stay valid
+  // without backfill. `category` enables the break-glass filter that
+  // the future privileged raw-transcript read accessor will write
+  // against (see RESPONSEOS_DATA_MODEL.md §6 + planning artifact Q7).
+  actor_role      UserRole?
   action          String
+  category        AuditCategory?
   target_type     String?
   target_id       String?
+  reason          String?
+  before_ref      Json?
+  after_ref       Json?
+  expires_at      DateTime?
   metadata_json   Json?
   ip_address      String?
   user_agent      String?
@@ -519,6 +545,7 @@ model AuditLog {
   @@index([account_id])
   @@index([actor_user_id])
   @@index([action])
+  @@index([category])
   @@index([created_at])
 }
 
