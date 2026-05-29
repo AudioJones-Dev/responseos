@@ -191,6 +191,10 @@ model Account {
   primary_phone String?
   timezone      String
   status        AccountStatus @default(lead)
+  // 32A — Clerk integration substrate per ADR-0005 + step-2.4 plan §4.3.
+  // Nullable so existing seeded accounts stay valid without backfill.
+  // Wiring (session derivation, webhook sync) lands in 32B/32C.
+  clerk_org_id  String?            @unique
   created_at    DateTime           @default(now())
   updated_at    DateTime           @updatedAt
 }
@@ -202,6 +206,11 @@ model User {
   name            String
   email           String   @unique
   phone           String?
+  // 32A — Clerk integration substrate per ADR-0005 + step-2.4 plan §4.2.
+  // Nullable so existing seeded users stay valid without backfill.
+  // Wiring (session derivation, webhook sync, JIT provisioning) lands
+  // in 32B/32C.
+  clerk_user_id   String?  @unique
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 

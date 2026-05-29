@@ -11,6 +11,7 @@ interface UserRow {
   name: string;
   email: string;
   phone: string | null;
+  clerk_user_id: string | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -23,6 +24,7 @@ function rowToUser(row: UserRow): User {
     name: row.name,
     email: row.email,
     phone: row.phone ?? undefined,
+    clerk_user_id: row.clerk_user_id ?? undefined,
     created_at: row.created_at.toISOString(),
     updated_at: row.updated_at.toISOString(),
   };

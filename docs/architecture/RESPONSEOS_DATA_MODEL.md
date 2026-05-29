@@ -30,8 +30,10 @@
 | Realtime session id | `sess_` + cuid | Voice gateway; mirrored in Redis key + ledger |
 | Idempotency key | client/provided | 24h retention (see API contracts) |
 | HubSpot object id | HubSpot-native | Stored on the mapping, never used as the ResponseOS PK |
+| Clerk user id | Clerk-native | Stored on `User.clerk_user_id` (nullable, unique). Per ADR-0005 + step-2.4 plan §4.2. Never the ResponseOS PK. |
+| Clerk organization id | Clerk-native | Stored on `Account.clerk_org_id` (nullable, unique). Per ADR-0005 + step-2.4 plan §4.3. AJ Digital's special cross-tenant Clerk org maps to `Session.account = null`. |
 
-**Rule:** ResponseOS PKs are always internal `cuid()`s. External ids (HubSpot, Twilio, Stripe) live in mapping columns/tables, never as primary keys — so a CRM swap never breaks referential integrity (ADR-0002, ADR-0015).
+**Rule:** ResponseOS PKs are always internal `cuid()`s. External ids (HubSpot, Twilio, Stripe, Clerk) live in mapping columns/tables, never as primary keys — so a CRM/auth-provider swap never breaks referential integrity (ADR-0002, ADR-0005, ADR-0015).
 
 ---
 
