@@ -28,7 +28,7 @@ This file records the load-bearing decisions that constrain how ResponseOS is bu
 
 ## ADR-0003 — Postgres on Supabase (Standard lane); Prisma for the ORM
 
-**Status:** Accepted.
+**Status:** **Superseded by ADR-0026** (2026-05-30) — Neon replaces Supabase as the Postgres host (the code is host-agnostic Postgres, so Prisma / migrations / seed / schema are unchanged). Originally Accepted.
 
 **Context.** Need a relational store that supports tenant scoping, indexed reads for dashboards, transactional integrity for booking + quote workflows, and a clean HIPAA upgrade path. Schema is well-known up front — the data model in `data-schema.md` is 11 v0.1 models expanding toward ~25 v0.2 tables.
 
@@ -159,7 +159,7 @@ Invalid signature → 401, no body parse, no business mutation, log to security 
 
 ## ADR-0012 — Realtime voice provider order: Grok Voice primary, OpenAI Realtime fallback (supersedes ADR-0008)
 
-**Status:** Accepted (2026-05-27). **Supersedes ADR-0008.**
+**Status:** **Superseded by ADR-0024** (2026-05-30) for the v1 default provider order. Originally Accepted (2026-05-27); superseded ADR-0008. The provider-abstraction + Twilio-edge principles below remain in force under ADR-0024.
 
 **Context.** ADR-0008 made Retell/Vapi/Bland the primary realtime runtime and classified Grok Voice as experimental, pending verification of telephony path, retention, BAA eligibility, and concurrency. The go-forward product direction selects **Grok Voice Agent API as the primary realtime voice provider** and **OpenAI Realtime API as the secondary/fallback**, with Twilio retained as the telephony edge. This is a deliberate reversal driven by realtime capability, tool-use support, and per-minute economics.
 
@@ -205,7 +205,7 @@ Both providers sit behind a single provider-abstraction interface in `lib/provid
 
 ## ADR-0015 — HubSpot is the default external CRM system of record; the event ledger remains the internal system of record
 
-**Status:** Accepted (2026-05-27). Extends ADR-0002 and ADR-0007.
+**Status:** Accepted (2026-05-27). Extends ADR-0002 and ADR-0007. **Amended by ADR-0027** (2026-05-30): HubSpot is demoted from *default* external CRM SoR to a *recommended, client-owned* connector with no mandated default; the internal-ledger-SoR decision below is unchanged.
 
 **Context.** Earlier docs treated CRMs (GoHighLevel, HubSpot, QuoteIQ) as interchangeable downstream targets. The go-forward direction names **HubSpot as the CRM system of record** for ResponseOS. This must not contradict ADR-0002, which makes the canonical event ledger the source from which all facts are recomputable.
 
@@ -340,3 +340,177 @@ CRM remains pluggable per tenant: HubSpot is the default, GoHighLevel and others
 - Per-tenant key derivation for HIPAA-ready lane per ADR-0004.
 - Break-glass decryption audit, integrating with `audit_logs.category = "break_glass"` once 31D ships.
 - Compliance-lane review at the v0.3 provider-readiness gate per ADR-0012 §"Provider readiness gate".
+
+---
+
+## ADR-0021 — Brand 2.0 visual direction: Signal Yellow `#E8FF5A` primary, `#FF4500` secondary, Syne wordmark
+
+**Status:** Accepted (2026-05-30). Amends the `DESIGN.md` accent/typography posture; runtime reconciliation scheduled for Phase 1. Resolves §24 row 5 of [`product/responseos-gtm-product-roadmap.md`](./product/responseos-gtm-product-roadmap.md).
+
+**Context.** `DESIGN.md` (v0.2 design freeze) set a dark-first system with `#FF4500` as the single primary accent and Sora (display) / Inter (body) / JetBrains Mono. PR #43 implemented that system in `app/globals.css`. The Audio Jones Brand 2.0 direction (Canva kit `kAHJkU6n4S8`, captured in the GTM roadmap §13–§14) elevates **Signal Yellow `#E8FF5A`** as the primary brand signal and adopts **Syne** for the `ResponseOS` wordmark.
+
+**Decision.**
+
+1. **Primary accent / brand signal = Signal Yellow `#E8FF5A`** — reserved for primary CTAs, key metrics, and intelligence highlights ("signal emerging from black").
+2. **`#FF4500` is retained as a *secondary* `action-orange`** — urgency, revenue-leak, and diagnostic-warning moments only. Demoted from primary, **not removed**.
+3. **Brand/display typography = Syne** (Bold / ExtraBold) for the `ResponseOS` wordmark and `RO` compact mark. Product-UI body (Inter) and mono (JetBrains Mono) are unaffected by this ADR; only the display/brand face moves toward Syne.
+4. **Interim tolerance.** The v0.2 UI (PR #43) ships the `DESIGN.md` tokens (`#FF4500` primary, Sora/Inter) and **may merge as interim scaffolding** — it is pre-Brand-2.0, not wrong.
+5. **Reconciliation is a Phase 1 task** under explicit authorization: update `DESIGN.md` + `app/globals.css` (`--color-accent` → `#E8FF5A`, add an action/orange token for `#FF4500`, display font → Syne). **This ADR changes no runtime token or font** — it sets the direction those future edits follow.
+
+**Consequences.** #43 can be reviewed and merged on its own merits without blocking on a re-skin; the brand migration becomes a contained token+font swap in Phase 1. Until that lands, the live UI and the brand canon are knowingly out of sync — this ADR is the record that the divergence is intentional and scheduled. Exact hex/palette values remain **TODO-verify** against Canva kit `kAHJkU6n4S8` (GTM §13/§25).
+
+---
+
+## ADR-0022 — Positioning: Business Memory / Response Intelligence is the near-term GTM wedge
+
+**Status:** Accepted (2026-05-30). Broadens the `PRD.md` category framing; does **not** retire Revenue Recovery. Resolves §24 row 1 of the GTM roadmap.
+
+**Context.** `PRD.md` / `product-spec.md` frame ResponseOS as "the AI Revenue Recovery Platform." The Brand 2.0 / GTM direction leads with **business memory** — capturing calls, notes, docs, decisions, SOPs, and workflows into structured, AI-ready operational memory (the "Managed Business Memory System" offer).
+
+**Decision.**
+
+1. The **near-term GTM wedge** is **Business Memory / Revenue Memory / Response Intelligence** — a managed business-memory + response system for founder-led service businesses.
+2. **Revenue Recovery is retained as the *outcome*, not retired.** The framings compose: *business memory is the mechanism; recovered revenue is the proof.* The mechanics (missed-call capture → qualify → follow-up → book → attribute recovered revenue) are unchanged.
+3. Public/marketing copy (`audiojones.com`) leads with the customer problem (memory leakage, lost context, missed follow-up); engineering/product canon may continue to use "Revenue Recovery Platform" internally where accurate.
+
+**Consequences.** Marketing/landing copy (Phases 2/5) leads with the memory/intelligence narrative; engineering docs and product mechanics need no rewrite. `PRD.md` should gain a positioning note pointing to this ADR and the GTM spec when next revised. No product behavior changes.
+
+---
+
+## ADR-0023 — Domain mapping: `audiojones.com` = public/GTM, `ajdigital.app` = app infrastructure
+
+**Status:** Accepted (2026-05-30). New decision. Resolves the domain item in §24 / GTM §20.
+
+**Context.** The operator owns `audiojones.com` (personal brand / authority) and `ajdigital.app` (product/app infra). The GTM spec §20 proposes a split; this ADR fixes it so route/deploy planning (incl. the #44 demo-deploy plan) has a stable assumption.
+
+**Decision.**
+
+1. **`audiojones.com`** = public personal brand, authority, content, and **GTM/marketing pages**. First GTM routes: `audiojones.com/responseos` and `audiojones.com/business-memory-system`.
+2. **`ajdigital.app`** = **product/app infrastructure**: authenticated app, portals, dashboards, client systems. Future subdomains: `app.ajdigital.app`, `clients.ajdigital.app`, `vault.ajdigital.app` (and `status.` / `docs.` as needed).
+3. `ajdigital.app` is **not** the primary public marketing site unless brand strategy shifts from personal-brand-led to product-company-led.
+4. **No DNS, domain, or deployment configuration is changed by this ADR** — it records the mapping future deploy work (v0.3-gated per ADR-0019) will implement.
+
+**Consequences.** The #44 demo-deploy plan and any Phase 5/6 routing target these domains. No code/DNS/deploy change now; production deploy remains v0.3-gated (ADR-0019).
+
+---
+
+## ADR-0024 — v1 AI/voice provider stance: OpenAI default, ElevenLabs premium, Vapi/Retell optional, Grok optional (supersedes ADR-0012)
+
+**Status:** Accepted (2026-05-30). **Supersedes ADR-0012** (realtime provider *order*). Retains the provider-abstraction + Twilio-edge principles of ADR-0012 / ADR-0013. Resolves §24 row 4 of the GTM roadmap.
+
+**Context.** ADR-0012 set Grok Voice as the primary realtime voice provider with OpenAI Realtime as fallback. The Brand 2.0 / GTM direction (GTM §10) selects a simpler **OpenAI-default** v1 posture for reasoning, basic voice, and transcription, with the other providers in clearly-scoped optional roles. This is a deliberate change of the *default*, not the architecture.
+
+**Decision.**
+
+| Role | v1 stance |
+|---|---|
+| Default reasoning + basic voice + transcription | **OpenAI** (incl. Whisper) |
+| Premium / custom / branded voice (with consent) | **ElevenLabs** — Growth/Enterprise add-on |
+| Voice-agent orchestration | **Vapi / Retell** — *optional*, adopted only after validation reduces build complexity |
+| Telephony edge | **Twilio or Telnyx** — Twilio remains default; Telnyx is now a sanctioned alternative |
+| Optional alternate reasoning / search | **Grok/xAI, Anthropic, Gemini, Perplexity, OpenRouter** — *not* the default voice-design layer |
+
+The **provider-abstraction principle is retained**: all providers sit behind `lib/providers/voice/*` (and the voice-gateway adapters if/when built); no provider-specific business logic above the adapter boundary. This ADR changes the default order, not the boundary.
+
+**Consequences.** Simpler v1 path (one default brain/voice/transcription vendor). The Node.js voice-gateway architecture (ADR-0013) and Redis ephemeral session state (ADR-0014) are **not** retired — they remain the realtime design if/when realtime voice is built; only the default provider changes. Mock-first (ADR-0001) and the v0.3 live-wiring + provider-readiness gate still hold; regulated/HIPAA-lane tenants must clear BAA / retention / training-data review before any live provider use. ADR-0012 is marked Superseded by this ADR.
+
+---
+
+## ADR-0025 — Logo/asset system: two core marks; favicons/app icons derived from the `RO` compact mark
+
+**Status:** Accepted (2026-05-30). New decision. Ratifies GTM §14–§15. **Creates no asset files.**
+
+**Context.** The GTM spec §14–§15 defines a `ResponseOS` Syne wordmark and an `RO` compact mark plus a future asset-export pipeline. Operator-provided Brand 2.0 references (white "Response" + Signal-Yellow "OS" wordmark; `RO` mark with a Signal-Yellow `O`) confirm the direction.
+
+**Decision.**
+
+1. **Exactly two core brand assets:** the **`ResponseOS` wordmark** (Syne; white `Response` + Signal-Yellow `OS` on dark) and the **`RO` compact mark** (Syne; Signal-Yellow `O`).
+2. **Favicons and app icons are *derived exports* of the `RO` compact mark** — not independent designs (`favicon.ico`, `favicon.svg`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`).
+3. The wordmark is the **primary** mark (navbar/header); `RO` is the **utility/compact** mark (favicon, app icon, compact sidebar, avatar, loading).
+4. **No asset files are created by this ADR.** Producing the SVG/PNG/ICO exports and wiring them into `app/layout.tsx` metadata and `/public` is a future, explicitly-authorized task (GTM §15/§17), not part of this docs-only decision.
+
+**Consequences.** Asset production has a fixed, minimal target (two source marks → derived icons), preventing logo sprawl. Later favicon/app-icon work is a mechanical export from one source. No runtime/asset change now.
+
+---
+
+## ADR-0026 — Neon Postgres is the default structured-memory database (supersedes ADR-0003)
+
+**Status:** Accepted (2026-05-30). **Supersedes ADR-0003** (Supabase hosting choice). Prisma, migrations, seed, and schema are unchanged. Resolves §24 row 3 of [`product/responseos-gtm-product-roadmap.md`](./product/responseos-gtm-product-roadmap.md).
+
+**Context.** ADR-0003 chose "Postgres on Supabase (Standard lane), Prisma ORM." Since then auth moved to Clerk (ADR-0005) and object storage to Cloudflare R2 (ADR-0006), leaving Supabase's only role as the Postgres engine. The codebase reflects this: the Prisma datasource is generic `provider = "postgresql"` reading `DATABASE_URL` / `DIRECT_URL`, with **zero Supabase-specific code, SDK, or config anywhere in the repo**. The GTM direction (§4) selects **Neon** for a clean modular fit — Clerk owns auth, R2 owns storage, Neon owns structured memory.
+
+**Decision.**
+
+1. **Default structured-memory database = Neon Postgres** (serverless Postgres, Standard lane).
+2. **Zero code change.** Prisma stays the ORM; `provider = "postgresql"`; migrations (`prisma migrate deploy`) and the deterministic seed (`prisma/seed.ts`) are unchanged. The switch is a **connection-string / hosting** decision (`DATABASE_URL` / `DIRECT_URL` point at Neon), not a migration.
+3. Local dev and CI continue on plain `postgres:16` (Docker / service container) — no Neon dependency for tests.
+4. **HIPAA-ready lane** (ADR-0004) swaps the managed host (Neon → a BAA-backed Postgres such as RDS or Neon's HIPAA offering) — same schema, same Prisma client. This replaces ADR-0003's "Supabase → RDS" note.
+
+**Consequences.** Modular backend (Clerk + Neon + R2), each concern independently swappable, matching the GTM architecture. Because the code is host-agnostic Postgres, the decision is low-risk and reversible. Supabase leaves the stack. A future consolidated-backend direction (auth+storage+db+realtime in one) would be a separate decision superseding this ADR and ADR-0005/0006. Mock-first (ADR-0001) holds — the app boots with no `DATABASE_URL`.
+
+---
+
+## ADR-0027 — Operational system of record is ResponseOS memory; external CRM is client-owned and pluggable, with no mandated default (amends ADR-0015)
+
+**Status:** Accepted (2026-05-30). **Amends ADR-0015** — demotes HubSpot from "default external CRM system of record" to a recommended client-owned connector. The internal-ledger-SoR decision (ADR-0002) is unchanged. Resolves §24 row 7.
+
+**Context.** ADR-0015 named HubSpot the *default* external CRM system of record while keeping the canonical event ledger as the internal SoR. The Business-Memory positioning (ADR-0022) makes ResponseOS's own operational memory (event ledger + structured business memory) the product's core asset and treats the customer's CRM as one client-owned connected system. GTM §5/§7 frames CRM as client-owned with no named default.
+
+**Decision.**
+
+1. **Operational system of record = ResponseOS operational memory** — the canonical event ledger (Postgres, ADR-0002) plus the structured business-memory records derived from it. ROI, audit, attribution, and replay compute from this, never from a vendor payload. **Unchanged from ADR-0002.**
+2. **External CRM is client-owned and pluggable, with no mandated default.** HubSpot is **demoted from "default SoR" to a recommended first-class connector**; GoHighLevel, Airtable, Notion, or none are equally valid. The tenant owns and controls its CRM; ResponseOS syncs to/from it via the canonical mapping (`lib/providers/*`), and full history survives a CRM swap because facts recompute from the ledger.
+3. No business logic depends on any CRM-specific payload above the adapter boundary (unchanged).
+
+**Consequences.** Aligns the data-ownership story with the Business-Memory offer: ResponseOS owns operational memory; the client owns their CRM. HubSpot stays fully supported and recommended but is no longer privileged as "the" SoR. No code change — `lib/providers/hubspot/*` and the connector abstraction are unchanged; this is a positioning/ownership clarification. Signature validation (ADR-0009) and ledger-first ingestion are unchanged.
+
+---
+
+## ADR-0028 — Go-forward pricing model: capacity + voice + AI-usage memory tiers (billing implementation stays v0.5)
+
+**Status:** Accepted (2026-05-30) for the pricing **model/structure**. Price points and billing implementation remain **open / v0.5-gated** (ADR-0010). Resolves the *model* half of §24 row 2; specific numbers stay open.
+
+**Context.** Existing canon (`pricing-and-onboarding.md`) frames public plans as Recovery Core / Recovery Pro / Recovery Performance + outcome fees, with the billing engine, Stripe, and outcome-fee ledger shipping in **v0.5** (ADR-0010). The GTM direction (§6–§8) reframes pricing around **managed business-memory capacity** — Starter / Operator / Growth Intelligence / Enterprise Memory System.
+
+**Decision.**
+
+1. **Go-forward public pricing model = capacity-based Business-Memory tiers** (Starter / Operator [featured] / Growth Intelligence / Enterprise), priced as platform fee + memory capacity + AI/automation usage + voice/transcription capacity + support, sold as a value-based retainer with pass-through-plus-margin overages. This supersedes the Recovery-Core/Pro/Performance naming **as the public model**.
+2. **Revenue-Recovery outcome fees are retained as an optional layer** (consistent with ADR-0022) — outcome/performance fees may sit on top of a memory-tier retainer.
+3. **Price points are NOT decided here.** Every number in GTM §6–§8 is a working estimate pending the **Phase 3 cost model** (TODO-verify), including final price points, minimum contract length, cancellation/data-export terms, and exact overage rates.
+4. **Billing implementation timing is unchanged** — the pricing engine, Stripe billing, and outcome-fee ledger still ship in **v0.5 per ADR-0010**. This ADR defines *what* the model is, not *when* it is built.
+
+**Consequences.** GTM/landing copy (Phase 2/5) can present the memory-tier model now (ranges or "contact us") while billing logic stays unbuilt until v0.5. ADR-0010 is unaffected; the open items are explicitly the numbers and contract terms, gated to Phase 3.
+
+---
+
+## ADR-0029 — Per-client Business Memory Vault is the canonical delivery model, activated behind the v0.4 knowledge-layer gates (extends ADR-0016)
+
+**Status:** Accepted (2026-05-30) for the *direction*; client-facing activation remains **v0.4-gated**. **Extends ADR-0016** (adds a per-tenant layer; the operator-side Obsidian scope is unchanged). Resolves the *direction* of §24 row 6; activation timing stays gated.
+
+**Context.** ADR-0016 scoped Obsidian as the **operator-side** SOP/brand-knowledge layer and explicitly **not** the per-tenant client knowledge/grounding layer, which `ROADMAP.md` gates to v0.4 behind isolation/audit/retention/PII controls. The Business-Memory offer (ADR-0022, GTM §3/§5) is built around a **dedicated per-client memory vault** (raw evidence in R2, structured memory in Neon, narrative memory in Markdown).
+
+**Decision.**
+
+1. **The per-client Business Memory Vault is the canonical *delivery model* for the offer** — each subscriber gets a dedicated memory container (R2 evidence + Neon records + Markdown/Obsidian-compatible narrative).
+2. **It is a distinct layer from operator-side Obsidian (ADR-0016), which is unchanged.** The per-client vault holds tenant content; the operator vault holds AJ Digital SOPs/brand knowledge and carries no tenant PII.
+3. **Client-facing activation is v0.4-gated.** Per-tenant ingestion of client content (and any RAG/grounding over it) ships only when the v0.4 knowledge-layer gates are in force: tenant isolation, source ownership, upload permissions, audit logging, retention policy, transcript/recording controls, PII minimization, deletion/export workflow, approved-source controls, human review for sensitive knowledge (`ROADMAP.md` Future Knowledge Layer).
+4. **The vault is sold as a managed outcome, not an Obsidian install** (GTM §3) — local Obsidian access is an optional add-on, not the core deliverable.
+
+**Consequences.** The Business-Memory delivery model is canonical and can drive GTM copy and the data architecture (R2 + Neon + narrative), while the **v0.4 gates remain hard prerequisites** before any per-tenant client content is ingested. No v0.4 control is relaxed; this ADR sets the target those gates protect. No code/ingestion is built by this ADR.
+
+---
+
+## ADR-0030 — Realtime voice infrastructure (gateway + Redis + orchestration) is a v0.3+/Phase-7 boundary, not v1
+
+**Status:** Accepted (2026-05-30). Sequencing/boundary clarification; **does not retire** ADR-0013 (gateway) or ADR-0014 (Redis) as the realtime design. Builds on ADR-0024. Resolves §24 rows 8–9.
+
+**Context.** ADR-0013 (dedicated Node.js voice gateway) and ADR-0014 (Redis ephemeral session state) define a realtime-audio architecture. ADR-0024 set OpenAI as the v1 default brain/voice/transcription and sanctioned Twilio-or-Telnyx telephony. The GTM v1 stack (§4/§10) omits the gateway and Redis; §24 rows 8–9 flagged the omission and the Twilio-vs-Telnyx detail.
+
+**Decision.**
+
+1. **v1 voice scope = async + basic voice/transcription via OpenAI** (per ADR-0024). v1 does **not** require the realtime audio gateway or the Redis session cache.
+2. **The realtime stack — Node.js voice gateway (ADR-0013), Redis session state (ADR-0014), optional Vapi/Retell orchestration — is deferred to the realtime-voice build** (the v0.3+ provider pilot / GTM Phase 7). ADR-0013/0014 **remain the design** for that build; they are sequenced, not retired.
+3. **Telephony: Twilio is the default; Telnyx is a sanctioned alternative** (per ADR-0024) behind the telephony abstraction.
+4. Live wiring stays v0.3-gated (ADR-0001) with the provider-readiness gate (ADR-0012/0024) before any live traffic.
+
+**Consequences.** A clear v1 boundary — simpler async/basic-voice path now, realtime architecture intact and scheduled for the pilot. No premature build of the gateway/Redis. No code change.
