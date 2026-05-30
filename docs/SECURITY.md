@@ -65,8 +65,13 @@ Maintain an explicit **vendor allowlist per compliance tier**. Onboarding a heal
 | Stripe | `Stripe-Signature` | `stripe.webhooks.constructEvent` — includes timestamp; IP allowlist Stripe ranges |
 | HighLevel | `X-GHL-Signature` (legacy `X-WH-Signature` deprecates 2026-07-01) | HMAC; use HighLevel SDK middleware |
 | n8n | shared secret header | Compare against `N8N_WEBHOOK_SECRET` constant-time |
+| Clerk | `svix-id` / `svix-timestamp` / `svix-signature` | Svix HMAC-SHA256 over `id.timestamp.body` keyed by `CLERK_WEBHOOK_SECRET`; constant-time compare; reject timestamps outside a 5-minute window (replay protection) |
 
 Invalid signature → 401, no body parse, no business mutation, log to security stream.
+
+### Route protection (`proxy.ts`)
+
+When `CLERK_SECRET_KEY` is set, `proxy.ts` runs `clerkMiddleware` and enforces sign-in on every route except the public set (`lib/auth/route-protection.ts`): `/`, `/pricing`, `/demo`, `/api/health`, `/sign-in/*`, `/sign-up/*`, `/industries/*`, and `/api/webhooks/*` (webhooks self-validate signatures). When Clerk is absent the proxy is a pass-through and the app runs on the placeholder dev-session (ADR-0001 mock-first).
 
 ## Tenant RBAC
 
