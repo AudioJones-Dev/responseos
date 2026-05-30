@@ -28,7 +28,7 @@ export function Sidebar({
         href="/"
         className="flex h-16 items-center gap-2.5 border-b border-line px-4"
       >
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-accent text-sm font-bold text-white">
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-accent text-sm font-bold text-black">
           R
         </span>
         <span className="hidden flex-col leading-tight lg:flex">
