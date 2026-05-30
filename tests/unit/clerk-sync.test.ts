@@ -9,7 +9,7 @@ const m = vi.hoisted(() => ({
       updateMany: vi.fn(),
     },
     account: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn() },
-    webhookEvent: { update: vi.fn() },
+    webhookEvent: { update: vi.fn(), findUnique: vi.fn() },
   },
   recordWebhookEvent: vi.fn(),
   recordAuditLog: vi.fn(),
@@ -36,6 +36,7 @@ beforeEach(() => {
     data: { id: "wh_1", process_status: "received" },
   });
   m.db.webhookEvent.update.mockResolvedValue({});
+  m.db.webhookEvent.findUnique.mockResolvedValue(null);
   m.db.user.findUnique.mockResolvedValue(null);
   m.db.user.update.mockResolvedValue({});
   m.db.user.create.mockResolvedValue({});
@@ -131,10 +132,24 @@ describe("handleClerkEvent — provisioning is conservative and fail-closed", ()
     expect(m.db.user.updateMany.mock.calls[0][0].data).not.toHaveProperty("role");
   });
 
-  test("membership.created fails closed when the org is not yet synced", async () => {
+  test("membership.created before its org is synced is retryable, not acked", async () => {
     m.db.account.findUnique.mockResolvedValue(null);
-    await call("organizationMembership.created", membership);
+    const res = await call("organizationMembership.created", membership);
     expect(m.db.user.updateMany).not.toHaveBeenCalled();
+    expect(res.ok).toBe(false);
+    expect(m.db.webhookEvent.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ process_status: "error" }) }),
+    );
+  });
+
+  test("membership.created before its user is synced is retryable, not acked", async () => {
+    m.db.account.findUnique.mockResolvedValue({ id: "acct_1" });
+    m.db.user.updateMany.mockResolvedValue({ count: 0 });
+    const res = await call("organizationMembership.created", membership);
+    expect(res.ok).toBe(false);
+    expect(m.db.webhookEvent.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ process_status: "error" }) }),
+    );
   });
 
   test("membership.deleted detaches the user and resets to client_viewer", async () => {
@@ -158,15 +173,32 @@ describe("handleClerkEvent — ledger / replay safety", () => {
     });
   });
 
-  test("a duplicate event short-circuits without dispatching", async () => {
+  test("an already-processed event short-circuits without dispatching", async () => {
     m.recordWebhookEvent.mockResolvedValue({
       ok: true,
       data: { id: "wh_1", process_status: "duplicate" },
     });
+    m.db.webhookEvent.findUnique.mockResolvedValue({ process_status: "processed" });
     const res = await call("user.created", userPayload);
     expect(res).toEqual({ ok: true, data: { status: "duplicate" } });
     expect(m.db.user.create).not.toHaveBeenCalled();
     expect(m.db.user.findUnique).not.toHaveBeenCalled();
+  });
+
+  test("a previously-errored event is re-dispatched on retry, not dropped", async () => {
+    // Ledger row exists but never reached "processed" (transient failure / early
+    // delivery). Clerk redelivers the same id; we must re-run reconciliation.
+    m.recordWebhookEvent.mockResolvedValue({
+      ok: true,
+      data: { id: "wh_1", process_status: "duplicate" },
+    });
+    m.db.webhookEvent.findUnique.mockResolvedValue({ process_status: "error" });
+    const res = await call("user.created", userPayload);
+    expect(res).toEqual({ ok: true, data: { status: "processed" } });
+    expect(m.db.user.create).toHaveBeenCalledTimes(1);
+    expect(m.db.webhookEvent.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ process_status: "processed" }) }),
+    );
   });
 
   test("propagates a ledger write failure", async () => {

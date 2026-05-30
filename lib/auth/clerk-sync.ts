@@ -31,6 +31,14 @@ const NEW_ACCOUNT_DEFAULTS = {
 
 type ClerkEvent = { type: string; data: Record<string, unknown> };
 
+/**
+ * Thrown when an event cannot be applied yet because a prerequisite row has not
+ * synced (out-of-order Clerk delivery). It is handled exactly like any other
+ * dispatch failure — the ledger row stays non-terminal and the 5xx response
+ * lets Clerk retry until the prerequisite exists.
+ */
+class RetryableSyncError extends Error {}
+
 function asString(value: unknown): string | undefined {
   return typeof value === "string" && value.length > 0 ? value : undefined;
 }
@@ -174,17 +182,29 @@ async function syncMembership(data: Record<string, unknown>): Promise<void> {
     where: { clerk_org_id: clerkOrgId },
     select: { id: true },
   });
-  // Fail closed: do not bind a user to an org we have not synced yet. The next
-  // membership event (or organization.created) reconciles.
-  if (!account) return;
+  // Out-of-order delivery: the org has not synced yet. Throw so the event is
+  // marked retryable rather than acknowledged — Clerk redelivers and the next
+  // attempt reconciles once organization.created has landed.
+  if (!account) {
+    throw new RetryableSyncError(
+      `membership references unsynced org ${clerkOrgId}`,
+    );
+  }
 
   // Bind the user to their tenant (the 32B isolation check reads account_id).
   // Role is intentionally left untouched — never auto-elevated from generic
   // Clerk membership (operator Q4).
-  await db.user.updateMany({
+  const updated = await db.user.updateMany({
     where: { clerk_user_id: clerkUserId },
     data: { account_id: account.id },
   });
+  // Likewise retry if user.created has not arrived yet: acknowledging now would
+  // strand the user without an account_id (no tenant session) permanently.
+  if (updated.count === 0) {
+    throw new RetryableSyncError(
+      `membership references unsynced user ${clerkUserId}`,
+    );
+  }
 }
 
 async function detachMembership(data: Record<string, unknown>): Promise<void> {
@@ -252,8 +272,20 @@ export async function handleClerkEvent(params: {
   if (!ledger.ok) {
     return ledger;
   }
+
+  // Only an event that previously reached "processed" is a true duplicate. A
+  // row left in "received"/"error" (a transient failure, or an out-of-order
+  // event whose prerequisites had not synced) must be re-reconciled — Clerk
+  // retries the same event id, and reconciliation is idempotent. Acknowledging
+  // a non-terminal row would permanently drop the event.
   if (ledger.data.process_status === "duplicate") {
-    return ok({ status: "duplicate" });
+    const existing = await db.webhookEvent.findUnique({
+      where: { id: ledger.data.id },
+      select: { process_status: true },
+    });
+    if (existing?.process_status === "processed") {
+      return ok({ status: "duplicate" });
+    }
   }
 
   try {
