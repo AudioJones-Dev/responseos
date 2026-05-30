@@ -20,9 +20,13 @@
   --color-ink-secondary: #94a3b8; /* secondary */
   --color-ink-muted: #4b5563; /* muted / labels */
 
-  /* Accent — primary action + revenue highlight (use sparingly) */
-  --color-accent: #ff4500;
-  --color-accent-hover: #e03d00;
+  /* Accent — primary brand signal (Brand 2.0: Signal Yellow). Use sparingly. ADR-0021. */
+  --color-accent: #e8ff5a;
+  --color-accent-hover: #d4ec3f; /* TODO: verify hover shade vs Canva kit kAHJkU6n4S8 */
+
+  /* Action — secondary action-orange: urgency, revenue-leak, diagnostic moments. ADR-0021. */
+  --color-action: #ff4500;
+  --color-action-hover: #e03d00;
 
   /* Semantic */
   --color-success: #22c55e;
@@ -34,11 +38,12 @@
   --color-success-soft: rgba(34, 197, 94, 0.12);
   --color-warning-soft: rgba(245, 158, 11, 0.12);
   --color-danger-soft: rgba(239, 68, 68, 0.12);
-  --color-accent-soft: rgba(255, 69, 0, 0.12);
+  --color-accent-soft: rgba(232, 255, 90, 0.12);
+  --color-action-soft: rgba(255, 69, 0, 0.12);
   --color-neutral-soft: rgba(107, 114, 128, 0.14);
 
   /* Type families (next/font variables set in layout.tsx) */
-  --font-display: var(--font-sora), system-ui, sans-serif;
+  --font-display: var(--font-syne), system-ui, sans-serif;
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 }

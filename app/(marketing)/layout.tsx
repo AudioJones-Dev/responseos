@@ -15,7 +15,7 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-20 border-b border-line bg-base/80 backdrop-blur">
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-6 px-4 sm:px-6">
           <Link href="/" className="flex items-center gap-2.5">
-            <span className="grid h-8 w-8 place-items-center rounded-md bg-accent text-sm font-bold text-white">
+            <span className="grid h-8 w-8 place-items-center rounded-md bg-accent text-sm font-bold text-black">
               R
             </span>
             <span className="font-display text-sm font-semibold text-ink">

@@ -4,6 +4,14 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — Brand 2.0 re-skin: Signal-Yellow primary + Syne (ADR-0021 Phase 1)
+
+- **Re-skinned** the v0.2 UI to the ratified Brand 2.0 direction (ADR-0021): primary accent token `--color-accent` `#FF4500` → **Signal Yellow `#E8FF5A`**; introduced **`--color-action` `#FF4500`** (+ `-hover`/`-soft`) as the secondary action-orange (urgency / revenue-leak); `--color-accent-soft` re-tinted to yellow. Display/brand font **Sora → Syne** (`app/layout.tsx` via `next/font`, `--font-display` → `var(--font-syne)`).
+- **Contrast:** primary `Button` and the two placeholder logo tiles flip `text-white` → `text-black` on the yellow fill (Brand §18 + WCAG). All other `bg-accent` usages are text-less dots/bars and simply re-tint.
+- **Reconciled `docs/DESIGN.md`** §2–§3 to Brand 2.0 (accent `#E8FF5A` primary, action-orange `#FF4500` secondary, Syne heading face) so the design canon and the implemented tokens agree.
+- **Verified:** lint, typecheck, build green; dev-server screenshot confirms yellow primary, black-on-yellow CTAs, and Syne wordmark/headline render correctly.
+- **Out of scope (later phases):** the `RO` logo mark + favicon/app-icon exports (ADR-0025 asset phase) and the positioning/landing copy shift to the Business-Memory wedge (ADR-0022 / GTM Phase 2). Exact hover/palette shades remain **TODO-verify** against Canva kit `kAHJkU6n4S8`. Per ADR-0021.
+
 ## Unreleased — v0.2 closeout: UI rebuild against DESIGN.md (dark-first design system)
 
 - **Implemented** the canonical dark-first visual system from `docs/DESIGN.md` §2–4 in `app/globals.css` (Tailwind v4 `@theme`): base/surface/elevated surfaces, line borders, ink text scale, `#FF4500` accent, semantic success/warning/danger/neutral + soft fills, `next/font` Sora (display) / Inter (body) / JetBrains Mono, focus-visible states, on-theme scrollbars. Replaces the create-next-app light-mode scaffold.

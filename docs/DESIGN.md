@@ -83,9 +83,11 @@ The visual system should communicate: **this is serious software that produces s
 --color-text-secondary: #94A3B8;
 --color-text-muted:     #4B5563;
 
-/* Accent */
---color-accent:       #FF4500;  /* Primary action, revenue highlight */
---color-accent-hover: #E03D00;
+/* Accent — Brand 2.0 (ADR-0021): Signal Yellow is the PRIMARY signal; orange demoted to secondary action */
+--color-accent:       #E8FF5A;  /* Primary signal — CTAs, key metrics, intelligence highlights */
+--color-accent-hover: #D4EC3F;  /* TODO: verify hover shade vs Canva kit kAHJkU6n4S8 */
+--color-action:       #FF4500;  /* Secondary action-orange — urgency, revenue-leak, diagnostic warnings */
+--color-action-hover: #E03D00;
 
 /* Semantic */
 --color-success: #22C55E;  /* Booked, recovered, positive */
@@ -107,7 +109,8 @@ The visual system should communicate: **this is serious software that produces s
 
 ### Accent Usage
 
-- Accent (`#FF4500`) is reserved for: primary CTAs, recovered revenue highlights, active selection states
+- Accent (`#E8FF5A` Signal Yellow) is reserved for: primary CTAs, recovered revenue highlights, active selection states. On a yellow fill, text is **black** for contrast (ADR-0021).
+- Action-orange (`#FF4500`) is reserved for urgency / revenue-leak / diagnostic-warning moments — not primary CTAs.
 - Do not scatter accent color across decorative elements
 - One dominant accent point per screen
 
@@ -119,11 +122,11 @@ The visual system should communicate: **this is serious software that produces s
 
 | Role | Font | Fallback |
 |---|---|---|
-| Headings / Brand moments | Sora | system-ui, sans-serif |
+| Headings / Brand moments / wordmark | Syne (Brand 2.0, ADR-0021) | system-ui, sans-serif |
 | Product UI / Body | Inter | system-ui, sans-serif |
 | Monospace (code, IDs, timestamps) | JetBrains Mono | monospace |
 
-> Avoid decorative fonts. Avoid system fonts as primary selections. If Sora is unavailable, **Space Grotesk** is the approved fallback for headings only.
+> Avoid decorative fonts. Avoid system fonts as primary selections. Syne (Bold/ExtraBold) is the ResponseOS wordmark + display face per ADR-0021 / GTM §14; if Syne is unavailable, **Space Grotesk** is the approved fallback for headings only.
 
 ### Type Scale
 
@@ -140,8 +143,8 @@ The visual system should communicate: **this is serious software that produces s
 
 ### Hierarchy Rules
 
-- **Page titles:** `--text-2xl`, `--color-text-primary`, Sora
-- **Section headings:** `--text-xl`, `--color-text-primary`, Sora
+- **Page titles:** `--text-2xl`, `--color-text-primary`, Syne
+- **Section headings:** `--text-xl`, `--color-text-primary`, Syne
 - **Card headings:** `--text-lg`, `--color-text-primary`, Inter Semibold
 - **Body / descriptions:** `--text-base`, `--color-text-secondary`, Inter Regular
 - **Labels / metadata:** `--text-sm`, `--color-text-muted`, Inter Regular
