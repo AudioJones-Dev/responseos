@@ -17,6 +17,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - **Not included:** no JIT provisioning in session derivation; no UI / sign-in / sign-up pages; no privileged raw-transcript / break-glass accessor; no role-elevation tooling; no v0.3 / PR #14 deploy work; no HIPAA-lane work; no external cache; no opportunistic refactors. Tenant-isolation behavior from PR #40 is unchanged.
 - Per ADR-0005 + ADR-0009 + step-2.4 plan §4.6 / §4.8. Tracks roadmap checkpoint issue #27.
 
+## Unreleased — fix: cross-platform integration test harness (Windows `npx` spawn)
+
+- **Fixed** the Prisma-CLI spawn in `tests/integration/setup.ts` (`seedTestDb`) and `tests/integration/seed-determinism.integration.test.ts` (`migrateResetAndSeed`) to pass `shell: process.platform === "win32"`. On a Windows host, `execFileSync("npx", …)` failed with `ENOENT` (npx resolves to `npx.cmd`), and naming `npx.cmd` directly failed with `EINVAL` under Node 20+ `.cmd`-spawn hardening — so the per-suite reseed / migrate-reset crashed and the integration suite could not run locally on Windows. CI (Linux) was unaffected.
+- **Scope:** the shell is enabled **only** on `win32`; the Linux/CI invocation is byte-for-byte unchanged. The spawned args are static literals (no interpolation), so the `shell: true` argument-escaping caveat does not apply.
+- Test-infra only — no product code, schema, migration, or runtime behavior changed.
+
 ## Unreleased — v0.2 closeout step 2.4 PR 32B: Clerk session derivation + conservative role mapping
 
 - **Wired** Clerk's server-side `auth()` into `lib/auth/session.ts` behind the **unchanged public contract** — same exports (`getCurrentSession`, `getCurrentUser`, `getCurrentAccount`, `requireRole`, `requireTenantScope`, `resolveTenantScope`), same types (`Session`, `SessionUser`, `SessionAccount`), and same error classes (`TenantScopeError`, `RoleDeniedError`, `DevSessionInProductionError`). No call site changed.

@@ -50,6 +50,7 @@ export async function seedTestDb(): Promise<void> {
     cwd: process.cwd(),
     env: process.env,
     stdio: "pipe",
+    shell: process.platform === "win32",
   });
 }
 
