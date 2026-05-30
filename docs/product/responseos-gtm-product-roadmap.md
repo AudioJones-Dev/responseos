@@ -927,20 +927,26 @@ to login, waitlist, or product gateway.
 
 > _From a direct audit of the existing `RESPONSEOS_*` canon and ADRs ([`../DECISIONS.md`](../DECISIONS.md)).
 > Under ADR-0011's reconciliation rule, this prose spec **does not supersede an ADR** — so the
-> operator-chosen directions below have been **ratified as ADRs** ([`../DECISIONS.md`](../DECISIONS.md)
-> ADR-0021–0025). Conflicts not yet ratified remain open decisions and the existing ADR stands._
+> operator-chosen directions below are **ratified as ADRs** ([`../DECISIONS.md`](../DECISIONS.md)
+> ADR-0021–0030). All nine §24 conflicts now have a ratifying ADR; what remains "open" is gated
+> *implementation detail* (price numbers, v0.4 activation), not unresolved direction._
 
 ### Resolution status (ratified 2026-05-30)
 
 | Conflict | Ratified decision | ADR |
 |---|---|---|
 | Row 1 — positioning | Business Memory / Response Intelligence is the near-term wedge; Revenue Recovery retained as the *outcome* | **[ADR-0022](../DECISIONS.md)** |
+| Row 2 — pricing | Capacity-based Business-Memory tiers are the public model (outcome fees optional); **price points + billing stay v0.5/Phase-3 gated** | **[ADR-0028](../DECISIONS.md)** |
+| Row 3 — database | **Neon Postgres** default (host-agnostic Postgres → zero code change); **supersedes ADR-0003** | **[ADR-0026](../DECISIONS.md)** |
 | Row 4 — voice | OpenAI default v1; ElevenLabs premium; Vapi/Retell optional; Grok optional — **supersedes ADR-0012** | **[ADR-0024](../DECISIONS.md)** |
 | Row 5 — brand | Signal-yellow `#E8FF5A` primary, `#FF4500` secondary, Syne wordmark; #43 may merge as interim, reconcile in Phase 1 | **[ADR-0021](../DECISIONS.md)** |
+| Row 6 — per-client vault | Per-client vault is the canonical delivery model; **client activation stays v0.4-gated** (extends ADR-0016) | **[ADR-0029](../DECISIONS.md)** |
+| Row 7 — CRM SoR | ResponseOS operational memory is the SoR; CRM is client-owned/pluggable, HubSpot recommended-not-default (**amends ADR-0015**) | **[ADR-0027](../DECISIONS.md)** |
+| Rows 8–9 — realtime/telephony | Gateway + Redis + orchestration deferred to v0.3+/Phase-7 (ADR-0013/0014 remain the design); Twilio default, Telnyx sanctioned | **[ADR-0030](../DECISIONS.md)** |
 | §20 — domains | `audiojones.com` = public/GTM, `ajdigital.app` = app infra | **[ADR-0023](../DECISIONS.md)** |
 | §14–§15 — assets | Two core marks (wordmark + `RO`); favicons/app icons derived from `RO` | **[ADR-0025](../DECISIONS.md)** |
 
-**Still open** (no ADR yet — pending operator decision): **Row 2** (plan names / pricing model — gated to the Phase 3 cost model; billing engine is v0.5 per ADR-0010), **Row 3** (Neon vs Supabase, ADR-0003), **Row 6** (per-client vault vs ADR-0016 / v0.4 knowledge-layer gates), **Row 7** (CRM system of record, ADR-0015), **Rows 8–9** (realtime voice gateway / Redis / Telnyx detail).
+**Remaining gated items** (decided in principle, deferred by design — *not* open conflicts): final **price points / contract terms** (Phase 3 cost model; billing engine v0.5 per ADR-0010 + ADR-0028); **per-client vault activation** (v0.4 knowledge-layer gates per ADR-0029); **realtime voice build** (v0.3+/Phase-7 per ADR-0030). Each is gated, not undecided.
 
 ### Conflicts to reconcile
 
