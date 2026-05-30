@@ -1,7 +1,10 @@
+import { ButtonLink, Card, StatusBadge } from "@/components/ui";
+
 const tiers = [
   {
     name: "Recovery Core",
     price: "TBD",
+    summary: "Stop the bleeding. Recover the calls you're already missing.",
     bullets: [
       "Missed-call recovery",
       "AI inbound answering (mock)",
@@ -12,16 +15,19 @@ const tiers = [
   {
     name: "Recovery Pro",
     price: "TBD",
+    summary: "Turn recovered demand into booked, attributed jobs.",
     bullets: [
       "Everything in Core",
       "Quote + booking flows",
       "Outbound recovery campaigns",
       "Client portal access",
     ],
+    featured: true,
   },
   {
     name: "Recovery Performance",
     price: "ROI-aligned",
+    summary: "We front the work and earn on the revenue we recover.",
     bullets: [
       "Everything in Pro",
       "Earn-on-outcomes structure",
@@ -33,29 +39,73 @@ const tiers = [
 
 export default function PricingPage() {
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-16">
-      <h1 className="text-3xl font-semibold">Pricing</h1>
-      <p className="mt-2 text-zinc-600">
-        ROI-aligned partnerships. Front the work, earn on outcomes.
+    <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-16 sm:px-6">
+      <p className="text-xs font-semibold uppercase tracking-widest text-ink-muted">
+        Pricing
       </p>
-      <div className="mt-8 grid gap-4 lg:grid-cols-3">
+      <h1 className="mt-2 max-w-3xl font-display text-3xl font-semibold leading-[1.1] text-ink sm:text-4xl">
+        Priced against the revenue we recover
+      </h1>
+      <p className="mt-4 max-w-2xl text-lg text-ink-secondary">
+        ROI-aligned partnerships, not seat licenses. We front the work and tie
+        every tier to recovered revenue — so the cost only matters next to the
+        dollars it returns.
+      </p>
+
+      <div className="mt-12 grid gap-4 lg:grid-cols-3">
         {tiers.map((tier) => (
-          <article
+          <Card
             key={tier.name}
-            className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm"
+            interactive
+            className={
+              tier.featured ? "flex flex-col border-line-strong" : "flex flex-col"
+            }
           >
-            <h2 className="text-lg font-semibold">{tier.name}</h2>
-            <p className="mt-2 text-2xl font-semibold text-emerald-700">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-ink">{tier.name}</h2>
+              {tier.featured ? (
+                <StatusBadge label="Most popular" tone="accent" />
+              ) : null}
+            </div>
+            <p className="mt-4 font-display text-3xl font-semibold text-ink">
               {tier.price}
             </p>
-            <ul className="mt-4 space-y-1 text-sm text-zinc-700">
+            <p className="mt-3 text-sm text-ink-secondary">{tier.summary}</p>
+            <ul className="mt-5 space-y-2.5 text-sm text-ink-secondary">
               {tier.bullets.map((b) => (
-                <li key={b}>- {b}</li>
+                <li key={b} className="flex gap-2.5">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                  {b}
+                </li>
               ))}
             </ul>
-          </article>
+            <div className="mt-8 pt-2">
+              <ButtonLink
+                href="/audit"
+                variant={tier.featured ? "primary" : "secondary"}
+                className="w-full"
+              >
+                Run a revenue audit
+              </ButtonLink>
+            </div>
+          </Card>
         ))}
       </div>
+
+      <Card className="mt-10 flex flex-col items-start gap-4 p-8 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="font-display text-xl font-semibold text-ink">
+            Not sure which tier fits?
+          </h2>
+          <p className="mt-1 max-w-xl text-sm text-ink-secondary">
+            Start with an audit. We size your missed-demand surface and quote
+            against the revenue it represents — no commitment.
+          </p>
+        </div>
+        <ButtonLink href="/demo" variant="secondary" className="shrink-0">
+          Watch the demo
+        </ButtonLink>
+      </Card>
     </main>
   );
 }

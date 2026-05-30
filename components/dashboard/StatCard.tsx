@@ -5,10 +5,10 @@ interface StatCardProps {
   accent?: "default" | "primary" | "warning";
 }
 
-const accentStyles: Record<NonNullable<StatCardProps["accent"]>, string> = {
-  default: "border-zinc-200 bg-white",
-  primary: "border-emerald-200 bg-emerald-50",
-  warning: "border-amber-200 bg-amber-50",
+const valueStyles: Record<NonNullable<StatCardProps["accent"]>, string> = {
+  default: "text-ink",
+  primary: "text-accent",
+  warning: "text-warning",
 };
 
 export default function StatCard({
@@ -18,16 +18,16 @@ export default function StatCard({
   accent = "default",
 }: StatCardProps) {
   return (
-    <div
-      className={`rounded-xl border p-5 shadow-sm ${accentStyles[accent]}`}
-    >
-      <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+    <div className="rounded-lg border border-line bg-surface p-5 transition-colors hover:border-line-strong">
+      <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">
         {label}
       </p>
-      <p className="mt-2 text-3xl font-semibold text-zinc-900">{value}</p>
-      {hint ? (
-        <p className="mt-1 text-xs text-zinc-500">{hint}</p>
-      ) : null}
+      <p
+        className={`mt-2 text-3xl font-semibold tabular-nums ${valueStyles[accent]}`}
+      >
+        {value}
+      </p>
+      {hint ? <p className="mt-1 text-xs text-ink-muted">{hint}</p> : null}
     </div>
   );
 }

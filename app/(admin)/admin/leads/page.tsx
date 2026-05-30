@@ -1,3 +1,14 @@
+import {
+  PageHeader,
+  EmptyState,
+  StatusBadge,
+  Table,
+  THead,
+  TBody,
+  TR,
+  TD,
+  type Tone,
+} from "@/components/ui";
 import { Leads } from "@/lib/data";
 
 const formatUsd = (cents?: number): string =>
@@ -9,44 +20,89 @@ const formatUsd = (cents?: number): string =>
       })
     : "—";
 
+const statusTone: Record<string, Tone> = {
+  qualified: "success",
+  booked: "success",
+  quoted: "success",
+  won: "success",
+  new: "warning",
+  unqualified: "danger",
+  lost: "danger",
+  archived: "neutral",
+};
+
+const urgencyTone: Record<string, Tone> = {
+  high: "danger",
+  medium: "warning",
+  low: "neutral",
+};
+
+const titleCase = (s: string): string =>
+  s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
 export default async function AdminLeadsPage() {
   const result = await Leads.listLeads({});
   const leads = result.ok ? result.data : [];
+
   return (
-    <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-12">
-      <h1 className="text-2xl font-semibold">Lead Events</h1>
-      <p className="mt-1 text-sm text-zinc-600">
-        Central revenue recovery object. Every captured demand signal
-        becomes a lead_event.
-      </p>
-      <table className="mt-6 w-full border-collapse text-sm">
-        <thead>
-          <tr className="text-left text-zinc-500">
-            <th className="border-b border-zinc-200 py-2 pr-3">Source</th>
-            <th className="border-b border-zinc-200 py-2 pr-3">Event</th>
-            <th className="border-b border-zinc-200 py-2 pr-3">Status</th>
-            <th className="border-b border-zinc-200 py-2 pr-3">Urgency</th>
-            <th className="border-b border-zinc-200 py-2 pr-3">Estimated</th>
-            <th className="border-b border-zinc-200 py-2 pr-3">Recovered</th>
-          </tr>
-        </thead>
-        <tbody>
-          {leads.map((l) => (
-            <tr key={l.id} className="text-zinc-800">
-              <td className="border-b border-zinc-100 py-2 pr-3">{l.source}</td>
-              <td className="border-b border-zinc-100 py-2 pr-3">{l.event_type}</td>
-              <td className="border-b border-zinc-100 py-2 pr-3">{l.status}</td>
-              <td className="border-b border-zinc-100 py-2 pr-3">{l.urgency}</td>
-              <td className="border-b border-zinc-100 py-2 pr-3">
-                {formatUsd(l.estimated_value)}
-              </td>
-              <td className="border-b border-zinc-100 py-2 pr-3">
-                {formatUsd(l.recovered_value)}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </main>
+    <>
+      <PageHeader
+        eyebrow="Operator Console"
+        title="Lead Events"
+        description="The central revenue-recovery object. Every captured demand signal becomes a lead event, tracked from first touch to won or lost."
+      />
+
+      {leads.length === 0 ? (
+        <EmptyState
+          title="No lead events yet"
+          description="As missed calls, quote requests, and inbound messages are captured, each demand signal will appear here with its recovery status and value."
+        />
+      ) : (
+        <Table>
+          <THead
+            columns={[
+              "Source",
+              "Event",
+              "Status",
+              "Urgency",
+              "Estimated",
+              "Recovered",
+            ]}
+          />
+          <TBody>
+            {leads.map((l) => (
+              <TR key={l.id}>
+                <TD>{titleCase(l.source)}</TD>
+                <TD>{titleCase(l.event_type)}</TD>
+                <TD>
+                  <StatusBadge
+                    label={titleCase(l.status)}
+                    tone={statusTone[l.status] ?? "neutral"}
+                  />
+                </TD>
+                <TD>
+                  <StatusBadge
+                    label={titleCase(l.urgency)}
+                    tone={urgencyTone[l.urgency] ?? "neutral"}
+                  />
+                </TD>
+                <TD className="tabular-nums">
+                  {formatUsd(l.estimated_value)}
+                </TD>
+                <TD
+                  className={
+                    typeof l.recovered_value === "number"
+                      ? "font-medium tabular-nums text-accent"
+                      : "tabular-nums text-ink-muted"
+                  }
+                >
+                  {formatUsd(l.recovered_value)}
+                </TD>
+              </TR>
+            ))}
+          </TBody>
+        </Table>
+      )}
+    </>
   );
 }
