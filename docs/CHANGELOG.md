@@ -4,6 +4,15 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — v0.2 closeout: UI rebuild against DESIGN.md (dark-first design system)
+
+- **Implemented** the canonical dark-first visual system from `docs/DESIGN.md` §2–4 in `app/globals.css` (Tailwind v4 `@theme`): base/surface/elevated surfaces, line borders, ink text scale, `#FF4500` accent, semantic success/warning/danger/neutral + soft fills, `next/font` Sora (display) / Inter (body) / JetBrains Mono, focus-visible states, on-theme scrollbars. Replaces the create-next-app light-mode scaffold.
+- **Added** a dependency-free component library in `components/ui/` (Card, PageHeader, MetricCard, StatusBadge, Button/ButtonLink, EmptyState, AlertBanner, DataTable primitives, `cn` helper) mapped to DESIGN.md §9. **No new packages.**
+- **Added** the app shell in `components/layout/` — Sidebar (active-state accent border, icon-only/​drawer responsive collapse), sticky TopBar (mobile nav strip + console↔portal switch), AppShell — plus route-group layouts for `(admin)`, `(client)`, `(marketing)`. Inline SVG icon set; no icon dependency.
+- **Restyled** all 25 pages (10 admin, 8 client, 7 marketing) to the dark system: PageHeader on every console page, DataTable + StatusBadge for record lists, MetricCard/StatCard metric grids, EmptyState for empty lists (§15), client-facing business language with no AI-hype (§7, §11). **Data / auth layer untouched — presentation only.**
+- **Verified:** lint, typecheck, and production build green; every route prerenders on the mock-first data layer (no DB or secrets required to view). Visually confirmed landing, client dashboard, admin console, and lead/table views render dark-first on mock data with zero console errors.
+- Per `docs/DESIGN.md` + ROADMAP v0.2 closeout ("rebuild UI against DESIGN.md tokens"). No live providers, no deploy, no schema change.
+
 ## Unreleased — v0.2 closeout step 2.4 PR 32B: Clerk session derivation + conservative role mapping
 
 - **Wired** Clerk's server-side `auth()` into `lib/auth/session.ts` behind the **unchanged public contract** — same exports (`getCurrentSession`, `getCurrentUser`, `getCurrentAccount`, `requireRole`, `requireTenantScope`, `resolveTenantScope`), same types (`Session`, `SessionUser`, `SessionAccount`), and same error classes (`TenantScopeError`, `RoleDeniedError`, `DevSessionInProductionError`). No call site changed.

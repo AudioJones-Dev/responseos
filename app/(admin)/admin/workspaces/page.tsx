@@ -1,11 +1,17 @@
+import { PageHeader, EmptyState } from "@/components/ui";
+
 export default function AdminWorkspacesPage() {
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
-      <h1 className="text-2xl font-semibold">Workspaces</h1>
-      <p className="mt-1 text-sm text-zinc-600">
-        Internal grouping of clients and operator assignments. Placeholder
-        for v0.1.
-      </p>
-    </main>
+    <>
+      <PageHeader
+        eyebrow="Operator Console"
+        title="Workspaces"
+        description="Internal grouping of clients and operator assignments for routing and on-call coverage."
+      />
+      <EmptyState
+        title="Workspace grouping arrives post-v0.1"
+        description="Operator assignments and client groupings are not wired up yet. Manage clients directly from the Clients view in the meantime."
+      />
+    </>
   );
 }

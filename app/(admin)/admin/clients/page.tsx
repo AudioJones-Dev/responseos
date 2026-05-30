@@ -1,37 +1,63 @@
+import {
+  PageHeader,
+  EmptyState,
+  StatusBadge,
+  Table,
+  THead,
+  TBody,
+  TR,
+  TD,
+  type Tone,
+} from "@/components/ui";
 import { Accounts } from "@/lib/data";
+
+const statusTone: Record<string, Tone> = {
+  active: "success",
+  pending: "warning",
+  inactive: "neutral",
+  churned: "danger",
+};
+
+const titleCase = (s: string): string =>
+  s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
 export default async function AdminClientsPage() {
   const result = await Accounts.listAccounts();
   const orgs = result.ok ? result.data : [];
+
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
-      <h1 className="text-2xl font-semibold">Clients</h1>
-      <p className="mt-1 text-sm text-zinc-600">
-        Workspaces ResponseOS is operating for. Tenant isolation enforced
-        per organization.
-      </p>
-      <table className="mt-6 w-full border-collapse text-sm">
-        <thead>
-          <tr className="text-left text-zinc-500">
-            <th className="border-b border-zinc-200 py-2 pr-3">Name</th>
-            <th className="border-b border-zinc-200 py-2 pr-3">Slug</th>
-            <th className="border-b border-zinc-200 py-2 pr-3">Industry</th>
-            <th className="border-b border-zinc-200 py-2 pr-3">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {orgs.map((o) => (
-            <tr key={o.id} className="text-zinc-800">
-              <td className="border-b border-zinc-100 py-2 pr-3">{o.name}</td>
-              <td className="border-b border-zinc-100 py-2 pr-3 font-mono text-xs">
-                {o.slug}
-              </td>
-              <td className="border-b border-zinc-100 py-2 pr-3">{o.industry}</td>
-              <td className="border-b border-zinc-100 py-2 pr-3">{o.status}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </main>
+    <>
+      <PageHeader
+        eyebrow="Operator Console"
+        title="Clients"
+        description="Workspaces ResponseOS is operating for. Tenant isolation is enforced per organization on every read and write."
+      />
+
+      {orgs.length === 0 ? (
+        <EmptyState
+          title="No client workspaces yet"
+          description="Onboard a client to provision their isolated workspace. Active clients and their health will surface here."
+        />
+      ) : (
+        <Table>
+          <THead columns={["Client", "Slug", "Industry", "Status"]} />
+          <TBody>
+            {orgs.map((o) => (
+              <TR key={o.id}>
+                <TD className="font-medium text-ink">{o.name}</TD>
+                <TD mono>{o.slug}</TD>
+                <TD>{titleCase(o.industry)}</TD>
+                <TD>
+                  <StatusBadge
+                    label={titleCase(o.status)}
+                    tone={statusTone[o.status] ?? "neutral"}
+                  />
+                </TD>
+              </TR>
+            ))}
+          </TBody>
+        </Table>
+      )}
+    </>
   );
 }

@@ -1,7 +1,38 @@
+import {
+  PageHeader,
+  StatusBadge,
+  EmptyState,
+  Table,
+  THead,
+  TBody,
+  TR,
+  TD,
+} from "@/components/ui";
 import { getCurrentAccount } from "@/lib/auth/session";
 import { Calls } from "@/lib/data";
+import type { CallStatus } from "@/types/call";
 
 const FALLBACK_ACCOUNT_ID = "org_mock_1";
+
+const statusLabel: Record<CallStatus, string> = {
+  answered: "Answered",
+  missed: "Missed",
+  voicemail: "Voicemail",
+  spam: "Spam",
+  failed: "Failed",
+  completed: "Completed",
+};
+
+const statusTone: Record<CallStatus, "success" | "warning" | "danger" | "neutral"> = {
+  answered: "success",
+  completed: "success",
+  voicemail: "warning",
+  missed: "danger",
+  failed: "danger",
+  spam: "neutral",
+};
+
+const formatWhen = (iso: string): string => iso.slice(0, 16).replace("T", " ");
 
 export default async function ClientCallsPage() {
   const org = await getCurrentAccount();
@@ -9,26 +40,41 @@ export default async function ClientCallsPage() {
     accountId: org?.id ?? FALLBACK_ACCOUNT_ID,
   });
   const calls = result.ok ? result.data : [];
+
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
-      <h1 className="text-2xl font-semibold">Calls</h1>
-      <ul className="mt-6 divide-y divide-zinc-200">
-        {calls.map((c) => (
-          <li key={c.id} className="flex items-center justify-between py-3 text-sm">
-            <div>
-              <p className="font-medium text-zinc-900">
-                {c.direction === "inbound" ? "Inbound" : "Outbound"} — {c.status}
-              </p>
-              <p className="text-xs text-zinc-500">
-                {c.started_at.slice(0, 16).replace("T", " ")} · {c.from_number} → {c.to_number}
-              </p>
-            </div>
-            <span className="text-xs uppercase tracking-wide text-zinc-500">
-              {c.provider}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </main>
+    <>
+      <PageHeader
+        eyebrow="Client Portal"
+        title="Calls"
+        description="Every inbound and outbound call handled on your behalf, newest first."
+      />
+
+      {calls.length === 0 ? (
+        <EmptyState
+          title="No calls yet"
+          description="When a customer calls your business line, the call and its outcome will appear here."
+        />
+      ) : (
+        <Table>
+          <THead columns={["When", "Direction", "Outcome", "From", "To"]} />
+          <TBody>
+            {calls.map((c) => (
+              <TR key={c.id}>
+                <TD mono>{formatWhen(c.started_at)}</TD>
+                <TD>{c.direction === "inbound" ? "Inbound" : "Outbound"}</TD>
+                <TD>
+                  <StatusBadge
+                    label={statusLabel[c.status]}
+                    tone={statusTone[c.status]}
+                  />
+                </TD>
+                <TD mono>{c.from_number}</TD>
+                <TD mono>{c.to_number}</TD>
+              </TR>
+            ))}
+          </TBody>
+        </Table>
+      )}
+    </>
   );
 }

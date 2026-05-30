@@ -1,26 +1,85 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * ResponseOS visual system — dark-first revenue command center.
+ * Tokens are the canonical source from docs/DESIGN.md §2–3. Do not introduce
+ * unapproved colors; map every surface/text/accent to a token below.
+ */
+@theme {
+  /* Base surfaces */
+  --color-base: #05070f; /* page background */
+  --color-surface: #0b1020; /* card backgrounds */
+  --color-surface-elevated: #111827; /* modals, popovers, dropdowns */
+
+  /* Borders */
+  --color-line: rgba(255, 255, 255, 0.08);
+  --color-line-strong: rgba(255, 255, 255, 0.14);
+
+  /* Text */
+  --color-ink: #f8fafc; /* primary */
+  --color-ink-secondary: #94a3b8; /* secondary */
+  --color-ink-muted: #4b5563; /* muted / labels */
+
+  /* Accent — primary action + revenue highlight (use sparingly) */
+  --color-accent: #ff4500;
+  --color-accent-hover: #e03d00;
+
+  /* Semantic */
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-neutral: #6b7280;
+
+  /* Soft semantic fills for badges/banners (token-derived) */
+  --color-success-soft: rgba(34, 197, 94, 0.12);
+  --color-warning-soft: rgba(245, 158, 11, 0.12);
+  --color-danger-soft: rgba(239, 68, 68, 0.12);
+  --color-accent-soft: rgba(255, 69, 0, 0.12);
+  --color-neutral-soft: rgba(107, 114, 128, 0.14);
+
+  /* Type families (next/font variables set in layout.tsx) */
+  --font-display: var(--font-sora), system-ui, sans-serif;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background-color: var(--color-base);
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-base);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* Visible focus on every interactive element (DESIGN.md §14). */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Quiet, on-theme scrollbars. */
+* {
+  scrollbar-color: var(--color-line-strong) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: var(--color-line-strong);
+  border-radius: 9999px;
+  border: 2px solid var(--color-base);
 }

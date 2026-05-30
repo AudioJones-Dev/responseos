@@ -1,11 +1,27 @@
+import { PageHeader, Card, CardHeading, EmptyState } from "@/components/ui";
+
 export default function ClientReportsPage() {
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
-      <h1 className="text-2xl font-semibold">Reports</h1>
-      <p className="mt-1 text-sm text-zinc-600">
-        Monthly business review export. PDF and CSV downloads will land
-        here in v0.2. Placeholder.
-      </p>
-    </main>
+    <>
+      <PageHeader
+        eyebrow="Client Portal"
+        title="Reports"
+        description="Your monthly business review, ready to download and share."
+      />
+
+      <Card>
+        <CardHeading>Monthly Business Review</CardHeading>
+        <p className="mt-2 text-sm text-ink-secondary">
+          A clear summary of the calls handled, leads recovered, and revenue
+          earned for your business each month.
+        </p>
+        <div className="mt-5">
+          <EmptyState
+            title="No reports available yet"
+            description="PDF and CSV downloads of your monthly business review will appear here once your first full month of results is in."
+          />
+        </div>
+      </Card>
+    </>
   );
 }

@@ -1,11 +1,44 @@
+import { PageHeader, Card, CardHeading, StatusBadge } from "@/components/ui";
+
 export default function AdminSettingsPage() {
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
-      <h1 className="text-2xl font-semibold">Operator Settings</h1>
-      <p className="mt-1 text-sm text-zinc-600">
-        Provider credentials (env-managed, never persisted in DB), team
-        members, role assignments. Placeholder.
-      </p>
-    </main>
+    <>
+      <PageHeader
+        eyebrow="Operator Console"
+        title="Operator Settings"
+        description="Provider credentials, team members, and role assignments for the operator console."
+      />
+
+      <section className="grid gap-4">
+        <Card>
+          <div className="flex items-center justify-between gap-3">
+            <CardHeading>Provider Credentials</CardHeading>
+            <StatusBadge label="Env-managed" tone="neutral" />
+          </div>
+          <p className="mt-2 text-sm text-ink-secondary">
+            Provider keys are read from environment variables and never
+            persisted to the database. When a key is absent, the matching
+            adapter falls back to mock. Configuration UI is a placeholder until
+            v0.3.
+          </p>
+        </Card>
+
+        <Card>
+          <CardHeading>Team Members</CardHeading>
+          <p className="mt-2 text-sm text-ink-secondary">
+            Invite operators and manage who can access the console. Member
+            management is a placeholder.
+          </p>
+        </Card>
+
+        <Card>
+          <CardHeading>Role Assignments</CardHeading>
+          <p className="mt-2 text-sm text-ink-secondary">
+            Assign roles to scope what each operator can view and act on. Role
+            controls are a placeholder.
+          </p>
+        </Card>
+      </section>
+    </>
   );
 }
