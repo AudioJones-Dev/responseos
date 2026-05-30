@@ -140,10 +140,11 @@ business outcome:
 
 ## 4. Recommended technical stack
 
-> ⚠️ **Conflict note:** this stack diverges from the established go-forward stack in
-> [`RESPONSEOS_BUILD_SOURCE.md`](./RESPONSEOS_BUILD_SOURCE.md) (notably voice-provider priority and
-> CRM system-of-record). See [§24](#24-relationship-to-existing-canonical-docs-conflicts--reconciliation)
-> before treating this as decided.
+> ⚠️ **Partial-ratification note:** this stack diverges from the established go-forward stack in
+> [`RESPONSEOS_BUILD_SOURCE.md`](./RESPONSEOS_BUILD_SOURCE.md). The **voice/AI provider stance is now
+> ratified** by [ADR-0024](../DECISIONS.md). **Database (Neon vs Supabase, ADR-0003) and CRM
+> system-of-record (ADR-0015) remain open** — see [§24 Resolution status](#24-relationship-to-existing-canonical-docs-conflicts--reconciliation)
+> before treating those as decided.
 
 Default v1 stack:
 
@@ -484,8 +485,9 @@ ElevenLabs      = custom branded voice / voice design / voice cloning with conse
 Vapi or Retell  = optional voice-agent orchestration if it reduces build complexity
 ```
 
-> ⚠️ **Conflict note:** existing canon (`RESPONSEOS_BUILD_SOURCE.md` / integration map) names a
-> different default voice path. See [§24](#24-relationship-to-existing-canonical-docs-conflicts--reconciliation).
+> ✅ **Ratified by [ADR-0024](../DECISIONS.md)** (supersedes ADR-0012): OpenAI is the v1 default;
+> Grok is an optional alternate. The provider-abstraction + Twilio-edge principles of ADR-0012/0013
+> remain. See [§24](#24-relationship-to-existing-canonical-docs-conflicts--reconciliation).
 
 ### Conceptual voice persona schema (do **not** implement)
 
@@ -564,9 +566,11 @@ palette/assets if exact values are not in repo files.
 
 ### Working palette
 
-> ⚠️ **TODO: verify** exact values against Canva kit `kAHJkU6n4S8`. Use as working palette unless repo
-> tokens define a newer source of truth. (Note: `app/globals.css` currently implements the v0.2
-> `DESIGN.md` token set, which is a *different* dark-first palette — see [§24](#24-relationship-to-existing-canonical-docs-conflicts--reconciliation).)
+> ✅ **Direction ratified by [ADR-0021](../DECISIONS.md):** signal-yellow `#E8FF5A` is the primary
+> accent, `#FF4500` becomes secondary `action-orange`, Syne is the wordmark face. Runtime
+> reconciliation of `DESIGN.md` + `app/globals.css` (which still implements the v0.2 `#FF4500`/Sora
+> tokens via PR #43) is a **Phase 1** task. Exact hex values remain **TODO: verify** against Canva kit
+> `kAHJkU6n4S8`. See [§24](#24-relationship-to-existing-canonical-docs-conflicts--reconciliation).
 
 **Canvas / surfaces**
 
@@ -922,9 +926,21 @@ to login, waitlist, or product gateway.
 ## 24. Relationship to existing canonical docs (conflicts & reconciliation)
 
 > _From a direct audit of the existing `RESPONSEOS_*` canon and ADRs ([`../DECISIONS.md`](../DECISIONS.md)).
-> Each conflict is an **open decision for the operator** — this GTM spec is a prose doc and, under
-> ADR-0011's reconciliation rule, **does not supersede an ADR**. Resolving a conflict in favor of this
-> GTM direction requires a new/updated ADR; otherwise the existing ADR stands._
+> Under ADR-0011's reconciliation rule, this prose spec **does not supersede an ADR** — so the
+> operator-chosen directions below have been **ratified as ADRs** ([`../DECISIONS.md`](../DECISIONS.md)
+> ADR-0021–0025). Conflicts not yet ratified remain open decisions and the existing ADR stands._
+
+### Resolution status (ratified 2026-05-30)
+
+| Conflict | Ratified decision | ADR |
+|---|---|---|
+| Row 1 — positioning | Business Memory / Response Intelligence is the near-term wedge; Revenue Recovery retained as the *outcome* | **[ADR-0022](../DECISIONS.md)** |
+| Row 4 — voice | OpenAI default v1; ElevenLabs premium; Vapi/Retell optional; Grok optional — **supersedes ADR-0012** | **[ADR-0024](../DECISIONS.md)** |
+| Row 5 — brand | Signal-yellow `#E8FF5A` primary, `#FF4500` secondary, Syne wordmark; #43 may merge as interim, reconcile in Phase 1 | **[ADR-0021](../DECISIONS.md)** |
+| §20 — domains | `audiojones.com` = public/GTM, `ajdigital.app` = app infra | **[ADR-0023](../DECISIONS.md)** |
+| §14–§15 — assets | Two core marks (wordmark + `RO`); favicons/app icons derived from `RO` | **[ADR-0025](../DECISIONS.md)** |
+
+**Still open** (no ADR yet — pending operator decision): **Row 2** (plan names / pricing model — gated to the Phase 3 cost model; billing engine is v0.5 per ADR-0010), **Row 3** (Neon vs Supabase, ADR-0003), **Row 6** (per-client vault vs ADR-0016 / v0.4 knowledge-layer gates), **Row 7** (CRM system of record, ADR-0015), **Rows 8–9** (realtime voice gateway / Redis / Telnyx detail).
 
 ### Conflicts to reconcile
 

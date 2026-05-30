@@ -159,7 +159,7 @@ Invalid signature → 401, no body parse, no business mutation, log to security 
 
 ## ADR-0012 — Realtime voice provider order: Grok Voice primary, OpenAI Realtime fallback (supersedes ADR-0008)
 
-**Status:** Accepted (2026-05-27). **Supersedes ADR-0008.**
+**Status:** **Superseded by ADR-0024** (2026-05-30) for the v1 default provider order. Originally Accepted (2026-05-27); superseded ADR-0008. The provider-abstraction + Twilio-edge principles below remain in force under ADR-0024.
 
 **Context.** ADR-0008 made Retell/Vapi/Bland the primary realtime runtime and classified Grok Voice as experimental, pending verification of telephony path, retention, BAA eligibility, and concurrency. The go-forward product direction selects **Grok Voice Agent API as the primary realtime voice provider** and **OpenAI Realtime API as the secondary/fallback**, with Twilio retained as the telephony edge. This is a deliberate reversal driven by realtime capability, tool-use support, and per-minute economics.
 
@@ -340,3 +340,93 @@ CRM remains pluggable per tenant: HubSpot is the default, GoHighLevel and others
 - Per-tenant key derivation for HIPAA-ready lane per ADR-0004.
 - Break-glass decryption audit, integrating with `audit_logs.category = "break_glass"` once 31D ships.
 - Compliance-lane review at the v0.3 provider-readiness gate per ADR-0012 §"Provider readiness gate".
+
+---
+
+## ADR-0021 — Brand 2.0 visual direction: Signal Yellow `#E8FF5A` primary, `#FF4500` secondary, Syne wordmark
+
+**Status:** Accepted (2026-05-30). Amends the `DESIGN.md` accent/typography posture; runtime reconciliation scheduled for Phase 1. Resolves §24 row 5 of [`product/responseos-gtm-product-roadmap.md`](./product/responseos-gtm-product-roadmap.md).
+
+**Context.** `DESIGN.md` (v0.2 design freeze) set a dark-first system with `#FF4500` as the single primary accent and Sora (display) / Inter (body) / JetBrains Mono. PR #43 implemented that system in `app/globals.css`. The Audio Jones Brand 2.0 direction (Canva kit `kAHJkU6n4S8`, captured in the GTM roadmap §13–§14) elevates **Signal Yellow `#E8FF5A`** as the primary brand signal and adopts **Syne** for the `ResponseOS` wordmark.
+
+**Decision.**
+
+1. **Primary accent / brand signal = Signal Yellow `#E8FF5A`** — reserved for primary CTAs, key metrics, and intelligence highlights ("signal emerging from black").
+2. **`#FF4500` is retained as a *secondary* `action-orange`** — urgency, revenue-leak, and diagnostic-warning moments only. Demoted from primary, **not removed**.
+3. **Brand/display typography = Syne** (Bold / ExtraBold) for the `ResponseOS` wordmark and `RO` compact mark. Product-UI body (Inter) and mono (JetBrains Mono) are unaffected by this ADR; only the display/brand face moves toward Syne.
+4. **Interim tolerance.** The v0.2 UI (PR #43) ships the `DESIGN.md` tokens (`#FF4500` primary, Sora/Inter) and **may merge as interim scaffolding** — it is pre-Brand-2.0, not wrong.
+5. **Reconciliation is a Phase 1 task** under explicit authorization: update `DESIGN.md` + `app/globals.css` (`--color-accent` → `#E8FF5A`, add an action/orange token for `#FF4500`, display font → Syne). **This ADR changes no runtime token or font** — it sets the direction those future edits follow.
+
+**Consequences.** #43 can be reviewed and merged on its own merits without blocking on a re-skin; the brand migration becomes a contained token+font swap in Phase 1. Until that lands, the live UI and the brand canon are knowingly out of sync — this ADR is the record that the divergence is intentional and scheduled. Exact hex/palette values remain **TODO-verify** against Canva kit `kAHJkU6n4S8` (GTM §13/§25).
+
+---
+
+## ADR-0022 — Positioning: Business Memory / Response Intelligence is the near-term GTM wedge
+
+**Status:** Accepted (2026-05-30). Broadens the `PRD.md` category framing; does **not** retire Revenue Recovery. Resolves §24 row 1 of the GTM roadmap.
+
+**Context.** `PRD.md` / `product-spec.md` frame ResponseOS as "the AI Revenue Recovery Platform." The Brand 2.0 / GTM direction leads with **business memory** — capturing calls, notes, docs, decisions, SOPs, and workflows into structured, AI-ready operational memory (the "Managed Business Memory System" offer).
+
+**Decision.**
+
+1. The **near-term GTM wedge** is **Business Memory / Revenue Memory / Response Intelligence** — a managed business-memory + response system for founder-led service businesses.
+2. **Revenue Recovery is retained as the *outcome*, not retired.** The framings compose: *business memory is the mechanism; recovered revenue is the proof.* The mechanics (missed-call capture → qualify → follow-up → book → attribute recovered revenue) are unchanged.
+3. Public/marketing copy (`audiojones.com`) leads with the customer problem (memory leakage, lost context, missed follow-up); engineering/product canon may continue to use "Revenue Recovery Platform" internally where accurate.
+
+**Consequences.** Marketing/landing copy (Phases 2/5) leads with the memory/intelligence narrative; engineering docs and product mechanics need no rewrite. `PRD.md` should gain a positioning note pointing to this ADR and the GTM spec when next revised. No product behavior changes.
+
+---
+
+## ADR-0023 — Domain mapping: `audiojones.com` = public/GTM, `ajdigital.app` = app infrastructure
+
+**Status:** Accepted (2026-05-30). New decision. Resolves the domain item in §24 / GTM §20.
+
+**Context.** The operator owns `audiojones.com` (personal brand / authority) and `ajdigital.app` (product/app infra). The GTM spec §20 proposes a split; this ADR fixes it so route/deploy planning (incl. the #44 demo-deploy plan) has a stable assumption.
+
+**Decision.**
+
+1. **`audiojones.com`** = public personal brand, authority, content, and **GTM/marketing pages**. First GTM routes: `audiojones.com/responseos` and `audiojones.com/business-memory-system`.
+2. **`ajdigital.app`** = **product/app infrastructure**: authenticated app, portals, dashboards, client systems. Future subdomains: `app.ajdigital.app`, `clients.ajdigital.app`, `vault.ajdigital.app` (and `status.` / `docs.` as needed).
+3. `ajdigital.app` is **not** the primary public marketing site unless brand strategy shifts from personal-brand-led to product-company-led.
+4. **No DNS, domain, or deployment configuration is changed by this ADR** — it records the mapping future deploy work (v0.3-gated per ADR-0019) will implement.
+
+**Consequences.** The #44 demo-deploy plan and any Phase 5/6 routing target these domains. No code/DNS/deploy change now; production deploy remains v0.3-gated (ADR-0019).
+
+---
+
+## ADR-0024 — v1 AI/voice provider stance: OpenAI default, ElevenLabs premium, Vapi/Retell optional, Grok optional (supersedes ADR-0012)
+
+**Status:** Accepted (2026-05-30). **Supersedes ADR-0012** (realtime provider *order*). Retains the provider-abstraction + Twilio-edge principles of ADR-0012 / ADR-0013. Resolves §24 row 4 of the GTM roadmap.
+
+**Context.** ADR-0012 set Grok Voice as the primary realtime voice provider with OpenAI Realtime as fallback. The Brand 2.0 / GTM direction (GTM §10) selects a simpler **OpenAI-default** v1 posture for reasoning, basic voice, and transcription, with the other providers in clearly-scoped optional roles. This is a deliberate change of the *default*, not the architecture.
+
+**Decision.**
+
+| Role | v1 stance |
+|---|---|
+| Default reasoning + basic voice + transcription | **OpenAI** (incl. Whisper) |
+| Premium / custom / branded voice (with consent) | **ElevenLabs** — Growth/Enterprise add-on |
+| Voice-agent orchestration | **Vapi / Retell** — *optional*, adopted only after validation reduces build complexity |
+| Telephony edge | **Twilio or Telnyx** — Twilio remains default; Telnyx is now a sanctioned alternative |
+| Optional alternate reasoning / search | **Grok/xAI, Anthropic, Gemini, Perplexity, OpenRouter** — *not* the default voice-design layer |
+
+The **provider-abstraction principle is retained**: all providers sit behind `lib/providers/voice/*` (and the voice-gateway adapters if/when built); no provider-specific business logic above the adapter boundary. This ADR changes the default order, not the boundary.
+
+**Consequences.** Simpler v1 path (one default brain/voice/transcription vendor). The Node.js voice-gateway architecture (ADR-0013) and Redis ephemeral session state (ADR-0014) are **not** retired — they remain the realtime design if/when realtime voice is built; only the default provider changes. Mock-first (ADR-0001) and the v0.3 live-wiring + provider-readiness gate still hold; regulated/HIPAA-lane tenants must clear BAA / retention / training-data review before any live provider use. ADR-0012 is marked Superseded by this ADR.
+
+---
+
+## ADR-0025 — Logo/asset system: two core marks; favicons/app icons derived from the `RO` compact mark
+
+**Status:** Accepted (2026-05-30). New decision. Ratifies GTM §14–§15. **Creates no asset files.**
+
+**Context.** The GTM spec §14–§15 defines a `ResponseOS` Syne wordmark and an `RO` compact mark plus a future asset-export pipeline. Operator-provided Brand 2.0 references (white "Response" + Signal-Yellow "OS" wordmark; `RO` mark with a Signal-Yellow `O`) confirm the direction.
+
+**Decision.**
+
+1. **Exactly two core brand assets:** the **`ResponseOS` wordmark** (Syne; white `Response` + Signal-Yellow `OS` on dark) and the **`RO` compact mark** (Syne; Signal-Yellow `O`).
+2. **Favicons and app icons are *derived exports* of the `RO` compact mark** — not independent designs (`favicon.ico`, `favicon.svg`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`).
+3. The wordmark is the **primary** mark (navbar/header); `RO` is the **utility/compact** mark (favicon, app icon, compact sidebar, avatar, loading).
+4. **No asset files are created by this ADR.** Producing the SVG/PNG/ICO exports and wiring them into `app/layout.tsx` metadata and `/public` is a future, explicitly-authorized task (GTM §15/§17), not part of this docs-only decision.
+
+**Consequences.** Asset production has a fixed, minimal target (two source marks → derived icons), preventing logo sprawl. Later favicon/app-icon work is a mechanical export from one source. No runtime/asset change now.
