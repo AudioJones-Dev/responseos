@@ -62,26 +62,41 @@ We are a **revenue recovery operating system**.
 
 ### Design Posture
 
-Dark-first. High-contrast. Low noise. Calm but powerful.
+**Black-first. Glass-structured. High-contrast. Low noise.** Premium, dark, editorial, modern, founder-tech — aligned with `audiojones.com`. The environment is true black; structure comes from translucent glass panels and hairline white borders, not from coloured backgrounds.
 
-The visual system should communicate: **this is serious software that produces serious outcomes.**
+The guiding principle is **"signal emerging from black"**:
+
+- **Black** = the environment.
+- **Off-white** = clarity (typography).
+- **Signal Yellow `#E8FF5A`** = intelligence / primary action.
+- **Glass** (translucent dark panels + hairline borders) = modern SaaS structure.
+- **Action-orange `#FF4500`** = urgency only.
+- **Blue** = utility only — never a brand or background colour.
+
+The visual system should communicate: **this is serious software that produces serious outcomes.** It must **not** read as a generic blue-background SaaS dashboard.
 
 ### Color Tokens
 
 ```css
-/* Base */
---color-base:             #05070F;  /* Page background */
---color-surface:          #0B1020;  /* Card backgrounds */
---color-surface-elevated: #111827;  /* Modals, popovers, dropdowns */
+/* Base — black canvas + near-black/glass surfaces. NO navy / slate / blue backgrounds. */
+--color-base:             #000000;  /* Canvas — page background */
+--color-canvas-soft:      #080808;  /* Soft-black band sections */
+--color-surface:          #0A0A0C;  /* Card backgrounds (near-black) */
+--color-surface-elevated: #101012;  /* Modals, popovers, dropdowns */
+--color-surface-deep:     #06060A;  /* Deepest recessed sections */
 
-/* Borders */
+/* Glass — translucent white over black; pair with backdrop-blur, hairline border, no heavy shadow */
+--color-glass:            rgba(255, 255, 255, 0.04);
+--color-glass-strong:     rgba(255, 255, 255, 0.07);
+
+/* Borders / hairlines — neutral white at low opacity (the primary structural device on black) */
 --color-border:        rgba(255, 255, 255, 0.08);
 --color-border-strong: rgba(255, 255, 255, 0.14);
 
-/* Typography */
---color-text-primary:   #F8FAFC;
---color-text-secondary: #94A3B8;
---color-text-muted:     #4B5563;
+/* Typography — off-white + NEUTRAL greys (no slate/blue tint) */
+--color-text-primary:   #FCFDFF;
+--color-text-secondary: #A1A4A5;
+--color-text-muted:     #888E90;
 
 /* Accent — Brand 2.0 (ADR-0021): Signal Yellow is the PRIMARY signal; orange demoted to secondary action */
 --color-accent:       #E8FF5A;  /* Primary signal — CTAs, key metrics, intelligence highlights */
@@ -100,19 +115,35 @@ The visual system should communicate: **this is serious software that produces s
 
 ### Surface Rules
 
-- Page background: `--color-base`
-- Cards and data surfaces: `--color-surface`
-- Modals / elevated panels: `--color-surface-elevated`
-- Borders are subtle — 8% white opacity by default
-- Glass/blur only where it adds meaningful depth (e.g., sticky headers, overlays)
-- No solid white panels. No light-mode assumptions in dark-first contexts.
+- Page background: `--color-base` (**true black `#000000`**).
+- Cards and data surfaces: `--color-surface` (near-black) — defined by **hairline borders**, not fill contrast.
+- Modals / elevated panels: `--color-surface-elevated`; deepest recesses: `--color-surface-deep`.
+- Borders are subtle — 8% white opacity by default (range 6–14%). Hairlines are the primary structural device on black.
+- **No solid white panels. No navy / slate / blue backgrounds. No light-mode assumptions.**
+
+### Glass
+
+Glass is the structural language for elevated/overlay surfaces (sticky headers, popovers, prominent panels). Use it carefully:
+
+- Translucent dark panel: `--color-glass` / `--color-glass-strong` (white at 4–7% over black), **or** `--color-base` at 70–85% opacity.
+- Optional `backdrop-blur` for depth; **always** paired with a hairline border.
+- **No heavy shadows.** **No frosted-white overuse** — glass is dark-tinted, not milky white.
+- Soft glow (yellow or glass) only when it carries meaning (e.g., a hero CTA or a key metric), never as decoration.
 
 ### Accent Usage
 
 - Accent (`#E8FF5A` Signal Yellow) is reserved for: primary CTAs, recovered revenue highlights, active selection states. On a yellow fill, text is **black** for contrast (ADR-0021).
 - Action-orange (`#FF4500`) is reserved for urgency / revenue-leak / diagnostic-warning moments — not primary CTAs.
-- Do not scatter accent color across decorative elements
-- One dominant accent point per screen
+- Do not scatter accent color across decorative elements.
+- One dominant accent point per screen.
+
+### Colour Usage Policy — blue is utility only
+
+1. **Blue is not a primary brand or background colour.** The system is black-first with Signal-Yellow accents.
+2. **Blue may appear only for rare utility states** — e.g. hyperlinks in long-form copy, an "info" system state, a data-viz series, or native OS/system UI — and only when no token already covers the need.
+3. **Never** use full blue panels, blue gradients, generic SaaS blue backgrounds, blue-dominant sections, or `bg-blue-*` / `text-blue-*` / `border-blue-*` utility classes for brand surfaces.
+4. If a blue usage is genuinely functional (e.g. an external link colour or a chart series), it must be documented as utility — not brand — at the point of use.
+5. Semantic colours (`success` green, `warning` amber, `danger` red, `neutral` grey) cover status; they are not "blue background" usage and are unaffected by this policy.
 
 ---
 
