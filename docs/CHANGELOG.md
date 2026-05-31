@@ -4,6 +4,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: ResponseOS sales-call talk track
+
+- **Added** [`docs/product/responseos-sales-call-talk-track.md`](./product/responseos-sales-call-talk-track.md) (16 sections): a spoken talk track bridging the landing-page copy to a live sales/diagnostic call — how-to-use, call-structure-at-a-glance, and 7 staged scripts (Open · Discovery · Frame the revenue leak · Demo walkthrough narration · Business Memory & Founder Intelligence · Objection handling · Close & next steps), plus qualification/disqualification, a language do/don't table, non-goals, open decisions, success criteria, and follow-ups.
+- **Canon-aligned:** leads with the prospect's revenue leak; the AI receptionist is the wedge, not the pitch; **objection handling maps to the landing-page FAQ**; vendors (Telnyx/Vapi/HubSpot) stay off the table unless asked; **Business Memory framed as Phase-1 structured capture, never RAG/vector/"AI brain"** (ADR-0034 — v0.4 gates intact); Brand 2.0 voice (ADR-0021). CTA wording, anchor vertical, and demo format kept as explicit open decisions, plus the ADR-0032 architecture open decisions (OpenAI-in-Vapi; gateway/Redis).
+- Cross-linked from the landing-page copy (§20) and `demo-assets/README.md`. **Documentation / sales-enablement only** — no UI, routes, components, app metadata, runtime code, deps, env, secrets, or deploy changes.
+
 ## Unreleased — docs: ResponseOS demo landing-page copy spec
 
 - **Added** [`docs/product/responseos-demo-landing-page-copy.md`](./product/responseos-demo-landing-page-copy.md) (20 sections): executive summary, page goal, target audience, primary conversion path, messaging hierarchy, **3 hero variants** (Revenue Recovery / Founder Intelligence / Business Memory — each with headline, subheadline, primary+secondary CTA, proof line), problem / system / demo-walkthrough / Business Memory / revenue-recovery / Founder-Intelligence / trust / CTA sections, **10 FAQ entries**, full microcopy + button labels, non-goals, open decisions, success criteria, and follow-ups.
