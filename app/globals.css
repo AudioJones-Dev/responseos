@@ -6,19 +6,23 @@
  * unapproved colors; map every surface/text/accent to a token below.
  */
 @theme {
-  /* Base surfaces */
-  --color-base: #05070f; /* page background */
-  --color-surface: #0b1020; /* card backgrounds */
-  --color-surface-elevated: #111827; /* modals, popovers, dropdowns */
+  /* Base surfaces — Brand 2.0: black canvas + near-black/glass, no navy/blue. "Signal emerging from black." */
+  --color-base: #000000; /* canvas — page background */
+  --color-canvas-soft: #080808; /* soft-black band sections */
+  --color-surface: #0a0a0c; /* card backgrounds (near-black) */
+  --color-surface-elevated: #101012; /* modals, popovers, dropdowns */
+  --color-surface-deep: #06060a; /* deepest recessed sections */
+  --color-glass: rgba(255, 255, 255, 0.04); /* translucent glass panel — pair with backdrop-blur */
+  --color-glass-strong: rgba(255, 255, 255, 0.07);
 
   /* Borders */
   --color-line: rgba(255, 255, 255, 0.08);
   --color-line-strong: rgba(255, 255, 255, 0.14);
 
-  /* Text */
-  --color-ink: #f8fafc; /* primary */
-  --color-ink-secondary: #94a3b8; /* secondary */
-  --color-ink-muted: #4b5563; /* muted / labels */
+  /* Text — off-white + neutral greys (no slate/blue tint) */
+  --color-ink: #fcfdff; /* primary */
+  --color-ink-secondary: #a1a4a5; /* secondary */
+  --color-ink-muted: #888e90; /* muted / labels */
 
   /* Accent — primary brand signal (Brand 2.0: Signal Yellow). Use sparingly. ADR-0021. */
   --color-accent: #e8ff5a;

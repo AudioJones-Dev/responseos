@@ -4,6 +4,14 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — Brand 2.0 glass refinement: remove residual blue surfaces (ADR-0021)
+
+- **Removed the residual navy/slate "dark-SaaS blue"** from the design tokens — the only place blue survived. `app/globals.css`: `--color-base` `#05070f` → **`#000000`** (true-black canvas); `--color-surface` `#0b1020` → `#0a0a0c`; `--color-surface-elevated` `#111827` → `#101012`; text greys de-tinted `#94a3b8`/`#4b5563` → neutral `#a1a4a5`/`#888e90`. Added `--color-canvas-soft` `#080808`, `--color-surface-deep` `#06060a`, and **glass** tokens `--color-glass` / `--color-glass-strong` (translucent white over black).
+- **Audit result:** no `bg-blue-*` / `text-blue-*` / `border-blue-*` classes, no blue gradients, and no hardcoded blue hex anywhere outside those five tokens — so the retune removes blue system-wide (everything else is token-driven). No functional/utility blue exists to retain.
+- **`docs/DESIGN.md` §2 rewritten** to the black/glass direction: "signal emerging from black" posture, black/near-black/glass surface tokens, neutral-grey type, a **glass usage** section (translucent dark panels, hairline border, optional backdrop-blur, no heavy shadows / frosted-white), and an explicit **"blue is utility only"** colour-usage policy (no blue brand/background, no blue panels/gradients).
+- **Verified:** lint, typecheck, build green; dev-server screenshots confirm true-black canvas, near-black/glass cards defined by hairlines, neutral type, and Signal-Yellow signal intact.
+- Token-only + DESIGN.md; **no `/public` assets, favicons, SVG/logo work, routes, or deploy changes.** Per ADR-0021.
+
 ## Unreleased — Brand 2.0 re-skin: Signal-Yellow primary + Syne (ADR-0021 Phase 1)
 
 - **Re-skinned** the v0.2 UI to the ratified Brand 2.0 direction (ADR-0021): primary accent token `--color-accent` `#FF4500` → **Signal Yellow `#E8FF5A`**; introduced **`--color-action` `#FF4500`** (+ `-hover`/`-soft`) as the secondary action-orange (urgency / revenue-leak); `--color-accent-soft` re-tinted to yellow. Display/brand font **Sora → Syne** (`app/layout.tsx` via `next/font`, `--font-display` → `var(--font-syne)`).
