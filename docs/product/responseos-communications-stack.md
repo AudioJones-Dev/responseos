@@ -7,9 +7,10 @@
 > dependencies, API integrations, migrations, env vars, or credentials. Live provider wiring is
 > **v0.3-gated** (ADR-0001, ADR-0019).
 >
-> ⚠️ **This decision reverses parts of the just-ratified canon (ADR-0024, ADR-0027) and diverges
-> from `RESPONSEOS_BUILD_SOURCE.md`.** Under ADR-0011 a prose doc does **not** supersede an ADR, so
-> the conflicting items below are marked **"pending ratifying ADR."** See
+> ✅ **The conflicting decisions are now ratified as ADR-0031–0034** ([`../DECISIONS.md`](../DECISIONS.md)):
+> Telnyx primary (ADR-0031), Vapi primary orchestration (ADR-0032), HubSpot default commercial SoR
+> (ADR-0033), Phase-1 Business Memory baseline (ADR-0034). ADR-0024 is partially superseded/amended,
+> ADR-0027 re-amended, ADR-0029 extended. See
 > [§9 Relationship to existing ADRs & canon](#9-relationship-to-existing-adrs--canon).
 
 **Milestone mapping:** the report's "MVP / Phase 1 / Phase 2 / Phase 3" maps onto the repo's version
@@ -29,9 +30,10 @@ ResponseOS is **not** being built as a Twilio-only, GoHighLevel-only, or single-
 communications platform. Carriers and AI runtimes are interchangeable inputs behind an internal
 abstraction (§2); no single vendor is load-bearing for the product.
 
-> Status vs canon: **Telnyx-primary** and **Vapi-primary** reverse ADR-0024 (Twilio default edge;
-> Vapi/Retell *optional*) and diverge from `RESPONSEOS_BUILD_SOURCE.md` (Twilio edge, Grok Voice
-> primary). Treat as the directed go-forward decision **pending a superseding ADR** (§9).
+> Status vs canon: **Telnyx-primary** is ratified by **ADR-0031** (supersedes ADR-0024's Twilio
+> telephony default); **Vapi-primary orchestration** by **ADR-0032** (amends ADR-0024; the LLM-brain
+> choice stays open). `RESPONSEOS_BUILD_SOURCE.md` (Twilio edge, Grok Voice primary) should be updated
+> to match. See §9.
 
 ---
 
@@ -124,8 +126,8 @@ as core infrastructure.**
 
 > Two distinct "systems of record" (consistent with ADR-0002): the **internal** SoR is the canonical
 > ResponseOS event ledger (ROI/audit/replay recompute from it — unchanged). HubSpot is the **default
-> external commercial/CRM SoR**, overridable per client. This **re-elevates** HubSpot from the
-> "recommended, no mandated default" position ADR-0027 set — pending a re-amending ADR (§9).
+> external commercial/CRM SoR**, overridable per client. Ratified by **ADR-0033**, which re-amends
+> ADR-0027's "recommended, no mandated default" back to "HubSpot default, client-overridable."
 
 ---
 
@@ -189,18 +191,18 @@ as core infrastructure.**
 
 ## 9. Relationship to existing ADRs & canon
 
-> This doc records a **directed CTO decision** that conflicts with parts of the ratified ADR set.
-> Under ADR-0011 the ADRs remain canonical until superseded, so each conflicting item below needs a
-> **ratifying ADR** before it is canon. **This doc does not write those ADRs** — it surfaces what they
-> must say (mirroring the GTM §24 → ADR-0021–0030 flow).
+> This doc records a **directed CTO decision** that conflicted with parts of the ratified ADR set.
+> Those conflicts are now **ratified as ADR-0031–0034** ([`../DECISIONS.md`](../DECISIONS.md)), so the
+> canon is consistent (mirroring the GTM §24 → ADR-0021–0030 flow). Remaining items below are
+> non-conflicting or tracked as open decisions (§10).
 
-| # | This decision | Existing canon | Required action |
+| # | This decision | Existing canon | Ratified by |
 |---|---|---|---|
-| 1 | **Telnyx primary carrier**, Twilio failover | ADR-0024 (Twilio default edge); ADR-0012 (Twilio edge); `RESPONSEOS_BUILD_SOURCE.md` (Twilio) | **Supersede ADR-0024** (telephony default) — new ADR |
-| 2 | **Vapi primary AI voice orchestration** | ADR-0024 (Vapi/Retell *optional*; OpenAI default brain) | **Amend/supersede ADR-0024** — new ADR. *Open:* does the LLM brain under Vapi remain OpenAI? (§10) |
-| 3 | **Telnyx + Vapi stack** generally | `RESPONSEOS_BUILD_SOURCE.md` go-forward stack: Twilio edge, **Grok Voice primary**, Node.js voice gateway, Redis (ADR-0012/0013/0014) | Update `BUILD_SOURCE` + supersede ADR-0012; clarify how the Node.js gateway/Redis (ADR-0013/0014) relate to a Vapi-orchestrated path |
-| 4 | **HubSpot default commercial SoR** (client-overridable) | ADR-0027 (demoted HubSpot to "recommended, no mandated default"); ADR-0015 (original "HubSpot default") | **Re-amend ADR-0027** — new ADR. Internal ledger SoR (ADR-0002) unchanged |
-| 5 | **Business Memory baseline in Phase 1/v0.3** | ADR-0029 + ROADMAP gate per-tenant knowledge to **v0.4** | **Extend ADR-0029** to allow Phase-1 *operational capture* (ledger), explicitly **not** relaxing the v0.4 *knowledge/RAG* gates |
+| 1 | **Telnyx primary carrier**, Twilio failover | ADR-0024 (Twilio default edge); ADR-0012 (Twilio edge); `RESPONSEOS_BUILD_SOURCE.md` (Twilio) | ✅ **ADR-0031** — supersedes ADR-0024's telephony default |
+| 2 | **Vapi primary AI voice orchestration** | ADR-0024 (Vapi/Retell *optional*; OpenAI default brain) | ✅ **ADR-0032** — amends ADR-0024. *Open:* LLM brain under Vapi (§10) |
+| 3 | **Telnyx + Vapi stack** generally | `RESPONSEOS_BUILD_SOURCE.md` go-forward stack: Twilio edge, **Grok Voice primary**, Node.js voice gateway, Redis (ADR-0012/0013/0014) | ✅ ADR-0031/0032; **`BUILD_SOURCE` still to be updated** + gateway/Redis (ADR-0013/0014) relationship is an open decision (§10) |
+| 4 | **HubSpot default commercial SoR** (client-overridable) | ADR-0027 (demoted HubSpot to "recommended, no mandated default"); ADR-0015 (original "HubSpot default") | ✅ **ADR-0033** — re-amends ADR-0027. Internal ledger SoR (ADR-0002) unchanged |
+| 5 | **Business Memory baseline in Phase 1/v0.3** | ADR-0029 + ROADMAP gate per-tenant knowledge to **v0.4** | ✅ **ADR-0034** — extends ADR-0029; v0.4 knowledge/RAG gates **not** relaxed |
 | 6 | **No GHL LC Phone dependency**; GHL = optional connector | Consistent with ADR-0007 (GHL/QuoteIQ are connectors, not SoR) | No conflict — reaffirms existing doctrine |
 
 **Overlaps (already aligned):** provider abstraction / mock-first (ADR-0001), event ledger as internal
@@ -211,12 +213,13 @@ SoR (ADR-0002), webhook signature validation before mutation (ADR-0009), live-wi
 
 ## 10. Open decisions
 
-1. **Ratify the superseding ADRs?** Items 1–5 above each need an ADR before they are canon. Recommended next step (operator's call), mirroring the GTM §24 → ADR ratification.
-2. **LLM brain under Vapi.** Does ResponseOS keep OpenAI as the reasoning/transcription model *inside* the Vapi-orchestrated agent (compatible with ADR-0024's model layer), or does Vapi own model selection? Affects how much of ADR-0024 survives.
-3. **Node.js voice gateway / Redis (ADR-0013/0014).** Are these retained behind a Vapi-orchestrated path, or does Vapi subsume the realtime gateway? Determines whether ADR-0013/0014 are superseded or kept.
-4. **A2P 10DLC / number registration ownership** (Telnyx) — platform-owned vs per-client. (v0.3 readiness; not decided here.)
-5. **Sendblue compliance / Apple ToS posture** for iMessage — verify before promising the Phase-2 add-on.
-6. **Cal.com vs GHL calendar** as the default scheduling tool-call surface for MVP.
+1. ✅ **Superseding ADRs ratified** — ADR-0031–0034 (this is done). Remaining open items below.
+2. **LLM brain under Vapi** *(preserved open per ADR-0032).* Does ResponseOS keep OpenAI as the reasoning/transcription model *inside* the Vapi-orchestrated agent (compatible with ADR-0024's model layer), or does Vapi own model selection? Affects how much of ADR-0024's model layer survives.
+3. **Node.js voice gateway / Redis (ADR-0013/0014)** *(open per ADR-0032).* Are these retained behind a Vapi-orchestrated path, or does Vapi subsume the realtime gateway? Determines whether ADR-0013/0014 are superseded or kept.
+4. **`RESPONSEOS_BUILD_SOURCE.md` reconciliation** — update its go-forward stack table (Twilio edge → Telnyx primary; Grok-primary voice → Vapi-orchestrated) to match ADR-0031/0032.
+5. **A2P 10DLC / number registration ownership** (Telnyx) — platform-owned vs per-client. (v0.3 readiness; not decided here.)
+6. **Sendblue compliance / Apple ToS posture** for iMessage — verify before promising the Phase-2 add-on.
+7. **Cal.com vs GHL calendar** as the default scheduling tool-call surface for MVP.
 
 ---
 

@@ -43,7 +43,7 @@ Carried forward from the v0.2 planning spec ([archived here](./archive/v0.2-plan
 
 ## v0.3 preview (not yet authorized)
 
-- **Communications stack (CTO decision — [`product/responseos-communications-stack.md`](./product/responseos-communications-stack.md)):** Telnyx primary carrier (voice + A2P SMS), Vapi primary AI receptionist orchestration, Twilio failover, HubSpot CRM event sync, Cal.com/GHL scheduling — all behind a Communications Abstraction Layer; signature verification + call/event persistence into the ledger. _Reverses ADR-0024's Twilio/OpenAI default and the `BUILD_SOURCE` Grok-primary stack — pending a superseding ADR (comms doc §9)._
+- **Communications stack (CTO decision — [`product/responseos-communications-stack.md`](./product/responseos-communications-stack.md)):** Telnyx primary carrier (voice + A2P SMS), Vapi primary AI receptionist orchestration, Twilio failover, HubSpot CRM event sync, Cal.com/GHL scheduling — all behind a Communications Abstraction Layer; signature verification + call/event persistence into the ledger. _Ratified by ADR-0031 (Telnyx) + ADR-0032 (Vapi) + ADR-0033 (HubSpot SoR); `BUILD_SOURCE` Grok-primary stack still to be reconciled (comms doc §9–§10)._
 - **Phase-1 Business Memory baseline:** structured capture of every AI receptionist interaction (transcript, summary, intent, qualification, appointment, follow-up, CRM-sync status, next action) into the event ledger. Operational capture only — the v0.4 per-tenant knowledge / RAG layer stays gated.
 - Real Stripe billing — Payment Intents, hosted pages, webhook ingest.
 - Outcome-fee invoicing — verified booked appointments and verified recovered revenue against a baseline, with evidence links per invoice.

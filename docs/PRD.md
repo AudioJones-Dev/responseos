@@ -83,7 +83,7 @@ Per the CTO communications decision ([`product/responseos-communications-stack.m
 - **HubSpot is the default commercial system of record** (client-overridable to GHL / Salesforce); the ResponseOS event ledger remains the **internal** SoR. GHL is a supported connector, not core infrastructure — **no GHL LC Phone dependency**.
 - **Phase-1 Business Memory capture.** Every AI receptionist interaction is captured as structured memory (transcript, summary, intent, qualification, appointment, follow-up, CRM-sync status, next action) in the event ledger — **operational capture only**; per-tenant knowledge / RAG stays **v0.4-gated**.
 
-> ⚠️ This direction **reverses parts of ADR-0024 (Twilio / OpenAI default) and ADR-0027 (HubSpot demotion)** and diverges from `RESPONSEOS_BUILD_SOURCE.md`. Those items are **pending ratifying ADRs** (comms doc §9); until ratified, the existing ADRs remain canonical (ADR-0011).
+> This direction is **ratified by ADR-0031–0034** ([`DECISIONS.md`](./DECISIONS.md)): Telnyx primary (supersedes ADR-0024's Twilio default), Vapi primary orchestration (amends ADR-0024; LLM-brain choice open), HubSpot default commercial SoR (re-amends ADR-0027; internal ledger SoR unchanged), Phase-1 Business Memory baseline (extends ADR-0029; v0.4 knowledge/RAG gates not relaxed). `RESPONSEOS_BUILD_SOURCE.md` reconciliation is tracked (comms doc §10).
 
 ## Hard constraints (always)
 
