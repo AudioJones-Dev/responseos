@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="76 130 360 250" role="img" aria-label="ResponseOS RO mark">
+  <!-- Brand 2.0 RO compact mark — transparent bg, for use on dark/black surfaces. ADR-0025. -->
+  <g fill="#FCFDFF">
+    <rect x="106" y="160" width="64" height="190" rx="6"/>
+    <path fill-rule="evenodd" d="M156 160 H206 C252 160 252 266 206 266 H156 Z M170 186 H202 C224 186 224 240 202 240 H170 Z"/>
+    <path d="M150 250 H206 L252 350 H196 Z"/>
+  </g>
+  <rect x="278" y="160" width="128" height="190" rx="46" fill="none" stroke="#E8FF5A" stroke-width="38"/>
+</svg>
