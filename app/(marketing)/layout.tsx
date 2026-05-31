@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { ButtonLink } from "@/components/ui";
+import { SocialLinks } from "@/components/layout/SocialLinks";
 
 const NAV = [
   { label: "Platform", href: "/" },
@@ -40,7 +41,7 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
             >
               Operator console
             </Link>
-            <ButtonLink href="/audit" size="sm">
+            <ButtonLink href="/audit" size="sm" glow>
               Run a revenue audit
             </ButtonLink>
           </div>
@@ -51,19 +52,22 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
 
       <footer className="border-t border-line">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-2 px-4 py-8 text-xs text-ink-muted sm:px-6">
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-            <span className="font-display text-sm font-semibold text-ink-secondary">
-              ResponseOS
-            </span>
-            <Link href="/pricing" className="hover:text-ink-secondary">
-              Pricing
-            </Link>
-            <Link href="/demo" className="hover:text-ink-secondary">
-              Demo
-            </Link>
-            <Link href="/audit" className="hover:text-ink-secondary">
-              Revenue audit
-            </Link>
+          <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+              <span className="font-display text-sm font-semibold text-ink-secondary">
+                ResponseOS
+              </span>
+              <Link href="/pricing" className="hover:text-ink-secondary">
+                Pricing
+              </Link>
+              <Link href="/demo" className="hover:text-ink-secondary">
+                Demo
+              </Link>
+              <Link href="/audit" className="hover:text-ink-secondary">
+                Revenue audit
+              </Link>
+            </div>
+            <SocialLinks />
           </div>
           <p>
             © {new Date().getFullYear()} AJ Digital LLC. ResponseOS is an

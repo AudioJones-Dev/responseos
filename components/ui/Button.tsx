@@ -6,7 +6,15 @@ type Variant = "primary" | "secondary" | "ghost" | "danger";
 type Size = "sm" | "md";
 
 const base =
-  "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-[color,background-color,border-color,box-shadow] disabled:cursor-not-allowed disabled:opacity-50";
+
+/**
+ * Penumbra Signal glow — opt-in only (Brand 2.1). Inset top-edge lip + a
+ * restrained Signal-Yellow ring on hover/focus. Reserved for marketing/demo
+ * CTAs; not applied to console/app buttons by default.
+ */
+const glowCls =
+  "shadow-[inset_0_1px_0_rgba(255,255,255,0.36)] hover:shadow-[0_0_0_6px_rgba(232,255,90,0.12)] focus-visible:shadow-[0_0_0_6px_rgba(232,255,90,0.12)] focus-visible:outline-none";
 
 const variants: Record<Variant, string> = {
   primary: "bg-accent text-black hover:bg-accent-hover",
@@ -24,11 +32,15 @@ const sizes: Record<Size, string> = {
 export function Button({
   variant = "primary",
   size = "md",
+  glow = false,
   className,
   ...props
-}: ComponentProps<"button"> & { variant?: Variant; size?: Size }) {
+}: ComponentProps<"button"> & { variant?: Variant; size?: Size; glow?: boolean }) {
   return (
-    <button className={cn(base, variants[variant], sizes[size], className)} {...props} />
+    <button
+      className={cn(base, variants[variant], sizes[size], glow && glowCls, className)}
+      {...props}
+    />
   );
 }
 
@@ -36,18 +48,20 @@ export function Button({
 export function ButtonLink({
   variant = "primary",
   size = "md",
+  glow = false,
   className,
   children,
   href,
 }: {
   variant?: Variant;
   size?: Size;
+  glow?: boolean;
   className?: string;
   children: ReactNode;
   href: string;
 }) {
   return (
-    <Link href={href} className={cn(base, variants[variant], sizes[size], className)}>
+    <Link href={href} className={cn(base, variants[variant], sizes[size], glow && glowCls, className)}>
       {children}
     </Link>
   );

@@ -44,7 +44,7 @@ export default function MarketingHome() {
           OFFER is the philosophy. RECOVER is how we ship it.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
-          <ButtonLink href="/audit">Run a revenue audit</ButtonLink>
+          <ButtonLink href="/audit" glow>Run a revenue audit</ButtonLink>
           <ButtonLink href="/demo" variant="secondary">
             Watch the demo
           </ButtonLink>

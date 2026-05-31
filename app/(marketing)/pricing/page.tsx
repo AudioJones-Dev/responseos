@@ -1,4 +1,4 @@
-import { ButtonLink, Card, StatusBadge } from "@/components/ui";
+import { ButtonLink, Card, StatusBadge, cn } from "@/components/ui";
 
 const tiers = [
   {
@@ -57,36 +57,52 @@ export default function PricingPage() {
           <Card
             key={tier.name}
             interactive
-            className={
-              tier.featured ? "flex flex-col border-line-strong" : "flex flex-col"
-            }
+            className={cn(
+              "relative flex flex-col overflow-hidden",
+              tier.featured &&
+                "border-accent/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
+            )}
           >
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-ink">{tier.name}</h2>
-              {tier.featured ? (
-                <StatusBadge label="Most popular" tone="accent" />
-              ) : null}
-            </div>
-            <p className="mt-4 font-display text-3xl font-semibold text-ink">
-              {tier.price}
-            </p>
-            <p className="mt-3 text-sm text-ink-secondary">{tier.summary}</p>
-            <ul className="mt-5 space-y-2.5 text-sm text-ink-secondary">
-              {tier.bullets.map((b) => (
-                <li key={b} className="flex gap-2.5">
-                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
-                  {b}
-                </li>
-              ))}
-            </ul>
-            <div className="mt-8 pt-2">
-              <ButtonLink
-                href="/audit"
-                variant={tier.featured ? "primary" : "secondary"}
-                className="w-full"
+            {tier.featured ? (
+              <div
+                className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(232,255,90,0.08),transparent_38%)]"
+                aria-hidden
+              />
+            ) : null}
+            <div className="relative flex flex-1 flex-col">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-ink">{tier.name}</h2>
+                {tier.featured ? (
+                  <StatusBadge label="Most popular" tone="accent" />
+                ) : null}
+              </div>
+              <p
+                className={cn(
+                  "mt-4 font-display text-3xl font-semibold",
+                  tier.featured ? "text-accent" : "text-ink",
+                )}
               >
-                Run a revenue audit
-              </ButtonLink>
+                {tier.price}
+              </p>
+              <p className="mt-3 text-sm text-ink-secondary">{tier.summary}</p>
+              <ul className="mt-5 space-y-2.5 text-sm text-ink-secondary">
+                {tier.bullets.map((b) => (
+                  <li key={b} className="flex gap-2.5">
+                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                    {b}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-8 pt-2">
+                <ButtonLink
+                  href="/audit"
+                  variant={tier.featured ? "primary" : "secondary"}
+                  glow={tier.featured}
+                  className="w-full"
+                >
+                  Run a revenue audit
+                </ButtonLink>
+              </div>
             </div>
           </Card>
         ))}
