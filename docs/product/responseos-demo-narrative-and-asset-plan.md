@@ -109,6 +109,9 @@ what action the founder should take next.
 
 ## 6. Required product screens
 
+> **Wireframe spec:** the structure, layout regions, data bindings, CTAs, and states for these six
+> screens are defined in [`responseos-screen-wireframe-spec.md`](./responseos-screen-wireframe-spec.md).
+
 | Screen | Purpose | Must Show |
 |---|---|---|
 | **Revenue Recovery Overview** | Executive dashboard | recovered calls, qualified leads, bookings, follow-up risk, estimated revenue |

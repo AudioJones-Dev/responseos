@@ -36,6 +36,11 @@ after-hours** call.
 > fictional demo-safe placeholders — no real customer/PII data. Every JSON payload carries
 > `"demo_only": true`.
 
+## Consumed by
+
+These assets are the data bindings for the six demo screens specified in
+[`../responseos-screen-wireframe-spec.md`](../responseos-screen-wireframe-spec.md) (§12 Data-binding map).
+
 ## Canon notes
 
 - **Vendors are invisible infrastructure** in client-facing narrative; provider names (Telnyx, Vapi,
