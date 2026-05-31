@@ -4,6 +4,13 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: ResponseOS demo content assets (call script, transcript, qualification JSON)
+
+- **Added** `docs/product/demo-assets/` — the first demo-content batch (mock-data only) powering the Call Intelligence + Lead Qualification screens from the demo narrative: `README.md`, `demo-call-script.md`, `mock-transcript.md`, `lead-qualification-output.json`, `business-memory-event.json`, `hubspot-sync-event.json`, `founder-intelligence-summary.md`.
+- **Anchor scenario:** South Florida accessibility / mobility-equipment contractor (DemoLift Accessibility Services); high-intent after-hours wheelchair-ramp call (Maria Santos, Pembroke Pines); $1,500–$4,500 estimated opportunity. **All fictional, demo-safe placeholders — no real customer/PII data, no real phone numbers.**
+- **Canon-aligned:** full recovery loop (call → qualify → CRM sync → memory → founder summary); vendors as invisible infrastructure (Telnyx/Vapi/HubSpot appear only in technical mock payloads); **Phase-1 Business Memory carries explicit `gates` with RAG/vector/per-tenant-knowledge `false`** (ADR-0034 — v0.4 gates not relaxed). Every JSON payload flags `"demo_only": true`.
+- All 3 JSON payloads validated (parse clean). Cross-linked from the demo narrative spec's asset inventory. **Documentation/mock-data only** — no UI, routes, runtime code, provider integrations, deps, env, secrets, or deploy changes.
+
 ## Unreleased — docs: ResponseOS demo narrative + asset plan (ADR-0025 asset phase)
 
 - **Added** [`docs/product/responseos-demo-narrative-and-asset-plan.md`](./product/responseos-demo-narrative-and-asset-plan.md) (13 sections): executive summary, demo goal (30-second test), the 8-step core demo storyline, product narrative principles, 7 required demo scenes, 6 required product screens, the demo data model + 3 example scenarios, Brand 2.0 visual requirements, the demo-content asset inventory, non-goals, open decisions, success criteria, and follow-up tasks.

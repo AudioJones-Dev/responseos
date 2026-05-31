@@ -1,0 +1,70 @@
+{
+  "schema_version": "demo.v1",
+  "event_type": "lead.qualified",
+  "demo_only": true,
+  "_warning": "Mock data only — fictional, demo-safe placeholders. Not production seed data, customer records, or integration fixtures.",
+  "lead": {
+    "id": "demo_lead_a1b2c3",
+    "name": "Maria Santos",
+    "phone": "+1-555-0148 (demo placeholder)",
+    "phone_consent": true,
+    "location_region": "Pembroke Pines, FL",
+    "source_channel": "inbound_voice_after_hours",
+    "relationship_to_service": "decision_maker_on_behalf_of_household"
+  },
+  "qualification": {
+    "decision_maker": true,
+    "urgency": "high",
+    "qualification_score": 88,
+    "qualification_band": "qualified",
+    "criteria_met": [
+      "in_service_area",
+      "decision_maker_confirmed",
+      "clear_service_need",
+      "actionable_timeline",
+      "contact_consent_granted"
+    ],
+    "criteria_unmet": [],
+    "summary": "After-hours, high-intent caller needs an urgent wheelchair-ramp safety assessment for her father in Pembroke Pines within 48 hours. Decision-maker confirmed; call + SMS consent granted."
+  },
+  "service_request": {
+    "service_category": "wheelchair_ramp",
+    "work_type": "repair_or_replacement",
+    "reason": "ramp too steep and one side loose; safety risk after hospital discharge",
+    "timeline": "within_48_hours",
+    "appointment_intent": "urgent_on_site_assessment"
+  },
+  "commercial_context": {
+    "estimated_revenue_range_usd": { "min": 1500, "max": 4500 },
+    "opportunity_type": "service_repair_or_install",
+    "risk_if_unrecovered": "lost service/install job; safety-critical caller likely to call a competitor"
+  },
+  "recommended_next_action": {
+    "action": "callback_to_confirm_assessment_window",
+    "owner": "accessibility_specialist_on_call",
+    "owner_id": "demo_user_op_07",
+    "due_at": "2026-06-01T09:00:00-04:00",
+    "priority": "urgent",
+    "channel": "phone_then_sms"
+  },
+  "crm_sync": {
+    "provider": "hubspot",
+    "target_object": "contact",
+    "hubspot_contact_id": "hs_contact_demo_44021",
+    "hubspot_deal_id": "hs_deal_demo_90115",
+    "sync_status": "completed",
+    "sync_event_id": "demo_hs_sync_5521"
+  },
+  "business_memory": {
+    "memory_model": "phase_1_event_ledger_capture",
+    "event_id": "bm_evt_demo_77c310",
+    "captured": true
+  },
+  "compliance": {
+    "sms_consent": true,
+    "callback_consent": true,
+    "consent_captured_on_call": true,
+    "pii_minimized": true,
+    "demo_only": true
+  }
+}

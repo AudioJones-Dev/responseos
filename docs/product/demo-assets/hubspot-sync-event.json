@@ -1,0 +1,63 @@
+{
+  "schema_version": "demo.v1",
+  "event_type": "crm.sync_completed",
+  "demo_only": true,
+  "_warning": "Mock data only — fictional, demo-safe placeholders. Not a real HubSpot fixture or integration payload.",
+  "crm": {
+    "provider": "hubspot",
+    "sync_status": "completed",
+    "sync_event_id": "demo_hs_sync_5521",
+    "synced_at": "2026-05-31T21:50:12-04:00",
+    "source_call_id": "demo_call_8F3K29",
+    "business_memory_event_id": "bm_evt_demo_77c310"
+  },
+  "contact": {
+    "hubspot_contact_id": "hs_contact_demo_44021",
+    "operation": "created",
+    "firstname": "Maria",
+    "lastname": "Santos",
+    "phone": "+1-555-0148 (demo placeholder)",
+    "lifecyclestage": "lead",
+    "region": "Pembroke Pines, FL",
+    "consent_sms": true,
+    "consent_call": true
+  },
+  "company": {
+    "hubspot_company_id": "hs_company_demo_3310",
+    "operation": "created",
+    "name": "Santos residence (demo household placeholder)",
+    "type": "household"
+  },
+  "activity": {
+    "hubspot_activity_id": "hs_activity_demo_61204",
+    "type": "call",
+    "title": "After-hours AI receptionist call — urgent ramp assessment",
+    "disposition": "qualified",
+    "summary_attached": true,
+    "transcript_ref": "demo_call_8F3K29"
+  },
+  "deal": {
+    "hubspot_deal_id": "hs_deal_demo_90115",
+    "operation": "created",
+    "dealname": "Urgent wheelchair-ramp assessment — Pembroke Pines",
+    "pipeline": "service_recovery",
+    "dealstage": "qualified_appointment_requested",
+    "amount_estimate_usd": { "min": 1500, "max": 4500 }
+  },
+  "task": {
+    "hubspot_task_id": "hs_task_demo_22087",
+    "operation": "created",
+    "title": "Callback to confirm urgent assessment window",
+    "owner_id": "demo_user_op_07",
+    "due_at": "2026-06-01T09:00:00-04:00",
+    "priority": "high",
+    "status": "not_started"
+  },
+  "source_attribution": {
+    "channel": "inbound_voice_after_hours",
+    "carrier": "telnyx",
+    "carrier_fallback": "twilio",
+    "voice_orchestration": "vapi",
+    "first_touch": "missed_or_after_hours_inbound_call"
+  }
+}
