@@ -4,6 +4,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: ResponseOS demo narrative + asset plan (ADR-0025 asset phase)
+
+- **Added** [`docs/product/responseos-demo-narrative-and-asset-plan.md`](./product/responseos-demo-narrative-and-asset-plan.md) (13 sections): executive summary, demo goal (30-second test), the 8-step core demo storyline, product narrative principles, 7 required demo scenes, 6 required product screens, the demo data model + 3 example scenarios, Brand 2.0 visual requirements, the demo-content asset inventory, non-goals, open decisions, success criteria, and follow-up tasks.
+- **Canon-aligned:** full revenue-recovery loop (not "just an AI receptionist"); vendors (Telnyx/Vapi/HubSpot) framed as invisible infrastructure; **Phase-1 Business Memory shown as event-ledger capture, not RAG/vector** (ADR-0034, v0.4 gates intact); Brand 2.0 (Signal-Yellow + Syne + true-black/glass, no blue — ADR-0021). The two ADR-0032 open decisions (OpenAI-brain-under-Vapi; gateway/Redis) preserved explicitly.
+- Cross-linked from `docs/README.md` (Product row). **Documentation only** — no UI, routes, code, deps, mock data, credentials, or deploy changes.
+
 ## Unreleased — docs: reconcile BUILD_SOURCE with the communications canon (ADR-0031–0034)
 
 - **Reconciled** `docs/product/RESPONSEOS_BUILD_SOURCE.md` with the ratified comms canon — the tracked follow-up from the communications-stack PR. Added a canonical-language note to §2; updated the canonical-stack table (carrier → **Telnyx primary / Twilio fallback**, ADR-0031; primary AI voice → **Vapi**, ADR-0032; CRM SoR ref → **ADR-0033**); annotated the **open** layers (OpenAI-Realtime-ownership, Node.js gateway + Redis) as open per ADR-0032; relabeled the mermaid diagram (Telnyx/Twilio carrier, Vapi orchestration); updated the ownership table, §6 rules (HubSpot SoR → ADR-0033, carrier+voice failover → ADR-0031/0032, added the Communications Abstraction Layer rule), §9 assumptions, and §10 open questions.
