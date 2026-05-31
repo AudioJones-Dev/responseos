@@ -145,6 +145,10 @@ Glass is the structural language for elevated/overlay surfaces (sticky headers, 
 4. If a blue usage is genuinely functional (e.g. an external link colour or a chart series), it must be documented as utility — not brand — at the point of use.
 5. Semantic colours (`success` green, `warning` amber, `danger` red, `neutral` grey) cover status; they are not "blue background" usage and are unaffected by this policy.
 
+### Penumbra Signal Adaptation (Brand 2.1)
+
+An approved atmospheric execution layer for Brand 2.0 — registered here per §17.6. It absorbs the **Penumbra** dark-editorial system (onyx surface tiers, 1px hairline structure, flat/restrained elevation, the load-bearing atmosphere card, generous negative space, grotesk-UI + mono pairing) as *atmosphere and structure only*, while preserving every Brand 2.0 / ADR-0021 identity rule: true-black canvas, **Signal Yellow `#E8FF5A`** as the single signal accent (replacing Penumbra's warm-white), the no-blue policy, and **Syne** as the display face (no serif swap). It also adds demo-mode / mock-disabled / memory-disabled / integration-disabled data-state treatments for the clickable demo. Where Penumbra and Brand 2.0 disagree, **Brand 2.0 wins.** Full mapping: [`design/responseos-penumbra-signal-adaptation.md`](./design/responseos-penumbra-signal-adaptation.md).
+
 ---
 
 ## 3. Typography
