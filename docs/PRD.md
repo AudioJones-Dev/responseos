@@ -67,12 +67,23 @@ In:
 
 Explicitly out:
 
-- Live provider integrations (Twilio / Retell / Vapi / Stripe / GHL / HubSpot) → v0.3.
+- Live provider integrations → **v0.3**, now specified by the **communications stack** decision ([`product/responseos-communications-stack.md`](./product/responseos-communications-stack.md)): Telnyx + Vapi primary, Twilio failover, HubSpot default commercial system of record, behind a Communications Abstraction Layer; includes a Phase-1 Business Memory capture baseline.
 - Billing engine + Stripe + outcome-fee ledger → v0.5.
 - Knowledge layer → v0.4+.
 - Production deploys → gated on v0.3 readiness.
 
 See [`ROADMAP.md`](./ROADMAP.md) for the full version table and milestone status.
+
+## Communications stack (v0.3 direction)
+
+Per the CTO communications decision ([`product/responseos-communications-stack.md`](./product/responseos-communications-stack.md)):
+
+- **Communications Abstraction Layer (requirement).** Carrier, SMS, AI-voice, messaging, webhook, and usage-metering providers sit behind internal interfaces (`CarrierProvider`, `SmsProvider`, `VoiceAgentProvider`, `MessagingChannelProvider`, `WebhookEventAdapter`, `UsageMeteringAdapter`) so Telnyx / Twilio / Vapi / Retell / Sendblue are swappable or routable **without client-facing change**. This abstraction is the platform's primary infrastructure moat. *Document only — not implemented.*
+- **Default providers:** **Telnyx** (carrier / A2P SMS) + **Vapi** (AI receptionist) primary; **Twilio** failover; **Retell** + **Sendblue** Phase 2. ResponseOS is not a Twilio-only or GHL-only platform.
+- **HubSpot is the default commercial system of record** (client-overridable to GHL / Salesforce); the ResponseOS event ledger remains the **internal** SoR. GHL is a supported connector, not core infrastructure — **no GHL LC Phone dependency**.
+- **Phase-1 Business Memory capture.** Every AI receptionist interaction is captured as structured memory (transcript, summary, intent, qualification, appointment, follow-up, CRM-sync status, next action) in the event ledger — **operational capture only**; per-tenant knowledge / RAG stays **v0.4-gated**.
+
+> This direction is **ratified by ADR-0031–0034** ([`DECISIONS.md`](./DECISIONS.md)): Telnyx primary (supersedes ADR-0024's Twilio default), Vapi primary orchestration (amends ADR-0024; LLM-brain choice open), HubSpot default commercial SoR (re-amends ADR-0027; internal ledger SoR unchanged), Phase-1 Business Memory baseline (extends ADR-0029; v0.4 knowledge/RAG gates not relaxed). `RESPONSEOS_BUILD_SOURCE.md` reconciliation is tracked (comms doc §10).
 
 ## Hard constraints (always)
 

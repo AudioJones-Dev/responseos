@@ -4,6 +4,14 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: communications stack roadmap + PRD decisions (CTO recommendation)
+
+- **Added** [`docs/product/responseos-communications-stack.md`](./product/responseos-communications-stack.md) (10 sections): CTO decision (Telnyx + Vapi primary, Twilio failover, Retell/Sendblue Phase 2, HubSpot default commercial SoR), the **Communications Abstraction Layer** requirement + 6 conceptual provider interfaces, the MVP communications stack, the **Phase-1 Business Memory baseline**, the vendor role table, non-goals, 3-phase comms roadmap, an ADR/canon **reconciliation matrix (§9)**, and open decisions (§10).
+- **Updated** `ROADMAP.md` (v0.3 row + preview → Telnyx/Vapi/HubSpot comms stack + Phase-1 Business Memory) and `PRD.md` (new "Communications stack (v0.3 direction)" section). Cross-linked from `docs/README.md`.
+- **Business Memory pulled earlier** to Phase 1 / v0.3 — **operational capture into the event ledger only**; the v0.4 per-tenant knowledge / RAG / vector layer stays gated (ADR-0016/0029, ROADMAP Future Knowledge Layer). No v0.4 gate relaxed.
+- **Ratified as ADR-0031–0034** so the canon is consistent (not "pending"): **ADR-0031** Telnyx primary carrier (supersedes ADR-0024's Twilio telephony default), **ADR-0032** Vapi primary AI voice orchestration (amends ADR-0024; the OpenAI-LLM-brain-under-Vapi choice is preserved as an open decision), **ADR-0033** HubSpot default commercial system of record (re-amends ADR-0027; the ResponseOS event ledger remains the internal SoR), **ADR-0034** Phase-1 Business Memory baseline (extends ADR-0029; the v0.4 RAG/vector/per-tenant knowledge gates are **not** relaxed). ADR-0024/0027/0029 status lines updated accordingly. `RESPONSEOS_BUILD_SOURCE.md` reconciliation remains tracked (comms doc §10).
+- **Documentation only** — no runtime code, dependencies, provider integrations, migrations, env vars, or secrets. Live wiring stays v0.3-gated (ADR-0001, ADR-0019). No existing roadmap items deleted.
+
 ## Unreleased — Brand 2.0 glass refinement: remove residual blue surfaces (ADR-0021)
 
 - **Removed the residual navy/slate "dark-SaaS blue"** from the design tokens — the only place blue survived. `app/globals.css`: `--color-base` `#05070f` → **`#000000`** (true-black canvas); `--color-surface` `#0b1020` → `#0a0a0c`; `--color-surface-elevated` `#111827` → `#101012`; text greys de-tinted `#94a3b8`/`#4b5563` → neutral `#a1a4a5`/`#888e90`. Added `--color-canvas-soft` `#080808`, `--color-surface-deep` `#06060a`, and **glass** tokens `--color-glass` / `--color-glass-strong` (translucent white over black).

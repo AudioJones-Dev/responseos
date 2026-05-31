@@ -12,7 +12,7 @@
 | **v0.2 Phase C** | Route consumers (admin + client + API) through the v0.2 data layer | ✅ Shipped (PR #7, `c681134`) |
 | **v0.2 Phase D** | Integration test suite + CI integration job against Postgres 16 | ✅ Shipped (PR #12, `8a8c6a0`) |
 | **v0.2 closeout** | `Organization` → `Account` rename; real Auth.js provider wiring; UI rebuild against `DESIGN.md` tokens; remaining v0.2-spec items (provider_connections, conversations/sms_messages, call_segments/transcripts, workflow_runs, qa_logs, audit_logs) | 🟡 In flight |
-| **v0.3** | Live Twilio / Retell / Vapi integration with signature verification and call/event persistence; real Stripe billing (Payment Intents, hosted pages, webhook ingest); outcome-fee invoicing preview; outbound recovery campaigns; branded client portals; OpenClaw sandboxed gateway experiment | ⏳ Planned |
+| **v0.3** | Live **communications stack** — Telnyx + Vapi primary, Twilio failover, HubSpot CRM sync, Phase-1 Business Memory capture, behind a Communications Abstraction Layer ([`product/responseos-communications-stack.md`](./product/responseos-communications-stack.md)) — with signature verification and call/event persistence; real Stripe billing (Payment Intents, hosted pages, webhook ingest); outcome-fee invoicing preview; outbound recovery campaigns; branded client portals; OpenClaw sandboxed gateway experiment | ⏳ Planned |
 | **v0.4** | Client knowledge base + agent grounding layer (gated on tenant isolation + audit log + retention controls being in force) | ⏳ Planned |
 | **v0.5** | Billing / outcome-fee ledger production: pricing engine, Stripe billing implementation, outcome-fee ledger, client invoice logic, in-app pricing-tier selectors | ⏳ Planned |
 | **v1.0** | Client-ready Revenue Recovery OS — polished, onboarding flow complete, white-label-ready | ⏳ Planned |
@@ -43,7 +43,8 @@ Carried forward from the v0.2 planning spec ([archived here](./archive/v0.2-plan
 
 ## v0.3 preview (not yet authorized)
 
-- Live Twilio / Retell / Vapi integration with signature verification and call/event persistence.
+- **Communications stack (CTO decision — [`product/responseos-communications-stack.md`](./product/responseos-communications-stack.md)):** Telnyx primary carrier (voice + A2P SMS), Vapi primary AI receptionist orchestration, Twilio failover, HubSpot CRM event sync, Cal.com/GHL scheduling — all behind a Communications Abstraction Layer; signature verification + call/event persistence into the ledger. _Ratified by ADR-0031 (Telnyx) + ADR-0032 (Vapi) + ADR-0033 (HubSpot SoR); `BUILD_SOURCE` Grok-primary stack still to be reconciled (comms doc §9–§10)._
+- **Phase-1 Business Memory baseline:** structured capture of every AI receptionist interaction (transcript, summary, intent, qualification, appointment, follow-up, CRM-sync status, next action) into the event ledger. Operational capture only — the v0.4 per-tenant knowledge / RAG layer stays gated.
 - Real Stripe billing — Payment Intents, hosted pages, webhook ingest.
 - Outcome-fee invoicing — verified booked appointments and verified recovered revenue against a baseline, with evidence links per invoice.
 - Outbound recovery campaigns — list builder, consent gating, AI dialer integration.
@@ -54,6 +55,8 @@ Carried forward from the v0.2 planning spec ([archived here](./archive/v0.2-plan
 ## Future Knowledge Layer (v0.4+)
 
 ResponseOS may later include a client-specific knowledge layer that grounds AI voice, SMS, booking, quote, and support workflows in approved business knowledge. This is a roadmap target for **v0.4 or later**. It is **not** part of v0.2, not part of v0.3, and not part of the current database / auth foundation.
+
+> **Distinct from Phase-1 Business Memory capture.** The v0.3 communications stack introduces a *lightweight Business Memory baseline* — structured transcript/summary/intent/qualification records written to the event ledger ([`product/responseos-communications-stack.md`](./product/responseos-communications-stack.md) §4). That is **operational capture** and is **not** gated by this section. What remains **v0.4-gated** is per-tenant *knowledge ingestion, retrieval, vector search, and RAG/grounding* — behind the full controls below (tenant isolation, source ownership, audit, retention, PII minimization, deletion/export). The Phase-1 baseline establishes the capture foundation without enabling any gated knowledge behavior.
 
 ### Required gates before client-facing knowledge ingestion
 

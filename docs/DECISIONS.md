@@ -396,7 +396,7 @@ CRM remains pluggable per tenant: HubSpot is the default, GoHighLevel and others
 
 ## ADR-0024 — v1 AI/voice provider stance: OpenAI default, ElevenLabs premium, Vapi/Retell optional, Grok optional (supersedes ADR-0012)
 
-**Status:** Accepted (2026-05-30). **Supersedes ADR-0012** (realtime provider *order*). Retains the provider-abstraction + Twilio-edge principles of ADR-0012 / ADR-0013. Resolves §24 row 4 of the GTM roadmap.
+**Status:** Accepted (2026-05-30); **telephony default superseded by ADR-0031** (Telnyx primary, Twilio failover) and **orchestration amended by ADR-0032** (Vapi primary; OpenAI-as-brain left open). **Supersedes ADR-0012** (realtime provider *order*). The OpenAI-default *model* layer and the provider-abstraction principle stand pending the open LLM-brain decision (ADR-0032). Resolves §24 row 4 of the GTM roadmap.
 
 **Context.** ADR-0012 set Grok Voice as the primary realtime voice provider with OpenAI Realtime as fallback. The Brand 2.0 / GTM direction (GTM §10) selects a simpler **OpenAI-default** v1 posture for reasoning, basic voice, and transcription, with the other providers in clearly-scoped optional roles. This is a deliberate change of the *default*, not the architecture.
 
@@ -452,7 +452,7 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 
 ## ADR-0027 — Operational system of record is ResponseOS memory; external CRM is client-owned and pluggable, with no mandated default (amends ADR-0015)
 
-**Status:** Accepted (2026-05-30). **Amends ADR-0015** — demotes HubSpot from "default external CRM system of record" to a recommended client-owned connector. The internal-ledger-SoR decision (ADR-0002) is unchanged. Resolves §24 row 7.
+**Status:** Accepted (2026-05-30). **Amends ADR-0015** — demotes HubSpot from "default external CRM system of record" to a recommended client-owned connector. The internal-ledger-SoR decision (ADR-0002) is unchanged. **Re-amended by ADR-0033** (2026-05-31): HubSpot restored as the *default* external commercial CRM SoR, client-overridable; the internal-ledger SoR remains unchanged. Resolves §24 row 7.
 
 **Context.** ADR-0015 named HubSpot the *default* external CRM system of record while keeping the canonical event ledger as the internal SoR. The Business-Memory positioning (ADR-0022) makes ResponseOS's own operational memory (event ledger + structured business memory) the product's core asset and treats the customer's CRM as one client-owned connected system. GTM §5/§7 frames CRM as client-owned with no named default.
 
@@ -485,7 +485,7 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 
 ## ADR-0029 — Per-client Business Memory Vault is the canonical delivery model, activated behind the v0.4 knowledge-layer gates (extends ADR-0016)
 
-**Status:** Accepted (2026-05-30) for the *direction*; client-facing activation remains **v0.4-gated**. **Extends ADR-0016** (adds a per-tenant layer; the operator-side Obsidian scope is unchanged). Resolves the *direction* of §24 row 6; activation timing stays gated.
+**Status:** Accepted (2026-05-30) for the *direction*; client-facing activation remains **v0.4-gated**. **Extends ADR-0016** (adds a per-tenant layer; the operator-side Obsidian scope is unchanged). **Extended by ADR-0034** (2026-05-31): a Phase-1 *operational capture* baseline (event-ledger records) is pulled into v0.3 **without** relaxing the v0.4 knowledge / RAG gates. Resolves the *direction* of §24 row 6; activation timing stays gated.
 
 **Context.** ADR-0016 scoped Obsidian as the **operator-side** SOP/brand-knowledge layer and explicitly **not** the per-tenant client knowledge/grounding layer, which `ROADMAP.md` gates to v0.4 behind isolation/audit/retention/PII controls. The Business-Memory offer (ADR-0022, GTM §3/§5) is built around a **dedicated per-client memory vault** (raw evidence in R2, structured memory in Neon, narrative memory in Markdown).
 
@@ -514,3 +514,73 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 4. Live wiring stays v0.3-gated (ADR-0001) with the provider-readiness gate (ADR-0012/0024) before any live traffic.
 
 **Consequences.** A clear v1 boundary — simpler async/basic-voice path now, realtime architecture intact and scheduled for the pilot. No premature build of the gateway/Redis. No code change.
+
+---
+
+## ADR-0031 — Telnyx is the primary communications carrier; Twilio is failover (supersedes the Twilio-default portion of ADR-0024)
+
+**Status:** Accepted (2026-05-31). **Supersedes the telephony-default portion of ADR-0024** (and the "Twilio edge" carried from ADR-0012). Twilio is retained as failover. Ratifies §1/§3 of [`product/responseos-communications-stack.md`](./product/responseos-communications-stack.md).
+
+**Context.** ADR-0024 set Twilio as the default telephony edge with Telnyx a "sanctioned alternative." The CTO communications-stack report selects **Telnyx as the primary carrier** (voice, SMS, SIP, numbers, A2P) on capability and per-minute/message economics, with Twilio maintained for failover/compatibility. Application code is carrier-agnostic behind the abstraction (ADR-0001; the Communications Abstraction Layer, comms doc §2), so this is a default/routing decision, not a rewrite.
+
+**Decision.**
+
+1. **Primary carrier = Telnyx** — inbound/outbound voice, A2P SMS, SIP, numbers.
+2. **Twilio = secondary / failover carrier** — maintained for redundancy and compatibility; **not** the default infrastructure path for MVP.
+3. Both sit behind `CarrierProvider` / `SmsProvider`; **no carrier-specific logic above the adapter boundary**; Telnyx → Twilio failover must be transparent to the policy engine, tool router, and event ledger.
+4. Live wiring is **v0.3-gated** (ADR-0001, ADR-0019). A2P 10DLC / number-registration ownership (platform vs per-client) is a v0.3-readiness open item.
+
+**Consequences.** ResponseOS is not a Twilio-only platform. The `RESPONSEOS_BUILD_SOURCE.md` "Twilio edge" line and ADR-0024's telephony default are superseded; `BUILD_SOURCE` should be updated to name Telnyx primary / Twilio failover. Regulated/HIPAA-lane tenants still gate on per-provider BAA/retention review before live traffic. Mock-first (ADR-0001) holds until v0.3.
+
+---
+
+## ADR-0032 — Vapi is the primary AI voice orchestration layer; Retell secondary (amends ADR-0024; LLM-brain choice left open)
+
+**Status:** Accepted (2026-05-31). **Amends ADR-0024** — promotes Vapi from "optional orchestration" to the **primary** AI voice orchestration layer. The **LLM-brain question is explicitly left OPEN** (Decision §3). Ratifies §1/§3 of the comms-stack doc.
+
+**Context.** ADR-0024 made OpenAI the default for reasoning/basic-voice/transcription and classified Vapi/Retell as *optional* orchestration "after validation." The CTO report selects **Vapi as the primary AI voice orchestration layer** for the AI receptionist, with Retell AI as secondary/redundancy (Phase 2). Vapi orchestrates the voice agent (telephony bridge, turn-taking, tool-calls, barge-in); the underlying LLM/voice model is a separate choice.
+
+**Decision.**
+
+1. **Primary AI voice orchestration = Vapi** — owns AI-receptionist orchestration for the MVP/v0.3 communications stack.
+2. **Retell AI = secondary AI voice runtime / redundancy** (Phase 2), behind the same `VoiceAgentProvider` abstraction (ADR-0001 / comms doc §2). No orchestration-specific logic above the adapter boundary.
+3. **OPEN DECISION (preserved):** whether **OpenAI remains the LLM brain / transcription model *inside* the Vapi-orchestrated agent** (compatible with ADR-0024's model layer) or whether **Vapi owns model selection**. This ADR does **not** resolve it — ADR-0024's OpenAI-default *model* stance stands until decided. Related open item: whether the Node.js voice gateway + Redis (ADR-0013/0014) are retained behind a Vapi path or subsumed by Vapi.
+4. Live wiring **v0.3-gated** (ADR-0001/0019); the provider-readiness gate (ADR-0012/0024) applies before live traffic.
+
+**Consequences.** The orchestration layer is decided (Vapi primary, Retell secondary) while the model layer remains an explicit open decision — so ADR-0024 is **amended, not fully superseded**. If OpenAI is later confirmed as the in-Vapi brain, ADR-0024's model stance is preserved; if Vapi owns model selection, a follow-up ADR supersedes that portion. Mock-first holds until v0.3.
+
+---
+
+## ADR-0033 — HubSpot is the default commercial system of record; the ResponseOS ledger remains the internal SoR (re-amends ADR-0027)
+
+**Status:** Accepted (2026-05-31). **Re-amends ADR-0027** — restores HubSpot as the *default* (client-overridable) external commercial CRM system of record. The internal-ledger SoR (ADR-0002) is unchanged. Ratifies §5 of the comms-stack doc.
+
+**Context.** ADR-0015 named HubSpot the default external CRM SoR; ADR-0027 demoted it to "recommended, no mandated default" to align with the Business-Memory positioning. The CTO communications decision re-establishes **HubSpot as the default commercial system of record** for the MVP, because the communications stack must sync calls/SMS/AI-summaries/qualification/appointments/follow-ups into a concrete commercial CRM by default — while keeping it client-overridable.
+
+**Decision.**
+
+1. **Two systems of record (unchanged framing, ADR-0002):**
+   - **Internal / product SoR = the ResponseOS event ledger.** ROI, audit, attribution, replay recompute from it, never from a vendor payload. **Unchanged.**
+   - **Default external commercial SoR = HubSpot**, overridable per client (GHL, Salesforce, or another CRM).
+2. **Commercial activity** — calls, SMS events, AI summaries, lead-qualification outcomes, appointment requests, follow-up status — syncs into HubSpot by default via the canonical mapping (`lib/providers/*`).
+3. **GHL remains a supported connector, not core infrastructure** — **no dependency on GHL LC Phone** (telephony is Telnyx/Twilio per ADR-0031). Consistent with ADR-0007.
+4. A client requiring a different CRM overrides the default; history survives a CRM swap because facts recompute from the ledger.
+
+**Consequences.** Restores a concrete default commercial CRM for the comms MVP while preserving client choice and the ledger's primacy. ADR-0027's "no mandated default" is re-amended to "HubSpot default, client-overridable"; the internal-ledger SoR and tenant-ownership story (ADR-0002, ADR-0027) are intact. No code change. Webhook signature validation (ADR-0009) unchanged.
+
+---
+
+## ADR-0034 — Phase-1 Business Memory baseline: operational capture into the event ledger; the v0.4 knowledge/RAG gates are NOT relaxed (extends ADR-0029)
+
+**Status:** Accepted (2026-05-31). **Extends ADR-0029** — pulls a lightweight Business Memory *capture* into Phase-1/v0.3 **without relaxing the v0.4 per-tenant knowledge gates** (ADR-0016, ROADMAP Future Knowledge Layer). Ratifies §4 of the comms-stack doc.
+
+**Context.** ADR-0029 made the per-client Business Memory Vault the canonical delivery model but kept client-facing knowledge activation v0.4-gated. The CTO report pulls a **lightweight Business Memory baseline earlier** so every AI receptionist interaction is captured as structured business memory from the comms MVP — establishing the data-capture foundation without advanced retrieval.
+
+**Decision.**
+
+1. **Phase-1 (v0.3) Business Memory baseline = structured operational capture into the event ledger** for every AI receptionist interaction: call transcript, call summary, lead/contact identity, intent, qualification status, appointment request, follow-up requirement, source channel, CRM-sync status, next recommended action.
+2. **Operational capture only.** It builds on the already-shipped call-intelligence substrate (conversations / transcripts / qa-logs) and the internal SoR (ADR-0002). It is **not** a vector index, embeddings store, RAG runtime, semantic retrieval, or per-tenant agent-grounding surface.
+3. **The v0.4 gates are NOT relaxed.** Per-tenant *knowledge ingestion, retrieval, vector search, and RAG/grounding* remain **v0.4-gated** behind the full controls (tenant isolation, source ownership, upload permissions, audit logging, retention, transcript/recording controls, PII minimization, deletion/export, approved-source controls, human review) per `ROADMAP.md` and ADR-0016/ADR-0029.
+4. Tenant isolation (every read/write scoped by `account_id`) applies to captured memory exactly as to all ledger data.
+
+**Consequences.** The capture foundation that makes Business Memory a differentiator ships earlier, while the gated knowledge/RAG behaviours stay v0.4. **No new database models, no vector/embeddings dependency, no RAG runtime, and no client upload surface are authorized by this ADR.** Mock-first / v0.3 live-wiring gates hold.
