@@ -62,13 +62,13 @@ export default function DemoPage() {
             Explore it yourself
           </h2>
           <p className="mt-1 text-sm text-ink-secondary">
-            Open the live consoles running on seeded data.
+            Click through the Revenue Recovery walkthrough on mock data.
           </p>
         </div>
         <div className="flex shrink-0 flex-wrap gap-3">
-          <ButtonLink href="/client/dashboard">Client dashboard</ButtonLink>
-          <ButtonLink href="/admin" variant="secondary">
-            Operator console
+          <ButtonLink href="/demo/walkthrough">Revenue Recovery Demo</ButtonLink>
+          <ButtonLink href="/client/dashboard" variant="secondary">
+            Client dashboard
           </ButtonLink>
         </div>
       </Card>

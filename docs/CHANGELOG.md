@@ -4,6 +4,16 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: add clickable demo walkthrough
+
+- **Built the first controlled runtime UI:** a public, prospect-facing **clickable walkthrough** at `/demo/walkthrough` in a new isolated `(demo)` route group, executing the approved ADR-0035 Revenue Recovery flow on **mock data** (Maria Santos / DemoLift accessibility scenario). Six screens: **Revenue Recovery Overview → Call Intelligence → Lead/Opportunity → Business Memory → Follow-Up Queue → Integration Status**, with a DEMO MODE bar, step nav, and prev/next footer.
+  - **In-app demo data module** (`app/(demo)/_data/scenario.ts`) — mirrors the `docs/product/demo-assets/*` spec rather than importing it (runtime non-goal). No PII, no provider calls, no DB.
+  - **Business Memory renders Phase-1 only:** RAG / vector / per-tenant knowledge gates display **Not active** via `MemoryGatesPanel` (ADR-0034 preserved, v0.4-gated).
+  - **Integration Status panel** shows every provider as **mock / disabled / captured** — no Telnyx, Vapi, HubSpot, SMS, or live calls touched.
+  - Reuses the Brand 2.0 `components/ui` library; **no new dependencies**.
+- **Made `/demo/walkthrough` public** (moved `/demo` to `PUBLIC_PREFIXES` in `lib/auth/route-protection.ts`, with a look-alike test guard) so the labeled DEMO MODE walkthrough is reachable without auth. Linked it as the primary CTA from the existing `/demo` landing.
+- **No external services, secrets, deploy, DB, migrations, or env changes.** Mock-first/keyless boot intact; ADR-0032/0034 gates not relaxed; `#44` untouched.
+
 ## Unreleased — docs: add responseos penumbra signal design adaptation
 
 - **Added** [`docs/design/responseos-penumbra-signal-adaptation.md`](./design/responseos-penumbra-signal-adaptation.md) — *Brand 2.1 — Penumbra Signal Adaptation*: a design direction that absorbs the **Penumbra** dark-editorial system as **atmosphere + structure only** (onyx surface tiers, 1px hairline borders, flat/restrained elevation, the load-bearing atmosphere card, generous negative space, grotesk-UI + mono pairing, ≤1200px width) while **infusing ResponseOS identity** — Signal Yellow `#E8FF5A` as the single signal accent (replacing Penumbra's warm-white), revenue-recovery emphasis, "signal emerging from black," and demo-mode clarity.

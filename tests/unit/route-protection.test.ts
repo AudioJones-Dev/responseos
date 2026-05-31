@@ -6,6 +6,8 @@ describe("isPublicPath", () => {
     "/",
     "/pricing",
     "/demo",
+    "/demo/walkthrough",
+    "/demo/walkthrough/call",
     "/api/health",
     "/sign-in",
     "/sign-in/factor-one",
@@ -33,6 +35,7 @@ describe("isPublicPath", () => {
     "/industries-x",
     "/api/webhooks-secret",
     "/pricing/internal",
+    "/demo-evil",
   ])("treats %s as protected", (path) => {
     expect(isPublicPath(path)).toBe(false);
   });
