@@ -4,6 +4,13 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: add responseos penumbra signal design adaptation
+
+- **Added** [`docs/design/responseos-penumbra-signal-adaptation.md`](./design/responseos-penumbra-signal-adaptation.md) — *Brand 2.1 — Penumbra Signal Adaptation*: a design direction that absorbs the **Penumbra** dark-editorial system as **atmosphere + structure only** (onyx surface tiers, 1px hairline borders, flat/restrained elevation, the load-bearing atmosphere card, generous negative space, grotesk-UI + mono pairing, ≤1200px width) while **infusing ResponseOS identity** — Signal Yellow `#E8FF5A` as the single signal accent (replacing Penumbra's warm-white), revenue-recovery emphasis, "signal emerging from black," and demo-mode clarity.
+- **Token map** (Penumbra → Brand 2.0 tokens): preserves base/surface/border/text tiers; adds/aliases `signal-yellow(-muted/-glow)`, `revenue-positive` (Signal Yellow), `revenue-risk` (restrained action-orange), and `demo-mode` / `mock-disabled` / `memory-disabled` / `integration-disabled` data-state treatments — **no new chroma** beyond Signal Yellow.
+- **Preserves every Brand 2.0 / ADR-0021 constraint:** true-black canvas, no-blue policy, and **Syne** display face (Penumbra's serif is explicitly *not* adopted — kept as ADR-gated future marketing-only option). Registered in [`DESIGN.md`](./DESIGN.md) §2 per §17.6 ("no unapproved visual systems without updating DESIGN.md").
+- **Documentation only** — no app runtime code, components, routes, deps, env, secrets, migrations, or deploy changes; the clickable demo build was **not** started or modified (it remains a separate PR).
+
 ## Unreleased — docs: sync environment contract (.env.example ↔ env-spec)
 
 - **Resolved env drift** flagged by the credential/env audit: added the two runtime-read variables missing from `.env.example` — **`RESPONSEOS_PROVIDER_KEY`** (read by `lib/providers/encryption/index.ts`) and **`RESPONSEOS_DEV_SESSION`** (read by `lib/auth/session.ts`) — with placeholder values and comments covering required/optional status, environments, and fallback behavior.
