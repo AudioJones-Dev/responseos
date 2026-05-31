@@ -4,6 +4,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: ADR-0035 demo go-to-market decisions (CTA / vertical / demo format)
+
+- **Added ADR-0035** ratifying the operator decisions made at the post-product-definition gate: **CTA = "Revenue Recovery Demo"**, **primary vertical = General Home Services** (Florida Ramp & Lift accessibility/mobility anchor case study), **demo format = Hybrid** (recorded for marketing · clickable for sales). Resolves the CTA / vertical / format open decisions threaded through the demo, landing-page, talk-track, cheat-sheet, and OG/social docs.
+- **Authorizes the first non-docs build task under strict scope:** a **clickable static demo route** — a visual click-through (Revenue Recovery Overview → Call Intelligence → Lead/Opportunity → Business Memory → Follow-Up Queue) bound to the **existing mock demo assets**, per the wireframe spec + Brand 2.0. **Does not** authorize Telnyx/Vapi/HubSpot/SMS/live calls, provider integrations, deploy work, or relaxing the v0.4 Business Memory/RAG/vector gates. The ADR-0032 architecture decisions (OpenAI-in-Vapi; gateway/Redis) remain open.
+- Documentation only (DECISIONS.md). No runtime code, deps, env, secrets, migrations, or deploy changes.
+
 ## Unreleased — docs: ResponseOS OG / social preview spec
 
 - **Added** [`docs/product/responseos-og-social-preview-spec.md`](./product/responseos-og-social-preview-spec.md) (11 sections): social-preview copy (`og:title`/`og:description` + X/Twitter variants matching the 3 hero directions), the OG **image spec** (1200×630 + optional square; Brand 2.0 true-black/glass, `RO` mark, Signal-Yellow emphasis, Syne; layout diagram; content variants), a **documented (not implemented) `metadata.openGraph`/`metadata.twitter` wiring plan**, asset inventory, non-goals, open decisions, success criteria, follow-ups.
