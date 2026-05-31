@@ -4,6 +4,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: ResponseOS one-page sales cheat sheet
+
+- **Added** [`docs/product/responseos-one-page-sales-cheat-sheet.md`](./product/responseos-one-page-sales-cheat-sheet.md) — a single-page reference distilled from the talk track / landing-page copy / demo narrative / demo assets / wireframe spec: one-sentence positioning, ideal buyer, pain symptoms, the **revenue-leak diagnosis formula**, core promise, 6-bullet demo flow, discovery questions, an objection-response table, value framing, primary CTA options, follow-up close, and a non-goals / do-not-say list.
+- **Canon-aligned:** revenue-recovery / founder-intelligence positioning (receptionist = wedge); vendors invisible unless asked; **Business Memory framed as Phase-1 structured capture, never RAG/vector/"AI brain"** (ADR-0034 — v0.4 gates intact); Brand 2.0 voice (ADR-0021). CTA wording, anchor vertical, and demo format kept explicit, plus the ADR-0032 architecture open decisions (OpenAI-in-Vapi; gateway/Redis).
+- Cross-linked from the talk track (§16) and landing-page copy (Related Docs). **Documentation / sales-enablement only** — no UI, routes, components, runtime code, app metadata, deps, env, secrets, or deploy changes.
+
 ## Unreleased — docs: ResponseOS sales-call talk track
 
 - **Added** [`docs/product/responseos-sales-call-talk-track.md`](./product/responseos-sales-call-talk-track.md) (16 sections): a spoken talk track bridging the landing-page copy to a live sales/diagnostic call — how-to-use, call-structure-at-a-glance, and 7 staged scripts (Open · Discovery · Frame the revenue leak · Demo walkthrough narration · Business Memory & Founder Intelligence · Objection handling · Close & next steps), plus qualification/disqualification, a language do/don't table, non-goals, open decisions, success criteria, and follow-ups.

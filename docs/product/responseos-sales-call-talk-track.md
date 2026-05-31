@@ -238,7 +238,7 @@ demo can't responsibly serve · no owner buy-in. Say so honestly — it builds t
 
 ## 16. Suggested follow-up tasks
 
-1. Create a **one-page sales cheat sheet** (talk track condensed to a single reference card).
+1. Create a **one-page sales cheat sheet** (talk track condensed to a single reference card). ✅ [`responseos-one-page-sales-cheat-sheet.md`](./responseos-one-page-sales-cheat-sheet.md)
 2. Create **OG / social preview copy + image spec.**
 3. Decide the **final primary CTA language.**
 4. Decide the **primary vertical** for the standard pitch.
