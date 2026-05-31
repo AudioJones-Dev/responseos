@@ -13,12 +13,13 @@
 const PUBLIC_EXACT = new Set<string>([
   "/",
   "/pricing",
-  "/demo",
   "/api/health",
 ]);
 
 // Public path prefixes (the prefix itself and anything beneath it).
 const PUBLIC_PREFIXES: readonly string[] = [
+  // `/demo` and the prospect-facing clickable walkthrough (`/demo/walkthrough/*`).
+  "/demo",
   "/sign-in",
   "/sign-up",
   "/industries",
