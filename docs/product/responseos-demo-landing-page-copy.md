@@ -329,7 +329,7 @@ intentionally gated for a later phase.
 2. Create low-fidelity landing-page section wireframe.
 3. Create the first clickable static demo route using approved copy and mock assets.
 4. Create OG / social preview copy and image spec.
-5. Create a sales-call talk track from the landing-page copy.
+5. Create a sales-call talk track from the landing-page copy. ✅ [`responseos-sales-call-talk-track.md`](./responseos-sales-call-talk-track.md)
 
 ---
 
