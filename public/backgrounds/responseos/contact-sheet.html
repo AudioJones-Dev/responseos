@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ResponseOS · Background Atmosphere · Contact Sheet</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: #000; color: #F4F4F5;
+    font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  header { padding: 40px 32px 8px; border-bottom: 1px solid #23232A; }
+  header h1 { margin: 0 0 6px; font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+  header p { margin: 0; color: #9BA0AB; font-size: 13px; max-width: 60ch; line-height: 1.55; }
+  header .sig { color: #E8FF5A; }
+  main { padding: 8px 32px 64px; }
+  section { margin-top: 40px; }
+  .fam-head { display: flex; align-items: baseline; gap: 12px; border-bottom: 1px solid #17171C; padding-bottom: 8px; }
+  .fam-head h2 { margin: 0; font-size: 16px; font-weight: 600; }
+  .fam-head .slug { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11px; color: #5C6068; }
+  .fam-head .mood { margin-left: auto; font-size: 12px; color: #9BA0AB; font-style: italic; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-top: 16px; }
+  figure { margin: 0; border: 1px solid #23232A; border-radius: 10px; overflow: hidden; background: #050506; }
+  .thumb { display: grid; place-items: center; background: #000; min-height: 132px; }
+  .thumb img { display: block; max-width: 100%; max-height: 220px; }
+  figcaption { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11px; color: #9BA0AB; padding: 7px 10px; border-top: 1px solid #17171C; display: flex; justify-content: space-between; gap: 8px; }
+  figcaption .tier { color: #5C6068; }
+</style>
+</head>
+<body>
+<header>
+  <h1>ResponseOS · Background Atmosphere <span class="sig">·</span> Contact Sheet</h1>
+  <p>Brand 2.1 — Penumbra Signal. 5 families × 10 sizes = 50 source SVGs. Dev review aid only (not wired into any route). <span class="sig">Signal Yellow is signal, not decoration.</span></p>
+</header>
+<main id="sheet"></main>
+<script>
+  const FAMILIES = [
+    { slug: "signal-field",  name: "Signal Field",  mood: "Revenue signal emerging from black." },
+    { slug: "revenue-grid",  name: "Revenue Grid",  mood: "Measured revenue recovery system." },
+    { slug: "noise-glass",   name: "Noise Glass",   mood: "Premium operational surface." },
+    { slug: "recovery-beam", name: "Recovery Beam", mood: "Actionable recovery path." },
+    { slug: "ledger-depth",  name: "Ledger Depth",  mood: "Business memory & operational sequence." },
+  ];
+  const SIZES = [
+    ["1920x1080","desktop"],["1600x900","desktop"],["1440x900","desktop"],["1200x630","OG"],
+    ["1024x768","tablet"],["768x1024","tablet"],["430x932","mobile"],["390x844","mobile"],
+    ["360x800","mobile"],["1080x1080","square"],
+  ];
+  const sheet = document.getElementById("sheet");
+  for (const fam of FAMILIES) {
+    const sec = document.createElement("section");
+    sec.innerHTML =
+      '<div class="fam-head"><h2>' + fam.name + '</h2><span class="slug">' + fam.slug +
+      '</span><span class="mood">' + fam.mood + '</span></div><div class="grid"></div>';
+    const grid = sec.querySelector(".grid");
+    for (const [size, tier] of SIZES) {
+      const fig = document.createElement("figure");
+      fig.innerHTML =
+        '<div class="thumb"><img loading="lazy" alt="' + fam.slug + ' ' + size +
+        '" src="' + fam.slug + '/' + fam.slug + '.' + size + '.svg"></div>' +
+        '<figcaption><span>' + size + '</span><span class="tier">' + tier + '</span></figcaption>';
+      grid.appendChild(fig);
+    }
+    sheet.appendChild(sec);
+  }
+</script>
+</body>
+</html>

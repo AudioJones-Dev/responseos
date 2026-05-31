@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="768" height="1024" viewBox="0 0 768 1024" fill="none">
+  <defs>
+    <radialGradient id="ld-bg-768" cx="50%" cy="58%" r="86%">
+      <stop offset="0%" stop-color="#101013"/>
+      <stop offset="48%" stop-color="#08080A"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </radialGradient>
+    <radialGradient id="ld-glow-768" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="rgba(232,255,90,0.20)"/>
+      <stop offset="42%" stop-color="rgba(232,255,90,0.07)"/>
+      <stop offset="100%" stop-color="rgba(232,255,90,0)"/>
+    </radialGradient>
+    <linearGradient id="ld-band-768" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#17171C" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#1B1B21" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#17171C" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="ld-rail-768" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2E2E36" stop-opacity="0"/>
+      <stop offset="20%" stop-color="#2E2E36" stop-opacity="0.7"/>
+      <stop offset="80%" stop-color="#2E2E36" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#2E2E36" stop-opacity="0"/>
+    </linearGradient>
+    <pattern id="ld-grid-768" width="64" height="64" patternUnits="userSpaceOnUse">
+      <path d="M64 0H0V64" fill="none" stroke="#23232A" stroke-width="1" stroke-opacity="0.36"/>
+    </pattern>
+    <filter id="ld-grain-768" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.5 0"/>
+    </filter>
+    <radialGradient id="ld-vig-768" cx="50%" cy="50%" r="72%">
+      <stop offset="54%" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.66"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="768" height="1024" fill="url(#ld-bg-768)"/>
+  <rect width="768" height="1024" fill="url(#ld-grid-768)"/>
+
+  <g>
+    <rect x="0" y="320" width="768" height="110" fill="url(#ld-band-768)"/>
+    <rect x="0" y="490" width="768" height="110" fill="url(#ld-band-768)"/>
+    <rect x="0" y="660" width="768" height="110" fill="url(#ld-band-768)"/>
+    <rect x="0" y="830" width="768" height="110" fill="url(#ld-band-768)"/>
+  </g>
+
+  <ellipse cx="384" cy="660" rx="360" ry="430" fill="url(#ld-glow-768)"/>
+
+  <rect x="383" y="0" width="1.5" height="1024" fill="url(#ld-rail-768)"/>
+
+  <g>
+    <circle cx="384" cy="375" r="4" fill="#9BA0AB" fill-opacity="0.5"/>
+    <circle cx="384" cy="545" r="4" fill="#9BA0AB" fill-opacity="0.6"/>
+    <circle cx="384" cy="715" r="8" fill="rgba(232,255,90,0.20)"/>
+    <circle cx="384" cy="715" r="4" fill="#E8FF5A"/>
+    <circle cx="384" cy="885" r="4" fill="#9BA0AB" fill-opacity="0.5"/>
+  </g>
+
+  <rect width="768" height="1024" fill="url(#ld-vig-768)"/>
+  <rect width="768" height="1024" filter="url(#ld-grain-768)" opacity="0.05"/>
+</svg>

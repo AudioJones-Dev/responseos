@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="800" viewBox="0 0 360 800" fill="none">
+  <defs>
+    <radialGradient id="sf-base-360" cx="50%" cy="36%" r="92%">
+      <stop offset="0%" stop-color="#08080A"/>
+      <stop offset="60%" stop-color="#050506"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </radialGradient>
+    <radialGradient id="sf-glow-360" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#E8FF5A" stop-opacity="0.19"/>
+      <stop offset="40%" stop-color="#E8FF5A" stop-opacity="0.07"/>
+      <stop offset="72%" stop-color="#E8FF5A" stop-opacity="0.014"/>
+      <stop offset="100%" stop-color="#E8FF5A" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="sf-vig-360" cx="50%" cy="40%" r="76%">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="66%" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.74"/>
+    </radialGradient>
+    <linearGradient id="sf-rail-360" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#23232A" stop-opacity="0"/>
+      <stop offset="45%" stop-color="#2E2E36" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#23232A" stop-opacity="0"/>
+    </linearGradient>
+    <pattern id="sf-grid-360" width="72" height="72" patternUnits="userSpaceOnUse">
+      <path d="M72 0H0V72" fill="none" stroke="#17171C" stroke-width="1"/>
+    </pattern>
+    <filter id="sf-grain-360" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.6 0"/>
+    </filter>
+  </defs>
+  <rect width="360" height="800" fill="url(#sf-base-360)"/>
+  <rect width="360" height="800" fill="url(#sf-grid-360)" opacity="0.32"/>
+  <rect x="-80" y="46" width="520" height="520" fill="url(#sf-glow-360)"/>
+  <g opacity="0.45">
+    <circle cx="235" cy="240" r="1.6" fill="#E8FF5A" opacity="0.5"/>
+    <circle cx="278" cy="330" r="1.6" fill="#E8FF5A" opacity="0.32"/>
+    <circle cx="175" cy="345" r="1.6" fill="#E8FF5A" opacity="0.22"/>
+  </g>
+  <rect x="250" y="125" width="1" height="430" fill="url(#sf-rail-360)" opacity="0.4"/>
+  <rect width="360" height="800" fill="url(#sf-vig-360)"/>
+  <rect width="360" height="800" filter="url(#sf-grain-360)" opacity="0.045"/>
+</svg>

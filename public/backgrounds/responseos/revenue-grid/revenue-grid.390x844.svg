@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844" fill="none">
+  <defs>
+    <linearGradient id="rg-base-390" x1="0" y1="0" x2="0" y2="844" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#08080A"/>
+      <stop offset="0.55" stop-color="#050506"/>
+      <stop offset="1" stop-color="#000000"/>
+    </linearGradient>
+    <radialGradient id="rg-glow-390" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(245 310) rotate(90) scale(280 240)">
+      <stop offset="0" stop-color="#E8FF5A" stop-opacity="0.16"/>
+      <stop offset="0.4" stop-color="#E8FF5A" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#E8FF5A" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="rg-vig-390" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(195 422) rotate(90) scale(580 290)">
+      <stop offset="0.62" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.72"/>
+    </radialGradient>
+    <pattern id="rg-grid-390" width="72" height="64" patternUnits="userSpaceOnUse">
+      <path d="M0 0H72" stroke="#FFFFFF" stroke-opacity="0.032" stroke-width="1"/>
+      <path d="M0 0V64" stroke="#FFFFFF" stroke-opacity="0.018" stroke-width="1"/>
+    </pattern>
+    <filter id="rg-grain-390" x="0" y="0" width="390" height="844" filterUnits="userSpaceOnUse">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.5 0"/>
+    </filter>
+  </defs>
+  <rect width="390" height="844" fill="url(#rg-base-390)"/>
+  <rect width="390" height="844" fill="url(#rg-grid-390)"/>
+  <g stroke="#FFFFFF" stroke-opacity="0.045">
+    <path d="M0 281H390"/>
+    <path d="M0 563H390"/>
+  </g>
+  <rect width="390" height="844" fill="url(#rg-glow-390)"/>
+  <circle cx="245" cy="310" r="3.2" fill="#E8FF5A"/>
+  <circle cx="245" cy="310" r="8" fill="#E8FF5A" fill-opacity="0.2"/>
+  <rect width="390" height="844" fill="url(#rg-vig-390)"/>
+  <rect width="390" height="844" fill="#FFFFFF" opacity="0.035" filter="url(#rg-grain-390)"/>
+</svg>
