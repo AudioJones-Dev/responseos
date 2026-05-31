@@ -225,7 +225,7 @@ This task is complete when:
 1. Create demo call script.
 2. Create mock transcript and lead qualification JSON.
 3. Create screen-by-screen wireframe spec.
-4. Create product demo landing page copy.
+4. Create product demo landing page copy. ✅ [`responseos-demo-landing-page-copy.md`](./responseos-demo-landing-page-copy.md)
 5. Create HubSpot sync mock event.
 6. Create Business Memory event sample.
 7. Create Founder Intelligence daily summary sample.
