@@ -9,6 +9,7 @@
 - [`responseos-demo-narrative-and-asset-plan.md`](./responseos-demo-narrative-and-asset-plan.md)
 - [`responseos-screen-wireframe-spec.md`](./responseos-screen-wireframe-spec.md)
 - [`demo-assets/README.md`](./demo-assets/README.md)
+- [`responseos-sales-call-talk-track.md`](./responseos-sales-call-talk-track.md) · [`responseos-one-page-sales-cheat-sheet.md`](./responseos-one-page-sales-cheat-sheet.md)
 
 > Documentation / copy-planning only. **No UI, routes, components, app metadata, runtime code, provider
 > integrations, deps, env vars, secrets, migrations, or deploy changes.** This is copy to *later* power
