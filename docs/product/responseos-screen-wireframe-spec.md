@@ -397,7 +397,7 @@ Next Action
 
 1. Create low-fidelity wireframe sketches or ASCII layout blocks for each screen.
 2. Create demo landing-page CTA copy. ✅ [`responseos-demo-landing-page-copy.md`](./responseos-demo-landing-page-copy.md)
-3. Create the first clickable static demo route using existing demo assets.
+3. Create the first clickable static demo route using existing demo assets. 📋 plan: [`responseos-clickable-demo-route-plan.md`](./responseos-clickable-demo-route-plan.md)
 4. Create OG image and outlined-Syne wordmark assets.
 5. Define screen implementation order for v0.3 demo readiness.
 

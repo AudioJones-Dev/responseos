@@ -4,6 +4,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: clickable static demo route implementation plan (pre-build)
+
+- **Added** [`docs/product/responseos-clickable-demo-route-plan.md`](./product/responseos-clickable-demo-route-plan.md) — the pre-build plan for the first non-docs task authorized by ADR-0035: a self-contained, prospect-facing **clickable walkthrough** (`/demo/walkthrough` in a new `(demo)` route group) of the revenue-recovery loop on **mock data**, per the wireframe spec + Brand 2.0. Defines route architecture, an **in-app demo-data module** (`scenario.ts` — mirrors the docs demo-assets rather than importing them, per the runtime non-goals), component reuse, a screen-by-screen build list, the build-time open decisions, validation plan, and PR breakdown.
+- **Plan only — changes no app code.** Hard scope reaffirmed: no Telnyx/Vapi/HubSpot, no SMS/live calls, no provider integrations, no deploy, no DB/migrations; the demo **must visibly show the Business Memory gates as disabled** (Phase-1, ADR-0034); ADR-0032 architecture decisions preserved; `#44` untouched.
+- Cross-linked from the wireframe spec (§16). **Documentation only** — no UI, routes, components, runtime code, deps, env, secrets, or deploy changes (the build is a separate, to-be-greenlit PR).
+
 ## Unreleased — docs: ADR-0035 demo go-to-market decisions (CTA / vertical / demo format)
 
 - **Added ADR-0035** ratifying the operator decisions made at the post-product-definition gate: **CTA = "Revenue Recovery Demo"**, **primary vertical = General Home Services** (Florida Ramp & Lift accessibility/mobility anchor case study), **demo format = Hybrid** (recorded for marketing · clickable for sales). Resolves the CTA / vertical / format open decisions threaded through the demo, landing-page, talk-track, cheat-sheet, and OG/social docs.
