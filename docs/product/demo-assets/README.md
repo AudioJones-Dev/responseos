@@ -39,7 +39,8 @@ after-hours** call.
 ## Consumed by
 
 These assets are the data bindings for the six demo screens specified in
-[`../responseos-screen-wireframe-spec.md`](../responseos-screen-wireframe-spec.md) (§12 Data-binding map).
+[`../responseos-screen-wireframe-spec.md`](../responseos-screen-wireframe-spec.md) (§12 Data-binding map),
+and the sales-facing wrapper in [`../responseos-demo-landing-page-copy.md`](../responseos-demo-landing-page-copy.md).
 
 ## Canon notes
 
