@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="800" viewBox="0 0 360 800" fill="none">
+  <defs>
+    <linearGradient id="rb-depth-360" x1="0" y1="800" x2="360" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#000000"/>
+      <stop offset="0.45" stop-color="#050506"/>
+      <stop offset="0.8" stop-color="#0C0C10"/>
+      <stop offset="1" stop-color="#101013"/>
+    </linearGradient>
+    <linearGradient id="rb-beam-360" x1="100" y1="700" x2="270" y2="190" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#E8FF5A" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#E8FF5A" stop-opacity="0.06"/>
+      <stop offset="0.86" stop-color="#E8FF5A" stop-opacity="0.15"/>
+      <stop offset="1" stop-color="#E8FF5A" stop-opacity="0.20"/>
+    </linearGradient>
+    <radialGradient id="rb-glow-360" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(213 232) rotate(-60) scale(206 172)">
+      <stop offset="0" stop-color="#E8FF5A" stop-opacity="0.19"/>
+      <stop offset="0.4" stop-color="#E8FF5A" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#E8FF5A" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="rb-vig-360" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(180 400) scale(270 512)">
+      <stop offset="0.55" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.58"/>
+    </radialGradient>
+    <linearGradient id="rb-rail-360" x1="0" y1="700" x2="0" y2="190" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#E8FF5A" stop-opacity="0"/>
+      <stop offset="0.65" stop-color="#E8FF5A" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#E8FF5A" stop-opacity="0.28"/>
+    </linearGradient>
+    <filter id="rb-grain-360" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="2" stitchTiles="stitch" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.04 0"/>
+    </filter>
+  </defs>
+  <rect width="360" height="800" fill="url(#rb-depth-360)"/>
+  <rect width="360" height="800" fill="url(#rb-beam-360)"/>
+  <rect width="360" height="800" fill="url(#rb-glow-360)"/>
+  <g stroke-linecap="round">
+    <line x1="150" y1="694" x2="252" y2="216" stroke="url(#rb-rail-360)" stroke-width="2"/>
+    <line x1="200" y1="694" x2="264" y2="250" stroke="#E8FF5A" stroke-opacity="0.06" stroke-width="1"/>
+  </g>
+  <g fill="#E8FF5A">
+    <circle cx="252" cy="226" r="2.6" fill-opacity="0.85"/>
+    <circle cx="222" cy="370" r="1.4" fill-opacity="0.36"/>
+    <circle cx="190" cy="524" r="1.2" fill-opacity="0.24"/>
+  </g>
+  <rect width="360" height="800" fill="url(#rb-vig-360)"/>
+  <rect width="360" height="800" filter="url(#rb-grain-360)" opacity="0.5"/>
+</svg>

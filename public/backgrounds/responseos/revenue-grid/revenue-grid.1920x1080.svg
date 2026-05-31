@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" fill="none">
+  <defs>
+    <linearGradient id="rg-base-1920" x1="0" y1="0" x2="0" y2="1080" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#08080A"/>
+      <stop offset="0.55" stop-color="#050506"/>
+      <stop offset="1" stop-color="#000000"/>
+    </linearGradient>
+    <radialGradient id="rg-glow-1920" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1320 470) rotate(90) scale(440 560)">
+      <stop offset="0" stop-color="#E8FF5A" stop-opacity="0.16"/>
+      <stop offset="0.4" stop-color="#E8FF5A" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#E8FF5A" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="rg-vig-1920" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(960 540) rotate(90) scale(620 1080)">
+      <stop offset="0.6" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.7"/>
+    </radialGradient>
+    <pattern id="rg-grid-1920" width="64" height="44" patternUnits="userSpaceOnUse">
+      <path d="M0 0H64" stroke="#FFFFFF" stroke-opacity="0.035" stroke-width="1"/>
+      <path d="M0 0V44" stroke="#FFFFFF" stroke-opacity="0.022" stroke-width="1"/>
+    </pattern>
+    <filter id="rg-grain-1920" x="0" y="0" width="1920" height="1080" filterUnits="userSpaceOnUse">
+      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.5 0"/>
+    </filter>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#rg-base-1920)"/>
+  <rect width="1920" height="1080" fill="url(#rg-grid-1920)"/>
+  <g stroke="#FFFFFF" stroke-opacity="0.05">
+    <path d="M0 270H1920"/>
+    <path d="M0 540H1920"/>
+    <path d="M0 810H1920"/>
+  </g>
+  <g stroke="#23232A" stroke-opacity="0.7">
+    <path d="M640 0V1080"/>
+    <path d="M1280 0V1080"/>
+  </g>
+  <rect width="1920" height="1080" fill="url(#rg-glow-1920)"/>
+  <circle cx="1320" cy="470" r="3.5" fill="#E8FF5A"/>
+  <circle cx="1320" cy="470" r="9" fill="#E8FF5A" fill-opacity="0.2"/>
+  <circle cx="640" cy="810" r="1.6" fill="#E8FF5A" fill-opacity="0.45"/>
+  <circle cx="1280" cy="270" r="1.6" fill="#E8FF5A" fill-opacity="0.3"/>
+  <rect width="1920" height="1080" fill="url(#rg-vig-1920)"/>
+  <rect width="1920" height="1080" fill="#FFFFFF" opacity="0.04" filter="url(#rg-grain-1920)"/>
+</svg>

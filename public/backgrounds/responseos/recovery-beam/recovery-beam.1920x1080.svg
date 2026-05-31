@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" fill="none">
+  <defs>
+    <linearGradient id="rb-depth-1920" x1="0" y1="0" x2="1920" y2="1080" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#000000"/>
+      <stop offset="0.45" stop-color="#050506"/>
+      <stop offset="0.8" stop-color="#0C0C10"/>
+      <stop offset="1" stop-color="#101013"/>
+    </linearGradient>
+    <linearGradient id="rb-beam-1920" x1="240" y1="760" x2="1640" y2="380" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#E8FF5A" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#E8FF5A" stop-opacity="0.06"/>
+      <stop offset="0.86" stop-color="#E8FF5A" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#E8FF5A" stop-opacity="0.22"/>
+    </linearGradient>
+    <radialGradient id="rb-glow-1920" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1470 470) rotate(-18) scale(640 360)">
+      <stop offset="0" stop-color="#E8FF5A" stop-opacity="0.20"/>
+      <stop offset="0.4" stop-color="#E8FF5A" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#E8FF5A" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="rb-vig-1920" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(960 540) scale(1180 720)">
+      <stop offset="0.55" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.6"/>
+    </radialGradient>
+    <linearGradient id="rb-rail-1920" x1="240" y1="0" x2="1640" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#E8FF5A" stop-opacity="0"/>
+      <stop offset="0.7" stop-color="#E8FF5A" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#E8FF5A" stop-opacity="0.30"/>
+    </linearGradient>
+    <pattern id="rb-grid-1920" width="64" height="64" patternUnits="userSpaceOnUse">
+      <path d="M64 0H0V64" fill="none" stroke="#23232A" stroke-width="1" stroke-opacity="0.5"/>
+    </pattern>
+    <filter id="rb-grain-1920" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.05 0"/>
+    </filter>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#rb-depth-1920)"/>
+  <rect x="900" y="0" width="1020" height="1080" fill="url(#rb-grid-1920)" opacity="0.5"/>
+  <rect width="1920" height="1080" fill="url(#rb-beam-1920)"/>
+  <rect width="1920" height="1080" fill="url(#rb-glow-1920)"/>
+  <g stroke-linecap="round">
+    <line x1="300" y1="742" x2="1620" y2="404" stroke="#E8FF5A" stroke-opacity="0.10" stroke-width="1.5"/>
+    <line x1="320" y1="788" x2="1640" y2="450" stroke="url(#rb-rail-1920)" stroke-width="2"/>
+    <line x1="340" y1="834" x2="1600" y2="512" stroke="#E8FF5A" stroke-opacity="0.06" stroke-width="1"/>
+  </g>
+  <g fill="#E8FF5A">
+    <circle cx="1470" cy="470" r="3" fill-opacity="0.85"/>
+    <circle cx="1318" cy="540" r="1.6" fill-opacity="0.4"/>
+    <circle cx="1170" cy="612" r="1.4" fill-opacity="0.28"/>
+    <circle cx="1556" cy="612" r="1.4" fill-opacity="0.3"/>
+  </g>
+  <rect width="1920" height="1080" fill="url(#rb-vig-1920)"/>
+  <rect width="1920" height="1080" filter="url(#rb-grain-1920)" opacity="0.5"/>
+</svg>

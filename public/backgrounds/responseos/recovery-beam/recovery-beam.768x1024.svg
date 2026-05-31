@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="768" height="1024" viewBox="0 0 768 1024" fill="none">
+  <defs>
+    <linearGradient id="rb-depth-768" x1="0" y1="1024" x2="768" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#000000"/>
+      <stop offset="0.45" stop-color="#050506"/>
+      <stop offset="0.8" stop-color="#0C0C10"/>
+      <stop offset="1" stop-color="#101013"/>
+    </linearGradient>
+    <linearGradient id="rb-beam-768" x1="150" y1="900" x2="600" y2="240" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#E8FF5A" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#E8FF5A" stop-opacity="0.06"/>
+      <stop offset="0.86" stop-color="#E8FF5A" stop-opacity="0.15"/>
+      <stop offset="1" stop-color="#E8FF5A" stop-opacity="0.21"/>
+    </linearGradient>
+    <radialGradient id="rb-glow-768" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(540 320) rotate(-50) scale(360 300)">
+      <stop offset="0" stop-color="#E8FF5A" stop-opacity="0.20"/>
+      <stop offset="0.4" stop-color="#E8FF5A" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#E8FF5A" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="rb-vig-768" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(384 512) scale(540 700)">
+      <stop offset="0.55" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.6"/>
+    </radialGradient>
+    <linearGradient id="rb-rail-768" x1="0" y1="900" x2="0" y2="240" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#E8FF5A" stop-opacity="0"/>
+      <stop offset="0.65" stop-color="#E8FF5A" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#E8FF5A" stop-opacity="0.30"/>
+    </linearGradient>
+    <pattern id="rb-grid-768" width="64" height="64" patternUnits="userSpaceOnUse">
+      <path d="M64 0H0V64" fill="none" stroke="#23232A" stroke-width="1" stroke-opacity="0.45"/>
+    </pattern>
+    <filter id="rb-grain-768" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="2" stitchTiles="stitch" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.045 0"/>
+    </filter>
+  </defs>
+  <rect width="768" height="1024" fill="url(#rb-depth-768)"/>
+  <rect x="0" y="0" width="768" height="430" fill="url(#rb-grid-768)" opacity="0.4"/>
+  <rect width="768" height="1024" fill="url(#rb-beam-768)"/>
+  <rect width="768" height="1024" fill="url(#rb-glow-768)"/>
+  <g stroke-linecap="round">
+    <line x1="300" y1="892" x2="528" y2="262" stroke="#E8FF5A" stroke-opacity="0.09" stroke-width="1.5"/>
+    <line x1="348" y1="900" x2="540" y2="270" stroke="url(#rb-rail-768)" stroke-width="2"/>
+    <line x1="404" y1="900" x2="560" y2="300" stroke="#E8FF5A" stroke-opacity="0.05" stroke-width="1"/>
+  </g>
+  <g fill="#E8FF5A">
+    <circle cx="540" cy="290" r="3" fill-opacity="0.85"/>
+    <circle cx="500" cy="430" r="1.6" fill-opacity="0.4"/>
+    <circle cx="452" cy="588" r="1.4" fill-opacity="0.26"/>
+  </g>
+  <rect width="768" height="1024" fill="url(#rb-vig-768)"/>
+  <rect width="768" height="1024" filter="url(#rb-grain-768)" opacity="0.5"/>
+</svg>

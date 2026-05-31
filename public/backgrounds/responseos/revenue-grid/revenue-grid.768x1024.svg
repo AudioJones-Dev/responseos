@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="768" height="1024" viewBox="0 0 768 1024" fill="none">
+  <defs>
+    <linearGradient id="rg-base-768" x1="0" y1="0" x2="0" y2="1024" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#08080A"/>
+      <stop offset="0.55" stop-color="#050506"/>
+      <stop offset="1" stop-color="#000000"/>
+    </linearGradient>
+    <radialGradient id="rg-glow-768" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(470 360) rotate(90) scale(360 320)">
+      <stop offset="0" stop-color="#E8FF5A" stop-opacity="0.16"/>
+      <stop offset="0.4" stop-color="#E8FF5A" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#E8FF5A" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="rg-vig-768" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(384 512) rotate(90) scale(680 460)">
+      <stop offset="0.6" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.72"/>
+    </radialGradient>
+    <pattern id="rg-grid-768" width="64" height="56" patternUnits="userSpaceOnUse">
+      <path d="M0 0H64" stroke="#FFFFFF" stroke-opacity="0.035" stroke-width="1"/>
+      <path d="M0 0V56" stroke="#FFFFFF" stroke-opacity="0.02" stroke-width="1"/>
+    </pattern>
+    <filter id="rg-grain-768" x="0" y="0" width="768" height="1024" filterUnits="userSpaceOnUse">
+      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.5 0"/>
+    </filter>
+  </defs>
+  <rect width="768" height="1024" fill="url(#rg-base-768)"/>
+  <rect width="768" height="1024" fill="url(#rg-grid-768)"/>
+  <g stroke="#FFFFFF" stroke-opacity="0.05">
+    <path d="M0 256H768"/>
+    <path d="M0 512H768"/>
+    <path d="M0 768H768"/>
+  </g>
+  <g stroke="#23232A" stroke-opacity="0.65">
+    <path d="M384 0V1024"/>
+  </g>
+  <rect width="768" height="1024" fill="url(#rg-glow-768)"/>
+  <circle cx="470" cy="360" r="3.4" fill="#E8FF5A"/>
+  <circle cx="470" cy="360" r="8.5" fill="#E8FF5A" fill-opacity="0.2"/>
+  <circle cx="384" cy="768" r="1.5" fill="#E8FF5A" fill-opacity="0.4"/>
+  <rect width="768" height="1024" fill="url(#rg-vig-768)"/>
+  <rect width="768" height="1024" fill="#FFFFFF" opacity="0.04" filter="url(#rg-grain-768)"/>
+</svg>

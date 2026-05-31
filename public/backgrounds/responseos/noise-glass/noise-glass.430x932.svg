@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="430" height="932" viewBox="0 0 430 932" fill="none">
+  <defs>
+    <linearGradient id="ng-surf-430" x1="0" y1="0" x2="0" y2="932" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#101013"/>
+      <stop offset="1" stop-color="#1B1B21"/>
+    </linearGradient>
+    <linearGradient id="ng-top-430" x1="0" y1="0" x2="0" y2="2" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="ng-glow-430" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(300 320) rotate(90) scale(220 250)">
+      <stop offset="0" stop-color="#E8FF5A" stop-opacity="0.10"/>
+      <stop offset="0.55" stop-color="#E8FF5A" stop-opacity="0.03"/>
+      <stop offset="1" stop-color="#E8FF5A" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="ng-vig-430" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(215 466) rotate(90) scale(560 380)">
+      <stop offset="0.62" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.55"/>
+    </radialGradient>
+    <pattern id="ng-grid-430" width="72" height="72" patternUnits="userSpaceOnUse">
+      <path d="M72 0H0V72" fill="none" stroke="#23232A" stroke-width="1" stroke-opacity="0.42"/>
+    </pattern>
+    <filter id="ng-grain-430" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="2" stitchTiles="stitch" result="n"/>
+      <feColorMatrix in="n" type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.04"/></feComponentTransfer>
+    </filter>
+  </defs>
+  <rect width="430" height="932" fill="#08080A"/>
+  <rect width="430" height="932" fill="url(#ng-surf-430)"/>
+  <rect width="430" height="932" fill="url(#ng-grid-430)"/>
+  <rect width="430" height="932" fill="url(#ng-glow-430)"/>
+  <rect width="430" height="932" fill="url(#ng-grain-430)"/>
+  <rect width="430" height="932" fill="url(#ng-vig-430)"/>
+  <circle cx="300" cy="320" r="1.4" fill="#E8FF5A" fill-opacity="0.65"/>
+  <rect x="0.5" y="0.5" width="429" height="931" fill="url(#ng-top-430)"/>
+  <rect x="0.5" y="0.5" width="429" height="931" rx="2" stroke="#2E2E36" stroke-opacity="0.6"/>
+</svg>

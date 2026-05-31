@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" fill="none">
+  <defs>
+    <linearGradient id="rg-base-1200" x1="0" y1="0" x2="0" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#08080A"/>
+      <stop offset="0.55" stop-color="#050506"/>
+      <stop offset="1" stop-color="#000000"/>
+    </linearGradient>
+    <radialGradient id="rg-glow-1200" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(820 285) rotate(90) scale(300 380)">
+      <stop offset="0" stop-color="#E8FF5A" stop-opacity="0.17"/>
+      <stop offset="0.4" stop-color="#E8FF5A" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#E8FF5A" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="rg-vig-1200" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(600 315) rotate(90) scale(380 630)">
+      <stop offset="0.6" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.72"/>
+    </radialGradient>
+    <pattern id="rg-grid-1200" width="60" height="42" patternUnits="userSpaceOnUse">
+      <path d="M0 0H60" stroke="#FFFFFF" stroke-opacity="0.035" stroke-width="1"/>
+      <path d="M0 0V42" stroke="#FFFFFF" stroke-opacity="0.022" stroke-width="1"/>
+    </pattern>
+    <filter id="rg-grain-1200" x="0" y="0" width="1200" height="630" filterUnits="userSpaceOnUse">
+      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.5 0"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="630" fill="url(#rg-base-1200)"/>
+  <rect width="1200" height="630" fill="url(#rg-grid-1200)"/>
+  <g stroke="#FFFFFF" stroke-opacity="0.05">
+    <path d="M0 210H1200"/>
+    <path d="M0 420H1200"/>
+  </g>
+  <g stroke="#23232A" stroke-opacity="0.7">
+    <path d="M400 0V630"/>
+    <path d="M800 0V630"/>
+  </g>
+  <rect width="1200" height="630" fill="url(#rg-glow-1200)"/>
+  <circle cx="820" cy="285" r="3.4" fill="#E8FF5A"/>
+  <circle cx="820" cy="285" r="8.5" fill="#E8FF5A" fill-opacity="0.2"/>
+  <circle cx="400" cy="420" r="1.5" fill="#E8FF5A" fill-opacity="0.4"/>
+  <rect width="1200" height="630" fill="url(#rg-vig-1200)"/>
+  <rect width="1200" height="630" fill="#FFFFFF" opacity="0.04" filter="url(#rg-grain-1200)"/>
+</svg>

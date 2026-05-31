@@ -4,6 +4,13 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — style: add responseos background atmosphere assets
+
+- **Added a reusable background-atmosphere asset system** under `public/backgrounds/responseos/` — **5 families × 10 sizes = 50 self-contained SVGs** (~134KB total, largest 3.3KB): **Signal Field** (hero), **Revenue Grid** (KPI/stats), **Noise Glass** (cards/panels), **Recovery Beam** (CTA bands), **Ledger Depth** (process/workflow). Theme: *"signal emerging from black"* — true-black/graphite base, Penumbra restraint, **Signal Yellow `#E8FF5A` as the only active signal**.
+- Each size hand-tuned to its aspect ratio (desktop `1920×1080`/`1600×900`/`1440×900`/`1200×630`, tablet `1024×768`/`768×1024`, mobile `430×932`/`390×844`/`360×800`, square `1080×1080`); portrait/mobile variants reflow vertically and reduce texture density. Deterministic vector primitives only (radial/linear gradients, masked grids, dot matrices, hairline rails, vignette, one low-opacity `feTurbulence` grain) — **no external fonts/images/scripts, no embedded raster, no new dependencies**; gradient/filter ids are per-family+size-suffixed to avoid collisions when inlined.
+- **Added** [`docs/design/responseos-background-atmosphere-system.md`](./design/responseos-background-atmosphere-system.md) — purpose, brand variables, family catalog, size table, placement map, accessibility/contrast guidance, do/don't, naming convention, future-integration + export (SVG-only; PNG/WebP deferred) + maintenance rules.
+- **Source assets only — not wired into any route/component.** No blue/purple/AI-art; no provider, deploy, env, DB, migrations, metadata, or OG-wiring work; `#44` untouched. Verified: 50/50 valid SVGs, dims match filenames, serve `200 image/svg+xml` and parse cleanly.
+
 ## Unreleased — feat: marketing-surface Penumbra Signal polish
 
 - **Footer social links** — added **LinkedIn, YouTube, Facebook** to the marketing footer as inline `currentColor` brand glyphs (repo's dependency-free icon strategy; **no new deps**). Penumbra Signal treatment: muted by default, **Signal-Yellow** + restrained glow ring on hover/focus — **no platform-color fills, no blue**. Real external hrefs (`target="_blank" rel="noopener noreferrer"`). New `components/layout/SocialLinks.tsx`.
