@@ -4,6 +4,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: ResponseOS demo narrative + asset plan (ADR-0025 asset phase)
+
+- **Added** [`docs/product/responseos-demo-narrative-and-asset-plan.md`](./product/responseos-demo-narrative-and-asset-plan.md) (13 sections): executive summary, demo goal (30-second test), the 8-step core demo storyline, product narrative principles, 7 required demo scenes, 6 required product screens, the demo data model + 3 example scenarios, Brand 2.0 visual requirements, the demo-content asset inventory, non-goals, open decisions, success criteria, and follow-up tasks.
+- **Canon-aligned:** full revenue-recovery loop (not "just an AI receptionist"); vendors (Telnyx/Vapi/HubSpot) framed as invisible infrastructure; **Phase-1 Business Memory shown as event-ledger capture, not RAG/vector** (ADR-0034, v0.4 gates intact); Brand 2.0 (Signal-Yellow + Syne + true-black/glass, no blue — ADR-0021). The two ADR-0032 open decisions (OpenAI-brain-under-Vapi; gateway/Redis) preserved explicitly.
+- Cross-linked from `docs/README.md` (Product row). **Documentation only** — no UI, routes, code, deps, mock data, credentials, or deploy changes.
+
 ## Unreleased — assets: ResponseOS brand mark + favicons (ADR-0025 asset phase)
 
 - **Added** the Brand 2.0 `RO` compact mark and favicon set under `/public` per ADR-0025: `favicon.svg` (RO mark on a black squircle tile — white `R`, Signal-Yellow `#E8FF5A` rounded-square `O`), `favicon.ico` (multi-size 16/32/48 PNG-in-ICO), `apple-touch-icon.png` (180), `icon-192.png`, `icon-512.png`, and `site.webmanifest` (PWA icons, black theme). All rasters are **derived exports of the `RO` mark** (ADR-0025) — generated from `favicon.svg` via the already-present `sharp` (no new dependency; the generation script was not committed).
