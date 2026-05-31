@@ -4,6 +4,14 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: sync environment contract (.env.example ↔ env-spec)
+
+- **Resolved env drift** flagged by the credential/env audit: added the two runtime-read variables missing from `.env.example` — **`RESPONSEOS_PROVIDER_KEY`** (read by `lib/providers/encryption/index.ts`) and **`RESPONSEOS_DEV_SESSION`** (read by `lib/auth/session.ts`) — with placeholder values and comments covering required/optional status, environments, and fallback behavior.
+  - `RESPONSEOS_PROVIDER_KEY`: server-only, never `NEXT_PUBLIC_`, base64 32-byte AES key; required only for live encrypted credentials (v0.3+), optional/keyless locally — absent → encryption **mock mode** (ADR-0020 §6).
+  - `RESPONSEOS_DEV_SESSION`: local/test/dev override only; **must never be set in production** (hard-fails under `NODE_ENV=production`); supported values match `lib/auth/session.ts` (`aj_admin` | `operator` | `client_admin@org_mock_1` | `client_viewer@org_mock_1`).
+- **Expanded `docs/env-spec.md`:** purpose, full variable inventory (incl. the two vars), a **required/optional environment matrix** (local / CI-test / preview / production), mock-first/keyless boot rules, secret-handling rules, the ADR-0020 relationship, an explicit **Doppler-out-of-scope** note (unless a future ADR), AWS Secrets Manager as a **documented future target only**, and a Future Work section (env-schema hardening, secret-store ADR, key-rotation runbook, platform migration, drift detection). Also corrected the DB-host label to **Neon** (ADR-0026).
+- **Centralized env validation (`lib/env.ts`) intentionally deferred** with a TODO in env-spec — kept this PR documentation-first and **non-breaking**: no runtime code, dependencies, behavior, or mock-first/keyless boot changed. **No real secrets added or read.**
+
 ## Unreleased — docs: clickable static demo route implementation plan (pre-build)
 
 - **Added** [`docs/product/responseos-clickable-demo-route-plan.md`](./product/responseos-clickable-demo-route-plan.md) — the pre-build plan for the first non-docs task authorized by ADR-0035: a self-contained, prospect-facing **clickable walkthrough** (`/demo/walkthrough` in a new `(demo)` route group) of the revenue-recovery loop on **mock data**, per the wireframe spec + Brand 2.0. Defines route architecture, an **in-app demo-data module** (`scenario.ts` — mirrors the docs demo-assets rather than importing them, per the runtime non-goals), component reuse, a screen-by-screen build list, the build-time open decisions, validation plan, and PR breakdown.
