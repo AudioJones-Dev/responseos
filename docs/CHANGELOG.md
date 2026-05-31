@@ -4,6 +4,14 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — style: wire responseos brand assets and atmosphere backgrounds
+
+- **Real header logo** — replaced the hardcoded Signal-Yellow "R" badge in the marketing header (and the demo header) with a `Logo` / `LogoMark` component rendering the on-brand **RO mark** (white R + Signal-Yellow O ring, mirrors `public/brand/responseos-mark.svg`, ADR-0025) + "ResponseOS" wordmark. New `components/layout/Logo.tsx`.
+- **Verified favicon/icon assets — no regeneration needed.** `favicon.svg` / `favicon.ico` / `apple-touch-icon.png` / `icon-192.png` / `icon-512.png` / `site.webmanifest` are already the correct Brand 2.1 RO mark (black tile, white R, Signal-Yellow O); confirmed they render correctly and resolve `200`. (Root metadata already wires them.)
+- **`AtmosphereBackground` helper** (`components/layout/AtmosphereBackground.tsx`) — reusable decorative layer for the Penumbra Signal background system with an **`intensity` (opacity) control**, so families dial down at apply-time without re-rendering source assets. Host is `relative isolate overflow-hidden`; layer is `-z-10`, `aria-hidden`, `pointer-events-none`.
+- **Wired the 5 atmosphere families selectively + subtly (text-safe):** landing hero → **Signal Field** (1.0); KPI/proof row → **Revenue Grid** (0.85, translucent tiles); "One loop, four moves" process → **Ledger Depth** (0.7); bottom CTA band → **Recovery Beam** (0.45, sparingly, right-directional); pricing tier cards → **Noise Glass** (0.7). Existing copy and routes unchanged.
+- **No new dependencies; no provider/env/DB/migrations/deploy work; no OG/social metadata beyond the existing icon wiring; `#44` untouched.** Verified in-browser: header no longer renders the plain "R" badge, all backgrounds apply at intended opacities, favicons/manifest resolve, and headline/price text stays `#FCFDFF` on near-black (readable).
+
 ## Unreleased — style: add responseos background atmosphere assets
 
 - **Added a reusable background-atmosphere asset system** under `public/backgrounds/responseos/` — **5 families × 10 sizes = 50 self-contained SVGs** (~134KB total, largest 3.3KB): **Signal Field** (hero), **Revenue Grid** (KPI/stats), **Noise Glass** (cards/panels), **Recovery Beam** (CTA bands), **Ledger Depth** (process/workflow). Theme: *"signal emerging from black"* — true-black/graphite base, Penumbra restraint, **Signal Yellow `#E8FF5A` as the only active signal**.

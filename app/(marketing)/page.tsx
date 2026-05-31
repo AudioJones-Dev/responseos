@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ButtonLink, Card } from "@/components/ui";
+import { AtmosphereBackground } from "@/components/layout/AtmosphereBackground";
 
 const PILLARS = [
   {
@@ -29,7 +30,8 @@ const PROOF = [
 export default function MarketingHome() {
   return (
     <main className="flex-1">
-      <section className="mx-auto w-full max-w-6xl px-4 pb-16 pt-20 sm:px-6 sm:pt-28">
+      <section className="relative isolate mx-auto w-full max-w-6xl overflow-hidden px-4 pb-16 pt-20 sm:px-6 sm:pt-28">
+        <AtmosphereBackground family="signal-field" size="1920x1080" intensity={1} />
         <p className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 text-xs font-medium text-ink-secondary">
           <span className="h-1.5 w-1.5 rounded-full bg-accent" />
           Revenue recovery operating system
@@ -50,19 +52,23 @@ export default function MarketingHome() {
           </ButtonLink>
         </div>
 
-        <dl className="mt-14 grid gap-px overflow-hidden rounded-lg border border-line bg-line sm:grid-cols-3">
-          {PROOF.map((p) => (
-            <div key={p.label} className="bg-surface p-6">
-              <dt className="font-display text-3xl font-semibold text-ink">
-                {p.value}
-              </dt>
-              <dd className="mt-1 text-sm text-ink-secondary">{p.label}</dd>
-            </div>
-          ))}
-        </dl>
+        <div className="relative isolate mt-14 overflow-hidden rounded-lg border border-line">
+          <AtmosphereBackground family="revenue-grid" size="1600x900" intensity={0.85} />
+          <dl className="grid gap-px bg-line/40 sm:grid-cols-3">
+            {PROOF.map((p) => (
+              <div key={p.label} className="bg-surface/80 p-6 backdrop-blur-sm">
+                <dt className="font-display text-3xl font-semibold text-ink">
+                  {p.value}
+                </dt>
+                <dd className="mt-1 text-sm text-ink-secondary">{p.label}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
       </section>
 
-      <section className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6">
+      <section className="relative isolate mx-auto w-full max-w-6xl overflow-hidden px-4 py-16 sm:px-6">
+        <AtmosphereBackground family="ledger-depth" size="1600x900" intensity={0.7} />
         <h2 className="font-display text-2xl font-semibold text-ink">
           One loop, four moves
         </h2>
@@ -85,7 +91,8 @@ export default function MarketingHome() {
       </section>
 
       <section className="mx-auto w-full max-w-6xl px-4 pb-24 sm:px-6">
-        <Card className="flex flex-col items-start gap-5 p-8 sm:flex-row sm:items-center sm:justify-between">
+        <Card className="relative isolate flex flex-col items-start gap-5 overflow-hidden p-8 sm:flex-row sm:items-center sm:justify-between">
+          <AtmosphereBackground family="recovery-beam" size="1600x900" intensity={0.45} position="right center" />
           <div>
             <h2 className="font-display text-2xl font-semibold text-ink">
               See it on real workflows
