@@ -4,6 +4,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: ResponseOS screen-by-screen wireframe spec
+
+- **Added** [`docs/product/responseos-screen-wireframe-spec.md`](./product/responseos-screen-wireframe-spec.md) (16 sections): executive summary, source assets, global UX principles, global layout system (with an ASCII shell diagram), the **six product/demo screens** (Revenue Recovery Overview · Call Intelligence Detail · Business Memory Event · Lead/Opportunity · Follow-Up Queue · Integration Status) — each with purpose, primary user question, layout regions, required content, data sources, primary CTA, empty/loading/error states, brand notes, and implementation notes — plus the demo navigation flow, a §12 **data-binding map** (each screen → demo-asset files + key fields), non-goals, open decisions, success criteria, and follow-ups.
+- **Canon-aligned:** revenue-command-center framing (not a call-center inbox); vendors invisible except on Integration Status; **Screen 3 renders the Business Memory `gates` (RAG/vector/per-tenant-knowledge disabled) as an explicit visible Phase-1 state** (ADR-0034 — v0.4 gates not relaxed); Brand 2.0 Signal-Yellow + Syne + true-black/glass, blue utility-only (ADR-0021). The ADR-0032 open decisions (OpenAI-in-Vapi; gateway/Redis) preserved, plus new demo-format/route/Integration-Status-visibility open decisions.
+- Cross-linked from the demo narrative spec (§6) and `demo-assets/README.md`. **Documentation / UX-planning only** — no UI, routes, components, runtime code, app mock data, deps, env, secrets, or deploy changes.
+
 ## Unreleased — docs: ResponseOS demo content assets (call script, transcript, qualification JSON)
 
 - **Added** `docs/product/demo-assets/` — the first demo-content batch (mock-data only) powering the Call Intelligence + Lead Qualification screens from the demo narrative: `README.md`, `demo-call-script.md`, `mock-transcript.md`, `lead-qualification-output.json`, `business-memory-event.json`, `hubspot-sync-event.json`, `founder-intelligence-summary.md`.
