@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="ResponseOS">
+  <!-- Brand 2.0: black tile, white R, Signal-Yellow rounded-square O -->
+  <rect width="512" height="512" rx="116" fill="#000000"/>
+  <g fill="#FCFDFF">
+    <!-- R stem -->
+    <rect x="106" y="160" width="64" height="190" rx="6"/>
+    <!-- R bowl with counter (evenodd) -->
+    <path fill-rule="evenodd" d="M156 160 H206 C252 160 252 266 206 266 H156 Z M170 186 H202 C224 186 224 240 202 240 H170 Z"/>
+    <!-- R leg -->
+    <path d="M150 250 H206 L252 350 H196 Z"/>
+  </g>
+  <!-- O: Signal-Yellow rounded-square ring -->
+  <rect x="278" y="160" width="128" height="190" rx="46" fill="none" stroke="#E8FF5A" stroke-width="38"/>
+</svg>

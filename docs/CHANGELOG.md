@@ -4,6 +4,14 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — assets: ResponseOS brand mark + favicons (ADR-0025 asset phase)
+
+- **Added** the Brand 2.0 `RO` compact mark and favicon set under `/public` per ADR-0025: `favicon.svg` (RO mark on a black squircle tile — white `R`, Signal-Yellow `#E8FF5A` rounded-square `O`), `favicon.ico` (multi-size 16/32/48 PNG-in-ICO), `apple-touch-icon.png` (180), `icon-192.png`, `icon-512.png`, and `site.webmanifest` (PWA icons, black theme). All rasters are **derived exports of the `RO` mark** (ADR-0025) — generated from `favicon.svg` via the already-present `sharp` (no new dependency; the generation script was not committed).
+- **Added** the two core brand SVGs in `/public/brand/`: `responseos-mark.svg` (transparent `RO` mark for dark surfaces) and `responseos-wordmark.svg` ("Response" off-white + "OS" Signal-Yellow, Syne with bold fallback).
+- **Wired** `app/layout.tsx` `metadata.icons` (svg + ico + apple-touch) and `metadata.manifest`; removed the default `app/favicon.ico`. Verified the `<link rel="icon|apple-touch-icon|manifest">` tags emit and every asset serves 200.
+- **Brand 2.0 preserved:** Signal-Yellow primary, true-black tile, no blue. Verified visually (rendered PNGs). lint / typecheck / build green.
+- **Out of scope (tracked gap):** the production **outlined-Syne wordmark** (glyphs converted to vector paths) — the current wordmark SVG is text-based (Syne where available, bold fallback otherwise). OG image (`/og/responseos-og.png`) not included. Per ADR-0025; no runtime logic, routes, deps, env, or deploy changes.
+
 ## Unreleased — docs: reconcile BUILD_SOURCE with the communications canon (ADR-0031–0034)
 
 - **Reconciled** `docs/product/RESPONSEOS_BUILD_SOURCE.md` with the ratified comms canon — the tracked follow-up from the communications-stack PR. Added a canonical-language note to §2; updated the canonical-stack table (carrier → **Telnyx primary / Twilio fallback**, ADR-0031; primary AI voice → **Vapi**, ADR-0032; CRM SoR ref → **ADR-0033**); annotated the **open** layers (OpenAI-Realtime-ownership, Node.js gateway + Redis) as open per ADR-0032; relabeled the mermaid diagram (Telnyx/Twilio carrier, Vapi orchestration); updated the ownership table, §6 rules (HubSpot SoR → ADR-0033, carrier+voice failover → ADR-0031/0032, added the Communications Abstraction Layer rule), §9 assumptions, and §10 open questions.

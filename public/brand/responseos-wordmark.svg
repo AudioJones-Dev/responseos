@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 120" role="img" aria-label="ResponseOS">
+  <!-- Brand 2.0 wordmark — "Response" off-white + "OS" Signal-Yellow, Syne (ADR-0021/0025).
+       Text-based asset: renders in Syne where available, else a bold geometric fallback.
+       The production outlined-Syne export is a tracked follow-up (see CHANGELOG). -->
+  <text x="16" y="88" font-family="Syne, 'Space Grotesk', system-ui, sans-serif" font-weight="800" font-size="84" letter-spacing="-2" fill="#FCFDFF">Response<tspan fill="#E8FF5A">OS</tspan></text>
+</svg>

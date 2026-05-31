@@ -22,7 +22,16 @@ export const metadata: Metadata = {
   title: "ResponseOS — AI Revenue Recovery Platform",
   description:
     "ResponseOS helps service businesses recover missed revenue by capturing demand, qualifying leads, booking opportunities, and reporting ROI.",
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico", sizes: "any" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
+  manifest: "/site.webmanifest",
 };
+
 
 export default function RootLayout({
   children,
