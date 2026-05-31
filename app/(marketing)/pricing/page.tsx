@@ -1,4 +1,5 @@
 import { ButtonLink, Card, StatusBadge, cn } from "@/components/ui";
+import { AtmosphereBackground } from "@/components/layout/AtmosphereBackground";
 
 const tiers = [
   {
@@ -58,11 +59,12 @@ export default function PricingPage() {
             key={tier.name}
             interactive
             className={cn(
-              "relative flex flex-col overflow-hidden",
+              "relative isolate flex flex-col overflow-hidden",
               tier.featured &&
                 "border-accent/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
             )}
           >
+            <AtmosphereBackground family="noise-glass" size="1080x1080" intensity={0.7} />
             {tier.featured ? (
               <div
                 className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(232,255,90,0.08),transparent_38%)]"

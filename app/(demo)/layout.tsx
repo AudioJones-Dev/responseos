@@ -3,6 +3,7 @@ import Link from "next/link";
 import { DemoNav } from "./_components/DemoNav";
 import { DemoStepFooter } from "./_components/DemoStepFooter";
 import { business } from "./_data/scenario";
+import { LogoMark } from "@/components/layout/Logo";
 
 export default function DemoWalkthroughLayout({ children }: { children: ReactNode }) {
   return (
@@ -10,9 +11,7 @@ export default function DemoWalkthroughLayout({ children }: { children: ReactNod
       <header className="sticky top-0 z-20 border-b border-line bg-base/80 backdrop-blur">
         <div className="flex h-16 items-center justify-between gap-4 px-4 sm:px-6">
           <Link href="/demo/walkthrough" className="flex min-w-0 items-center gap-2.5">
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-accent text-sm font-bold text-black">
-              R
-            </span>
+            <LogoMark className="h-7 shrink-0" />
             <span className="hidden flex-col leading-tight sm:flex">
               <span className="font-display text-sm font-semibold text-ink">
                 Revenue Recovery Demo
