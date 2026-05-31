@@ -584,3 +584,19 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 4. Tenant isolation (every read/write scoped by `account_id`) applies to captured memory exactly as to all ledger data.
 
 **Consequences.** The capture foundation that makes Business Memory a differentiator ships earlier, while the gated knowledge/RAG behaviours stay v0.4. **No new database models, no vector/embeddings dependency, no RAG runtime, and no client upload surface are authorized by this ADR.** Mock-first / v0.3 live-wiring gates hold.
+
+---
+
+## ADR-0035 — Demo go-to-market decisions: CTA "Revenue Recovery Demo", primary vertical General Home Services, Hybrid demo format
+
+**Status:** Accepted (2026-05-31). Operator decision at the post-product-definition gate. Resolves the CTA / vertical / demo-format open decisions threaded through the demo docs. **Does not** resolve the ADR-0032 architecture open decisions (OpenAI-in-Vapi; gateway/Redis), which remain open.
+
+**Context.** With the ResponseOS product-definition layer complete (demo narrative, demo-content assets, wireframe spec, landing-page copy, sales talk track + cheat sheet, OG/social spec), three open decisions gated the first non-docs build task. The operator made them at the explicit decision gate.
+
+**Decision.**
+
+1. **Final primary CTA = "Revenue Recovery Demo."** The canonical CTA across landing-page copy, talk track, cheat sheet, and OG/social card (OG headline Variant A pairs with it). "Revenue Memory Diagnostic" and "Missed Revenue Audit" are retired as the primary CTA (may survive as secondary/alt framings).
+2. **Primary vertical = General Home Services**, with **Florida Ramp & Lift (accessibility / mobility equipment) as the anchor case study.** This keeps TAM broad while leveraging real-world experience; the existing accessibility-equipment demo assets become the flagship example *within* the home-services pitch.
+3. **Demo format = Hybrid** — a **recorded** demo for marketing / top-of-funnel and a **clickable** demo for sales conversations. The **clickable static demo route** is the first implementation milestone either way.
+
+**Consequences.** The demo docs' "open decisions" sections for CTA / vertical / format are now resolved by this ADR (the docs may reference it incrementally; this ADR is authoritative). **This ADR authorizes the *first non-docs build task* — a clickable static demo route — under a strict scope:** a visual click-through (Revenue Recovery Overview → Call Intelligence → Lead/Opportunity → Business Memory → Follow-Up Queue) bound to the **existing mock demo assets**, per the wireframe spec and Brand 2.0. It explicitly does **not** authorize Telnyx, Vapi, HubSpot, SMS, live calls, provider integrations, deploy work, or relaxing the v0.4 Business Memory / RAG / vector gates. Mock-first (ADR-0001) and v0.3 live-wiring gates hold.
