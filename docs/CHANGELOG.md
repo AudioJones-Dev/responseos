@@ -4,6 +4,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: ResponseOS OG / social preview spec
+
+- **Added** [`docs/product/responseos-og-social-preview-spec.md`](./product/responseos-og-social-preview-spec.md) (11 sections): social-preview copy (`og:title`/`og:description` + X/Twitter variants matching the 3 hero directions), the OG **image spec** (1200×630 + optional square; Brand 2.0 true-black/glass, `RO` mark, Signal-Yellow emphasis, Syne; layout diagram; content variants), a **documented (not implemented) `metadata.openGraph`/`metadata.twitter` wiring plan**, asset inventory, non-goals, open decisions, success criteria, follow-ups.
+- **Spec only — no image generated, no metadata or runtime changed.** Positions ResponseOS as revenue recovery / founder intelligence; **no vendor names, no "AI receptionist," no RAG/vector language** in social copy (ADR-0034 gating respected; ADR-0021 Brand 2.0). The OG PNG + outlined-Syne wordmark remain the tracked ADR-0025 asset-phase gaps for a later authorized task.
+- Cross-linked from the landing-page copy (§20). **Documentation / copy-planning only** — no UI, routes, components, app metadata, runtime code, image assets, deps, env, secrets, or deploy changes.
+
 ## Unreleased — docs: ResponseOS one-page sales cheat sheet
 
 - **Added** [`docs/product/responseos-one-page-sales-cheat-sheet.md`](./product/responseos-one-page-sales-cheat-sheet.md) — a single-page reference distilled from the talk track / landing-page copy / demo narrative / demo assets / wireframe spec: one-sentence positioning, ideal buyer, pain symptoms, the **revenue-leak diagnosis formula**, core promise, 6-bullet demo flow, discovery questions, an objection-response table, value framing, primary CTA options, follow-up close, and a non-goals / do-not-say list.

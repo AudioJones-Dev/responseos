@@ -329,7 +329,7 @@ intentionally gated for a later phase.
 1. Decide final primary CTA language.
 2. Create low-fidelity landing-page section wireframe.
 3. Create the first clickable static demo route using approved copy and mock assets.
-4. Create OG / social preview copy and image spec.
+4. Create OG / social preview copy and image spec. ✅ [`responseos-og-social-preview-spec.md`](./responseos-og-social-preview-spec.md)
 5. Create a sales-call talk track from the landing-page copy. ✅ [`responseos-sales-call-talk-track.md`](./responseos-sales-call-talk-track.md)
 
 ---
