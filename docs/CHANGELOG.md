@@ -4,6 +4,14 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: communications stack roadmap + PRD decisions (CTO recommendation)
+
+- **Added** [`docs/product/responseos-communications-stack.md`](./product/responseos-communications-stack.md) (10 sections): CTO decision (Telnyx + Vapi primary, Twilio failover, Retell/Sendblue Phase 2, HubSpot default commercial SoR), the **Communications Abstraction Layer** requirement + 6 conceptual provider interfaces, the MVP communications stack, the **Phase-1 Business Memory baseline**, the vendor role table, non-goals, 3-phase comms roadmap, an ADR/canon **reconciliation matrix (§9)**, and open decisions (§10).
+- **Updated** `ROADMAP.md` (v0.3 row + preview → Telnyx/Vapi/HubSpot comms stack + Phase-1 Business Memory) and `PRD.md` (new "Communications stack (v0.3 direction)" section). Cross-linked from `docs/README.md`.
+- **Business Memory pulled earlier** to Phase 1 / v0.3 — **operational capture into the event ledger only**; the v0.4 per-tenant knowledge / RAG / vector layer stays gated (ADR-0016/0029, ROADMAP Future Knowledge Layer). No v0.4 gate relaxed.
+- **Conflicts surfaced, not silently applied.** This decision **reverses parts of ADR-0024** (Twilio/OpenAI default; Vapi/Retell optional) and **ADR-0027** (HubSpot demoted to "recommended, no default"), and diverges from `RESPONSEOS_BUILD_SOURCE.md` (Twilio edge, Grok-primary). Per ADR-0011 a prose doc does not supersede an ADR — the conflicting items are marked **"pending ratifying ADR"** (comms doc §9); the existing ADRs remain canonical until ratified.
+- **Documentation only** — no runtime code, dependencies, provider integrations, migrations, env vars, or secrets. Live wiring stays v0.3-gated (ADR-0001, ADR-0019). No existing roadmap items deleted.
+
 ## Unreleased — Brand 2.0 re-skin: Signal-Yellow primary + Syne (ADR-0021 Phase 1)
 
 - **Re-skinned** the v0.2 UI to the ratified Brand 2.0 direction (ADR-0021): primary accent token `--color-accent` `#FF4500` → **Signal Yellow `#E8FF5A`**; introduced **`--color-action` `#FF4500`** (+ `-hover`/`-soft`) as the secondary action-orange (urgency / revenue-leak); `--color-accent-soft` re-tinted to yellow. Display/brand font **Sora → Syne** (`app/layout.tsx` via `next/font`, `--font-display` → `var(--font-syne)`).
