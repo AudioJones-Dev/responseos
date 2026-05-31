@@ -66,7 +66,7 @@ export default function DemoPage() {
           </p>
         </div>
         <div className="flex shrink-0 flex-wrap gap-3">
-          <ButtonLink href="/demo/walkthrough">Revenue Recovery Demo</ButtonLink>
+          <ButtonLink href="/demo/walkthrough" glow>Revenue Recovery Demo</ButtonLink>
           <ButtonLink href="/client/dashboard" variant="secondary">
             Client dashboard
           </ButtonLink>

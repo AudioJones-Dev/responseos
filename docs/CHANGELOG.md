@@ -4,6 +4,14 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: marketing-surface Penumbra Signal polish
+
+- **Footer social links** — added **LinkedIn, YouTube, Facebook** to the marketing footer as inline `currentColor` brand glyphs (repo's dependency-free icon strategy; **no new deps**). Penumbra Signal treatment: muted by default, **Signal-Yellow** + restrained glow ring on hover/focus — **no platform-color fills, no blue**. Real external hrefs (`target="_blank" rel="noopener noreferrer"`). New `components/layout/SocialLinks.tsx`.
+- **Opt-in CTA glow** — added a `glow` prop to the shared `Button` / `ButtonLink` (default **off**, so console/app buttons are unchanged). Applied to **primary marketing CTAs only** (landing hero, marketing header, pricing featured tier, demo-landing): Signal-Yellow hover/focus ring + inset lip. Reviewer-flagged "don't restyle the shared button by default" honored via opt-in.
+- **Pricing featured tier → Penumbra atmosphere card** — graphite surface with a restrained radial Signal-Yellow glow, hairline accent border, inset top-edge highlight, and the price rendered in **Signal Yellow** (revenue emphasis).
+- **Deliberately skipped** (per the conditional scope — surfaces that don't exist yet): the diagnostic/demo **form** (no form surface in the app) and the **cookie/consent** card (no consent surface or planned placeholder). Both deferred to when those surfaces exist.
+- Applied via Brand 2.0 tokens + `components/ui` conventions per the Brand 2.1 [Penumbra Signal adaptation](./design/responseos-penumbra-signal-adaptation.md). **No raw Uiverse/global CSS, no new dependencies; no provider, deploy, env, DB, migrations, metadata, or OG work; `#44` untouched.**
+
 ## Unreleased — feat: add clickable demo walkthrough
 
 - **Built the first controlled runtime UI:** a public, prospect-facing **clickable walkthrough** at `/demo/walkthrough` in a new isolated `(demo)` route group, executing the approved ADR-0035 Revenue Recovery flow on **mock data** (Maria Santos / DemoLift accessibility scenario). Six screens: **Revenue Recovery Overview → Call Intelligence → Lead/Opportunity → Business Memory → Follow-Up Queue → Integration Status**, with a DEMO MODE bar, step nav, and prev/next footer.
