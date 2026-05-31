@@ -4,6 +4,13 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: reconcile BUILD_SOURCE with the communications canon (ADR-0031–0034)
+
+- **Reconciled** `docs/product/RESPONSEOS_BUILD_SOURCE.md` with the ratified comms canon — the tracked follow-up from the communications-stack PR. Added a canonical-language note to §2; updated the canonical-stack table (carrier → **Telnyx primary / Twilio fallback**, ADR-0031; primary AI voice → **Vapi**, ADR-0032; CRM SoR ref → **ADR-0033**); annotated the **open** layers (OpenAI-Realtime-ownership, Node.js gateway + Redis) as open per ADR-0032; relabeled the mermaid diagram (Telnyx/Twilio carrier, Vapi orchestration); updated the ownership table, §6 rules (HubSpot SoR → ADR-0033, carrier+voice failover → ADR-0031/0032, added the Communications Abstraction Layer rule), §9 assumptions, and §10 open questions.
+- **Marked superseded decisions clearly** in the §7 reconciliation log: added ADR-0031–0034 rows and annotated the superseded ADR-0012 (Grok-Voice-primary, Twilio-edge) and ADR-0015 (HubSpot SoR) rows.
+- **Preserved the open decisions** verbatim in intent: OpenAI-as-LLM-brain-inside-Vapi vs direct OpenAI Realtime ownership, and whether the Node.js gateway + Redis (ADR-0013/0014) survive behind/alongside Vapi.
+- **Single-file, documentation-only** diff — no ADR files edited, no runtime code, no `.env.example`, no dependencies, no vendor credentials or integration instructions. Validation: no active Twilio-default, no GHL-LC-Phone-as-core-infra, no settled-OpenAI-Realtime-primary, HubSpot remains default commercial SoR, Business Memory Phase-1 stays operational-capture (v0.4 RAG/vector gates intact).
+
 ## Unreleased — docs: communications stack roadmap + PRD decisions (CTO recommendation)
 
 - **Added** [`docs/product/responseos-communications-stack.md`](./product/responseos-communications-stack.md) (10 sections): CTO decision (Telnyx + Vapi primary, Twilio failover, Retell/Sendblue Phase 2, HubSpot default commercial SoR), the **Communications Abstraction Layer** requirement + 6 conceptual provider interfaces, the MVP communications stack, the **Phase-1 Business Memory baseline**, the vendor role table, non-goals, 3-phase comms roadmap, an ADR/canon **reconciliation matrix (§9)**, and open decisions (§10).
