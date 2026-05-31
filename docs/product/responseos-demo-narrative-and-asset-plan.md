@@ -173,6 +173,12 @@ Use **Brand 2.0** (ADR-0021, [`../DESIGN.md`](../DESIGN.md)):
 
 > Brand mark + favicons are already delivered (ADR-0025 asset phase). The assets above are the
 > *demo-content* assets that follow.
+>
+> **First demo-content batch delivered:** the call script, mock transcript, lead-qualification JSON,
+> Business Memory event JSON, HubSpot sync JSON, and Founder Intelligence summary now exist as
+> mock-data assets in [`demo-assets/`](./demo-assets/README.md) (anchor scenario: after-hours
+> accessibility / mobility-equipment service call). Remaining: screen wireframes, demo landing-page
+> CTA copy.
 
 ## 10. Non-goals
 

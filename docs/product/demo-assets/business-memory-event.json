@@ -1,0 +1,54 @@
+{
+  "schema_version": "demo.v1",
+  "event_type": "business_memory.event_captured",
+  "demo_only": true,
+  "_warning": "Mock data only — fictional, demo-safe placeholders. Phase-1 operational capture; not RAG/vector/knowledge data.",
+  "memory_model": "phase_1_event_ledger_capture",
+  "event_id": "bm_evt_demo_77c310",
+  "captured_at": "2026-05-31T21:49:58-04:00",
+  "account_id": "demo_account_demolift",
+  "source_event": {
+    "type": "call.qualified",
+    "call_id": "demo_call_8F3K29",
+    "channel": "inbound_voice_after_hours",
+    "started_at": "2026-05-31T21:47:10-04:00",
+    "duration_seconds": 158
+  },
+  "entities": {
+    "contact": { "id": "demo_lead_a1b2c3", "name": "Maria Santos", "region": "Pembroke Pines, FL" },
+    "household": { "id": "demo_household_3310", "label": "Santos residence (demo placeholder)" },
+    "business": { "id": "demo_account_demolift", "name": "DemoLift Accessibility Services" }
+  },
+  "summary": {
+    "headline": "Urgent after-hours wheelchair-ramp safety assessment requested",
+    "intent": "urgent_on_site_assessment",
+    "qualification_band": "qualified",
+    "urgency": "high"
+  },
+  "operational_context": {
+    "service_category": "wheelchair_ramp",
+    "work_type": "repair_or_replacement",
+    "timeline": "within_48_hours",
+    "region": "Pembroke Pines, FL",
+    "operational_note": "Safety-critical: caller's father just discharged from hospital; ramp unsafe. Route to nearest accessibility crew; confirm same-day or next-morning window."
+  },
+  "commercial_context": {
+    "estimated_revenue_range_usd": { "min": 1500, "max": 4500 },
+    "crm_provider": "hubspot",
+    "crm_sync_event_id": "demo_hs_sync_5521"
+  },
+  "next_actions": [
+    {
+      "action": "callback_to_confirm_assessment_window",
+      "owner_id": "demo_user_op_07",
+      "due_at": "2026-06-01T09:00:00-04:00",
+      "priority": "urgent"
+    }
+  ],
+  "gates": {
+    "rag_enabled": false,
+    "vector_memory_enabled": false,
+    "per_tenant_knowledge_enabled": false,
+    "note": "Phase-1 event-ledger capture only (ADR-0034). Advanced RAG / vector / per-tenant knowledge remain v0.4-gated and are NOT active in this demo."
+  }
+}
