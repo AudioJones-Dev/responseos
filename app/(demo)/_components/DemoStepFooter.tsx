@@ -26,7 +26,7 @@ export function DemoStepFooter() {
       {next ? (
         <Link
           href={next.href}
-          className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-accent-hover"
+          className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-black shadow-[inset_0_1px_0_rgba(255,255,255,0.36)] transition-[background-color,box-shadow] duration-200 hover:bg-accent-hover hover:shadow-[0_0_0_6px_rgba(232,255,90,0.12)] focus-visible:shadow-[0_0_0_6px_rgba(232,255,90,0.12)] focus-visible:outline-none"
         >
           {next.label} →
         </Link>

@@ -14,12 +14,16 @@ export default function RevenueRecoveryOverview() {
         Guided walkthrough on mock data — no live calls, CRM, or providers are connected.
       </AlertBanner>
 
-      <section className="mb-6 overflow-hidden rounded-lg border border-accent/30 bg-surface">
-        <div className="bg-accent-soft p-8">
+      <section className="relative mb-6 overflow-hidden rounded-lg border border-line bg-surface p-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+        <div
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(232,255,90,0.10),transparent_42%)]"
+          aria-hidden
+        />
+        <div className="relative">
           <p className="text-xs font-semibold uppercase tracking-widest text-accent">
             Estimated Revenue Protected
           </p>
-          <p className="mt-3 font-display text-4xl font-semibold tabular-nums text-ink sm:text-5xl">
+          <p className="mt-3 font-display text-4xl font-semibold tabular-nums text-accent sm:text-5xl">
             {usd(overview.revenueProtected)}
           </p>
           <p className="mt-2 text-sm text-ink-secondary">
