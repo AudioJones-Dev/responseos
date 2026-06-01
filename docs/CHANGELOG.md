@@ -4,6 +4,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: demo landing-page narrative (GTM Phase 0.5)
+
+- **Expanded `/demo`** from a bare step list into the full narrative from `docs/product/responseos-demo-landing-page-copy.md`: a sharper hero with the Variant A proof line, a **Problem** section (revenue-leak pain bullets), the **"One system" loop** (Call → Qualify → CRM sync → Business Memory → Founder action), the existing RECOVER walkthrough steps, a **Business Memory** section, and a straight-talk **FAQ**.
+- **Truthful to the current build.** Every claim is framed for the mock stage: the FAQ states plainly that the demo uses **clearly-labeled mock data only**, that it is a **simulated walkthrough**, that **live provider integrations are gated until v0.3**, and that **advanced AI memory is not active** (Phase-1 = structured event capture only, per ADR-0034). The Business Memory section carries the spec's **"Honest scope"** callout verbatim in spirit. No present-tense live-CRM/HubSpot claims.
+- Secondary CTA routes to the real conversion path (`/audit`); brand atmosphere reuses the existing `ledger-depth` family. No new dependencies, routes, providers, or DB work.
+
 ## Unreleased — feat: Open Graph social card image + spec-aligned copy (GTM Phase 0.5)
 
 - **Generated the OG/social card** (`public/og/responseos-og.png`, 1200×630) from a hand-authored, on-brand source SVG (`public/og/responseos-og.svg`) via `sharp` — the same toolchain as the favicons, no new deps. Reproducible through `scripts/generate-og.mjs`. Brand 2.0 treatment per `docs/product/responseos-og-social-preview-spec.md` §4: true-black canvas, RO mark + wordmark lockup, headline with **revenue** in Signal-Yellow, proof line, quiet attribution.
