@@ -4,6 +4,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: trust & security marketing page (GTM Phase 0.5)
+
+- **New `/trust` page** (`app/(marketing)/trust/page.tsx`) — the GTM trust surface, grounded in `docs/SECURITY.md`: tenant isolation by construction, immutable event ledger, webhook signature verification, clean payment boundary (never store cards), per-tenant retention modes, and deletion/export. Linked from the header nav and footer.
+- **Honest compliance language per the hard rules** — states plainly that **ResponseOS is not HIPAA-certified or HIPAA-compliant out of the box**; the HIPAA-ready lane is an optional per-tenant architectural pattern available only after independent review + BAA verification. A "where the build is today" section discloses the current mock-adapter / no-live-data stage rather than implying otherwise.
+- No new dependencies; no provider/env/DB/migration/deploy work; no fabricated metrics or testimonials. Atmosphere background reuses the existing `noise-glass` family.
+
 ## Unreleased — feat: marketing audit-request capture (GTM Phase 0.5)
 
 - **Conversion path on `/audit`** — the revenue-recovery-audit page now has a real lead-capture form (`app/(marketing)/audit/AuditRequestForm.tsx`) wired to a new public endpoint `POST /api/audit-requests`. The hero CTA scrolls to the form (`#request`); the demo link is preserved.
