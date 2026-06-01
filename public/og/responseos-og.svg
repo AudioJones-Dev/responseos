@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <!--
+    ResponseOS OG / social card — Variant A (Revenue Recovery), per
+    docs/product/responseos-og-social-preview-spec.md §4–§5. Brand 2.0
+    (ADR-0021): true-black canvas, off-white headline, one Signal-Yellow
+    emphasis word. Rasterized to responseos-og.png via scripts/generate-og.mjs
+    (sharp). Headline uses Liberation Sans (Syne outlined export is the
+    tracked ADR-0025 follow-up).
+  -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#000000"/>
+      <stop offset="1" stop-color="#080808"/>
+    </linearGradient>
+    <radialGradient id="signal" cx="0.92" cy="1.05" r="0.6">
+      <stop offset="0" stop-color="#E8FF5A" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#E8FF5A" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#signal)"/>
+  <rect x="0.5" y="0.5" width="1199" height="629" fill="none" stroke="#FFFFFF" stroke-opacity="0.06"/>
+
+  <!-- top-left brand lockup: RO mark + wordmark -->
+  <svg x="60" y="52" width="72" height="50" viewBox="76 130 360 250">
+    <g fill="#FCFDFF">
+      <rect x="106" y="160" width="64" height="190" rx="6"/>
+      <path fill-rule="evenodd" d="M156 160 H206 C252 160 252 266 206 266 H156 Z M170 186 H202 C224 186 224 240 202 240 H170 Z"/>
+      <path d="M150 250 H206 L252 350 H196 Z"/>
+    </g>
+    <rect x="278" y="160" width="128" height="190" rx="46" fill="none" stroke="#E8FF5A" stroke-width="38"/>
+  </svg>
+  <text x="146" y="90" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-weight="700" font-size="40" letter-spacing="-1" fill="#FCFDFF">Response<tspan fill="#E8FF5A">OS</tspan></text>
+
+  <!-- headline -->
+  <text x="60" y="312" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-weight="700" font-size="76" letter-spacing="-2" fill="#FCFDFF">Stop losing <tspan fill="#E8FF5A">revenue</tspan> to</text>
+  <text x="60" y="398" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-weight="700" font-size="76" letter-spacing="-2" fill="#FCFDFF">missed calls.</text>
+
+  <!-- supporting proof line -->
+  <text x="62" y="474" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-weight="400" font-size="30" fill="#A1A4A5">Catch the call &#183; qualify the lead &#183; see what to do next.</text>
+
+  <!-- quiet footer attribution -->
+  <circle cx="69" cy="571" r="5" fill="#E8FF5A"/>
+  <text x="84" y="578" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-weight="400" font-size="22" fill="#888E90">responseos &#183; AJ Digital</text>
+</svg>

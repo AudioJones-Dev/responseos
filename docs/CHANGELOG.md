@@ -4,6 +4,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: Open Graph social card image + spec-aligned copy (GTM Phase 0.5)
+
+- **Generated the OG/social card** (`public/og/responseos-og.png`, 1200×630) from a hand-authored, on-brand source SVG (`public/og/responseos-og.svg`) via `sharp` — the same toolchain as the favicons, no new deps. Reproducible through `scripts/generate-og.mjs`. Brand 2.0 treatment per `docs/product/responseos-og-social-preview-spec.md` §4: true-black canvas, RO mark + wordmark lockup, headline with **revenue** in Signal-Yellow, proof line, quiet attribution.
+- **Wired the metadata** — root `openGraph`/`twitter` now use the spec's **Variant A** copy ("Stop losing revenue to missed calls…") and reference the card image. Added `metadataBase` from the existing `NEXT_PUBLIC_APP_URL` env var (fallback `http://localhost:3000`) so image/OG URLs resolve absolutely at deploy — no hardcoded domain, build stays warning-free.
+- Verified end to end: card renders correctly (viewed), `og:image` serves `200 image/png`, and all OG/Twitter tags emit Variant A copy. **Follow-ups remain** (per the spec): the outlined-Syne wordmark (ADR-0025 gap, headline currently rasterized in Liberation Sans), the optional 1080×1080 square, and any per-route cards — left for a later pass.
+
 ## Unreleased — feat: pricing-page clarity — assessment anchor + retainer model (GTM Phase 0.5)
 
 - **Surfaced the commercial model** on `/pricing`, grounded in `docs/pricing-and-onboarding.md`: a two-step "Step 1 · Revenue Leak Assessment → Step 2 · Implementation" layout. Per the owner's call, the **$1,000 flat assessment** (creditable toward implementation within 30 days) is published as a concrete anchor; per-tier setup/monthly **dollar ranges stay gated** behind the assessment conversation.
