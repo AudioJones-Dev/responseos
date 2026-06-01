@@ -4,6 +4,11 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: home-page OFFER philosophy section (GTM Phase 0.5)
+
+- **Paid off the dangling hero reference.** The home hero says "OFFER is the philosophy" but the page never explained it. Added a five-card **OFFER** section (Outcomes First / Front the Work / Framework Driven / Earn on Outcomes / ROI-Aligned Partnerships) grounded verbatim in `docs/README.md`, placed between the hero and the "One loop, four moves" RECOVER pillars.
+- Copy is truthful and consistent with the pricing model already shipped (outcome fees upside-only, never performance-only); **no fabricated proof, testimonials, or metrics.** Reuses the existing `noise-glass` atmosphere; no new dependencies, routes, providers, or DB work.
+
 ## Unreleased — feat: demo landing-page narrative (GTM Phase 0.5)
 
 - **Expanded `/demo`** from a bare step list into the full narrative from `docs/product/responseos-demo-landing-page-copy.md`: a sharper hero with the Variant A proof line, a **Problem** section (revenue-leak pain bullets), the **"One system" loop** (Call → Qualify → CRM sync → Business Memory → Founder action), the existing RECOVER walkthrough steps, a **Business Memory** section, and a straight-talk **FAQ**.
