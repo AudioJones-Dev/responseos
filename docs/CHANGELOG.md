@@ -4,6 +4,13 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — style: site-wide brand mark consistency (console sidebar)
+
+- **Logo usage audit across every route group + shared shell.** Found the last placeholder "R" badge in `components/layout/Sidebar.tsx` (the **admin + client console** rail). Replaced it with the shared `LogoMark` (real RO mark), sized to fit the collapsed 68px rail and centered when collapsed, left-aligned + product/scope text when expanded.
+- **Accessibility:** the sidebar brand link now has `aria-label="<product> home"` (overriding the previously redundant mark+text accessible name); the mark is decorative within the labeled link; home navigation unchanged.
+- **Audit result:** no placeholder "R" badge remains anywhere except inside the actual RO mark asset/`LogoMark`. `TopBar` carries no logo (section title only — unchanged); there are **no** error/not-found/loading/global-error pages or auth route group to brand; remaining `ResponseOS` strings are legitimate body copy / footer wordmark, not placeholders. Marketing + demo headers already use `Logo`/`LogoMark` (shipped prior).
+- **No new dependencies; no provider/env/DB/migrations/deploy/metadata work; `#44` untouched.** Verified in-browser on `/admin` and `/client/dashboard`: RO mark renders, no "R" badge, link reads "ResponseOS home", scope text intact. Favicon/icon assets unchanged and still resolve.
+
 ## Unreleased — style: wire responseos brand assets and atmosphere backgrounds
 
 - **Real header logo** — replaced the hardcoded Signal-Yellow "R" badge in the marketing header (and the demo header) with a `Logo` / `LogoMark` component rendering the on-brand **RO mark** (white R + Signal-Yellow O ring, mirrors `public/brand/responseos-mark.svg`, ADR-0025) + "ResponseOS" wordmark. New `components/layout/Logo.tsx`.

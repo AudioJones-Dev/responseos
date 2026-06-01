@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icons } from "./icons";
+import { LogoMark } from "./Logo";
 import type { NavItem } from "./nav";
 import { cn } from "@/components/ui/cn";
 
@@ -26,10 +27,11 @@ export function Sidebar({
     <aside className="sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-line bg-surface/60 md:flex md:w-[68px] lg:w-60">
       <Link
         href="/"
-        className="flex h-16 items-center gap-2.5 border-b border-line px-4"
+        aria-label={`${product} home`}
+        className="flex h-16 items-center justify-center gap-2.5 border-b border-line px-3 lg:justify-start lg:px-4"
       >
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-accent text-sm font-bold text-black">
-          R
+        <span aria-hidden="true">
+          <LogoMark className="h-7 w-auto shrink-0" />
         </span>
         <span className="hidden flex-col leading-tight lg:flex">
           <span className="font-display text-sm font-semibold text-ink">
