@@ -10,7 +10,7 @@ export const metadata = {
 const tiers = [
   {
     name: "Recovery Core",
-    price: "TBD",
+    price: "Setup + monthly",
     summary: "Stop the bleeding. Recover the calls you're already missing.",
     bullets: [
       "Missed-call recovery",
@@ -21,7 +21,7 @@ const tiers = [
   },
   {
     name: "Recovery Pro",
-    price: "TBD",
+    price: "Setup + monthly",
     summary: "Turn recovered demand into booked, attributed jobs.",
     bullets: [
       "Everything in Core",
@@ -33,7 +33,7 @@ const tiers = [
   },
   {
     name: "Recovery Performance",
-    price: "ROI-aligned",
+    price: "Setup + monthly + outcome",
     summary: "We front the work and earn on the revenue we recover.",
     bullets: [
       "Everything in Pro",
@@ -59,7 +59,80 @@ export default function PricingPage() {
         dollars it returns.
       </p>
 
-      <div className="mt-12 grid gap-4 lg:grid-cols-3">
+      <section className="mt-10 grid gap-4 lg:grid-cols-[1.15fr_1fr]">
+        <Card className="relative isolate overflow-hidden border-line-strong p-8">
+          <AtmosphereBackground
+            family="noise-glass"
+            size="1600x900"
+            intensity={0.6}
+          />
+          <div className="relative">
+            <p className="text-xs font-semibold uppercase tracking-widest text-ink-muted">
+              Step 1 · Proof before you commit
+            </p>
+            <h2 className="mt-2 font-display text-2xl font-semibold text-ink">
+              Revenue Leak Assessment
+            </h2>
+            <p className="mt-3 font-display text-4xl font-semibold text-accent">
+              $1,000
+              <span className="ml-2 align-middle text-sm font-normal text-ink-secondary">
+                flat
+              </span>
+            </p>
+            <p className="mt-3 max-w-md text-sm text-ink-secondary">
+              A paid diagnostic that maps your missed-demand surface, scores
+              AI-readiness, and returns a revenue-leak estimate with a clear
+              fit / no-fit call — before a dollar goes toward implementation.
+              Apply the full fee toward implementation when you sign within 30
+              days.
+            </p>
+            <div className="mt-6">
+              <ButtonLink href="/audit" glow>
+                Start your assessment
+              </ButtonLink>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-8">
+          <p className="text-xs font-semibold uppercase tracking-widest text-ink-muted">
+            Step 2 · Implementation
+          </p>
+          <h2 className="mt-2 font-display text-2xl font-semibold text-ink">
+            How the retainer works
+          </h2>
+          <ul className="mt-4 space-y-3 text-sm text-ink-secondary">
+            <li className="flex gap-2.5">
+              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+              Every engagement combines a one-time{" "}
+              <span className="text-ink">setup fee</span> with a{" "}
+              <span className="text-ink">monthly retainer</span>, sized to your
+              volume.
+            </li>
+            <li className="flex gap-2.5">
+              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+              Optional <span className="text-ink">outcome fees</span> are upside
+              only — tied to verified booked appointments or recovered revenue.
+            </li>
+            <li className="flex gap-2.5">
+              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+              No performance-only deals and no seat licenses. You always know
+              the base before you start.
+            </li>
+          </ul>
+        </Card>
+      </section>
+
+      <h2 className="mt-14 font-display text-2xl font-semibold text-ink">
+        Choose your tier
+      </h2>
+      <p className="mt-2 max-w-2xl text-sm text-ink-secondary">
+        Your setup and monthly figures are tailored from the assessment — that&apos;s
+        what the diagnostic produces. The tiers below show what each scope
+        includes.
+      </p>
+
+      <div className="mt-8 grid gap-4 lg:grid-cols-3">
         {tiers.map((tier) => (
           <Card
             key={tier.name}
@@ -86,8 +159,8 @@ export default function PricingPage() {
               </div>
               <p
                 className={cn(
-                  "mt-4 font-display text-3xl font-semibold",
-                  tier.featured ? "text-accent" : "text-ink",
+                  "mt-4 text-sm font-medium uppercase tracking-wide",
+                  tier.featured ? "text-accent" : "text-ink-secondary",
                 )}
               >
                 {tier.price}

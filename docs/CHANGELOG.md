@@ -4,6 +4,13 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: pricing-page clarity — assessment anchor + retainer model (GTM Phase 0.5)
+
+- **Surfaced the commercial model** on `/pricing`, grounded in `docs/pricing-and-onboarding.md`: a two-step "Step 1 · Revenue Leak Assessment → Step 2 · Implementation" layout. Per the owner's call, the **$1,000 flat assessment** (creditable toward implementation within 30 days) is published as a concrete anchor; per-tier setup/monthly **dollar ranges stay gated** behind the assessment conversation.
+- **Explained the retainer structure** — every engagement = one-time setup + monthly retainer, with optional outcome fees as upside only (verified booked appointments / recovered revenue), and the hard rule stated plainly: **no performance-only deals, no seat licenses.**
+- **Replaced the placeholder "TBD" / "ROI-aligned" tier prices** with model descriptors ("Setup + monthly", "Setup + monthly + outcome") so the cards read as scope, not unfinished figures. Added a "Choose your tier" note clarifying that figures are tailored from the assessment.
+- No fabricated numbers beyond the doc-sourced assessment price; no new dependencies, routes, providers, or DB work.
+
 ## Unreleased — feat: per-page marketing metadata + social cards (GTM Phase 0.5)
 
 - **Per-page titles + descriptions** — every marketing route now sets its own `title`/`description` instead of inheriting the generic root title: `/audit`, `/pricing`, `/demo`, `/trust`, and the three `/industries/*` pages. Root layout adds a `title.template` (`"%s — ResponseOS"`) so each page renders e.g. `Pricing — ResponseOS`.
