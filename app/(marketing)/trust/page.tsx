@@ -2,7 +2,7 @@ import { Card } from "@/components/ui";
 import { AtmosphereBackground } from "@/components/layout/AtmosphereBackground";
 
 export const metadata = {
-  title: "Trust & security — ResponseOS",
+  title: "Trust & security",
   description:
     "How ResponseOS is architected for tenant isolation, auditability, and a clean payment boundary — and an honest read on where the build is today.",
 };

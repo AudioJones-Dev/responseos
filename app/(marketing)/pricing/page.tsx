@@ -1,6 +1,12 @@
 import { ButtonLink, Card, StatusBadge, cn } from "@/components/ui";
 import { AtmosphereBackground } from "@/components/layout/AtmosphereBackground";
 
+export const metadata = {
+  title: "Pricing",
+  description:
+    "ResponseOS is priced against the revenue we recover. Compare the Recovery tiers and what each one includes.",
+};
+
 const tiers = [
   {
     name: "Recovery Core",

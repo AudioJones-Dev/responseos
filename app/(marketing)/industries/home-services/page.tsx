@@ -1,5 +1,11 @@
 import { ButtonLink, Card } from "@/components/ui";
 
+export const metadata = {
+  title: "For home services",
+  description:
+    "ResponseOS for home services — book the estimate before they call the next guy, and never miss after-hours demand again.",
+};
+
 const POINTS = [
   {
     title: "Catch the 6:42pm missed call",

@@ -1,6 +1,12 @@
 import { ButtonLink, Card } from "@/components/ui";
 import { AuditRequestForm } from "./AuditRequestForm";
 
+export const metadata = {
+  title: "Revenue recovery audit",
+  description:
+    "Map your missed-demand surface and get an estimated recovered-revenue number for the next 30 days — a clear figure, not a sales pitch.",
+};
+
 const STEPS = [
   {
     n: "01",

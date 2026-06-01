@@ -1,5 +1,11 @@
 import { ButtonLink, Card } from "@/components/ui";
 
+export const metadata = {
+  title: "Product demo",
+  description:
+    "Walk ResponseOS from missed call to recovered revenue on seeded mock data — capture, qualify, follow-up, booking, and reporting.",
+};
+
 const STEPS = [
   {
     n: "01",

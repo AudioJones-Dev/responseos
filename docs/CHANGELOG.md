@@ -4,6 +4,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: per-page marketing metadata + social cards (GTM Phase 0.5)
+
+- **Per-page titles + descriptions** — every marketing route now sets its own `title`/`description` instead of inheriting the generic root title: `/audit`, `/pricing`, `/demo`, `/trust`, and the three `/industries/*` pages. Root layout adds a `title.template` (`"%s — ResponseOS"`) so each page renders e.g. `Pricing — ResponseOS`.
+- **Site-level Open Graph + Twitter cards** — root metadata gains `openGraph` (type/siteName/title/description/locale) and `twitter` (`summary_large_image`) so shared links render valid cards. No OG image asset or `metadataBase` domain invented — relative-URL fields are avoided to keep the build warning-free and the domain unhardcoded.
+- Copy is drawn from each page's existing headline — no fabricated claims; med-spas description avoids any compliance/HIPAA implication. No new dependencies, routes, providers, or DB work.
+
 ## Unreleased — feat: trust & security marketing page (GTM Phase 0.5)
 
 - **New `/trust` page** (`app/(marketing)/trust/page.tsx`) — the GTM trust surface, grounded in `docs/SECURITY.md`: tenant isolation by construction, immutable event ledger, webhook signature verification, clean payment boundary (never store cards), per-tenant retention modes, and deletion/export. Linked from the header nav and footer.

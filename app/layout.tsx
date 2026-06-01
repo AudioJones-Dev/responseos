@@ -18,10 +18,29 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
 });
 
+const SITE_NAME = "ResponseOS";
+const SITE_TAGLINE = "ResponseOS — AI Revenue Recovery Platform";
+const SITE_DESCRIPTION =
+  "ResponseOS helps service businesses recover missed revenue by capturing demand, qualifying leads, booking opportunities, and reporting ROI.";
+
 export const metadata: Metadata = {
-  title: "ResponseOS — AI Revenue Recovery Platform",
-  description:
-    "ResponseOS helps service businesses recover missed revenue by capturing demand, qualifying leads, booking opportunities, and reporting ROI.",
+  title: {
+    default: SITE_TAGLINE,
+    template: "%s — ResponseOS",
+  },
+  description: SITE_DESCRIPTION,
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: SITE_TAGLINE,
+    description: SITE_DESCRIPTION,
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TAGLINE,
+    description: SITE_DESCRIPTION,
+  },
   icons: {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },
