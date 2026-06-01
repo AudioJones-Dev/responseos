@@ -46,6 +46,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - **Public, mock, safe by design.** The endpoint is **unauthenticated** (prospects have no session/account) and is deliberately **separate from the tenant-scoped `Assessments` data layer** — it validates at the boundary with `AuditRequestSchema` (`lib/validation/audit-request.ts`, exported via the `api` barrel) and only **acknowledges** the request (`{ ok: true, mock: true, data: { reference, status: "received", … } }`). No CRM/provider/DB write — live capture stays gated until v0.3.
 - **Boundary validation + tests.** Required `name` / `email` / `business_name`; optional `phone` / `industry` / `monthly_missed_calls` / `avg_job_value_usd` / `notes`, with numeric coercion and empty-optional drop. New `tests/unit/audit-request.test.ts` covers accept/reject paths.
 - **First form in the app** — established on-brand dark-token field styling (`border-line` / `bg-surface` / `text-ink`) inline; no new UI primitive, no new dependency. `#44` untouched.
+## Unreleased — style: site-wide brand mark consistency (console sidebar)
+
+- **Logo usage audit across every route group + shared shell.** Found the last placeholder "R" badge in `components/layout/Sidebar.tsx` (the **admin + client console** rail). Replaced it with the shared `LogoMark` (real RO mark), sized to fit the collapsed 68px rail and centered when collapsed, left-aligned + product/scope text when expanded.
+- **Accessibility:** the sidebar brand link now has `aria-label="<product> home"` (overriding the previously redundant mark+text accessible name); the mark is decorative within the labeled link; home navigation unchanged.
+- **Audit result:** no placeholder "R" badge remains anywhere except inside the actual RO mark asset/`LogoMark`. `TopBar` carries no logo (section title only — unchanged); there are **no** error/not-found/loading/global-error pages or auth route group to brand; remaining `ResponseOS` strings are legitimate body copy / footer wordmark, not placeholders. Marketing + demo headers already use `Logo`/`LogoMark` (shipped prior).
+- **No new dependencies; no provider/env/DB/migrations/deploy/metadata work; `#44` untouched.** Verified in-browser on `/admin` and `/client/dashboard`: RO mark renders, no "R" badge, link reads "ResponseOS home", scope text intact. Favicon/icon assets unchanged and still resolve.
 
 ## Unreleased — style: wire responseos brand assets and atmosphere backgrounds
 
