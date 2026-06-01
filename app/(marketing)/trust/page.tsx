@@ -18,7 +18,7 @@ const CONTROLS = [
   },
   {
     title: "Webhook signatures verified",
-    body: "Inbound provider events are signature-validated before any business mutation. An invalid signature is rejected outright — no body parse, no side effects.",
+    body: "Every inbound provider webhook must pass signature validation before it can change anything in your account — the mandatory rule that goes live with each integration. An unverified event mutates nothing.",
   },
   {
     title: "Clean payment boundary",

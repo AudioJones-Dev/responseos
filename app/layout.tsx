@@ -38,10 +38,21 @@ const OG_IMAGE = {
   alt: "ResponseOS — stop losing revenue to missed calls.",
 };
 
+// A malformed NEXT_PUBLIC_APP_URL must not crash the build/boot — fall back.
+function resolveMetadataBase(): URL {
+  const fromEnv = process.env.NEXT_PUBLIC_APP_URL;
+  if (fromEnv) {
+    try {
+      return new URL(fromEnv);
+    } catch {
+      // fall through to the safe default
+    }
+  }
+  return new URL("http://localhost:3000");
+}
+
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
-  ),
+  metadataBase: resolveMetadataBase(),
   title: {
     default: SITE_TAGLINE,
     template: "%s — ResponseOS",

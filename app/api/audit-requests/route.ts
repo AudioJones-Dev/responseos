@@ -30,9 +30,8 @@ export async function POST(req: Request) {
 
   const reference = `audit_${Date.now().toString(36)}`;
   if (process.env.NODE_ENV !== "test") {
-    console.log(
-      `[audit-request] mock capture ref=${reference} business=${result.data.business_name}`,
-    );
+    // Reference only — never log untrusted prospect PII to the server stream.
+    console.log(`[audit-request] mock capture ref=${reference}`);
   }
 
   return NextResponse.json({
