@@ -5,14 +5,21 @@ import {
   Automations,
   Appointments,
   Calls,
+  CallSegments,
+  CallTranscripts,
   Contacts,
+  Conversations,
   Engagements,
   Leads,
   Notifications,
   Accounts,
+  ProviderConnections,
+  QaLogs,
   Quotes,
   RevenueMetrics,
+  SmsMessages,
   Users,
+  WorkflowRuns,
 } from "@/lib/data";
 import { disconnectTestDb, resetAndSeedTestDb, setDevSession } from "./setup";
 
@@ -38,6 +45,14 @@ const listCases: Array<{
   { name: "listRevenueMetrics", read: (accountId) => RevenueMetrics.listRevenueMetrics({ accountId }) },
   { name: "getCurrentRevenueMetrics", read: (accountId) => RevenueMetrics.getCurrentRevenueMetrics({ accountId }) },
   { name: "listUsers", read: (accountId) => Users.listUsers({ accountId }) },
+  // v0.2-closeout models — seeded for org_mock_1 (conv_mock_1, call_mock_2).
+  { name: "listConversations", read: (accountId) => Conversations.listConversations({ accountId }) },
+  { name: "listProviderConnections", read: (accountId) => ProviderConnections.listProviderConnections({ accountId }) },
+  { name: "listWorkflowRuns", read: (accountId) => WorkflowRuns.listWorkflowRuns({ accountId }) },
+  { name: "listSmsMessagesByConversation", read: (accountId) => SmsMessages.listSmsMessagesByConversation({ accountId: accountId as string, conversationId: "conv_mock_1" }) },
+  { name: "listCallSegmentsByCall", read: (accountId) => CallSegments.listCallSegmentsByCall({ accountId: accountId as string, callId: "call_mock_2" }) },
+  { name: "listQaLogsByCall", read: (accountId) => QaLogs.listQaLogsByCall({ accountId: accountId as string, callId: "call_mock_2" }) },
+  { name: "getCallTranscriptByCall", read: (accountId) => CallTranscripts.getCallTranscriptByCall({ accountId: accountId as string, callId: "call_mock_2" }) },
 ];
 
 beforeEach(async () => {
@@ -97,5 +112,41 @@ describe("account read tenant matrix", () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error.code).toBe("tenant_scope_denied");
+  });
+});
+
+// The v0.2-closeout substrate accessors enforce isolation on by-id reads with
+// an inline scope check (not the listCases withTenantScope path). Cover it.
+describe("by-id inline tenant guards (v0.2-closeout substrate)", () => {
+  test("client_admin reads own conversation by id", async () => {
+    setDevSession("client_admin@org_mock_1");
+    const result = await Conversations.getConversationById("conv_mock_1");
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.account_id).toBe("org_mock_1");
+  });
+
+  test("client_admin cannot read another tenant's conversation by id", async () => {
+    setDevSession("client_admin@org_mock_1");
+    const result = await Conversations.getConversationById("conv_mock_2");
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe("tenant_scope_denied");
+  });
+
+  test("client_admin cannot read another tenant's workflow run by id", async () => {
+    setDevSession("client_admin@org_mock_1");
+    const result = await WorkflowRuns.getWorkflowRunByRunId("n8n_run_mock_2");
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe("tenant_scope_denied");
+  });
+
+  test("aj_admin reads any tenant's conversation by id", async () => {
+    setDevSession("aj_admin");
+    const result = await Conversations.getConversationById("conv_mock_2");
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.account_id).toBe("org_mock_2");
   });
 });
