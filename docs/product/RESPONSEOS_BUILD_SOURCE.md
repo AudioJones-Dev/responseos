@@ -196,7 +196,7 @@ The canonical `RESPONSEOS_*` set, by directory:
 
 These constrain every implementation phase:
 
-1. **Separate realtime audio from async workflows.** The realtime plane owns realtime (Vapi-orchestrated; whether a self-hosted Node.js gateway is retained is deferred per ADR-0036); n8n is async-only and never in the audio loop. (ADR-0013, ADR-0017, ADR-0032)
+1. **Separate realtime audio from async workflows.** The realtime plane owns realtime (Vapi-orchestrated; whether a self-hosted Node.js gateway is retained is deferred per ADR-0036); n8n is async-only and never in the audio loop. (ADR-0013, ADR-0017, ADR-0032, ADR-0036)
 2. **Keep the event ledger as the internal system of record;** HubSpot is the default external commercial CRM system of record (client-overridable). (ADR-0002, ADR-0033)
 3. **No provider-specific business logic.** All provider behavior sits behind adapters; carrier (Telnyx↔Twilio) and Vapi-orchestrated voice failover is transparent. (ADR-0031, ADR-0032)
 4. **Communications Abstraction Layer.** Carrier, SMS, AI-voice, messaging, webhook, and usage-metering providers sit behind internal interfaces so providers swap or route without client-facing change. This abstraction is the infrastructure moat. (ADR-0031/0032; comms doc §2)
@@ -206,7 +206,7 @@ These constrain every implementation phase:
 8. **Webhook signature validation is mandatory before any business mutation.** (ADR-0009)
 9. **No hardcoded secrets.** `.env.example` is placeholders only; tenant credentials live encrypted in the DB.
 10. **No Firebase. Ever.**
-11. **No premature microservices.** Any self-hosted realtime voice service (if retained — deferred per ADR-0036) is the *only* sanctioned service split; everything else stays a modular monolith until scale demands otherwise.
+11. **No premature microservices.** Any self-hosted realtime voice service (if retained — deferred per ADR-0036) is the *only* sanctioned service split; everything else stays a modular monolith until scale demands otherwise. (ADR-0013, ADR-0036)
 12. **Mock-first; no live provider integrations until v0.3 is authorized;** adapters fall back to mock when env vars are missing. (ADR-0001)
 13. **No production deploys until v0.3 readiness gates clear.**
 14. **ResponseOS is not HIPAA-certified.** Never represent it as compliant; HIPAA-readiness is a per-deployment lane, not a product property. (ADR-0004)
