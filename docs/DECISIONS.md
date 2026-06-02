@@ -620,3 +620,21 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 7. **Sendblue / iMessage is out of v0.3** and remains future / premium research only.
 
 **Consequences.** The provider-stack direction for a future v0.3 communications slice is now unambiguous, while the **gate is unchanged**: no live providers, schema, env, secrets, accounts, or deploy ship under this ADR. It updates two stale prose docs to match the baseline — `docs/README.md` (the "Twilio edge · Grok Voice primary …" stack summary) and `docs/SECURITY.md` (the standard-mode line + the webhook-signature table, which now lists the planned Telnyx/Vapi validation). `RESPONSEOS_BUILD_SOURCE.md` was already reconciled (#49) and is unchanged. The v0.4 knowledge / RAG / vector gates (ADR-0016/0029/0034) are untouched. Mock-first (ADR-0001) holds. The first actual provider work begins only with a separate, explicitly-authorized, scoped PR.
+
+---
+
+## ADR-0037 — v0.3 MVP scheduling baseline is Calendly; Cal.com deferred as the platform-native option (amends ADR-0036 decision 6; planning only)
+
+**Status:** Accepted (2026-06-02) as a **planning decision. Amends ADR-0036 decision 6** (which set Cal.com as the scheduling baseline). **No implementation authorized** — no Calendly adapter, env var, secret, schema change, account setup, or live integration ships under this ADR (v0.3-gated, ADR-0019).
+
+**Context.** ADR-0036 set Cal.com as the platform-native scheduling baseline and flagged the Cal.com-vs-Calendly question for a short decision note. For the v0.3 MVP the operator selects **Calendly** as the lower-friction path: reliable booking links, embeds, calendar sync, webhooks, HubSpot-friendly GTM workflows, and a familiar UX at low per-seat cost — without turning scheduling into a platform-infrastructure project. Cal.com's platform/API tier is more infrastructure-oriented and is better justified once the product needs deeper embedded scheduling control.
+
+**Decision.**
+
+1. **Calendly = v0.3 MVP scheduling baseline** — booking links, embeds, calendar sync, webhooks, HubSpot-friendly scheduling workflows.
+2. **Cal.com = deferred platform-native option** — reconsider after v0.3 proves the scheduling workflow needs deeper embedded control.
+3. **Google Calendar compatibility remains required** regardless of provider.
+4. **A `SchedulingProvider` abstraction is retained** (consistent with the CAL doctrine, ADR-0001) — the platform binds to neither vendor directly, so Calendly ↔ Cal.com is a swap, not a rewrite.
+5. **Planning only.** No live Calendly integration, env vars, secrets, schema work (the `CalendarProvider` enum is unchanged), provider adapter, or account setup is authorized; that requires a separate, explicitly-approved PR.
+
+**Consequences.** Amends ADR-0036 decision 6 (scheduling baseline Cal.com → Calendly for the MVP; Cal.com deferred). The accompanying reconciliation updates the stale `RESPONSEOS_*` prose (`RESPONSEOS_BUILD_SOURCE.md`, `RESPONSEOS_PRD.md`, `RESPONSEOS_ROADMAP.md`) to defer to ADR-0031/0032/0033/0036/0037 rather than the older Grok/OpenAI-Realtime/Twilio/gateway/Redis framing. Mock-first (ADR-0001) and the v0.3 live-wiring gate (ADR-0019) hold.

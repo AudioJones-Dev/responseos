@@ -4,6 +4,14 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: ADR-0037 (Calendly MVP scheduling) + RESPONSEOS_* canon reconciliation (planning only)
+
+- **Added ADR-0037** ([`DECISIONS.md`](./DECISIONS.md)) — **amends ADR-0036 decision 6**: **Calendly is the v0.3 MVP scheduling baseline** (booking links, embeds, calendar sync, webhooks, HubSpot-friendly workflows); **Cal.com deferred** as the platform-native option; **Google Calendar compatibility required**; a `SchedulingProvider` abstraction is retained. Planning only — no Calendly adapter, env, secret, schema, or account work authorized.
+- **Reconciled the stale `RESPONSEOS_*` prose** to defer to ADR-0031/0032/0033/0036/0037:
+  - `RESPONSEOS_BUILD_SOURCE.md` — flipped the now-resolved "open" markers (OpenAI-in-Vapi → preferred; Node gateway + Redis → **deferred** per ADR-0036), added a **Scheduling** row (Calendly MVP / Cal.com deferred), updated the canon-note range and the realtime-plane diagram label.
+  - `RESPONSEOS_PRD.md` and `RESPONSEOS_ROADMAP.md` — added a provider-stack supersession banner and updated the prominent stack lines; the older **Grok-Voice-primary / OpenAI-Realtime-fallback / Twilio-default / gateway / Redis** framing is now clearly marked **superseded** by the ADRs.
+- **Documentation only.** No schema, provider adapters, env vars, secrets, account configuration, deploy, or v0.3 implementation. The `CalendarProvider` enum is unchanged; first scheduling/provider work needs a separate, explicitly-approved PR.
+
 ## Unreleased — docs: ADR-0036 resolves v0.3 provider-stack open decisions + stale-doc cleanup (planning only)
 
 - **Added ADR-0036** ([`DECISIONS.md`](./DECISIONS.md)) — resolves the §4 open decisions of the v0.3 provider-readiness spec and the ADR-0032 open items as a **planning baseline**: Vapi primary orchestration; **OpenAI preferred LLM/transcription brain inside Vapi** (Vapi-owned model selection only as fallback); **Node voice gateway + Redis deferred** for the first v0.3 slice unless readiness testing proves them necessary; Telnyx primary / Twilio failover carrier baseline (implementation/schema changes require a separate approved PR); **platform-owned A2P** for MVP; **Cal.com scheduling** with Google Calendar compatibility (GHL optional); **Sendblue/iMessage out of v0.3**.

@@ -5,13 +5,15 @@
 **Last updated:** 2026-05-27
 **Read first:** [`RESPONSEOS_BUILD_SOURCE.md`](./RESPONSEOS_BUILD_SOURCE.md)
 
+> **Provider-stack note — supersedes inline framing below.** This PRD predates ADR-0031 → ADR-0037. For the current provider stack the **`../DECISIONS.md` ADRs are authoritative**: Telnyx primary carrier / Twilio failover; Vapi primary orchestration with **OpenAI as the preferred in-Vapi brain** / Retell secondary; HubSpot default CRM SoR; **Calendly** as the v0.3 MVP scheduling baseline (Cal.com deferred); the Node voice gateway + Redis are **deferred**. Any **Grok Voice / OpenAI-Realtime-fallback / Twilio-default / dedicated-gateway** wording below is **superseded** by ADR-0031/0032/0033/0036/0037.
+
 ---
 
 ## 1. Executive summary
 
 Founder-led service businesses lose real revenue every week to demand they never respond to: missed calls, after-hours inquiries, web forms that sit unanswered, and follow-ups that never happen. The owner is on a roof or under a sink; the phone rings; the homeowner calls the next contractor on the list. That leak is invisible because nothing in their stack measures it.
 
-**ResponseOS is the operating layer that captures that demand, responds instantly, qualifies and routes it, books or quotes it, and proves the recovered revenue every month.** It is built as a multi-tenant SaaS platform from day one — one shared codebase, many tenants — with AI voice agents at the edge (Grok Voice primary, OpenAI Realtime fallback, Twilio telephony), a dedicated realtime voice gateway, an event-ledger core, and HubSpot as the CRM system of record.
+**ResponseOS is the operating layer that captures that demand, responds instantly, qualifies and routes it, books or quotes it, and proves the recovered revenue every month.** It is built as a multi-tenant SaaS platform from day one — one shared codebase, many tenants — with AI voice agents at the edge (Telnyx telephony with Twilio failover; Vapi orchestration with OpenAI as the preferred in-Vapi brain — per ADR-0031/0032/0036), an event-ledger core, and HubSpot as the CRM system of record.
 
 The product is sold outcome-first: a paid Readiness & Revenue Leak Assessment, then an implementation + monthly retainer with optional outcome fees tied to **verified** results. The defensible IP is the RECOVER orchestration, the canonical event ledger, ROI attribution, and the white-label OS — not the bought voice/telephony primitives.
 
@@ -92,7 +94,7 @@ ResponseOS digitizes the front-office workflows of a service business and maps t
 | 6 | Human Escalation | Escalate |
 | 7 | Monthly ROI Reporting | Report |
 
-These remain the workflow contract; the go-forward stack changes *how* they run (Grok Voice via the gateway instead of Retell), not *what* they do.
+These remain the workflow contract; the go-forward stack changes *how* they run (Vapi orchestration with an OpenAI in-Vapi brain, per ADR-0032/0036), not *what* they do.
 
 ---
 
@@ -214,10 +216,10 @@ In scope for MVP:
 - Multi-tenant data layer (tenant-scoped, `account_id` from session) — **shipped (v0.2)**.
 - Operator console + read-only tenant portal — **shipped (v0.2), rebuilt against DESIGN.md in closeout**.
 - Event ledger + signed webhook ingest foundation — **shipped (v0.2 foundation)**.
-- Node.js voice gateway with Grok Voice (primary) + OpenAI Realtime (fallback) behind the provider abstraction — **v0.3**.
-- Twilio telephony edge, live, with signature validation + persistence — **v0.3**.
-- Redis ephemeral session state — **v0.3**.
-- HubSpot CRM connector (default) + calendar connector — **v0.3**.
+- Vapi primary AI voice orchestration (OpenAI preferred in-Vapi brain; Retell secondary) behind the `VoiceAgentProvider` abstraction — **v0.3** (ADR-0032/0036).
+- Telnyx carrier with Twilio failover, live, with signature validation + persistence — **v0.3** (ADR-0031).
+- Node voice gateway + Redis ephemeral session state — **deferred** for the first v0.3 slice (ADR-0036).
+- HubSpot CRM connector (default) + **Calendly** scheduling (Google Calendar compatible; Cal.com deferred) — **v0.3** (ADR-0033/0037).
 - The seven RECOVER playbooks running against live providers — **v0.3**.
 - Tenant onboarding/provisioning flow (no code change per tenant) — **v0.3**.
 - Monthly ROI reporting — **v0.3** (outcome-fee preview only).

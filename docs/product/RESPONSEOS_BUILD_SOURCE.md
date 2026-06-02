@@ -37,7 +37,7 @@ Operational · measurable · audit-friendly · enterprise-capable · founder-rea
 
 This is the authoritative technology direction. It is reconciled against the earlier ADRs in [§7](#7-reconciliation-with-the-original-docs) and ratified by [ADR-0012 → ADR-0018](../DECISIONS.md).
 
-> **Communications-stack canon update (ADR-0031 → ADR-0034).** As of ADR-0031 through ADR-0034,
+> **Communications-stack canon update (ADR-0031 → ADR-0037).** As of ADR-0031 through ADR-0037,
 > ResponseOS treats **Telnyx as the primary communications carrier**, **Vapi as the primary AI voice
 > orchestration layer**, **Twilio as fallback / compatibility infrastructure**, **HubSpot as the
 > default commercial system of record**, and **Phase-1 Business Memory as operational event-ledger
@@ -46,22 +46,24 @@ This is the authoritative technology direction. It is reconciled against the ear
 > AI-voice, messaging, webhook, and usage-metering providers behind internal interfaces) is required
 > platform doctrine — see [`responseos-communications-stack.md`](./responseos-communications-stack.md).
 >
-> **Open architecture decisions (not yet settled — ADR-0032):** OpenAI may remain the LLM brain
-> *inside* the Vapi orchestration path, but **direct OpenAI Realtime ownership as the primary voice
-> runtime remains open**; and the **Node.js voice gateway + Redis (ADR-0013/ADR-0014) remain open for
-> reconciliation behind or alongside Vapi.** The table and diagram below retain the pre-ADR-0031
-> realtime design for those open layers and are annotated accordingly.
+> **Resolved by ADR-0036 (planning baseline):** **OpenAI is the preferred LLM / transcription brain
+> *inside* Vapi** (Vapi-owned model selection only as fallback if OpenAI-in-Vapi is not configurable);
+> and the **Node.js voice gateway + Redis (ADR-0013/ADR-0014) are deferred** for the first v0.3 slice
+> unless provider-readiness testing proves them necessary. **Scheduling baseline = Calendly** for the
+> v0.3 MVP, with Cal.com deferred as the platform-native option (**ADR-0037**). The table rows below
+> are annotated accordingly. No implementation is authorized; live wiring remains v0.3-gated (ADR-0019).
 
 | Layer | Technology | Role | Reference |
 |---|---|---|---|
 | Communications carrier | **Telnyx** (primary); **Twilio** (fallback / compatibility) | Carrier, numbers, SIP, A2P SMS, Media Streams | **ADR-0031** (supersedes the Twilio-default of ADR-0012) |
 | Primary AI voice orchestration | **Vapi**; **Retell** secondary | Owns AI-receptionist orchestration, behind the `VoiceAgentProvider` abstraction | **ADR-0032** (supersedes Grok-Voice-primary of ADR-0012) |
-| Voice model / runtime | **OpenAI** (likely LLM brain inside Vapi) — *direct OpenAI Realtime ownership open* | Reasoning / transcription model under the orchestrator | **ADR-0032** (open decision) |
-| Realtime gateway (open) | **Node.js voice gateway** (dedicated service) — *relationship to Vapi open* | Realtime audio loop, isolated from async + UI | ADR-0013 (open per ADR-0032) |
+| Voice model / runtime | **OpenAI** — preferred LLM/transcription brain inside Vapi (Vapi-owned model selection as fallback) | Reasoning / transcription model under the orchestrator | **ADR-0032 / ADR-0036** |
+| Realtime gateway (deferred) | **Node.js voice gateway** — deferred for the first v0.3 slice unless readiness testing requires it | Realtime audio loop, isolated from async + UI | ADR-0013 (deferred per ADR-0036) |
 | Async orchestration | **n8n** | Tenant-specific workflows, follow-up cadences — **never in the realtime loop** | ADR-0017 |
 | CRM system of record (external) | **HubSpot** (default; client-overridable) | Canonical customer-facing contact/deal/ticket store | **ADR-0033** (re-amends ADR-0015/0027) |
+| Scheduling | **Calendly** (v0.3 MVP baseline); **Cal.com** deferred platform-native option; **Google Calendar** compatibility required | Booking links, embeds, calendar sync, webhooks behind a `SchedulingProvider` abstraction | **ADR-0037** (amends ADR-0036) |
 | Internal system of record | **Postgres event ledger** | Replayable, auditable canonical truth | ADR-0002 |
-| Realtime session state (open) | **Redis** (ephemeral, TTL'd) — *retained behind/alongside Vapi: open* | Live-call working memory; never durable truth | ADR-0014 (open per ADR-0032) |
+| Realtime session state (deferred) | **Redis** (ephemeral, TTL'd) — deferred with the voice gateway | Live-call working memory; never durable truth | ADR-0014 (deferred per ADR-0036) |
 | Product analytics | **PostHog** | Funnel, activation, feature usage (tenant-scoped) | ADR-0018 |
 | Monitoring / observability | **Sentry + Better Stack** on an **OpenTelemetry** spine | Errors, release health, uptime, on-call | ADR-0018 |
 | Internal SOP / brand knowledge | **Obsidian** (Git-backed Markdown vault) | Operator-side SOPs, playbooks, prompt/policy source — **not** per-tenant RAG | ADR-0016 |
@@ -73,7 +75,7 @@ flowchart LR
   subgraph Edge[Telephony Edge]
     TW[Telnyx primary / Twilio fallback<br/>numbers / SIP / Media Streams]
   end
-  subgraph RT[Realtime Plane - Vapi orchestration - gateway/Redis open per ADR-0032]
+  subgraph RT[Realtime Plane - Vapi orchestration - gateway/Redis deferred per ADR-0036]
     GW[Session lifecycle<br/>policy engine + tool router]
     RS[(Redis<br/>ephemeral session state)]
     VAPI[Vapi - primary orchestration]
@@ -194,7 +196,7 @@ The canonical `RESPONSEOS_*` set, by directory:
 
 These constrain every implementation phase:
 
-1. **Separate realtime audio from async workflows.** The realtime plane owns realtime (Vapi-orchestrated; whether a self-hosted Node.js gateway is retained is open per ADR-0032); n8n is async-only and never in the audio loop. (ADR-0013, ADR-0017, ADR-0032)
+1. **Separate realtime audio from async workflows.** The realtime plane owns realtime (Vapi-orchestrated; whether a self-hosted Node.js gateway is retained is deferred per ADR-0036); n8n is async-only and never in the audio loop. (ADR-0013, ADR-0017, ADR-0032)
 2. **Keep the event ledger as the internal system of record;** HubSpot is the default external commercial CRM system of record (client-overridable). (ADR-0002, ADR-0033)
 3. **No provider-specific business logic.** All provider behavior sits behind adapters; carrier (Telnyx↔Twilio) and Vapi-orchestrated voice failover is transparent. (ADR-0031, ADR-0032)
 4. **Communications Abstraction Layer.** Carrier, SMS, AI-voice, messaging, webhook, and usage-metering providers sit behind internal interfaces so providers swap or route without client-facing change. This abstraction is the infrastructure moat. (ADR-0031/0032; comms doc §2)
@@ -204,7 +206,7 @@ These constrain every implementation phase:
 8. **Webhook signature validation is mandatory before any business mutation.** (ADR-0009)
 9. **No hardcoded secrets.** `.env.example` is placeholders only; tenant credentials live encrypted in the DB.
 10. **No Firebase. Ever.**
-11. **No premature microservices.** Any self-hosted realtime voice service (if retained — open per ADR-0032) is the *only* sanctioned service split; everything else stays a modular monolith until scale demands otherwise.
+11. **No premature microservices.** Any self-hosted realtime voice service (if retained — deferred per ADR-0036) is the *only* sanctioned service split; everything else stays a modular monolith until scale demands otherwise.
 12. **Mock-first; no live provider integrations until v0.3 is authorized;** adapters fall back to mock when env vars are missing. (ADR-0001)
 13. **No production deploys until v0.3 readiness gates clear.**
 14. **ResponseOS is not HIPAA-certified.** Never represent it as compliant; HIPAA-readiness is a per-deployment lane, not a product property. (ADR-0004)
@@ -220,7 +222,7 @@ The original `docs/*.md` set assumed Twilio + Retell/Vapi/Bland as the primary v
 |---|---|---|
 | Grok Voice primary, OpenAI Realtime fallback (Twilio edge retained) — _superseded by ADR-0031/0032_ | ADR-0008 | ADR-0012 |
 | Dedicated Node.js voice gateway; realtime isolated — _relationship to Vapi open (ADR-0032)_ | — (new) | ADR-0013 |
-| Redis ephemeral realtime session state — _open per ADR-0032_ | — (new) | ADR-0014 |
+| Redis ephemeral realtime session state — _deferred per ADR-0036_ | — (new) | ADR-0014 |
 | HubSpot default external CRM SoR; ledger internal SoR — _re-amended by ADR-0027 then ADR-0033_ | extends ADR-0002/0007 | ADR-0015 |
 | Obsidian internal SOP/brand-knowledge layer | `architecture.md` Obsidian-out note (partial) | ADR-0016 |
 | n8n async-only, out of realtime loop | formalizes hybrid posture | ADR-0017 |
@@ -247,15 +249,15 @@ The documentation must be complete enough that an implementer (human or Codex) c
 
 ## 9. Assumptions
 
-- The Vapi-orchestrated voice runtime on the Telnyx carrier (ADR-0031/0032) exposes telephony-compatible streaming, tool-calling, and webhook/event semantics sufficient for production answering (with OpenAI likely the LLM brain inside Vapi; direct OpenAI Realtime ownership open). **This must be verified at the v0.3 provider-readiness gate** (see [`RESPONSEOS_BACKEND_SPEC.md`](../architecture/RESPONSEOS_BACKEND_SPEC.md) § Provider readiness).
+- The Vapi-orchestrated voice runtime on the Telnyx carrier (ADR-0031/0032) exposes telephony-compatible streaming, tool-calling, and webhook/event semantics sufficient for production answering (with **OpenAI as the preferred LLM brain inside Vapi** per ADR-0036; Vapi-owned model selection as fallback). **This must be verified at the v0.3 provider-readiness gate** (see [`RESPONSEOS_BACKEND_SPEC.md`](../architecture/RESPONSEOS_BACKEND_SPEC.md) § Provider readiness).
 - HubSpot's API and webhook surface support the contact/deal/ticket mirroring and per-tenant OAuth ResponseOS needs.
 - The MVP runs on the Standard compliance lane (non-PHI home services). Regulated verticals wait for the Privacy-hardened / HIPAA-ready lanes.
-- The existing v0.1/v0.2 codebase (Next.js 16, Prisma 6, Postgres 16, tenant-aware data layer) is the foundation; the voice gateway is a *new* service added at v0.3.
+- The existing v0.1/v0.2 codebase (Next.js 16, Prisma 6, Postgres 16, tenant-aware data layer) is the foundation; the Node voice gateway is **deferred** for the first v0.3 slice (ADR-0036).
 
 ## 10. Open questions
 
-1. **Vapi / Telnyx production telephony path** — concurrency limits, barge-in quality, webhook reliability, retention, and BAA/training-data posture all need verification before live traffic (ADR-0031/0032). Tracked in the v0.3 readiness gate. **Open (ADR-0032):** whether OpenAI remains the LLM brain inside Vapi vs direct OpenAI Realtime ownership, and whether the Node.js voice gateway + Redis (ADR-0013/0014) survive behind or alongside Vapi.
-2. **Voice gateway hosting target** — *if* the dedicated gateway is retained (open per ADR-0032), does it run on the Standard-lane host alongside Next.js, or a separate container platform from day one? (See [`RESPONSEOS_DEPLOYMENT_PLAN.md`](../ops/RESPONSEOS_DEPLOYMENT_PLAN.md).)
+1. **Vapi / Telnyx production telephony path** — concurrency limits, barge-in quality, webhook reliability, retention, and BAA/training-data posture all need verification before live traffic (ADR-0031/0032). Tracked in the v0.3 readiness gate. **Resolved (ADR-0036):** OpenAI is the preferred LLM brain inside Vapi (Vapi-owned model selection as fallback), and the Node.js voice gateway + Redis (ADR-0013/0014) are deferred for the first v0.3 slice unless readiness testing proves them necessary.
+2. **Voice gateway hosting target** — *if* the dedicated gateway is retained (deferred per ADR-0036), does it run on the Standard-lane host alongside Next.js, or a separate container platform from day one? (See [`RESPONSEOS_DEPLOYMENT_PLAN.md`](../ops/RESPONSEOS_DEPLOYMENT_PLAN.md).)
 3. **HubSpot-default onboarding** — HubSpot is the default commercial CRM SoR (ADR-0033), client-overridable; many ICP tenants are on GHL today, so confirm HubSpot-default does not slow pilot onboarding. GHL stays a supported connector, **not** core infrastructure (no GHL LC Phone dependency).
 4. **Bring-your-own-provider timing** — which enterprise milestone unlocks BYO carrier (Telnyx/Twilio) / BYO LLM keys (Future)?
 
