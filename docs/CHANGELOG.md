@@ -4,6 +4,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — test: foreign-child-id tenant hardening (by-call / by-conversation accessors)
+
+- Follow-up to #69. Adds the case #69 didn't cover: a tenant passing their **own** `accountId` together with a **child id owned by another tenant** must get empty/denied — never foreign rows. `listSmsMessagesByConversation` (`conv_mock_2`), `listCallSegmentsByCall` / `listQaLogsByCall` (`call_mock_4`) → `[]`; `getCallTranscriptByCall` → `tenant_scope_denied`.
+- The by-call cases **insert org_mock_2-owned children on `call_mock_4` inside the test** (via the test `prisma` client) so the `account_id` filter / inline guard is genuinely exercised — no shared seed or mock-fixture changes.
+- **No runtime change** — the invariant already holds; this is coverage only. Verified against Postgres 16 (file passes 71/71).
+
 ## Unreleased — test: tenant-isolation coverage for v0.2-closeout substrate models
 
 - **Closed a regression-coverage gap.** The `data-tenant-matrix` integration test exercised the original models but **none of the seven v0.2-closeout substrate models** — conversations, sms_messages, call_segments, call_transcripts, qa_logs, workflow_runs, provider_connections. For a non-negotiable invariant (tenant isolation), that coverage now exists.

@@ -21,7 +21,7 @@ import {
   Users,
   WorkflowRuns,
 } from "@/lib/data";
-import { disconnectTestDb, resetAndSeedTestDb, setDevSession } from "./setup";
+import { disconnectTestDb, prisma, resetAndSeedTestDb, setDevSession } from "./setup";
 
 type TenantResult = Promise<
   | { ok: true; data: Array<{ account_id?: string | null; id?: string }> | { account_id?: string | null; id?: string } | null }
@@ -148,5 +148,86 @@ describe("by-id inline tenant guards (v0.2-closeout substrate)", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.account_id).toBe("org_mock_2");
+  });
+});
+
+// A tenant passing their OWN accountId together with a child id (conversation
+// / call) owned by ANOTHER tenant must get empty/denied — never the foreign
+// rows. conv_mock_2 has org_mock_2 SMS in the seed; call_mock_4 (org_mock_2)
+// gets org_mock_2-owned children inserted below so the exclusion actually bites.
+describe("foreign child id under own account scope", () => {
+  beforeEach(async () => {
+    await prisma.callSegment.create({
+      data: {
+        account_id: "org_mock_2",
+        call_id: "call_mock_4",
+        sequence: 1,
+        speaker: "caller",
+        text: "foreign-tenant segment",
+        started_at: new Date("2026-01-01T00:00:00Z"),
+        ended_at: new Date("2026-01-01T00:00:05Z"),
+      },
+    });
+    await prisma.qaLog.create({
+      data: {
+        account_id: "org_mock_2",
+        call_id: "call_mock_4",
+        rubric_version: "v1",
+        reviewer_type: "human",
+        findings_json: {},
+        reviewed_at: new Date("2026-01-01T00:00:00Z"),
+      },
+    });
+    await prisma.callTranscript.create({
+      data: {
+        account_id: "org_mock_2",
+        call_id: "call_mock_4",
+        inline_text: "foreign-tenant transcript",
+      },
+    });
+  });
+
+  test("listSmsMessagesByConversation excludes another tenant's conversation", async () => {
+    setDevSession("client_admin@org_mock_1");
+    const result = await SmsMessages.listSmsMessagesByConversation({
+      accountId: "org_mock_1",
+      conversationId: "conv_mock_2",
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data).toEqual([]);
+  });
+
+  test("listCallSegmentsByCall excludes another tenant's call", async () => {
+    setDevSession("client_admin@org_mock_1");
+    const result = await CallSegments.listCallSegmentsByCall({
+      accountId: "org_mock_1",
+      callId: "call_mock_4",
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data).toEqual([]);
+  });
+
+  test("listQaLogsByCall excludes another tenant's call", async () => {
+    setDevSession("client_admin@org_mock_1");
+    const result = await QaLogs.listQaLogsByCall({
+      accountId: "org_mock_1",
+      callId: "call_mock_4",
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data).toEqual([]);
+  });
+
+  test("getCallTranscriptByCall denies another tenant's call, never leaks it", async () => {
+    setDevSession("client_admin@org_mock_1");
+    const result = await CallTranscripts.getCallTranscriptByCall({
+      accountId: "org_mock_1",
+      callId: "call_mock_4",
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe("tenant_scope_denied");
   });
 });
