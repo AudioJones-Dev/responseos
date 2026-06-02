@@ -11,23 +11,27 @@
 | **v0.2 Phase B** | Auth scaffold + tenant-aware data access layer | ✅ Shipped (PR #6, `f6cfaf8`) |
 | **v0.2 Phase C** | Route consumers (admin + client + API) through the v0.2 data layer | ✅ Shipped (PR #7, `c681134`) |
 | **v0.2 Phase D** | Integration test suite + CI integration job against Postgres 16 | ✅ Shipped (PR #12, `8a8c6a0`) |
-| **v0.2 closeout** | `Organization` → `Account` rename; real Auth.js provider wiring; UI rebuild against `DESIGN.md` tokens; remaining v0.2-spec items (provider_connections, conversations/sms_messages, call_segments/transcripts, workflow_runs, qa_logs, audit_logs) | 🟡 In flight |
+| **v0.2 closeout** | `Organization` → `Account` + `Booking` → `Appointment` renames; **Clerk** auth wiring (identity schema, session derivation, webhook + `proxy.ts` route protection — ADR-0005, *not* Auth.js); UI rebuild against `DESIGN.md` tokens; remaining v0.2-spec models (provider_connections, conversations/sms_messages, call_segments/call_transcripts, workflow_runs, qa_logs, expanded audit_logs) | ✅ Shipped (PRs #37–#43; migrations `0002`–`0008`) |
 | **v0.3** | Live **communications stack** — Telnyx + Vapi primary, Twilio failover, HubSpot CRM sync, Phase-1 Business Memory capture, behind a Communications Abstraction Layer ([`product/responseos-communications-stack.md`](./product/responseos-communications-stack.md)) — with signature verification and call/event persistence; real Stripe billing (Payment Intents, hosted pages, webhook ingest); outcome-fee invoicing preview; outbound recovery campaigns; branded client portals; OpenClaw sandboxed gateway experiment | ⏳ Planned |
 | **v0.4** | Client knowledge base + agent grounding layer (gated on tenant isolation + audit log + retention controls being in force) | ⏳ Planned |
 | **v0.5** | Billing / outcome-fee ledger production: pricing engine, Stripe billing implementation, outcome-fee ledger, client invoice logic, in-app pricing-tier selectors | ⏳ Planned |
 | **v1.0** | Client-ready Revenue Recovery OS — polished, onboarding flow complete, white-label-ready | ⏳ Planned |
 | **HIPAA-ready lane** | Optional per-tenant deployment lane (AWS-hosted, BAA-backed). Only after independent compliance review and full vendor BAA chain verification. **ResponseOS is not HIPAA-certified out of the box.** | ⏳ Architectural pattern only |
 
-## Current focus (May 2026)
+## Current focus (June 2026)
 
-v0.2 closeout — finish the data model expansion (provider_connections, conversations, call_segments, call_transcripts, workflow_runs, qa_logs), wire real Auth.js, rename `Organization` → `Account`, and rebuild UI against the `DESIGN.md` tokens. After v0.2 closes, v0.3 unlocks live provider integration work.
+**v0.2 closeout is complete.** The data-model expansion (provider_connections, conversations/sms_messages, call_segments/call_transcripts, workflow_runs, qa_logs, expanded audit_logs) shipped and is wired through the data-access layer and routes; the `Organization` → `Account` and `Booking` → `Appointment` renames landed; **Clerk** auth (identity schema, session derivation, webhook + `proxy.ts` route protection — ADR-0005, not Auth.js) is in force; and the UI was rebuilt against `DESIGN.md` tokens (#43). Tenant-isolation, seed-determinism, and mock-parity integration tests cover the new models.
+
+In parallel, a **GTM Phase 0.5** marketing surface shipped (#66/#67): a public conversion path (`/audit` → mock capture endpoint), a trust/security page, pricing clarity, per-page + Open Graph metadata, an expanded demo narrative, and the home OFFER section — all mock-safe, no live integrations.
+
+**Next milestone: v0.3 — gated.** Live provider integrations (Telnyx/Vapi/Twilio/HubSpot), real Stripe billing, and any production deploy stay **off** until v0.3 is **explicitly authorized** per the AGENTS hard rules. No v0.3 code lands before that authorization.
 
 ## v0.2 acceptance criteria
 
 Carried forward from the v0.2 planning spec ([archived here](./archive/v0.2-planning-spec.md)):
 
 - [x] Supabase / Postgres persistence added.
-- [x] Auth scaffold added (real provider wiring deferred to v0.2 closeout).
+- [x] Auth scaffold added (real **Clerk** provider wiring landed in v0.2 closeout — ADR-0005).
 - [x] Tenant-aware data access added.
 - [x] Client portal reads from database.
 - [x] Webhook event ledger added (foundation).
