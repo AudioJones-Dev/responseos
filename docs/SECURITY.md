@@ -1,6 +1,6 @@
 # Security
 
-The compliance posture is chosen **per tenant tier**, not hard-coded globally. Standard mode runs on Twilio + Retell + Supabase + Vercel; HIPAA-ready mode runs on AWS-hosted primitives with BAAs in place across the vendor chain.
+The compliance posture is chosen **per tenant tier**, not hard-coded globally. Standard mode runs on the planning-baseline communications stack — **Telnyx** primary carrier (**Twilio** failover), **Vapi** primary AI voice orchestration (**Retell** secondary; **OpenAI** preferred in-Vapi brain, per ADR-0031/0032/0036), Postgres (Neon, ADR-0026), and Vercel; **live provider wiring is v0.3-gated** (ADR-0019). HIPAA-ready mode runs on AWS-hosted primitives with BAAs in place across the vendor chain.
 
 ## Hard rules (always)
 
@@ -21,7 +21,7 @@ The compliance posture is chosen **per tenant tier**, not hard-coded globally. S
 | Encryption | TLS in transit; encrypted storage + backups (KMS in HIPAA lane) |
 | Access control | Tenant RBAC; least privilege; admin break-glass policy |
 | Auditability | Immutable event ledger (v0.2); admin action logs; prompt/version history |
-| Webhook security | Signature validation on Twilio, Retell, Stripe, HighLevel |
+| Webhook security | Signature validation on Telnyx, Vapi, Twilio, Retell, Stripe, HighLevel (Telnyx/Vapi wire in v0.3) |
 | Payment boundary | Never store cards; hosted pages / Payment Intents only |
 | Deletion + export | Tenant-scoped delete/export workflows |
 | QA governance | Separate raw artifacts from redacted review copies |
@@ -60,6 +60,8 @@ Maintain an explicit **vendor allowlist per compliance tier**. Onboarding a heal
 
 | Provider | Header | Validation |
 |---|---|---|
+| Telnyx _(primary carrier; wires v0.3, ADR-0031)_ | `telnyx-signature-ed25519` + `telnyx-timestamp` | Ed25519 public-key verify over `timestamp\|raw-body` against the Telnyx public key; reject stale timestamps (replay) |
+| Vapi _(primary orchestration; wires v0.3, ADR-0032)_ | `X-Vapi-Signature` / shared-secret header | Verify HMAC-SHA256 over the raw server-message body with the configured secret; constant-time compare |
 | Twilio | `X-Twilio-Signature` | HMAC-SHA1 using auth token + full URL + sorted form params; preserve raw body |
 | Retell | `x-retell-signature` | Raw-body HMAC; reject events older than 5 minutes (replay protection) |
 | Stripe | `Stripe-Signature` | `stripe.webhooks.constructEvent` — includes timestamp; IP allowlist Stripe ranges |
