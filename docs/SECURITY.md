@@ -61,7 +61,7 @@ Maintain an explicit **vendor allowlist per compliance tier**. Onboarding a heal
 | Provider | Header | Validation |
 |---|---|---|
 | Telnyx _(primary carrier; wires v0.3, ADR-0031)_ | `telnyx-signature-ed25519` + `telnyx-timestamp` | Ed25519 public-key verify over `timestamp\|raw-body` against the Telnyx public key; reject stale timestamps (replay) |
-| Vapi _(primary orchestration; wires v0.3, ADR-0032)_ | `X-Vapi-Signature` / shared-secret header | Verify HMAC-SHA256 over the raw server-message body with the configured secret; constant-time compare |
+| Vapi _(primary orchestration; wires v0.3, ADR-0032)_ | Configured HMAC signature header, e.g. `X-Vapi-Signature`, plus optional timestamp header | Verify HMAC-SHA256 over the raw server-message body with the configured secret; constant-time compare; reject stale timestamps when configured |
 | Twilio | `X-Twilio-Signature` | HMAC-SHA1 using auth token + full URL + sorted form params; preserve raw body |
 | Retell | `x-retell-signature` | Raw-body HMAC; reject events older than 5 minutes (replay protection) |
 | Stripe | `Stripe-Signature` | `stripe.webhooks.constructEvent` — includes timestamp; IP allowlist Stripe ranges |
