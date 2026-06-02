@@ -1,4 +1,11 @@
 import { ButtonLink, Card } from "@/components/ui";
+import { AuditRequestForm } from "./AuditRequestForm";
+
+export const metadata = {
+  title: "Revenue recovery audit",
+  description:
+    "Map your missed-demand surface and get an estimated recovered-revenue number for the next 30 days — a clear figure, not a sales pitch.",
+};
 
 const STEPS = [
   {
@@ -39,7 +46,10 @@ export default function AuditPage() {
         recovered-revenue number for the next 30 days. A clear figure, not a
         sales pitch.
       </p>
-      <div className="mt-8">
+      <div className="mt-8 flex flex-wrap gap-3">
+        <ButtonLink href="#request" glow>
+          Request my audit
+        </ButtonLink>
         <ButtonLink href="/demo" variant="secondary">
           See it on real workflows
         </ButtonLink>
@@ -80,6 +90,19 @@ export default function AuditPage() {
             </Card>
           ))}
         </div>
+      </section>
+
+      <section id="request" className="mt-14 scroll-mt-24">
+        <h2 className="font-display text-2xl font-semibold text-ink">
+          Request your audit
+        </h2>
+        <p className="mt-2 max-w-2xl text-sm text-ink-secondary">
+          Tell us where the demand is leaking. We&apos;ll come back with a
+          recovery plan and a 30-day recovered-revenue estimate.
+        </p>
+        <Card className="mt-8" as="section">
+          <AuditRequestForm />
+        </Card>
       </section>
     </main>
   );

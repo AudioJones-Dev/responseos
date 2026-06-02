@@ -1,5 +1,11 @@
 import { ButtonLink, Card } from "@/components/ui";
 
+export const metadata = {
+  title: "For med spas",
+  description:
+    "ResponseOS for med spas — high-ticket consults booked before they cool, with discreet, on-brand follow-up.",
+};
+
 const POINTS = [
   {
     title: "Catch the consult request",

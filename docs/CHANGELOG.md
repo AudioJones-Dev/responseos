@@ -4,6 +4,48 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: home-page OFFER philosophy section (GTM Phase 0.5)
+
+- **Paid off the dangling hero reference.** The home hero says "OFFER is the philosophy" but the page never explained it. Added a five-card **OFFER** section (Outcomes First / Front the Work / Framework Driven / Earn on Outcomes / ROI-Aligned Partnerships) grounded verbatim in `docs/README.md`, placed between the hero and the "One loop, four moves" RECOVER pillars.
+- Copy is truthful and consistent with the pricing model already shipped (outcome fees upside-only, never performance-only); **no fabricated proof, testimonials, or metrics.** Reuses the existing `noise-glass` atmosphere; no new dependencies, routes, providers, or DB work.
+
+## Unreleased — feat: demo landing-page narrative (GTM Phase 0.5)
+
+- **Expanded `/demo`** from a bare step list into the full narrative from `docs/product/responseos-demo-landing-page-copy.md`: a sharper hero with the Variant A proof line, a **Problem** section (revenue-leak pain bullets), the **"One system" loop** (Call → Qualify → CRM sync → Business Memory → Founder action), the existing RECOVER walkthrough steps, a **Business Memory** section, and a straight-talk **FAQ**.
+- **Truthful to the current build.** Every claim is framed for the mock stage: the FAQ states plainly that the demo uses **clearly-labeled mock data only**, that it is a **simulated walkthrough**, that **live provider integrations are gated until v0.3**, and that **advanced AI memory is not active** (Phase-1 = structured event capture only, per ADR-0034). The Business Memory section carries the spec's **"Honest scope"** callout verbatim in spirit. No present-tense live-CRM/HubSpot claims.
+- Secondary CTA routes to the real conversion path (`/audit`); brand atmosphere reuses the existing `ledger-depth` family. No new dependencies, routes, providers, or DB work.
+
+## Unreleased — feat: Open Graph social card image + spec-aligned copy (GTM Phase 0.5)
+
+- **Generated the OG/social card** (`public/og/responseos-og.png`, 1200×630) from a hand-authored, on-brand source SVG (`public/og/responseos-og.svg`) via `sharp` — the same toolchain as the favicons, no new deps. Reproducible through `scripts/generate-og.mjs`. Brand 2.0 treatment per `docs/product/responseos-og-social-preview-spec.md` §4: true-black canvas, RO mark + wordmark lockup, headline with **revenue** in Signal-Yellow, proof line, quiet attribution.
+- **Wired the metadata** — root `openGraph`/`twitter` now use the spec's **Variant A** copy ("Stop losing revenue to missed calls…") and reference the card image. Added `metadataBase` from the existing `NEXT_PUBLIC_APP_URL` env var (fallback `http://localhost:3000`) so image/OG URLs resolve absolutely at deploy — no hardcoded domain, build stays warning-free.
+- Verified end to end: card renders correctly (viewed), `og:image` serves `200 image/png`, and all OG/Twitter tags emit Variant A copy. **Follow-ups remain** (per the spec): the outlined-Syne wordmark (ADR-0025 gap, headline currently rasterized in Liberation Sans), the optional 1080×1080 square, and any per-route cards — left for a later pass.
+
+## Unreleased — feat: pricing-page clarity — assessment anchor + retainer model (GTM Phase 0.5)
+
+- **Surfaced the commercial model** on `/pricing`, grounded in `docs/pricing-and-onboarding.md`: a two-step "Step 1 · Revenue Leak Assessment → Step 2 · Implementation" layout. Per the owner's call, the **$1,000 flat assessment** (creditable toward implementation within 30 days) is published as a concrete anchor; per-tier setup/monthly **dollar ranges stay gated** behind the assessment conversation.
+- **Explained the retainer structure** — every engagement = one-time setup + monthly retainer, with optional outcome fees as upside only (verified booked appointments / recovered revenue), and the hard rule stated plainly: **no performance-only deals, no seat licenses.**
+- **Replaced the placeholder "TBD" / "ROI-aligned" tier prices** with model descriptors ("Setup + monthly", "Setup + monthly + outcome") so the cards read as scope, not unfinished figures. Added a "Choose your tier" note clarifying that figures are tailored from the assessment.
+- No fabricated numbers beyond the doc-sourced assessment price; no new dependencies, routes, providers, or DB work.
+
+## Unreleased — feat: per-page marketing metadata + social cards (GTM Phase 0.5)
+
+- **Per-page titles + descriptions** — every marketing route now sets its own `title`/`description` instead of inheriting the generic root title: `/audit`, `/pricing`, `/demo`, `/trust`, and the three `/industries/*` pages. Root layout adds a `title.template` (`"%s — ResponseOS"`) so each page renders e.g. `Pricing — ResponseOS`.
+- **Site-level Open Graph + Twitter cards** — root metadata gains `openGraph` (type/siteName/title/description/locale) and `twitter` (`summary_large_image`) so shared links render valid cards. No OG image asset or `metadataBase` domain invented — relative-URL fields are avoided to keep the build warning-free and the domain unhardcoded.
+- Copy is drawn from each page's existing headline — no fabricated claims; med-spas description avoids any compliance/HIPAA implication. No new dependencies, routes, providers, or DB work.
+
+## Unreleased — feat: trust & security marketing page (GTM Phase 0.5)
+
+- **New `/trust` page** (`app/(marketing)/trust/page.tsx`) — the GTM trust surface, grounded in `docs/SECURITY.md`: tenant isolation by construction, immutable event ledger, webhook signature verification, clean payment boundary (never store cards), per-tenant retention modes, and deletion/export. Linked from the header nav and footer.
+- **Honest compliance language per the hard rules** — states plainly that **ResponseOS is not HIPAA-certified or HIPAA-compliant out of the box**; the HIPAA-ready lane is an optional per-tenant architectural pattern available only after independent review + BAA verification. A "where the build is today" section discloses the current mock-adapter / no-live-data stage rather than implying otherwise.
+- No new dependencies; no provider/env/DB/migration/deploy work; no fabricated metrics or testimonials. Atmosphere background reuses the existing `noise-glass` family.
+
+## Unreleased — feat: marketing audit-request capture (GTM Phase 0.5)
+
+- **Conversion path on `/audit`** — the revenue-recovery-audit page now has a real lead-capture form (`app/(marketing)/audit/AuditRequestForm.tsx`) wired to a new public endpoint `POST /api/audit-requests`. The hero CTA scrolls to the form (`#request`); the demo link is preserved.
+- **Public, mock, safe by design.** The endpoint is **unauthenticated** (prospects have no session/account) and is deliberately **separate from the tenant-scoped `Assessments` data layer** — it validates at the boundary with `AuditRequestSchema` (`lib/validation/audit-request.ts`, exported via the `api` barrel) and only **acknowledges** the request (`{ ok: true, mock: true, data: { reference, status: "received", … } }`). No CRM/provider/DB write — live capture stays gated until v0.3.
+- **Boundary validation + tests.** Required `name` / `email` / `business_name`; optional `phone` / `industry` / `monthly_missed_calls` / `avg_job_value_usd` / `notes`, with numeric coercion and empty-optional drop. New `tests/unit/audit-request.test.ts` covers accept/reject paths.
+- **First form in the app** — established on-brand dark-token field styling (`border-line` / `bg-surface` / `text-ink`) inline; no new UI primitive, no new dependency. `#44` untouched.
 ## Unreleased — style: site-wide brand mark consistency (console sidebar)
 
 - **Logo usage audit across every route group + shared shell.** Found the last placeholder "R" badge in `components/layout/Sidebar.tsx` (the **admin + client console** rail). Replaced it with the shared `LogoMark` (real RO mark), sized to fit the collapsed 68px rail and centered when collapsed, left-aligned + product/scope text when expanded.

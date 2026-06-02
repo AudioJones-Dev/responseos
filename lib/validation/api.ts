@@ -12,5 +12,6 @@ export * from "./user";
 export * from "./contact";
 export * from "./lead";
 export * from "./assessment";
+export * from "./audit-request";
 export * from "./engagement";
 export * from "./webhook";

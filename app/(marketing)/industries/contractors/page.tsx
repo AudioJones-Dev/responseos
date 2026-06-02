@@ -1,5 +1,11 @@
 import { ButtonLink, Card } from "@/components/ui";
 
+export const metadata = {
+  title: "For contractors",
+  description:
+    "ResponseOS for contractors — win the quote before it goes cold. Capture missed calls, qualify leads, and follow up automatically.",
+};
+
 const POINTS = [
   {
     title: "Route to the right estimator",

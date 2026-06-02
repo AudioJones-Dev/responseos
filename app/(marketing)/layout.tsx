@@ -8,6 +8,7 @@ const NAV = [
   { label: "Platform", href: "/" },
   { label: "Industries", href: "/industries/home-services" },
   { label: "Pricing", href: "/pricing" },
+  { label: "Trust", href: "/trust" },
   { label: "Demo", href: "/demo" },
 ];
 
@@ -59,6 +60,9 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
               </Link>
               <Link href="/audit" className="hover:text-ink-secondary">
                 Revenue audit
+              </Link>
+              <Link href="/trust" className="hover:text-ink-secondary">
+                Trust
               </Link>
             </div>
             <SocialLinks />
