@@ -4,6 +4,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — test: tenant-isolation coverage for v0.2-closeout substrate models
+
+- **Closed a regression-coverage gap.** The `data-tenant-matrix` integration test exercised the original models but **none of the seven v0.2-closeout substrate models** — conversations, sms_messages, call_segments, call_transcripts, qa_logs, workflow_runs, provider_connections. For a non-negotiable invariant (tenant isolation), that coverage now exists.
+- Added the list/by-call read accessors to the cross-tenant matrix (own-tenant ok · cross-tenant → `tenant_scope_denied` · cross-tenant admin ok), plus a focused block for the **by-id inline guards** (`getConversationById`, `getWorkflowRunByRunId`) — a distinct enforcement path from the `withTenantScope` one.
+- **Audit finding (no bug):** every newer read accessor already scopes by `account_id` (WHERE filter or inline `isCrossTenantRole`/`effectiveAccountId` check), and `provider_connections` excludes credential ciphertext from its public projection. This PR only adds the missing tests. Verified against Postgres 16 — the matrix file passes 67/67.
+
 ## Unreleased — docs: reconcile ROADMAP with shipped state (v0.2 closeout complete)
 
 - **Marked v0.2 closeout ✅ Shipped** in the version table (was "🟡 In flight"). Verified against the repo: the `Organization` → `Account` + `Booking` → `Appointment` renames, the remaining v0.2 models (provider_connections, conversations/sms_messages, call_segments/call_transcripts, workflow_runs, qa_logs, expanded audit_logs), Clerk auth wiring, and the DESIGN.md UI rebuild all landed (PRs #37–#43; migrations `0002`–`0008`), with tenant-isolation / seed-determinism / mock-parity integration coverage.
