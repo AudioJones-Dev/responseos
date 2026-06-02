@@ -105,9 +105,9 @@ These remain the workflow contract; the go-forward stack changes *how* they run 
 ```mermaid
 sequenceDiagram
   participant C as Caller
-  participant TW as Twilio
-  participant GW as Voice Gateway
-  participant V as Grok Voice (→OpenAI on failover)
+  participant TW as Telnyx (Twilio failover)
+  participant GW as ResponseOS (CAL + ledger)
+  participant V as Vapi (OpenAI brain; Retell failover)
   participant L as Event Ledger
   C->>TW: Calls the business
   TW->>GW: Media stream + call webhook
@@ -262,10 +262,10 @@ MVP (v0.2 done → v0.3) → Phase 2 (v0.4 knowledge grounding, v0.5 billing) �
 
 | ID | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|---|
-| R-01 | Grok Voice / OpenAI Realtime not production-ready for telephony (concurrency, barge-in, webhooks) | Med | High | v0.3 provider-readiness gate before live traffic; transparent failover; abstraction allows re-swap (ADR-0012) |
+| R-01 | Vapi / Telnyx (with OpenAI as the in-Vapi brain) not production-ready for telephony (concurrency, barge-in, webhooks) | Med | High | v0.3 provider-readiness gate before live traffic; Telnyx→Twilio and Vapi→Retell failover; CAL abstraction allows re-swap (ADR-0031/0032/0036) |
 | R-02 | Cross-tenant data leak | Low | Critical | `account_id` from session on every path; integration tests assert isolation; break-glass logging |
-| R-03 | Voice-provider compliance posture (retention/training data) unverified for regulated tenants | Med | High | Block Grok/OpenAI on HIPAA lane until BAA/retention verified; Standard lane only for MVP |
-| R-04 | Voice gateway is a new operational surface (latency, scaling) | Med | Med | Isolated service + own SLOs; Redis-backed session continuity; load test before go-live |
+| R-03 | Voice-provider compliance posture (retention/training data) unverified for regulated tenants | Med | High | Block Telnyx/Vapi/OpenAI on HIPAA lane until BAA/retention verified; Standard lane only for MVP |
+| R-04 | The Vapi-orchestrated voice path is a new operational surface (latency, scaling) | Med | Med | Provider SLOs + monitoring; load test before go-live. Node gateway + Redis deferred (ADR-0036); revisit only if readiness testing requires them |
 | R-05 | HubSpot-default friction for GHL-native tenants | Med | Med | Keep CRM pluggable; GHL connector retained (ADR-0015) |
 | R-06 | Outcome-fee disputes over attribution | Med | Med | Evidence-linked, ledger-backed ROI; 30-day audit window |
 | R-07 | TCPA / call-recording consent violations | Low | High | Disclosure + consent as tenant policy objects; jurisdiction-aware (v0.3) |
@@ -277,8 +277,8 @@ MVP (v0.2 done → v0.3) → Phase 2 (v0.4 knowledge grounding, v0.5 billing) �
 
 ## 14. Open questions
 
-1. Production telephony viability + compliance posture of Grok Voice and OpenAI Realtime (R-01, R-03) — owner: backend/voice; due: v0.3 readiness gate.
-2. Voice gateway hosting/topology on the Standard lane (co-located vs separate container platform) — owner: infra.
+1. Production telephony viability + compliance posture of Vapi / Telnyx with an OpenAI in-Vapi brain (R-01, R-03) — owner: backend/voice; due: v0.3 readiness gate.
+2. Whether the deferred Node voice gateway + Redis (ADR-0036) are needed for the first v0.3 slice, and if un-deferred, their hosting/topology on the Standard lane — owner: infra.
 3. HubSpot-default vs GHL-default for first pilots (R-05) — owner: product/GTM.
 4. Which milestone unlocks bring-your-own-provider for enterprise tenants — owner: product.
 5. Outcome-fee attribution rules edge cases (multi-touch, recurring customers) — owner: product/finance.
