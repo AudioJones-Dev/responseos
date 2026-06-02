@@ -4,6 +4,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: reconcile ROADMAP with shipped state (v0.2 closeout complete)
+
+- **Marked v0.2 closeout ✅ Shipped** in the version table (was "🟡 In flight"). Verified against the repo: the `Organization` → `Account` + `Booking` → `Appointment` renames, the remaining v0.2 models (provider_connections, conversations/sms_messages, call_segments/call_transcripts, workflow_runs, qa_logs, expanded audit_logs), Clerk auth wiring, and the DESIGN.md UI rebuild all landed (PRs #37–#43; migrations `0002`–`0008`), with tenant-isolation / seed-determinism / mock-parity integration coverage.
+- **Corrected the stale "Auth.js" references to Clerk** (ADR-0005) in the closeout row and the v0.2 acceptance list — real auth wiring is Clerk, not Auth.js.
+- **Refreshed "Current focus"** (May → June 2026): v0.2 closeout done; noted the parallel GTM Phase 0.5 marketing surface (#66/#67); restated that **v0.3 stays gated** until explicitly authorized per the AGENTS hard rules. Docs-only; no code, schema, or runtime change.
+
 ## Unreleased — feat: home-page OFFER philosophy section (GTM Phase 0.5)
 
 - **Paid off the dangling hero reference.** The home hero says "OFFER is the philosophy" but the page never explained it. Added a five-card **OFFER** section (Outcomes First / Front the Work / Framework Driven / Earn on Outcomes / ROI-Aligned Partnerships) grounded verbatim in `docs/README.md`, placed between the hero and the "One loop, four moves" RECOVER pillars.
