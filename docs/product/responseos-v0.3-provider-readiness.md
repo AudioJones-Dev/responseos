@@ -76,7 +76,7 @@ The research README ([#71](../research/communications-stack/README.md)) is **cor
 
 1. **Docs reconciliation (docs-only):** update `BUILD_SOURCE.md` (Telnyx) and `SECURITY.md` (webhook table + standard-mode line); record the resolved §4 decisions (LLM brain, gateway/Redis) as a new ADR.
 2. **CAL interfaces in code (mock-only):** define `CarrierProvider`, `VoiceAgentProvider`, `SmsProvider`, `CrmProvider` mirroring the existing `voice/` pattern; env-absent → mock fallback.
-3. **Schema alignment (migration, gated):** add `telnyx` to carrier/SMS/connection enums; resolve `grok`/`sendblue`. **No new business tables** (ADR-0034 forbids).
+3. **Schema alignment (migration, gated):** add `telnyx` to carrier/SMS/connection enums; resolve `grok`/`sendblue`. No new knowledge/RAG/vector tables under this provider-readiness slice; any new v0.3 schema must be separately scoped and approved.
 4. **Mock adapters** for Telnyx/Vapi/HubSpot behind the CAL returning deterministic data; persist into the existing ledger / `conversations` / `call_transcripts` substrate (Phase-1 Business Memory capture, ADR-0034).
 5. **Webhook ingress with signature validation first** (ADR-0009): validate → reject-on-bad → *then* mutate; mock mode validates and no-ops.
 6. **Env placeholders only** (`TELNYX_*`, `OPENAI_*`/`GROK_*`, etc.) — **no real secrets**.
