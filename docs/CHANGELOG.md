@@ -4,6 +4,11 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: v0.3 Provider Stack Readiness Spec (planning only)
+
+- Added [`product/responseos-v0.3-provider-readiness.md`](./product/responseos-v0.3-provider-readiness.md) — the next planning artifact after the communications-stack research report (#71). Captures the ADR-ratified **planning baseline** (Telnyx primary carrier, Twilio failover, Vapi primary orchestration, Retell secondary, HubSpot default commercial SoR, all behind the CAL), the repo-backed baseline (provider adapters are `.gitkeep` stubs; only `voice/` mock + `encryption/` exist), the research-vs-ADR reconciliation, the schema/adapter gaps, the unresolved decisions (OpenAI-in-Vapi vs Vapi-owned model, gateway/Redis, Telnyx enum/schema representation, A2P ownership, scheduling provider, Sendblue scope, `grok` legacy-residue reconciliation, stale-docs cleanup), a minimal safe (mock-first) implementation sequence, and a per-provider readiness checklist.
+- **Documentation only.** No provider adapters, schema, env vars, secrets, account config, deploy, or v0.3 code — the spec explicitly states nothing live is authorized.
+
 ## Unreleased — test: foreign-child-id tenant hardening (by-call / by-conversation accessors)
 
 - Follow-up to #69. Adds the case #69 didn't cover: a tenant passing their **own** `accountId` together with a **child id owned by another tenant** must get empty/denied — never foreign rows. `listSmsMessagesByConversation` (`conv_mock_2`), `listCallSegmentsByCall` / `listQaLogsByCall` (`call_mock_4`) → `[]`; `getCallTranscriptByCall` → `tenant_scope_denied`.
