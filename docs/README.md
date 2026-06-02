@@ -4,7 +4,7 @@ ResponseOS is the AI Revenue Recovery Platform built by AJ Digital LLC. This `do
 
 ## Canonical `RESPONSEOS_*` doc set (go-forward)
 
-A complete canonical documentation set lives under `product/`, `architecture/`, `ops/`, `brand/`, and `research/`, indexed by **[`product/RESPONSEOS_BUILD_SOURCE.md`](./product/RESPONSEOS_BUILD_SOURCE.md)** — start there. It defines the go-forward stack (Twilio edge · Node.js voice gateway · Grok Voice primary / OpenAI Realtime fallback · n8n async · HubSpot CRM SoR · Redis · PostHog/Sentry/Better Stack · Obsidian SOP layer) and is reconciled against the original docs via [ADR-0011 → ADR-0018](./DECISIONS.md). Where the new set conflicts with an earlier prose doc, the new ADRs win; the original `docs/*.md` files below remain authoritative for anything the new set does not restate.
+A complete canonical documentation set lives under `product/`, `architecture/`, `ops/`, `brand/`, and `research/`, indexed by **[`product/RESPONSEOS_BUILD_SOURCE.md`](./product/RESPONSEOS_BUILD_SOURCE.md)** — start there. The authoritative provider-stack baseline is the decision log: Telnyx primary / Twilio failover; Vapi primary orchestration with OpenAI as the preferred in-Vapi brain and Vapi-owned model selection as fallback; Retell secondary; n8n async; HubSpot default CRM SoR; Cal.com scheduling with Google Calendar compatibility; Node gateway + Redis deferred, per [ADR-0031/0032/0033/0036](./DECISIONS.md). Some `RESPONSEOS_*` prose docs still carry older Grok/OpenAI-Realtime/Twilio/gateway/Redis framing or mark layers open; where prose docs conflict with ADRs, the ADRs win until a separate reconciliation PR updates them.
 
 | Area | Docs |
 |---|---|

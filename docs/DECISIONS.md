@@ -600,3 +600,23 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 3. **Demo format = Hybrid** — a **recorded** demo for marketing / top-of-funnel and a **clickable** demo for sales conversations. The **clickable static demo route** is the first implementation milestone either way.
 
 **Consequences.** The demo docs' "open decisions" sections for CTA / vertical / format are now resolved by this ADR (the docs may reference it incrementally; this ADR is authoritative). **This ADR authorizes the *first non-docs build task* — a clickable static demo route — under a strict scope:** a visual click-through (Revenue Recovery Overview → Call Intelligence → Lead/Opportunity → Business Memory → Follow-Up Queue) bound to the **existing mock demo assets**, per the wireframe spec and Brand 2.0. It explicitly does **not** authorize Telnyx, Vapi, HubSpot, SMS, live calls, provider integrations, deploy work, or relaxing the v0.4 Business Memory / RAG / vector gates. Mock-first (ADR-0001) and v0.3 live-wiring gates hold.
+
+---
+
+## ADR-0036 — v0.3 provider-stack open decisions resolved as a planning baseline (resolves the §4 open items of the provider-readiness spec; closes the ADR-0032 open decisions; **no implementation authorized**)
+
+**Status:** Accepted (2026-06-02) as **planning decisions only.** Resolves the open decisions in [`product/responseos-v0.3-provider-readiness.md`](./product/responseos-v0.3-provider-readiness.md) §4 and the open items in **ADR-0032 §3** (LLM brain; gateway/Redis). Confirms ADR-0031 (carrier) and ADR-0033 (CRM SoR). **No schema change, provider adapter, env var, secret, account configuration, deploy, or v0.3 implementation is authorized by this ADR** — those remain gated (ADR-0001, ADR-0019) behind a separate, explicitly-approved PR.
+
+**Context.** The v0.3 Provider Stack Readiness Spec (#72) enumerated the provider-stack decisions that gate a future communications build: the in-Vapi LLM/transcription brain, the custom Node voice gateway + Redis relationship, Telnyx enum/schema representation, A2P ownership, the scheduling baseline, and Sendblue/iMessage scope. This ADR settles them as a **planning baseline** so the direction is unambiguous, while keeping every implementation step gated.
+
+**Decision.**
+
+1. **Vapi remains the primary AI voice orchestration layer** (confirms ADR-0032); Retell AI stays secondary/redundancy.
+2. **OpenAI is the preferred LLM / transcription brain *inside* Vapi where it is configurable;** Vapi-owned model selection is the **fallback** only if OpenAI-in-Vapi is not configurable. This resolves the ADR-0032 §3 open decision in favor of *OpenAI-in-Vapi-preferred*.
+3. **The custom Node.js voice gateway + Redis (ADR-0013/0014) are deferred for the first v0.3 slice** unless provider-readiness testing proves them necessary (e.g., barge-in / media-stream control Vapi does not cover). Deferred, not removed — revisited per readiness testing.
+4. **Telnyx primary / Twilio failover remains the carrier baseline** (confirms ADR-0031). **Any implementation or schema change** (adding `telnyx` to `CallProvider`/`SmsProvider`/`ProviderConnectionProvider`, adapters, env) **requires a separate approved PR** — this ADR does not make it.
+5. **MVP A2P 10DLC ownership is platform-owned** (ResponseOS-registered brand/campaign); per-client / BYO registration is a future option. Resolves the ADR-0031 A2P-ownership open readiness item.
+6. **Scheduling baseline is Cal.com, with Google Calendar compatibility;** GHL remains an optional connector (consistent with ADR-0033 and ADR-0007). Resolves the readiness-spec scheduling open item.
+7. **Sendblue / iMessage is out of v0.3** and remains future / premium research only.
+
+**Consequences.** The provider-stack direction for a future v0.3 communications slice is now unambiguous, while the **gate is unchanged**: no live providers, schema, env, secrets, accounts, or deploy ship under this ADR. It updates two stale prose docs to match the baseline — `docs/README.md` (the "Twilio edge · Grok Voice primary …" stack summary) and `docs/SECURITY.md` (the standard-mode line + the webhook-signature table, which now lists the planned Telnyx/Vapi validation). `RESPONSEOS_BUILD_SOURCE.md` was already reconciled (#49) and is unchanged. The v0.4 knowledge / RAG / vector gates (ADR-0016/0029/0034) are untouched. Mock-first (ADR-0001) holds. The first actual provider work begins only with a separate, explicitly-authorized, scoped PR.
