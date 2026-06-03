@@ -4,6 +4,11 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: v0.3 implementation authorization brief (decision checkpoint, planning only)
+
+- Added [`product/responseos-v0.3-authorization-brief.md`](./product/responseos-v0.3-authorization-brief.md) — a decision-support brief so the operator can make a controlled yes/no on a single **mock-first** v0.3 slice without opening the live-integration gate. Proposes the first slice (CAL provider interfaces + **mock adapters only**, mirroring `lib/providers/voice/`), lists the files/surfaces that would change, what stays mock-only, what stays forbidden, the validation gates, rollback/stop conditions, and an explicit statement that **no live secrets, accounts, or deploys are included**.
+- **The brief authorizes nothing.** Documentation only; no code, schema, env, secrets, accounts, deploy, or v0.3 implementation. ADR-0001 (mock-first) and ADR-0019 (v0.3 gate) remain in force.
+
 ## Unreleased — docs: ADR-0037 (Calendly MVP scheduling) + RESPONSEOS_* canon reconciliation (planning only)
 
 - **Added ADR-0037** ([`DECISIONS.md`](./DECISIONS.md)) — **amends ADR-0036 decision 6**: **Calendly is the v0.3 MVP scheduling baseline** (booking links, embeds, calendar sync, webhooks, HubSpot-friendly workflows); **Cal.com deferred** as the platform-native option; **Google Calendar compatibility required**; a `SchedulingProvider` abstraction is retained. Planning only — no Calendly adapter, env, secret, schema, or account work authorized.
