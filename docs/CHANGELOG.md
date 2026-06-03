@@ -4,6 +4,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: ADR-0038 CAL provider architecture (proposed; docs-only)
+
+- Added [`adr/ADR-0038-cal-provider-architecture.md`](./adr/ADR-0038-cal-provider-architecture.md) — the canonical CAL architecture ADR to be **Accepted before any Slice 1 implementation**. Defines: 7 architectural principles (no direct vendor SDKs in app code, all providers replaceable, mandatory mocks, optional live, safe env-absence, provider-independent tenant isolation, standard onboarding); the canonical domains (Carrier, Voice, Voice Agent, CRM, Scheduling, SMS) and their responsibility boundaries; the composition hierarchy (Carrier → Voice Provider → Voice Agent Layer → Application Layer, with `VoiceAgentProvider` **composing** — not duplicating — `VoiceProvider`); the resolver policy (**absent → mock; valid live → live; unknown/invalid → fail closed, no silent fallback**); tenant-isolation assumptions (providers stateless, never own/bypass authorization); mock-first rules; a provider-onboarding checklist; consequences; and an explicit approval gate.
+- First ADR maintained as a **standalone file** under `docs/adr/`; `DECISIONS.md` stays the canonical index and gains an ADR-0038 pointer entry.
+- **Docs only — authorizes nothing.** No code, dependencies, schema, routes, env, or runtime changes. Acceptance of this ADR does not authorize implementation; ADR-0001/0019 remain in force.
+
 ## Unreleased — docs: v0.3 implementation authorization brief (decision checkpoint, planning only)
 
 - Added [`product/responseos-v0.3-authorization-brief.md`](./product/responseos-v0.3-authorization-brief.md) — a decision-support brief so the operator can make a controlled yes/no on a single **mock-first** v0.3 slice without opening the live-integration gate. Proposes the first slice (CAL provider interfaces + **mock adapters only**, mirroring `lib/providers/voice/`), lists the files/surfaces that would change, what stays mock-only, what stays forbidden, the validation gates, rollback/stop conditions, and an explicit statement that **no live secrets, accounts, or deploys are included**.

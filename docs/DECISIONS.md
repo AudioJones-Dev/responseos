@@ -638,3 +638,15 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 5. **Planning only.** No live Calendly integration, env vars, secrets, schema work (the `CalendarProvider` enum is unchanged), provider adapter, or account setup is authorized; that requires a separate, explicitly-approved PR.
 
 **Consequences.** Amends ADR-0036 decision 6 (scheduling baseline Cal.com → Calendly for the MVP; Cal.com deferred). The accompanying reconciliation updates the stale `RESPONSEOS_*` prose (`RESPONSEOS_BUILD_SOURCE.md`, `RESPONSEOS_PRD.md`, `RESPONSEOS_ROADMAP.md`) to defer to ADR-0031/0032/0033/0036/0037 rather than the older Grok/OpenAI-Realtime/Twilio/gateway/Redis framing. Mock-first (ADR-0001) and the v0.3 live-wiring gate (ADR-0019) hold.
+
+---
+
+## ADR-0038 — Communications Abstraction Layer (CAL) provider architecture (full text in `docs/adr/`)
+
+**Status:** Proposed (2026-06-03) — **docs only; authorizes no code.** Must be **Accepted** before Slice 1 CAL implementation begins; acceptance does **not** authorize code changes (implementation is a separate written gate).
+
+This is the first ADR maintained as a **standalone file** — full text at [`adr/ADR-0038-cal-provider-architecture.md`](./adr/ADR-0038-cal-provider-architecture.md). `DECISIONS.md` remains the canonical ADR index; this entry is the pointer.
+
+**Decision (summary).** Establishes the CAL provider architecture: application code never depends on vendor SDKs; all providers are replaceable behind per-domain interfaces with mandatory deterministic mocks; live integrations are optional and v0.3-gated. Canonical domains — **Carrier** (Telnyx/Twilio), **Voice** (speech/transcript/session), **Voice Agent** (Vapi/Retell orchestration that *composes* a Voice provider, not a duplicate), **CRM** (HubSpot default), **Scheduling** (Calendly MVP), **SMS**. Composition hierarchy: Carrier → Voice Provider → Voice Agent Layer → Application Layer. Resolver policy: **absent credentials → mock; valid live config → live provider; unknown/invalid provider → fail closed (no silent fallback)**. Tenancy stays application-layer (providers are stateless, never own/bypass authorization). A standard onboarding checklist governs every new provider.
+
+**Consequences.** Locks the architectural contract before interfaces become code. Benefits: vendor portability, offline testability, reduced lock-in, predictable onboarding, lower implementation risk. Tradeoffs: more abstraction/interfaces and per-provider onboarding overhead (accepted). Refines ADR-0001 by adding the fail-closed rule for *misconfiguration* (mock-as-fallback applies to credential *absence*, never to *error*). Mock-first (ADR-0001) and the v0.3 gate (ADR-0019) remain in force; open questions are tracked in the standalone file §11.
