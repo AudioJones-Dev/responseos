@@ -1,7 +1,7 @@
 # v0.3 Implementation Authorization Brief (decision checkpoint)
 
 **Status:** Decision-support brief. **This document authorizes nothing.** It exists so the operator can make a controlled yes/no on a single **mock-first** v0.3 slice without opening the live-integration gate. Live provider work begins only with a separate, explicit, written authorization referencing this brief.
-**Added:** 2026-06-02
+**Added:** 2026-06-03
 **Governing canon:** ADR-0001 (mock-first), ADR-0019 (v0.3 gate), ADR-0031/0032/0033/0036/0037 (provider baseline), and [`responseos-v0.3-provider-readiness.md`](./responseos-v0.3-provider-readiness.md).
 
 ---
