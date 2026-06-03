@@ -4,6 +4,8 @@
 **Status:** Canonical (go-forward). Aligns with the existing [`../ROADMAP.md`](../ROADMAP.md) version table; this view restates sequencing for the go-forward stack and the MVP / Phase 2 / Future / Deferred classification.
 **Read first:** [`RESPONSEOS_BUILD_SOURCE.md`](./RESPONSEOS_BUILD_SOURCE.md) · [`RESPONSEOS_PHASE_PLAN.md`](./RESPONSEOS_PHASE_PLAN.md)
 
+> **Provider-stack note — supersedes inline framing below.** The v0.3 provider stack is now governed by ADR-0031 → ADR-0037 (authoritative in [`../DECISIONS.md`](../DECISIONS.md)): Telnyx primary carrier / Twilio failover; Vapi primary orchestration with **OpenAI as the preferred in-Vapi brain** / Retell secondary; HubSpot default CRM SoR; **Calendly** as the v0.3 MVP scheduling baseline (Cal.com deferred); Node voice gateway + Redis **deferred**. Any **Grok-Voice-primary / OpenAI-Realtime-fallback / Twilio-default / gateway / Redis** framing below is **superseded**.
+
 ---
 
 ## 1. Version table
@@ -13,7 +15,7 @@
 | **v0.1** | Operator console scaffold; mock adapters; 11 typed models; webhook-ready stubs; canonical envelopes | MVP foundation | ✅ Shipped |
 | **v0.2 A–D** | Postgres schema + seed; auth + tenant-aware data layer; consumers routed through data layer; integration tests + CI | MVP foundation | ✅ Shipped |
 | **v0.2 closeout** | `Organization`→`Account` rename; real auth wiring; UI rebuild vs `../DESIGN.md`; remaining model expansion (provider_connections, conversations, call_segments/transcripts, workflow_runs, qa_logs, audit_logs) | MVP foundation | 🟡 In flight |
-| **v0.3** | **Go-forward live stack:** Node.js voice gateway; Grok Voice (primary) + OpenAI Realtime (fallback); live Twilio; Redis session state; HubSpot CRM connector; calendar connector; signature validation + persistence; the 7 RECOVER playbooks live; tenant provisioning; monthly ROI report; outcome-fee invoicing **preview**; basic white-label | **MVP (live)** | ⏳ Planned |
+| **v0.3** | **Go-forward live stack (per ADR-0031/0032/0033/0036/0037):** Telnyx carrier (Twilio failover); Vapi orchestration with OpenAI as the preferred in-Vapi brain (Retell secondary); live SMS; HubSpot CRM connector; **Calendly** scheduling (Google Calendar compatible; Cal.com deferred); signature validation + persistence; the 7 RECOVER playbooks live; tenant provisioning; monthly ROI report; outcome-fee invoicing **preview**; basic white-label. _Node voice gateway + Redis deferred (ADR-0036)._ | **MVP (live)** | ⏳ Planned |
 | **v0.4** | Per-tenant client knowledge + agent grounding layer (RAG), gated on isolation/audit/retention | **Phase 2** | ⏳ Planned |
 | **v0.5** | Billing/outcome-fee ledger production: pricing engine, Stripe billing, outcome-fee ledger, invoices, in-app tier selectors | **Phase 2** | ⏳ Planned |
 | **v1.0** | Client-ready Revenue Recovery OS — polished, onboarding complete, **full white-label**, BYO-provider groundwork | **Future** | ⏳ Planned |
@@ -25,7 +27,7 @@
 
 ## 2. What changes from the original roadmap
 
-The original `../ROADMAP.md` v0.3 named Twilio/Retell/Vapi as the live voice stack. The go-forward v0.3 (ADR-0012/0013/0014) introduces the **Node.js voice gateway** with **Grok Voice primary / OpenAI Realtime fallback** and **Redis** session state, and makes **HubSpot** the default CRM connector. The *milestone shape* (live integrations at v0.3) is unchanged; the *providers* change. Retell/Vapi/Bland become optional/future behind the abstraction.
+The original `../ROADMAP.md` v0.3 named Twilio/Retell/Vapi as the live voice stack; an interim go-forward draft (ADR-0012/0013/0014) had proposed a **Node.js voice gateway** with **Grok Voice primary / OpenAI Realtime fallback** and **Redis** session state. **That framing is superseded by ADR-0031/0032/0033/0036/0037:** Telnyx primary carrier (Twilio failover), **Vapi** primary orchestration with **OpenAI as the preferred in-Vapi brain** (Retell secondary), **HubSpot** default CRM SoR, and **Calendly** as the v0.3 MVP scheduling baseline (Cal.com deferred); the Node voice gateway + Redis are **deferred** for the first v0.3 slice unless readiness testing requires them. The *milestone shape* (live integrations at v0.3) is unchanged; the *providers* are now the ADR canon.
 
 ---
 
@@ -33,7 +35,7 @@ The original `../ROADMAP.md` v0.3 named Twilio/Retell/Vapi as the live voice sta
 
 ```mermaid
 flowchart LR
-  F[v0.2 foundation<br/>tenant data + ledger] --> M[v0.3 MVP live<br/>voice gateway + Grok/OpenAI + HubSpot]
+  F[v0.2 foundation<br/>tenant data + ledger] --> M[v0.3 MVP live<br/>Telnyx + Vapi/OpenAI + HubSpot + Calendly]
   M --> K[v0.4 knowledge grounding]
   M --> B[v0.5 billing/outcome ledger]
   K --> O[v1.0 white-label OS]
@@ -51,11 +53,11 @@ flowchart LR
 ## 4. Per-version scope detail
 
 ### v0.3 (MVP, live) — in scope
-- Voice gateway service (realtime session lifecycle, Redis state).
-- Grok Voice + OpenAI Realtime adapters behind the provider interface; transparent failover.
+- Vapi primary AI voice orchestration (OpenAI preferred in-Vapi brain; Retell secondary) behind the `VoiceAgentProvider` interface; transparent failover. _(Node voice gateway + Redis deferred — ADR-0036.)_
+- Telnyx carrier with Twilio failover behind the `CarrierProvider` interface.
 - **Provider-readiness gate** passes before live traffic (Backend Spec §12).
-- Live Twilio (numbers, Media Streams, signature validation, persistence).
-- HubSpot connector (CRM SoR) + Google/Cal.com calendar.
+- Live carrier: Telnyx primary / Twilio failover (numbers, Media Streams, signature validation, persistence).
+- HubSpot connector (CRM SoR) + Calendly scheduling (Google Calendar compatible; Cal.com deferred).
 - The 7 RECOVER playbooks running live.
 - Tenant provisioning (data-only) + profile editors.
 - Monthly ROI reporting; outcome-fee invoicing **preview** only.
@@ -66,7 +68,7 @@ flowchart LR
 - Per-tenant knowledge ingestion / RAG (v0.4).
 - Full white-label / custom domains (v1.0).
 - HIPAA lane production; regulated-vertical go-live.
-- Grok/OpenAI on regulated lanes (blocked until compliance verified, ADR-0012).
+- Telnyx/Vapi/OpenAI on regulated lanes (blocked until compliance verified).
 
 ### Phase 2
 - **v0.4** knowledge grounding — gated on tenant isolation, source ownership, audit, retention, PII minimization, deletion/export, approved-source controls, human review (per `../ROADMAP.md` gates). No vector store committed until v0.4 picks a strategy.
@@ -75,7 +77,7 @@ flowchart LR
 ### Future (v1.0)
 - Full white-label / partner branding; custom domains; tenant RBAC for branding.
 - Onboarding flow complete and production-grade.
-- Bring-your-own-provider groundwork (BYO Twilio / LLM keys).
+- Bring-your-own-provider groundwork (BYO carrier / LLM keys).
 
 ### Deferred / speculative
 - HIPAA-ready lane production (AWS, BAA chain) — pattern only until independent review per tenant.
@@ -110,7 +112,7 @@ Detailed gates: [`RESPONSEOS_PHASE_PLAN.md`](./RESPONSEOS_PHASE_PLAN.md).
 
 ## 7. Open questions
 
-1. v0.3 timing depends on the provider-readiness gate outcome for Grok/OpenAI (PRD R-01).
+1. v0.3 timing depends on the provider-readiness gate outcome for Vapi / Telnyx (OpenAI in-Vapi brain) (PRD R-01).
 2. HubSpot-default vs GHL-default may shift the connector priority within v0.3.
 3. v0.4 vs v0.5 ordering could swap if a pilot demands billing before knowledge grounding.
 

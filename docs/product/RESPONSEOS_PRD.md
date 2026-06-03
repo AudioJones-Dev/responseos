@@ -2,8 +2,10 @@
 
 **Owner:** AJ Digital LLC / Audio Jones
 **Status:** Canonical (go-forward). Companion to the short [`../PRD.md`](../PRD.md); this is the expanded product definition for the `RESPONSEOS_*` set.
-**Last updated:** 2026-05-27
+**Last updated:** 2026-06-02
 **Read first:** [`RESPONSEOS_BUILD_SOURCE.md`](./RESPONSEOS_BUILD_SOURCE.md)
+
+> **Provider-stack note — supersedes inline framing below.** This PRD predates ADR-0031 → ADR-0037. For the current provider stack the **`../DECISIONS.md` ADRs are authoritative**: Telnyx primary carrier / Twilio failover; Vapi primary orchestration with **OpenAI as the preferred in-Vapi brain** / Retell secondary; HubSpot default CRM SoR; **Calendly** as the v0.3 MVP scheduling baseline (Cal.com deferred); the Node voice gateway + Redis are **deferred**. Any **Grok Voice / OpenAI-Realtime-fallback / Twilio-default / dedicated-gateway** wording below is **superseded** by ADR-0031/0032/0033/0036/0037.
 
 ---
 
@@ -11,7 +13,7 @@
 
 Founder-led service businesses lose real revenue every week to demand they never respond to: missed calls, after-hours inquiries, web forms that sit unanswered, and follow-ups that never happen. The owner is on a roof or under a sink; the phone rings; the homeowner calls the next contractor on the list. That leak is invisible because nothing in their stack measures it.
 
-**ResponseOS is the operating layer that captures that demand, responds instantly, qualifies and routes it, books or quotes it, and proves the recovered revenue every month.** It is built as a multi-tenant SaaS platform from day one — one shared codebase, many tenants — with AI voice agents at the edge (Grok Voice primary, OpenAI Realtime fallback, Twilio telephony), a dedicated realtime voice gateway, an event-ledger core, and HubSpot as the CRM system of record.
+**ResponseOS is the operating layer that captures that demand, responds instantly, qualifies and routes it, books or quotes it, and proves the recovered revenue every month.** It is built as a multi-tenant SaaS platform from day one — one shared codebase, many tenants — with AI voice agents at the edge (Telnyx telephony with Twilio failover; Vapi orchestration with OpenAI as the preferred in-Vapi brain — per ADR-0031/0032/0036), an event-ledger core, and HubSpot as the CRM system of record.
 
 The product is sold outcome-first: a paid Readiness & Revenue Leak Assessment, then an implementation + monthly retainer with optional outcome fees tied to **verified** results. The defensible IP is the RECOVER orchestration, the canonical event ledger, ROI attribution, and the white-label OS — not the bought voice/telephony primitives.
 
@@ -92,7 +94,7 @@ ResponseOS digitizes the front-office workflows of a service business and maps t
 | 6 | Human Escalation | Escalate |
 | 7 | Monthly ROI Reporting | Report |
 
-These remain the workflow contract; the go-forward stack changes *how* they run (Grok Voice via the gateway instead of Retell), not *what* they do.
+These remain the workflow contract; the go-forward stack changes *how* they run (Vapi orchestration with an OpenAI in-Vapi brain, per ADR-0032/0036), not *what* they do.
 
 ---
 
@@ -103,9 +105,9 @@ These remain the workflow contract; the go-forward stack changes *how* they run 
 ```mermaid
 sequenceDiagram
   participant C as Caller
-  participant TW as Twilio
-  participant GW as Voice Gateway
-  participant V as Grok Voice (→OpenAI on failover)
+  participant TW as Telnyx (Twilio failover)
+  participant GW as ResponseOS (CAL + ledger)
+  participant V as Vapi (OpenAI brain; Retell failover)
   participant L as Event Ledger
   C->>TW: Calls the business
   TW->>GW: Media stream + call webhook
@@ -214,10 +216,10 @@ In scope for MVP:
 - Multi-tenant data layer (tenant-scoped, `account_id` from session) — **shipped (v0.2)**.
 - Operator console + read-only tenant portal — **shipped (v0.2), rebuilt against DESIGN.md in closeout**.
 - Event ledger + signed webhook ingest foundation — **shipped (v0.2 foundation)**.
-- Node.js voice gateway with Grok Voice (primary) + OpenAI Realtime (fallback) behind the provider abstraction — **v0.3**.
-- Twilio telephony edge, live, with signature validation + persistence — **v0.3**.
-- Redis ephemeral session state — **v0.3**.
-- HubSpot CRM connector (default) + calendar connector — **v0.3**.
+- Vapi primary AI voice orchestration (OpenAI preferred in-Vapi brain; Retell secondary) behind the `VoiceAgentProvider` abstraction — **v0.3** (ADR-0032/0036).
+- Telnyx carrier with Twilio failover, live, with signature validation + persistence — **v0.3** (ADR-0031).
+- Node voice gateway + Redis ephemeral session state — **deferred** for the first v0.3 slice (ADR-0036).
+- HubSpot CRM connector (default) + **Calendly** scheduling (Google Calendar compatible; Cal.com deferred) — **v0.3** (ADR-0033/0037).
 - The seven RECOVER playbooks running against live providers — **v0.3**.
 - Tenant onboarding/provisioning flow (no code change per tenant) — **v0.3**.
 - Monthly ROI reporting — **v0.3** (outcome-fee preview only).
@@ -260,10 +262,10 @@ MVP (v0.2 done → v0.3) → Phase 2 (v0.4 knowledge grounding, v0.5 billing) �
 
 | ID | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|---|
-| R-01 | Grok Voice / OpenAI Realtime not production-ready for telephony (concurrency, barge-in, webhooks) | Med | High | v0.3 provider-readiness gate before live traffic; transparent failover; abstraction allows re-swap (ADR-0012) |
+| R-01 | Vapi / Telnyx (with OpenAI as the in-Vapi brain) not production-ready for telephony (concurrency, barge-in, webhooks) | Med | High | v0.3 provider-readiness gate before live traffic; Telnyx→Twilio and Vapi→Retell failover; CAL abstraction allows re-swap (ADR-0031/0032/0036) |
 | R-02 | Cross-tenant data leak | Low | Critical | `account_id` from session on every path; integration tests assert isolation; break-glass logging |
-| R-03 | Voice-provider compliance posture (retention/training data) unverified for regulated tenants | Med | High | Block Grok/OpenAI on HIPAA lane until BAA/retention verified; Standard lane only for MVP |
-| R-04 | Voice gateway is a new operational surface (latency, scaling) | Med | Med | Isolated service + own SLOs; Redis-backed session continuity; load test before go-live |
+| R-03 | Voice-provider compliance posture (retention/training data) unverified for regulated tenants | Med | High | Block Telnyx/Vapi/OpenAI on HIPAA lane until BAA/retention verified; Standard lane only for MVP |
+| R-04 | The Vapi-orchestrated voice path is a new operational surface (latency, scaling) | Med | Med | Provider SLOs + monitoring; load test before go-live. Node gateway + Redis deferred (ADR-0036); revisit only if readiness testing requires them |
 | R-05 | HubSpot-default friction for GHL-native tenants | Med | Med | Keep CRM pluggable; GHL connector retained (ADR-0015) |
 | R-06 | Outcome-fee disputes over attribution | Med | Med | Evidence-linked, ledger-backed ROI; 30-day audit window |
 | R-07 | TCPA / call-recording consent violations | Low | High | Disclosure + consent as tenant policy objects; jurisdiction-aware (v0.3) |
@@ -275,8 +277,8 @@ MVP (v0.2 done → v0.3) → Phase 2 (v0.4 knowledge grounding, v0.5 billing) �
 
 ## 14. Open questions
 
-1. Production telephony viability + compliance posture of Grok Voice and OpenAI Realtime (R-01, R-03) — owner: backend/voice; due: v0.3 readiness gate.
-2. Voice gateway hosting/topology on the Standard lane (co-located vs separate container platform) — owner: infra.
+1. Production telephony viability + compliance posture of Vapi / Telnyx with an OpenAI in-Vapi brain (R-01, R-03) — owner: backend/voice; due: v0.3 readiness gate.
+2. Whether the deferred Node voice gateway + Redis (ADR-0036) are needed for the first v0.3 slice, and if un-deferred, their hosting/topology on the Standard lane — owner: infra.
 3. HubSpot-default vs GHL-default for first pilots (R-05) — owner: product/GTM.
 4. Which milestone unlocks bring-your-own-provider for enterprise tenants — owner: product.
 5. Outcome-fee attribution rules edge cases (multi-touch, recurring customers) — owner: product/finance.
