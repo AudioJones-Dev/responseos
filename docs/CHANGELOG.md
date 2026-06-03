@@ -4,6 +4,11 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: v0.3 Slice 1 mock-first CAL scaffolding — implementation-ready brief (planning only)
+
+- Added [`product/responseos-v0.3-slice1-cal-brief.md`](./product/responseos-v0.3-slice1-cal-brief.md) — the implementation-ready plan / PR brief for the first mock-first CAL slice: exact files touched, proposed provider interfaces/contracts (`CarrierProvider`, `VoiceAgentProvider`, `SmsProvider`, `CrmProvider`, `SchedulingProvider` — mirroring `lib/providers/voice/`), mock-adapter boundaries + env-absent→mock resolver, required unit tests, forbidden changes, validation gates, rollback/checkpoint criteria, and a proposed PR brief.
+- **Planning only — authorizes nothing.** No code, dependency, schema, route, or runtime change; the v0.3 live-integration gate stays closed and building Slice 1 needs a separate explicit written authorization. ADR-0001/0019 preserved.
+
 ## Unreleased — docs: v0.3 implementation authorization brief (decision checkpoint, planning only)
 
 - Added [`product/responseos-v0.3-authorization-brief.md`](./product/responseos-v0.3-authorization-brief.md) — a decision-support brief so the operator can make a controlled yes/no on a single **mock-first** v0.3 slice without opening the live-integration gate. Proposes the first slice (CAL provider interfaces + **mock adapters only**, mirroring `lib/providers/voice/`), lists the files/surfaces that would change, what stays mock-only, what stays forbidden, the validation gates, rollback/stop conditions, and an explicit statement that **no live secrets, accounts, or deploys are included**.
