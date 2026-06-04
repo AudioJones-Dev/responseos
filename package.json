@@ -9,7 +9,11 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:integration": "vitest run --config vitest.integration.config.ts"
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "dev:doppler": "doppler run -- next dev",
+    "build:doppler": "doppler run -- next build",
+    "start:doppler": "doppler run -- next start",
+    "secrets:check": "doppler secrets --only-names"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

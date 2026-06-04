@@ -42,6 +42,30 @@ npm install
 npm run dev      # http://localhost:3000
 ```
 
+The app boots with **zero credentials** — every provider falls back to mock when its env vars are missing (ADR-0001). You only need real values to exercise a live path.
+
+### Secrets management (Doppler — optional)
+
+Secrets are managed with [Doppler](https://docs.doppler.com/) as an **opt-in** runtime injector. It is never required: the mock-first fallback above means the app runs without it. See ADR-0038 in [`docs/DECISIONS.md`](./docs/DECISIONS.md).
+
+One-time setup (Doppler CLI must be installed):
+
+```bash
+doppler login          # once per machine
+doppler setup          # maps this repo to the project/config in doppler.yaml
+```
+
+Then run with secrets injected straight from Doppler instead of maintaining a local `.env.local`:
+
+```bash
+npm run dev:doppler     # doppler run -- next dev
+npm run build:doppler
+npm run start:doppler
+npm run secrets:check    # list configured secret names (no values printed)
+```
+
+`doppler.yaml` (committed) only pins the project/config mapping — it holds no secret values. If you prefer the classic flow, copy `.env.example` to `.env.local` and run the plain `npm run dev` / `npm run build` scripts; both paths work.
+
 Integration tests need a local Postgres:
 
 ```bash
@@ -68,8 +92,8 @@ CI runs `validate` (lint → typecheck → test → build) and `integration` (Po
 ## Environment policy
 
 - **Only** `.env.example` is committed; it contains placeholder keys.
-- Copy to `.env.local` (gitignored) for local runs.
-- **No real secrets in this repo, ever.** Provider adapters fall back to mock when env vars are missing, so the app boots and runs without any live keys.
+- Copy to `.env.local` (gitignored) for local runs, **or** inject secrets with Doppler (`npm run dev:doppler` — see above). `doppler.yaml` is committed but holds the project/config mapping only, no secret values.
+- **No real secrets in this repo, ever.** Provider adapters fall back to mock when env vars are missing, so the app boots and runs without any live keys. Doppler is an opt-in convenience layer, not a requirement (ADR-0038).
 
 ## Hard constraints
 

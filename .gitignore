@@ -35,6 +35,12 @@ yarn-error.log*
 !.env.example
 !.env.template
 
+# doppler (secrets injected at runtime via `doppler run` — never commit local
+# state or fallback caches, which can contain decrypted secret values)
+.doppler/
+doppler.fallback.json
+*.doppler.fallback.json
+
 # vercel
 .vercel
 
