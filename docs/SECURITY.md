@@ -10,6 +10,15 @@ The compliance posture is chosen **per tenant tier**, not hard-coded globally. S
 - **Payment boundary:** never store card data. Stripe hosted pages or Payment Intents only.
 - **Audit logging** on every admin action, prompt change, and data export.
 
+## Secrets management
+
+Local and runtime secrets are injected with **Doppler** as an **opt-in** layer (ADR-0038). It does not change any hard rule above and does not relax the mock-first / v0.3 live-wiring gates (ADR-0001, ADR-0019): with no secrets present the app still boots on mock adapters. Injecting a real key only activates that key's already-existing adapter path (e.g. `CLERK_SECRET_KEY`) — it authorizes no new live provider integration.
+
+- `doppler.yaml` is committed and pins the Doppler **project/config mapping only** — never secret values, exactly like `.env.example`.
+- Secrets are pulled at runtime via `doppler run` (the `*:doppler` npm scripts); the `.env.local` flow remains fully supported.
+- Doppler local state and fallback caches are gitignored (`.doppler/`, `*.doppler.fallback.json`) — decrypted secrets must never reach the repo.
+- CI is unchanged: the `validate` / `integration` jobs inject their own env (Postgres for integration) and do not depend on Doppler.
+
 ## Compliance checklist
 
 | Control area | Requirement |

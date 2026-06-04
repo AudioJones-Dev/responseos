@@ -638,3 +638,21 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 5. **Planning only.** No live Calendly integration, env vars, secrets, schema work (the `CalendarProvider` enum is unchanged), provider adapter, or account setup is authorized; that requires a separate, explicitly-approved PR.
 
 **Consequences.** Amends ADR-0036 decision 6 (scheduling baseline Cal.com → Calendly for the MVP; Cal.com deferred). The accompanying reconciliation updates the stale `RESPONSEOS_*` prose (`RESPONSEOS_BUILD_SOURCE.md`, `RESPONSEOS_PRD.md`, `RESPONSEOS_ROADMAP.md`) to defer to ADR-0031/0032/0033/0036/0037 rather than the older Grok/OpenAI-Realtime/Twilio/gateway/Redis framing. Mock-first (ADR-0001) and the v0.3 live-wiring gate (ADR-0019) hold.
+
+---
+
+## ADR-0038 — Doppler is the opt-in secrets-injection tool for local + runtime env
+
+**Status:** Accepted (2026-06-03). Tooling decision. **Does not change ADR-0001 (mock-first) or ADR-0019 (v0.3 live-wiring gate)** — it adds a way to *supply* env vars, not permission to wire live providers.
+
+**Context.** Secrets reach the app through env vars, today via a hand-maintained `.env.local` copied from `.env.example`. That works but spreads decrypted secrets across contributor machines, has no rotation or access story, and makes "who has which key" untrackable. The operator installed the Doppler CLI and asked to wire it into the repo for handling secrets. The constraint is the load-bearing env policy: **no real secrets in the repo**, and **the app must boot with zero credentials** (every provider falls back to mock when its env vars are missing).
+
+**Decision.**
+
+1. **Doppler is the secrets-injection layer, and it is opt-in.** A committed `doppler.yaml` pins the project/config mapping only (no secret values, same spirit as `.env.example`). Secrets are pulled at runtime via `doppler run`, exposed through `*:doppler` npm scripts (`dev:doppler`, `build:doppler`, `start:doppler`, `secrets:check`).
+2. **The plain scripts and the `.env.local` flow stay fully supported.** Doppler is never required; mock-fallback `npm run dev` and `.env.local`-backed `npm run dev` both keep working.
+3. **The mock-first guarantee is untouched.** With no secrets present (no Doppler, no `.env.local`) the app boots on mock adapters per ADR-0001. Injecting a real key only activates that key's already-existing adapter path (e.g. `CLERK_SECRET_KEY`) — it authorizes **no** new live provider integration.
+4. **No decrypted secrets may reach the repo.** Doppler local state and fallback caches are gitignored (`.doppler/`, `*.doppler.fallback.json`). The "no real secrets in the repo, ever" rule is unchanged.
+5. **CI is unchanged.** The `validate` / `integration` jobs inject their own env (Postgres for integration) and do not depend on Doppler. Adopting Doppler in CI/CD, if ever, is a separate decision.
+
+**Consequences.** Contributors get centralized, rotatable, access-controlled secrets without maintaining `.env.local`, while every existing guarantee holds: zero-credential boot, mock-first, no secrets in the repo, and the v0.3 gate. Cost: contributors who opt in need the Doppler CLI and a one-time `doppler login` + `doppler setup`; the project/config names in `doppler.yaml` must match the Doppler workplace. This ADR is tooling only — it ships no provider adapter, schema change, env var, secret, account configuration, or deploy.

@@ -4,6 +4,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — chore: wire Doppler as the opt-in secrets-injection tool
+
+- Added `doppler.yaml` (project/config mapping only, no secret values) and opt-in npm scripts `dev:doppler` / `build:doppler` / `start:doppler` / `secrets:check` that inject secrets via `doppler run`. The plain scripts and the `.env.local` flow are untouched.
+- **Added ADR-0038** ([`DECISIONS.md`](./DECISIONS.md)) — Doppler is opt-in and changes nothing load-bearing: the app still boots with zero credentials on mock adapters (ADR-0001), no live provider integration is authorized (ADR-0019 gate holds), and "no real secrets in the repo" is unchanged. Documented the workflow in [`README.md`](../README.md) and a "Secrets management" note in [`docs/SECURITY.md`](./SECURITY.md).
+- Hardened `.gitignore` against committing Doppler local state / fallback caches (`.doppler/`, `*.doppler.fallback.json`). CI (`validate` / `integration`) is unchanged — it injects its own env and does not depend on Doppler.
+
 ## Unreleased — docs: v0.3 implementation authorization brief (decision checkpoint, planning only)
 
 - Added [`product/responseos-v0.3-authorization-brief.md`](./product/responseos-v0.3-authorization-brief.md) — a decision-support brief so the operator can make a controlled yes/no on a single **mock-first** v0.3 slice without opening the live-integration gate. Proposes the first slice (CAL provider interfaces + **mock adapters only**, mirroring `lib/providers/voice/`), lists the files/surfaces that would change, what stays mock-only, what stays forbidden, the validation gates, rollback/stop conditions, and an explicit statement that **no live secrets, accounts, or deploys are included**.

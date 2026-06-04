@@ -1,0 +1,17 @@
+# Doppler project configuration for ResponseOS.
+#
+# This file pins which Doppler project + config this repo maps to, so a
+# contributor's one-time `doppler setup` is non-interactive. It is config
+# metadata only — NO secret values live here, so it is safe to commit
+# (same spirit as .env.example: structure, never secrets).
+#
+# Doppler is an OPT-IN secrets-injection layer. The app still boots and runs
+# with zero credentials via the mock-first provider fallback (ADR-0001); see
+# ADR-0038, README "Secrets management", and docs/SECURITY.md. Use the
+# `*:doppler` npm scripts (e.g. `npm run dev:doppler`) to inject secrets at
+# runtime instead of maintaining a local .env.local.
+#
+# Rename the project/config below to match your Doppler workplace if needed.
+setup:
+  project: responseos
+  config: dev
