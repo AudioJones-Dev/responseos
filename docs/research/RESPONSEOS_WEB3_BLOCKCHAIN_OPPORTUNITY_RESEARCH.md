@@ -564,7 +564,7 @@ That vertical wedge matters because the proof is tied to business outcomes: call
 
 ## 10. Decision Matrix
 
-| Idea | Build Now | Research | Defer | Reject | Reason |
+| Idea | Near-Term Candidate | Research | Defer | Reject | Reason |
 |---|---:|---:|---:|---:|---|
 | Append-only audit log | Yes |  |  |  | Already aligned with repo. Strengthen with proof fields later. |
 | Hash-chained business events | Yes |  |  |  | Best near-term moat; no blockchain needed. |
