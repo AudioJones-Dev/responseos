@@ -1,9 +1,9 @@
 # ResponseOS Web3 / Blockchain / Crypto Opportunity Research
 
-**Status:** Research and architecture report only. No implementation authorized.  
-**Repository:** `AudioJones-Dev/responseos`  
-**Local checkout reviewed:** `C:\dev\responseos` on 2026-06-05  
-**Scope guard:** This report does not authorize wallet login, token logic, blockchain SDKs, live provider integrations, schema changes, auth changes, production deployment, or secrets work.
+- **Status:** Research and architecture report only. No implementation authorized.
+- **Repository:** `AudioJones-Dev/responseos`
+- **Reviewed against:** `origin/master` at commit `b8343b9` on 2026-06-05
+- **Scope guard:** This report does not authorize wallet login, token logic, blockchain SDKs, live provider integrations, schema changes, auth changes, production deployment, or secrets work.
 
 ## 1. Executive Summary
 
