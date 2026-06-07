@@ -1,0 +1,56 @@
+{
+  "project": {
+    "name": "ResponseOS",
+    "subtitle": "AI Revenue Recovery Platform",
+    "repo": "AudioJones-Dev/responseos",
+    "branch": "master",
+    "launch": "2026-08-15",
+    "milestone": "v0.3 Demo"
+  },
+  "owners": {
+    "Audio":       { "role": "Founder / Roadmap", "color": "#6366f1" },
+    "Claude Code": { "role": "Build",             "color": "#d97757" },
+    "Codex":       { "role": "Review / QA",        "color": "#10a37f" }
+  },
+  "phases": [
+    "v0.1 · Foundation",
+    "v0.2 · Stabilization",
+    "v0.3 · Demo Scope",
+    "Tech Debt & Hardening",
+    "Integrations",
+    "Testing & QA",
+    "Launch / Demo Deploy"
+  ],
+  "tasks": [
+    { "id": "F-01", "phase": "v0.1 · Foundation",     "title": "Next.js app scaffold",                         "owner": "Claude Code", "status": "Done",        "progress": 100, "priority": "High", "start": "2026-05-05", "due": "2026-05-09" },
+    { "id": "F-02", "phase": "v0.1 · Foundation",     "title": "Prisma schema & data models",                  "owner": "Claude Code", "status": "Done",        "progress": 100, "priority": "High", "start": "2026-05-06", "due": "2026-05-12" },
+    { "id": "F-03", "phase": "v0.1 · Foundation",     "title": "Database seed (prisma/seed.ts)",               "owner": "Claude Code", "status": "Done",        "progress": 100, "priority": "Med",  "start": "2026-05-10", "due": "2026-05-14" },
+    { "id": "F-04", "phase": "v0.1 · Foundation",     "title": "Env / Doppler secret config",                  "owner": "Audio",       "status": "Done",        "progress": 100, "priority": "Med",  "start": "2026-05-08", "due": "2026-05-13" },
+
+    { "id": "25",   "phase": "v0.2 · Stabilization",  "title": "VoiceProvider interface + mock adapter",       "owner": "Claude Code", "status": "Done",        "progress": 100, "priority": "High", "start": "2026-05-18", "due": "2026-05-27", "ref": 25, "refType": "pull" },
+    { "id": "15",   "phase": "v0.2 · Stabilization",  "title": "Seed/mock parity + un-skip integration tests", "owner": "Claude Code", "status": "Done",        "progress": 100, "priority": "High", "start": "2026-05-20", "due": "2026-05-28", "ref": 15, "refType": "pull" },
+    { "id": "S-03", "phase": "v0.2 · Stabilization",  "title": "Integration test suite green in CI",           "owner": "Codex",       "status": "Done",        "progress": 100, "priority": "High", "start": "2026-05-22", "due": "2026-05-29" },
+    { "id": "S-04", "phase": "v0.2 · Stabilization",  "title": "v0.2 implementation spec (docs)",              "owner": "Audio",       "status": "Done",        "progress": 100, "priority": "Med",  "start": "2026-05-21", "due": "2026-05-29" },
+
+    { "id": "27",   "phase": "v0.3 · Demo Scope",     "title": "Define authorized v0.3 demo scope",            "owner": "Audio",       "status": "In Progress", "progress": 50,  "priority": "High", "start": "2026-05-29", "due": "2026-06-13", "ref": 27, "refType": "issue" },
+    { "id": "V-02", "phase": "v0.3 · Demo Scope",     "title": "Decide demo surface / feature cut",            "owner": "Audio",       "status": "In Progress", "progress": 30,  "priority": "High", "start": "2026-06-02", "due": "2026-06-16" },
+    { "id": "V-03", "phase": "v0.3 · Demo Scope",     "title": "Document v0.3 acceptance gates",               "owner": "Audio",       "status": "To Do",       "progress": 0,   "priority": "Med",  "start": "2026-06-16", "due": "2026-06-23" },
+
+    { "id": "26",   "phase": "Tech Debt & Hardening", "title": "Seed idempotency / create-only ADR",           "owner": "Codex",       "status": "To Do",       "progress": 0,   "priority": "Med",  "start": "2026-06-16", "due": "2026-06-27", "ref": 26, "refType": "issue" },
+    { "id": "T-02", "phase": "Tech Debt & Hardening", "title": "Re-seed regression test (double seed)",        "owner": "Codex",       "status": "Backlog",     "progress": 0,   "priority": "Low",  "start": "2026-06-29", "due": "2026-07-08" },
+
+    { "id": "14",   "phase": "Launch / Demo Deploy",  "title": "v0.3 demo deploy",                             "owner": "Claude Code", "status": "Backlog",     "progress": 10,  "priority": "High", "start": "2026-07-13", "due": "2026-08-01", "ref": 14, "refType": "pull", "blocked": true, "blockedReason": "Draft & unauthorized until v0.3 scope is opened (#27)" },
+
+    { "id": "I-01", "phase": "Integrations",          "title": "Live voice integration (real adapter)",       "owner": "Claude Code", "status": "Backlog",     "progress": 0,   "priority": "High", "start": "2026-07-06", "due": "2026-07-24", "blocked": true, "blockedReason": "Gated on v0.3 scope decision" },
+    { "id": "I-02", "phase": "Integrations",          "title": "Lead qualification pipeline",                 "owner": "Claude Code", "status": "Backlog",     "progress": 0,   "priority": "Med",  "start": "2026-07-20", "due": "2026-08-03" },
+    { "id": "I-03", "phase": "Integrations",          "title": "Booking + revenue metrics wiring",            "owner": "Claude Code", "status": "Backlog",     "progress": 0,   "priority": "Med",  "start": "2026-07-27", "due": "2026-08-07" },
+
+    { "id": "Q-01", "phase": "Testing & QA",          "title": "Unit coverage expansion",                     "owner": "Codex",       "status": "In Progress", "progress": 40,  "priority": "Med",  "start": "2026-05-25", "due": "2026-07-04" },
+    { "id": "Q-02", "phase": "Testing & QA",          "title": "End-to-end demo smoke test",                  "owner": "Codex",       "status": "Backlog",     "progress": 0,   "priority": "High", "start": "2026-07-27", "due": "2026-08-10" },
+
+    { "id": "L-02", "phase": "Launch / Demo Deploy",  "title": "Production env + secrets",                     "owner": "Audio",       "status": "Backlog",     "progress": 0,   "priority": "High", "start": "2026-08-03", "due": "2026-08-12" },
+    { "id": "L-03", "phase": "Launch / Demo Deploy",  "title": "Go-live demo 🚀",                              "owner": "Audio",       "status": "Backlog",     "progress": 0,   "priority": "High", "start": "2026-08-13", "due": "2026-08-15" }
+  ],
+  "liveIssues": [],
+  "generatedAt": "2026-06-07T00:00:00Z"
+}
