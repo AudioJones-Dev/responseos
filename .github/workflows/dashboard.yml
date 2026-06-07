@@ -1,0 +1,76 @@
+name: Build Progress Dashboard
+
+# Keeps dashboard/dashboard-data.json in sync with live issue/PR state and
+# (optionally) publishes the dashboard to GitHub Pages.
+#
+# Pages is OFF by default. To turn it on:
+#   1. Settings > Pages > Build and deployment > Source: GitHub Actions
+#   2. Settings > Secrets and variables > Actions > Variables: add ENABLE_PAGES = true
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "dashboard/dashboard-data.json"
+      - "dashboard/index.html"
+      - "scripts/sync-dashboard.mjs"
+      - ".github/workflows/dashboard.yml"
+  issues:
+    types: [opened, closed, reopened, edited, labeled, unlabeled]
+  pull_request:
+    types: [closed]
+  schedule:
+    - cron: "0 13 * * *" # daily 13:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+  issues: read
+
+concurrency:
+  group: dashboard
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Sync dashboard data from issues/PRs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/sync-dashboard.mjs
+      - name: Commit refreshed data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet -- dashboard/dashboard-data.json; then
+            git add dashboard/dashboard-data.json
+            git commit -m "chore(dashboard): sync progress data [skip ci]"
+            git push origin master
+          else
+            echo "No data changes to commit."
+          fi
+      - name: Upload Pages artifact
+        if: ${{ vars.ENABLE_PAGES == 'true' }}
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dashboard
+
+  deploy:
+    needs: sync
+    if: ${{ vars.ENABLE_PAGES == 'true' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

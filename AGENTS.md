@@ -53,6 +53,17 @@ CI runs `validate` (lint + typecheck + unit test + build) and `integration` (Pos
 - Every merged PR → add a line to [`docs/CHANGELOG.md`](./docs/CHANGELOG.md) (newest first).
 - File renames or moves → update cross-references in non-archived docs in the same PR.
 - Implementation briefs that have shipped → move to [`docs/archive/`](./docs/archive/).
+- Progress board → keep [`dashboard/dashboard-data.json`](./dashboard/dashboard-data.json) current (see **Progress board** below).
+
+## Progress board
+
+This repo has a live build-progress dashboard in [`dashboard/`](./dashboard/). Its single source of truth is [`dashboard/dashboard-data.json`](./dashboard/dashboard-data.json) — every KPI, roadmap phase bar, kanban card, and table row is derived from it.
+
+- When you **start, finish, or change** a unit of work, update `dashboard/dashboard-data.json` in the same PR: add or edit the task and set its `status` (`Backlog` | `To Do` | `In Progress` | `Review` | `Done`), `progress` (`0`–`100`), and `owner` (`Audio` | `Claude Code` | `Codex`).
+- If the work maps to a GitHub issue or PR, set `"ref": <number>` and `"refType": "issue" | "pull"`. The dashboard workflow flips the task to Done/100% automatically when that issue/PR closes — you don't have to.
+- Keep `phase` consistent with the roadmap order already in the file; don't invent new phases without a roadmap update.
+- Don't hand-edit `generatedAt` or `liveIssues` — the sync workflow owns those.
+- Full contract and task shape: [`dashboard/README.md`](./dashboard/README.md).
 
 ## Scope discipline
 

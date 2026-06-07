@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ResponseOS — Build Progress</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
+<style>
+:root{
+  --bg-primary:#f4f5f7;--bg-card:#ffffff;--bg-header:#15182b;--bg-header-2:#23284a;
+  --text-primary:#1d2233;--text-secondary:#6b7384;--text-on-dark:#ffffff;--border:#e6e8ee;
+  --c-backlog:#94a3b8;--c-todo:#6366f1;--c-progress:#0ea5e9;--c-review:#f59e0b;--c-done:#22c55e;--c-blocked:#ef4444;
+  --pri-high:#ef4444;--pri-med:#f59e0b;--pri-low:#64748b;--positive:#16a34a;--negative:#dc2626;
+  --gap:16px;--radius:12px;--shadow:0 1px 3px rgba(20,24,43,.08),0 1px 2px rgba(20,24,43,.04);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg-primary);color:var(--text-primary);line-height:1.5;-webkit-font-smoothing:antialiased}
+.dashboard-container{max-width:1480px;margin:0 auto;padding:20px}
+.dashboard-header{background:linear-gradient(120deg,var(--bg-header),var(--bg-header-2));color:var(--text-on-dark);padding:22px 26px;border-radius:var(--radius);margin-bottom:var(--gap);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;box-shadow:var(--shadow)}
+.header-left h1{font-size:21px;font-weight:700;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.header-left .proj{font-size:13px;color:rgba(255,255,255,.6);margin-top:3px}
+.header-left .proj a{color:rgba(255,255,255,.85)}
+.header-left .pill{font-size:11px;font-weight:600;background:rgba(255,255,255,.14);padding:3px 9px;border-radius:99px;letter-spacing:.3px}
+.sync-pill{font-size:11px;font-weight:600;padding:3px 9px;border-radius:99px;letter-spacing:.2px;display:inline-flex;align-items:center;gap:6px}
+.sync-pill .dot{width:7px;height:7px;border-radius:50%}
+.filters{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
+.filter-group{display:flex;flex-direction:column;gap:4px}
+.filter-group label{font-size:11px;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.filter-group select{padding:7px 12px;border:1px solid rgba(255,255,255,.18);border-radius:8px;background:rgba(255,255,255,.08);color:var(--text-on-dark);font-size:13px;min-width:140px;cursor:pointer}
+.filter-group select option{background:var(--bg-header);color:var(--text-on-dark)}
+.reset-btn{padding:8px 14px;border:1px solid rgba(255,255,255,.18);border-radius:8px;background:rgba(255,255,255,.06);color:var(--text-on-dark);font-size:13px;font-weight:600;cursor:pointer;transition:background .15s}
+.reset-btn:hover{background:rgba(255,255,255,.16)}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:var(--gap);margin-bottom:var(--gap)}
+.kpi-card{background:var(--bg-card);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.kpi-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent,var(--c-progress))}
+.kpi-label{font-size:12px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:8px}
+.kpi-value{font-size:30px;font-weight:800;letter-spacing:-.5px}
+.kpi-sub{font-size:12px;color:var(--text-secondary);margin-top:4px;font-weight:500}
+.kpi-ring{position:absolute;right:16px;top:16px}
+.section{background:var(--bg-card);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow);margin-bottom:var(--gap)}
+.section-title{font-size:14px;font-weight:700;letter-spacing:-.1px;margin-bottom:2px;display:flex;align-items:center;gap:8px}
+.section-sub{font-size:12px;color:var(--text-secondary);margin-bottom:16px}
+.phase-list{display:flex;flex-direction:column;gap:14px}
+.phase-row{display:grid;grid-template-columns:230px 1fr 56px;gap:14px;align-items:center}
+.phase-meta{display:flex;flex-direction:column;gap:2px}
+.phase-name{font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:8px}
+.phase-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.phase-tasks{font-size:11.5px;color:var(--text-secondary)}
+.phase-bar-track{height:14px;background:#eef0f4;border-radius:99px;overflow:hidden}
+.phase-bar-fill{height:100%;border-radius:99px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+.phase-pct{font-size:13px;font-weight:700;text-align:right}
+.phase-status-chip{font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;text-transform:uppercase;letter-spacing:.3px}
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap)}
+.chart-container{background:var(--bg-card);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow)}
+.chart-container h3{font-size:14px;font-weight:700;margin-bottom:14px}
+.chart-wrap{position:relative;height:260px}
+.upnext{display:flex;gap:14px;flex-wrap:wrap}
+.upnext-card{flex:1;min-width:240px;border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;gap:12px;align-items:center;background:linear-gradient(180deg,#fff,#fbfcfe)}
+.upnext-num{font-size:22px;font-weight:800;color:var(--text-secondary);width:28px;text-align:center}
+.upnext-body{flex:1}
+.upnext-title{font-size:13.5px;font-weight:600}
+.upnext-meta{font-size:11.5px;color:var(--text-secondary);margin-top:3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.kanban{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;align-items:start}
+.kanban-col{background:#f7f8fa;border-radius:10px;padding:10px;min-height:120px}
+.kanban-col-head{display:flex;align-items:center;justify-content:space-between;padding:4px 6px 10px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.kanban-col-head .cnt{background:#fff;border:1px solid var(--border);border-radius:99px;padding:1px 8px;font-size:11px;color:var(--text-secondary)}
+.kanban-cards{display:flex;flex-direction:column;gap:9px}
+.kcard{background:#fff;border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:10px 11px;box-shadow:0 1px 2px rgba(20,24,43,.04);transition:transform .1s,box-shadow .1s}
+.kcard:hover{transform:translateY(-1px);box-shadow:0 3px 8px rgba(20,24,43,.1)}
+.kcard-title{font-size:12.5px;font-weight:600;line-height:1.35;margin-bottom:8px}
+.kcard-title a{color:inherit;text-decoration:none}
+.kcard-title a:hover{text-decoration:underline}
+.kcard-prog{height:6px;background:#eef0f4;border-radius:99px;overflow:hidden;margin-bottom:8px}
+.kcard-prog>div{height:100%;border-radius:99px}
+.badge{font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:5px;text-transform:uppercase;letter-spacing:.3px}
+.ref-badge{font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:5px;background:#eef2ff;color:#4338ca;text-decoration:none}
+.ref-badge:hover{background:#e0e7ff}
+.blocked-tag{font-size:9.5px;font-weight:700;color:#fff;background:var(--c-blocked);padding:2px 6px;border-radius:5px;text-transform:uppercase;letter-spacing:.3px}
+.avatar{width:24px;height:24px;border-radius:50%;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.kcard-due{font-size:10.5px;color:var(--text-secondary);font-weight:500}
+.kcard-due.overdue{color:var(--negative);font-weight:700}
+.kcard-foot{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.table-section{overflow-x:auto}
+.data-table{width:100%;border-collapse:collapse;font-size:13px}
+.data-table thead th{text-align:left;padding:10px 12px;border-bottom:2px solid var(--border);color:var(--text-secondary);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;user-select:none;cursor:pointer}
+.data-table thead th:hover{color:var(--text-primary)}
+.data-table tbody td{padding:9px 12px;border-bottom:1px solid #f0f1f4;vertical-align:middle}
+.data-table tbody tr:hover{background:#f9fafb}
+.cell-owner{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.mini-prog{display:flex;align-items:center;gap:8px}
+.mini-prog-track{width:70px;height:7px;background:#eef0f4;border-radius:99px;overflow:hidden}
+.mini-prog-track>div{height:100%;border-radius:99px}
+.status-chip{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:99px;color:#fff;white-space:nowrap}
+.issues-list{display:flex;flex-direction:column;gap:8px}
+.issue-row{display:flex;align-items:center;gap:10px;padding:9px 11px;border:1px solid var(--border);border-radius:8px}
+.issue-row a{font-size:13px;font-weight:600;color:var(--text-primary);text-decoration:none}
+.issue-row a:hover{text-decoration:underline}
+.issue-state{font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;text-transform:uppercase}
+.issue-labels{display:flex;gap:5px;flex-wrap:wrap;margin-left:auto}
+.dashboard-footer{text-align:center;color:var(--text-secondary);font-size:12px;padding:10px 0 4px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--text-secondary);margin-bottom:14px}
+.legend span{display:flex;align-items:center;gap:5px}
+.legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.loading{text-align:center;padding:60px 20px;color:var(--text-secondary);font-size:14px}
+@media(max-width:1100px){.kanban{grid-template-columns:repeat(2,1fr)}.chart-row{grid-template-columns:1fr}}
+@media(max-width:760px){.phase-row{grid-template-columns:1fr;gap:6px}.phase-pct{text-align:left}.kanban{grid-template-columns:1fr}.kpi-row{grid-template-columns:repeat(2,1fr)}.dashboard-header{flex-direction:column;align-items:flex-start}}
+@media print{body{background:#fff}.filters,.reset-btn{display:none}.section,.chart-container,.kpi-card{box-shadow:none;border:1px solid var(--border)}.kanban{grid-template-columns:repeat(5,1fr)}}
+</style>
+</head>
+<body>
+<div class="dashboard-container" id="root">
+  <div class="loading">Loading live data from GitHub…</div>
+</div>
+
+<script>
+const REPO = "AudioJones-Dev/responseos";
+const BRANCH = "master";
+const RAW_URL = `https://raw.githubusercontent.com/${REPO}/${BRANCH}/dashboard/dashboard-data.json`;
+
+const FALLBACK = {
+  project:{name:"ResponseOS",subtitle:"AI Revenue Recovery Platform",repo:REPO,branch:BRANCH,launch:"2026-08-15",milestone:"v0.3 Demo"},
+  owners:{"Audio":{role:"Founder / Roadmap",color:"#6366f1"},"Claude Code":{role:"Build",color:"#d97757"},"Codex":{role:"Review / QA",color:"#10a37f"}},
+  phases:["v0.1 · Foundation","v0.2 · Stabilization","v0.3 · Demo Scope","Tech Debt & Hardening","Integrations","Testing & QA","Launch / Demo Deploy"],
+  tasks:[
+    {id:"F-01",phase:"v0.1 · Foundation",title:"Next.js app scaffold",owner:"Claude Code",status:"Done",progress:100,priority:"High",start:"2026-05-05",due:"2026-05-09"},
+    {id:"F-02",phase:"v0.1 · Foundation",title:"Prisma schema & data models",owner:"Claude Code",status:"Done",progress:100,priority:"High",start:"2026-05-06",due:"2026-05-12"},
+    {id:"F-03",phase:"v0.1 · Foundation",title:"Database seed (prisma/seed.ts)",owner:"Claude Code",status:"Done",progress:100,priority:"Med",start:"2026-05-10",due:"2026-05-14"},
+    {id:"F-04",phase:"v0.1 · Foundation",title:"Env / Doppler secret config",owner:"Audio",status:"Done",progress:100,priority:"Med",start:"2026-05-08",due:"2026-05-13"},
+    {id:"25",phase:"v0.2 · Stabilization",title:"VoiceProvider interface + mock adapter",owner:"Claude Code",status:"Done",progress:100,priority:"High",start:"2026-05-18",due:"2026-05-27",ref:25,refType:"pull"},
+    {id:"15",phase:"v0.2 · Stabilization",title:"Seed/mock parity + un-skip integration tests",owner:"Claude Code",status:"Done",progress:100,priority:"High",start:"2026-05-20",due:"2026-05-28",ref:15,refType:"pull"},
+    {id:"S-03",phase:"v0.2 · Stabilization",title:"Integration test suite green in CI",owner:"Codex",status:"Done",progress:100,priority:"High",start:"2026-05-22",due:"2026-05-29"},
+    {id:"S-04",phase:"v0.2 · Stabilization",title:"v0.2 implementation spec (docs)",owner:"Audio",status:"Done",progress:100,priority:"Med",start:"2026-05-21",due:"2026-05-29"},
+    {id:"27",phase:"v0.3 · Demo Scope",title:"Define authorized v0.3 demo scope",owner:"Audio",status:"In Progress",progress:50,priority:"High",start:"2026-05-29",due:"2026-06-13",ref:27,refType:"issue"},
+    {id:"V-02",phase:"v0.3 · Demo Scope",title:"Decide demo surface / feature cut",owner:"Audio",status:"In Progress",progress:30,priority:"High",start:"2026-06-02",due:"2026-06-16"},
+    {id:"V-03",phase:"v0.3 · Demo Scope",title:"Document v0.3 acceptance gates",owner:"Audio",status:"To Do",progress:0,priority:"Med",start:"2026-06-16",due:"2026-06-23"},
+    {id:"26",phase:"Tech Debt & Hardening",title:"Seed idempotency / create-only ADR",owner:"Codex",status:"To Do",progress:0,priority:"Med",start:"2026-06-16",due:"2026-06-27",ref:26,refType:"issue"},
+    {id:"T-02",phase:"Tech Debt & Hardening",title:"Re-seed regression test (double seed)",owner:"Codex",status:"Backlog",progress:0,priority:"Low",start:"2026-06-29",due:"2026-07-08"},
+    {id:"14",phase:"Launch / Demo Deploy",title:"v0.3 demo deploy",owner:"Claude Code",status:"Backlog",progress:10,priority:"High",start:"2026-07-13",due:"2026-08-01",ref:14,refType:"pull",blocked:true,blockedReason:"Draft & unauthorized until v0.3 scope is opened (#27)"},
+    {id:"I-01",phase:"Integrations",title:"Live voice integration (real adapter)",owner:"Claude Code",status:"Backlog",progress:0,priority:"High",start:"2026-07-06",due:"2026-07-24",blocked:true,blockedReason:"Gated on v0.3 scope decision"},
+    {id:"I-02",phase:"Integrations",title:"Lead qualification pipeline",owner:"Claude Code",status:"Backlog",progress:0,priority:"Med",start:"2026-07-20",due:"2026-08-03"},
+    {id:"I-03",phase:"Integrations",title:"Booking + revenue metrics wiring",owner:"Claude Code",status:"Backlog",progress:0,priority:"Med",start:"2026-07-27",due:"2026-08-07"},
+    {id:"Q-01",phase:"Testing & QA",title:"Unit coverage expansion",owner:"Codex",status:"In Progress",progress:40,priority:"Med",start:"2026-05-25",due:"2026-07-04"},
+    {id:"Q-02",phase:"Testing & QA",title:"End-to-end demo smoke test",owner:"Codex",status:"Backlog",progress:0,priority:"High",start:"2026-07-27",due:"2026-08-10"},
+    {id:"L-02",phase:"Launch / Demo Deploy",title:"Production env + secrets",owner:"Audio",status:"Backlog",progress:0,priority:"High",start:"2026-08-03",due:"2026-08-12"},
+    {id:"L-03",phase:"Launch / Demo Deploy",title:"Go-live demo 🚀",owner:"Audio",status:"Backlog",progress:0,priority:"High",start:"2026-08-13",due:"2026-08-15"}
+  ],
+  liveIssues:[],generatedAt:null
+};
+
+const KANBAN_COLS=["Backlog","To Do","In Progress","Review","Done"];
+const STATUS_HEX={"Backlog":"#94a3b8","To Do":"#6366f1","In Progress":"#0ea5e9","Review":"#f59e0b","Done":"#22c55e"};
+const PRI_COLOR={High:"var(--pri-high)",Med:"var(--pri-med)",Low:"var(--pri-low)"};
+const TODAY=new Date();
+
+async function loadData(){
+  const tries=[ "./dashboard-data.json?cb="+Date.now(), RAW_URL+"?cb="+Date.now() ];
+  for(const url of tries){
+    try{
+      const r=await fetch(url,{cache:"no-store"});
+      if(r.ok){const j=await r.json(); j.__source = url.startsWith("http")?"GitHub (live)":"local file"; return j;}
+    }catch(e){}
+  }
+  const fb=JSON.parse(JSON.stringify(FALLBACK)); fb.__source="embedded fallback"; return fb;
+}
+
+class Dashboard{
+  constructor(d){
+    this.D=d;this.OWNERS=d.owners||{};this.PHASES=d.phases||[];
+    this.raw=(d.tasks||[]).slice();this.filtered=this.raw.slice();
+    this.charts={};this.sortCol=null;this.sortDir="asc";this.render();
+  }
+  render(){
+    const p=this.D.project||{};
+    document.getElementById("root").innerHTML=`
+      <header class="dashboard-header">
+        <div class="header-left">
+          <h1>🚧 ${p.name||"Build"} — Progress <span class="pill">${p.milestone||"IN DEV"}</span></h1>
+          <div class="proj">${p.subtitle||""} · <a href="https://github.com/${p.repo}" target="_blank" rel="noopener">${p.repo||""}</a></div>
+        </div>
+        <div class="filters">
+          <div class="filter-group"><label>Phase</label><select id="f-phase"><option value="all">All phases</option></select></div>
+          <div class="filter-group"><label>Owner</label><select id="f-owner"><option value="all">All owners</option></select></div>
+          <div class="filter-group"><label>Status</label><select id="f-status"><option value="all">All statuses</option></select></div>
+          <button class="reset-btn" id="reset">Reset</button>
+        </div>
+      </header>
+      <section class="kpi-row" id="kpi-row"></section>
+      <section class="section">
+        <div class="section-title">🗺️ Roadmap — Phase Progress</div>
+        <div class="section-sub">Each phase rolls up its tasks. Completion is the average progress across the phase.</div>
+        <div class="phase-list" id="phase-list"></div>
+      </section>
+      <section class="section">
+        <div class="section-title">⏭️ Up Next</div>
+        <div class="section-sub">Highest-priority unstarted work, in roadmap order.</div>
+        <div class="upnext" id="upnext"></div>
+      </section>
+      <section class="chart-row">
+        <div class="chart-container"><h3>Tasks by Status</h3><div class="chart-wrap"><canvas id="statusChart"></canvas></div></div>
+        <div class="chart-container"><h3>Workload by Owner</h3><div class="chart-wrap"><canvas id="ownerChart"></canvas></div></div>
+      </section>
+      <section class="section">
+        <div class="section-title">📋 Kanban Board</div>
+        <div class="section-sub">Every task by status. Cards linked to a GitHub issue/PR are clickable.</div>
+        <div class="legend" id="legend"></div>
+        <div class="kanban" id="kanban"></div>
+      </section>
+      <section class="section" id="issues-section" style="display:none">
+        <div class="section-title">🔗 Open GitHub Issues <span class="badge" style="background:#eef2ff;color:#4338ca" id="issue-count"></span></div>
+        <div class="section-sub">Synced live from ${p.repo}.</div>
+        <div class="issues-list" id="issues-list"></div>
+      </section>
+      <section class="section table-section">
+        <div class="section-title">📑 All Tasks</div>
+        <div class="section-sub">Click any column header to sort.</div>
+        <div id="table-wrap"></div>
+      </section>
+      <footer class="dashboard-footer" id="footer"></footer>`;
+    this.buildFilters();this.buildLegend();this.renderKPIs();this.renderPhases();this.renderUpNext();
+    this.renderCharts();this.renderKanban();this.renderIssues();this.renderTable();this.renderFooter();
+  }
+  buildFilters(){
+    const fill=(id,vals)=>{const s=document.getElementById(id);vals.forEach(v=>{const o=document.createElement("option");o.value=v;o.textContent=v;s.appendChild(o);});s.onchange=()=>this.apply();};
+    fill("f-phase",this.PHASES);fill("f-owner",Object.keys(this.OWNERS));fill("f-status",KANBAN_COLS);
+    document.getElementById("reset").onclick=()=>{["f-phase","f-owner","f-status"].forEach(id=>document.getElementById(id).value="all");this.apply();};
+  }
+  buildLegend(){document.getElementById("legend").innerHTML=KANBAN_COLS.map(s=>`<span><i style="background:${STATUS_HEX[s]}"></i>${s}</span>`).join("")+`<span><i style="background:#ef4444"></i>Blocked</span>`;}
+  apply(){
+    const ph=val("f-phase"),ow=val("f-owner"),st=val("f-status");
+    this.filtered=this.raw.filter(t=>(ph==="all"||t.phase===ph)&&(ow==="all"||t.owner===ow)&&(st==="all"||t.status===st));
+    this.renderKPIs();this.renderPhases();this.renderUpNext();this.updateCharts();this.renderKanban();this.renderTable();
+  }
+  renderKPIs(){
+    const d=this.filtered,total=d.length;
+    const done=d.filter(t=>t.status==="Done").length;
+    const inprog=d.filter(t=>t.status==="In Progress").length;
+    const blocked=d.filter(t=>t.blocked).length;
+    const overdue=d.filter(t=>t.status!=="Done"&&new Date(t.due)<TODAY).length;
+    const overall=total?Math.round(d.reduce((a,t)=>a+(+t.progress||0),0)/total):0;
+    const launch=this.D.project&&this.D.project.launch?new Date(this.D.project.launch):null;
+    const daysLeft=launch?Math.ceil((launch-TODAY)/86400000):null;
+    const cards=[
+      {label:"Overall Progress",value:overall+"%",sub:`${done}/${total} tasks complete`,accent:"#0ea5e9",ring:overall},
+      {label:"In Progress",value:inprog,sub:"active now",accent:"#6366f1"},
+      {label:"Blocked",value:blocked,sub:blocked?"needs attention":"all clear",accent:blocked?"#ef4444":"#22c55e"},
+      {label:"Overdue",value:overdue,sub:overdue?"past due date":"on schedule",accent:overdue?"#ef4444":"#22c55e"},
+    ];
+    if(daysLeft!=null)cards.push({label:"Days to "+(this.D.project.milestone||"Launch"),value:daysLeft,sub:launch.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}),accent:"#f59e0b"});
+    document.getElementById("kpi-row").innerHTML=cards.map(c=>`
+      <div class="kpi-card" style="--accent:${c.accent}">
+        ${c.ring!=null?ringSVG(c.ring,c.accent):""}
+        <div class="kpi-label">${c.label}</div>
+        <div class="kpi-value" style="color:${c.accent}">${c.value}</div>
+        <div class="kpi-sub">${c.sub}</div>
+      </div>`).join("");
+  }
+  renderPhases(){
+    const el=document.getElementById("phase-list");
+    const active=new Set(this.filtered.map(t=>t.phase));
+    el.innerHTML=this.PHASES.filter(p=>active.has(p)).map(p=>{
+      const ts=this.filtered.filter(t=>t.phase===p);
+      const pct=ts.length?Math.round(ts.reduce((a,t)=>a+(+t.progress||0),0)/ts.length):0;
+      const done=ts.filter(t=>t.status==="Done").length;
+      let chip,chipBg;
+      if(pct===100){chip="Complete";chipBg="#22c55e";}else if(pct===0){chip="Not started";chipBg="#94a3b8";}else{chip="In progress";chipBg="#0ea5e9";}
+      const color=pct===100?"#22c55e":pct>=50?"#0ea5e9":pct>0?"#6366f1":"#cbd5e1";
+      return `<div class="phase-row">
+        <div class="phase-meta">
+          <div class="phase-name"><span class="phase-dot" style="background:${color}"></span>${p}</div>
+          <div class="phase-tasks">${done}/${ts.length} done <span class="phase-status-chip" style="background:${chipBg}22;color:${chipBg}">${chip}</span></div>
+        </div>
+        <div class="phase-bar-track"><div class="phase-bar-fill" style="width:${pct}%;background:linear-gradient(90deg,${color}cc,${color})"></div></div>
+        <div class="phase-pct" style="color:${color}">${pct}%</div>
+      </div>`;
+    }).join("")||`<div class="phase-tasks">No phases match the current filters.</div>`;
+  }
+  renderUpNext(){
+    const order={High:0,Med:1,Low:2};
+    const next=this.filtered.filter(t=>t.status==="To Do"||t.status==="Backlog")
+      .sort((a,b)=>this.PHASES.indexOf(a.phase)-this.PHASES.indexOf(b.phase)||order[a.priority]-order[b.priority]||new Date(a.due)-new Date(b.due)).slice(0,3);
+    const el=document.getElementById("upnext");
+    if(!next.length){el.innerHTML=`<div class="upnext-card"><div class="upnext-body"><div class="upnext-title">🎉 Nothing queued — all visible tasks are started or done.</div></div></div>`;return;}
+    el.innerHTML=next.map((t,i)=>`<div class="upnext-card">
+      <div class="upnext-num">${i+1}</div>
+      <div class="upnext-body">
+        <div class="upnext-title">${t.title} ${t.blocked?'<span class="blocked-tag">Blocked</span>':''}</div>
+        <div class="upnext-meta">${avatar(t.owner,this.OWNERS)} <span>${t.owner}</span> ·
+          <span class="badge" style="color:${PRI_COLOR[t.priority]};background:${PRI_COLOR[t.priority]}1a">${t.priority}</span> ·
+          <span>${shortPhase(t.phase)}</span> · due ${fmtDate(t.due)}</div>
+      </div></div>`).join("");
+  }
+  statusData(){return KANBAN_COLS.map(s=>this.filtered.filter(t=>t.status===s).length);}
+  ownerData(){
+    const labels=Object.keys(this.OWNERS).filter(o=>this.filtered.some(t=>t.owner===o));
+    const byStatus={};KANBAN_COLS.forEach(s=>byStatus[s]=labels.map(o=>this.filtered.filter(t=>t.owner===o&&t.status===s).length));
+    return {labels,byStatus};
+  }
+  renderCharts(){
+    this.charts.status=new Chart(document.getElementById("statusChart"),{
+      type:"doughnut",data:{labels:KANBAN_COLS,datasets:[{data:this.statusData(),backgroundColor:KANBAN_COLS.map(s=>STATUS_HEX[s]),borderColor:"#fff",borderWidth:3}]},
+      options:{responsive:true,maintainAspectRatio:false,cutout:"62%",plugins:{legend:{position:"right",labels:{usePointStyle:true,padding:14,font:{size:12}}},
+        tooltip:{callbacks:{label:c=>{const tot=c.dataset.data.reduce((a,b)=>a+b,0)||1;return `${c.label}: ${c.parsed} (${Math.round(c.parsed/tot*100)}%)`;}}}}}});
+    const od=this.ownerData();
+    this.charts.owner=new Chart(document.getElementById("ownerChart"),{
+      type:"bar",data:{labels:od.labels,datasets:KANBAN_COLS.map(s=>({label:s,data:od.byStatus[s],backgroundColor:STATUS_HEX[s],borderRadius:4,stack:"s"}))},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom",labels:{usePointStyle:true,padding:12,font:{size:11}}}},
+        scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true,ticks:{stepSize:1,precision:0}}}}});
+  }
+  updateCharts(){
+    this.charts.status.data.datasets[0].data=this.statusData();this.charts.status.update("none");
+    const od=this.ownerData();this.charts.owner.data.labels=od.labels;
+    KANBAN_COLS.forEach((s,i)=>this.charts.owner.data.datasets[i].data=od.byStatus[s]);this.charts.owner.update("none");
+  }
+  renderKanban(){
+    document.getElementById("kanban").innerHTML=KANBAN_COLS.map(col=>{
+      const cards=this.filtered.filter(t=>t.status===col);
+      return `<div class="kanban-col">
+        <div class="kanban-col-head" style="color:${STATUS_HEX[col]}"><span><span class="phase-dot" style="background:${STATUS_HEX[col]};display:inline-block;margin-right:6px"></span>${col}</span><span class="cnt">${cards.length}</span></div>
+        <div class="kanban-cards">${cards.map(t=>this.kcard(t)).join("")||`<div style="font-size:11.5px;color:var(--text-secondary);padding:6px;text-align:center">—</div>`}</div>
+      </div>`;}).join("");
+  }
+  kcard(t){
+    const overdue=t.status!=="Done"&&new Date(t.due)<TODAY;const bar=STATUS_HEX[t.status];
+    const title=t.ref?`<a href="${refUrl(this.D.project,t)}" target="_blank" rel="noopener">${t.title}</a>`:t.title;
+    return `<div class="kcard" style="--accent:${bar}">
+      <div class="kcard-title">${title}</div>
+      ${t.progress>0&&t.progress<100?`<div class="kcard-prog"><div style="width:${t.progress}%;background:${bar}"></div></div>`:""}
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">
+        <span class="badge" style="color:${PRI_COLOR[t.priority]};background:${PRI_COLOR[t.priority]}1a">${t.priority}</span>
+        <span class="badge" style="color:#475569;background:#f1f5f9">${shortPhase(t.phase)}</span>
+        ${t.ref?`<a class="ref-badge" href="${refUrl(this.D.project,t)}" target="_blank" rel="noopener">#${t.ref}</a>`:""}
+        ${t.blocked?`<span class="blocked-tag" title="${t.blockedReason||''}">Blocked</span>`:""}
+      </div>
+      <div class="kcard-foot">
+        <div style="display:flex;align-items:center;gap:6px">${avatar(t.owner,this.OWNERS)}<span style="font-size:11px;color:var(--text-secondary)">${ownerShort(t.owner)}</span></div>
+        <span class="kcard-due ${overdue?'overdue':''}">${overdue?'⚠ ':''}${fmtDate(t.due)}</span>
+      </div></div>`;
+  }
+  renderIssues(){
+    const list=this.D.liveIssues||[];const sec=document.getElementById("issues-section");
+    if(!list.length){sec.style.display="none";return;}
+    sec.style.display="";
+    document.getElementById("issue-count").textContent=list.length+" open";
+    document.getElementById("issues-list").innerHTML=list.map(i=>`
+      <div class="issue-row">
+        <span class="issue-state" style="background:${i.state==='open'?'#dcfce7':'#f1f5f9'};color:${i.state==='open'?'#166534':'#64748b'}">#${i.number}</span>
+        <a href="${i.url}" target="_blank" rel="noopener">${i.title}</a>
+        <span class="issue-labels">${(i.labels||[]).map(l=>`<span class="badge" style="background:#eef2ff;color:#4338ca">${l}</span>`).join("")}</span>
+      </div>`).join("");
+  }
+  renderTable(){
+    const proj=this.D.project,OW=this.OWNERS;
+    const cols=[
+      {f:"id",l:"ID",render:t=>t.ref?`<a class="ref-badge" href="${refUrl(proj,t)}" target="_blank" rel="noopener">#${t.ref}</a>`:t.id},
+      {f:"title",l:"Task"},{f:"phase",l:"Phase",fmt:shortPhase},
+      {f:"owner",l:"Owner",render:t=>`<div class="cell-owner">${avatar(t.owner,OW)}${t.owner}</div>`},
+      {f:"status",l:"Status",render:t=>`<span class="status-chip" style="background:${STATUS_HEX[t.status]}">${t.status}</span>`},
+      {f:"priority",l:"Priority",render:t=>`<span class="badge" style="color:${PRI_COLOR[t.priority]};background:${PRI_COLOR[t.priority]}1a">${t.priority}</span>`},
+      {f:"progress",l:"Progress",render:t=>`<div class="mini-prog"><div class="mini-prog-track"><div style="width:${t.progress}%;background:${STATUS_HEX[t.status]}"></div></div><span style="font-size:12px;font-weight:600">${t.progress}%</span></div>`},
+      {f:"due",l:"Due",render:t=>{const od=t.status!=="Done"&&new Date(t.due)<TODAY;return `<span style="${od?'color:var(--negative);font-weight:600':''}">${fmtDate(t.due)}</span>`;}},
+    ];
+    let data=this.filtered.slice();
+    if(this.sortCol){data.sort((a,b)=>{let x=a[this.sortCol],y=b[this.sortCol];if(this.sortCol==="due"){x=new Date(x);y=new Date(y);}const c=x<y?-1:x>y?1:0;return this.sortDir==="asc"?c:-c;});}
+    let html='<table class="data-table"><thead><tr>';
+    cols.forEach(c=>{const a=this.sortCol===c.f?(this.sortDir==="asc"?" ▲":" ▼"):"";html+=`<th data-f="${c.f}">${c.l}${a}</th>`;});
+    html+='</tr></thead><tbody>';
+    data.forEach(t=>{html+="<tr>";cols.forEach(c=>{html+=`<td>${c.render?c.render(t):(c.fmt?c.fmt(t[c.f]):t[c.f])}</td>`;});html+="</tr>";});
+    html+='</tbody></table>';
+    const wrap=document.getElementById("table-wrap");wrap.innerHTML=html;
+    wrap.querySelectorAll("th").forEach(th=>th.onclick=()=>{const f=th.dataset.f;if(this.sortCol===f)this.sortDir=this.sortDir==="asc"?"desc":"asc";else{this.sortCol=f;this.sortDir="asc";}this.renderTable();});
+  }
+  renderFooter(){
+    const g=this.D.generatedAt?new Date(this.D.generatedAt):null;
+    const src=this.D.__source||"unknown";
+    const color=src.includes("live")?"#22c55e":src.includes("local")?"#0ea5e9":"#f59e0b";
+    document.getElementById("footer").innerHTML=
+      `<span class="sync-pill" style="background:${color}1a;color:${color}"><span class="dot" style="background:${color}"></span>Source: ${src}</span> · `+
+      (g?`Synced ${g.toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}`:`Showing seed data`)+
+      ` · Edit <code>dashboard/dashboard-data.json</code> in the repo to update.`;
+  }
+}
+
+function val(id){return document.getElementById(id).value;}
+function shortPhase(p){const m=(p||"").match(/^v?[\d.]+/);return m?m[0]:"P"+((p||"").split(" ")[0]);}
+function fmtDate(d){return new Date(d).toLocaleDateString(undefined,{month:'short',day:'numeric'});}
+function ownerShort(name){return (name||"").split(" ")[0];}
+function avatar(name,OW){const o=(OW&&OW[name])||{color:"#94a3b8"};const init=(name||"?").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();return `<span class="avatar" title="${name} · ${o.role||''}" style="background:${o.color}">${init}</span>`;}
+function refUrl(proj,t){const kind=t.refType==="pull"?"pull":"issues";return `https://github.com/${proj.repo}/${kind}/${t.ref}`;}
+function ringSVG(pct,color){const r=18,c=2*Math.PI*r,off=c*(1-pct/100);return `<svg class="kpi-ring" width="46" height="46" viewBox="0 0 46 46"><circle cx="23" cy="23" r="${r}" fill="none" stroke="#eef0f4" stroke-width="5"/><circle cx="23" cy="23" r="${r}" fill="none" stroke="${color}" stroke-width="5" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${off}" transform="rotate(-90 23 23)"/></svg>`;}
+
+loadData().then(d=>new Dashboard(d));
+</script>
+</body>
+</html>
