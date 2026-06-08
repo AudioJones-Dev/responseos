@@ -87,7 +87,7 @@
       "due": "2026-05-27",
       "ref": 25,
       "refType": "pull",
-      "refState": "closed",
+      "refState": "merged",
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/25"
     },
     {
@@ -102,7 +102,7 @@
       "due": "2026-05-28",
       "ref": 15,
       "refType": "pull",
-      "refState": "closed",
+      "refState": "merged",
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/15"
     },
     {
@@ -308,5 +308,5 @@
       ]
     }
   ],
-  "generatedAt": "2026-06-08T00:02:43.363Z"
+  "generatedAt": "2026-06-08T00:26:45.358Z"
 }
