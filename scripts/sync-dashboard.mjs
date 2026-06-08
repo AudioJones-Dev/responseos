@@ -3,8 +3,11 @@
 // Runs in GitHub Actions on Node 20+ (uses global fetch). No external deps.
 //
 // For every task that has a "ref" (issue or PR number):
-//   - if that issue/PR is CLOSED  -> task.status = "Done", progress = 100
-//   - if it is OPEN and the task was "Done" -> revert to "In Progress"
+//   - issue closed, or PR merged          -> task.status = "Done", progress = 100
+//   - PR closed WITHOUT merging           -> never auto-complete; a stale "Done"
+//                                            is demoted to "To Do"/0, other
+//                                            statuses are left as authored
+//   - ref open (or reopened) but "Done"   -> revert to "In Progress"
 // It also refreshes data.liveIssues (open issues only) and stamps generatedAt.
 
 import { readFileSync, writeFileSync } from "node:fs";
@@ -32,6 +35,8 @@ async function gh(path) {
 }
 
 // PRs are returned by the issues endpoint too, so this works for both.
+// For PRs the payload carries a `pull_request` object whose `merged_at` is
+// non-null only when the PR was actually merged (vs closed-unmerged).
 async function getRef(num) {
   try {
     return await gh(`/repos/${owner}/${name}/issues/${num}`);
@@ -68,13 +73,34 @@ for (const t of data.tasks || []) {
   if (!t.ref) continue;
   const ref = await getRef(t.ref);
   if (!ref) continue;
+
+  const isPR = Boolean(ref.pull_request);
+  const merged = isPR && Boolean(ref.pull_request.merged_at);
   const closed = ref.state === "closed";
-  const newStatus = closed ? "Done" : t.status === "Done" ? "In Progress" : t.status;
-  const newProgress = closed ? 100 : t.progress;
+
+  let newStatus = t.status;
+  let newProgress = t.progress;
+
+  if (isPR && closed && !merged) {
+    // PR closed without merging: the work did NOT land. Never auto-complete.
+    // Demote a stale "Done" back to To Do; leave any deliberate status alone.
+    if (t.status === "Done") {
+      newStatus = "To Do";
+      newProgress = 0;
+    }
+  } else if (closed) {
+    // Issue closed, or PR merged -> complete.
+    newStatus = "Done";
+    newProgress = 100;
+  } else if (t.status === "Done") {
+    // Reopened / still open but marked Done -> walk back.
+    newStatus = "In Progress";
+  }
+
   if (t.status !== newStatus) console.log(`  #${t.ref} ${t.title}: ${t.status} -> ${newStatus}`);
   t.status = newStatus;
   t.progress = newProgress;
-  t.refState = ref.state;
+  t.refState = merged ? "merged" : ref.state;
   t.refUrl = ref.html_url;
 }
 
