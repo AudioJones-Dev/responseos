@@ -4,6 +4,10 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: add Web3 opportunity research
+
+- Added [`research/RESPONSEOS_WEB3_BLOCKCHAIN_OPPORTUNITY_RESEARCH.md`](./research/RESPONSEOS_WEB3_BLOCKCHAIN_OPPORTUNITY_RESEARCH.md) — evaluates Web3/blockchain/crypto opportunities against the current ResponseOS architecture and recommends a **non-crypto** path: a Level-1 tamper-evident AI interaction ledger (canonical JSON, hash chains, Ed25519 signatures, signed exports) before any optional Merkle-root anchoring. Research-only; no app code, schema, auth, provider, dependency, secret, or deploy changes.
+
 ## Unreleased — chore: wire Doppler as the opt-in secrets-injection tool
 
 - Added `doppler.yaml` (project/config mapping only, no secret values) and opt-in npm scripts `dev:doppler` / `build:doppler` / `start:doppler` / `secrets:check` that inject secrets via `doppler run`. The plain scripts and the `.env.local` flow are untouched.
