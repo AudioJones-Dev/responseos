@@ -225,6 +225,17 @@
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/91"
     },
     {
+      "id": "G-04",
+      "phase": "Tech Debt & Hardening",
+      "title": "Quality and reference docs",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "Med",
+      "start": "2026-07-01",
+      "due": "2026-07-01"
+    },
+    {
       "id": "T-02",
       "phase": "Tech Debt & Hardening",
       "title": "Re-seed regression test (double seed)",
