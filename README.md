@@ -4,11 +4,11 @@
 
 > ResponseOS helps service businesses recover missed revenue by capturing demand, responding instantly, qualifying leads, booking opportunities, and reporting ROI.
 
-## Current status (May 2026)
+## Current status
 
 - **v0.1** foundation shipped: internal operator console, read-only client dashboard, marketing surface, 11 typed domain models, mock provider adapters, canonical API envelopes.
 - **v0.2 Phases A–D** merged: real Postgres schema + deterministic seed (PR #5), auth + tenant-aware data access layer (PR #6), consumers routed through the v0.2 data layer (PR #7), integration test suite + Postgres-backed CI job (PR #12).
-- **v0.2 closeout** in flight: `Organization` → `Account` rename, real Auth.js provider wiring, UI rebuild against `DESIGN.md` tokens, remaining v0.2 data-model expansion (provider_connections, conversations, call_segments / transcripts, workflow_runs, qa_logs).
+- **v0.2 closeout** shipped: `Organization` → `Account` rename, `Booking` → `Appointment` rename, Clerk auth wiring, UI rebuild against `DESIGN.md` tokens, and remaining v0.2 data-model expansion (`provider_connections`, conversations / SMS, call segments / transcripts, workflow runs, QA logs, expanded audit logs).
 - **Live provider integrations are still gated to v0.3.** No Twilio / Retell / Vapi / Stripe / GHL / HubSpot calls run against real accounts from this repo. No production deploys.
 
 For the full version table and milestone state see [`docs/ROADMAP.md`](./docs/ROADMAP.md); for the per-PR history see [`docs/CHANGELOG.md`](./docs/CHANGELOG.md).
@@ -17,9 +17,9 @@ For the full version table and milestone state see [`docs/ROADMAP.md`](./docs/RO
 
 - App: Next.js 16 App Router with route groups `app/(marketing)`, `app/(admin)`, `app/(client)`.
 - API + webhook route stubs returning canonical envelopes under `app/api/`.
-- Domain types in `types/` (11 v0.1 models, expanding in v0.2).
-- Prisma schema + first migration (`prisma/migrations/0001_v0_2_foundation`) + deterministic seed.
-- Data access layer with tenant scoping in `lib/data/*`; auth scaffold in `lib/auth/*`.
+- Domain types in `types/`, expanded by the v0.2 data model.
+- Prisma schema + migrations (`prisma/migrations/0001_*` through `0008_*`) + deterministic seed.
+- Data access layer with tenant scoping in `lib/data/*`; Clerk session, webhook sync, and route-protection helpers in `lib/auth/*`.
 - Mock provider adapters in `lib/providers/*` — every provider falls back to mock when env vars are missing.
 - Mock fixtures in `lib/mock/*` back every page; the v0.2 seed mirrors them field-for-field.
 - Revenue + scoring math in `lib/revenue/*` and `lib/scoring/*`.
@@ -33,7 +33,7 @@ For the full version table and milestone state see [`docs/ROADMAP.md`](./docs/RO
 - ESLint v9 (flat config).
 - Prisma 6 + Postgres 16.
 - Vitest (unit + integration).
-- Clerk auth (Standard lane), Cloudflare R2 (Standard lane), Supabase Postgres (Standard lane).
+- Clerk auth (Standard lane), Neon Postgres as the hosted Standard-lane database target per ADR-0026, plain Postgres 16 for local/CI, and Cloudflare R2 as the Standard-lane object-storage target.
 
 ## Local development
 
