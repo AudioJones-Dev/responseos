@@ -23,6 +23,7 @@ The authoritative provider-stack baseline is the decision log: Telnyx primary / 
 2. [`ROADMAP.md`](./ROADMAP.md) — version table and milestone status (v0.1 → v0.2 → v0.3 → …).
 3. [`CHANGELOG.md`](./CHANGELOG.md) — per-PR history.
 4. [`DECISIONS.md`](./DECISIONS.md) — architecture decisions (ADRs).
+5. [`reference/DOCUMENTATION_INDEX.md`](./reference/DOCUMENTATION_INDEX.md) — AJ Digital OS governance-stack map. Draft navigation only; it does not rename files or promote a final canonicalization model.
 
 ## Product + architecture
 
@@ -44,9 +45,15 @@ The authoritative provider-stack baseline is the decision log: Telnyx primary / 
 14. [`DEPLOYMENT.md`](./DEPLOYMENT.md) — three deployment lanes, CI/CD, SLOs, rollback plan.
 15. [`SECURITY.md`](./SECURITY.md) — secrets, webhook signatures, tenant isolation, BAA matrix, incident response.
 
-## Reference
+## Governance, quality, and reference
 
-16. [`research-report.md`](./research-report.md) — curated summary of the canonical product + architecture research.
+16. [`governance/RESPONSEOS_DOCUMENTATION_REMEDIATION_PLAN.md`](./governance/RESPONSEOS_DOCUMENTATION_REMEDIATION_PLAN.md) — remediation sequence and remaining canonicalization decisions.
+17. [`governance/PROJECT_CONSTITUTION.md`](./governance/PROJECT_CONSTITUTION.md) — draft project constitution.
+18. [`governance/DEFINITION_OF_READY.md`](./governance/DEFINITION_OF_READY.md), [`DEFINITION_OF_DONE.md`](./governance/DEFINITION_OF_DONE.md), [`DEFINITION_OF_STABLE.md`](./governance/DEFINITION_OF_STABLE.md) — draft governance gates.
+19. [`governance/RISK_REGISTER.md`](./governance/RISK_REGISTER.md), [`WORKTREE_PLAN.md`](./governance/WORKTREE_PLAN.md), [`REQUIREMENTS_TRACEABILITY_MATRIX.md`](./governance/REQUIREMENTS_TRACEABILITY_MATRIX.md) — draft risk, worktree, and traceability controls.
+20. [`quality/ACCEPTANCE_TEST_PLAN.md`](./quality/ACCEPTANCE_TEST_PLAN.md), [`PERFORMANCE.md`](./quality/PERFORMANCE.md), [`FAILURE_MODES.md`](./quality/FAILURE_MODES.md) — draft quality baselines.
+21. [`reference/DOCUMENTATION_INDEX.md`](./reference/DOCUMENTATION_INDEX.md), [`GLOSSARY.md`](./reference/GLOSSARY.md), [`OPEN_QUESTIONS.md`](./reference/OPEN_QUESTIONS.md), [`CODING_STANDARDS.md`](./reference/CODING_STANDARDS.md) — draft reference baselines.
+22. [`research-report.md`](./research-report.md) — curated summary of the canonical product + architecture research.
 
 ## Archive
 
