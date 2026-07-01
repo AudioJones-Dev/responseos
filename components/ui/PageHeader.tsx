@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { cn } from "./cn";
 
-/** Standard page header — eyebrow label, title (Sora), optional description + actions. */
+/** Standard page header — eyebrow label, Syne title, optional description + actions. */
 export function PageHeader({
   eyebrow,
   title,

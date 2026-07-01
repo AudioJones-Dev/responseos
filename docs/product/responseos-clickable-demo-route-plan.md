@@ -90,14 +90,14 @@ No new dependencies; inline SVG/icons as already used.
 | 2 | Call Intelligence Detail | transcript, AI summary, urgency, score, consent, next action, sync+memory chips | transcript left, summary right |
 | 3 | Lead / Opportunity View | lead identity, value, qual score, deal stage, CRM sync, owner, attribution | value in Signal-Yellow |
 | 4 | Business Memory Event | event id, source, entities, summary, op/commercial context, next actions, **gates panel (all false)** | gates rendered as visible Phase-1 state |
-| 5 | Follow-Up Queue | the urgent Maria Santos task: due, owner, reason, value, risk-if-ignored, suggested action | due/overdue in action-orange |
+| 5 | Follow-Up Queue | the urgent Maria Santos task: due, owner, reason, value, risk-if-ignored, suggested action | due/overdue in critical/warning treatment |
 | 6 | Integration Status *(optional)* | HubSpot/telephony/memory/event-bus status, last sync, demo-mode warning | the one screen vendor names may appear |
 
 Cross-screen links follow the wireframe spec's navigation flow.
 
 ## 7. Brand & UX
 
-True-black/glass, Signal-Yellow emphasis, action-orange for urgency/leak, Syne display, neutral type —
+Dark editorial canvas, Signal-Yellow emphasis, critical/warning for urgency/leak, Syne display, neutral type —
 straight from `DESIGN.md` (post-Brand-2.0 tokens, already in `app/globals.css`). Every step has the
 "Next Action" module; the stepper makes it a guided click-through. CTA "Revenue Recovery Demo"
 (ADR-0035) links back to the marketing demo/booking surface.

@@ -656,3 +656,22 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 5. **CI is unchanged.** The `validate` / `integration` jobs inject their own env (Postgres for integration) and do not depend on Doppler. Adopting Doppler in CI/CD, if ever, is a separate decision.
 
 **Consequences.** Contributors get centralized, rotatable, access-controlled secrets without maintaining `.env.local`, while every existing guarantee holds: zero-credential boot, mock-first, no secrets in the repo, and the v0.3 gate. Cost: contributors who opt in need the Doppler CLI and a one-time `doppler login` + `doppler setup`; the project/config names in `doppler.yaml` must match the Doppler workplace. This ADR is tooling only — it ships no provider adapter, schema change, env var, secret, account configuration, or deploy.
+
+---
+
+## ADR-0039 — Audio Jones Editorial Intelligence design doctrine is the parent visual system (supersedes the action-orange/body-font portions of ADR-0021)
+
+**Status:** Accepted (2026-06-29). Visual-system decision. **Supersedes part of ADR-0021** while preserving its core Signal Yellow + Syne direction.
+
+**Context.** ADR-0021 moved ResponseOS from the pre-Brand-2.0 orange/Sora system to Signal Yellow as the primary accent and Syne as the display face, while retaining `#FF4500` as secondary action-orange and leaving Inter / JetBrains Mono untouched. The operator supplied the portable **Audio Jones — Editorial Intelligence Systems** doctrine as the new parent system for repo installation. That doctrine keeps the dark-first, operational, Signal Yellow posture but changes the supporting system: body/UI becomes DM Sans, mono/data becomes DM Mono, urgency is handled by critical red `#FF4545` and warning amber `#FFB340`, and hierarchy is carried by surfaces, borders, spacing, and restrained elevation instead of glass or glow.
+
+**Decision.**
+
+1. **Parent design doctrine = Audio Jones Editorial Intelligence Systems**, committed at [`docs/design/audio-jones-editorial-intelligence-systems.md`](./design/audio-jones-editorial-intelligence-systems.md).
+2. **ResponseOS `docs/DESIGN.md` remains the product-specific UX spine.** It inherits the parent doctrine for tokens, type, spacing, radius, elevation, and accent discipline, then adds ResponseOS-specific screen hierarchy, component behavior, data visualization rules, and UX writing.
+3. **Signal Yellow `#E8FF5A` remains the single primary signal.** It is semantic, not decorative, and marks the most important action/state in a view.
+4. **`#FF4500` is no longer the canonical secondary urgency token.** Urgency maps to `--aj-critical` `#FF4545` and `--aj-warning` `#FFB340`. Historical docs may mention action-orange as provenance, but go-forward runtime tokens and new UI work use the AJ token layer.
+5. **Typography = Syne / DM Sans / DM Mono.** This supersedes ADR-0021's "Inter / JetBrains unaffected" clause for go-forward UI.
+6. **Runtime compatibility aliases stay in force.** Existing Tailwind utilities such as `bg-base`, `text-ink`, `font-sans`, and `font-mono` remain valid but map to the AJ tokens in `app/globals.css`.
+
+**Consequences.** The design canon and runtime token layer are aligned with the portable Audio Jones system without forcing a repo-wide component rename. Existing UI classes keep compiling; visual changes come from token remapping and the global font swap. No schema, provider, secret, production deploy, or live integration behavior changes.

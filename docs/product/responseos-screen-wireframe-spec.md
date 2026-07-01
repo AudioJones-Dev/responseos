@@ -65,7 +65,7 @@ Every screen binds to the existing mock-data assets (all `demo_only: true`, no P
 - Make the dashboard feel like a **revenue command center, not a call-center inbox.**
 - Keep **Telnyx, Vapi, HubSpot** and other vendors **invisible** — except on Integration Status.
 - Business Memory must appear as **operational context, not RAG/vector jargon.**
-- Use **Signal-Yellow `#E8FF5A`** for emphasis, risk, and action hierarchy; **action-orange `#FF4500`**
+- Use **Signal-Yellow `#E8FF5A`** for emphasis and action hierarchy; use critical red / warning amber
   for urgency / revenue-leak moments only.
 - Use **blue only for utility / system states.**
 - Prioritize **readable executive summaries** over dense tables.
@@ -113,7 +113,7 @@ captured, and what needs attention now.
 [ Hero: Estimated Revenue Protected (Signal-Yellow) | period delta ]
 [ Metric row: Recovered opps · Qualified leads · Appts · Follow-ups due · Missed-call recovery rate ]
 [ Left: Recent call/event feed ]      [ Right rail: Founder Intelligence summary card + Top Next Action ]
-[ At-risk leads strip (action-orange accents) ]
+[ At-risk leads strip (critical/warning accents) ]
 ```
 
 **Required content.** Recovered opportunities · qualified leads · booked/requested appointments ·
@@ -130,7 +130,7 @@ for the highest-value urgent item (the Maria Santos demo lead).
 revenue will appear here." Loading: skeleton metric cards + feed rows (no spinners). Error: "We
 couldn't load this period. Retry." Never show `$0`/null without explanation (DESIGN.md §15).
 
-**Brand notes.** Recovered-revenue hero in Signal-Yellow; at-risk strip uses action-orange sparingly;
+**Brand notes.** Recovered-revenue hero in Signal-Yellow; at-risk strip uses critical/warning treatment sparingly;
 everything on true-black glass. Reads as a command center, not an inbox.
 
 **Future implementation notes.** Read-only, mock-bound; the hero + metric row map 1:1 to the existing
@@ -146,7 +146,7 @@ everything on true-black glass. Reads as a command center, not an inbox.
 
 **Layout regions.**
 ```
-[ Header: call metadata · disposition badge · urgency badge (action-orange if high) ]
+[ Header: call metadata · disposition badge · urgency badge (critical/warning if high) ]
 [ Left (2/3): Transcript (timestamped) ]   [ Right (1/3): AI summary · intent · service · score · consent ]
 [ Next Action module (Signal-Yellow CTA) ]
 [ Footer chips: CRM sync status · Business Memory capture status (links out) ]
@@ -166,8 +166,8 @@ action** · CRM sync status · Business Memory capture status.
 is processed." Loading: skeleton transcript lines + summary panel. Error: retry + support note; never
 expose raw error codes to clients.
 
-**Brand notes.** Urgency badge action-orange when high; qualification score and next-action CTA in
-Signal-Yellow; transcript in readable body type (Inter), timestamps in mono.
+**Brand notes.** Urgency badge critical/warning when high; qualification score and next-action CTA in
+Signal-Yellow; transcript in readable body type (DM Sans), timestamps in DM Mono.
 
 **Future implementation notes.** Bind to `mock-transcript.md` (transcript + metadata) and the
 qualification JSON; status chips derive from the sync + memory payloads. No vendor names surfaced here.
@@ -243,7 +243,7 @@ deal stage `qualified_appointment_requested`.
 **Empty / loading / error states.** Empty: "No opportunities yet — qualified leads become opportunities
 here." Loading: skeleton record. Error: retry.
 
-**Brand notes.** Estimated value in Signal-Yellow; urgency in action-orange when high; CRM sync shown as
+**Brand notes.** Estimated value in Signal-Yellow; urgency in critical/warning when high; CRM sync shown as
 a quiet trust chip (HubSpot named here is acceptable as a status, not the hero).
 
 **Future implementation notes.** Bind lead + commercial fields from the qualification + sync payloads;
@@ -260,7 +260,7 @@ unless the operator opens Integration Status.
 
 **Layout regions.**
 ```
-[ Header: "Follow-ups due" count · overdue count (action-orange) ]
+[ Header: "Follow-ups due" count · overdue count (critical/warning) ]
 [ Queue table: Lead · Reason · Urgency · Due · Owner · Est. value · CRM status · Suggested action ]
 [ Row expand: "Risk if ignored" + one-click suggested action ]
 ```
@@ -277,7 +277,7 @@ window") + bulk "Mark contacted." The urgent Maria Santos task (due 9:00 AM) is 
 **Empty / loading / error states.** Empty (good state): "You're all caught up — no follow-ups due." 
 Loading: skeleton rows. Error: retry. Overdue items surfaced first.
 
-**Brand notes.** Due/overdue and "risk if ignored" use action-orange; the suggested-action CTA is
+**Brand notes.** Due/overdue and "risk if ignored" use critical/warning; the suggested-action CTA is
 Signal-Yellow. DataTable on glass; tight density per DESIGN.md §9.
 
 **Future implementation notes.** Bind to the task + qualification payloads; "risk if ignored" copy
@@ -314,7 +314,7 @@ status tiles. Error/degraded: a clearly-labeled illustrative retry example, mark
 
 **Brand notes.** This is the **one screen where provider names (Telnyx, Twilio, Vapi, HubSpot) may
 appear**, as infrastructure status. Healthy = success-green dot; degraded = warning-amber; failed =
-action-orange. Blue permitted only for neutral/utility "info" states here.
+critical red. Blue permitted only for neutral/utility "info" states here.
 
 **Future implementation notes.** Pure status render from mock payloads; **no live provider connections,
 credentials, or webhooks.** Whether this screen ships in the public prospect demo or stays

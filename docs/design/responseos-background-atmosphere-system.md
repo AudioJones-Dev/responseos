@@ -38,10 +38,11 @@ const RESPONSEOS_BACKGROUND_BRAND = {
     signalYellow: "#E8FF5A",
     signalYellowSoft: "rgba(232, 255, 90, 0.14)",
     signalYellowGlow: "rgba(232, 255, 90, 0.20)",
-    actionOrange: "#FF4500",            // very sparingly; usually omit
+    critical: "#FF4545",                // very sparingly; genuine risk only
+    warning: "#FFB340",                 // very sparingly; genuine warning only
     actionOrangeSoft: "rgba(255, 69, 0, 0.12)",
   },
-  typography: { display: "Syne", ui: "Inter", mono: "JetBrains Mono" },
+  typography: { display: "Syne", ui: "DM Sans", mono: "DM Mono" },
   principles: {
     accent: "Signal Yellow is signal, not decoration.",
     depth: "Hairline grids, subtle grain, inset highlights, restrained glow.",
@@ -139,7 +140,7 @@ Concrete ResponseOS surfaces (for the later wiring pass): landing hero (`app/(ma
 - No generic AI networks, robots, AI brains, headsets, literal phones, dollar bills, stock-photo people, busy particle fields, literal diagrams.
 - Don't stack heavy SVG filters or run high-frequency noise over the full canvas at high opacity (perf + grain blowout).
 - Don't let texture compete with headlines or sit as strong lines directly under metric text.
-- Don't introduce a second accent color — Signal Yellow is the only active signal (action-orange only for a genuine risk accent, rarely).
+- Don't introduce a second accent color — Signal Yellow is the only active signal (critical/warning only for genuine risk states, rarely).
 
 ---
 

@@ -10,7 +10,7 @@
 
 ## 1. Design system direction (inherited)
 
-From `../DESIGN.md`: dark-first, high-contrast, low-noise; Sora (headings) / Inter (UI) / JetBrains Mono (IDs/timestamps); accent `#FF4500` reserved for primary CTAs + recovered-revenue highlights; 12-col desktop grid, 240px sidebar, cards on `--color-surface`. Components: `MetricCard`, `RevenueMetricCard`, `StatusBadge`, `ProviderBadge`, `DataTable`, `DetailPanel`, `Timeline`, `EmptyState`, `AlertBanner`, `ActionButton`, etc. **Information hierarchy** (every screen): recovered revenue → qualified leads → bookings → missed calls recovered → response time → ROI → open opportunities → urgent escalations.
+From `../DESIGN.md`: dark-first, high-contrast, low-noise; Syne (display) / DM Sans (UI) / DM Mono (IDs/timestamps); Signal Yellow `#E8FF5A` reserved for primary CTAs + recovered-revenue highlights; critical red / warning amber reserved for urgency; 12-col desktop grid, 240px sidebar, cards on `--color-surface`. Components: `MetricCard`, `RevenueMetricCard`, `StatusBadge`, `ProviderBadge`, `DataTable`, `DetailPanel`, `Timeline`, `EmptyState`, `AlertBanner`, `ActionButton`, etc. **Information hierarchy** (every screen): recovered revenue → qualified leads → bookings → missed calls recovered → response time → ROI → open opportunities → urgent escalations.
 
 > Go-forward note: `ProviderBadge` variants must include **Grok**, **OpenAI** (and retain Twilio, Google Calendar) since these are the primary realtime voice providers (ADR-0012); Retell/Vapi/Bland become optional variants.
 

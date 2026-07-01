@@ -80,7 +80,7 @@ asset task.
 - **Background:** true-black `#000000` → soft-black `#080808` (subtle vertical depth), glass texture optional. **No blue.**
 - **Logo:** the **`RO` mark** (`/public/brand/responseos-mark.svg`) and/or the **ResponseOS wordmark** (Syne), top-left.
 - **Headline:** Syne, off-white `#FCFDFF`, large; one emphasis word in **Signal-Yellow `#E8FF5A`**.
-- **Accent:** one Signal-Yellow element (underline, dot, or the `RO` `O`); **action-orange `#FF4500`** only if a "leak/urgency" motif is used — sparingly.
+- **Accent:** one Signal-Yellow element (underline, dot, or the `RO` `O`); critical red / warning amber only if a "leak/urgency" motif is used — sparingly.
 - **No** stock photos, chatbot/robot imagery, neon gradients, or vendor logos. "Signal emerging from black."
 
 **Layout (1200 × 630)**

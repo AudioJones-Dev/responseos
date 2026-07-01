@@ -2,8 +2,15 @@
 
 **Product:** ResponseOS
 **Owner:** AJ Digital LLC / Audio Jones
-**Version:** 0.1 (Pre-v0.2 Design Freeze)
+**Version:** 0.2 (Audio Jones Editorial Intelligence alignment)
 **Status:** Canonical. All UI implementation must align with this document.
+**Parent doctrine:** [`Audio Jones — Editorial Intelligence Systems`](./design/audio-jones-editorial-intelligence-systems.md)
+
+This document applies the Audio Jones parent design system to ResponseOS. The
+parent doctrine governs brand tokens, typography, accent discipline, spacing,
+radius, elevation, and the light-split paper surface. The ResponseOS sections
+below govern product UX, screen hierarchy, component behavior, and business
+language.
 
 ---
 
@@ -62,15 +69,19 @@ We are a **revenue recovery operating system**.
 
 ### Design Posture
 
-**Black-first. Glass-structured. High-contrast. Low noise.** Premium, dark, editorial, modern, founder-tech — aligned with `audiojones.com`. The environment is true black; structure comes from translucent glass panels and hairline white borders, not from coloured backgrounds.
+**Dark-first. Editorial. Operational. Low noise.** Premium, restrained, and
+serious — aligned with the Audio Jones Editorial Intelligence Systems doctrine.
+The environment is near-black; structure comes from surfaces, borders, spacing,
+and type hierarchy. Glass is restrained to true overlays or a few load-bearing
+panels, never used as a decorative theme.
 
 The guiding principle is **"signal emerging from black"**:
 
-- **Black** = the environment.
+- **Near-black** = the environment.
 - **Off-white** = clarity (typography).
 - **Signal Yellow `#E8FF5A`** = intelligence / primary action.
-- **Glass** (translucent dark panels + hairline borders) = modern SaaS structure.
-- **Action-orange `#FF4500`** = urgency only.
+- **Borders and spacing** = hierarchy.
+- **Critical red `#FF4545` / warning amber `#FFB340`** = urgency only.
 - **Blue** = utility only — never a brand or background colour.
 
 The visual system should communicate: **this is serious software that produces serious outcomes.** It must **not** read as a generic blue-background SaaS dashboard.
@@ -78,62 +89,51 @@ The visual system should communicate: **this is serious software that produces s
 ### Color Tokens
 
 ```css
-/* Base — black canvas + near-black/glass surfaces. NO navy / slate / blue backgrounds. */
---color-base:             #000000;  /* Canvas — page background */
---color-canvas-soft:      #080808;  /* Soft-black band sections */
---color-surface:          #0A0A0C;  /* Card backgrounds (near-black) */
---color-surface-elevated: #101012;  /* Modals, popovers, dropdowns */
---color-surface-deep:     #06060A;  /* Deepest recessed sections */
-
-/* Glass — translucent white over black; pair with backdrop-blur, hairline border, no heavy shadow */
---color-glass:            rgba(255, 255, 255, 0.04);
---color-glass-strong:     rgba(255, 255, 255, 0.07);
-
-/* Borders / hairlines — neutral white at low opacity (the primary structural device on black) */
---color-border:        rgba(255, 255, 255, 0.08);
---color-border-strong: rgba(255, 255, 255, 0.14);
-
-/* Typography — off-white + NEUTRAL greys (no slate/blue tint) */
---color-text-primary:   #FCFDFF;
---color-text-secondary: #A1A4A5;
---color-text-muted:     #888E90;
-
-/* Accent — Brand 2.0 (ADR-0021): Signal Yellow is the PRIMARY signal; orange demoted to secondary action */
---color-accent:       #E8FF5A;  /* Primary signal — CTAs, key metrics, intelligence highlights */
---color-accent-hover: #D4EC3F;  /* TODO: verify hover shade vs Canva kit kAHJkU6n4S8 */
---color-action:       #FF4500;  /* Secondary action-orange — urgency, revenue-leak, diagnostic warnings */
---color-action-hover: #E03D00;
-
-/* Semantic */
---color-success: #22C55E;  /* Booked, recovered, positive */
---color-warning: #F59E0B;  /* Warm lead, needs review */
---color-danger:  #EF4444;  /* Missed, failed, escalated */
---color-neutral: #6B7280;  /* Archived, cold, inactive */
+/* Audio Jones parent tokens. Runtime aliases live in app/globals.css. */
+--aj-signal: #E8FF5A;
+--aj-signal-ink: #080808;
+--aj-data: #4DACFF;
+--aj-critical: #FF4545;
+--aj-warning: #FFB340;
+--aj-success: #3DFFB0;
+--aj-base: #080808;
+--aj-surface-1: #0F0F0F;
+--aj-surface-2: #161616;
+--aj-surface-3: #1E1E1E;
+--aj-text: #F2F2F2;
+--aj-text-secondary: #A8A8A8;
+--aj-text-muted: #6E6E6E;
+--aj-border: #222222;
+--aj-border-strong: #333333;
+--aj-paper: #F4F1E9;
+--aj-ink: #080808;
+--aj-paper-rule: #D8D3C6;
 ```
 
 > **Note:** Exact tokens may evolve. Visual posture — dark, premium, signal-focused — must not.
 
 ### Surface Rules
 
-- Page background: `--color-base` (**true black `#000000`**).
-- Cards and data surfaces: `--color-surface` (near-black) — defined by **hairline borders**, not fill contrast.
-- Modals / elevated panels: `--color-surface-elevated`; deepest recesses: `--color-surface-deep`.
-- Borders are subtle — 8% white opacity by default (range 6–14%). Hairlines are the primary structural device on black.
+- Page background: `--aj-base` / `--color-base` (`#080808`).
+- Cards and data surfaces: `--aj-surface-1` / `--color-surface` — defined by **hairline borders**, not fill contrast.
+- Modals / elevated panels: `--aj-surface-2` / `--color-surface-elevated`; deepest panels: `--aj-surface-3`.
+- Borders use `--aj-border` and `--aj-border-strong`; hairlines are the primary structural device.
 - **No solid white panels. No navy / slate / blue backgrounds. No light-mode assumptions.**
 
 ### Glass
 
-Glass is the structural language for elevated/overlay surfaces (sticky headers, popovers, prominent panels). Use it carefully:
+Glass is allowed only where it has a job: sticky headers, menus, popovers,
+modals, or a small number of high-value operating panels. Use it carefully:
 
-- Translucent dark panel: `--color-glass` / `--color-glass-strong` (white at 4–7% over black), **or** `--color-base` at 70–85% opacity.
+- Translucent dark panel: surface color at 70–85% opacity.
 - Optional `backdrop-blur` for depth; **always** paired with a hairline border.
-- **No heavy shadows.** **No frosted-white overuse** — glass is dark-tinted, not milky white.
-- Soft glow (yellow or glass) only when it carries meaning (e.g., a hero CTA or a key metric), never as decoration.
+- Shadow is reserved for true overlays: `--aj-elevation-overlay`.
+- **No heavy shadows. No glow. No frosted-white overuse.**
 
 ### Accent Usage
 
-- Accent (`#E8FF5A` Signal Yellow) is reserved for: primary CTAs, recovered revenue highlights, active selection states. On a yellow fill, text is **black** for contrast (ADR-0021).
-- Action-orange (`#FF4500`) is reserved for urgency / revenue-leak / diagnostic-warning moments — not primary CTAs.
+- Accent (`#E8FF5A` Signal Yellow) is reserved for: primary CTAs, recovered revenue highlights, active selection states. On a yellow fill, text is **black** for contrast.
+- Critical red (`#FF4545`) and warning amber (`#FFB340`) are reserved for urgency / revenue-leak / diagnostic-warning moments — not primary CTAs.
 - Do not scatter accent color across decorative elements.
 - One dominant accent point per screen.
 
@@ -158,10 +158,10 @@ An approved atmospheric execution layer for Brand 2.0 — registered here per §
 | Role | Font | Fallback |
 |---|---|---|
 | Headings / Brand moments / wordmark | Syne (Brand 2.0, ADR-0021) | system-ui, sans-serif |
-| Product UI / Body | Inter | system-ui, sans-serif |
-| Monospace (code, IDs, timestamps) | JetBrains Mono | monospace |
+| Product UI / Body | DM Sans | system-ui, sans-serif |
+| Monospace (code, IDs, timestamps) | DM Mono | monospace |
 
-> Avoid decorative fonts. Avoid system fonts as primary selections. Syne (Bold/ExtraBold) is the ResponseOS wordmark + display face per ADR-0021 / GTM §14; if Syne is unavailable, **Space Grotesk** is the approved fallback for headings only.
+> Avoid decorative fonts. Avoid system fonts as primary selections. Syne (Bold/ExtraBold) is the ResponseOS wordmark + display face per ADR-0021 / GTM §14; DM Sans carries dense product UI; DM Mono carries labels, IDs, timestamps, and data.
 
 ### Type Scale
 
@@ -180,9 +180,9 @@ An approved atmospheric execution layer for Brand 2.0 — registered here per §
 
 - **Page titles:** `--text-2xl`, `--color-text-primary`, Syne
 - **Section headings:** `--text-xl`, `--color-text-primary`, Syne
-- **Card headings:** `--text-lg`, `--color-text-primary`, Inter Semibold
-- **Body / descriptions:** `--text-base`, `--color-text-secondary`, Inter Regular
-- **Labels / metadata:** `--text-sm`, `--color-text-muted`, Inter Regular
+- **Card headings:** `--text-lg`, `--color-text-primary`, DM Sans Semibold
+- **Body / descriptions:** `--text-base`, `--color-text-secondary`, DM Sans Regular
+- **Labels / metadata:** `--text-sm`, `--color-text-muted`, DM Mono or DM Sans Medium depending on density
 - **Revenue figures:** `--text-3xl` or `--text-4xl`, `--color-accent` or `--color-success`
 
 ---

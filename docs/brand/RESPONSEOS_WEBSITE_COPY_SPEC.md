@@ -310,7 +310,7 @@ All copy must comply with [`./RESPONSEOS_BRAND_VOICE.md`](./RESPONSEOS_BRAND_VOI
 
 - The seven routes above are the full public marketing surface for MVP; no blog/resources hub in scope yet.
 - The assessment is the single primary conversion site-wide; demo is the secondary path.
-- Visual system (dark-first, #FF4500 accent) is governed by [`../DESIGN.md`](../DESIGN.md); this spec covers copy only.
+- Visual system (dark-first, Signal Yellow primary with critical/warning urgency states) is governed by [`../DESIGN.md`](../DESIGN.md); this spec covers copy only.
 
 ## Open questions
 

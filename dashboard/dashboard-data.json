@@ -143,6 +143,17 @@
       "refUrl": "https://github.com/AudioJones-Dev/responseos/issues/27"
     },
     {
+      "id": "D-01",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Install Audio Jones design doctrine",
+      "owner": "Codex",
+      "status": "Done",
+      "progress": 100,
+      "priority": "Med",
+      "start": "2026-06-29",
+      "due": "2026-06-29"
+    },
+    {
       "id": "V-02",
       "phase": "v0.3 · Demo Scope",
       "title": "Decide demo surface / feature cut",

@@ -1,55 +1,141 @@
 @import "tailwindcss";
 
 /*
- * ResponseOS visual system — dark-first revenue command center.
- * Tokens are the canonical source from docs/DESIGN.md §2–3. Do not introduce
- * unapproved colors; map every surface/text/accent to a token below.
+ * ResponseOS visual system — Audio Jones Editorial Intelligence alignment.
+ * AJ tokens are the parent system from docs/design/audio-jones-editorial-intelligence-systems.md.
+ * Tailwind aliases below preserve existing utility class names.
  */
-@theme {
-  /* Base surfaces — Brand 2.0: black canvas + near-black/glass, no navy/blue. "Signal emerging from black." */
-  --color-base: #000000; /* canvas — page background */
-  --color-canvas-soft: #080808; /* soft-black band sections */
-  --color-surface: #0a0a0c; /* card backgrounds (near-black) */
-  --color-surface-elevated: #101012; /* modals, popovers, dropdowns */
-  --color-surface-deep: #06060a; /* deepest recessed sections */
-  --color-glass: rgba(255, 255, 255, 0.04); /* translucent glass panel — pair with backdrop-blur */
+
+:root {
+  /* brand / semantic */
+  --aj-signal: #e8ff5a;
+  --aj-signal-ink: #080808;
+  --aj-data: #4dacff;
+  --aj-critical: #ff4545;
+  --aj-warning: #ffb340;
+  --aj-success: #3dffb0;
+
+  /* canvas */
+  --aj-base: #080808;
+  --aj-surface-1: #0f0f0f;
+  --aj-surface-2: #161616;
+  --aj-surface-3: #1e1e1e;
+
+  /* text */
+  --aj-text: #f2f2f2;
+  --aj-text-secondary: #a8a8a8;
+  --aj-text-muted: #6e6e6e;
+
+  /* borders */
+  --aj-border: #222222;
+  --aj-border-strong: #333333;
+
+  /* light-split paper */
+  --aj-paper: #f4f1e9;
+  --aj-ink: #080808;
+  --aj-paper-rule: #d8d3c6;
+
+  /* typography */
+  --aj-font-display: var(--font-syne), "Syne", "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --aj-font-body: var(--font-dm-sans), "DM Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --aj-font-mono: var(--font-dm-mono), "DM Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+  --aj-fw-regular: 400;
+  --aj-fw-medium: 500;
+  --aj-fw-semibold: 600;
+  --aj-fw-bold: 700;
+  --aj-fw-display: 800;
+  --aj-ls-label: 0.14em;
+  --aj-ls-display: -0.02em;
+  --aj-lh-tight: 1.05;
+  --aj-lh-heading: 1.2;
+  --aj-lh-body: 1.6;
+
+  /* type scale */
+  --aj-fs-label: 12px;
+  --aj-fs-caption: 13px;
+  --aj-fs-small: 14px;
+  --aj-fs-body: 16px;
+  --aj-fs-lead: 18px;
+  --aj-fs-subhead: 20px;
+  --aj-fs-h4: 24px;
+  --aj-fs-h3: 32px;
+  --aj-fs-h2: 40px;
+  --aj-fs-h1: 48px;
+  --aj-fs-display: 64px;
+  --aj-fs-hero: 84px;
+
+  /* spacing */
+  --aj-space-1: 4px;
+  --aj-space-2: 8px;
+  --aj-space-3: 12px;
+  --aj-space-4: 16px;
+  --aj-space-5: 20px;
+  --aj-space-6: 24px;
+  --aj-space-8: 32px;
+  --aj-space-10: 40px;
+  --aj-space-12: 48px;
+  --aj-space-16: 64px;
+  --aj-space-20: 80px;
+
+  /* radius (governed) */
+  --aj-radius-none: 0;
+  --aj-radius-control: 4px;
+  --aj-radius-card: 8px;
+  --aj-radius-pill: 999px;
+
+  /* elevation — overlays only */
+  --aj-elevation-flat: none;
+  --aj-elevation-overlay: 0 16px 40px rgba(0, 0, 0, 0.55);
+
+  /* containers */
+  --aj-container-prose: 680px;
+  --aj-container-app: 1280px;
+  --aj-container-wide: 1440px;
+  --aj-container-gutter: 24px;
+
+  /* motion (restrained) */
+  --aj-motion-fast: 120ms;
+  --aj-motion-base: 180ms;
+  --aj-ease: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@theme inline {
+  /* Existing Tailwind token aliases mapped to the Audio Jones system. */
+  --color-base: var(--aj-base);
+  --color-canvas-soft: var(--aj-surface-1);
+  --color-surface: var(--aj-surface-1);
+  --color-surface-elevated: var(--aj-surface-2);
+  --color-surface-deep: var(--aj-surface-3);
+  --color-glass: rgba(255, 255, 255, 0.04);
   --color-glass-strong: rgba(255, 255, 255, 0.07);
 
-  /* Borders */
-  --color-line: rgba(255, 255, 255, 0.08);
-  --color-line-strong: rgba(255, 255, 255, 0.14);
+  --color-line: var(--aj-border);
+  --color-line-strong: var(--aj-border-strong);
 
-  /* Text — off-white + neutral greys (no slate/blue tint) */
-  --color-ink: #fcfdff; /* primary */
-  --color-ink-secondary: #a1a4a5; /* secondary */
-  --color-ink-muted: #888e90; /* muted / labels */
+  --color-ink: var(--aj-text);
+  --color-ink-secondary: var(--aj-text-secondary);
+  --color-ink-muted: var(--aj-text-muted);
 
-  /* Accent — primary brand signal (Brand 2.0: Signal Yellow). Use sparingly. ADR-0021. */
-  --color-accent: #e8ff5a;
-  --color-accent-hover: #d4ec3f; /* TODO: verify hover shade vs Canva kit kAHJkU6n4S8 */
+  --color-accent: var(--aj-signal);
+  --color-accent-hover: #d4ec3f;
+  --color-action: var(--aj-critical);
+  --color-action-hover: #e23f3f;
 
-  /* Action — secondary action-orange: urgency, revenue-leak, diagnostic moments. ADR-0021. */
-  --color-action: #ff4500;
-  --color-action-hover: #e03d00;
+  --color-success: var(--aj-success);
+  --color-warning: var(--aj-warning);
+  --color-danger: var(--aj-critical);
+  --color-neutral: var(--aj-text-muted);
 
-  /* Semantic */
-  --color-success: #22c55e;
-  --color-warning: #f59e0b;
-  --color-danger: #ef4444;
-  --color-neutral: #6b7280;
-
-  /* Soft semantic fills for badges/banners (token-derived) */
-  --color-success-soft: rgba(34, 197, 94, 0.12);
-  --color-warning-soft: rgba(245, 158, 11, 0.12);
-  --color-danger-soft: rgba(239, 68, 68, 0.12);
+  --color-success-soft: rgba(61, 255, 176, 0.12);
+  --color-warning-soft: rgba(255, 179, 64, 0.12);
+  --color-danger-soft: rgba(255, 69, 69, 0.12);
   --color-accent-soft: rgba(232, 255, 90, 0.12);
-  --color-action-soft: rgba(255, 69, 0, 0.12);
-  --color-neutral-soft: rgba(107, 114, 128, 0.14);
+  --color-action-soft: rgba(255, 69, 69, 0.12);
+  --color-neutral-soft: rgba(110, 110, 110, 0.16);
 
-  /* Type families (next/font variables set in layout.tsx) */
-  --font-display: var(--font-syne), system-ui, sans-serif;
-  --font-sans: var(--font-inter), system-ui, sans-serif;
-  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+  --font-display: var(--aj-font-display);
+  --font-sans: var(--aj-font-body);
+  --font-mono: var(--aj-font-mono);
 }
 
 html {
@@ -58,9 +144,9 @@ html {
 }
 
 body {
-  background-color: var(--color-base);
-  color: var(--color-ink);
-  font-family: var(--font-sans);
+  background-color: var(--aj-base);
+  color: var(--aj-text);
+  font-family: var(--aj-font-body);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -69,7 +155,17 @@ h1,
 h2,
 h3,
 .font-display {
-  font-family: var(--font-display);
+  font-family: var(--aj-font-display);
+  letter-spacing: var(--aj-ls-display);
+}
+
+a {
+  color: var(--aj-data);
+}
+
+::selection {
+  background: var(--aj-signal);
+  color: var(--aj-signal-ink);
 }
 
 /* Visible focus on every interactive element (DESIGN.md §14). */

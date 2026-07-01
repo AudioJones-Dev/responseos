@@ -157,7 +157,7 @@ Use **Brand 2.0** (ADR-0021, [`../DESIGN.md`](../DESIGN.md)):
 - Avoid generic chatbot styling.
 
 > Screens should feel like a **revenue command center, not a call-center inbox.** Recovered-revenue
-> figures carry the Signal-Yellow emphasis; action-orange `#FF4500` is reserved for urgency / leak
+> figures carry the Signal-Yellow emphasis; critical red / warning amber are reserved for urgency / leak
 > moments only.
 
 ## 9. Asset inventory

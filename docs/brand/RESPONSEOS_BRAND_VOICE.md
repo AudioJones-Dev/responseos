@@ -148,7 +148,7 @@ The voice is constant; the register shifts with context.
 - Expand or avoid acronyms on first client-facing use (write "field service management (FSM)" once, then FSM).
 - Every metric shown to a client must be explainable in one plain sentence (the analyst can always say what it means and how it was computed).
 - Link text describes its destination ("see the pricing tiers"), never "click here."
-- Color is never the only signal; the reddish-orange accent (#FF4500) supports, but does not solely carry, meaning. See [`../DESIGN.md`](../DESIGN.md) Accessibility.
+- Color is never the only signal; Signal Yellow and critical/warning states support, but do not solely carry, meaning. See [`../DESIGN.md`](../DESIGN.md) Accessibility.
 - Avoid idioms and regional slang that don't translate cleanly.
 
 ---
@@ -173,7 +173,7 @@ Before any copy ships, it should pass all of these:
 ## Assumptions
 
 - The DESIGN.md UX Writing Rules and this doc stay in sync; if they ever diverge, this file is the broader source for voice and DESIGN.md governs in-product UX specifics.
-- The reddish-orange accent and dark-first system are fixed (see [`../DESIGN.md`](../DESIGN.md)); voice does not need to restate visual rules beyond accessibility.
+- The dark-first visual system and semantic Signal Yellow discipline are fixed (see [`../DESIGN.md`](../DESIGN.md)); voice does not need to restate visual rules beyond accessibility.
 
 ## Open questions
 
