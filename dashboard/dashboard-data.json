@@ -203,7 +203,11 @@
       "progress": 90,
       "priority": "High",
       "start": "2026-07-01",
-      "due": "2026-07-01"
+      "due": "2026-07-01",
+      "ref": 90,
+      "refType": "pull",
+      "refState": "open",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/90"
     },
     {
       "id": "T-02",
