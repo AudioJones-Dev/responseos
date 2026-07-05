@@ -244,7 +244,7 @@
       "start": "2026-07-06",
       "due": "2026-07-10",
       "blocked": true,
-      "blockedReason": "Requires explicit scoped approval for PR A from the live-call implementation brief; live provider wiring remains out of scope"
+      "blockedReason": "Requires explicit scoped approval for PR A from the live-call implementation brief; active target remains Telnyx + Sent.dm, with Linq migration kept behind the MessagingProvider boundary"
     },
     {
       "id": "I-02",

@@ -30,6 +30,7 @@ In scope for the next implementation PR after approval:
 
 - TypeScript interfaces for telephony, messaging, demo-call events, and consent state.
 - Mock Telnyx and mock Sent.dm adapters only.
+- Provider-neutral messaging fields that keep a later Linq adapter possible without changing business logic.
 - Unit tests proving deterministic mock behavior and no-secret boot.
 - Dashboard/progress doc updates for each completed slice.
 
@@ -56,7 +57,7 @@ Add:
 - `MessagingProvider` interface for verification, consent confirmation, and follow-up message shape.
 - `MockTelephonyProvider` with deterministic inbound/outbound demo fixtures.
 - `MockMessagingProvider` with deterministic Sent.dm-style idempotency behavior.
-- Unit tests for mock provider behavior, idempotency keys, and no-secret fallback.
+- Unit tests for mock provider behavior, idempotency keys, provider-neutral message metadata, and no-secret fallback.
 
 Do not add:
 
@@ -151,7 +152,11 @@ Required capabilities:
 - require idempotency key on every send;
 - record consent purpose;
 - surface provider message id and delivery status;
+- preserve optional protocol/channel metadata so a later Linq adapter can support SMS, RCS, or iMessage without changing ResponseOS business state;
+- preserve optional trace id, delivery receipt id, read receipt id, and provider-specific capability metadata when a provider exposes them;
 - fall back to mock when secrets are absent.
+
+The active implementation target remains Sent.dm. Linq is an option to revisit after the scheduled provider demo, so PR A should avoid Sent.dm-specific names above the adapter boundary.
 
 ## 6. Required Human Inputs Before Live Activation
 
@@ -159,6 +164,7 @@ Required capabilities:
 - Telnyx AI Assistant decision: sufficient for first demo or Vapi fallback required.
 - Sent.dm first channel: SMS only, or SMS plus WhatsApp/RCS.
 - Sent.dm template IDs for verification, consent confirmation, and follow-up.
+- Linq provider-demo outcome: keep as migration option, promote to fallback, or open a later replacement decision.
 - Public consent copy.
 - Daily outbound call/message cap.
 - Demo account identifier strategy.
@@ -187,4 +193,4 @@ Live activation additionally requires:
 
 Proceed with **PR A — Contracts and Mocks Only**.
 
-This is the strongest next move because it creates the internal seams required for Telnyx and Sent.dm without exposing the app to live provider behavior, billing, or public outbound abuse before the security gates exist.
+This is the strongest next move because it creates the internal seams required for Telnyx and Sent.dm without exposing the app to live provider behavior, billing, or public outbound abuse before the security gates exist. It also keeps the messaging boundary clean enough to migrate to Linq later if the provider demo proves it is a better fit.

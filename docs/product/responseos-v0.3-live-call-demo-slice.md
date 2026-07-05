@@ -76,12 +76,14 @@ Preferred live-call demo baseline:
 |---|---|---|---|
 | Carrier / number | Telnyx | Twilio | Telnyx is ADR-0031 primary; Twilio remains failover. |
 | First AI voice path | Telnyx AI Assistant | Vapi | Start with the fewest vendors; introduce Vapi only if Telnyx assistant capability blocks the demo. |
-| Messaging / verification | Sent.dm | Telnyx Messaging | Sent.dm handles OTP, consent confirmation, post-call follow-up, and demo links. |
+| Messaging / verification | Sent.dm | Telnyx Messaging / Linq | Sent.dm handles OTP, consent confirmation, post-call follow-up, and demo links. Linq remains an evaluated migration option, not the active baseline. |
 | Commercial CRM | Demo-only internal ledger first | HubSpot later | No live CRM sync required for first demo slice. |
 
 If Telnyx setup blocks the demo number, Twilio is acceptable for this demo slice as a time-boxed fallback, provided the carrier remains behind the same provider abstraction and the ADR is not silently reversed.
 
 If Sent.dm setup blocks verification/follow-up, Telnyx Messaging may be used as a temporary fallback. The ResponseOS app should still model messaging through a provider abstraction so Sent.dm can remain the preferred messaging layer once ready.
+
+Linq should be tracked as a migration-ready messaging option after the scheduled provider demo. It must not change the current Telnyx + Sent.dm implementation sequence until provider access, assigned numbers, webhook signature behavior, pricing, and delivery/read-receipt semantics are confirmed. Any future Linq move should happen behind the same `MessagingProvider` boundary, not through Linq-specific business logic.
 
 ## 7. Journey A — Inbound Lead Calls Demo Number
 
@@ -151,6 +153,8 @@ Required controls:
 - Do not send outbound messages without a consent purpose.
 - Deduplicate sends by idempotency key.
 - Record delivery status webhooks only after signature validation, if Sent.dm webhooks are enabled.
+
+The contract must stay provider-neutral enough to support a later Linq adapter. At minimum, the internal message shape should preserve channel/protocol, provider message id, delivery/read receipt identifiers where available, trace id where available, and provider-specific capabilities as optional metadata rather than required business fields.
 
 ## 10. Webhook and Data Contract
 
@@ -260,6 +264,7 @@ Before live-call preview:
 
 - Can Telnyx AI Assistant handle the first demo conversation without Vapi?
 - Which Sent.dm channels should be enabled first: SMS only, or SMS plus WhatsApp/RCS?
+- After the scheduled Linq provider demo, should Linq remain a migration option, become a fallback, or replace Sent.dm as the preferred messaging layer?
 - Which page should display the live demo number first: `/demo`, `/demo/walkthrough`, or a new `/demo/live-call` route?
 - Should outbound call requests require email verification before dialing?
 - What is the daily spend cap for public demo calls?
