@@ -198,9 +198,12 @@ Verified:
 
 Pending before Git-based preview branch envs and automatic deployments:
 
-- Connect the Vercel project to GitHub repo `AudioJones-Dev/responseos`.
-- The Vercel CLI did not complete the Git connection non-interactively; it prompted for confirmation despite `--non-interactive`.
-- Branch-scoped preview env vars are blocked until the Git repository is connected.
-- All-preview env vars are present, so a manual Vercel CLI preview deployment remains available as the non-Git fallback.
+- Resolved after this checkpoint was first written: the Vercel project connected to GitHub repo `AudioJones-Dev/responseos`.
+- Vercel automatically deployed commit `4578cd91a56be792f83b7ca9d5a6cc49d9c1db49` from branch `codex/v0-3-demo-deploy-checkpoint`.
+- Vercel classified that deployment as `production` and assigned:
+  - `https://responseos.ajdigital.app`
+  - `https://responseos.vercel.app`
+  - `https://responseos-git-codex-v0-3-demo-deploy-checkpoint-audiojones.vercel.app`
+- This was an automatic Git/Vercel promotion, not a manual `vercel --prod` command.
 
-No deploy has been run from this checkpoint.
+Operator decision after the automatic deployment: keep the public site live as a mock-first demo while hardening the demo surface and scoping the v0.3 live-call demo slice separately.

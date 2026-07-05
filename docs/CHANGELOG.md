@@ -4,11 +4,18 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: scope v0.3 live-call demo slice
+
+- Added [`product/responseos-v0.3-live-call-demo-slice.md`](./product/responseos-v0.3-live-call-demo-slice.md) to define the next v0.3 slice: a dedicated ResponseOS demo number, inbound lead-call journey first, outbound request-call journey second, demo-only tenant isolation, consent/rate-limit controls, spend cap, kill switch, and webhook-signature-first persistence.
+- Added ADR-0039 to record that the live-call demo uses a dedicated demo number, never the operator's personal number, and that implementation remains split into separate scoped PRs.
+- Updated [`ROADMAP.md`](./ROADMAP.md) and the progress dashboard so the live-call demo slice is visible as planned/scoped work rather than hidden scope.
+- Documentation/planning only. No provider adapter, schema migration, env var, secret, account configuration, webhook mutation, billing, or live-call cutover is included.
+
 ## Unreleased — docs: v0.3 mock-first demo deploy checkpoint
 
 - Added [`product/responseos-v0.3-demo-deploy-checkpoint.md`](./product/responseos-v0.3-demo-deploy-checkpoint.md) to record the selected next path after the deployment-readiness review: **mock-first demo deployment readiness**, not live production traffic. The checkpoint includes the minimum PRD, success criteria, scope, out-of-scope items, constraints, risks, open questions, and separate gates for demo deploy versus live production.
 - Created and documented the Neon `demo` branch metadata for the `responseos` project, stored the generated `DATABASE_URL` / `DIRECT_URL` in Doppler `response-os/stg_staging_demo` without printing values, and verified Prisma validate / migrate / seed / DB-backed build against that branch.
-- Created and linked the Vercel `audiojones/responseos` project for the mock-first demo path, corrected the project settings to Next.js / Node 22 / `npm ci` / `npm run build` / `.next`, attached `responseos.ajdigital.app`, added production and all-preview runtime envs without printing values, and created the Cloudflare A record for the demo domain. Vercel Git connection remains pending; no deploy was run.
+- Created and linked the Vercel `audiojones/responseos` project for the mock-first demo path, corrected the project settings to Next.js / Node 22 / `npm ci` / `npm run build` / `.next`, attached `responseos.ajdigital.app`, added production and all-preview runtime envs without printing values, and created the Cloudflare A record for the demo domain. Vercel Git integration later became active and automatically promoted commit `4578cd91a56be792f83b7ca9d5a6cc49d9c1db49` to the public demo aliases; no manual `vercel --prod` command was run.
 - Corrected `doppler.yaml` to point at the actual Doppler project slug, `response-os`.
 - Updated the progress dashboard to reflect that the demo surface / feature-cut decision is now selected while acceptance-gate documentation remains in progress.
 - Documentation/progress/config metadata only. No runtime code, schema, provider adapter, webhook mutation, billing, live integration, or deploy is authorized.

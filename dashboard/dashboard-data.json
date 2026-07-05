@@ -203,7 +203,7 @@
       "ref": 14,
       "refType": "pull",
       "blocked": true,
-      "blockedReason": "PR #14 closed unmerged (draft); gated on v0.3 scope (#27) and Vercel Git connection",
+      "blockedReason": "PR #14 closed unmerged (draft); replacement checkpoint is PR #94; live-call demo safety gates remain pending",
       "refState": "closed",
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/14"
     },
@@ -218,7 +218,20 @@
       "start": "2026-07-06",
       "due": "2026-07-24",
       "blocked": true,
-      "blockedReason": "Gated on v0.3 scope decision"
+      "blockedReason": "ADR-0039 scopes the live-call demo; implementation still requires dedicated number, provider choice, signature validation, consent/rate limits, and kill switch PRs"
+    },
+    {
+      "id": "I-04",
+      "phase": "Integrations",
+      "title": "Live-call demo slice spec",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-07-05",
+      "due": "2026-07-08",
+      "ref": 94,
+      "refType": "pull"
     },
     {
       "id": "I-02",
@@ -270,12 +283,12 @@
       "title": "Production env + secrets",
       "owner": "Audio",
       "status": "In Progress",
-      "progress": 55,
+      "progress": 70,
       "priority": "High",
       "start": "2026-08-03",
       "due": "2026-08-12",
       "blocked": true,
-      "blockedReason": "Vercel production and all-preview envs are set; branch-scoped envs and automatic Git deployments are blocked until the Vercel project is connected to GitHub"
+      "blockedReason": "Base Vercel and DB envs are set; live-call provider secrets are not authorized until the dedicated implementation PR"
     },
     {
       "id": "L-03",

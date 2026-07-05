@@ -656,3 +656,22 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 5. **CI is unchanged.** The `validate` / `integration` jobs inject their own env (Postgres for integration) and do not depend on Doppler. Adopting Doppler in CI/CD, if ever, is a separate decision.
 
 **Consequences.** Contributors get centralized, rotatable, access-controlled secrets without maintaining `.env.local`, while every existing guarantee holds: zero-credential boot, mock-first, no secrets in the repo, and the v0.3 gate. Cost: contributors who opt in need the Doppler CLI and a one-time `doppler login` + `doppler setup`; the project/config names in `doppler.yaml` must match the Doppler workplace. This ADR is tooling only — it ships no provider adapter, schema change, env var, secret, account configuration, or deploy.
+
+---
+
+## ADR-0039 — v0.3 live-call demo slice: dedicated demo number, inbound first, outbound second
+
+**Status:** Accepted (2026-07-05) as a scoped v0.3 planning decision. **No provider adapter, schema migration, env var, secret, account configuration, webhook mutation, or live call cutover is implemented by this ADR.**
+
+**Context.** The public ResponseOS demo now proves deployment and mock walkthrough mechanics, but the operator wants a lead to experience the core product promise through live telephony: calling a ResponseOS number and optionally requesting an outbound demo call. That is a meaningful scope change from mock-only demo to live-provider demo traffic, so it must be recorded before implementation.
+
+**Decision.**
+
+1. The live-call demo uses a **dedicated ResponseOS demo number**, never the operator's personal number.
+2. The first implementation slice is **inbound call demo first**: lead calls the demo number, AI answers, qualifies, and writes verified events into the ResponseOS demo account.
+3. The outbound "call me now" journey is **second** and requires explicit consent, rate limiting, abuse controls, a daily spend cap, and a kill switch before any public form can initiate calls.
+4. The demo runs against a **demo-only tenant/account**. Public requests must never supply or override `accountId`; server code owns demo account resolution.
+5. Webhook signature validation remains mandatory before any business mutation (ADR-0009). Invalid or stale provider webhooks must be rejected before parsing/mutation and logged to the security/audit stream.
+6. The provider baseline remains ADR-0031/0032/0036: Telnyx primary carrier with Twilio fallback; Vapi primary orchestration with Retell secondary; OpenAI preferred inside Vapi where configurable. Twilio may be used as a time-boxed demo fallback if Telnyx number setup blocks execution, but provider-specific logic still must stay behind the abstraction.
+
+**Consequences.** v0.3 now has a concrete first live-provider experience target: a bounded public demo, not a general production cutover. The slice is allowed to be specified and broken into implementation PRs, but each implementation step still needs its own scoped approval and must carry tests for signature validation, tenant isolation, kill switch behavior, and outbound abuse controls. This ADR does not authorize live CRM sync, billing, HIPAA-ready behavior, or use of real client data.
