@@ -149,10 +149,10 @@ export default function MarketingHome() {
             </p>
           </div>
           <div className="flex shrink-0 flex-wrap gap-3">
-            <ButtonLink href="/admin" variant="secondary">
+            <ButtonLink href="/demo/operator-console" variant="secondary">
               Operator console
             </ButtonLink>
-            <ButtonLink href="/client/dashboard">Client dashboard</ButtonLink>
+            <ButtonLink href="/demo/client-dashboard">Client dashboard</ButtonLink>
           </div>
         </Card>
         <p className="mt-6 text-xs text-ink-muted">

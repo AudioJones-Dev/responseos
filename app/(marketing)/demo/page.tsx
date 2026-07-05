@@ -103,7 +103,7 @@ export default function DemoPage() {
             Revenue Recovery Demo
           </ButtonLink>
           <ButtonLink href="/audit" variant="secondary">
-            Audit my missed revenue
+            Run a revenue audit
           </ButtonLink>
         </div>
       </section>
@@ -223,7 +223,7 @@ export default function DemoPage() {
           <ButtonLink href="/demo/walkthrough" glow>
             Revenue Recovery Demo
           </ButtonLink>
-          <ButtonLink href="/client/dashboard" variant="secondary">
+          <ButtonLink href="/demo/client-dashboard" variant="secondary">
             Client dashboard
           </ButtonLink>
         </div>

@@ -36,7 +36,7 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
           </nav>
           <div className="flex items-center gap-3">
             <Link
-              href="/admin"
+              href="/demo/operator-console"
               className="hidden text-sm text-ink-secondary transition-colors hover:text-ink sm:inline"
             >
               Operator console

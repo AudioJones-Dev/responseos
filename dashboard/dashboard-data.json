@@ -317,7 +317,7 @@
     {
       "id": "L-04",
       "phase": "Launch / Demo Deploy",
-      "title": "Demo surface hardening (fail-closed auth, demo banner, public marketing routes)",
+      "title": "Demo surface hardening and P0 screenshot fixes",
       "owner": "Claude Code",
       "status": "Review",
       "progress": 100,
