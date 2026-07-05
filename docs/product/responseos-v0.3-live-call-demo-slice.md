@@ -55,20 +55,35 @@ Out of scope for this planning artifact:
 - CRM sync beyond mock or demo-only future wiring.
 - HIPAA-ready lane implementation.
 
-## 5. Provider Baseline
+## 5. Stack Decision
 
-Preferred v0.3 baseline remains:
+The strongest first live-call demo stack is **Telnyx-first, Sent.dm-assisted, Vapi optional**.
+
+This means:
+
+- **Telnyx owns the phone path**: dedicated demo number, inbound/outbound voice, call webhooks, call-control events, recording/transcript path where enabled.
+- **Sent.dm owns verification and follow-up messaging**: OTP or phone verification before outbound, consent confirmation, post-call recap, demo links, and fallback messaging across SMS/WhatsApp/RCS.
+- **ResponseOS owns the product truth**: demo tenant, event ledger, qualification facts, consent state, dashboard display, audit trail, and kill switch.
+- **Vapi stays optional behind `VoiceAgentProvider`**: use it only if Telnyx AI Assistant is not flexible enough for the first demo conversation.
+
+This is a demo-slice decision, not a reversal of the broader v0.3 provider baseline. Telnyx remains the primary carrier per ADR-0031. Vapi remains the broader primary orchestration baseline per ADR-0032/0036, but the demo slice should first test whether Telnyx can provide enough AI-assistant capability with fewer moving parts.
+
+## 6. Provider Baseline
+
+Preferred live-call demo baseline:
 
 | Layer | Preferred | Fallback / Secondary | Notes |
 |---|---|---|---|
 | Carrier / number | Telnyx | Twilio | Telnyx is ADR-0031 primary; Twilio remains failover. |
-| AI voice orchestration | Vapi | Retell | Vapi is ADR-0032 primary; Retell remains secondary. |
-| LLM / transcription brain | OpenAI in Vapi where configurable | Vapi-owned model selection | ADR-0036 planning baseline. |
+| First AI voice path | Telnyx AI Assistant | Vapi | Start with the fewest vendors; introduce Vapi only if Telnyx assistant capability blocks the demo. |
+| Messaging / verification | Sent.dm | Telnyx Messaging | Sent.dm handles OTP, consent confirmation, post-call follow-up, and demo links. |
 | Commercial CRM | Demo-only internal ledger first | HubSpot later | No live CRM sync required for first demo slice. |
 
 If Telnyx setup blocks the demo number, Twilio is acceptable for this demo slice as a time-boxed fallback, provided the carrier remains behind the same provider abstraction and the ADR is not silently reversed.
 
-## 6. Journey A — Inbound Lead Calls Demo Number
+If Sent.dm setup blocks verification/follow-up, Telnyx Messaging may be used as a temporary fallback. The ResponseOS app should still model messaging through a provider abstraction so Sent.dm can remain the preferred messaging layer once ready.
+
+## 7. Journey A — Inbound Lead Calls Demo Number
 
 1. Lead sees the demo number on the ResponseOS public demo surface.
 2. Lead calls the dedicated demo number.
@@ -89,16 +104,18 @@ If Telnyx setup blocks the demo number, Twilio is acceptable for this demo slice
 8. Valid event is written to the event ledger and normalized into demo call/contact/lead records.
 9. Dashboard/demo surface shows the captured call, qualification, transcript/summary, and next action.
 
-## 7. Journey B — Lead Requests Outbound Demo Call
+## 8. Journey B — Lead Requests Outbound Demo Call
 
 Outbound is phase two of this slice.
 
 1. Lead enters name, phone number, and consent on the public demo surface.
 2. Server validates input, rate limit, and abuse controls.
-3. Request is written as a pending outbound demo request.
-4. Server initiates a provider call only if consent and rate-limit checks pass.
-5. AI voice agent calls the lead and uses the same demo intake flow.
-6. Provider webhooks follow the same verify-first ingest path as inbound.
+3. Sent.dm sends a verification or consent-confirmation message.
+4. Lead confirms the verification/consent step.
+5. Request is written as a pending outbound demo request.
+6. Server initiates a Telnyx outbound call only if verification, consent, and rate-limit checks pass.
+7. AI voice agent calls the lead and uses the same demo intake flow.
+8. Provider webhooks follow the same verify-first ingest path as inbound.
 
 Outbound must not ship until inbound proves:
 
@@ -108,7 +125,34 @@ Outbound must not ship until inbound proves:
 - dashboard display works,
 - kill switch is tested.
 
-## 8. Webhook and Data Contract
+## 9. Sent.dm Messaging Contract
+
+Sent.dm is not the voice layer. It is the messaging layer for:
+
+- phone verification / OTP,
+- consent confirmation,
+- post-call recap,
+- demo links,
+- fallback follow-up if the call fails or is missed.
+
+Required message properties:
+
+- idempotency key,
+- recipient phone number,
+- channel selection,
+- template id,
+- template parameters,
+- consent purpose,
+- associated demo request id where applicable.
+
+Required controls:
+
+- Store Sent.dm API keys only in Doppler/Vercel, never in repo.
+- Do not send outbound messages without a consent purpose.
+- Deduplicate sends by idempotency key.
+- Record delivery status webhooks only after signature validation, if Sent.dm webhooks are enabled.
+
+## 10. Webhook and Data Contract
 
 Minimum event fields:
 
@@ -135,7 +179,7 @@ Required controls:
 - Do not mutate lead/contact/call rows before signature validation.
 - Log invalid attempts to the security/audit stream.
 
-## 9. Demo Tenant Isolation
+## 11. Demo Tenant Isolation
 
 The live-call demo must use a dedicated demo account, for example:
 
@@ -145,19 +189,20 @@ The live-call demo must use a dedicated demo account, for example:
 
 No public request may submit or override `accountId`. Server code owns the demo account lookup.
 
-## 10. Consent, Abuse, and Budget Controls
+## 12. Consent, Abuse, and Budget Controls
 
 Required before outbound:
 
 - Clear consent checkbox near the phone-number field.
 - Copy stating that the user agrees to receive a demo call from ResponseOS.
+- Sent.dm verification or consent-confirmation message before the outbound call.
 - Rate limit by IP, phone number, and time window.
 - Maximum daily outbound demo-call count.
 - Block repeated failed attempts.
 - Internal kill switch, for example `RESPONSEOS_LIVE_CALL_DEMO_ENABLED=false`.
 - Provider spend limit or prepaid cap where supported.
 
-## 11. Success Criteria
+## 13. Success Criteria
 
 Inbound success:
 
@@ -171,18 +216,21 @@ Inbound success:
 Outbound success:
 
 - A lead can explicitly request a demo call.
+- Sent.dm verifies or confirms consent before the call is initiated.
 - Rate limits and consent gates are enforced.
 - The outbound call is initiated only after validation.
 - The resulting call follows the same ledger-first path.
 
-## 12. Validation Gates
+## 14. Validation Gates
 
 Before implementation PR:
 
-- Confirm provider choice for the dedicated demo number.
+- Confirm Telnyx dedicated demo number path.
+- Confirm whether Telnyx AI Assistant can handle the first demo conversation without Vapi.
+- Confirm Sent.dm template/channel setup for OTP, consent confirmation, and follow-up.
 - Confirm demo phone number ownership and billing cap.
 - Confirm webhook signature mechanism for chosen provider(s).
-- Confirm Vapi/Retell assistant disclosure script.
+- Confirm Telnyx or Vapi assistant disclosure script.
 - Confirm demo account id lookup strategy.
 
 Before live-call preview:
@@ -198,19 +246,20 @@ Before live-call preview:
 - Invalid signature test proves no mutation.
 - Outbound rate-limit test passes before any public call-me form ships.
 
-## 13. Rollback Plan
+## 15. Rollback Plan
 
 - Disable `RESPONSEOS_LIVE_CALL_DEMO_ENABLED`.
 - Disable provider webhook endpoint or reject all non-Clerk live-call events.
 - Unpublish or hide the demo phone number from the public page.
 - Disable outbound call initiation.
+- Disable Sent.dm message sends.
 - Keep existing mock walkthrough available.
 - Preserve event logs for incident review.
 
-## 14. Open Questions
+## 16. Open Questions
 
-- Should the demo number be Telnyx-first or Twilio fallback for speed?
-- Should the first assistant use Vapi with OpenAI as the in-Vapi brain, or Vapi-owned model selection?
+- Can Telnyx AI Assistant handle the first demo conversation without Vapi?
+- Which Sent.dm channels should be enabled first: SMS only, or SMS plus WhatsApp/RCS?
 - Which page should display the live demo number first: `/demo`, `/demo/walkthrough`, or a new `/demo/live-call` route?
 - Should outbound call requests require email verification before dialing?
 - What is the daily spend cap for public demo calls?

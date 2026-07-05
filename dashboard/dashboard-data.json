@@ -218,15 +218,15 @@
       "start": "2026-07-06",
       "due": "2026-07-24",
       "blocked": true,
-      "blockedReason": "ADR-0039 scopes the live-call demo; implementation still requires dedicated number, provider choice, signature validation, consent/rate limits, and kill switch PRs"
+      "blockedReason": "ADR-0039 selects Telnyx-first and Sent.dm-assisted; implementation still requires dedicated number, Telnyx AI/Vapi validation, signature validation, Sent.dm consent messaging, rate limits, and kill switch PRs"
     },
     {
       "id": "I-04",
       "phase": "Integrations",
-      "title": "Live-call demo slice spec",
+      "title": "Telnyx + Sent.dm live-call demo spec",
       "owner": "Codex",
       "status": "Review",
-      "progress": 90,
+      "progress": 95,
       "priority": "High",
       "start": "2026-07-05",
       "due": "2026-07-08",

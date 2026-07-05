@@ -659,7 +659,7 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 
 ---
 
-## ADR-0039 — v0.3 live-call demo slice: dedicated demo number, inbound first, outbound second
+## ADR-0039 — v0.3 live-call demo slice: Telnyx-first, Sent.dm-assisted, inbound first
 
 **Status:** Accepted (2026-07-05) as a scoped v0.3 planning decision. **No provider adapter, schema migration, env var, secret, account configuration, webhook mutation, or live call cutover is implemented by this ADR.**
 
@@ -672,6 +672,10 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 3. The outbound "call me now" journey is **second** and requires explicit consent, rate limiting, abuse controls, a daily spend cap, and a kill switch before any public form can initiate calls.
 4. The demo runs against a **demo-only tenant/account**. Public requests must never supply or override `accountId`; server code owns demo account resolution.
 5. Webhook signature validation remains mandatory before any business mutation (ADR-0009). Invalid or stale provider webhooks must be rejected before parsing/mutation and logged to the security/audit stream.
-6. The provider baseline remains ADR-0031/0032/0036: Telnyx primary carrier with Twilio fallback; Vapi primary orchestration with Retell secondary; OpenAI preferred inside Vapi where configurable. Twilio may be used as a time-boxed demo fallback if Telnyx number setup blocks execution, but provider-specific logic still must stay behind the abstraction.
+6. The live-call demo stack is **Telnyx-first, Sent.dm-assisted, Vapi optional**:
+   - Telnyx owns the phone path: dedicated demo number, inbound/outbound voice, call-control events, and signed call webhooks.
+   - Sent.dm owns verification and follow-up messaging: OTP/consent confirmation, post-call recap, demo links, and fallback messaging.
+   - Vapi stays optional behind `VoiceAgentProvider`, introduced only if Telnyx AI Assistant cannot satisfy the first demo conversation.
+7. The broader provider baseline remains ADR-0031/0032/0036. This demo-slice decision tests whether the first live demo can ship with fewer vendors; it does not reverse Vapi's broader v0.3 orchestration role.
 
-**Consequences.** v0.3 now has a concrete first live-provider experience target: a bounded public demo, not a general production cutover. The slice is allowed to be specified and broken into implementation PRs, but each implementation step still needs its own scoped approval and must carry tests for signature validation, tenant isolation, kill switch behavior, and outbound abuse controls. This ADR does not authorize live CRM sync, billing, HIPAA-ready behavior, or use of real client data.
+**Consequences.** v0.3 now has a concrete first live-provider experience target: a bounded public demo, not a general production cutover. The slice is allowed to be specified and broken into implementation PRs, but each implementation step still needs its own scoped approval and must carry tests for signature validation, tenant isolation, kill switch behavior, Sent.dm idempotent messaging, and outbound abuse controls. This ADR does not authorize live CRM sync, billing, HIPAA-ready behavior, or use of real client data.

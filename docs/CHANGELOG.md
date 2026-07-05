@@ -6,8 +6,8 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 ## Unreleased — docs: scope v0.3 live-call demo slice
 
-- Added [`product/responseos-v0.3-live-call-demo-slice.md`](./product/responseos-v0.3-live-call-demo-slice.md) to define the next v0.3 slice: a dedicated ResponseOS demo number, inbound lead-call journey first, outbound request-call journey second, demo-only tenant isolation, consent/rate-limit controls, spend cap, kill switch, and webhook-signature-first persistence.
-- Added ADR-0039 to record that the live-call demo uses a dedicated demo number, never the operator's personal number, and that implementation remains split into separate scoped PRs.
+- Added [`product/responseos-v0.3-live-call-demo-slice.md`](./product/responseos-v0.3-live-call-demo-slice.md) to define the next v0.3 slice: Telnyx-first live-call path, Sent.dm-assisted verification/follow-up messaging, Vapi optional behind `VoiceAgentProvider`, a dedicated ResponseOS demo number, inbound lead-call journey first, outbound request-call journey second, demo-only tenant isolation, consent/rate-limit controls, spend cap, kill switch, and webhook-signature-first persistence.
+- Added ADR-0039 to record that the live-call demo uses a dedicated demo number, never the operator's personal number, and that implementation remains split into separate scoped PRs under the Telnyx-first / Sent.dm-assisted stack decision.
 - Updated [`ROADMAP.md`](./ROADMAP.md) and the progress dashboard so the live-call demo slice is visible as planned/scoped work rather than hidden scope.
 - Documentation/planning only. No provider adapter, schema migration, env var, secret, account configuration, webhook mutation, billing, or live-call cutover is included.
 
