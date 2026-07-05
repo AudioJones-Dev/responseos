@@ -2,7 +2,7 @@
 
 **Status:** Planning and authorization artifact. This document defines the next v0.3 slice but does not implement provider wiring, schema changes, env vars, webhook mutation, billing, or live cutover.
 **Date:** 2026-07-05
-**Related:** [`../ROADMAP.md`](../ROADMAP.md), [`../SECURITY.md`](../SECURITY.md), [`../DECISIONS.md`](../DECISIONS.md), [`responseos-v0.3-demo-deploy-checkpoint.md`](./responseos-v0.3-demo-deploy-checkpoint.md), [`responseos-v0.3-provider-readiness.md`](./responseos-v0.3-provider-readiness.md).
+**Related:** [`../ROADMAP.md`](../ROADMAP.md), [`../SECURITY.md`](../SECURITY.md), [`../DECISIONS.md`](../DECISIONS.md), [`responseos-v0.3-demo-deploy-checkpoint.md`](./responseos-v0.3-demo-deploy-checkpoint.md), [`responseos-v0.3-provider-readiness.md`](./responseos-v0.3-provider-readiness.md), [`responseos-v0.3-live-call-demo-implementation-brief.md`](./responseos-v0.3-live-call-demo-implementation-brief.md).
 
 ## 1. Problem
 
@@ -263,3 +263,9 @@ Before live-call preview:
 - Which page should display the live demo number first: `/demo`, `/demo/walkthrough`, or a new `/demo/live-call` route?
 - Should outbound call requests require email verification before dialing?
 - What is the daily spend cap for public demo calls?
+
+## 17. Next Implementation Brief
+
+The recommended next step is [`responseos-v0.3-live-call-demo-implementation-brief.md`](./responseos-v0.3-live-call-demo-implementation-brief.md).
+
+That brief breaks ADR-0039 into implementation PRs, starting with **contracts and mocks only** before any live Telnyx/Sent.dm wiring, schema migration, env var, or outbound call behavior is introduced.

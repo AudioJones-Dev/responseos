@@ -223,15 +223,28 @@
     {
       "id": "I-04",
       "phase": "Integrations",
-      "title": "Telnyx + Sent.dm live-call demo spec",
+      "title": "Telnyx + Sent.dm live-call demo implementation brief",
       "owner": "Codex",
       "status": "Review",
-      "progress": 95,
+      "progress": 100,
       "priority": "High",
       "start": "2026-07-05",
       "due": "2026-07-08",
       "ref": 94,
       "refType": "pull"
+    },
+    {
+      "id": "I-05",
+      "phase": "Integrations",
+      "title": "Live-call provider contracts and mocks",
+      "owner": "Codex",
+      "status": "To Do",
+      "progress": 0,
+      "priority": "High",
+      "start": "2026-07-06",
+      "due": "2026-07-10",
+      "blocked": true,
+      "blockedReason": "Requires explicit scoped approval for PR A from the live-call implementation brief; live provider wiring remains out of scope"
     },
     {
       "id": "I-02",
