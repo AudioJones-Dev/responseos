@@ -23,6 +23,8 @@ const PUBLIC_PREFIXES: readonly string[] = [
   "/sign-in",
   "/sign-up",
   "/industries",
+  "/audit",
+  "/trust",
   "/api/webhooks",
 ];
 

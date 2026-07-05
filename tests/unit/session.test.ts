@@ -87,10 +87,10 @@ describe("lib/auth/session.ts", () => {
     );
   });
 
-  test("does NOT throw in production when RESPONSEOS_DEV_SESSION is unset", async () => {
+  test("fails closed in production without Clerk: resolves null, no throw", async () => {
     (process.env as MutableEnv).NODE_ENV = "production";
     const { getCurrentSession } = await freshSession();
-    await expect(getCurrentSession()).resolves.toBeTruthy();
+    await expect(getCurrentSession()).resolves.toBeNull();
   });
 
   test("requireRole accepts matching role", async () => {

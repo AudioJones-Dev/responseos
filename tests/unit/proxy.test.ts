@@ -3,10 +3,13 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 const m = vi.hoisted(() => ({
   clerkProxy: vi.fn(() => "CLERK_RESULT"),
   next: vi.fn(() => "NEXT_RESULT"),
+  redirect: vi.fn(() => "REDIRECT_RESULT"),
   captured: { handler: null as null | ((auth: unknown, req: unknown) => unknown) },
 }));
 
-vi.mock("next/server", () => ({ NextResponse: { next: m.next } }));
+vi.mock("next/server", () => ({
+  NextResponse: { next: m.next, redirect: m.redirect },
+}));
 vi.mock("@clerk/nextjs/server", () => ({
   clerkMiddleware: vi.fn((handler: (auth: unknown, req: unknown) => unknown) => {
     m.captured.handler = handler;
@@ -37,6 +40,31 @@ describe("proxy.ts route protection", () => {
     expect(result).toBe("NEXT_RESULT");
     expect(m.next).toHaveBeenCalledTimes(1);
     expect(m.clerkProxy).not.toHaveBeenCalled();
+  });
+
+  test("Clerk absent + production → protected routes redirect to /", async () => {
+    (process.env as Record<string, string | undefined>).NODE_ENV = "production";
+    const { default: proxy } = await loadProxy();
+    const req = {
+      nextUrl: { pathname: "/admin/dashboard" },
+      url: "https://responseos.ajdigital.app/admin/dashboard",
+    } as never;
+    const result = proxy(req, {} as never);
+    expect(result).toBe("REDIRECT_RESULT");
+    expect(m.redirect).toHaveBeenCalledTimes(1);
+    expect(m.next).not.toHaveBeenCalled();
+  });
+
+  test("Clerk absent + production → public routes stay open", async () => {
+    (process.env as Record<string, string | undefined>).NODE_ENV = "production";
+    const { default: proxy } = await loadProxy();
+    const req = {
+      nextUrl: { pathname: "/demo" },
+      url: "https://responseos.ajdigital.app/demo",
+    } as never;
+    const result = proxy(req, {} as never);
+    expect(result).toBe("NEXT_RESULT");
+    expect(m.redirect).not.toHaveBeenCalled();
   });
 
   test("Clerk present → delegates to clerkMiddleware", async () => {

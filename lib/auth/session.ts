@@ -281,6 +281,11 @@ export async function getCurrentSession(): Promise<Session | null> {
   }
 
   // 4. Placeholder fallback — preserves pre-Clerk dev-session behavior.
+  //    Fail closed in production: missing Clerk config must never grant the
+  //    placeholder session to anonymous traffic on a deployed surface.
+  if (process.env.NODE_ENV === "production") {
+    return null;
+  }
   const fallback = resolveDevSession();
   return buildSession(fallback!.user, fallback!.account);
 }

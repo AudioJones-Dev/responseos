@@ -313,6 +313,19 @@
       "priority": "High",
       "start": "2026-08-13",
       "due": "2026-08-15"
+    },
+    {
+      "id": "L-04",
+      "phase": "Launch / Demo Deploy",
+      "title": "Demo surface hardening (fail-closed auth, demo banner, public marketing routes)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-07-05",
+      "due": "2026-07-05",
+      "ref": 94,
+      "refType": "pull"
     }
   ],
   "liveIssues": [

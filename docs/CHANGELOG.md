@@ -4,6 +4,15 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: harden the public demo surface (PR #94)
+
+- `getCurrentSession()` now fails closed in production when Clerk is not configured: the placeholder dev-session is never granted to anonymous traffic on a deployed surface. Previously every visitor to the live demo received a mock `aj_admin` session, leaving `/admin` publicly browsable.
+- `proxy.ts` blocks non-public routes at the edge when Clerk is absent in production, redirecting to `/` (defense in depth above the session fix).
+- Reclassified `/audit` and `/trust` as public marketing routes in `lib/auth/route-protection.ts`; both are prospect-facing pages linked from the marketing header and were caught by the new production redirect. `/audit` had been listed as protected since PR #41 — an oversight, not a decision.
+- Added a demo-environment banner to the marketing layout per the mock-first demo deploy gate (checkpoint 2026-07-04). Banner copy is a draft pending operator approval.
+- Raised the Vitest `testTimeout` to 20s to eliminate the two known local timeout flakes noted in the deploy checkpoint.
+- Unit tests updated/added for the fail-closed session path, production proxy redirect, and public-route reclassification.
+
 ## Unreleased — docs: scope v0.3 live-call demo slice
 
 - Added [`product/responseos-v0.3-live-call-demo-slice.md`](./product/responseos-v0.3-live-call-demo-slice.md) to define the next v0.3 slice: Telnyx-first live-call path, Sent.dm-assisted verification/follow-up messaging, Vapi optional behind `VoiceAgentProvider`, a dedicated ResponseOS demo number, inbound lead-call journey first, outbound request-call journey second, demo-only tenant isolation, consent/rate-limit controls, spend cap, kill switch, and webhook-signature-first persistence.
