@@ -133,7 +133,7 @@
       "title": "Define authorized v0.3 demo scope",
       "owner": "Audio",
       "status": "In Progress",
-      "progress": 50,
+      "progress": 75,
       "priority": "High",
       "start": "2026-05-29",
       "due": "2026-06-13",
@@ -147,8 +147,8 @@
       "phase": "v0.3 · Demo Scope",
       "title": "Decide demo surface / feature cut",
       "owner": "Audio",
-      "status": "In Progress",
-      "progress": 30,
+      "status": "Done",
+      "progress": 100,
       "priority": "High",
       "start": "2026-06-02",
       "due": "2026-06-16"
@@ -158,8 +158,8 @@
       "phase": "v0.3 · Demo Scope",
       "title": "Document v0.3 acceptance gates",
       "owner": "Audio",
-      "status": "To Do",
-      "progress": 0,
+      "status": "In Progress",
+      "progress": 60,
       "priority": "Med",
       "start": "2026-06-16",
       "due": "2026-06-23"
@@ -203,7 +203,7 @@
       "ref": 14,
       "refType": "pull",
       "blocked": true,
-      "blockedReason": "PR #14 closed unmerged (draft); gated on v0.3 scope (#27)",
+      "blockedReason": "PR #14 closed unmerged (draft); gated on v0.3 scope (#27) and Vercel Git connection",
       "refState": "closed",
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/14"
     },
@@ -269,11 +269,13 @@
       "phase": "Launch / Demo Deploy",
       "title": "Production env + secrets",
       "owner": "Audio",
-      "status": "Backlog",
-      "progress": 0,
+      "status": "In Progress",
+      "progress": 55,
       "priority": "High",
       "start": "2026-08-03",
-      "due": "2026-08-12"
+      "due": "2026-08-12",
+      "blocked": true,
+      "blockedReason": "Vercel production and all-preview envs are set; branch-scoped envs and automatic Git deployments are blocked until the Vercel project is connected to GitHub"
     },
     {
       "id": "L-03",
