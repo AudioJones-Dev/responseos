@@ -17,7 +17,10 @@ import type { UserRole } from "@/types/user";
  *      (the test/CI bypass per plan §4.7).
  *   3. Clerk path — when CLERK_SECRET_KEY is set, derive from Clerk `auth()`.
  *   4. Placeholder fallback — no Clerk env: existing dev-session behavior
- *      (defaults to aj_admin), preserved unchanged.
+ *      (defaults to aj_admin), preserved unchanged — UNLESS
+ *      RESPONSEOS_REQUIRE_AUTH is set (auth-required hosted/production deploy),
+ *      in which case a missing Clerk config fails closed (no session) instead
+ *      of granting the privileged cross-tenant aj_admin session.
  *
  * The Clerk path resolves only existing `User`/`Account` rows. There is no
  * just-in-time provisioning in 32B — an unmapped Clerk identity or org resolves
@@ -173,6 +176,20 @@ function clerkEnabled(): boolean {
 }
 
 /**
+ * Auth-required signal for hosted/production deploys (e.g. the v0.3 demo
+ * deploy, which sets `RESPONSEOS_REQUIRE_AUTH=1`). When set, the placeholder
+ * fallback in `getCurrentSession` step 4 must NOT grant the privileged
+ * `aj_admin` dev session if Clerk is unconfigured — a missing Clerk config in
+ * an auth-required deploy fails closed rather than silently exposing the
+ * operator console cross-tenant. When unset (local dev, CI, `next build`) the
+ * mock-first boot fallback is preserved unchanged (ADR-0001).
+ */
+function authRequired(): boolean {
+  const v = process.env.RESPONSEOS_REQUIRE_AUTH;
+  return Boolean(v && v !== "0" && v.toLowerCase() !== "false");
+}
+
+/**
  * Conservative role mapping (operator decision Q4).
  *
  * - Control context (active org is the AJ Digital control org): the DB role is
@@ -280,7 +297,13 @@ export async function getCurrentSession(): Promise<Session | null> {
     return deriveClerkSession();
   }
 
-  // 4. Placeholder fallback — preserves pre-Clerk dev-session behavior.
+  // 4. No Clerk configured. In an auth-required deploy
+  // (RESPONSEOS_REQUIRE_AUTH set), fail closed rather than granting the
+  // privileged aj_admin dev session cross-tenant (D2). Default (unset)
+  // preserves the pre-Clerk mock-first boot behavior for dev / CI / build.
+  if (authRequired()) {
+    return null;
+  }
   const fallback = resolveDevSession();
   return buildSession(fallback!.user, fallback!.account);
 }
