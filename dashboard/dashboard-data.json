@@ -289,6 +289,17 @@
   ],
   "liveIssues": [
     {
+      "number": 97,
+      "title": "xAI Voice Agent readiness spike",
+      "url": "https://github.com/AudioJones-Dev/responseos/issues/97",
+      "state": "open",
+      "labels": [
+        "documentation",
+        "codex",
+        "roadmap"
+      ]
+    },
+    {
       "number": 27,
       "title": "Roadmap checkpoint: v0.2 stabilization complete, prepare v0.3 demo scope",
       "url": "https://github.com/AudioJones-Dev/responseos/issues/27",
@@ -308,5 +319,5 @@
       ]
     }
   ],
-  "generatedAt": "2026-07-13T13:41:27.911Z"
+  "generatedAt": "2026-07-13T14:40:12.269Z"
 }
