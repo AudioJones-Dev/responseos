@@ -221,6 +221,21 @@
       "blockedReason": "Gated on v0.3 scope decision"
     },
     {
+      "id": "I-06",
+      "phase": "Integrations",
+      "title": "xAI voice readiness spike",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 100,
+      "priority": "Med",
+      "start": "2026-07-13",
+      "due": "2026-07-13",
+      "ref": 97,
+      "refType": "issue",
+      "refState": "open",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/issues/97"
+    },
+    {
       "id": "I-02",
       "phase": "Integrations",
       "title": "Lead qualification pipeline",
