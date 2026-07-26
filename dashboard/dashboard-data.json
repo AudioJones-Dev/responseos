@@ -191,6 +191,19 @@
       "due": "2026-07-08"
     },
     {
+      "id": "P0-01",
+      "phase": "Tech Debt & Hardening",
+      "title": "Contain automatic production deployments",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-07-26",
+      "due": "2026-07-26",
+      "blocked": true,
+      "blockedReason": "Local implementation is validated and committed but unmerged; GitHub Actions PR creation permission requires separate approval"
+    },
+    {
       "id": "14",
       "phase": "Launch / Demo Deploy",
       "title": "v0.3 demo deploy",
