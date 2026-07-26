@@ -36,10 +36,10 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
           </nav>
           <div className="flex items-center gap-3">
             <Link
-              href="/demo/operator-console"
+              href="/demo/walkthrough"
               className="hidden text-sm text-ink-secondary transition-colors hover:text-ink sm:inline"
             >
-              Operator console
+              Walkthrough demo
             </Link>
             <ButtonLink href="/audit" size="sm" glow>
               Run a revenue audit

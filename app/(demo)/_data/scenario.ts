@@ -18,9 +18,9 @@ export const business = {
 } as const;
 
 export const overview = {
-  period: "This month",
+  period: "Sample month - July 2026",
   revenueProtected: 12450,
-  revenueProtectedDelta: "+18% vs last month",
+  revenueProtectedDelta: "+18% vs prior sample month",
   recoveredCalls: 31,
   qualifiedLeads: 14,
   appointments: 8,
@@ -46,7 +46,7 @@ export type TranscriptLine = { t: string; speaker: "AI" | "Caller"; text: string
 export const call = {
   id: "demo_call_8F3K29",
   channel: "Inbound voice · after-hours · AI receptionist",
-  startedAt: "2026-05-31 21:47 (local)",
+  startedAt: "2026-07-03 21:47 (local)",
   duration: "2m 38s",
   disposition: "Qualified — urgent on-site assessment requested",
   urgency: "high" as const,
@@ -102,7 +102,7 @@ export const lead = {
 
 export const memory = {
   id: "bm_evt_demo_77c310",
-  capturedAt: "2026-05-31 21:49 (local)",
+  capturedAt: "2026-07-03 21:49 (local)",
   model: "Phase-1 event-ledger capture",
   sourceEvent: { type: "call.qualified", callId: call.id, channel: call.channel },
   entities: [
@@ -158,8 +158,6 @@ export const integrations: { name: string; state: IntegrationState; detail: stri
 // Ordered walkthrough steps for the stepper navigation.
 export const steps = [
   { slug: "", label: "Overview", href: "/demo/walkthrough" },
-  { slug: "operator-console", label: "Operator", href: "/demo/operator-console" },
-  { slug: "client-dashboard", label: "Client", href: "/demo/client-dashboard" },
   { slug: "call", label: "Call", href: "/demo/walkthrough/call" },
   { slug: "lead", label: "Lead", href: "/demo/walkthrough/lead" },
   { slug: "memory", label: "Memory", href: "/demo/walkthrough/memory" },

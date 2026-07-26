@@ -11,7 +11,7 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - Reclassified `/audit` and `/trust` as public marketing routes in `lib/auth/route-protection.ts`; both are prospect-facing pages linked from the marketing header and were caught by the new production redirect. `/audit` had been listed as protected since PR #41 — an oversight, not a decision.
 - Added a demo-environment banner to the marketing layout per the mock-first demo deploy gate (checkpoint 2026-07-04). Banner copy is a draft pending operator approval.
 - Repointed public marketing/demo CTAs away from protected `/admin` and `/client/dashboard` routes and added read-only `/demo/operator-console` and `/demo/client-dashboard` variants so the GTM demo does not dead-end after fail-closed auth ships.
-- Fixed the pricing-page retainer bullet layout, reconciled operator/client KPI storytelling to the same sample-month revenue metrics, relabeled the client dashboard as "Sample Month," and added operator-console client-health/escalation structure.
+- Fixed the pricing-page retainer bullet layout, reconciled operator/client KPI storytelling to the same sample-month revenue metrics, relabeled the client dashboard as "Sample Month," added operator-console client-health/escalation structure, and made `/demo/walkthrough` the primary public GTM demo path with July 2026 sample dates and recovered-revenue terminology.
 - Raised the Vitest `testTimeout` to 20s to eliminate the two known local timeout flakes noted in the deploy checkpoint.
 - Unit tests updated/added for the fail-closed session path, production proxy redirect, and public-route reclassification.
 

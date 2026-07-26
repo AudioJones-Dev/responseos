@@ -548,8 +548,8 @@ async function seedRevenueMetrics() {
     create: {
       id: "rev_mock_current",
       account_id: "org_mock_1",
-      period_start: new Date("2026-05-01T00:00:00.000Z"),
-      period_end: new Date("2026-05-31T23:59:59.999Z"),
+      period_start: new Date("2026-07-01T00:00:00.000Z"),
+      period_end: new Date("2026-07-31T23:59:59.999Z"),
       total_calls: 87,
       missed_calls: 31,
       calls_answered_by_ai: 24,
@@ -572,8 +572,8 @@ async function seedRevenueMetrics() {
     create: {
       id: "rev_mock_prev_1",
       account_id: "org_mock_1",
-      period_start: new Date("2026-04-01T00:00:00.000Z"),
-      period_end: new Date("2026-04-30T23:59:59.999Z"),
+      period_start: new Date("2026-06-01T00:00:00.000Z"),
+      period_end: new Date("2026-06-30T23:59:59.999Z"),
       total_calls: 71,
       missed_calls: 27,
       calls_answered_by_ai: 19,
@@ -596,8 +596,8 @@ async function seedRevenueMetrics() {
     create: {
       id: "rev_mock_prev_2",
       account_id: "org_mock_1",
-      period_start: new Date("2026-03-01T00:00:00.000Z"),
-      period_end: new Date("2026-03-31T23:59:59.999Z"),
+      period_start: new Date("2026-05-01T00:00:00.000Z"),
+      period_end: new Date("2026-05-31T23:59:59.999Z"),
       total_calls: 64,
       missed_calls: 30,
       calls_answered_by_ai: 12,

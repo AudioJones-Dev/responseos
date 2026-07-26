@@ -7,7 +7,7 @@ export default function RevenueRecoveryOverview() {
       <PageHeader
         eyebrow="Revenue Recovery Demo"
         title="Revenue Recovery Overview"
-        description={`${overview.period} · what revenue we protected and what needs action`}
+        description={`${overview.period} · what revenue was recovered and what needs action`}
       />
 
       <AlertBanner className="mb-6">
@@ -21,7 +21,7 @@ export default function RevenueRecoveryOverview() {
         />
         <div className="relative">
           <p className="text-xs font-semibold uppercase tracking-widest text-accent">
-            Estimated Revenue Protected
+            Estimated Revenue Recovered
           </p>
           <p className="mt-3 font-display text-4xl font-semibold tabular-nums text-accent sm:text-5xl">
             {usd(overview.revenueProtected)}

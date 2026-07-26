@@ -223,8 +223,8 @@ export default function DemoPage() {
           <ButtonLink href="/demo/walkthrough" glow>
             Revenue Recovery Demo
           </ButtonLink>
-          <ButtonLink href="/demo/client-dashboard" variant="secondary">
-            Client dashboard
+          <ButtonLink href="/demo/walkthrough" variant="secondary">
+            Walkthrough demo
           </ButtonLink>
         </div>
       </Card>
