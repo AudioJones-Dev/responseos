@@ -4,6 +4,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — ci: contain automatic production deployments and dashboard writes
+
+- **Disabled automatic Vercel deployments from `master`** in `vercel.json` while leaving connected-branch preview behavior available; this change does not deploy, promote, or alter domains, environment variables, or provider settings.
+- **Replaced dashboard automation's direct pushes to `master`** with updates to the dedicated `automation/dashboard-sync` branch and a bot-created pull request for human review. Documented the required repository Actions permission and workflow-approval behavior in [`dashboard/README.md`](../dashboard/README.md), and added the P0 containment task to the dashboard data in Review state.
+- **Applied review hardening:** scoped GitHub token permissions per job, suppressed timestamp-only dashboard rewrites so substantive no-ops do not create pull-request churn, and added focused unit coverage for both no-op and changed-data sync behavior.
+
 ## Unreleased — docs: add Web3 opportunity research
 
 - Added [`research/RESPONSEOS_WEB3_BLOCKCHAIN_OPPORTUNITY_RESEARCH.md`](./research/RESPONSEOS_WEB3_BLOCKCHAIN_OPPORTUNITY_RESEARCH.md) — evaluates Web3/blockchain/crypto opportunities against the current ResponseOS architecture and recommends a **non-crypto** path: a Level-1 tamper-evident AI interaction ledger (canonical JSON, hash chains, Ed25519 signatures, signed exports) before any optional Merkle-root anchoring. Research-only; no app code, schema, auth, provider, dependency, secret, or deploy changes.
