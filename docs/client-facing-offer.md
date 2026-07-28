@@ -1,10 +1,12 @@
 # Client-Facing Offer
 
 > **Commercial and support status:** The price points, legacy Recovery-tier
-> names, bundled usage, pilot terms, and SLA defaults below are unresolved
-> prior planning—not newly validated public pricing or demonstrated SLA
-> performance. Do not use them as a proposal or contractual commitment without
-> separate approval. See the
+> names, and pilot terms below remain unresolved prior planning—not validated or
+> approved public pricing. The bundled-usage table and SLA defaults are
+> superseded for opening planning by client responsibility for variable usage
+> and business-hours support objectives with no after-hours human coverage.
+> None of these terms may be used as a proposal or contractual commitment
+> without separate approval. See the
 > [client-delivery canon reconciliation](./ops/client-delivery/RESPONSEOS_CANON_RECONCILIATION.md).
 
 ## Headline
@@ -79,6 +81,11 @@ The assessment delivers a Readiness Score, Revenue Leak Estimate, AI Fit / No-Fi
 
 ### Suggested included AI voice usage
 
+> **Opening-policy override:** No bundled allowance is approved. Use compatible
+> direct client billing or pass-through plus an explicit
+> administration/platform-management fee. The fee amount remains unknown
+> pending separate approval.
+
 | Tier | Included minutes / month | Overage |
 |---|---|---|
 | Recovery Core | up to 300 | cost + 20% management margin |
@@ -88,6 +95,12 @@ The assessment delivers a Readiness Score, Revenue Leak Estimate, AI Fit / No-Fi
 Alternative: software / usage billed separately at cost + management fee. The model in force is recorded on each Pricing Proposal.
 
 ## SLA defaults
+
+> **Opening-policy override:** The table below is retained as prior planning and
+> is not an approved SLA. Opening support planning is Monday–Friday,
+> 9:00 a.m.–5:00 p.m. Eastern; P1 within 4 business hours, P2 within 1 business
+> day, P3 within 2 business days, P4 best effort; after-hours human coverage is
+> excluded. Contract terms require separate approval.
 
 | Term | Default |
 |---|---|

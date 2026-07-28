@@ -35,7 +35,8 @@ a winner, or convert an assumption into an actual.
 - [`RESPONSEOS_FUTURE_CLIENT_READINESS_STANDARD.md`](./RESPONSEOS_FUTURE_CLIENT_READINESS_STANDARD.md)
   — current pre-client state and readiness gates R0–R3.
 - [`RESPONSEOS_CANON_RECONCILIATION.md`](./RESPONSEOS_CANON_RECONCILIATION.md)
-  — overlap, conflicts, current authorities, treatments, and unresolved owners.
+  — overlap, conflicts, current authorities, ratified opening decisions, and
+  remaining unknowns.
 
 ## Templates
 

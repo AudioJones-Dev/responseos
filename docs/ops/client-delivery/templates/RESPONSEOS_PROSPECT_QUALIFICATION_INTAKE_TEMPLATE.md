@@ -49,7 +49,8 @@ decision, or Unknown.
 ## Qualification heuristics
 
 The `$300+` average-job-value and `20+` missed-calls-per-month figures are
-planning heuristics, not validated universal thresholds.
+planning heuristics, not validated universal thresholds. Neither figure is an
+automatic pass/fail gate.
 
 | Heuristic / requirement | Result | Evidence | Notes |
 |---|---|---|---|

@@ -4,7 +4,13 @@
 > usage, overages, pilot terms, and default quote in this document are
 > provisional planning material—not newly validated or approved public pricing.
 > ADR-0028 governs the go-forward pricing-model structure while specific price
-> points and contract terms remain open. See the
+> points and contract terms remain open and unpublished. The approved opening
+> posture makes clients commercially responsible for attributable variable
+> usage, uses direct billing where compatible or pass-through plus an explicit
+> administration/platform fee, and defers bundled allowances. The numeric
+> qualification figures below are evidence prompts, not automatic gates. The
+> conflicting usage, overage, and qualification language is retained as prior
+> planning and is superseded by this opening posture. See the
 > [client-delivery canon reconciliation](./ops/client-delivery/RESPONSEOS_CANON_RECONCILIATION.md).
 
 Commercial strategy and onboarding workflow for ResponseOS. This is documentation only. None of the pricing, outcome-fee, billing, or invoicing logic described here ships as code in v0.2; that work is roadmapped for v0.5 (see "Roadmap and what is intentionally not built yet" at the end).
@@ -132,6 +138,12 @@ An optional early-client package designed for the first cohort of pilots. Use it
 
 ## Usage and pass-through cost policy
 
+> **Opening-policy override:** The bundled allowances and percentage margin
+> below are retained as prior planning and are not approved opening terms.
+> Current planning uses compatible direct client billing or pass-through plus
+> an explicit administration/platform-management fee. The fee amount remains
+> unknown pending separate approval.
+
 Voice, SMS, and AI usage is real money. The policy is to either bundle it with a fair-use cap or bill it through transparently with a management margin.
 
 ### Suggested included usage
@@ -150,6 +162,10 @@ Voice, SMS, and AI usage is real money. The policy is to either bundle it with a
 The choice between bundled-with-cap and pass-through-with-margin is per engagement. Document which model is in force on each Pricing Proposal.
 
 ## Client qualification gates
+
+> **Opening-policy interpretation:** The numeric figures below are evidence
+> prompts, not automatic pass/fail gates. Fit/no-fit requires engagement-specific
+> evidence and approval.
 
 ResponseOS implementation only proceeds when the client clears the minimum gates. These gates are checked during the assessment and recorded in the AI Fit / No-Fit Diagnosis.
 

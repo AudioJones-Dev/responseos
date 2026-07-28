@@ -1,14 +1,37 @@
 # ResponseOS Cost Model Standard
 
-**Status:** Canonical internal planning standard
+**Status:** Canonical internal commercial and delivery planning standard
 **Owner:** AJ Digital LLC / Audio Jones
 **Public pricing:** Not established by this document
+**Opening-policy decision:** Approved by Audio on 2026-07-28 for PR #103
 
 ## Purpose
 
 This standard separates internal delivery-cost planning from public pricing.
 It provides an auditable way to model a future engagement without manufacturing
 client facts, AJ Digital actuals, or statistical certainty.
+
+## Ratified opening posture
+
+AJ Digital has approved these internal boundaries for the opening ResponseOS
+offer:
+
+1. Public pricing remains unpublished until separately approved from
+   evidence-backed economics.
+2. The client is commercially responsible for variable vendor usage: use
+   direct client billing where compatible with platform doctrine; otherwise AJ
+   Digital passes usage through with an explicit
+   administration/platform-management fee.
+3. Bundled usage allowances are deferred until comparable attributable usage
+   history supports them.
+4. Support uses the business-hours planning objectives below, with no
+   after-hours human coverage.
+5. The `$300+` average-job-value and `20+` missed-calls-per-month figures are
+   evidence prompts, not automatic qualification gates.
+
+These are AJ Digital decisions, not client actuals, validated economics,
+contractual SLAs, or authorization to publish a price. Each proposal still
+requires engagement-specific approval.
 
 ## Evidence classes
 
@@ -49,7 +72,7 @@ prices, client estimates, or AJ Digital actuals.
 | Expected founder delivery capacity | `18 hours/week` | Planning assumption |
 | Working weeks | `46/year` | Planning assumption |
 | Annual expected delivery capacity | `828 hours/year` | Calculated derivative |
-| After-hours human support | Excluded | Preliminary AJ Digital decision |
+| After-hours human support | Excluded | AJ Digital decision |
 
 Contractor rates and all effort hours remain provisional or `unknown` until
 supported in the completed cost template. No client total may be calculated
@@ -120,15 +143,19 @@ correlations, major cost drivers, and largest unknowns.
 
 ## Variable vendor billing
 
-The opening posture is preliminary and must be reconciled per engagement with
-the platform ownership canon.
+The approved opening posture must be applied without changing the platform
+ownership canon.
 
-1. **Preferred where practical:** client-owned accounts.
-2. **Secondary:** pass-through billing plus an explicit
+1. **Credential/platform ownership:** remains governed by the ADRs and
+   Integration Map.
+2. **Commercial responsibility:** the client bears attributable variable
+   vendor usage.
+3. **Vendor invoicing:** use direct client billing where compatible with the
+   platform doctrine; otherwise use pass-through billing plus an explicit
    administration/platform-management fee.
-3. **Bundled usage:** deferred until AJ Digital has comparable attributable
-   usage history.
-4. **Excluded:** fully absorbed, uncapped variable usage in the standard offer.
+4. **Bundled usage:** deferred until AJ Digital has comparable attributable
+   usage history and separately approves an allowance method.
+5. **Excluded:** fully absorbed, uncapped variable usage in the standard offer.
 
 Record four different questions separately:
 
@@ -147,8 +174,8 @@ decision.
 
 ## Support planning objectives
 
-These are preliminary planning objectives, not validated SLA performance or
-client commitments:
+These are approved opening planning objectives, not validated SLA performance
+or automatic client commitments:
 
 | Severity | Initial-response objective |
 |---|---|
@@ -182,6 +209,7 @@ declared by this standard.
 
 ## Approval boundary
 
-This standard authorizes internal modeling only. Public pricing, a proposal,
-bundled usage, a support commitment, vendor purchase, production configuration,
-or deployment each require their own approval.
+This standard authorizes internal modeling and use of the ratified opening
+posture during scope and proposal preparation. Public pricing, a specific
+proposal, bundled usage, a contractual SLA, a vendor purchase, production
+configuration, or deployment each require their own approval.
