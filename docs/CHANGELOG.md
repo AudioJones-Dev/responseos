@@ -4,6 +4,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: add future-client delivery system
+
+- Added the canonical [`ops/client-delivery/`](./ops/client-delivery/README.md) system for future ResponseOS engagements: pre-client readiness gates R0–R3; qualification-to-retrospective delivery controls; internal cost-model evidence classes and P50/P80 planning-proxy rules; and twelve client-agnostic templates for qualification, discovery, current state, readiness, revenue leak, assumptions, costing, implementation, risk/compliance, onboarding, launch/hypercare, and telemetry.
+- Added a no-silent-overwrite canon reconciliation covering the preliminary source pack, existing pricing/onboarding material, provider and credential ownership, usage billing, support objectives, qualification heuristics, platform controls, and unresolved human decisions. No ADR was added because architecture, provider doctrine, milestone sequencing, and public pricing remain unchanged.
+- Added non-destructive status banners to the existing pricing and client-facing offer documents so their numeric terms, bundled usage, and SLA defaults are not mistaken for validated public pricing or demonstrated service performance. Documentation only: no client, code, schema, provider, secret, environment, deployment, or public pricing change.
+
 ## Unreleased — ci: contain automatic production deployments and dashboard writes
 
 - **Disabled automatic Vercel deployments from `master`** in `vercel.json` while leaving connected-branch preview behavior available; this change does not deploy, promote, or alter domains, environment variables, or provider settings.

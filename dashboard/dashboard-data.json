@@ -165,6 +165,17 @@
       "due": "2026-06-23"
     },
     {
+      "id": "V-04",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Integrate future-client delivery standards and templates",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-07-28",
+      "due": "2026-07-28"
+    },
+    {
       "id": "26",
       "phase": "Tech Debt & Hardening",
       "title": "Seed idempotency / create-only ADR",

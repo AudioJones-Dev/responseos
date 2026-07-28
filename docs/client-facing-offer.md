@@ -1,5 +1,12 @@
 # Client-Facing Offer
 
+> **Commercial and support status:** The price points, legacy Recovery-tier
+> names, bundled usage, pilot terms, and SLA defaults below are unresolved
+> prior planning—not newly validated public pricing or demonstrated SLA
+> performance. Do not use them as a proposal or contractual commitment without
+> separate approval. See the
+> [client-delivery canon reconciliation](./ops/client-delivery/RESPONSEOS_CANON_RECONCILIATION.md).
+
 ## Headline
 
 > **ResponseOS turns missed demand into booked revenue.**

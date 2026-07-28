@@ -1,5 +1,12 @@
 # Pricing and Onboarding
 
+> **Commercial status:** The amounts, legacy Recovery-tier names, included
+> usage, overages, pilot terms, and default quote in this document are
+> provisional planning material—not newly validated or approved public pricing.
+> ADR-0028 governs the go-forward pricing-model structure while specific price
+> points and contract terms remain open. See the
+> [client-delivery canon reconciliation](./ops/client-delivery/RESPONSEOS_CANON_RECONCILIATION.md).
+
 Commercial strategy and onboarding workflow for ResponseOS. This is documentation only. None of the pricing, outcome-fee, billing, or invoicing logic described here ships as code in v0.2; that work is roadmapped for v0.5 (see "Roadmap and what is intentionally not built yet" at the end).
 
 ## Why this exists

@@ -10,7 +10,7 @@ A complete canonical documentation set lives under `product/`, `architecture/`, 
 |---|---|
 | Product | [`BUILD_SOURCE`](./product/RESPONSEOS_BUILD_SOURCE.md) · [`PRD`](./product/RESPONSEOS_PRD.md) · [`ROADMAP`](./product/RESPONSEOS_ROADMAP.md) · [`PHASE_PLAN`](./product/RESPONSEOS_PHASE_PLAN.md) · [`IMPLEMENTATION_PLAN`](./product/RESPONSEOS_IMPLEMENTATION_PLAN.md) · [`BACKLOG`](./product/RESPONSEOS_BACKLOG.md) · [`GTM_ROADMAP`](./product/responseos-gtm-product-roadmap.md) (GTM/brand/voice/pricing planning spec) · [`COMMS_STACK`](./product/responseos-communications-stack.md) (communications stack CTO decision) · [`DEMO_PLAN`](./product/responseos-demo-narrative-and-asset-plan.md) (demo narrative + asset plan) |
 | Architecture | [`SYSTEM_ARCHITECTURE`](./architecture/RESPONSEOS_SYSTEM_ARCHITECTURE.md) · [`MODULE_BOUNDARIES`](./architecture/RESPONSEOS_MODULE_BOUNDARIES.md) · [`FRONTEND_SPEC`](./architecture/RESPONSEOS_FRONTEND_SPEC.md) · [`BACKEND_SPEC`](./architecture/RESPONSEOS_BACKEND_SPEC.md) · [`DATA_MODEL`](./architecture/RESPONSEOS_DATA_MODEL.md) · [`API_CONTRACTS`](./architecture/RESPONSEOS_API_CONTRACTS.md) · [`EVENT_SCHEMA`](./architecture/RESPONSEOS_EVENT_SCHEMA.md) · [`INTEGRATION_MAP`](./architecture/RESPONSEOS_INTEGRATION_MAP.md) |
-| Ops | [`OBSERVABILITY_AND_GOVERNANCE`](./ops/RESPONSEOS_OBSERVABILITY_AND_GOVERNANCE.md) · [`SECURITY_AND_COMPLIANCE`](./ops/RESPONSEOS_SECURITY_AND_COMPLIANCE.md) · [`RUNBOOK`](./ops/RESPONSEOS_RUNBOOK.md) · [`QA_VALIDATION_PLAN`](./ops/RESPONSEOS_QA_VALIDATION_PLAN.md) · [`DEPLOYMENT_PLAN`](./ops/RESPONSEOS_DEPLOYMENT_PLAN.md) |
+| Ops | [`CLIENT_DELIVERY`](./ops/client-delivery/README.md) (future-client qualification, discovery, costing, gates, launch, measurement, and templates) · [`OBSERVABILITY_AND_GOVERNANCE`](./ops/RESPONSEOS_OBSERVABILITY_AND_GOVERNANCE.md) · [`SECURITY_AND_COMPLIANCE`](./ops/RESPONSEOS_SECURITY_AND_COMPLIANCE.md) · [`RUNBOOK`](./ops/RESPONSEOS_RUNBOOK.md) · [`QA_VALIDATION_PLAN`](./ops/RESPONSEOS_QA_VALIDATION_PLAN.md) · [`DEPLOYMENT_PLAN`](./ops/RESPONSEOS_DEPLOYMENT_PLAN.md) |
 | Brand | [`POSITIONING`](./brand/RESPONSEOS_POSITIONING.md) · [`BRAND_VOICE`](./brand/RESPONSEOS_BRAND_VOICE.md) · [`SALES_NARRATIVE`](./brand/RESPONSEOS_SALES_NARRATIVE.md) · [`WEBSITE_COPY_SPEC`](./brand/RESPONSEOS_WEBSITE_COPY_SPEC.md) |
 | Research | [`MARKET_RESEARCH`](./research/RESPONSEOS_MARKET_RESEARCH.md) · [`NAMING_RISK_RESEARCH`](./research/RESPONSEOS_NAMING_RISK_RESEARCH.md) · [`COMPETITOR_RESEARCH`](./research/RESPONSEOS_COMPETITOR_RESEARCH.md) |
 
@@ -33,17 +33,18 @@ A complete canonical documentation set lives under `product/`, `architecture/`, 
 
 10. [`DESIGN.md`](./DESIGN.md) — visual system, UX spine, design maturity ladder.
 11. [`client-facing-offer.md`](./client-facing-offer.md) — buyer-facing summary.
-12. [`pricing-and-onboarding.md`](./pricing-and-onboarding.md) — commercial strategy and qualification gates.
+12. [`pricing-and-onboarding.md`](./pricing-and-onboarding.md) — provisional commercial strategy and qualification gates; numeric terms remain unvalidated for publication.
+13. [`ops/client-delivery/README.md`](./ops/client-delivery/README.md) — canonical future-client delivery standards, reconciliation, and reusable templates.
 
 ## Environment, deployment, security
 
-13. [`env-spec.md`](./env-spec.md) — environment variables.
-14. [`DEPLOYMENT.md`](./DEPLOYMENT.md) — three deployment lanes, CI/CD, SLOs, rollback plan.
-15. [`SECURITY.md`](./SECURITY.md) — secrets, webhook signatures, tenant isolation, BAA matrix, incident response.
+14. [`env-spec.md`](./env-spec.md) — environment variables.
+15. [`DEPLOYMENT.md`](./DEPLOYMENT.md) — three deployment lanes, CI/CD, SLOs, rollback plan.
+16. [`SECURITY.md`](./SECURITY.md) — secrets, webhook signatures, tenant isolation, BAA matrix, incident response.
 
 ## Reference
 
-16. [`research-report.md`](./research-report.md) — curated summary of the canonical product + architecture research.
+17. [`research-report.md`](./research-report.md) — curated summary of the canonical product + architecture research.
 
 ## Archive
 

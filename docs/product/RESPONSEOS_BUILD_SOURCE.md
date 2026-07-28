@@ -175,6 +175,7 @@ The canonical `RESPONSEOS_*` set, by directory:
 ### `docs/ops/`
 | Doc | Purpose |
 |---|---|
+| [`client-delivery/README.md`](../ops/client-delivery/README.md) | Future-client qualification, discovery, delivery, cost-model, launch, measurement standards, reconciliation, and reusable templates. |
 | [`RESPONSEOS_OBSERVABILITY_AND_GOVERNANCE.md`](../ops/RESPONSEOS_OBSERVABILITY_AND_GOVERNANCE.md) | Telemetry standards, tenant-scoped analytics/observability, Git workflow, PR gates, doc + architecture governance. |
 | [`RESPONSEOS_SECURITY_AND_COMPLIANCE.md`](../ops/RESPONSEOS_SECURITY_AND_COMPLIANCE.md) | PII, retention, recordings, OAuth, secrets, RBAC, audit, compliance, rollback, DR. |
 | [`RESPONSEOS_RUNBOOK.md`](../ops/RESPONSEOS_RUNBOOK.md) | Incident response, on-call, common failures, provider failover procedures. |
