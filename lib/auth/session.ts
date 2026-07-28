@@ -1,6 +1,7 @@
 import "@/lib/serverOnlyGuard";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db/client";
+import { isAuthRequired } from "@/lib/auth/auth-required";
 import type { UserRole } from "@/types/user";
 
 /**
@@ -176,20 +177,6 @@ function clerkEnabled(): boolean {
 }
 
 /**
- * Auth-required signal for hosted/production deploys (e.g. the v0.3 demo
- * deploy, which sets `RESPONSEOS_REQUIRE_AUTH=1`). When set, the placeholder
- * fallback in `getCurrentSession` step 4 must NOT grant the privileged
- * `aj_admin` dev session if Clerk is unconfigured — a missing Clerk config in
- * an auth-required deploy fails closed rather than silently exposing the
- * operator console cross-tenant. When unset (local dev, CI, `next build`) the
- * mock-first boot fallback is preserved unchanged (ADR-0001).
- */
-function authRequired(): boolean {
-  const v = process.env.RESPONSEOS_REQUIRE_AUTH;
-  return Boolean(v && v !== "0" && v.toLowerCase() !== "false");
-}
-
-/**
  * Conservative role mapping (operator decision Q4).
  *
  * - Control context (active org is the AJ Digital control org): the DB role is
@@ -301,7 +288,7 @@ export async function getCurrentSession(): Promise<Session | null> {
   // (RESPONSEOS_REQUIRE_AUTH set), fail closed rather than granting the
   // privileged aj_admin dev session cross-tenant (D2). Default (unset)
   // preserves the pre-Clerk mock-first boot behavior for dev / CI / build.
-  if (authRequired()) {
+  if (isAuthRequired()) {
     return null;
   }
   const fallback = resolveDevSession();
