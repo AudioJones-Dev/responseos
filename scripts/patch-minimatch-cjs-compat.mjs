@@ -2,9 +2,19 @@ import fs from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 
-const packagePath = createRequire(import.meta.url).resolve(
-  "minimatch/package.json",
-);
+const packageRequire = createRequire(import.meta.url);
+let packagePath;
+
+try {
+  packagePath = packageRequire.resolve("minimatch/package.json");
+} catch (error) {
+  if (error?.code === "MODULE_NOT_FOUND") {
+    process.exit(0);
+  }
+
+  throw error;
+}
+
 const packageJson = JSON.parse(fs.readFileSync(packagePath, "utf8"));
 
 if (packageJson.version !== "10.2.5") {
