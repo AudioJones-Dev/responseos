@@ -103,7 +103,7 @@ jobs:
 
   deploy:
     needs: sync
-    if: ${{ vars.ENABLE_PAGES == 'true' }}
+    if: ${{ vars.ENABLE_PAGES == 'true' && github.event_name != 'pull_request' }}
     permissions:
       pages: write
       id-token: write
