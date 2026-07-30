@@ -4,6 +4,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — chore: remediate dependencies and pin the Node/npm runtime
+
+- Upgraded Next and `eslint-config-next` to `16.2.12`, Sharp to `0.35.3`, PostCSS to `8.5.23`, and the Node type definitions to the Node 24 line; constrained the ESLint transitive glob stack to patched `minimatch` `10.2.5` / `brace-expansion` `5.0.9` and added a version-checked CommonJS compatibility patch for legacy ESLint consumers. The current clean-install audit reports zero vulnerabilities, and CI enforces `npm audit --audit-level=high` in both validation jobs.
+- Pinned the repository and CI runtime to Node `24.18.0` with npm `11.16.0`; CI now runs explicit dependency-audit and Prisma-generation gates after clean install. No application runtime behavior, schema, migration, provider integration, secret, environment, domain, or deployment setting changed.
+- Excluded Git-ignored Claude worktree build artifacts from the root lint traversal so the documented local lint gate evaluates this worktree's source rather than generated output from nested worktrees.
+
 ## Unreleased — ci: contain automatic production deployments and dashboard writes
 
 - **Disabled automatic Vercel deployments from `master`** in `vercel.json` while leaving connected-branch preview behavior available; this change does not deploy, promote, or alter domains, environment variables, or provider settings.
