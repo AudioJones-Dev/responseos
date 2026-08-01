@@ -1,5 +1,16 @@
 # Architecture
 
+> **⚠ Partially superseded — read the ADRs first.** This document predates the current stack decisions and is retained for provenance. Its **event-ledger-first principle, multi-tenancy model, provider-adapter pattern, QuoteIQ posture, and Future Knowledge Layer gates remain in force.** The following passages are stale and the ADRs win:
+>
+> - **Hosting** — Supabase is out; **Neon Postgres** is the default structured-memory host (ADR-0026). The code is host-agnostic Postgres; this is a connection-string decision.
+> - **Voice / telephony lanes** — the "Twilio + Retell + Vapi + Bland primary, Grok experimental" framing is superseded by **Telnyx primary / Twilio failover** (ADR-0031) and **Vapi primary / Retell secondary**, with OpenAI as the preferred in-Vapi brain (ADR-0032, ADR-0036).
+> - **Deployment-lane provider names** — the Standard/Privacy-hardened/HIPAA lane *structure* stands (ADR-0004); the provider names inside each lane are superseded by the above.
+> - **"Auth via Clerk (planned)"** — Clerk auth **shipped** in v0.2 closeout (ADR-0005).
+> - **"no migrations yet"** — eight migrations (`0001`–`0008`) exist.
+> - **`lib/automations/`, `lib/config/`, `lib/notifications/`** — currently empty directories, not populated modules.
+>
+> For the go-forward architecture see the `RESPONSEOS_*` set indexed by [`product/RESPONSEOS_BUILD_SOURCE.md`](./product/RESPONSEOS_BUILD_SOURCE.md); for the layered platform model (Communications → Business Memory → … → Trust Infrastructure) and per-layer implementation status see [`strategy/responseos-platform-doctrine-v1.md`](./strategy/responseos-platform-doctrine-v1.md) §8.
+
 ## Stack
 
 - Next.js (App Router, route groups for marketing / admin / client).

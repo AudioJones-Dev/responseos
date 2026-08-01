@@ -10,11 +10,12 @@ This file is the contract for any AI agent (Claude Code, Codex, etc.) working in
 
 ## Before you touch code
 
-1. Read [`docs/PRD.md`](./docs/PRD.md) — what the product is and isn't.
-2. Read [`docs/ROADMAP.md`](./docs/ROADMAP.md) — what milestone is in flight and what's explicitly out of scope.
-3. Read [`docs/DECISIONS.md`](./docs/DECISIONS.md) — the load-bearing decisions. Don't relitigate them without an ADR update.
-4. Skim [`docs/architecture.md`](./docs/architecture.md) — event-ledger-first, multi-tenant, provider-adapter pattern.
-5. If you're touching the schema, data layer, or API contracts, read the relevant docs first (`data-schema.md`, `api-spec.md`, `SECURITY.md`).
+1. Read [`docs/strategy/responseos-platform-doctrine-v1.md`](./docs/strategy/responseos-platform-doctrine-v1.md) — the platform doctrine. Product boundary, verified current-state truth, layered architecture, build-vs-buy, provider strategy, claims policy.
+2. Read [`docs/PRD.md`](./docs/PRD.md) — what the product is and isn't.
+3. Read [`docs/ROADMAP.md`](./docs/ROADMAP.md) — what milestone is in flight and what's explicitly out of scope.
+4. Read [`docs/DECISIONS.md`](./docs/DECISIONS.md) — the load-bearing decisions. Don't relitigate them without an ADR update.
+5. Skim [`docs/architecture.md`](./docs/architecture.md) — event-ledger-first, multi-tenant, provider-adapter pattern. **Partially superseded** — read its banner.
+6. If you're touching the schema, data layer, or API contracts, read the relevant docs first (`data-schema.md`, `api-spec.md`, `SECURITY.md`).
 
 ## Hard rules
 
@@ -26,6 +27,12 @@ This file is the contract for any AI agent (Claude Code, Codex, etc.) working in
 - **Webhook signature validation is mandatory** before any business mutation. See ADR-0009 in [`docs/DECISIONS.md`](./docs/DECISIONS.md).
 - **Provider adapters must fall back to mock** when env vars are missing. The app boots and runs without secrets at every version.
 - **ResponseOS is not HIPAA-certified.** Don't represent it as compliant in copy, comments, or commits.
+- **Status language is load-bearing.** Never write a planned feature in the present tense, never describe a mock adapter as an integration, never present estimated revenue as recovered revenue, and never call a ratified decision a shipped capability. The prohibited-claims list and the allowed phrasing are in doctrine §20; the status vocabulary (`SHIPPED` / `PARTIALLY_SHIPPED` / `DOCUMENTED_ONLY` / `ROADMAP` / `EXPERIMENTAL` / `NOT_PLANNED` / `PROHIBITED_CLAIM`) is in §2.
+- **Verify current state against the repository**, not against strategy documents. Several prose docs in `docs/` have outlived the code they describe.
+
+## Architecture review
+
+Before proposing a feature, refactor, or architectural change, answer the fifteen questions in doctrine §21 — which layer it belongs to, whether it should be built or bought, whether it preserves evidence and tenant isolation, whether it creates a claim we can't support, and whether it's required now or merely interesting. A proposal that can't answer them doesn't advance.
 
 ## Branch + PR policy
 

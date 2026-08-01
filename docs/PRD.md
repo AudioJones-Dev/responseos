@@ -2,7 +2,9 @@
 
 **Owner:** AJ Digital LLC / Audio Jones
 **Status:** Living document. Updated each minor version.
-**Companion docs:** [`product-spec.md`](./product-spec.md) (full positioning + framework detail), [`client-facing-offer.md`](./client-facing-offer.md) (buyer-facing summary), [`ROADMAP.md`](./ROADMAP.md) (what ships when).
+**Companion docs:** [`strategy/responseos-platform-doctrine-v1.md`](./strategy/responseos-platform-doctrine-v1.md) (**platform doctrine** — product boundary, layered architecture, build-vs-buy, claims policy), [`product-spec.md`](./product-spec.md) (full positioning + framework detail), [`client-facing-offer.md`](./client-facing-offer.md) (buyer-facing summary), [`ROADMAP.md`](./ROADMAP.md) (what ships when).
+
+> **Positioning note.** "AI Revenue Recovery Platform" and "Managed Business Memory System" are adjacent stages of one progression, not competing brands: *business memory is the mechanism; recovered revenue is the proof; founder intelligence is the destination.* The buyer enters through revenue recovery (primary CTA "Revenue Recovery Demo", ADR-0035); the public pricing model is capacity-based memory tiers (ADR-0028). See ADR-0022 and the doctrine §4.1. What ResponseOS is **not** — CRM, FSM, carrier, voice-model provider, generic automation builder — is enumerated in the doctrine §5.2 and ADR-0039.
 
 > This PRD is the short, opinionated source of truth for what ResponseOS is, who it's for, and what the current scope is. For deep product context (RECOVER mapping, buy-vs-build, success metrics), read `product-spec.md`. For commercial detail, read `pricing-and-onboarding.md`.
 

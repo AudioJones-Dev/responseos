@@ -2,6 +2,8 @@
 
 Commercial strategy and onboarding workflow for ResponseOS. This is documentation only. None of the pricing, outcome-fee, billing, or invoicing logic described here ships as code in v0.2; that work is roadmapped for v0.5 (see "Roadmap and what is intentionally not built yet" at the end).
 
+> **Two doctrine constraints govern this document.** (1) **Diagnostic-first is immutable** — the assessment must be permitted to conclude *no fit*, *not ready*, *use something simpler*, or *use another vendor*; it is a product-quality and trust mechanism, not a lead-generation tactic ([doctrine §7](./strategy/responseos-platform-doctrine-v1.md)). (2) **Outcome fees are not billable until the attribution and dispute process is operationally validated** — the Revenue Gate in doctrine §18, ratified by ADR-0041. Estimated revenue is not recovered revenue; booked revenue is not collected revenue; influence is not causation. The **public pricing model** is capacity-based Business-Memory tiers per ADR-0028, with the Recovery-tier naming below retained as the engagement/outcome-fee structure; **price points remain open** pending the Phase 3 cost model.
+
 ## Why this exists
 
 ResponseOS is sold as a **revenue recovery system**, not as a generic "AI receptionist install." That positioning only holds if every engagement starts with proof that revenue is leaking and that the client is operationally ready to plug it. So the commercial motion is two phases, in order:
