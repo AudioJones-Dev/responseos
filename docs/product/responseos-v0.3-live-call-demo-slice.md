@@ -273,4 +273,4 @@ Before live-call preview:
 
 The recommended next step is [`responseos-v0.3-live-call-demo-implementation-brief.md`](./responseos-v0.3-live-call-demo-implementation-brief.md).
 
-That brief breaks ADR-0039 into implementation PRs, starting with **contracts and mocks only** before any live Telnyx/Sent.dm wiring, schema migration, env var, or outbound call behavior is introduced.
+That brief breaks ADR-0045 into implementation PRs, starting with **contracts and mocks only** before any live Telnyx/Sent.dm wiring, schema migration, env var, or outbound call behavior is introduced.

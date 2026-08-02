@@ -2,7 +2,7 @@
 
 **Status:** Git Spec-ready task brief. Planning only until an implementation PR is explicitly approved.
 **Date:** 2026-07-05
-**Related:** [`responseos-v0.3-live-call-demo-slice.md`](./responseos-v0.3-live-call-demo-slice.md), [`../DECISIONS.md#adr-0039--v03-live-call-demo-slice-telnyx-first-sentdm-assisted-inbound-first`](../DECISIONS.md#adr-0039--v03-live-call-demo-slice-telnyx-first-sentdm-assisted-inbound-first), [`../SECURITY.md`](../SECURITY.md), [`../ROADMAP.md`](../ROADMAP.md).
+**Related:** [`responseos-v0.3-live-call-demo-slice.md`](./responseos-v0.3-live-call-demo-slice.md), [`../DECISIONS.md#adr-0045--v03-live-call-demo-slice-telnyx-first-sentdm-assisted-inbound-first`](../DECISIONS.md#adr-0045--v03-live-call-demo-slice-telnyx-first-sentdm-assisted-inbound-first), [`../SECURITY.md`](../SECURITY.md), [`../ROADMAP.md`](../ROADMAP.md).
 
 ## 1. Problem
 

@@ -659,7 +659,7 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 
 ---
 
-## ADR-0039 — v0.3 live-call demo slice: Telnyx-first, Sent.dm-assisted, inbound first
+## ADR-0045 — v0.3 live-call demo slice: Telnyx-first, Sent.dm-assisted, inbound first
 
 **Status:** Accepted (2026-07-05) as a scoped v0.3 planning decision. **No provider adapter, schema migration, env var, secret, account configuration, webhook mutation, or live call cutover is implemented by this ADR.**
 

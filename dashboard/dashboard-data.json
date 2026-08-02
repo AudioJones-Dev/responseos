@@ -242,7 +242,7 @@
       "start": "2026-07-06",
       "due": "2026-07-24",
       "blocked": true,
-      "blockedReason": "ADR-0039 selects Telnyx-first and Sent.dm-assisted; implementation still requires dedicated number, Telnyx AI/Vapi validation, signature validation, Sent.dm consent messaging, rate limits, and kill switch PRs"
+      "blockedReason": "ADR-0045 selects Telnyx-first and Sent.dm-assisted; implementation still requires dedicated number, Telnyx AI/Vapi validation, signature validation, Sent.dm consent messaging, rate limits, and kill switch PRs"
     },
     {
       "id": "I-04",
