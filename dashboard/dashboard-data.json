@@ -191,6 +191,30 @@
       "due": "2026-07-08"
     },
     {
+      "id": "P0-01",
+      "phase": "Tech Debt & Hardening",
+      "title": "Contain automatic production deployments",
+      "owner": "Codex",
+      "status": "Done",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-07-26",
+      "due": "2026-07-26",
+      "blocked": false
+    },
+    {
+      "id": "P0-02",
+      "phase": "Tech Debt & Hardening",
+      "title": "Remediate dependencies and pin Node/npm",
+      "owner": "Codex",
+      "status": "In Progress",
+      "progress": 85,
+      "priority": "High",
+      "start": "2026-07-27",
+      "due": "2026-07-28",
+      "blocked": false
+    },
+    {
       "id": "14",
       "phase": "Launch / Demo Deploy",
       "title": "v0.3 demo deploy",
@@ -330,6 +354,17 @@
   ],
   "liveIssues": [
     {
+      "number": 97,
+      "title": "xAI Voice Agent readiness spike",
+      "url": "https://github.com/AudioJones-Dev/responseos/issues/97",
+      "state": "open",
+      "labels": [
+        "documentation",
+        "codex",
+        "roadmap"
+      ]
+    },
+    {
       "number": 27,
       "title": "Roadmap checkpoint: v0.2 stabilization complete, prepare v0.3 demo scope",
       "url": "https://github.com/AudioJones-Dev/responseos/issues/27",
@@ -349,5 +384,5 @@
       ]
     }
   ],
-  "generatedAt": "2026-07-04T13:30:53.535Z"
+  "generatedAt": "2026-07-27T13:48:41.322Z"
 }
