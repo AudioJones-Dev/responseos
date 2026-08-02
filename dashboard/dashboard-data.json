@@ -208,13 +208,24 @@
       "phase": "Tech Debt & Hardening",
       "title": "Contain automatic production deployments",
       "owner": "Codex",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "High",
       "start": "2026-07-26",
       "due": "2026-07-26",
-      "blocked": true,
-      "blockedReason": "Local implementation is validated and committed but unmerged; GitHub Actions PR creation permission requires separate approval"
+      "blocked": false
+    },
+    {
+      "id": "P0-02",
+      "phase": "Tech Debt & Hardening",
+      "title": "Remediate dependencies and pin Node/npm",
+      "owner": "Codex",
+      "status": "In Progress",
+      "progress": 85,
+      "priority": "High",
+      "start": "2026-07-27",
+      "due": "2026-07-28",
+      "blocked": false
     },
     {
       "id": "14",
