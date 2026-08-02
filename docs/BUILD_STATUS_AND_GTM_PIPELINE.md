@@ -12,11 +12,11 @@ This document answers one question: **what is actually built, what do the docs c
 
 **ResponseOS is not behind on code. It is behind on landing.**
 
-`master` is healthy: CI green, 22 Prisma models with consistent tenant scoping, 8 migrations, ~176 tests passing, a working mock-safe demo walkthrough, and deployment correctly contained. The v0.2 substrate is genuinely complete.
+`master` is healthy: CI green, 22 Prisma models with consistent tenant scoping, 8 migrations, 146 unit tests passing (plus ~60 integration tests in CI), a working mock-safe demo walkthrough, and deployment correctly contained. The v0.2 substrate is genuinely complete.
 
 What is broken is **flow**. At the time of this sweep:
 
-- **10 pull requests were open**, totalling roughly **7,400 added lines** of finished, CI-green work.
+- **10 pull requests were open**, totalling **6,444 added lines** of finished, CI-green work.
 - **5 of them formed a chain stranded since 2026-07-01** — a month of governance, quality, and reference documentation nobody popped off the stack.
 - **Four separate branches each claimed `ADR-0039`.** Whichever merged first would have silently won the number and pushed duplicate identifiers into the decision log.
 - Two PRs showed as CONFLICTING. Both conflicted in **exactly one file** — `docs/CHANGELOG.md` — from concurrent appends. Neither was substantively blocked.
