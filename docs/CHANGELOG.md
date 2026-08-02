@@ -4,6 +4,13 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: record build status vs docs and the GTM pipeline
+
+- Added [`BUILD_STATUS_AND_GTM_PIPELINE.md`](./BUILD_STATUS_AND_GTM_PIPELINE.md) — a build-vs-docs reconciliation covering git topology, the docs-behind/docs-ahead split with `file:line` evidence, a SHA-pinned merge sheet for the open pull-request backlog, the four GTM lanes and their real gates, and a founder decision register. Documentation only; no app code, schema, auth, provider, dependency, secret, or deploy changes, and no merges to `master`.
+- **Recorded a quadruple `ADR-0039` collision.** Master's highest ADR is `0038`, but four branches each introduced a different `ADR-0039`. Allocated: #96 keeps `0039`, #105 moves to `0040`–`0044`, #94 moves to `0045`, and the unlanded editorial-design-doctrine branch needs `0046` if it is ever promoted.
+- **Reconciled the progress board with merged reality** — `P0-02` closed out against #102, `P0-01` linked to #100, and `Q-02` linked to the contract-level demo smoke test in #96 (browser-level e2e remains unwritten; `tests/e2e/` is still empty).
+- **Reconciled local git with `origin`.** Removed six branches after verifying each was already landed in `master` or preserved on `origin`, deregistered six orphan worktrees, and dropped two disposable stashes. Rescued `codex/preserve-primary-dirty-2026-07-01` from deletion — it held a 188-line design doctrine document, 192 lines of `globals.css`, and an ADR that existed nowhere else — and pushed it to `origin` so it is mirrored rather than lost.
+
 ## Unreleased — chore: remediate dependencies and pin the Node/npm runtime
 
 - Upgraded Next and `eslint-config-next` to `16.2.12`, Sharp to `0.35.3`, PostCSS to `8.5.23`, and the Node type definitions to the Node 24 line; constrained the ESLint transitive glob stack to patched `minimatch` `10.2.5` / `brace-expansion` `5.0.9` and added a version-checked CommonJS compatibility patch for legacy ESLint consumers. The current clean-install audit reports zero vulnerabilities, and CI enforces `npm audit --audit-level=high` in both validation jobs.

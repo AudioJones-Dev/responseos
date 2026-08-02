@@ -200,6 +200,8 @@
       "priority": "High",
       "start": "2026-07-26",
       "due": "2026-07-26",
+      "ref": 100,
+      "refType": "pull",
       "blocked": false
     },
     {
@@ -207,11 +209,25 @@
       "phase": "Tech Debt & Hardening",
       "title": "Remediate dependencies and pin Node/npm",
       "owner": "Codex",
-      "status": "In Progress",
-      "progress": 85,
+      "status": "Done",
+      "progress": 100,
       "priority": "High",
       "start": "2026-07-27",
       "due": "2026-07-28",
+      "ref": 102,
+      "refType": "pull",
+      "blocked": false
+    },
+    {
+      "id": "P0-03",
+      "phase": "Tech Debt & Hardening",
+      "title": "Build consistency sweep + GTM pipeline status",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-08-02",
+      "due": "2026-08-02",
       "blocked": false
     },
     {
@@ -282,11 +298,13 @@
       "phase": "Testing & QA",
       "title": "End-to-end demo smoke test",
       "owner": "Codex",
-      "status": "Backlog",
-      "progress": 0,
+      "status": "In Progress",
+      "progress": 50,
       "priority": "High",
       "start": "2026-07-27",
-      "due": "2026-08-10"
+      "due": "2026-08-10",
+      "ref": 96,
+      "refType": "pull"
     },
     {
       "id": "L-02",
