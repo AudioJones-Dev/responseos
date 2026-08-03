@@ -198,6 +198,9 @@ Every resolution is mechanical — take the union of task objects in the JSON, t
 - **PR #96 updates neither `docs/CHANGELOG.md` nor `dashboard/dashboard-data.json`**, both required by the same rule.
 - **PR #90 adds a line to `docs/DEPLOYMENT.md` that is already stale**: *"Current GitHub Actions run validation only; there are no deploy jobs yet."* Master now has a `deploy` job (`actions/deploy-pages@v5`) and a `vercel.json` master-deploy gate, landed via #100/#104 after that branch forked. The pre-existing "No deploy jobs yet." sentence is stale on `master` too.
 - **PR #98's cross-references dangle.** Its provider positioning is *correct* (Telnyx/Vapi, matching ADR-0031/0032), but it links to an `ADR-0039` anchor and to `responseos-v0.3-live-call-demo-implementation-brief.md` — both of which exist only on PR #94's branch, where the ADR is now **0045**. Fix the anchor when #94 lands.
+- **Three pre-existing off-by-one ADR citations on PR #105**, carried forward deliberately by the renumber rather than silently corrected — fixing them would change what the docs *assert*, which is out of scope for a mechanical renumber. Each still resolves to the same target it always did. Worth a separate one-line fix:
+  - `docs/DECISIONS.md:690` cites "ADR-0043 §governance", but 0043 is *Provider portability* and has no §governance section; the governance/approval-state material is in ADR-0044 §7.
+  - `docs/strategy/responseos-platform-doctrine-v1.md:481` and `:553` cite ADR-0044 (*Trust Infrastructure*) for provider-portability claims; line 553 verbatim restates **ADR-0043**'s decision 2.
 
 ---
 
