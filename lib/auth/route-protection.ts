@@ -9,10 +9,15 @@
  * `NextRequest` objects, and reused verbatim by the proxy.
  */
 
-// Exact public paths.
+// Exact public paths. `/audit` and `/trust` are prospect-facing marketing
+// pages linked from the marketing nav alongside `/`, `/demo`, and `/pricing`;
+// `/audit` is the lead-capture form, so gating it behind sign-in would break
+// the top of the funnel.
 const PUBLIC_EXACT = new Set<string>([
   "/",
   "/pricing",
+  "/audit",
+  "/trust",
   "/api/health",
 ]);
 
