@@ -197,8 +197,10 @@ Scope:
 
 Scope:
 
-- Update documentation indexes after Audio approves canonicalization decisions.
-- Mark duplicate or superseded docs as reference-only where justified.
+- Create a governance-stack documentation index without renaming files or promoting a final canonicalization model.
+- Update documentation navigation to point to the new governance, quality, and reference baselines.
+- Keep canonicalization decisions open until Audio approves them.
+- Mark duplicate or superseded docs as reference-only only where already justified by earlier reconciliation.
 - Do not delete existing docs unless a separate explicit deletion approval is granted.
 
 ## Non-Goals
@@ -211,4 +213,3 @@ Scope:
 - No broad rewrite of the existing documentation set.
 - No deletion of existing docs.
 - No promotion of a new canonical documentation system before Audio approval.
-

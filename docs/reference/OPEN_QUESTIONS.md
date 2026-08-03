@@ -7,7 +7,7 @@
 
 | ID | Question | Owner | Needed before | Status / notes |
 |---|---|---|---|---|
-| OQ-001 | Should ResponseOS adopt numbered AJ Digital OS file names or keep current names with a governance index? | Audio | PR 5 docs index/canonicalization cleanup | Open |
+| OQ-001 | Should ResponseOS adopt numbered AJ Digital OS file names or keep current names with a governance index? | Audio | Final canonicalization approval | Open; `DOCUMENTATION_INDEX.md` maps the stack without deciding the naming model |
 | OQ-002 | Should future ADRs stay in `docs/DECISIONS.md` or move to `docs/adr/`? | Audio | New ADR structure | Open |
 | OQ-003 | Who approves DoR, DoD, and DoS: Audio only, Codex draft plus Audio approval, or CODEOWNERS-backed review? | Audio | Governance docs marked accepted/stable | Open |
 | OQ-004 | Is Claude an active build lane or a review/planning-only lane? | Audio | `CLAUDE.md` build-plan remediation | Open |
@@ -21,4 +21,3 @@
 ## Maintenance Rule
 
 Add a row when a decision blocks implementation, merge readiness, stability, production readiness, or provider authorization. Close a row only by referencing the accepted decision, PR, ADR, or governance doc that resolved it.
-
