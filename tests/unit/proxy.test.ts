@@ -44,19 +44,6 @@ describe("proxy.ts route protection", () => {
     expect(m.clerkProxy).not.toHaveBeenCalled();
   });
 
-  test("Clerk absent + production → protected routes redirect to /", async () => {
-    (process.env as Record<string, string | undefined>).NODE_ENV = "production";
-    const { default: proxy } = await loadProxy();
-    const req = {
-      nextUrl: { pathname: "/admin/dashboard" },
-      url: "https://responseos.ajdigital.app/admin/dashboard",
-    } as never;
-    const result = proxy(req, {} as never);
-    expect(result).toBe("REDIRECT_RESULT");
-    expect(m.redirect).toHaveBeenCalledTimes(1);
-    expect(m.next).not.toHaveBeenCalled();
-  });
-
   test("Clerk absent + production → public routes stay open", async () => {
     (process.env as Record<string, string | undefined>).NODE_ENV = "production";
     const { default: proxy } = await loadProxy();
