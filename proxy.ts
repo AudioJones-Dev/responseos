@@ -1,6 +1,7 @@
 import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
 import { clerkMiddleware } from "@clerk/nextjs/server";
 import { isPublicPath } from "@/lib/auth/route-protection";
+import { isAuthRequired } from "@/lib/auth/auth-required";
 
 /**
  * Clerk route-protection seam (32C). When Clerk is configured
@@ -21,6 +22,14 @@ const clerkProxy = clerkMiddleware(async (auth, req) => {
 
 export default function proxy(req: NextRequest, event: NextFetchEvent) {
   if (!process.env.CLERK_SECRET_KEY) {
+    // Auth-required deploy with no Clerk configuration: nothing can
+    // authenticate, so protected surfaces must not be reachable at all.
+    // `getCurrentSession` already fails closed here, which renders empty
+    // shells; stopping the request at the edge is the layer that actually
+    // keeps anonymous visitors off the operator and tenant consoles.
+    if (isAuthRequired() && !isPublicPath(req.nextUrl.pathname)) {
+      return NextResponse.redirect(new URL("/", req.url));
+    }
     return NextResponse.next();
   }
   return clerkProxy(req, event);
