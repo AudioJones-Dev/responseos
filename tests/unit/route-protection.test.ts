@@ -5,6 +5,8 @@ describe("isPublicPath", () => {
   test.each([
     "/",
     "/pricing",
+    "/audit",
+    "/trust",
     "/demo",
     "/demo/walkthrough",
     "/demo/walkthrough/call",
@@ -37,6 +39,11 @@ describe("isPublicPath", () => {
     "/api/webhooks-secret",
     "/pricing/internal",
     "/demo-evil",
+    // `/audit` and `/trust` are exact-match public, not prefixes
+    "/audit/internal",
+    "/trust/internal",
+    "/audit-evil",
+    "/trust-evil",
   ])("treats %s as protected", (path) => {
     expect(isPublicPath(path)).toBe(false);
   });

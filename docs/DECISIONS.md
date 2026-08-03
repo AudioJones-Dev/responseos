@@ -659,6 +659,21 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 
 ---
 
+## ADR-0039 — `RESPONSEOS_REQUIRE_AUTH` is the fail-closed auth gate, at both the edge and the session
+
+**Status:** Accepted (2026-07-28). Security posture decision. **Does not change ADR-0001 (mock-first) or ADR-0019 (v0.3 live-wiring gate)** — it adds an opt-in way to *harden* a deploy, and authorizes no deploy.
+
+**Context.** With no `CLERK_SECRET_KEY`, `getCurrentSession()` fell back to the placeholder `aj_admin` dev session — a privileged, cross-tenant identity — and `proxy.ts` passed every request straight through. On a hosted surface that is a fail-open hole (gap **D2** in `GTM_GAP_AND_DEPLOYMENT_PLAN.md`): an anonymous visitor reaches the operator console and tenant consoles. Two open PRs fixed it independently and incompatibly. PR #94 gated on `NODE_ENV === "production"` and fixed the edge (`proxy.ts` redirect) plus the session. PR #96 gated on an explicit `RESPONSEOS_REQUIRE_AUTH` env var and fixed only the session.
+
+**Decision.**
+
+1. **The trigger is the explicit `RESPONSEOS_REQUIRE_AUTH` env var, not `NODE_ENV`.** Set (any value other than `0`/`false`) means "this deploy must authenticate." `NODE_ENV === "production"` is the wrong signal here because the flagship near-term deliverable — the mock-safe hosted demo (ADR-0019) — *is* a production build whose entire purpose is rendering populated mock data. Verified: with the flag set, the prerendered `/client/*` pages render `EmptyState` instead of the mock tenant financials; gating on `NODE_ENV` would strip the demo of its content.
+2. **Both layers fail closed, on the same trigger.** `lib/auth/session.ts` returns no session; `proxy.ts` redirects non-public paths to `/`. The session layer alone only produces empty authenticated shells — the edge redirect is what actually keeps anonymous visitors off the consoles. Keeping both is deliberate defence in depth, not redundancy.
+3. **Unset is byte-identical to before.** Local dev, CI, `next build`, and the mock-safe demo keep the ADR-0001 mock-first fallback unchanged. Verified by comparing prerendered output before and after (`client/dashboard.html` 34,930 bytes both ways).
+4. **The predicate lives in `lib/auth/auth-required.ts`, dependency-free.** `proxy.ts` runs in the edge runtime and must not import `lib/auth/session.ts`, which pulls in the server-only guard, the Prisma client, and the Clerk server SDK.
+5. **`/audit` and `/trust` are public routes.** Both are prospect-facing marketing pages in the public nav, and `/audit` is the lead-capture form; neither was in the public set, so a Clerk-enabled deploy would have put the top of the funnel behind sign-in. Classified as `PUBLIC_EXACT` (like `/pricing`), not prefixes.
+
+**Consequences.** Supersedes the `NODE_ENV`-gated approach in PR #94; that PR's session and proxy changes should be dropped in favour of this gate when it is reconciled, and its `/audit` + `/trust` fix is carried here. A hosted deploy must now set `RESPONSEOS_REQUIRE_AUTH=1` explicitly — the cost of the opt-in trigger is that forgetting it leaves the deploy fail-open, so it belongs in the demo-deploy checklist alongside the Clerk keys. This ADR ships no deploy config, no secret, and no provider wiring.
 ## ADR-0045 — v0.3 live-call demo slice: Telnyx-first, Sent.dm-assisted, inbound first
 
 **Status:** Accepted (2026-07-05) as a scoped v0.3 planning decision. **No provider adapter, schema migration, env var, secret, account configuration, webhook mutation, or live call cutover is implemented by this ADR.**

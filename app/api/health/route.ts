@@ -4,6 +4,6 @@ export async function GET() {
   return NextResponse.json({
     status: "ok",
     service: "responseos",
-    version: "0.1.0",
+    version: "0.2.0",
   });
 }
