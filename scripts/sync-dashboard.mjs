@@ -8,7 +8,8 @@
 //                                            is demoted to "To Do"/0, other
 //                                            statuses are left as authored
 //   - ref open (or reopened) but "Done"   -> revert to "In Progress"
-// It also refreshes data.liveIssues (open issues only) and stamps generatedAt.
+// It also refreshes data.liveIssues (open issues only) and stamps generatedAt
+// when substantive dashboard data changes.
 
 import { readFileSync, writeFileSync } from "node:fs";
 
@@ -66,7 +67,8 @@ async function getOpenIssues() {
   return out;
 }
 
-const data = JSON.parse(readFileSync(DATA_PATH, "utf8"));
+const originalData = JSON.parse(readFileSync(DATA_PATH, "utf8"));
+const data = structuredClone(originalData);
 
 // 1) Sync tasks linked to an issue/PR.
 for (const t of data.tasks || []) {
@@ -111,10 +113,17 @@ try {
   console.warn("Could not fetch open issues:", e.message);
 }
 
-// 3) Stamp sync time.
-data.generatedAt = new Date().toISOString();
+const originalSubstantiveData = structuredClone(originalData);
+const currentSubstantiveData = structuredClone(data);
+delete originalSubstantiveData.generatedAt;
+delete currentSubstantiveData.generatedAt;
 
-writeFileSync(DATA_PATH, JSON.stringify(data, null, 2) + "\n");
-console.log(
-  `Synced: refs=${(data.tasks || []).filter((t) => t.ref).length} openIssues=${(data.liveIssues || []).length}`
-);
+if (JSON.stringify(originalSubstantiveData) === JSON.stringify(currentSubstantiveData)) {
+  console.log("No substantive dashboard changes.");
+} else {
+  data.generatedAt = new Date().toISOString();
+  writeFileSync(DATA_PATH, JSON.stringify(data, null, 2) + "\n");
+  console.log(
+    `Synced: refs=${(data.tasks || []).filter((t) => t.ref).length} openIssues=${(data.liveIssues || []).length}`
+  );
+}
