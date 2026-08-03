@@ -1,6 +1,7 @@
 import "@/lib/serverOnlyGuard";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db/client";
+import { isAuthRequired } from "@/lib/auth/auth-required";
 import type { UserRole } from "@/types/user";
 
 /**
@@ -17,7 +18,10 @@ import type { UserRole } from "@/types/user";
  *      (the test/CI bypass per plan §4.7).
  *   3. Clerk path — when CLERK_SECRET_KEY is set, derive from Clerk `auth()`.
  *   4. Placeholder fallback — no Clerk env: existing dev-session behavior
- *      (defaults to aj_admin), preserved unchanged.
+ *      (defaults to aj_admin), preserved unchanged — UNLESS
+ *      RESPONSEOS_REQUIRE_AUTH is set (auth-required hosted/production deploy),
+ *      in which case a missing Clerk config fails closed (no session) instead
+ *      of granting the privileged cross-tenant aj_admin session.
  *
  * The Clerk path resolves only existing `User`/`Account` rows. There is no
  * just-in-time provisioning in 32B — an unmapped Clerk identity or org resolves
@@ -280,7 +284,13 @@ export async function getCurrentSession(): Promise<Session | null> {
     return deriveClerkSession();
   }
 
-  // 4. Placeholder fallback — preserves pre-Clerk dev-session behavior.
+  // 4. No Clerk configured. In an auth-required deploy
+  // (RESPONSEOS_REQUIRE_AUTH set), fail closed rather than granting the
+  // privileged aj_admin dev session cross-tenant (D2). Default (unset)
+  // preserves the pre-Clerk mock-first boot behavior for dev / CI / build.
+  if (isAuthRequired()) {
+    return null;
+  }
   const fallback = resolveDevSession();
   return buildSession(fallback!.user, fallback!.account);
 }

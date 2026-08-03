@@ -30,6 +30,15 @@ development never requires a secret.**
 - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` — client-side.
 - `CLERK_WEBHOOK_SECRET` — Svix HMAC for `/api/webhooks/clerk` (ADR-0009). Absent → webhook fails closed (503), no mutation.
 - `AJ_DIGITAL_CLERK_ORG_ID` — the AJ Digital cross-tenant control org (members → `Session.account = null`).
+- `RESPONSEOS_REQUIRE_AUTH` — **optional**, read by `lib/auth/auth-required.ts` and consumed by both
+  `lib/auth/session.ts` and `proxy.ts` (ADR-0039). Set it (any value other than `0`/`false`) on any
+  hosted surface that must authenticate. With it set and `CLERK_SECRET_KEY` absent, the session
+  resolves to `null` and the proxy redirects non-public paths to `/`, instead of falling back to the
+  privileged cross-tenant `aj_admin` placeholder (gap D2).
+  - **Absent → unchanged mock-first behaviour** for local dev, CI, `next build`, and the mock-safe
+    hosted demo, whose prerendered pages must still render mock data (ADR-0001).
+  - **Deploy checklist item:** because the trigger is opt-in, forgetting it leaves a hosted deploy
+    fail-open. Set it alongside the Clerk keys, not after.
 
 ### Dev session override (local / test / dev only)
 - `RESPONSEOS_DEV_SESSION` — **optional**, read by `lib/auth/session.ts`. Forces a fixed placeholder
@@ -81,6 +90,7 @@ development never requires a secret.**
 | `CLERK_WEBHOOK_SECRET` | mock | — | opt | req (clerk webhook) | mock-first | absent → 503 fail-closed |
 | `AJ_DIGITAL_CLERK_ORG_ID` | opt | opt | opt | req (control org) | opt | cross-tenant control org |
 | **`RESPONSEOS_DEV_SESSION`** | opt | set by tests | opt (non-prod) | **never** | opt | dev/test override; hard-fails in production |
+| **`RESPONSEOS_REQUIRE_AUTH`** | — | — | req (any hosted surface) | req | opt | absent → mock-first fallback; set → session + proxy fail closed (ADR-0039) |
 | **`RESPONSEOS_PROVIDER_KEY`** | mock | mock | opt | req (live creds, v0.3+) | mock-first | base64 32-byte AES; absent → encryption mock mode |
 | R2 / Twilio / Retell / Vapi / Bland / Resend / Stripe / n8n / GHL / HubSpot | mock | mock | opt | req (when live) | mock-first | provider adapters mock until v0.3 |
 | `SENTRY_DSN` / `POSTHOG_KEY` / `NEXT_PUBLIC_POSTHOG_KEY` | opt | opt | opt | opt | opt | observability |
