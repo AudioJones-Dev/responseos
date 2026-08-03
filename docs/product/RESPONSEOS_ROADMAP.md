@@ -1,7 +1,7 @@
 # ResponseOS — Roadmap
 
 **Owner:** AJ Digital LLC / Audio Jones
-**Status:** Canonical (go-forward). Aligns with the existing [`../ROADMAP.md`](../ROADMAP.md) version table; this view restates sequencing for the go-forward stack and the MVP / Phase 2 / Future / Deferred classification.
+**Status:** Go-forward planning view. The operational roadmap entry point remains [`../ROADMAP.md`](../ROADMAP.md), and provider / infrastructure conflicts are resolved by [`../DECISIONS.md`](../DECISIONS.md) until the documentation governance canonicalization pass is approved.
 **Read first:** [`RESPONSEOS_BUILD_SOURCE.md`](./RESPONSEOS_BUILD_SOURCE.md) · [`RESPONSEOS_PHASE_PLAN.md`](./RESPONSEOS_PHASE_PLAN.md)
 
 > **Provider-stack note — supersedes inline framing below.** The v0.3 provider stack is now governed by ADR-0031 → ADR-0037 (authoritative in [`../DECISIONS.md`](../DECISIONS.md)): Telnyx primary carrier / Twilio failover; Vapi primary orchestration with **OpenAI as the preferred in-Vapi brain** / Retell secondary; HubSpot default CRM SoR; **Calendly** as the v0.3 MVP scheduling baseline (Cal.com deferred); Node voice gateway + Redis **deferred**. Any **Grok-Voice-primary / OpenAI-Realtime-fallback / Twilio-default / gateway / Redis** framing below is **superseded**.
@@ -14,7 +14,7 @@
 |---|---|---|---|
 | **v0.1** | Operator console scaffold; mock adapters; 11 typed models; webhook-ready stubs; canonical envelopes | MVP foundation | ✅ Shipped |
 | **v0.2 A–D** | Postgres schema + seed; auth + tenant-aware data layer; consumers routed through data layer; integration tests + CI | MVP foundation | ✅ Shipped |
-| **v0.2 closeout** | `Organization`→`Account` rename; real auth wiring; UI rebuild vs `../DESIGN.md`; remaining model expansion (provider_connections, conversations, call_segments/transcripts, workflow_runs, qa_logs, audit_logs) | MVP foundation | 🟡 In flight |
+| **v0.2 closeout** | `Organization`→`Account` rename; `Booking`→`Appointment` rename; Clerk auth wiring; UI rebuild vs `../DESIGN.md`; remaining model expansion (provider_connections, conversations/SMS, call_segments/transcripts, workflow_runs, qa_logs, expanded audit_logs) | MVP foundation | ✅ Shipped |
 | **v0.3** | **Go-forward live stack (per ADR-0031/0032/0033/0036/0037):** Telnyx carrier (Twilio failover); Vapi orchestration with OpenAI as the preferred in-Vapi brain (Retell secondary); live SMS; HubSpot CRM connector; **Calendly** scheduling (Google Calendar compatible; Cal.com deferred); signature validation + persistence; the 7 RECOVER playbooks live; tenant provisioning; monthly ROI report; outcome-fee invoicing **preview**; basic white-label. _Node voice gateway + Redis deferred (ADR-0036)._ | **MVP (live)** | ⏳ Planned |
 | **v0.4** | Per-tenant client knowledge + agent grounding layer (RAG), gated on isolation/audit/retention | **Phase 2** | ⏳ Planned |
 | **v0.5** | Billing/outcome-fee ledger production: pricing engine, Stripe billing, outcome-fee ledger, invoices, in-app tier selectors | **Phase 2** | ⏳ Planned |
@@ -100,7 +100,7 @@ flowchart LR
 
 | Milestone | Exit gate |
 |---|---|
-| v0.2 closeout | Model expansion complete; real auth wired; UI on `../DESIGN.md` tokens; CI green |
+| v0.2 closeout | ✅ Shipped: model expansion complete; Clerk auth wired; UI on `../DESIGN.md` tokens; CI green |
 | v0.3 | Provider-readiness gate passed; ≥1 pilot live on Standard lane; zero cross-tenant incidents; defensible monthly ROI report produced |
 | v0.4 | Knowledge gates in force for the ingesting tenant's lane; grounded answers auditable |
 | v0.5 | Outcome-fee invoices reconcile to ledger evidence; Stripe webhooks signature-validated |

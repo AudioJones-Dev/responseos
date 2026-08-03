@@ -16,16 +16,17 @@
 - Next.js (App Router, route groups for marketing / admin / client).
 - TypeScript, strict mode.
 - Tailwind CSS v4.
-- Postgres via Prisma (schema stub in `prisma/schema.prisma`, no migrations yet).
+- Postgres via Prisma (`prisma/schema.prisma` plus migrations under `prisma/migrations/`).
 - Mock provider adapters in `lib/providers/*` until real keys land.
-- Auth via Clerk (planned).
-- Object storage via Cloudflare R2 (planned, for call recordings + quote photos).
+- Auth via Clerk in the Standard lane (`lib/auth/*` session, webhook sync, and route-protection helpers).
+- Hosted Standard-lane database target: Neon Postgres per ADR-0026. Local dev and CI use plain Postgres 16.
+- Object storage target: Cloudflare R2 for call recordings, quote photos, and exports.
 
 ## Design principle: event-ledger-first
 
 ResponseOS is a **multi-tenant, event-led platform** with adapters at the edges and a normalized operational core in the middle. Every inbound call, outbound call, SMS, quote, schedule change, approval, payment event, and webhook lands first in a canonical event ledger. From there, the RECOVER orchestration runs, the tenant record model updates, downstream systems (QuoteIQ, GHL, HubSpot) receive normalized writes, and ROI facts are recomputed.
 
-Why: the canonical ledger means we can replay events, audit any outcome, and recompute ROI even if a client swaps CRMs. v0.1 ships the surface for this pattern; the formal `events` table arrives in v0.2 (see `data-schema.md`).
+Why: the canonical ledger means we can replay events, audit any outcome, and recompute ROI even if a client swaps CRMs. v0.2 ships the Postgres foundation, webhook-event persistence, audit-log expansion, and related call / conversation / workflow substrate. Any future ledger expansion must reconcile `data-schema.md`, `prisma/schema.prisma`, and accepted ADRs.
 
 ## Top-level layout
 
@@ -37,8 +38,8 @@ app/                     ← App Router top-level (no src/)
   api/                   ← REST + webhook routes
 components/              ← shared UI
 lib/
-  auth/                  ← Clerk integration (stub)
-  db/                    ← Prisma client wrapper (stub)
+  auth/                  ← Clerk session, webhook sync, route protection
+  db/                    ← Prisma client wrapper
   providers/             ← Twilio, Retell, Vapi, GHL, HubSpot, Stripe, Resend, Bland, n8n
   automations/           ← internal workflow runners + dispatchers
   scoring/               ← lead qualification scoring
@@ -76,10 +77,10 @@ Each provider folder under `lib/providers/` exposes a stable interface (e.g. `se
 ResponseOS is designed to ship in three compliance lanes selectable per tenant. The default is Standard mode; Privacy-hardened and HIPAA-ready are upgrade paths.
 
 ### Standard mode (default)
-**Twilio + Retell + Supabase + Vercel.** Fastest path to market. Use for non-medical, non-PHI home services.
+**Vercel + Neon Postgres + Clerk + Cloudflare R2** for the web, data, auth, and object-storage posture. v0.3 communications are planned around Telnyx primary carrier, Twilio failover, Vapi primary orchestration, Retell secondary, HubSpot CRM sync, and Calendly scheduling per ADR-0031/0032/0033/0036/0037. Live providers remain gated until v0.3 is explicitly authorized.
 
 ### Privacy-hardened mode
-**Twilio + Retell with PII scrubbing + redacted-facts-only Postgres.** Recordings on short retention; call analysis processed into structured facts; raw transcripts hidden from client-facing roles by default. Retell's storage-mode controls and post-call PII categories drive this.
+Standard-lane infrastructure with stricter retention, redaction, and client-facing visibility controls. Recordings are on short retention; call analysis is processed into structured facts; raw transcripts are hidden from client-facing roles by default.
 
 ### HIPAA-ready mode
 **AWS-hosted (CloudFront + Route 53 + ECS/Fargate + RDS + S3 + KMS) + Twilio HIPAA account + Retell BAA + BAA-backed database.** Vendor allowlist enforced per compliance tier. Avoid non-BAA TTS/STT options.
@@ -92,14 +93,19 @@ Reference + connector, not system-of-record. Public integration surface is outbo
 
 ## Voice provider lanes (future)
 
-Primary voice layer:
-- Twilio
-- Retell
-- Vapi
-- Bland
+Carrier layer:
+- Telnyx primary
+- Twilio failover
+
+AI voice orchestration layer:
+- Vapi primary
+- Retell secondary
+
+Legacy / reference providers:
+- Bland remains a provider-adapter placeholder/reference, not the v0.3 default.
 
 Experimental voice layer:
-- Grok Voice API
+- Grok Voice API remains research/reference only unless a later ADR promotes it.
 
 Workflow layer:
 - ResponseOS
@@ -116,7 +122,7 @@ Architecture note: Grok Voice must be treated as an experimental provider until:
 - escalation/handoff behavior is validated
 - compliance posture is reviewed
 
-Until those gates are met, Grok Voice stays behind the same provider abstraction the primary lane uses, and is selectable only for non-regulated experiments (website/app voice assistants, internal operator copilot, sales qualification pilots). The primary live phone-answering lane remains Twilio / Retell / Vapi / Bland.
+Until those gates are met, Grok Voice stays behind the same provider abstraction the primary lane uses, and is selectable only for non-regulated experiments (website/app voice assistants, internal operator copilot, sales qualification pilots). The v0.3 planning baseline remains Telnyx / Twilio failover for carrier behavior and Vapi / Retell for AI voice orchestration. No live provider wiring is authorized by this architecture document.
 
 ## Future Knowledge Layer / Agent Grounding Layer (v0.4+)
 

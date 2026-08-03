@@ -1,10 +1,12 @@
 # ResponseOS — Docs
 
-ResponseOS is the AI Revenue Recovery Platform built by AJ Digital LLC. This `docs/` directory is the canonical product source of truth: positioning, data models, API contracts, automation flows, environment, deployment posture, and security stance.
+ResponseOS is the AI Revenue Recovery Platform built by AJ Digital LLC. This `docs/` directory holds the product, architecture, data, API, automation, environment, deployment, governance, and security documentation. `PRD.md`, `ROADMAP.md`, and `DECISIONS.md` remain the operational entry points unless a later approved governance decision changes the canonical hierarchy.
 
-## Canonical `RESPONSEOS_*` doc set (go-forward)
+## `RESPONSEOS_*` doc set
 
-A complete canonical documentation set lives under `product/`, `architecture/`, `ops/`, `brand/`, and `research/`, indexed by **[`product/RESPONSEOS_BUILD_SOURCE.md`](./product/RESPONSEOS_BUILD_SOURCE.md)** — start there. The authoritative provider-stack baseline is the decision log: Telnyx primary / Twilio failover; Vapi primary orchestration with OpenAI as the preferred in-Vapi brain and Vapi-owned model selection as fallback; Retell secondary; n8n async; HubSpot default CRM SoR; Cal.com scheduling with Google Calendar compatibility; Node gateway + Redis deferred, per [ADR-0031/0032/0033/0036](./DECISIONS.md). Some `RESPONSEOS_*` prose docs still carry older Grok/OpenAI-Realtime/Twilio/gateway/Redis framing or mark layers open; where prose docs conflict with ADRs, the ADRs win until a separate reconciliation PR updates them.
+A broad go-forward documentation set lives under `product/`, `architecture/`, `ops/`, `brand/`, and `research/`, indexed by **[`product/RESPONSEOS_BUILD_SOURCE.md`](./product/RESPONSEOS_BUILD_SOURCE.md)**. Treat it as detailed product and implementation context, not as permission to override `PRD.md`, `ROADMAP.md`, or `DECISIONS.md`.
+
+The authoritative provider-stack baseline is the decision log: Telnyx primary / Twilio failover; Vapi primary orchestration with OpenAI as the preferred in-Vapi brain and Vapi-owned model selection as fallback; Retell secondary; n8n async; HubSpot default CRM SoR; Calendly as the v0.3 MVP scheduling baseline with Cal.com deferred; Node gateway + Redis deferred, per [ADR-0031/0032/0033/0036/0037](./DECISIONS.md). Some `RESPONSEOS_*` prose docs still carry older Grok/OpenAI-Realtime/Twilio/gateway/Redis framing or mark layers open; where prose docs conflict with ADRs, the ADRs win until a separate reconciliation PR updates them.
 
 | Area | Docs |
 |---|---|
@@ -13,6 +15,7 @@ A complete canonical documentation set lives under `product/`, `architecture/`, 
 | Ops | [`OBSERVABILITY_AND_GOVERNANCE`](./ops/RESPONSEOS_OBSERVABILITY_AND_GOVERNANCE.md) · [`SECURITY_AND_COMPLIANCE`](./ops/RESPONSEOS_SECURITY_AND_COMPLIANCE.md) · [`RUNBOOK`](./ops/RESPONSEOS_RUNBOOK.md) · [`QA_VALIDATION_PLAN`](./ops/RESPONSEOS_QA_VALIDATION_PLAN.md) · [`DEPLOYMENT_PLAN`](./ops/RESPONSEOS_DEPLOYMENT_PLAN.md) |
 | Brand | [`POSITIONING`](./brand/RESPONSEOS_POSITIONING.md) · [`BRAND_VOICE`](./brand/RESPONSEOS_BRAND_VOICE.md) · [`SALES_NARRATIVE`](./brand/RESPONSEOS_SALES_NARRATIVE.md) · [`WEBSITE_COPY_SPEC`](./brand/RESPONSEOS_WEBSITE_COPY_SPEC.md) |
 | Research | [`MARKET_RESEARCH`](./research/RESPONSEOS_MARKET_RESEARCH.md) · [`NAMING_RISK_RESEARCH`](./research/RESPONSEOS_NAMING_RISK_RESEARCH.md) · [`COMPETITOR_RESEARCH`](./research/RESPONSEOS_COMPETITOR_RESEARCH.md) |
+| Governance | [`DOCUMENTATION_REMEDIATION_PLAN`](./governance/RESPONSEOS_DOCUMENTATION_REMEDIATION_PLAN.md) · [`PROJECT_CONSTITUTION`](./governance/PROJECT_CONSTITUTION.md) · [`DEFINITION_OF_READY`](./governance/DEFINITION_OF_READY.md) · [`DEFINITION_OF_DONE`](./governance/DEFINITION_OF_DONE.md) · [`DEFINITION_OF_STABLE`](./governance/DEFINITION_OF_STABLE.md) · [`RISK_REGISTER`](./governance/RISK_REGISTER.md) · [`WORKTREE_PLAN`](./governance/WORKTREE_PLAN.md) · [`REQUIREMENTS_TRACEABILITY_MATRIX`](./governance/REQUIREMENTS_TRACEABILITY_MATRIX.md) |
 
 ## Start here
 
@@ -21,6 +24,7 @@ A complete canonical documentation set lives under `product/`, `architecture/`, 
 2. [`ROADMAP.md`](./ROADMAP.md) — version table and milestone status (v0.1 → v0.2 → v0.3 → …).
 3. [`CHANGELOG.md`](./CHANGELOG.md) — per-PR history.
 4. [`DECISIONS.md`](./DECISIONS.md) — architecture decisions (ADRs).
+5. [`reference/DOCUMENTATION_INDEX.md`](./reference/DOCUMENTATION_INDEX.md) — AJ Digital OS governance-stack map. Draft navigation only; it does not rename files or promote a final canonicalization model.
 
 ## Product + architecture
 
@@ -42,9 +46,15 @@ A complete canonical documentation set lives under `product/`, `architecture/`, 
 14. [`DEPLOYMENT.md`](./DEPLOYMENT.md) — three deployment lanes, CI/CD, SLOs, rollback plan.
 15. [`SECURITY.md`](./SECURITY.md) — secrets, webhook signatures, tenant isolation, BAA matrix, incident response.
 
-## Reference
+## Governance, quality, and reference
 
-16. [`research-report.md`](./research-report.md) — curated summary of the canonical product + architecture research.
+16. [`governance/RESPONSEOS_DOCUMENTATION_REMEDIATION_PLAN.md`](./governance/RESPONSEOS_DOCUMENTATION_REMEDIATION_PLAN.md) — remediation sequence and remaining canonicalization decisions.
+17. [`governance/PROJECT_CONSTITUTION.md`](./governance/PROJECT_CONSTITUTION.md) — draft project constitution.
+18. [`governance/DEFINITION_OF_READY.md`](./governance/DEFINITION_OF_READY.md), [`DEFINITION_OF_DONE.md`](./governance/DEFINITION_OF_DONE.md), [`DEFINITION_OF_STABLE.md`](./governance/DEFINITION_OF_STABLE.md) — draft governance gates.
+19. [`governance/RISK_REGISTER.md`](./governance/RISK_REGISTER.md), [`WORKTREE_PLAN.md`](./governance/WORKTREE_PLAN.md), [`REQUIREMENTS_TRACEABILITY_MATRIX.md`](./governance/REQUIREMENTS_TRACEABILITY_MATRIX.md) — draft risk, worktree, and traceability controls.
+20. [`quality/ACCEPTANCE_TEST_PLAN.md`](./quality/ACCEPTANCE_TEST_PLAN.md), [`PERFORMANCE.md`](./quality/PERFORMANCE.md), [`FAILURE_MODES.md`](./quality/FAILURE_MODES.md) — draft quality baselines.
+21. [`reference/DOCUMENTATION_INDEX.md`](./reference/DOCUMENTATION_INDEX.md), [`GLOSSARY.md`](./reference/GLOSSARY.md), [`OPEN_QUESTIONS.md`](./reference/OPEN_QUESTIONS.md), [`CODING_STANDARDS.md`](./reference/CODING_STANDARDS.md) — draft reference baselines.
+22. [`research-report.md`](./research-report.md) — curated summary of the canonical product + architecture research.
 
 ## Archive
 

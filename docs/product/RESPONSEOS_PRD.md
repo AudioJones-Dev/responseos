@@ -1,7 +1,7 @@
 # ResponseOS — Product Requirements Document (PRD)
 
 **Owner:** AJ Digital LLC / Audio Jones
-**Status:** Canonical (go-forward). Companion to the short [`../PRD.md`](../PRD.md); this is the expanded product definition for the `RESPONSEOS_*` set.
+**Status:** Expanded product-definition companion. The short [`../PRD.md`](../PRD.md) remains the operational PRD entry point; `../ROADMAP.md` and `../DECISIONS.md` remain authoritative for milestone status and accepted decisions until the documentation governance canonicalization pass is approved.
 **Last updated:** 2026-06-02
 **Read first:** [`RESPONSEOS_BUILD_SOURCE.md`](./RESPONSEOS_BUILD_SOURCE.md)
 
