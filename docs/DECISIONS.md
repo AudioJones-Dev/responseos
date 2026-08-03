@@ -659,7 +659,7 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 
 ---
 
-## ADR-0039 — ResponseOS product boundary: a managed revenue-recovery and operational-intelligence layer, not a CRM, FSM, carrier, or automation platform
+## ADR-0040 — ResponseOS product boundary: a managed revenue-recovery and operational-intelligence layer, not a CRM, FSM, carrier, or automation platform
 
 **Status:** Proposed (2026-07-31), pending operator ratification with [`strategy/responseos-platform-doctrine-v1.md`](./strategy/responseos-platform-doctrine-v1.md). Consolidates the boundary language scattered across ADR-0007 (QuoteIQ), ADR-0015/0027/0033 (CRM ownership), and ADR-0022 (positioning) into one testable rule. **Documentation only — no code, schema, env, provider, or deploy change.**
 
@@ -676,7 +676,7 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 
 ---
 
-## ADR-0040 — Founder Intelligence architecture: a nine-layer progression from Communications to Trust Infrastructure
+## ADR-0041 — Founder Intelligence architecture: a nine-layer progression from Communications to Trust Infrastructure
 
 **Status:** Proposed (2026-07-31), pending operator ratification with the platform doctrine. Extends ADR-0002 (event-ledger-first) and ADR-0022 (positioning). **Does not relax any v0.4 knowledge/RAG gate** (ADR-0016, ADR-0029, ADR-0034). **Documentation only.**
 
@@ -687,7 +687,7 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 1. **The long-term architecture is a nine-layer progression:** (1) Communications Capture → (2) Business Memory → (3) Operational Models → (4) Revenue Intelligence → (5) Operational Intelligence → (6) Verified Outcomes → (7) Benchmark Intelligence → (8) Founder Intelligence → (9) Trust Infrastructure. Each layer's purpose, contents, output, and current status are specified in doctrine §8.
 2. **Layer 6 (Verified Outcomes) is the load-bearing layer.** Nothing above it is defensible without it. Every state change in the outcome chain preserves source, timestamp, evidence, actor, tenant, confidence, attribution status, and correction history.
 3. **Layer 7 (Benchmark Intelligence) must never expose client-specific data** and requires tenant isolation, privacy review, aggregation thresholds, a lawful processing basis, de-identification, small-cohort suppression, documented metric definitions, data-quality gates, and confidence ranges.
-4. **Layer 8 (Founder Intelligence) produces evidence-linked recommendations, not autonomous executive authority** (ADR-0042 §governance, doctrine §16).
+4. **Layer 8 (Founder Intelligence) produces evidence-linked recommendations, not autonomous executive authority** (ADR-0043 §governance, doctrine §16).
 5. **Layer status must be stated wherever a layer is described.** Today, Layers 1, 2, 4, and 9 are `PARTIALLY_SHIPPED` (substrate only) and Layers 3, 5, 6, 7, 8 are `DOCUMENTED_ONLY`.
 6. **The intelligence flywheel becomes defensible only when it contains real operating data, verified outcomes, durable metric definitions, evidence-linked interventions, lawful cross-client aggregation, vertical-specific models, and repeatable findings.** Documentation, schemas, prompts, and dashboards do not by themselves create a moat.
 
@@ -695,7 +695,7 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 
 ---
 
-## ADR-0041 — Revenue attribution states: estimated, influenced, qualified, booked, completed, and collected revenue remain distinct
+## ADR-0042 — Revenue attribution states: estimated, influenced, qualified, booked, completed, and collected revenue remain distinct
 
 **Status:** Proposed (2026-07-31), pending operator ratification with the platform doctrine. Extends ADR-0002. Interacts with ADR-0010 (billing in v0.5). **No schema change is authorized** — introducing these states requires a separate approved PR.
 
@@ -713,7 +713,7 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 
 ---
 
-## ADR-0042 — Provider portability is proven by two adapters or one live provider plus a tested fallback — not by an interface plus a mock
+## ADR-0043 — Provider portability is proven by two adapters or one live provider plus a tested fallback — not by an interface plus a mock
 
 **Status:** Proposed (2026-07-31), pending operator ratification with the platform doctrine. **Extends** ADR-0001 (mock-first) and the provider-stack decisions ADR-0031 / ADR-0032 / ADR-0033 / ADR-0036 / ADR-0037 — it does **not** re-decide the stack and creates no duplicate provider ADR. **Documentation only.**
 
@@ -732,7 +732,7 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 
 ---
 
-## ADR-0043 — Trust Infrastructure: ResponseOS is blockchain-compatible, not blockchain-dependent
+## ADR-0044 — Trust Infrastructure: ResponseOS is blockchain-compatible, not blockchain-dependent
 
 **Status:** Proposed (2026-07-31), pending operator ratification with the platform doctrine. Ratifies the recommendation of [`research/RESPONSEOS_WEB3_BLOCKCHAIN_OPPORTUNITY_RESEARCH.md`](./research/RESPONSEOS_WEB3_BLOCKCHAIN_OPPORTUNITY_RESEARCH.md) as decision. Extends ADR-0002. **Authorizes no implementation** — no hashing, signing, anchoring, SDK, dependency, schema change, or wallet surface.
 

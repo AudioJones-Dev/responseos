@@ -334,7 +334,7 @@ Nine layers. Each carries its current status so the architecture cannot be mista
 
 **Output.** Revenue signals with explicit evidence and confidence.
 
-**Status.** Two of nine distinctions exist as columns (`estimated_recovered_revenue`, `verified_recovered_revenue`). §14 defines the full state set; ADR-0041 ratifies it.
+**Status.** Two of nine distinctions exist as columns (`estimated_recovered_revenue`, `verified_recovered_revenue`). §14 defines the full state set; ADR-0042 ratifies it.
 
 ### Layer 5 — Operational Intelligence · `DOCUMENTED_ONLY`
 
@@ -398,7 +398,7 @@ tenant isolation · privacy review · aggregation thresholds · consent or lawfu
 
 **Output.** A verifiable history of system activity and business-relevant decisions.
 
-**Status.** `AuditLog` (with `break_glass` category), `WebhookEvent` (with dedupe hash and `signature_valid`), and `WorkflowRun` are shipped. Hashing, signing, chaining, and provenance are not. See §15 and ADR-0043.
+**Status.** `AuditLog` (with `break_glass` category), `WebhookEvent` (with dedupe hash and `signature_valid`), and `WorkflowRun` are shipped. Hashing, signing, chaining, and provenance are not. See §15 and ADR-0044.
 
 ---
 
@@ -478,7 +478,7 @@ Honest estimated-vs-verified separation · correction history · disputed-attrib
 
 ### 10.6 The abstraction-is-not-a-moat rule
 
-The communications-stack document describes the Communications Abstraction Layer as "the platform's primary infrastructure moat." **This doctrine does not ratify that claim.** An abstraction with one mock adapter and no live provider is architecture preparation. Portability becomes a claim only under the standard in §12.3 (ADR-0043).
+The communications-stack document describes the Communications Abstraction Layer as "the platform's primary infrastructure moat." **This doctrine does not ratify that claim.** An abstraction with one mock adapter and no live provider is architecture preparation. Portability becomes a claim only under the standard in §12.3 (ADR-0044).
 
 ---
 
@@ -550,7 +550,7 @@ Portability is **not proven** until either:
 - at least two adapters implement the same interface, **or**
 - one live provider and one verified fallback path have been tested end to end.
 
-**A TypeScript interface plus a mock adapter is architecture preparation, not proven provider portability.** Ratified as ADR-0043.
+**A TypeScript interface plus a mock adapter is architecture preparation, not proven provider portability.** Ratified as ADR-0044.
 
 ### 12.4 Provider review triggers
 
@@ -604,7 +604,7 @@ REJECTED
 UNATTRIBUTED
 ```
 
-Ratified as ADR-0041. **Status: `DOCUMENTED_ONLY`** — the schema currently carries only estimated and verified totals. Introducing these states requires a separate approved PR.
+Ratified as ADR-0042. **Status: `DOCUMENTED_ONLY`** — the schema currently carries only estimated and verified totals. Introducing these states requires a separate approved PR.
 
 ### 14.2 Required fields on every revenue claim
 
@@ -742,7 +742,7 @@ This is the most important sequencing fact in the repository. v0.2 closeout ship
 - operator can inspect event history
 
 ### Revenue Gate (Phase 2)
-- attribution definitions ratified (ADR-0041)
+- attribution definitions ratified (ADR-0042)
 - booked / completed / collected states represented
 - correction workflow exists
 - dispute workflow exists
@@ -916,4 +916,4 @@ Recorded so they are visibly open rather than silently assumed.
 
 | Version | Date | Change |
 |---|---|---|
-| v1.0 | 2026-07-31 | Initial doctrine. Consolidates positioning (ADR-0022/0028/0035), provider stack (ADR-0031/0032/0033/0036/0037), memory gating (ADR-0016/0029/0034), and trust posture into a single strategic source of truth. Adds the nine-layer architecture, the intelligence flywheel, the moat doctrine, the evidence-state vocabulary, the claims policy, and the review checklist. Ratifies ADR-0039 through ADR-0043. **Proposed — not yet operator-ratified.** |
+| v1.0 | 2026-07-31 | Initial doctrine. Consolidates positioning (ADR-0022/0028/0035), provider stack (ADR-0031/0032/0033/0036/0037), memory gating (ADR-0016/0029/0034), and trust posture into a single strategic source of truth. Adds the nine-layer architecture, the intelligence flywheel, the moat doctrine, the evidence-state vocabulary, the claims policy, and the review checklist. Ratifies ADR-0040 through ADR-0044. **Proposed — not yet operator-ratified.** |
