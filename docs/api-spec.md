@@ -1,6 +1,6 @@
 # API Spec
 
-All routes live under `app/api/*` as Next.js App Router Route Handlers. Responses use a consistent envelope. v0.1 returns mock data; v0.3 wires real provider/DB reads.
+All routes live under `app/api/*` as Next.js App Router Route Handlers. Responses use a consistent envelope. v0.2 routes now mix DB-backed reads, mock-safe mutation acknowledgements, and provider webhook stubs. v0.3 live-provider behavior remains gated by `AGENTS.md`, `ROADMAP.md`, and ADR-0001 / ADR-0009.
 
 ## Response envelope (canonical)
 
@@ -28,7 +28,7 @@ Error:
 | `TENANT_SCOPE_DENIED` | Cross-tenant access blocked |
 | `VENDOR_UNAVAILABLE` | Upstream provider is down |
 
-v0.1 stubs include a `mock: true` flag inside the success envelope (`{ ok: true, mock: true, data }`) so consumers can tell test data from real. v0.2+ drops the flag once real provider/DB reads are wired.
+Mock-safe mutation routes may include a `mock: true` flag inside the success envelope (`{ ok: true, mock: true, data }`) so consumers can tell acknowledgements from live provider effects. DB-backed reads generally return `{ ok: true, data }`.
 
 ## Status codes
 
@@ -53,15 +53,19 @@ v0.1 stubs include a `mock: true` flag inside the success envelope (`{ ok: true,
 ### Health
 `GET /api/health` → `{ status: 'ok', service: 'responseos', version: '0.1.0' }`
 
+### Accounts
+- `GET /api/accounts` → account list
+- `GET /api/accounts/:id` → single account
+
 ### Calls
-- `GET /api/calls` → list of mock calls
+- `GET /api/calls` → list of calls
 - `GET /api/calls/:id` → single call
 
 ### Leads
-- `GET /api/leads` → list of mock lead events
+- `GET /api/leads` → list of lead events
 - `GET /api/leads/:id` → single lead event
-- `POST /api/leads/:id/qualify` — body: `LeadQualificationInput` → `{ lead_event_id, qualification_score }`
-- `POST /api/leads/:id/status` — body: `{ status: LeadEventStatus, notes? }`
+- `POST /api/leads/:id/qualify` — body: `LeadQualificationInput` → mock-safe `{ lead_event_id, qualification_score }`
+- `POST /api/leads/:id/status` — body: `{ status: LeadEventStatus, notes? }` → mock-safe status acknowledgement
 
 ### Appointments
 - `GET /api/appointments` → list
@@ -75,19 +79,15 @@ v0.1 stubs include a `mock: true` flag inside the success envelope (`{ ok: true,
 
 ### Automations
 - `GET /api/automations` → list
-- `GET /api/automations/:id` → single
+- `GET /api/automations/:id` → mock-safe single automation detail
 - `POST /api/automations/webhook/n8n` — n8n callback into ResponseOS
 
 ### Contacts
 - `GET /api/contacts`
 - `GET /api/contacts/:id`
 
-### Organizations
-- `GET /api/organizations`
-- `GET /api/organizations/:id`
-
 ### Auth
-- `GET /api/auth/session` — Clerk session lookup (stubbed; returns unauthenticated)
+- `GET /api/auth/session` — Clerk-backed session lookup via `lib/auth/session`
 
 ### Notifications
 - `GET /api/notifications`
@@ -97,12 +97,16 @@ v0.1 stubs include a `mock: true` flag inside the success envelope (`{ ok: true,
 - `GET /api/reports/revenue` → current period revenue_metrics
 - `GET /api/reports/client/:accountId` → metrics list for one workspace
 
+### Marketing capture
+- `POST /api/audit-requests` → public `/audit` form capture; validates payload and returns a mock-safe reference without provider/CRM writes.
+
 ## Webhook routes
 
-All webhook endpoints accept POST only (405 on other methods), parse JSON safely, and return `{ ok: true, received: <provider>, mock: true }`. Each has a TODO marker for signature verification.
+Provider webhook endpoints accept POST only and reject other methods. Live provider webhooks remain mock-safe until v0.3 authorization: most provider routes parse safely and acknowledge with `{ ok: true, received: <provider>, mock: true }` while signature validation remains a TODO. Clerk is the exception: `/api/webhooks/clerk` verifies Svix headers before parsing or mutating identity records.
 
 | Route | Provider | Signature header (v0.3) |
 |---|---|---|
+| `POST /api/webhooks/clerk` | Clerk auth sync | `svix-id`, `svix-timestamp`, `svix-signature` — implemented |
 | `POST /api/webhooks/twilio/call-status` | Twilio voice | `X-Twilio-Signature` |
 | `POST /api/webhooks/twilio/sms` | Twilio messaging | `X-Twilio-Signature` |
 | `POST /api/webhooks/retell/call-ended` | Retell AI | `x-retell-signature` (raw body, 5-min freshness) |
@@ -144,11 +148,13 @@ These rules go live progressively: v0.1 returns mock acks; v0.2 adds the persist
 
 Vendor webhooks must land in the event ledger (v0.2 `events` table) **before** mutating any business object. The dedupe key combines `provider` + the provider-supplied event id (e.g. Twilio `MessageSid`, Retell `call_id`, Stripe `event.id`). Replays are safe because mutations are derived from the ledger, not from the inbound HTTP request.
 
-## Sample payloads (v0.2 target shapes)
+## Sample payloads (future target shapes)
+
+The samples below describe future mutation contracts. They are not current route inventory: there is no live `POST /api/quotes` or appointment-availability route in `app/api/**` yet.
 
 ### Quote creation
 ```http
-POST /v1/quotes
+POST /api/quotes
 {
   "account_id": "acct_aj_roofing_01",
   "lead_id": "lead_01JXYZ",
@@ -173,7 +179,7 @@ POST /v1/quotes
 
 ### Appointment availability
 ```http
-POST /v1/appointments/availability
+POST /api/appointments/availability
 {
   "account_id": "acct_aj_roofing_01",
   "lead_id": "lead_01JXYZ",
