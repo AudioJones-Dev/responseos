@@ -54,6 +54,7 @@ describe("lib/auth/session.ts", () => {
     delete env.NODE_ENV;
     delete env.CLERK_SECRET_KEY;
     delete env.AJ_DIGITAL_CLERK_ORG_ID;
+    delete env.RESPONSEOS_REQUIRE_AUTH;
   });
 
   afterEach(() => {
@@ -91,6 +92,23 @@ describe("lib/auth/session.ts", () => {
     (process.env as MutableEnv).NODE_ENV = "production";
     const { getCurrentSession } = await freshSession();
     await expect(getCurrentSession()).resolves.toBeTruthy();
+  });
+
+  test("RESPONSEOS_REQUIRE_AUTH fails closed (null) when Clerk is unconfigured", async () => {
+    // Auth-required hosted deploy without Clerk keys must NOT fall back to the
+    // privileged aj_admin dev session (D2 — cross-tenant fail-open).
+    process.env.RESPONSEOS_REQUIRE_AUTH = "1";
+    const { getCurrentSession } = await freshSession();
+    expect(await getCurrentSession()).toBeNull();
+  });
+
+  test("RESPONSEOS_REQUIRE_AUTH=0/false preserves the mock-first fallback", async () => {
+    process.env.RESPONSEOS_REQUIRE_AUTH = "0";
+    const { getCurrentSession } = await freshSession();
+    expect((await getCurrentSession())?.user.role).toBe("aj_admin");
+    process.env.RESPONSEOS_REQUIRE_AUTH = "false";
+    const again = await freshSession();
+    expect((await again.getCurrentSession())?.user.role).toBe("aj_admin");
   });
 
   test("requireRole accepts matching role", async () => {
@@ -151,6 +169,7 @@ describe("lib/auth/session.ts — Clerk path", () => {
     delete env.NODE_ENV;
     delete env.CLERK_SECRET_KEY;
     delete env.AJ_DIGITAL_CLERK_ORG_ID;
+    delete env.RESPONSEOS_REQUIRE_AUTH;
     vi.clearAllMocks();
   });
 
@@ -179,6 +198,20 @@ describe("lib/auth/session.ts — Clerk path", () => {
     const result = await session.getCurrentSession();
     expect(result?.user.role).toBe("aj_admin");
     expect(auth).not.toHaveBeenCalled();
+  });
+
+  test("RESPONSEOS_REQUIRE_AUTH does not disturb the Clerk path when Clerk is configured", async () => {
+    process.env.RESPONSEOS_REQUIRE_AUTH = "1";
+    process.env.CLERK_SECRET_KEY = "sk_test_123";
+    const { session, auth, userFindUnique, accountFindUnique } =
+      await loadClerkSession();
+    auth.mockResolvedValue({ userId: "clerk_user_1", orgId: "org_clerk_client_1" });
+    userFindUnique.mockResolvedValue(clientUser);
+    accountFindUnique.mockResolvedValue(clientAccount);
+
+    const result = await session.getCurrentSession();
+    expect(result?.user.role).toBe("client_admin");
+    expect(result?.account?.id).toBe("acct_db_1");
   });
 
   test("explicit RESPONSEOS_DEV_SESSION wins over Clerk in non-production", async () => {

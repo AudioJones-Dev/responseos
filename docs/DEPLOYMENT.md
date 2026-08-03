@@ -1,6 +1,6 @@
 # Deployment
 
-> **v0.2 hard rule:** do NOT deploy from this repo. No Vercel deploy, no AWS deploy — production deploys are gated to v0.3 readiness. This document captures the **target** deployment posture so we can move fast when v0.3 unlocks.
+> **Hard rule:** do NOT deploy production from this repo yet. No Vercel production deploy, no AWS deploy — production deploys are gated to explicit v0.3 readiness approval. This document captures the **target** deployment posture so we can move fast when v0.3 unlocks.
 >
 > **Current state.** GitHub remote is live (`audiojones-dev/responseos`) and CI runs on every push and PR — `validate` (lint + typecheck + unit test + build) and `integration` (Postgres 16 service container, `prisma migrate diff`, `prisma migrate deploy`, `prisma db seed`, integration tests, DB-backed build). No deploy jobs yet.
 
@@ -8,30 +8,32 @@
 
 ResponseOS supports three compliance lanes selectable per tenant. Standard mode is the default; the others are upgrade paths.
 
-### Standard mode (default — v0.1/v0.2)
+### Standard mode (default target)
 
-**Stack:** Vercel + Supabase (Postgres + Auth + Storage) + Twilio + Retell + Stripe.
+**Target stack:** Vercel + Neon Postgres + Clerk + Cloudflare R2, with live communications/billing providers gated to v0.3 authorization.
 
-- Frontend + Route Handlers on Vercel.
-- Database + auth on Supabase.
-- Object storage: Cloudflare R2 (call recordings, quote photos).
-- Custom-domain wildcard pattern (`*.responseos.app`) for white-label tenants.
+- Frontend + Route Handlers target Vercel.
+- Database target is Neon Postgres per ADR-0026; local dev and CI continue on plain Postgres 16.
+- Auth target is Clerk per ADR-0005.
+- Object storage target is Cloudflare R2 (call recordings, quote photos, exports).
+- v0.3 communications planning baseline is Telnyx primary carrier, Twilio failover, Vapi primary orchestration, Retell secondary, HubSpot CRM sync, and Calendly scheduling per ADR-0031/0032/0033/0036/0037.
+- Custom-domain wildcard pattern (`*.responseos.app`) remains a future white-label target.
 
 Use for non-medical, non-PHI home services. This is the fastest path to market.
 
 ### Privacy-hardened mode
 
-Same infrastructure as Standard, with:
-- Retell `Basic Attributes Only` storage mode.
+Same infrastructure family as Standard, with stricter retention, redaction, and visibility controls:
+
 - Post-call PII scrubbing (Retell categories) applied before transcript persistence.
 - `call_transcripts.pii_redacted = true`; raw transcripts hidden from client-facing roles by default.
 - Short retention on `Call.recording_url` (30/60/90-day options per tenant).
 
-### HIPAA-ready mode (v0.3+, future)
+### HIPAA-ready mode (future)
 
 > **Important:** ResponseOS is **not** HIPAA-certified or HIPAA-compliant today. v0.1 ships in Standard mode only. The HIPAA-ready lane is a future architectural pattern, not a current product capability. Do not represent the platform as HIPAA-compliant in marketing, sales, contracts, or onboarding until a deployment in this lane has been independently reviewed and the full vendor BAA chain has been signed and verified for that tenant.
 
-**Stack:** AWS-hosted, no Vercel/Supabase.
+**Target stack:** AWS-hosted, no Vercel, no shared Standard-lane database.
 
 - **Frontend:** CloudFront + Route 53 + ACM certs.
 - **API/workers:** ECS/Fargate behind ALB.
@@ -59,9 +61,9 @@ infra/
 
 State lives in S3 with state locking + versioning per AWS prescriptive guidance. No hand-edits to console; everything ships through Terraform plan/apply via CI.
 
-## CI/CD
+## CI/CD Target
 
-GitHub Actions with **OIDC federation to AWS** so the deploy pipeline never needs long-lived cloud secrets. n8n workflow definitions live in Git — n8n source-control mode is downstream of Git, not the source of truth.
+Current GitHub Actions run validation only; there are no deploy jobs yet. The target deployment pipeline uses GitHub Actions with **OIDC federation to AWS** so the deploy pipeline never needs long-lived cloud secrets. n8n workflow definitions live in Git — n8n source-control mode is downstream of Git, not the source of truth.
 
 Pipeline gates:
 | Stage | Gate |
@@ -105,10 +107,11 @@ Pipeline gates:
 
 ## Environments
 
-- `dev` — local + preview deploys per PR.
-- `staging` — shared preprod against staging Twilio/Retell sub-accounts.
-- `prod` — Standard / Privacy-hardened production.
-- `prod-hipaa` — HIPAA-ready production, isolated VPC + db + Twilio HIPAA account.
+- `dev` — local development plus CI validation.
+- `preview` — future per-PR preview target once deploy jobs are approved.
+- `staging` — future shared preprod against staging provider accounts.
+- `prod` — future Standard / Privacy-hardened production after v0.3 readiness approval.
+- `prod-hipaa` — future HIPAA-ready production, isolated VPC + database + eligible provider accounts after independent review.
 
 ## Multi-tenant deployment model
 
