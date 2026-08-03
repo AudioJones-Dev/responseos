@@ -1,8 +1,8 @@
 # Build Status & GTM Pipeline
 
-**Date:** 2026-08-02 · **Master:** `1510139` · **Scope:** documentation + reconciliation only — no feature work, nothing merged to `master`.
+**Date:** 2026-08-03 · **Master:** `83038d5` · **Scope:** documentation + reconciliation only — no feature work.
 
-This document answers one question: **what is actually built, what do the docs claim, and what stands between here and a GTM pipeline?** It was produced by a full sweep of local and remote git plus a line-level audit of the build against its documentation.
+This document answers one question: **what is actually built, what do the docs claim, and what stands between here and a GTM pipeline?** It was produced by a full sweep of local and remote git plus a line-level audit of the build against its documentation, then updated as the backlog was drained.
 
 > **Reading note.** Sections 1–3 are verified fact. Section 4 is the merge sheet. Section 5 is the pipeline. Section 6 lists the decisions only the founder can make — nothing in Section 6 is an engineering task.
 
@@ -10,19 +10,34 @@ This document answers one question: **what is actually built, what do the docs c
 
 ## 1. Headline
 
-**ResponseOS is not behind on code. It is behind on landing.**
+**ResponseOS was not behind on code. It was behind on landing.** Six of the ten stranded pull requests have now merged.
 
-`master` is healthy: CI green, 22 Prisma models with consistent tenant scoping, 8 migrations, 146 unit tests passing (plus ~60 integration tests in CI), a working mock-safe demo walkthrough, and deployment correctly contained. The v0.2 substrate is genuinely complete.
+`master` is healthy: CI green, 22 Prisma models with consistent tenant scoping, 8 migrations, **177 unit tests** passing (plus ~60 integration tests in CI), a working mock-safe demo walkthrough, and deployment correctly contained. The v0.2 substrate is genuinely complete.
 
-What is broken is **flow**. At the time of this sweep:
+### What the sweep found
 
 - **10 pull requests were open**, totalling **6,444 added lines** of finished, CI-green work.
 - **5 of them formed a chain stranded since 2026-07-01** — a month of governance, quality, and reference documentation nobody popped off the stack.
 - **Five branches carried `ADR-0039`, covering four distinct decisions.** Whichever merged first would have silently won the number and pushed duplicate identifiers into the decision log.
-- Two PRs showed as CONFLICTING. Both conflicted in **exactly one file** — `docs/CHANGELOG.md` — from concurrent appends. Neither was substantively blocked.
-- 🔴 **The five "CLEAN" stacked PRs will not actually cascade cleanly.** This repo permits **squash merges only**, and GitHub evaluates each stacked PR against its *original chained base*, not against a post-squash `master`. See §4.
+- 🔴 **Auth on `master` was fail-OPEN** — `/admin` served a 42,528-byte cross-tenant Operator Console to anonymous visitors. Measured, not inferred (§3e).
+- 🔴 **The five "CLEAN" stacked PRs would not cascade cleanly.** This repo permits **squash merges only**, and GitHub evaluates each stacked PR against its *original chained base*, not against a post-squash `master`.
 
-The declared launch in `dashboard/dashboard-data.json` is **2026-08-15 — 13 days out**.
+### What has since landed
+
+| Merged | Commit | Effect |
+|---|---|---|
+| #96 | `8fffd57` | **Closes the fail-open auth hole** — `RESPONSEOS_REQUIRE_AUTH` gate at edge + session |
+| #89 | `b35669f` | Governance remediation plan + gate docs |
+| #90 | `9d35142` | Stale documentation posture reconciled |
+| #91 | `335f044` | API, data, and PRD specs reconciled |
+| #92 | `a7790ad` | Quality + reference baselines |
+| #93 | `83038d5` | Documentation governance index |
+
+**The squash-cascade prediction was confirmed in practice:** #89 merged clean, then **every** subsequent step conflicted — #90/#91/#92 on `dashboard/dashboard-data.json`, #93 on that plus two add/add `.md` collisions. All were mechanical; at each step the resolution was verified to lose nothing from *either* side. The board ended at exactly the predicted **28 tasks, `G-01`–`G-05` present, no duplicate ids**.
+
+**Still open:** #94, #103, #105, #98, and this document (#106).
+
+The declared launch in `dashboard/dashboard-data.json` is **2026-08-15 — 12 days out**.
 
 ---
 
@@ -87,7 +102,7 @@ This is the more dangerous direction: these read as capabilities but are not imp
 
 | Documented | Actual state |
 |---|---|
-| Fail-closed auth | 🔴 **Auth is fail-OPEN.** With no `CLERK_SECRET_KEY`, `proxy.ts:22-27` passes every route through and `lib/auth/session.ts:284-285` returns the cross-tenant superuser `aj_admin`. `RESPONSEOS_REQUIRE_AUTH` **does not exist on `master`** — the fix is sitting unmerged in PR #96. **Confirmed by live test** — see §3e. |
+| Fail-closed auth | ✅ **RESOLVED by #96 (`8fffd57`).** `RESPONSEOS_REQUIRE_AUTH` now exists on `master`, enforced at both the edge (`proxy.ts:30`) and the session resolver. Prior to that merge, auth was fail-OPEN. **Verified by live test both before and after** — see §3e. |
 | Provider adapters | **9 of 11 are empty `.gitkeep` directories.** Only `voice/` (mock only, no live impl, no env factory) and `encryption/` (real AES-256-GCM) have code. |
 | Telnyx as primary carrier (ADR-0031) | **Absent from code, schema, and env entirely.** |
 | Webhook signature validation (ADR-0009) | Every non-Clerk webhook is an **unauthenticated stub** returning `mock:true`. `app/api/webhooks/stripe/route.ts:3` is a literal `// TODO: verify Stripe-Signature header`. The Clerk webhook is the one genuinely fail-closed surface. |
@@ -124,7 +139,11 @@ The landing page was checked for leakage: no `AJ Admin`, `aj@responseos`, `Sunsh
 
 The mechanism is two independent layers over one predicate in `lib/auth/auth-required.ts` — `proxy.ts` redirects at the edge, `lib/auth/session.ts` returns `null` — deliberately dependency-free so the edge runtime need not import the Prisma client or the Clerk server SDK.
 
-> **This is why #96 is first on the merge sheet.** It is the only change in the backlog that closes a live cross-tenant exposure.
+> **✅ #96 merged as `8fffd57`.** Before merging, the result was rebuilt against current `master` and re-gated (lint, typecheck, **177/177 tests**, build) — the PR's own CI was three weeks stale and predated #100/#102/#104. The merge was SHA-pinned. No deploy fired: only `CI` and the dashboard sync ran, and `vercel.json`'s `deploymentEnabled` gate remains intact.
+>
+> **The flag still has to be switched on.** `RESPONSEOS_REQUIRE_AUTH` is opt-in by design — unset preserves mock-first boot for dev, CI, and `next build`. `master` today is still fail-open *by default*; the gate now exists but the hosted demo must set the variable. That is part of decision **D3**.
+
+> ⚠️ **Before enabling the flag:** `/api/audit-requests` — the lead-capture endpoint behind the `/audit` form — is **not** on the public path list. With `RESPONSEOS_REQUIRE_AUTH` on, that form would submit into a redirect. Verify before the Aug-15 demo.
 
 ### 3d. What is genuinely solid
 
@@ -155,42 +174,43 @@ Worth stating plainly, because the gap list above reads harshly:
 
 > **Renumbering gotcha.** `grep "ADR-0039"` is case-sensitive and **misses lowercase markdown anchor fragments** (`#adr-0039--…`). One reference escaped that way on #94. Always verify with `grep -rniE "adr-0039"`. Separately, an unanchored duplicate check on `DECISIONS.md` yields ~29 false positives because every ADR is legitimately cited in body text as well as its heading — scope it: `grep -oE '^## ADR-[0-9]{4}'`.
 
-### 🔴 The stacked chain will not cascade cleanly — squash-only repo
+### 🔴 The squash-only trap — predicted, then confirmed
 
 The repository allows **squash merges only** (`allow_merge_commit: false`, `allow_rebase_merge: false`, `allow_squash_merge: true`). This breaks stacked PRs in a way the UI does not show:
 
-Squash-merging #89 lands its tree on `master` as a **new commit that is not an ancestor of #90's head**. #90's merge-base then falls back to the original fork point `4885876`, and its `dashboard-data.json` task insertion collides with the block squash-#89 already placed at the same array index. This repeats at every subsequent step.
+Squash-merging #89 lands its tree on `master` as a **new commit that is not an ancestor of #90's head**. #90's merge-base then falls back to the original fork point, and its `dashboard-data.json` task insertion collides with the block squash-#89 already placed at the same array index. This repeated at every subsequent step.
 
-**GitHub reports all five as `MERGEABLE / CLEAN` because it evaluates each against its original chained base, not against a post-squash `master`.** The badge is not a promise.
+**GitHub reported all five as `MERGEABLE / CLEAN` throughout, because it evaluates each against its original chained base, not against a post-squash `master`.** The badge was not a promise.
 
-| Step | Under merge-commit | Under squash (the only mode allowed) | Conflicting files |
+| Step | Predicted | Actual | Conflicting files |
 |---|---|---|---|
-| #89 | clean | clean | — |
-| #90 | clean | **conflict** | `dashboard/dashboard-data.json` |
-| #91 | clean | **conflict** | `dashboard/dashboard-data.json` |
-| #92 | clean | **conflict** | `dashboard/dashboard-data.json` |
-| #93 | clean | **conflict** | `dashboard-data.json`; add/add on `docs/governance/RESPONSEOS_DOCUMENTATION_REMEDIATION_PLAN.md` and `docs/reference/OPEN_QUESTIONS.md` |
+| #89 → `b35669f` | clean | ✅ clean | — |
+| #90 → `9d35142` | conflict | ✅ conflict | `dashboard/dashboard-data.json` |
+| #91 → `335f044` | conflict | ✅ conflict | `dashboard/dashboard-data.json` |
+| #92 → `a7790ad` | conflict | ✅ conflict | `dashboard/dashboard-data.json` |
+| #93 → `83038d5` | conflict | ✅ conflict | that, plus add/add on `RESPONSEOS_DOCUMENTATION_REMEDIATION_PLAN.md` and `OPEN_QUESTIONS.md` |
 
-Every resolution is mechanical — take the union of task objects in the JSON, take #93's version of the two `.md` files. The verified correct end state is **28 tasks, valid JSON, no duplicate ids**, with `P0-01`/`P0-02` from master and `G-01`…`G-05` all present.
+All resolutions were mechanical — union the JSON task objects, take #93's version of the two `.md` files (verified as genuine supersets, not assumed). Each step was checked for loss from *both* sides, not merely for valid JSON. Final board: **28 tasks, no duplicate ids, `G-01`–`G-05` and both `P0` tasks present** — exactly the predicted end state.
 
-**Two ways forward, both your call:**
-1. **Temporarily enable merge commits** for this stack — the cascade is provably clean that way — then turn it back off.
-2. **Squash and hand-resolve** the trivial conflict at steps 2–5.
+**The lesson worth keeping:** in a squash-only repo, a stacked PR's green mergeability badge is meaningless. Simulate against a post-squash `master` with `git merge-tree` before trusting it.
 
-### Recommended order
+> **Add/add conflicts are an artefact of squashing, not a real disagreement.** #93 edits files that #89 and #92 created; because those landed as squash commits, git saw the files as independently added on both sides. Check which side is a superset rather than assuming.
 
-| Order | PR | Why here |
+### Remaining order
+
+| Order | PR | State |
 |---|---|---|
-| 1 | **#96** | Closes a live cross-tenant exposure (§3e). Non-draft, CLEAN. Keeps ADR-0039. |
-| 2–6 | **#89 → #90 → #91 → #92 → #93** | The stranded chain, in this exact order — with the squash caveat above. |
-| 7 | **#94** | ✅ Ready: conflict resolved, ADR→0045, CI green. **Review alongside #96** — both touch auth (see note). |
-| 8 | **#105** | Draft. After ADR→0040–0044. |
-| 9 | **#103** | Draft. Docs-only. |
-| 10 | **#98** | Draft. See correction below. |
+| 1 | **#94** | Conflicts resolved against post-#96 master; ADR→0045; gates green (179/179). |
+| 2 | **#105** | Draft. ADR→0040–0044; `docs/PRD.md` re-merged after #91. |
+| 3 | **#103** | Draft. `docs/README.md` re-merged after #93. |
+| 4 | **#98** | Draft. Fix its dangling `ADR-0039` anchor first — that number now belongs to #96's auth ADR, and #98 means #94's, which is **0045**. |
+| 5 | **#106** | This document. |
 
-> **⚠️ #94 and #96 both change auth — #96 supersedes.** #94 carries an earlier variant whose fail-closed redirect is gated on `NODE_ENV=production`; #96 carries the reconciled single gate keyed on `RESPONSEOS_REQUIRE_AUTH` (its history includes a commit literally titled *"reconcile PR #94/#96 fail-closed auth into one gate"*). Merging #96 first and reviewing #94's auth hunks against it avoids reintroducing the older behaviour.
+> **⚠️ Every merge re-conflicts the next.** `docs/CHANGELOG.md` for #94/#103/#106, `docs/DECISIONS.md` for #94/#105, `dashboard/dashboard-data.json` for anything touching the board. Mechanical each time, but unavoidable — merge one, re-resolve, repeat. Consider a `.gitattributes` union merge driver for `CHANGELOG.md` if the pattern persists.
 
-> **⚠️ `docs/CHANGELOG.md` is a serial bottleneck for #94, #103, and #106.** Each appends to the same `## Unreleased` block, so every merge re-conflicts the next. Mechanical (keep both sides, newest first) but unavoidable. *The five stacked docs PRs are exempt — none of them touches `CHANGELOG.md`, which is itself an `AGENTS.md` hygiene gap.* Consider a `.gitattributes` union merge driver if the pattern persists.
+> **⚠️ #94 and #96 both changed auth — #96 won.** #94 carried an earlier variant gated on `NODE_ENV=production`; master now has the reconciled `RESPONSEOS_REQUIRE_AUTH` gate. #94's conflicts were resolved **in master's favour**, and two of its tests asserting the superseded semantics were removed (master's `proxy.test.ts` and `session.test.ts` already cover the same ground more thoroughly).
+
+> 🔴 **A clean auto-merge silently widened the public surface.** Merging master into #94 produced *no conflict* in `lib/auth/route-protection.ts`, yet left `/audit` and `/trust` in **both** `PUBLIC_EXACT` (master's posture) and `PUBLIC_PREFIXES` (#94's). Since `isPublicPath` returns true if either matches, the prefix rule won and `/audit/*` and `/trust/*` became public — wider than either branch intended. Only master's `treats /audit/internal as protected` test caught it. Fixed by dropping the prefix entries. **A clean merge is not a correct merge.**
 
 ### Hygiene gaps found (not blockers)
 
@@ -213,9 +233,11 @@ A mock-safe hosted demo. Per **ADR-0019** this is a *v0.3-gated, production-faci
 
 - ✅ Demo walkthrough built and mock-safe
 - ✅ Deployment contained (`vercel.json`, Pages double-gated)
+- ✅ **Fail-closed auth gate exists** — #96 merged (`8fffd57`)
+- ⬜ **Set `RESPONSEOS_REQUIRE_AUTH` on the hosted deploy** — the gate is opt-in; unset, `master` is still fail-open by default
+- ⬜ **Confirm `/api/audit-requests` reachability** before enabling the flag — it is not on the public path list (§3e)
 - ⬜ **Founder authorization + an explicit carve-out** from the "no production deploys" hard rule (`AGENTS.md:24`)
 - ⬜ **Real Clerk login replacing the basic-auth shim** — ADR-0019 makes this a precondition
-- ⬜ **Fail-closed auth** — PR #96, unmerged
 - ⬜ No hosted-deploy artifact exists on `master` (`vercel.json` is a *blocker*, not a pipeline)
 
 ### Lane 2 — `v0.3-production` (live providers)
@@ -263,12 +285,12 @@ These are yours. None is an engineering task; each blocks work downstream.
 
 ## 7. Recommended sequence
 
-1. **Merge #96 first** — it closes a live cross-tenant exposure, proven in §3e. Nothing else in the backlog is this urgent.
-2. **Decide D2** (define the v0.3 readiness gates) — every deploy is blocked behind it, and the 2026-08-15 date depends on it.
-3. **Decide D6b**, then **drain the #89→#93 chain in order** — a month of finished work, four mechanical conflicts.
-4. **Decide D1** (positioning) — unblocks every sales asset.
-5. **Merge #94** (ready now), then **#105, #103, #98**. Review #94's auth hunks against #96.
-6. **Then, and only then**, take up D3 and the demo deploy.
+1. ~~Merge #96~~ — ✅ done (`8fffd57`). The fail-closed gate now exists on `master`.
+2. ~~Drain the #89→#93 chain~~ — ✅ done (`b35669f` → `83038d5`). A month of stranded documentation is landed.
+3. **Decide D2** (define the v0.3 readiness gates) — **now the critical path.** Every deploy is blocked behind it and the 2026-08-15 date depends on it. Nothing else in this list unblocks as much.
+4. **Decide D1** (positioning) — unblocks every sales asset. Note #105 (unmerged) proposes a reconciliation: revenue recovery and business memory as *stages of one progression* rather than competing brands. **Ratifying or rejecting that framing is the decision.**
+5. **Merge #94, #105, #103, #98, #106** — all resolved and gated; expect one mechanical re-conflict per merge.
+6. **Then, and only then**, take up D3 and the demo deploy — including setting `RESPONSEOS_REQUIRE_AUTH` and verifying the `/audit` form still submits.
 
 ---
 
@@ -280,4 +302,6 @@ This is not a defect and nothing was changed to accommodate it — but the defau
 
 ---
 
-*Produced by an automated consistency sweep, 2026-08-02. Verification: `lint`, `typecheck`, `test`, `build` on every touched branch; `test:integration` delegated to CI (Postgres 16 service container). The fail-open/fail-closed result in §3e was measured against a running dev server, not inferred. **No merges to `master` were performed** — merge authority remains with the founder per the governance kernel.*
+*Produced by an automated consistency sweep, 2026-08-02; updated 2026-08-03 as the backlog was drained. Verification: `lint`, `typecheck`, `test`, `build` on every touched branch; `test:integration` delegated to CI (Postgres 16 service container). The fail-open/fail-closed result in §3e was measured against a running dev server, not inferred.*
+
+*Every merge to `master` was individually authorised by the founder and SHA-pinned with `--match-head-commit`. No merge was performed on the agent's own initiative.*

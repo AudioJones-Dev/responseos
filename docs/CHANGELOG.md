@@ -4,6 +4,13 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: update the build status report as the PR backlog drained
+
+- Recorded the six merges that landed during the sweep — #96 (`8fffd57`, the fail-closed auth gate), then the five-PR documentation chain #89–#93 (`b35669f` → `83038d5`) — and marked the fail-open auth finding **resolved**.
+- **Confirmed the squash-cascade prediction in practice.** #89 merged clean and every subsequent step conflicted, exactly as simulated: #90/#91/#92 on `dashboard/dashboard-data.json`, #93 on that plus two add/add `.md` collisions caused by squashing. The board finished at the predicted 28 tasks with `G-01`–`G-05` intact and no duplicate ids.
+- **Recorded a defect a clean auto-merge introduced.** Merging master into #94 produced no conflict in `lib/auth/route-protection.ts` yet left `/audit` and `/trust` in both `PUBLIC_EXACT` and `PUBLIC_PREFIXES`; because `isPublicPath` matches either, the prefix rule won and `/audit/*` and `/trust/*` silently became public. Caught only by master's own test.
+- Flagged that `RESPONSEOS_REQUIRE_AUTH` is **opt-in** — the gate now exists but `master` remains fail-open by default until the hosted deploy sets it — and that `/api/audit-requests` is absent from the public path list, so the `/audit` form would submit into a redirect once the flag is on.
+
 ## Unreleased — docs: record build status vs docs and the GTM pipeline
 
 - Added [`BUILD_STATUS_AND_GTM_PIPELINE.md`](./BUILD_STATUS_AND_GTM_PIPELINE.md) — a build-vs-docs reconciliation covering git topology, the docs-behind/docs-ahead split with `file:line` evidence, a SHA-pinned merge sheet for the open pull-request backlog, the four GTM lanes and their real gates, and a founder decision register. Documentation only; no app code, schema, auth, provider, dependency, secret, or deploy changes, and no merges to `master`.
