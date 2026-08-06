@@ -14,4 +14,3 @@ export interface CrmProvider {
     name: string;
   }): Promise<CrmContactRef>;
 }
-

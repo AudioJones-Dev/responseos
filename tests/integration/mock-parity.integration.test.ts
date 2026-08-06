@@ -44,8 +44,24 @@ afterAll(async () => {
 
 describe("seeded mock fixture parity", () => {
   test("accounts match lib/mock accounts field-for-field", async () => {
-    const rows = await prisma.account.findMany({ orderBy: { id: "asc" } });
+    const fixtureIds = getMockAccounts().map((account) => account.id);
+    const rows = await prisma.account.findMany({
+      where: { id: { in: fixtureIds } },
+      orderBy: { id: "asc" },
+    });
     expect(clean(normalize(rows))).toEqual(clean(getMockAccounts()));
+  });
+
+  test("internal inbound infrastructure stays outside client mock fixtures", async () => {
+    expect(getMockAccounts().map((account) => account.id)).not.toContain(
+      "org_inbound_prospects",
+    );
+    await expect(
+      prisma.account.findUnique({ where: { id: "org_inbound_prospects" } }),
+    ).resolves.toMatchObject({
+      id: "org_inbound_prospects",
+      industry: "internal",
+    });
   });
 
   test("contacts match lib/mock contacts field-for-field", async () => {

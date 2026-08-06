@@ -65,9 +65,10 @@ export default function MarketingHome() {
           <span className="text-accent">missed revenue</span>.
         </h1>
         <p className="mt-6 max-w-2xl text-lg text-ink-secondary">
-          ResponseOS captures calls, notes, and follow-up into Business Memory —
-          then turns missed demand into booked revenue you can prove. OFFER is
-          the philosophy. RECOVER is how we ship it.
+          Explore a mock-safe demo of how ResponseOS is designed to capture
+          calls, notes, and follow-up into Business Memory, then turn missed
+          demand into attributable opportunities. OFFER is the philosophy.
+          RECOVER is the delivery model.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <ButtonLink href="/demo" glow>Revenue Recovery Demo</ButtonLink>

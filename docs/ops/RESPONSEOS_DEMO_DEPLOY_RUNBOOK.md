@@ -42,8 +42,13 @@ npx prisma db seed
 2. Anonymous `GET /admin` → redirect to `/`
 3. Anonymous `GET /client/dashboard` → redirect to `/`
 4. Anonymous `GET /demo/walkthrough` → 200
-5. `POST /api/audit-requests` with valid body → `ok: true` (persisted when DB present)
-6. Confirmed: no live provider secrets in the env
+5. Confirm Gate A11 is accepted and implemented: a valid
+   `POST /api/audit-requests` records the canonical intake event before its
+   derived assessment, and replaying the same `Idempotency-Key` does not create
+   another assessment
+6. Confirm Gate A12 host/edge abuse control returns `429` under the approved
+   test policy; do not substitute an in-memory process limiter
+7. Confirmed: no live provider secrets in the env
 
 ## Rollback
 

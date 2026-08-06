@@ -40,7 +40,8 @@ development never requires a secret.**
   - **Deploy checklist item:** because the trigger is opt-in, forgetting it leaves a hosted deploy
     fail-open. Set it alongside the Clerk keys, not after.
 - `AUDIT_NOTIFY_WEBHOOK` — **optional**. HTTPS URL notified with a **reference-only** JSON payload
-  (no prospect PII) when `/api/audit-requests` captures an inbound audit (ADR-0040). Absent →
+  (no prospect PII) when `/api/audit-requests` captures an inbound audit (ADR-0040). Delivery has a
+  three-second timeout and never changes the already-captured client response. Absent →
   reference-only server log.
 
 ### Dev session override (local / test / dev only)
