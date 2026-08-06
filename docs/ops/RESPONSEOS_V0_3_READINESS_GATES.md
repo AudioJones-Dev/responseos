@@ -25,8 +25,16 @@ Clears a **production-facing, mock-safe hosted demo** (ADR-0019). No live Telnyx
 | A8 | Version identity coherent (`package.json` ≡ `/api/health`) | Health probe |
 | A9 | Demo walkthrough smoke tests green | `tests/unit/demo-walkthrough.smoke.test.ts` |
 | A10 | No live provider secrets required for the demo to boot | Mock-first ADR-0001 |
+| A11 | Public `/audit` persistence records an idempotent canonical intake event before deriving an assessment | Accepted intake-ledger ADR + migration + DB integration tests |
+| A12 | Durable public abuse control is enabled and verified at the host/edge | Host configuration evidence + 429 smoke; no in-memory limiter claim |
 
 **Go-live verb:** promote a **preview/demo** deployment with Gate Set A checked. This is **not** live-provider production.
+
+Gate A11 and A12 are currently **blocking operator requirements**. The schema has
+no generic `Event` model, and `WebhookEvent` is reserved for signed vendor
+callbacks. A durable rate limit also requires an approved host/edge control; an
+in-memory process counter is not production protection. PR #107, its preview,
+and green CI do not clear either gate.
 
 ---
 

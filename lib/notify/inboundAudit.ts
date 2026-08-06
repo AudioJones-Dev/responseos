@@ -6,21 +6,31 @@
 
 import type { InboundAuditRecord } from "@/lib/data/inboundAudits";
 
+export const AUDIT_NOTIFY_TIMEOUT_MS = 3_000;
+
+interface NotifyInboundAuditOptions {
+  fetchImpl?: typeof fetch;
+  timeoutMs?: number;
+}
+
 export async function notifyInboundAudit(
   record: InboundAuditRecord,
+  options: NotifyInboundAuditOptions = {},
 ): Promise<{ notified: boolean; channel: "webhook" | "log" }> {
   const webhook = process.env.AUDIT_NOTIFY_WEBHOOK?.trim();
   if (webhook) {
     try {
-      const res = await fetch(webhook, {
+      const res = await (options.fetchImpl ?? fetch)(webhook, {
         method: "POST",
         headers: { "content-type": "application/json" },
+        signal: AbortSignal.timeout(
+          options.timeoutMs ?? AUDIT_NOTIFY_TIMEOUT_MS,
+        ),
         body: JSON.stringify({
           type: "inbound_audit",
           reference: record.reference,
           id: record.id,
           persisted: record.persisted,
-          industry: record.inputs.industry ?? null,
           created_at: record.created_at,
         }),
       });

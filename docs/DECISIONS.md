@@ -802,3 +802,41 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 5. **Authorize the commercial write path for `/audit` capture** — persist inbound prospect requests (AssessmentReport on the inbound pool account, or mock fallback) and optional operator notify webhook. Does not authorize Engagement create/sign UI or live CRM writes.
 
 **Consequences.** PRD, offer, pricing, and marketing copy reconcile to the hybrid story. Demo runbook + readiness gates become the deploy vocabulary. Mock CAL scaffolding may land. Live Telnyx/Vapi/HubSpot/Calendly remain gated on Gate Set B + separate written auth. Admin billing mock tiers must not be quoted to prospects.
+
+---
+
+## ADR-0041 — Public web intake ledger and idempotency contract
+
+**Status:** Proposed (2026-08-06). Requires explicit operator acceptance before
+any schema migration or persistent `/audit` implementation. This proposal does
+not authorize a deploy, provider, secret, or production configuration change.
+
+**Context.** PR #107 writes a public `/audit` submission directly to
+`AssessmentReport`. That bypasses ADR-0002 and permits duplicate derived rows.
+The implemented `WebhookEvent` model is not an appropriate substitute: its raw
+body, signature, provider-event, and processing-status contract is specifically
+for vendor HTTP callbacks. The canonical generic `events` envelope is defined
+in [`architecture/RESPONSEOS_EVENT_SCHEMA.md`](./architecture/RESPONSEOS_EVENT_SCHEMA.md)
+but has no Prisma model or writer yet.
+
+**Smallest decision required before implementation.** Accept or reject a scoped
+canonical `Event` model and idempotent writer for public web intake, following
+the existing envelope rather than creating an audit-specific pseudo-ledger. The
+accepted decision must settle:
+
+1. the catalog name for a public assessment request (`assessment.requested` or
+   another explicitly approved canonical name);
+2. immutable tenant/account scope, `source = web`, occurred/received timestamps,
+   schema version, lane-redacted payload, and a unique dedupe key;
+3. the public `Idempotency-Key` contract: 24-hour retention, same key and body
+   returns the original result, and same key with a different payload returns
+   `409 IDEMPOTENCY_CONFLICT`;
+4. one database transaction that inserts or resolves the intake event before
+   deriving at most one `AssessmentReport` linked to that event; and
+5. retention/deletion treatment for prospect PII plus database-backed replay,
+   conflict, concurrency, tenant-isolation, and write-order tests.
+
+**Interim consequence.** Gate A11 remains blocked. `WebhookEvent`, `AuditLog`,
+`LeadEvent`, and `WorkflowRun` must not be repurposed to avoid this decision.
+The direct-write implementation in PR #107 is not merge-ready until this ADR is
+accepted and implemented or that persistence path is removed.

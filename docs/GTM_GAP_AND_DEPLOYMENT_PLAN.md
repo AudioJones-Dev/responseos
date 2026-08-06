@@ -294,4 +294,3 @@ Keep demo pages (`operator-console`, `client-dashboard`) and checkpoint docs; **
 - Close issue #27 demo scope cut
 
 *ResponseOS — GTM Gap & Deployment Plan. Updated 2026-08-06.*
-

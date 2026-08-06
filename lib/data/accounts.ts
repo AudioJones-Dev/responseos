@@ -53,7 +53,11 @@ export async function listAccounts(): Promise<Result<Account[]>> {
   }
 
   try {
-    const rows = await db.account.findMany({ orderBy: { created_at: "asc" } });
+    // Client directories exclude the operator-only inbound infrastructure pool.
+    const rows = await db.account.findMany({
+      where: { id: { not: "org_inbound_prospects" } },
+      orderBy: { created_at: "asc" },
+    });
     return ok(rows.map(rowToAccount));
   } catch (e) {
     return errFromThrown<Account[]>(e);

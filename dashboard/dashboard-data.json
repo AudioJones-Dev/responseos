@@ -388,27 +388,29 @@
       "id": "GTM-01",
       "phase": "Launch / Demo Deploy",
       "title": "GTM gap closure — gates, hybrid narrative, audit persist, CAL mocks",
-      "owner": "Claude Code",
+      "owner": "Codex",
       "status": "Review",
-      "progress": 90,
+      "progress": 85,
       "priority": "High",
       "start": "2026-08-06",
       "due": "2026-08-06",
       "ref": 107,
       "refType": "pull",
-      "blocked": false
+      "blocked": true,
+      "blockedReason": "Gate A11/A12: accept and implement canonical public-intake ledger/idempotency contract; configure durable host abuse control"
     },
     {
       "id": "GTM-02",
       "phase": "Integrations",
       "title": "Persist /audit inbound prospects + operator notify",
-      "owner": "Claude Code",
-      "status": "Review",
-      "progress": 100,
+      "owner": "Codex",
+      "status": "In Progress",
+      "progress": 70,
       "priority": "High",
       "start": "2026-08-06",
       "due": "2026-08-06",
-      "blocked": false
+      "blocked": true,
+      "blockedReason": "Direct AssessmentReport write bypasses ADR-0002; generic Event ledger schema/writer needs an accepted ADR before implementation"
     },
     {
       "id": "GTM-03",

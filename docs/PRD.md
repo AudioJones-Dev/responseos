@@ -98,7 +98,10 @@ Per the CTO communications decision ([`product/responseos-communications-stack.m
 - No Firebase.
 - No live provider integrations until v0.3 is explicitly authorized.
 - No real secrets in the repo; `.env.example` is placeholders only.
-- No production deploys from this repo yet.
+- No deploy is authorized by CI, a preview URL, or a pull request. A separately
+  authorized **Gate Set A** promotion may host only the Clerk-gated, mock-safe
+  demo; **Gate Set B** live-provider production requires separate written
+  authorization.
 - ResponseOS is **not** HIPAA-certified. The HIPAA-ready lane is a future architectural pattern, not a current product capability.
 
 ## Success metrics
