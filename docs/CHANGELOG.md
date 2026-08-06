@@ -4,6 +4,15 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: GTM gap closure (Gate Set A + prospect pipeline + mock CAL)
+
+- **Defined v0.3 readiness gates** as Gate Set A (mock-safe demo) vs Gate Set B (live pilot) in [`ops/RESPONSEOS_V0_3_READINESS_GATES.md`](./ops/RESPONSEOS_V0_3_READINESS_GATES.md); demo runbook in [`ops/RESPONSEOS_DEMO_DEPLOY_RUNBOOK.md`](./ops/RESPONSEOS_DEMO_DEPLOY_RUNBOOK.md).
+- **ADR-0040** — hybrid narrative (Business Memory system → Revenue Recovery outcome), demo deploy carve-out, defer live providers, manual invoice bridge, authorize `/audit` write path; pre-authorize mock-only CAL.
+- **Prospect capture:** `/api/audit-requests` persists to inbound pool account `org_inbound_prospects` when DB is present; optional `AUDIT_NOTIFY_WEBHOOK`; public allowlist includes the capture route under `RESPONSEOS_REQUIRE_AUTH`.
+- **Marketing/docs** reconciled to hybrid CTA (**Revenue Recovery Demo**); PRD, offer, pricing, site metadata updated.
+- **Mock CAL** interfaces + resolver: carrier, voiceAgent, sms, crm, scheduling (no live SDKs).
+- Demo surfaces from #94 triage: `/demo/operator-console`, `/demo/client-dashboard`. Health probe reports `package.json` version + optional DB check. Landed [`BUILD_STATUS_AND_GTM_PIPELINE.md`](./BUILD_STATUS_AND_GTM_PIPELINE.md).
+
 ## Unreleased — chore: remediate dependencies and pin the Node/npm runtime
 
 - Upgraded Next and `eslint-config-next` to `16.2.12`, Sharp to `0.35.3`, PostCSS to `8.5.23`, and the Node type definitions to the Node 24 line; constrained the ESLint transitive glob stack to patched `minimatch` `10.2.5` / `brace-expansion` `5.0.9` and added a version-checked CommonJS compatibility patch for legacy ESLint consumers. The current clean-install audit reports zero vulnerabilities, and CI enforces `npm audit --audit-level=high` in both validation jobs.

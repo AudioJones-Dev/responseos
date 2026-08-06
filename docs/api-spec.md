@@ -51,7 +51,7 @@ Mock-safe mutation routes may include a `mock: true` flag inside the success env
 ## REST routes
 
 ### Health
-`GET /api/health` → `{ status: 'ok', service: 'responseos', version: '0.1.0' }`
+`GET /api/health` → `{ status: 'ok' | 'degraded', service: 'responseos', version: '<package.json>', database: 'connected' | 'unavailable' | 'skipped' }`
 
 ### Accounts
 - `GET /api/accounts` → account list

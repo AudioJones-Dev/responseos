@@ -24,7 +24,12 @@
 
 In parallel, a **GTM Phase 0.5** marketing surface shipped (#66/#67): a public conversion path (`/audit` → mock capture endpoint), a trust/security page, pricing clarity, per-page + Open Graph metadata, an expanded demo narrative, and the home OFFER section — all mock-safe, no live integrations.
 
-**Next milestone: v0.3 — gated.** Live provider integrations (Telnyx/Vapi/Twilio/HubSpot), real Stripe billing, and any production deploy stay **off** until v0.3 is **explicitly authorized** per the AGENTS hard rules. No v0.3 code lands before that authorization.
+**Next milestone: mock-safe demo deploy (Gate Set A) → prospect pipeline → live v0.3 (Gate Set B).**
+
+- **Gate definitions:** [`ops/RESPONSEOS_V0_3_READINESS_GATES.md`](./ops/RESPONSEOS_V0_3_READINESS_GATES.md) — Set A = hosted mock-safe demo; Set B = live providers.
+- **Demo carve-out (ADR-0040):** a Clerk-gated, mock-safe hosted demo may proceed under Gate Set A without live Telnyx/Vapi/HubSpot. Runbook: [`ops/RESPONSEOS_DEMO_DEPLOY_RUNBOOK.md`](./ops/RESPONSEOS_DEMO_DEPLOY_RUNBOOK.md).
+- **Live providers + Gate Set B** stay **off** until explicitly authorized. Mock-only CAL interface scaffolding is pre-authorized (authorization brief §1 + ADR-0040).
+- **Commercial:** hybrid narrative (Business Memory system → Revenue Recovery outcome); Recovery tiers for public quotes; manual invoicing bridge until v0.5.
 
 ## v0.2 acceptance criteria
 
@@ -97,6 +102,6 @@ Architectural placement: [`architecture.md`](./architecture.md) § Future Knowle
 
 - No Firebase.
 - No real secrets in the repo.
-- No production deploys from this repo until v0.3 readiness gates clear.
+- No live-provider (Gate Set B) deploys until [`ops/RESPONSEOS_V0_3_READINESS_GATES.md`](./ops/RESPONSEOS_V0_3_READINESS_GATES.md) clears; mock-safe Gate Set A demo deploys follow ADR-0040.
 - Provider adapters fall back to mock when env vars are missing — the app must boot and run without live keys at every version.
 - ResponseOS is not HIPAA-certified or HIPAA-compliant out of the box. The HIPAA-ready lane is an architectural pattern, not a current product capability.

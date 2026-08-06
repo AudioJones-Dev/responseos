@@ -11,6 +11,7 @@ describe("isPublicPath", () => {
     "/demo/walkthrough",
     "/demo/walkthrough/call",
     "/api/health",
+    "/api/audit-requests",
     "/sign-in",
     "/sign-in/factor-one",
     "/sign-up",

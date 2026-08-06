@@ -21,6 +21,7 @@ export * as Automations from "./automations";
 export * as Notifications from "./notifications";
 export * as RevenueMetrics from "./revenueMetrics";
 export * as Assessments from "./assessments";
+export * as InboundAudits from "./inboundAudits";
 export * as Engagements from "./engagements";
 export * as AuditLogs from "./auditLogs";
 export * as WebhookEvents from "./webhookEvents";

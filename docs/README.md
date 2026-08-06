@@ -1,6 +1,8 @@
 # ResponseOS — Docs
 
-ResponseOS is the AI Revenue Recovery Platform built by AJ Digital LLC. This `docs/` directory holds the product, architecture, data, API, automation, environment, deployment, governance, and security documentation. `PRD.md`, `ROADMAP.md`, and `DECISIONS.md` remain the operational entry points unless a later approved governance decision changes the canonical hierarchy.
+ResponseOS is the Business Memory system that delivers Revenue Recovery, built by AJ Digital LLC. This `docs/` directory holds the product, architecture, data, API, automation, environment, deployment, governance, and security documentation. `PRD.md`, `ROADMAP.md`, and `DECISIONS.md` remain the operational entry points unless a later approved governance decision changes the canonical hierarchy.
+
+**GTM / deploy gate vocabulary:** [`ops/RESPONSEOS_V0_3_READINESS_GATES.md`](./ops/RESPONSEOS_V0_3_READINESS_GATES.md) (Gate Set A = mock-safe demo; Gate Set B = live pilot) · [`GTM_GAP_AND_DEPLOYMENT_PLAN.md`](./GTM_GAP_AND_DEPLOYMENT_PLAN.md) · [`BUILD_STATUS_AND_GTM_PIPELINE.md`](./BUILD_STATUS_AND_GTM_PIPELINE.md) · demo runbook [`ops/RESPONSEOS_DEMO_DEPLOY_RUNBOOK.md`](./ops/RESPONSEOS_DEMO_DEPLOY_RUNBOOK.md).
 
 ## `RESPONSEOS_*` doc set
 

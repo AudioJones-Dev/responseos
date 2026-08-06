@@ -1,10 +1,10 @@
 # ResponseOS — Deployment Plan
 
 **Owner:** AJ Digital LLC / Audio Jones
-**Status:** Canonical (go-forward). Extends [`../DEPLOYMENT.md`](../DEPLOYMENT.md) (three lanes, IaC, CI/CD, SLOs, rollback) with the go-forward topology: the **voice gateway as a second deployable**, Redis, and the Grok/OpenAI providers.
-**Anchored by:** ADR-0001 (no deploy until v0.3) · ADR-0013 (gateway) · ADR-0014 (Redis) · ADR-0004 (lanes)
+**Status:** Canonical (go-forward). Extends [`../DEPLOYMENT.md`](../DEPLOYMENT.md) (three lanes, IaC, CI/CD, SLOs, rollback). **Readiness gates are defined in** [`RESPONSEOS_V0_3_READINESS_GATES.md`](./RESPONSEOS_V0_3_READINESS_GATES.md) (Gate Set A = mock-safe demo; Gate Set B = live pilot).
+**Anchored by:** ADR-0001 · ADR-0019 · ADR-0036 (gateway + Redis **deferred** for first live slice) · ADR-0031–0037 · ADR-0040 · ADR-0004 (lanes)
 
-> **Hard rule (unchanged):** do **not** deploy from this repo until v0.3 readiness gates clear. This document is the **target** posture so we can move fast when v0.3 unlocks. Current state: GitHub remote live (`audiojones-dev/responseos`); CI runs `validate` + `integration` on every push/PR; **no deploy jobs yet**.
+> **Hard rule:** do **not** promote Gate Set B (live providers) until those gates clear and live v0.3 is explicitly authorized. Gate Set A mock-safe demo deploys follow ADR-0040 + [`RESPONSEOS_DEMO_DEPLOY_RUNBOOK.md`](./RESPONSEOS_DEMO_DEPLOY_RUNBOOK.md). Current state: CI `validate` + `integration`; `master` auto-deploy disabled in `vercel.json`.
 
 ---
 

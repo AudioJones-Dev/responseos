@@ -36,7 +36,7 @@ export default function MedSpasPage() {
         the appointment before the lead cools off.
       </p>
       <div className="mt-8">
-        <ButtonLink href="/audit">Run a revenue audit</ButtonLink>
+        <ButtonLink href="/audit">Request a revenue audit</ButtonLink>
       </div>
 
       <div className="mt-14 grid gap-4 sm:grid-cols-3">
