@@ -19,7 +19,9 @@ Commercial strategy and onboarding workflow for ResponseOS. This is documentatio
 
 ## Why this exists
 
-ResponseOS is sold as a **revenue recovery system**, not as a generic "AI receptionist install." That positioning only holds if every engagement starts with proof that revenue is leaking and that the client is operationally ready to plug it. So the commercial motion is two phases, in order:
+ResponseOS is sold as a **Business Memory system that delivers revenue recovery** (ADR-0040), not as a generic "AI receptionist install." Public quotes use the **Recovery Core / Pro / Performance** table (matches the shipped site and `EngagementTier`). Memory capacity tiers (ADR-0028) stay planning-only until the v0.5 billing engine. First 1–3 pilots may invoice **manually** (Stripe Dashboard).
+
+That positioning only holds if every engagement starts with proof that revenue is leaking and that the client is operationally ready to plug it. So the commercial motion is two phases, in order:
 
 1. **Phase 1 — ResponseOS Readiness & Revenue Leak Assessment.** A paid diagnostic that decides whether ResponseOS should be implemented at all.
 2. **Phase 2 — ResponseOS Implementation + Monthly Revenue Recovery Retainer.** The recurring offer, anchored by a setup fee, a monthly fee, and an optional outcome fee tied to verified results.

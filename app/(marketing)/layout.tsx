@@ -42,7 +42,7 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
               Operator console
             </Link>
             <ButtonLink href="/audit" size="sm" glow>
-              Run a revenue audit
+              Request audit
             </ButtonLink>
           </div>
         </div>

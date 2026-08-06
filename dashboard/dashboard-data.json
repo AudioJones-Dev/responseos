@@ -1,11 +1,11 @@
 {
   "project": {
     "name": "ResponseOS",
-    "subtitle": "AI Revenue Recovery Platform",
+    "subtitle": "Business Memory · Revenue Recovery",
     "repo": "AudioJones-Dev/responseos",
     "branch": "master",
     "launch": "2026-08-15",
-    "milestone": "v0.3 Demo"
+    "milestone": "Gate Set A · Mock-safe demo"
   },
   "owners": {
     "Audio": {
@@ -174,7 +174,8 @@
       "progress": 100,
       "priority": "Med",
       "start": "2026-06-16",
-      "due": "2026-06-23"
+      "due": "2026-08-06",
+      "blocked": false
     },
     {
       "id": "R-01",
@@ -375,13 +376,49 @@
       "progress": 15,
       "priority": "High",
       "start": "2026-07-13",
-      "due": "2026-08-01",
-      "ref": 14,
+      "due": "2026-08-15",
+      "ref": 94,
       "refType": "pull",
       "blocked": true,
       "blockedReason": "Historical #14 closed; Path A staging scaffold in chore/v0.3-staging-hosting-prep — still blocked on Audio Neon/Clerk/Vercel secrets + Stage C auth; no staging URL live",
       "refState": "closed",
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/14"
+    },
+    {
+      "id": "GTM-01",
+      "phase": "Launch / Demo Deploy",
+      "title": "GTM gap closure — gates, hybrid narrative, audit persist, CAL mocks",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-08-06",
+      "due": "2026-08-06",
+      "blocked": false
+    },
+    {
+      "id": "GTM-02",
+      "phase": "Integrations",
+      "title": "Persist /audit inbound prospects + operator notify",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-08-06",
+      "due": "2026-08-06",
+      "blocked": false
+    },
+    {
+      "id": "GTM-03",
+      "phase": "Integrations",
+      "title": "Mock-only CAL interfaces (carrier/voiceAgent/sms/crm/scheduling)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 100,
+      "priority": "Med",
+      "start": "2026-08-06",
+      "due": "2026-08-06",
+      "blocked": false
     },
     {
       "id": "I-01",

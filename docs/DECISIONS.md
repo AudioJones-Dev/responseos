@@ -784,3 +784,21 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 7. The broader provider baseline remains ADR-0031/0032/0036. This demo-slice decision tests whether the first live demo can ship with fewer vendors; it does not reverse Vapi's broader v0.3 orchestration role.
 
 **Consequences.** v0.3 now has a concrete first live-provider experience target: a bounded public demo, not a general production cutover. The slice is allowed to be specified and broken into implementation PRs, but each implementation step still needs its own scoped approval and must carry tests for signature validation, tenant isolation, kill switch behavior, Sent.dm idempotent messaging, and outbound abuse controls. This ADR does not authorize live CRM sync, billing, HIPAA-ready behavior, or use of real client data.
+
+---
+
+## ADR-0046 — GTM closure defaults: hybrid narrative, demo carve-out, defer live v0.3, manual invoice bridge
+
+**Status:** Accepted (2026-08-06) as the **operator-default package** for closing GTM/PRD gaps to a sellable demo + prospect pipeline. **Does not authorize live provider traffic.** Live integrations still require a separate written authorization referencing Gate Set B in [`ops/RESPONSEOS_V0_3_READINESS_GATES.md`](./ops/RESPONSEOS_V0_3_READINESS_GATES.md).
+
+**Context.** Docs disagreed with each other and with the shipped site: Revenue Recovery vs Business Memory, undefined “v0.3 readiness gates,” mock-only `/audit`, and a hard “no production deploys” rule that blocked the ADR-0019 mock-safe demo. The GTM gap plan and BUILD_STATUS sweep listed founder decisions as the pacing constraint.
+
+**Decision.**
+
+1. **Hybrid commercial narrative (extends ADR-0022).** Public GTM leads with **Business Memory as the system** and **Revenue Recovery as the outcome**. One CTA: **“Revenue Recovery Demo”** (ADR-0035). One public pricing table for prospects: **Recovery Core / Pro / Performance** (matches `EngagementTier` + shipped site); capacity/Memory tiers remain the ADR-0028 planning model and are not a second quote sheet for reps.
+2. **Mock-safe demo deploy carve-out.** A hosted, Clerk-gated, mock-safe demo that clears **Gate Set A** in [`ops/RESPONSEOS_V0_3_READINESS_GATES.md`](./ops/RESPONSEOS_V0_3_READINESS_GATES.md) is an allowed **demo deploy**. It is not live-provider production. The AGENTS “no production deploys” hard rule is amended to: no **live-provider / Gate Set B** deploys until those gates clear; Gate Set A demo deploys need explicit founder go-live (secrets + promote) but are no longer categorically forbidden by the readiness-gates phrase.
+3. **Defer live v0.3 providers** until Gate Set A demo is up and first leads flow. **Pre-authorize the mock-only CAL interface slice** from [`product/responseos-v0.3-authorization-brief.md`](./product/responseos-v0.3-authorization-brief.md) §1 (interfaces + mocks + tests only; no live SDKs, secrets, schema enums, or webhook mutations).
+4. **Manual / off-platform invoicing bridge** for the first 1–3 paid assessments and pilots (Stripe Dashboard or equivalent). In-app money rail stays **v0.5** (ADR-0010 / ADR-0028).
+5. **Authorize the commercial write path for `/audit` capture** — persist inbound prospect requests (AssessmentReport on the inbound pool account, or mock fallback) and optional operator notify webhook. Does not authorize Engagement create/sign UI or live CRM writes.
+
+**Consequences.** PRD, offer, pricing, and marketing copy reconcile to the hybrid story. Demo runbook + readiness gates become the deploy vocabulary. Mock CAL scaffolding may land. Live Telnyx/Vapi/HubSpot/Calendly remain gated on Gate Set B + separate written auth. Admin billing mock tiers must not be quoted to prospects.

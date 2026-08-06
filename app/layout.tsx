@@ -19,23 +19,22 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 const SITE_NAME = "ResponseOS";
-const SITE_TAGLINE = "ResponseOS — AI Revenue Recovery Platform";
+const SITE_TAGLINE = "ResponseOS — Business Memory · Revenue Recovery";
 const SITE_DESCRIPTION =
-  "ResponseOS helps service businesses recover missed revenue by capturing demand, qualifying leads, booking opportunities, and reporting ROI.";
+  "ResponseOS captures calls, notes, and follow-up into Business Memory — then recovers missed demand into booked revenue you can prove.";
 
-// Social-card copy — Variant A (Revenue Recovery), per
-// docs/product/responseos-og-social-preview-spec.md §3/§5.
-const OG_TITLE = "Stop losing revenue to missed calls and weak follow-up.";
+// Social-card copy — hybrid narrative (ADR-0040 / ADR-0022).
+const OG_TITLE = "Stop leaking memory, context, and missed revenue.";
 const OG_DESCRIPTION =
-  "ResponseOS answers the calls you miss, qualifies the lead, updates your CRM, and shows you the revenue you'd have lost — automatically.";
-const TWITTER_TITLE = "Stop losing revenue to missed calls.";
+  "ResponseOS turns service-business activity into Business Memory — then recovers missed calls into booked revenue you can prove.";
+const TWITTER_TITLE = "Business Memory that recovers missed revenue.";
 const TWITTER_DESCRIPTION =
-  "ResponseOS catches the calls you miss, qualifies the lead, and shows you what to do next.";
+  "ResponseOS captures the call, qualifies the lead, and shows what you'd have lost — automatically.";
 const OG_IMAGE = {
   url: "/og/responseos-og.png",
   width: 1200,
   height: 630,
-  alt: "ResponseOS — stop losing revenue to missed calls.",
+  alt: "ResponseOS — Business Memory · Revenue Recovery",
 };
 
 // A malformed NEXT_PUBLIC_APP_URL must not crash the build/boot — fall back.

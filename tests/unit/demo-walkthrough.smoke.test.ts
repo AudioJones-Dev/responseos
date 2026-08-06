@@ -38,6 +38,11 @@ describe("demo walkthrough — smoke (D7)", () => {
     }
   });
 
+  test("demo operator/client surfaces are public mock routes", () => {
+    expect(isPublicPath("/demo/operator-console")).toBe(true);
+    expect(isPublicPath("/demo/client-dashboard")).toBe(true);
+  });
+
   test("steps start at the Overview and have unique hrefs", () => {
     expect(steps[0].href).toBe("/demo/walkthrough");
     const hrefs = steps.map((s) => s.href);

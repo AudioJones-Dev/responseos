@@ -11,13 +11,15 @@
 
 ## Headline
 
-> **ResponseOS turns missed demand into booked revenue.**
+> **ResponseOS turns scattered activity into Business Memory — and missed demand into booked revenue.**
 
 We capture every call, qualify every lead, automate the follow-up, book the appointment, send the quote, and prove the recovered revenue every month — so you stop paying for marketing that walks straight into voicemail.
 
 ## What it is
 
-ResponseOS is the AI Revenue Recovery Platform for service businesses. Built on the OFFER + RECOVER frameworks. Operated by AJ Digital. White-labelable for partners.
+ResponseOS is the Business Memory system that delivers Revenue Recovery for service businesses (ADR-0022 / ADR-0040). Built on the OFFER + RECOVER frameworks. Operated by AJ Digital. White-labelable for partners.
+
+**Primary CTA:** Revenue Recovery Demo.
 
 ## What you get
 

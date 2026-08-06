@@ -70,6 +70,14 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 ## Unreleased — chore: pin js-yaml 4.3.1 to clear GHSA-5p4m-2wfm-xmqj
 
 - Added a `package.json` overrides pin for transitive `js-yaml` `4.3.1` (via `eslint` → `@eslint/eslintrc`) so `npm audit --audit-level=high` stays green in validate and integration CI. No app runtime, provider, secret, or deploy changes.
+## Unreleased — feat: GTM gap closure (Gate Set A + prospect pipeline + mock CAL)
+
+- **Defined v0.3 readiness gates** as Gate Set A (mock-safe demo) vs Gate Set B (live pilot) in [`ops/RESPONSEOS_V0_3_READINESS_GATES.md`](./ops/RESPONSEOS_V0_3_READINESS_GATES.md); demo runbook in [`ops/RESPONSEOS_DEMO_DEPLOY_RUNBOOK.md`](./ops/RESPONSEOS_DEMO_DEPLOY_RUNBOOK.md).
+- **ADR-0046** — hybrid narrative (Business Memory system → Revenue Recovery outcome), demo deploy carve-out, defer live providers, manual invoice bridge, authorize `/audit` write path; pre-authorize mock-only CAL.
+- **Prospect capture:** `/api/audit-requests` persists to inbound pool account `org_inbound_prospects` when DB is present; optional `AUDIT_NOTIFY_WEBHOOK`; public allowlist includes the capture route under `RESPONSEOS_REQUIRE_AUTH`.
+- **Marketing/docs** reconciled to hybrid CTA (**Revenue Recovery Demo**); PRD, offer, pricing, site metadata updated.
+- **Mock CAL** interfaces + resolver: carrier, voiceAgent, sms, crm, scheduling (no live SDKs).
+- Demo surfaces from #94 triage: `/demo/operator-console`, `/demo/client-dashboard`. Health probe reports `package.json` version + optional DB check. Landed [`BUILD_STATUS_AND_GTM_PIPELINE.md`](./BUILD_STATUS_AND_GTM_PIPELINE.md).
 
 ## Unreleased — chore: remediate dependencies and pin the Node/npm runtime
 

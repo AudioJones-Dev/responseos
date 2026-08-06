@@ -10,13 +10,15 @@
 
 ## What it is
 
-**ResponseOS is the AI Revenue Recovery Platform.** It captures missed demand for service businesses, qualifies and routes leads, automates follow-up, books opportunities, and proves the recovered revenue.
+**ResponseOS is the Business Memory system that delivers Revenue Recovery.** It captures calls, notes, decisions, and follow-up into structured operational memory, then uses that memory to qualify and route leads, automate follow-up, book opportunities, and prove recovered revenue.
 
 It is **not** an AI receptionist clone. The receptionist is one input. ResponseOS is the recovery layer that sits on top of every demand signal — phone, SMS, web form, AI-answered call, outbound campaign — and makes sure none of it leaks.
 
 ## Positioning
 
-> "ResponseOS helps service businesses recover missed revenue by capturing calls, qualifying leads, automating follow-up, booking opportunities, and reporting ROI."
+> "ResponseOS turns scattered service-business activity into Business Memory — so missed demand becomes booked revenue you can prove."
+
+**Public wedge (ADR-0022 / ADR-0040):** Business Memory is the *system*; Revenue Recovery is the *outcome*. Primary CTA: **Revenue Recovery Demo** (ADR-0035).
 
 ## Target user
 
@@ -34,10 +36,10 @@ It is **not** an AI receptionist clone. The receptionist is one input. ResponseO
 
 ## Commercial motion
 
-Sold in two phases:
+Sold in two phases (public quote sheet = **Recovery** tiers per ADR-0040; Memory capacity tiers stay planning-only until billing v0.5):
 
 1. **Phase 1 — Readiness & Revenue Leak Assessment.** $1,000 flat ($750–$1,500 range). Paid diagnostic that determines AI-readiness, revenue leak size, and fit/no-fit before any implementation conversation.
-2. **Phase 2 — Implementation + Monthly Revenue Recovery Retainer.** Setup fee + monthly retainer in one of three tiers (Recovery Core / Recovery Pro / Recovery Performance), with optional outcome fees layered on top.
+2. **Phase 2 — Implementation + Monthly Revenue Recovery Retainer.** Setup fee + monthly retainer in one of three tiers (Recovery Core / Recovery Pro / Recovery Performance), with optional outcome fees layered on top. First 1–3 pilots may invoice **manually** (Stripe Dashboard) until the v0.5 money rail.
 
 Qualification gates before Phase 2: ~$300+ average job value, ~20+ missed calls/month, clear booking or quote process, owner/staff buy-in, CRM/calendar access, low compliance risk, measurable ROI path. Full detail in [`pricing-and-onboarding.md`](./pricing-and-onboarding.md).
 
@@ -73,10 +75,10 @@ Shipped foundation:
 
 Explicitly out:
 
-- Live provider integrations → **v0.3**, now specified by the **communications stack** decision ([`product/responseos-communications-stack.md`](./product/responseos-communications-stack.md)): Telnyx + Vapi primary, Twilio failover, HubSpot default commercial system of record, behind a Communications Abstraction Layer; includes a Phase-1 Business Memory capture baseline.
+- Live provider integrations → **v0.3 Gate Set B**, now specified by the **communications stack** decision ([`product/responseos-communications-stack.md`](./product/responseos-communications-stack.md)): Telnyx + Vapi primary, Twilio failover, HubSpot default commercial system of record, behind a Communications Abstraction Layer; includes a Phase-1 Business Memory capture baseline.
 - Billing engine + Stripe + outcome-fee ledger → v0.5.
 - Knowledge layer → v0.4+.
-- Production deploys → gated on v0.3 readiness.
+- Live-provider production deploys → Gate Set B ([`ops/RESPONSEOS_V0_3_READINESS_GATES.md`](./ops/RESPONSEOS_V0_3_READINESS_GATES.md)). Mock-safe demo deploys → Gate Set A (ADR-0040).
 
 See [`ROADMAP.md`](./ROADMAP.md) for the full version table and milestone status.
 

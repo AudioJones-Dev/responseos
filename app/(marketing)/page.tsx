@@ -58,21 +58,21 @@ export default function MarketingHome() {
         <AtmosphereBackground family="signal-field" size="1920x1080" intensity={1} />
         <p className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 text-xs font-medium text-ink-secondary">
           <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-          Revenue recovery operating system
+          Business Memory · Revenue Recovery
         </p>
         <h1 className="mt-6 max-w-3xl font-display text-4xl font-semibold leading-[1.1] text-ink sm:text-6xl">
-          The revenue your service business{" "}
-          <span className="text-accent">already earned</span> — recovered.
+          Stop leaking memory, context, and{" "}
+          <span className="text-accent">missed revenue</span>.
         </h1>
         <p className="mt-6 max-w-2xl text-lg text-ink-secondary">
-          ResponseOS captures missed calls, qualifies leads, automates
-          follow-up, books opportunities, and reports the revenue you recovered.
-          OFFER is the philosophy. RECOVER is how we ship it.
+          ResponseOS captures calls, notes, and follow-up into Business Memory —
+          then turns missed demand into booked revenue you can prove. OFFER is
+          the philosophy. RECOVER is how we ship it.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
-          <ButtonLink href="/audit" glow>Run a revenue audit</ButtonLink>
-          <ButtonLink href="/demo" variant="secondary">
-            Watch the demo
+          <ButtonLink href="/demo" glow>Revenue Recovery Demo</ButtonLink>
+          <ButtonLink href="/audit" variant="secondary">
+            Request a revenue audit
           </ButtonLink>
         </div>
 
