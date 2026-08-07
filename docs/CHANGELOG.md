@@ -4,6 +4,14 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — chore: Path A staging hosting prep (workflow + operator runbook)
+
+- Added **staging-only** GitHub Actions workflow [`.github/workflows/deploy-staging.yml`](../.github/workflows/deploy-staging.yml): `workflow_dispatch` with confirmation input `staging`, GitHub Environment `staging` (human approval), `prisma migrate deploy`, then Vercel prebuilt deploy. **No** automatic production deploy from `master` (`vercel.json` containment unchanged).
+- Added operator runbook [`ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md`](./ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md) — env checklist (placeholders), Neon/Clerk/Vercel/GH Environment provision steps, tenant bootstrap smoke (Clerk org → Account → portal), credential gap audit (names only), observability tagging contract.
+- Documented Path A staging posture in [`DEPLOYMENT.md`](./DEPLOYMENT.md), [`env-spec.md`](./env-spec.md), [`ops/RESPONSEOS_DEPLOYMENT_PLAN.md`](./ops/RESPONSEOS_DEPLOYMENT_PLAN.md); observability stubs in [`ops/RESPONSEOS_OBSERVABILITY_AND_GOVERNANCE.md`](./ops/RESPONSEOS_OBSERVABILITY_AND_GOVERNANCE.md) § A7 (docs-first; no Sentry/PostHog SDK wiring without DSNs).
+- Dashboard: **L-02** → In Progress (partial; staging URL not live); added **L-02a** scaffold task; deploy task **14** progress note only — not Done. Providers remain mock; no secrets committed; pilot go-live not claimed.
+- Note: rebase/merge conflicts likely with open draft PRs [#109](https://github.com/AudioJones-Dev/responseos/pull/109) (Phase 0 docs) and [#108](https://github.com/AudioJones-Dev/responseos/pull/108) (Phase 1 CAL) on `CHANGELOG` / `DEPLOYMENT` / dashboard.
+
 ## Unreleased — chore: remediate dependencies and pin the Node/npm runtime
 
 - Upgraded Next and `eslint-config-next` to `16.2.12`, Sharp to `0.35.3`, PostCSS to `8.5.23`, and the Node type definitions to the Node 24 line; constrained the ESLint transitive glob stack to patched `minimatch` `10.2.5` / `brace-expansion` `5.0.9` and added a version-checked CommonJS compatibility patch for legacy ESLint consumers. The current clean-install audit reports zero vulnerabilities, and CI enforces `npm audit --audit-level=high` in both validation jobs.

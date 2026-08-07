@@ -63,6 +63,28 @@
 - **Ingest/async:** validation rate, queue depth, DLQ.
 - **Per-tenant:** the 9 KPIs + operational health.
 
+### A7. Path A staging baseline (docs-first; no DSN wiring yet)
+
+Path A hosted staging may go live **before** Sentry/PostHog SDKs are added. Until `SENTRY_DSN` / PostHog keys exist and packages are authorized:
+
+| Layer | Use now | When DSNs exist |
+|---|---|---|
+| Errors | Vercel runtime logs | Sentry — set `accountId` (or `account_id`) tag/context on every event/transaction |
+| Product analytics | defer | PostHog — group or property `account_id` only |
+| Uptime | optional Better Stack check on staging URL | same |
+| Auth/sync debug | Clerk webhook delivery log + Neon | keep; do not ship PII to analytics |
+
+**Tagging contract (mandatory when wiring DSNs):**
+
+```text
+sentry.setTag("accountId", session.account?.id ?? "control")
+posthog.group("account", accountId)  // or equivalent property — never email/phone/name
+```
+
+- Absent DSN/key → no-op / do not throw (ADR-0001 mock-first).
+- Never put transcript text, phone numbers, or contact names in Sentry extras or PostHog properties.
+- Staging operator steps: [`RESPONSEOS_STAGING_HOSTING_RUNBOOK.md`](./RESPONSEOS_STAGING_HOSTING_RUNBOOK.md) §6.
+
 ---
 
 ## Part B — Governance

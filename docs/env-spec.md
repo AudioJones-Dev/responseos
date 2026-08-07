@@ -79,21 +79,23 @@ development never requires a secret.**
 `—` = not needed · `opt` = optional · `req` = required · `mock` = optional, mock fallback when absent ·
 `never` = must not be set.
 
-| Variable | Local Dev | CI/Test | Preview | Production | Required? | Notes |
+| Variable | Local Dev | CI/Test | Preview / Staging | Production | Required? | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
 | `NODE_ENV` | opt | `test` | `production` | `production` | opt | framework-set in most envs |
-| `NEXT_PUBLIC_APP_URL` | opt | opt | req | req | opt locally | base browser URL |
+| `NEXT_PUBLIC_APP_URL` | opt | opt | req | req | opt locally | base browser URL; staging host per Path A runbook |
 | `DATABASE_URL` | mock | req (integration) | req | req | mock-first | unit tests run keyless; integration needs Postgres |
 | `DIRECT_URL` | mock | req (integration) | req | req | mock-first | Prisma migrations only |
-| `CLERK_SECRET_KEY` | mock | — | opt | req (live auth) | mock-first | absent → dev-session + pass-through proxy |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | mock | — | opt | req (live auth) | mock-first | client-side |
-| `CLERK_WEBHOOK_SECRET` | mock | — | opt | req (clerk webhook) | mock-first | absent → 503 fail-closed |
-| `AJ_DIGITAL_CLERK_ORG_ID` | opt | opt | opt | req (control org) | opt | cross-tenant control org |
-| **`RESPONSEOS_DEV_SESSION`** | opt | set by tests | opt (non-prod) | **never** | opt | dev/test override; hard-fails in production |
+| `CLERK_SECRET_KEY` | mock | — | req (Path A) | req (live auth) | mock-first | absent → dev-session + pass-through proxy |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | mock | — | req (Path A) | req (live auth) | mock-first | client-side |
+| `CLERK_WEBHOOK_SECRET` | mock | — | req (Path A) | req (clerk webhook) | mock-first | absent → 503 fail-closed |
+| `AJ_DIGITAL_CLERK_ORG_ID` | opt | opt | req (control org) | req (control org) | opt | cross-tenant control org |
+| **`RESPONSEOS_DEV_SESSION`** | opt | set by tests | **never** (hosted) | **never** | opt | dev/test override; hard-fails in production |
 | **`RESPONSEOS_REQUIRE_AUTH`** | — | — | req (any hosted surface) | req | opt | absent → mock-first fallback; set → session + proxy fail closed (ADR-0039) |
-| **`RESPONSEOS_PROVIDER_KEY`** | mock | mock | opt | req (live creds, v0.3+) | mock-first | base64 32-byte AES; absent → encryption mock mode |
-| R2 / Twilio / Retell / Vapi / Bland / Resend / Stripe / n8n / GHL / HubSpot | mock | mock | opt | req (when live) | mock-first | provider adapters mock until v0.3 |
-| `SENTRY_DSN` / `POSTHOG_KEY` / `NEXT_PUBLIC_POSTHOG_KEY` | opt | opt | opt | opt | opt | observability |
+| **`RESPONSEOS_PROVIDER_KEY`** | mock | mock | opt (Path A) | req (live creds, v0.3+) | mock-first | base64 32-byte AES; absent → encryption mock mode |
+| R2 / Twilio / Retell / Vapi / Bland / Resend / Stripe / n8n / GHL / HubSpot | mock | mock | mock (Path A) | req (when live) | mock-first | provider adapters mock until authorized |
+| `SENTRY_DSN` / `POSTHOG_KEY` / `NEXT_PUBLIC_POSTHOG_KEY` | opt | opt | opt | opt | opt | observability; see staging runbook §6 |
+
+Path A staging checklist (operator): [`ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md`](./ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md).
 
 ## Mock-first / keyless boot rules
 

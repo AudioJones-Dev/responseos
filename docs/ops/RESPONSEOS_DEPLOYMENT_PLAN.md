@@ -4,7 +4,7 @@
 **Status:** Canonical (go-forward). Extends [`../DEPLOYMENT.md`](../DEPLOYMENT.md) (three lanes, IaC, CI/CD, SLOs, rollback) with the go-forward topology: the **voice gateway as a second deployable**, Redis, and the Grok/OpenAI providers.
 **Anchored by:** ADR-0001 (no deploy until v0.3) · ADR-0013 (gateway) · ADR-0014 (Redis) · ADR-0004 (lanes)
 
-> **Hard rule (unchanged):** do **not** deploy from this repo until v0.3 readiness gates clear. This document is the **target** posture so we can move fast when v0.3 unlocks. Current state: GitHub remote live (`audiojones-dev/responseos`); CI runs `validate` + `integration` on every push/PR; **no deploy jobs yet**.
+> **Hard rule (unchanged):** do **not** deploy **production** from this repo until v0.3 readiness gates clear. Current state: GitHub remote live (`audiojones-dev/responseos`); CI runs `validate` + `integration` on every push/PR; **staging-only** manual deploy scaffolding lives in `.github/workflows/deploy-staging.yml` (Environment `staging` + human approval). Operator runbook: [`RESPONSEOS_STAGING_HOSTING_RUNBOOK.md`](./RESPONSEOS_STAGING_HOSTING_RUNBOOK.md).
 
 ---
 
@@ -57,7 +57,7 @@ The gateway deploys per lane alongside the app; on the HIPAA lane it runs on AWS
 | Env | Purpose | Providers |
 |---|---|---|
 | `dev` | local + preview per PR | mock adapters (zero keys) |
-| `staging` | preprod; provider-readiness gate; golden calls | staging Twilio + verified Grok/OpenAI keys |
+| `staging` | Path A host first (Clerk + Neon + portal); later provider-readiness / golden calls | mock until live stages authorized; see [`RESPONSEOS_STAGING_HOSTING_RUNBOOK.md`](./RESPONSEOS_STAGING_HOSTING_RUNBOOK.md) |
 | `prod` | Standard / Privacy-hardened | live |
 | `prod-hipaa` | HIPAA-ready (future) | per BAA; voice blocked until verified |
 
@@ -67,7 +67,7 @@ Mock-first everywhere keys are absent (ADR-0001).
 
 ## 4. CI/CD
 
-Current CI (unchanged): `validate` + `integration`. Target deploy pipeline (v0.3+):
+Current CI: `validate` + `integration`. Staging Path A: manual `Deploy Staging` workflow (see runbook). Target deploy pipeline (v0.3+ prod still gated):
 
 | Stage | Gate | Env |
 |---|---|---|
@@ -76,6 +76,7 @@ Current CI (unchanged): `validate` + `integration`. Target deploy pipeline (v0.3
 | Integration tests (Postgres) | required | all |
 | Contract tests (gateway↔core, provider mocks) | required | all |
 | DB migration validation (`prisma migrate diff/deploy`) | required | all |
+| Staging host deploy (Path A, mock providers) | manual + Environment `staging` approval | staging |
 | Golden-call regression | required before prompt/voice release | staging |
 | Provider-readiness gate | required before live voice | staging |
 | Security scan + dependency audit | required | all |
