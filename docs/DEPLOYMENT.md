@@ -84,7 +84,7 @@ Pipeline gates:
 - **OpenTelemetry** as the standard — unified traces, metrics, logs across services.
 - **Sentry** for release health and source-mapped stack traces in the portal/admin apps.
 - **Cloud-native metrics** (CloudWatch in HIPAA lane, Vercel Analytics in Standard) page on webhook failures, queue backlogs, booking errors.
-- **Retell alerting webhooks** wired to ops Slack for call-quality incidents.
+- **Provider alerting webhooks** (Vapi primary; Retell secondary) wired to ops Slack for call-quality incidents.
 
 ## SLOs (v0.3 targets)
 
@@ -109,8 +109,8 @@ Pipeline gates:
 
 - `dev` — local development plus CI validation.
 - `preview` — future per-PR preview target once deploy jobs are approved.
-- `staging` — future shared preprod against staging provider accounts.
-- `prod` — future Standard / Privacy-hardened production after v0.3 readiness approval.
+- `staging` — future shared preprod against staging Telnyx/Vapi/Twilio/HubSpot/Calendly accounts (Path A host first; live providers one-at-a-time per founding-pilot staged auths).
+- `prod` — future Standard / Privacy-hardened production after v0.3 readiness approval ([`product/responseos-v0.3-founding-pilot-scope.md`](./product/responseos-v0.3-founding-pilot-scope.md)).
 - `prod-hipaa` — future HIPAA-ready production, isolated VPC + database + eligible provider accounts after independent review.
 
 ## Multi-tenant deployment model

@@ -24,7 +24,7 @@
 
 In parallel, a **GTM Phase 0.5** marketing surface shipped (#66/#67): a public conversion path (`/audit` → mock capture endpoint), a trust/security page, pricing clarity, per-page + Open Graph metadata, an expanded demo narrative, and the home OFFER section — all mock-safe, no live integrations.
 
-**Next milestone: v0.3 — gated.** Live provider integrations (Telnyx/Vapi/Twilio/HubSpot), real Stripe billing, and any production deploy stay **off** until v0.3 is **explicitly authorized** per the AGENTS hard rules. No v0.3 code lands before that authorization.
+**Next milestone: v0.3 — gated.** Live provider integrations (Telnyx/Vapi/Twilio/HubSpot/Calendly), real Stripe billing, and any production deploy stay **off** until v0.3 is **explicitly authorized** per the AGENTS hard rules. Written founding-pilot scope + acceptance gates: [`product/responseos-v0.3-founding-pilot-scope.md`](./product/responseos-v0.3-founding-pilot-scope.md) (Path B Standard-lane home-services; staged auths still required — start with mock CAL per [`product/responseos-v0.3-authorization-brief.md`](./product/responseos-v0.3-authorization-brief.md)). No live v0.3 code lands before the matching written authorization.
 
 ## v0.2 acceptance criteria
 
