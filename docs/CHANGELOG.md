@@ -11,6 +11,10 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - Dashboard: `#27` → Review (awaiting signed Stage A+); **V-02** / **V-03** → Done. Deploy/live tasks untouched.
 - Documentation only — no code, schema, secrets, accounts, or deploy jobs.
 
+## Unreleased — chore: pin js-yaml 4.3.1 to clear GHSA-5p4m-2wfm-xmqj
+
+- Added a `package.json` overrides pin for transitive `js-yaml` `4.3.1` (via `eslint` → `@eslint/eslintrc`) so `npm audit --audit-level=high` stays green in validate and integration CI. No app runtime, provider, secret, or deploy changes.
+
 ## Unreleased — chore: remediate dependencies and pin the Node/npm runtime
 
 - Upgraded Next and `eslint-config-next` to `16.2.12`, Sharp to `0.35.3`, PostCSS to `8.5.23`, and the Node type definitions to the Node 24 line; constrained the ESLint transitive glob stack to patched `minimatch` `10.2.5` / `brace-expansion` `5.0.9` and added a version-checked CommonJS compatibility patch for legacy ESLint consumers. The current clean-install audit reports zero vulnerabilities, and CI enforces `npm audit --audit-level=high` in both validation jobs.
