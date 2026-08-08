@@ -1,5 +1,12 @@
 # Critical Path & Task Register
 
+> ⚠️ **AMENDED 2026-08-08.** The critical path in §2 and parts of the register below are superseded
+> by [`CRITICAL_PATH_AMENDMENT.md`](./CRITICAL_PATH_AMENDMENT.md), which corrects the architecture
+> after provider verification: Telnyx routes inbound via SIP directly into Vapi (A03 merges into Vapi
+> ingestion), A08 decomposes, and three previously-invisible tasks appear.
+> Register 56 → 55 · demo-critical 29 → 25 · sequential depth 16 → 13.
+> **The diagnosis is unchanged; the sequence is not.** Read the amendment before executing.
+
 **Base:** `master` @ `ed77c26` · Organized by **dependency**, not calendar.
 
 > **Format note.** The mandated 15-field task schema is rendered in full for the **20 Gate-A tasks**

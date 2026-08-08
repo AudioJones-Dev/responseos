@@ -1,5 +1,10 @@
 # Controlled Demo — status and minimum spec
 
+> ⚠️ **AMENDED 2026-08-08** by [`CRITICAL_PATH_AMENDMENT.md`](./CRITICAL_PATH_AMENDMENT.md).
+> The **NOT PRESENT** verdict stands. What changed: Telnyx needs no ResponseOS webhook (SIP-direct
+> into Vapi), Vapi structured outputs may serve as the first extraction adapter behind a
+> ResponseOS-owned canonical schema, and recording consent is promoted into the demo path.
+
 **Verdict: `NOT PRESENT`.**
 
 ---
