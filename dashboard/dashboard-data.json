@@ -166,6 +166,20 @@
       "due": "2026-06-23"
     },
     {
+      "id": "R-01",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Readiness audit + critical-path amendment",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-08-07",
+      "due": "2026-08-08",
+      "ref": 113,
+      "refType": "pull",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/113"
+    },
+    {
       "id": "26",
       "phase": "Tech Debt & Hardening",
       "title": "Seed idempotency / create-only ADR",
