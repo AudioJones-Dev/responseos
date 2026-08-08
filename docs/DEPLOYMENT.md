@@ -95,7 +95,7 @@ Pipeline gates:
 - **OpenTelemetry** as the standard — unified traces, metrics, logs across services.
 - **Sentry** for release health and source-mapped stack traces in the portal/admin apps.
 - **Cloud-native metrics** (CloudWatch in HIPAA lane, Vercel Analytics in Standard) page on webhook failures, queue backlogs, booking errors.
-- **Retell alerting webhooks** wired to ops Slack for call-quality incidents.
+- **Provider alerting webhooks** (Vapi primary; Retell secondary) wired to ops Slack for call-quality incidents.
 
 ## SLOs (v0.3 targets)
 
@@ -120,8 +120,8 @@ Pipeline gates:
 
 - `dev` — local development plus CI validation.
 - `preview` — Vercel preview deployments (connected branches); may host Path A while a stable staging alias is set.
-- `staging` — shared preprod for Path A (Clerk + Neon + portal smoke; providers mock). Operator checklist + tenant bootstrap: [`ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md`](./ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md). Live Telnyx/Vapi/etc. only after later staged authorizations.
-- `prod` — Standard / Privacy-hardened production **after** v0.3 readiness approval (not enabled from this repo yet).
+- `staging` — shared preprod for Path A (Clerk + Neon + portal smoke; providers mock). Operator checklist + tenant bootstrap: [`ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md`](./ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md). Live providers arrive **one at a time** per the staged authorizations in [`product/responseos-v0.3-founding-pilot-scope.md`](./product/responseos-v0.3-founding-pilot-scope.md) §5 — Telnyx and Vapi first. HubSpot, Calendly, and Twilio failover are **deferred-live** per §1.1 and are not Demo-MVP dependencies.
+- `prod` — Standard / Privacy-hardened production **after** v0.3 readiness approval ([`product/responseos-v0.3-founding-pilot-scope.md`](./product/responseos-v0.3-founding-pilot-scope.md) §4). Not enabled from this repo yet.
 - `prod-hipaa` — future HIPAA-ready production, isolated VPC + database + eligible provider accounts after independent review.
 
 ### Staging env vars (Path A — placeholders)

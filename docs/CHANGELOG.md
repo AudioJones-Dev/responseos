@@ -12,6 +12,21 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - Dashboard: **L-02** → In Progress (partial; staging URL not live); added **L-02a** scaffold task; deploy task **14** progress note only — not Done. Providers remain mock; no secrets committed; pilot go-live not claimed.
 - Note: rebase/merge conflicts likely with open draft PRs [#109](https://github.com/AudioJones-Dev/responseos/pull/109) (Phase 0 docs) and [#108](https://github.com/AudioJones-Dev/responseos/pull/108) (Phase 1 CAL) on `CHANGELOG` / `DEPLOYMENT` / dashboard.
 
+## Unreleased — docs: readiness audit + critical-path architecture amendment (#113 / R-01)
+
+- Added [`readiness/`](./readiness/) — an evidence-first audit of `master` against three gates (Operational / Serviceable / GTM-ready) plus a controlled-demo assessment: `CURRENT_STATE_AUDIT.md`, `OPERATIONAL_SERVICEABILITY_GAP.md`, `GTM_GAP.md`, `CONTROLLED_DEMO_SPEC.md`, `CRITICAL_PATH.md`, `PILOT_READINESS.md`.
+- Headline findings, all from repository evidence: the call → intelligence → memory → decision → action chain has **no implementation at any link**; `lib/automations/` is an empty `.gitkeep`; no extraction/intelligence/memory code exists repo-wide; Telnyx appears only as display strings in demo fixtures; the Vapi `call-ended` webhook is a 9-line ack-and-discard stub; the demo walkthrough is a 171-line hardcoded scenario with zero database access. Controlled demo: **NOT PRESENT**. Pilot readiness: **NO**, 12 blockers.
+- Added [`readiness/CRITICAL_PATH_AMENDMENT.md`](./readiness/CRITICAL_PATH_AMENDMENT.md) correcting the critical path after provider verification (documentation-based; nothing verified against a live account). Telnyx routes inbound via SIP directly into Vapi, so ResponseOS needs no carrier webhook; Vapi structured outputs may serve as the first extraction adapter behind a ResponseOS-owned canonical schema; recording consent is Enterprise-tier gated and promoted into the demo path. Register 56 → 55, demo-critical 29 → 25, sequential depth 16 → 13 — the correction shrinks sequence depth, effort, and risk front-loading rather than the register.
+- Corrects two of the audit's own findings: `Call` has no write accessor anywhere in application code (call persistence needs a migration, not just wiring), and three incompatible qualification vocabularies already exist independent of any provider.
+- Documentation only — no runtime code, schema, provider, secret, or deploy changes.
+
+## Unreleased — docs: freeze v0.3 founding-pilot scope + acceptance gates (#27 / V-02 / V-03)
+
+- Added [`product/responseos-v0.3-founding-pilot-scope.md`](./product/responseos-v0.3-founding-pilot-scope.md) — written Path B freeze (Standard-lane home-services founding pilot), Path A staging intermediate, Telnyx/Vapi/Twilio/HubSpot/Calendly stack, deferred gateway/Redis, out-of-scope HIPAA / v0.4 vault / v0.5 billing, acceptance gates, and **staged authorization checklist** with templates for Audio to sign. **Does not authorize** live providers, secrets, or deploys; human written auth remains required ([`product/responseos-v0.3-authorization-brief.md`](./product/responseos-v0.3-authorization-brief.md)).
+- Reconciled stale stack lines toward Telnyx/Vapi/Neon/Calendly (gateway/Redis deferred; GTM vault marked v0.4) in [`DEPLOYMENT.md`](./DEPLOYMENT.md), [`ops/RESPONSEOS_DEPLOYMENT_PLAN.md`](./ops/RESPONSEOS_DEPLOYMENT_PLAN.md), [`SECURITY.md`](./SECURITY.md), and [`product/RESPONSEOS_PHASE_PLAN.md`](./product/RESPONSEOS_PHASE_PLAN.md).
+- Dashboard: `#27` → Review (awaiting signed Stage A+); **V-02** / **V-03** → Done. Deploy/live tasks untouched.
+- Documentation only — no code, schema, secrets, accounts, or deploy jobs.
+
 ## Unreleased — chore: pin nanoid 3.3.17 to clear GHSA-2v37-7h3g-55p8
 
 - Added a `package.json` overrides pin for transitive `nanoid` `3.3.17` (via `postcss`, whose `^3.3.16` range the pin satisfies) so `npm audit --audit-level=high` stays green in validate and integration CI. `master` at `ed77c26` resolved `nanoid` `3.3.16`, which the advisory published 2026-08-08 marks high severity. Lockfile change is limited to that one package's `version`/`resolved`/`integrity`. No app runtime, provider, secret, or deploy changes.
