@@ -4,6 +4,13 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: freeze v0.3 founding-pilot scope + acceptance gates (#27 / V-02 / V-03)
+
+- Added [`product/responseos-v0.3-founding-pilot-scope.md`](./product/responseos-v0.3-founding-pilot-scope.md) — written Path B freeze (Standard-lane home-services founding pilot), Path A staging intermediate, Telnyx/Vapi/Twilio/HubSpot/Calendly stack, deferred gateway/Redis, out-of-scope HIPAA / v0.4 vault / v0.5 billing, acceptance gates, and **staged authorization checklist** with templates for Audio to sign. **Does not authorize** live providers, secrets, or deploys; human written auth remains required ([`product/responseos-v0.3-authorization-brief.md`](./product/responseos-v0.3-authorization-brief.md)).
+- Reconciled stale stack lines toward Telnyx/Vapi/Neon/Calendly (gateway/Redis deferred; GTM vault marked v0.4) in [`DEPLOYMENT.md`](./DEPLOYMENT.md), [`ops/RESPONSEOS_DEPLOYMENT_PLAN.md`](./ops/RESPONSEOS_DEPLOYMENT_PLAN.md), [`SECURITY.md`](./SECURITY.md), and [`product/RESPONSEOS_PHASE_PLAN.md`](./product/RESPONSEOS_PHASE_PLAN.md).
+- Dashboard: `#27` → Review (awaiting signed Stage A+); **V-02** / **V-03** → Done. Deploy/live tasks untouched.
+- Documentation only — no code, schema, secrets, accounts, or deploy jobs.
+
 ## Unreleased — chore: pin nanoid 3.3.17 to clear GHSA-2v37-7h3g-55p8
 
 - Added a `package.json` overrides pin for transitive `nanoid` `3.3.17` (via `postcss`, whose `^3.3.16` range the pin satisfies) so `npm audit --audit-level=high` stays green in validate and integration CI. `master` at `ed77c26` resolved `nanoid` `3.3.16`, which the advisory published 2026-08-08 marks high severity. Lockfile change is limited to that one package's `version`/`resolved`/`integrity`. No app runtime, provider, secret, or deploy changes.
