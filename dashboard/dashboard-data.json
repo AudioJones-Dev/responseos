@@ -180,6 +180,81 @@
       "refUrl": "https://github.com/AudioJones-Dev/responseos/issues/26"
     },
     {
+      "id": "G-01",
+      "phase": "Tech Debt & Hardening",
+      "title": "Governance gate docs",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-06-30",
+      "due": "2026-06-30",
+      "ref": 89,
+      "refType": "pull",
+      "refState": "open",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/89"
+    },
+    {
+      "id": "G-02",
+      "phase": "Tech Debt & Hardening",
+      "title": "Stale docs reconciliation",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-07-01",
+      "due": "2026-07-01",
+      "ref": 90,
+      "refType": "pull",
+      "refState": "open",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/90"
+    },
+    {
+      "id": "G-03",
+      "phase": "Tech Debt & Hardening",
+      "title": "API/data/PRD spec reconciliation",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-07-01",
+      "due": "2026-07-01",
+      "ref": 91,
+      "refType": "pull",
+      "refState": "open",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/91"
+    },
+    {
+      "id": "G-04",
+      "phase": "Tech Debt & Hardening",
+      "title": "Quality and reference docs",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "Med",
+      "start": "2026-07-01",
+      "due": "2026-07-01",
+      "ref": 92,
+      "refType": "pull",
+      "refState": "open",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/92"
+    },
+    {
+      "id": "G-05",
+      "phase": "Tech Debt & Hardening",
+      "title": "Documentation index cleanup",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "Med",
+      "start": "2026-07-01",
+      "due": "2026-07-01",
+      "ref": 93,
+      "refType": "pull",
+      "refState": "open",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/93"
+    },
+    {
       "id": "T-02",
       "phase": "Tech Debt & Hardening",
       "title": "Re-seed regression test (double seed)",
@@ -189,6 +264,30 @@
       "priority": "Low",
       "start": "2026-06-29",
       "due": "2026-07-08"
+    },
+    {
+      "id": "P0-01",
+      "phase": "Tech Debt & Hardening",
+      "title": "Contain automatic production deployments",
+      "owner": "Codex",
+      "status": "Done",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-07-26",
+      "due": "2026-07-26",
+      "blocked": false
+    },
+    {
+      "id": "P0-02",
+      "phase": "Tech Debt & Hardening",
+      "title": "Remediate dependencies and pin Node/npm",
+      "owner": "Codex",
+      "status": "In Progress",
+      "progress": 85,
+      "priority": "High",
+      "start": "2026-07-27",
+      "due": "2026-07-28",
+      "blocked": false
     },
     {
       "id": "14",
@@ -334,5 +433,5 @@
       ]
     }
   ],
-  "generatedAt": "2026-07-13T14:40:45.613Z"
+  "generatedAt": "2026-07-27T13:48:41.322Z"
 }

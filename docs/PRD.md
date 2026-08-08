@@ -2,9 +2,9 @@
 
 **Owner:** AJ Digital LLC / Audio Jones
 **Status:** Living document. Updated each minor version.
-**Companion docs:** [`product-spec.md`](./product-spec.md) (full positioning + framework detail), [`client-facing-offer.md`](./client-facing-offer.md) (buyer-facing summary), [`ROADMAP.md`](./ROADMAP.md) (what ships when).
+**Companion docs:** [`product-spec.md`](./product-spec.md) (full positioning + framework detail), [`client-facing-offer.md`](./client-facing-offer.md) (buyer-facing summary), [`ROADMAP.md`](./ROADMAP.md) (what ships when), [`product/RESPONSEOS_PRD.md`](./product/RESPONSEOS_PRD.md) (expanded product definition).
 
-> This PRD is the short, opinionated source of truth for what ResponseOS is, who it's for, and what the current scope is. For deep product context (RECOVER mapping, buy-vs-build, success metrics), read `product-spec.md`. For commercial detail, read `pricing-and-onboarding.md`.
+> This PRD is the short operational product source of truth for what ResponseOS is, who it's for, and what the current scope is. `product/RESPONSEOS_PRD.md` is the expanded product-definition companion. If the two conflict, this short PRD, `ROADMAP.md`, and `DECISIONS.md` win until the documentation governance canonicalization pass is approved.
 
 ## What it is
 
@@ -53,9 +53,9 @@ Qualification gates before Phase 2: ~$300+ average job value, ~20+ missed calls/
 
 Buyer-facing version of the same 7 stages: Revenue Leak Detection · Engagement Automation · Call Capture System · Outcome-Based Booking · Verification + Qualification · Economic ROI Tracking · Reporting + Retention.
 
-## Current scope (v0.2, in progress)
+## Current scope (v0.2 shipped; v0.3 gated)
 
-In:
+Shipped foundation:
 
 - Postgres-backed data layer with deterministic seed.
 - Tenant-aware data access (`aj_admin` / `operator` / `client_admin` / `client_viewer`).
@@ -63,6 +63,10 @@ In:
 - Integration test suite + CI integration job against Postgres 16.
 - Webhook event ledger foundation (raw body, signature header, signature_valid flag, dedupe hash).
 - Audit-log foundation.
+- `Organization` → `Account` rename.
+- `Booking` → `Appointment` rename.
+- Clerk auth wiring and route protection.
+- Provider connection, conversation/SMS, call intelligence, workflow-run, QA, and expanded audit-log substrate.
 - Mock provider adapters preserved.
 
 Explicitly out:
@@ -83,7 +87,7 @@ Per the CTO communications decision ([`product/responseos-communications-stack.m
 - **HubSpot is the default commercial system of record** (client-overridable to GHL / Salesforce); the ResponseOS event ledger remains the **internal** SoR. GHL is a supported connector, not core infrastructure — **no GHL LC Phone dependency**.
 - **Phase-1 Business Memory capture.** Every AI receptionist interaction is captured as structured memory (transcript, summary, intent, qualification, appointment, follow-up, CRM-sync status, next action) in the event ledger — **operational capture only**; per-tenant knowledge / RAG stays **v0.4-gated**.
 
-> This direction is **ratified by ADR-0031–0034** ([`DECISIONS.md`](./DECISIONS.md)): Telnyx primary (supersedes ADR-0024's Twilio default), Vapi primary orchestration (amends ADR-0024; LLM-brain choice open), HubSpot default commercial SoR (re-amends ADR-0027; internal ledger SoR unchanged), Phase-1 Business Memory baseline (extends ADR-0029; v0.4 knowledge/RAG gates not relaxed). `RESPONSEOS_BUILD_SOURCE.md` reconciliation is tracked (comms doc §10).
+> This direction is **ratified by ADR-0031–0037** ([`DECISIONS.md`](./DECISIONS.md)): Telnyx primary (supersedes ADR-0024's Twilio default), Vapi primary orchestration with OpenAI preferred in-Vapi where configurable, Twilio failover, Retell secondary, HubSpot default commercial SoR, Calendly as the v0.3 MVP scheduling baseline with Cal.com deferred, Phase-1 Business Memory baseline, and no implementation authorization without a separate approved PR.
 
 ## Hard constraints (always)
 
