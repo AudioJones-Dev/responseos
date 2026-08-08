@@ -1,10 +1,10 @@
 # ResponseOS — Deployment Plan
 
 **Owner:** AJ Digital LLC / Audio Jones
-**Status:** Canonical (go-forward). Extends [`../DEPLOYMENT.md`](../DEPLOYMENT.md) (three lanes, IaC, CI/CD, SLOs, rollback) with the go-forward topology: the **voice gateway as a second deployable**, Redis, and the Grok/OpenAI providers.
-**Anchored by:** ADR-0001 (no deploy until v0.3) · ADR-0013 (gateway) · ADR-0014 (Redis) · ADR-0004 (lanes)
+**Status:** Canonical (go-forward). Extends [`../DEPLOYMENT.md`](../DEPLOYMENT.md) (three lanes, IaC, CI/CD, SLOs, rollback) with the go-forward topology. **Planning baseline (ADR-0031/0032/0033/0036/0037):** Telnyx / Vapi / HubSpot / Calendly on Neon + Vercel; **Node voice gateway + Redis are deferred** for the first founding-pilot slice (they remain documented as optional later topology, not a go-live hard dependency).
+**Anchored by:** ADR-0001 (no deploy until v0.3) · ADR-0004 (lanes) · ADR-0036 (gateway/Redis deferred) · ADR-0013/0014 (gateway/Redis retained as deferred design)
 
-> **Hard rule (unchanged):** do **not** deploy from this repo until v0.3 readiness gates clear. This document is the **target** posture so we can move fast when v0.3 unlocks. Current state: GitHub remote live (`audiojones-dev/responseos`); CI runs `validate` + `integration` on every push/PR; **no deploy jobs yet**.
+> **Hard rule (unchanged):** do **not** deploy **production** from this repo until v0.3 readiness gates clear. Current state: GitHub remote live (`audiojones-dev/responseos`); CI runs `validate` + `integration` on every push/PR; **staging-only** manual deploy scaffolding lives in `.github/workflows/deploy-staging.yml` (Environment `staging` + human approval). Operator runbook: [`RESPONSEOS_STAGING_HOSTING_RUNBOOK.md`](./RESPONSEOS_STAGING_HOSTING_RUNBOOK.md).
 
 ---
 
@@ -12,11 +12,11 @@
 
 | Service | Runtime | Scales on | Notes |
 |---|---|---|---|
-| **Next.js app** | App Router (console + portal + marketing + API + webhooks) | request load | existing |
-| **Voice gateway** | Node.js service | concurrent calls | **new at v0.3** (ADR-0013); separate deployable |
+| **Next.js app** | App Router (console + portal + marketing + API + webhooks) | request load | **first-slice deployable** (founding pilot) |
+| **Voice gateway** | Node.js service | concurrent calls | **Deferred** (ADR-0036); not required for first founding-pilot slice |
 | **Async workers** | Node.js workers + n8n | queue depth | n8n out of the audio loop (ADR-0017) |
-| Postgres | managed | data | event ledger = recoverable truth |
-| Redis | managed | sessions/queue | ephemeral (ADR-0014) |
+| Postgres | Neon (Standard) / RDS (HIPAA) | data | event ledger = recoverable truth |
+| Redis | managed | sessions/queue | **Deferred** with gateway (ADR-0036); ephemeral if later introduced (ADR-0014) |
 | Object storage | R2 (Standard) / S3+KMS (HIPAA) | — | tenant-prefixed keys |
 
 ```mermaid
@@ -42,13 +42,13 @@ flowchart TB
 
 ## 2. Three compliance lanes (per tenant, ADR-0004)
 
-| Lane | Stack | Voice providers |
+| Lane | Stack | Voice / comms providers |
 |---|---|---|
-| **Standard** (default, MVP) | App + gateway + Postgres + Redis + R2 (Vercel/managed) | Grok (primary) / OpenAI (fallback) |
+| **Standard** (default, founding pilot) | App + Neon Postgres + R2 (Vercel/managed); gateway/Redis deferred | Telnyx primary / Twilio failover; Vapi primary (OpenAI preferred in-Vapi) / Retell secondary; HubSpot; Calendly |
 | **Privacy-hardened** | Same + PII scrubbing + short retention + raw-transcript hiding | Permitted with scrubbing; review per provider |
-| **HIPAA-ready** (pattern only) | AWS-hosted (CloudFront + Route 53 + ECS/Fargate + RDS + S3 + KMS + Secrets Manager) | **Blocked** until provider BAA/retention verified (ADR-0012) |
+| **HIPAA-ready** (pattern only) | AWS-hosted (CloudFront + Route 53 + ECS/Fargate + RDS + S3 + KMS + Secrets Manager) | **Blocked** until provider BAA/retention verified (ADR-0012); out of founding-pilot scope |
 
-The gateway deploys per lane alongside the app; on the HIPAA lane it runs on AWS primitives with BAA-eligible services only.
+If/when the deferred gateway is introduced, it deploys per lane alongside the app; on the HIPAA lane it would run on AWS primitives with BAA-eligible services only.
 
 ---
 
@@ -57,7 +57,7 @@ The gateway deploys per lane alongside the app; on the HIPAA lane it runs on AWS
 | Env | Purpose | Providers |
 |---|---|---|
 | `dev` | local + preview per PR | mock adapters (zero keys) |
-| `staging` | preprod; provider-readiness gate; golden calls | staging Twilio + verified Grok/OpenAI keys |
+| `staging` | Path A host first (Clerk + Neon + portal); then provider-readiness gate + golden calls | mock until each live stage is authorized — Telnyx + Vapi first; HubSpot, Calendly, Twilio failover deferred-live (scope §1.1). See [`RESPONSEOS_STAGING_HOSTING_RUNBOOK.md`](./RESPONSEOS_STAGING_HOSTING_RUNBOOK.md) |
 | `prod` | Standard / Privacy-hardened | live |
 | `prod-hipaa` | HIPAA-ready (future) | per BAA; voice blocked until verified |
 
@@ -67,7 +67,7 @@ Mock-first everywhere keys are absent (ADR-0001).
 
 ## 4. CI/CD
 
-Current CI (unchanged): `validate` + `integration`. Target deploy pipeline (v0.3+):
+Current CI: `validate` + `integration`. Staging Path A: manual `Deploy Staging` workflow (see runbook). Target deploy pipeline (v0.3+ prod still gated):
 
 | Stage | Gate | Env |
 |---|---|---|
@@ -76,6 +76,7 @@ Current CI (unchanged): `validate` + `integration`. Target deploy pipeline (v0.3
 | Integration tests (Postgres) | required | all |
 | Contract tests (gateway↔core, provider mocks) | required | all |
 | DB migration validation (`prisma migrate diff/deploy`) | required | all |
+| Staging host deploy (Path A, mock providers) | manual + Environment `staging` approval | staging |
 | Golden-call regression | required before prompt/voice release | staging |
 | Provider-readiness gate | required before live voice | staging |
 | Security scan + dependency audit | required | all |
@@ -85,7 +86,7 @@ Current CI (unchanged): `validate` + `integration`. Target deploy pipeline (v0.3
 
 - **GitHub Actions with OIDC federation** to the cloud (no long-lived cloud secrets), per `../DEPLOYMENT.md`.
 - n8n workflow definitions are versioned in Git (Git upstream of n8n).
-- The voice gateway and the app deploy **independently** (separate pipelines), so one can roll back without the other.
+- When the deferred voice gateway exists, it and the app deploy **independently** (separate pipelines), so one can roll back without the other. First founding-pilot slice: **app-only**.
 
 ---
 
@@ -112,7 +113,7 @@ Current CI (unchanged): `validate` + `integration`. Target deploy pipeline (v0.3
 | Appointment success after slot selection | > 98% |
 | Monthly report generation | > 99% |
 | Client portal uptime | 99.5% |
-| Voice gateway availability | target defined at gate (new service) |
+| Voice gateway availability | N/A until gateway is un-deferred; target defined at that gate |
 
 ---
 
@@ -136,21 +137,22 @@ Future-target Terraform layout (per `../DEPLOYMENT.md`): `infra/terraform/{modul
 
 ## 10. Pre-deploy checklist (v0.3 go-live)
 
-- [ ] Provider-readiness gate passed (Grok + OpenAI).
+- [ ] Provider-readiness gate passed (Telnyx + Vapi; Twilio failover; HubSpot; Calendly) per [`../product/responseos-v0.3-provider-readiness.md`](../product/responseos-v0.3-provider-readiness.md) §7.
+- [ ] Founding-pilot acceptance gates met ([`../product/responseos-v0.3-founding-pilot-scope.md`](../product/responseos-v0.3-founding-pilot-scope.md) §4).
 - [ ] Golden-call regression green.
 - [ ] Tenant-isolation + signature-validation tests green.
-- [ ] Secrets in the secret store (none in repo); tenant creds DB-encrypted.
-- [ ] Rollback paths verified (profile + both service deploys + ledger replay).
+- [ ] Secrets in the secret store (none in repo); tenant creds DB-encrypted (production key posture ADR before live traffic).
+- [ ] Rollback paths verified (profile + app deploy + ledger replay; gateway N/A until un-deferred).
 - [ ] Observability + alerting wired (PostHog/Sentry/Better Stack), tagged `account_id`.
-- [ ] Standard lane only; regulated lanes deferred; voice blocked on HIPAA lane.
-- [ ] Human approval recorded.
+- [ ] Standard lane only; regulated lanes deferred; voice blocked on HIPAA lane; GTM vault/RAG stays v0.4.
+- [ ] Human approval recorded (staged auths in founding-pilot scope §5).
 
 ---
 
 ## 11. Assumptions & open questions
 
-**Assumptions:** the gateway can run on the Standard-lane host platform; managed Redis/Postgres available per lane; OIDC federation usable for deploys.
-**Open questions:** (1) gateway hosting target (co-located vs separate container platform); (2) canary strategy for a realtime service (call-draining on deploy); (3) RTO/RPO targets per lane.
+**Assumptions:** founding-pilot first slice is app-only on Vercel + Neon; managed Postgres available per lane; OIDC federation usable for deploys when jobs are authorized.
+**Open questions:** (1) whether readiness testing forces un-deferring gateway/Redis; (2) gateway hosting target if un-deferred; (3) canary strategy for realtime; (4) RTO/RPO targets per lane.
 
 ---
 

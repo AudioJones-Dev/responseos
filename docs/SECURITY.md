@@ -40,9 +40,11 @@ Local and runtime secrets are injected with **Doppler** as an **opt-in** layer (
 
 | Vendor | BAA available | Required in HIPAA lane | Notes |
 |---|---|---|---|
-| Twilio | Yes | Yes (HIPAA-eligible account) | Enable HIPAA features per Twilio docs |
-| Retell AI | Yes (self-sign BAA/DPA) | Yes | Use BAA + storage policy `Basic Attributes Only`; private deployment optional |
-| Supabase | Yes (paid plan) | No — replace with RDS in HIPAA lane | Supabase BAA covers Standard mode |
+| Telnyx | Confirm at cutover | Restricted until verified | Primary Standard-lane carrier (ADR-0031); BAA/DPA posture must be re-confirmed before any regulated workflow |
+| Twilio | Yes | Yes (HIPAA-eligible account) | Failover / HIPAA-eligible path; enable HIPAA features per Twilio docs |
+| Vapi | Confirm at cutover | Restricted until verified | Primary Standard-lane orchestration (ADR-0032); confirm data-retention / subprocessors before regulated use |
+| Retell AI | Yes (self-sign BAA/DPA) | Yes | Secondary voice; use BAA + storage policy `Basic Attributes Only`; private deployment optional |
+| Neon | Confirm current terms | No — replace with RDS in HIPAA lane | Standard-lane Postgres target (ADR-0026); not a substitute for HIPAA-lane RDS |
 | AWS | Yes | Yes — only HIPAA-eligible services | RDS, S3, KMS, ECS/Fargate, CloudFront, Route 53, Secrets Manager |
 | Stripe | N/A (not PHI) | N/A | Cards only; never PHI |
 | ElevenLabs | Enterprise BAA only | Restricted | Avoid in HIPAA lane unless on enterprise BAA |

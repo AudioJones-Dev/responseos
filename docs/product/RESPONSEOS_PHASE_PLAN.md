@@ -16,64 +16,50 @@
 
 ---
 
-## Phase 1 — v0.2 closeout (IN FLIGHT)
+## Phase 1 — v0.2 closeout (DONE)
 
+**Status:** ✅ Shipped (see [`../ROADMAP.md`](../ROADMAP.md)).
 **Entry gate:** Phase 0 exit met.
 **Owner:** core/platform.
-**Work:**
-1. `Organization` → `Account` rename (migration + types + data layer).
-2. Real auth provider wiring (session → `account_id` + role).
-3. UI rebuild against [`../DESIGN.md`](../DESIGN.md) tokens.
-4. Remaining model expansion: `provider_connections`, `conversations`/`sms_messages`, `call_segments`/`call_transcripts`, `workflow_runs`, `qa_logs`, `audit_logs`.
-5. Add go-forward tables forward-compatibly: `call_sessions`, `tool_calls`, profile tables (`routing_/prompt_/policy_/workflow_profiles`), `crm_mappings` (see [`../architecture/RESPONSEOS_DATA_MODEL.md`](../architecture/RESPONSEOS_DATA_MODEL.md) § 4).
-
-**Exit gates:**
-- [ ] Rename complete; no `Organization` references in code/docs that should be `Account`.
-- [ ] Auth wired; role-aware sessions for all four roles.
-- [ ] UI on `../DESIGN.md` tokens; empty/loading/error states present.
-- [ ] New tables migrated + seeded; integration tests assert tenant isolation on each.
-- [ ] CI `validate` + `integration` green. No live providers. No deploy.
+**Delivered:** `Organization` → `Account` and `Booking` → `Appointment` renames; Clerk auth wiring; UI rebuild against [`../DESIGN.md`](../DESIGN.md); remaining model expansion (`provider_connections`, conversations/SMS, call segments/transcripts, workflow_runs, qa_logs, audit_logs); CI green; no live providers; no deploy.
 
 ---
 
-## Phase 2 — v0.3 voice gateway + provider abstraction (MVP live, part A)
+## Phase 2 — v0.3 CAL + provider abstraction (MVP live, part A)
 
-**Entry gate:** Phase 1 exit met; v0.3 explicitly authorized.
+**Entry gate:** Phase 1 exit met; **staged written v0.3 authorization** per [`responseos-v0.3-founding-pilot-scope.md`](./responseos-v0.3-founding-pilot-scope.md) §5 (start with Stage A mock CAL — [`responseos-v0.3-authorization-brief.md`](./responseos-v0.3-authorization-brief.md)).
 **Owner:** backend/voice.
 **Work:**
-1. Stand up the **Node.js voice gateway** as a separate deployable (Backend Spec §1).
-2. Implement the `VoiceProvider` interface + **mock adapter** (still no live keys).
-3. Implement **Grok** + **OpenAI Realtime** adapters behind the interface.
-4. Session lifecycle + Redis ephemeral state (ADR-0014).
-5. Failover controller (Grok→OpenAI), `voice.provider_failover` events.
-6. Policy engine + tool router + internal gateway↔core API (API Contracts §4).
-7. Twilio Media Streams handler.
+1. Implement CAL interfaces + **mock adapters only** (`CarrierProvider`, `VoiceAgentProvider`, `SmsProvider`, `CrmProvider`, `SchedulingProvider`) mirroring `lib/providers/voice/`.
+2. Provider resolver: env-absent → mock (ADR-0001).
+3. Schema/env placeholder alignment (e.g. `telnyx`, Calendly) only under a **separate** Stage B auth — not in the first mock slice.
+4. **Node voice gateway + Redis deferred** (ADR-0036) unless readiness testing later requires them.
+5. Live adapters (Telnyx / Vapi / Twilio failover) only under later staged auths — never in the mock-CAL slice.
 
 **Exit gates:**
-- [ ] **Provider-readiness gate passed** for Grok + OpenAI (Backend Spec §12): telephony path, barge-in, latency, concurrency, webhook reliability, tool calling, failover, transcript handling, escalation, compliance posture reviewed.
-- [ ] Gateway runs on mock with zero keys; live providers gated behind verified keys.
-- [ ] Failover verified mid-session in staging.
-- [ ] All gateway outputs land in the ledger; no business mutation bypasses signature validation.
-- [ ] CI green; gateway has its own tests + SLOs defined.
+- [ ] Mock CAL merged; app boots with zero secrets; unit tests assert mock resolution.
+- [ ] CI `validate` + `integration` green.
+- [ ] No live SDKs, secrets, or deploys in this phase’s first slice.
+- [ ] Provider-readiness checklist path documented for the live stages ([`responseos-v0.3-provider-readiness.md`](./responseos-v0.3-provider-readiness.md) §7).
 
 ---
 
 ## Phase 3 — v0.3 live integrations + RECOVER playbooks (MVP live, part B)
 
-**Entry gate:** Phase 2 exit met.
+**Entry gate:** Phase 2 mock CAL exit met; staged auths for schema + each live provider ([founding-pilot scope](./responseos-v0.3-founding-pilot-scope.md) §5 Stages B–H).
 **Owner:** core + integrations.
 **Work:**
-1. Live Twilio (numbers per tenant via routing profile; signature validation; persistence).
-2. **HubSpot** connector (OAuth, contact/deal/ticket mirroring, `crm_mappings`, signed webhooks) — default CRM SoR (ADR-0015).
-3. Calendar connector (Google `freeBusy` / Cal.com).
-4. Post-call normalization pipeline (lane-aware redaction → canonical objects → CRM mirror → ROI).
-5. n8n async flows for the 7 RECOVER playbooks (`workflow_runs`, idempotent).
-6. Notifications (SMS/email/in-app/slack) via adapters.
-7. Resend email for reports.
+1. Live **Telnyx** (primary carrier voice + A2P SMS; signature validation; persistence) with **Twilio** failover.
+2. Live **Vapi** orchestration (OpenAI preferred in-Vapi brain; Retell secondary).
+3. **HubSpot** connector (OAuth, contact/deal/ticket mirroring, `crm_mappings`, signed webhooks) — default CRM SoR (ADR-0033).
+4. **Calendly** scheduling (Google Calendar compatible; Cal.com deferred — ADR-0037).
+5. Post-call normalization pipeline (lane-aware redaction → canonical objects → CRM mirror → ROI); Phase-1 Business Memory **ledger capture only** (vault/RAG stays v0.4).
+6. n8n async flows for the 7 RECOVER playbooks (`workflow_runs`, idempotent).
+7. Notifications (SMS/email/in-app/slack) via adapters; Resend email for reports.
 
 **Exit gates:**
-- [ ] All 7 RECOVER playbooks run end-to-end live on the Standard lane.
-- [ ] HubSpot bi-directional sync verified; conflict handling exercised.
+- [ ] All 7 RECOVER playbooks run end-to-end live on the Standard lane (staging first).
+- [ ] HubSpot sync verified; conflict handling exercised.
 - [ ] Signature validation > 99.9%; replays are no-ops.
 - [ ] Tenant retention/redaction lane applied before persistence.
 - [ ] CI green.
@@ -89,23 +75,23 @@
 2. Onboarding/Readiness Assessment flow (10 inputs → Readiness packet).
 3. Integrations connect UI (HubSpot/calendar OAuth).
 4. Transcript/QA review UI (redacted default; break-glass for raw).
-5. Monthly ROI report (portal page + PDF + email); outcome-fee **preview**.
-6. Basic white-label (theme vars, wildcard subdomain).
+5. Monthly ROI report (portal page + PDF + email); outcome-fee **preview** (manual — not Stripe engine).
+6. Basic white-label (theme vars, wildcard subdomain) only as needed for the founding pilot — full white-label stays v1.0.
 
 **Exit gates:**
 - [ ] A new tenant can be provisioned + onboarded with **no code change**.
-- [ ] ≥1 pilot client live on the Standard lane producing a defensible monthly ROI report.
+- [ ] ≥1 **home-services** pilot client live on the **Standard** lane producing a defensible monthly ROI report ([founding-pilot scope](./responseos-v0.3-founding-pilot-scope.md)).
 - [ ] Zero cross-tenant data-exposure incidents (verified by isolation tests + review).
 - [ ] Break-glass logged + tenant-notified; audit logs populated.
-- [ ] CI green. **Production deploy authorized only after these gates.**
+- [ ] CI green. **Production deploy authorized only after these gates + staged §5 auths.**
 
 ---
 
-## Phase 5 — v0.4 knowledge grounding (Phase 2)
+## Phase 5 — v0.4 knowledge grounding + GTM vault (Phase 2)
 
 **Entry gate:** v0.3 MVP live + the ingesting tenant's compliance lane controls in force (isolation, source ownership, audit, retention, PII minimization, deletion/export, approved-source, human review — per `../ROADMAP.md`).
 **Owner:** core/AI.
-**Work:** per-tenant client knowledge ingestion + agent grounding; retrieval substrate chosen at v0.4 (no vector store committed before then).
+**Work:** per-tenant client knowledge ingestion + agent grounding; GTM “Business Memory vault” / Obsidian-compatible narrative memory productization; retrieval substrate chosen at v0.4 (no vector store committed before then). **Out of founding-pilot go-live.**
 **Exit gates:** grounded answers auditable + tied to the ledger; gates above demonstrably enforced; no regression in isolation/audit/retention.
 
 ---
@@ -136,7 +122,7 @@
 | Tenant isolation tested | every phase that adds a tenant-scoped table/route |
 | Signature validation before mutation | every webhook added |
 | Event-ledger-first | every write path |
-| No premature microservices | only the voice gateway is split |
+| No premature microservices | gateway/Redis deferred; do not split services for the first founding-pilot slice |
 | Scope discipline | no abstractions beyond the phase's need |
 | Docs hygiene | new decision → ADR; new milestone → roadmap; merged PR → CHANGELOG line |
 
@@ -144,14 +130,14 @@
 
 ## Implementation sequencing (one-line view)
 
-`v0.2 closeout` → `gateway + provider abstraction (mock→Grok/OpenAI, readiness gate)` → `live Twilio + HubSpot + calendar + playbooks` → `provisioning + reporting + basic white-label (pilot live)` → `v0.4 knowledge` → `v0.5 billing` → `v1.0 white-label OS`.
+`v0.2 closeout` → `CAL mocks (Stage A auth)` → `schema/env placeholders` → `hosted staging (Path A)` → `live Telnyx/Vapi/Twilio/HubSpot/Calendly on staging (Path B)` → `provisioning + ROI report (founding pilot prod)` → `v0.4 knowledge/vault` → `v0.5 billing` → `v1.0 white-label OS`.
 
 ---
 
 ## Assumptions & open questions
 
-**Assumptions:** v0.3 is authorized after Phase 1; provider-readiness gate is achievable; pilot sourced from AJ Digital's book.
-**Open questions:** gateway hosting target; whether v0.4 or v0.5 goes first if a pilot demands billing; concurrency-ceiling defaults.
+**Assumptions:** staged written auths per [`responseos-v0.3-founding-pilot-scope.md`](./responseos-v0.3-founding-pilot-scope.md) §5; provider-readiness gate is achievable; pilot is home-services Standard lane.
+**Open questions:** first pilot client identity; production secret store (Vercel vs Doppler); whether readiness testing forces un-deferring gateway/Redis; whether a pilot demands billing before v0.5.
 
 ---
 
