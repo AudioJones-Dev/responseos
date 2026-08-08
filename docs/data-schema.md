@@ -8,12 +8,58 @@ The schema mirrors `types/*.ts` and `prisma/schema.prisma`. Conventions:
 - JSON fields use Postgres `jsonb` so config payloads stay flexible.
 - IDs are `cuid()` strings; timestamps are ISO 8601.
 
-## v0.1 — current models (11)
+## Current implementation snapshot
+
+The source of truth for exact fields, enum values, relations, and indexes is `prisma/schema.prisma`. As of the v0.2 closeout, the schema has migrations `0001_v0_2_foundation` through `0008_clerk_identity_columns`.
+
+Current Prisma models:
+
+| Model | Purpose |
+|---|---|
+| `Account` | Tenant root, formerly `Organization`. |
+| `User` | AJ/operator/client user with Clerk identity columns and role. |
+| `Contact` | Customer/prospect record per account. |
+| `Call` | Logical phone interaction. |
+| `LeadEvent` | Captured demand signal and recovery event. |
+| `LeadQualification` | Qualification snapshot for a lead event. |
+| `Appointment` | Booking/job visit, formerly `Booking`. |
+| `QuoteRequest` | Quote/estimate request header. |
+| `Automation` | Workflow definition. |
+| `Notification` | Outbound dispatch record. |
+| `RevenueMetrics` | KPI facts per period per account. |
+| `AssessmentReport` | Readiness / revenue-leak assessment artifact. |
+| `Engagement` | Commercial engagement state and terms. |
+| `AuditLog` | Admin/system audit event. |
+| `WebhookEvent` | Vendor webhook ingest record with signature/dedupe fields. |
+| `ProviderConnection` | Per-account provider connection metadata. |
+| `Conversation` | SMS / messaging thread root. |
+| `SmsMessage` | Per-message row under a conversation. |
+| `CallSegment` | Turn-level call transcript segment. |
+| `CallTranscript` | Full transcript artifact and retention lane. |
+| `QaLog` | QA review / scoring record. |
+| `WorkflowRun` | n8n/internal workflow execution log. |
+
+Current migration history:
+
+| Migration | Effect |
+|---|---|
+| `0001_v0_2_foundation` | Initial v0.2 Postgres foundation. |
+| `0002_organization_to_account_rename` | Renames tenant root from organization to account. |
+| `0003_booking_to_appointment_rename` | Renames bookings to appointments. |
+| `0004_communication_substrate` | Adds provider connections, conversations, and SMS messages. |
+| `0005_call_intelligence_substrate` | Adds call segments, transcripts, and QA logs. |
+| `0006_workflow_run_substrate` | Adds workflow run tracking. |
+| `0007_audit_logs_expansion` | Expands audit logging. |
+| `0008_clerk_identity_columns` | Adds Clerk identity wiring columns. |
+
+The sections below retain historical v0.1/v0.2 design context. If they conflict with `prisma/schema.prisma`, the Prisma schema wins until this document is fully rewritten from the live schema.
+
+## Historical v0.1 base models (11)
 
 The v0.1 model is intentionally narrow. It captures the core revenue-recovery shape without committing to deep CRM emulation.
 
 ### organizations
-Tenant root.
+Historical tenant root. Implemented schema now uses `accounts` / `Account`.
 
 | field | type | notes |
 |---|---|---|
@@ -100,7 +146,7 @@ One logical phone interaction.
 | disqualification_reason | string? | |
 
 ### bookings
-Appointment / job visit.
+Historical appointment / job visit name. Implemented schema now uses `appointments` / `Appointment`.
 
 | field | type | notes |
 |---|---|---|
@@ -175,9 +221,9 @@ Aggregated KPI facts per period per workspace.
 
 ---
 
-## v0.2 expansion — roadmap (do NOT build now)
+## v0.2 expansion status
 
-The deep research report defines an event-ledger-first canonical model. v0.2 expands the v0.1 schema toward that target. The following changes are **roadmap targets**, not present-tense code. v0.1 ships with the 11 models above unchanged.
+The deep research report defined an event-ledger-first canonical model. v0.2 has now shipped part of that expansion through Prisma migrations. The table below is retained as planning context: rows marked as already implemented by the current snapshot should be read through `prisma/schema.prisma`; rows not present in Prisma remain future candidates.
 
 ### Renames
 
@@ -187,12 +233,12 @@ The deep research report defines an event-ledger-first canonical model. v0.2 exp
 | `bookings` | `appointments` | Domain language used across telephony/CRM vendors |
 | `lead_events` (kept) | `lead_events` + new `leads` | `leads` becomes the durable prospect/customer record; lead_events stays as the event stream |
 
-### New tables
+### Expansion table status
 
 | Table | Purpose |
 |---|---|
-| `events` | **Immutable webhook + event ledger.** All raw vendor payloads land here first with a dedupe key. Central to replay + audit + ROI recomputation. |
-| `leads` | Unified prospect/customer record (vs splitting across contacts/lead_events) |
+| `events` | Historical planning name. Current implemented webhook ingest record is `WebhookEvent`; broader immutable event-ledger expansion remains future work. |
+| `leads` | Future candidate. Current code uses `Contact` + `LeadEvent`. |
 | `locations` | Branches / service areas, per account |
 | `call_segments` | Turn-by-turn legs (speaker, sequence, text, confidence, redacted_text) |
 | `call_transcripts` | Full transcript artifacts with PII redaction + storage policy + expiry |
@@ -207,11 +253,11 @@ The deep research report defines an event-ledger-first canonical model. v0.2 exp
 | `invoices` | AJ invoices to clients (subtotal, usage_total, outcome_total) |
 | `roi_metrics` | Replaces `revenue_metrics` with expanded KPI facts |
 | `workspaces` | Sub-tenant grouping below `accounts` (multi-location, multi-brand operators) |
-| `provider_connections` | Per-tenant credentials for Twilio / Retell / GHL / HubSpot / Stripe / Cal.com / Google — encrypted at rest, decrypted at request time |
+| `provider_connections` | Implemented as connection metadata. Live credential usage remains v0.3-gated. |
 | `audit_logs` | Admin actions, prompt changes, break-glass entries, data exports |
 | `conversations` | SMS thread root grouping inbound + outbound messages by contact + tenant |
 | `sms_messages` | Per-message rows under a conversation (provider, direction, body, status, segment count) |
-| `webhook_events` | Specialization of `events` for vendor HTTP callbacks (raw body, signature header, signature_valid, dedupe_hash) |
+| `webhook_events` | Implemented for vendor HTTP callbacks (raw body, signature header, signature_valid, dedupe_hash). |
 | `workflow_runs` | n8n / internal workflow execution log (run_id, workflow_id, status, started_at, ended_at, error) |
 | `outcome_fees` | Computed performance fees per period per tenant with evidence references |
 | `billing_events` | Stripe-side billing state changes mirrored locally (invoice.created, paid, refunded) |
@@ -226,7 +272,9 @@ Storing the raw event before mutating any business object means we can:
 - **Migrate** between CRMs without rewriting business logic — recompute facts from `events`, not from QuoteIQ vs HighLevel vs HubSpot payload shapes.
 - **Recompute ROI** independently of which downstream system holds the data of record.
 
-### Migration plan (sketch)
+### Historical migration sketch
+
+This sketch is retained for provenance. Steps that have shipped are represented by the migrations listed in the current implementation snapshot above.
 
 1. Add `events` table; backfill from existing `calls`, `lead_events`, `bookings` rows where derivable.
 2. Add `leads` table; map existing `contacts` + `lead_events` into normalized `leads`.
@@ -236,7 +284,7 @@ Storing the raw event before mutating any business object means we can:
 6. Add billing/payments/invoices when Stripe lands (v0.3).
 7. Keep `revenue_metrics` running alongside `roi_metrics` until the new mart proves out, then deprecate.
 
-The v0.1 schema is forward-compatible: nothing in v0.1 blocks the v0.2 expansion. Renames happen via Prisma migrations once the data volumes and product surface make the lift worth it.
+The v0.1 schema was forward-compatible with the shipped v0.2 expansion. Future schema changes should now start from the current Prisma schema and create new migrations rather than reusing this historical sketch as an implementation plan.
 
 ---
 
