@@ -21,6 +21,32 @@
 
 Brand / public landing voice (Revenue Recovery vs Business Memory) remains **operator-owned**; agents draft only.
 
+### 1.1 Demo-MVP dependency narrowing (amended 2026-08-08)
+
+The **Stack** row above records the *target* provider set and is unchanged. It is **not** the
+acceptance-dependency set for the first vertical slice ("One Call, End to End"). Freezing five live
+provider integrations as acceptance criteria would make the demo depend on systems that contribute
+nothing to the claim it must prove.
+
+| Tier | Systems | Meaning |
+|---|---|---|
+| **Demo-MVP REQUIRED** | Telnyx → Vapi → ResponseOS · Neon · Clerk · Vercel | Live and working, or the slice does not exist |
+| **SANDBOXED for Demo MVP** | CRM · scheduling · SMS actions | Executed through sandbox adapters against controlled demo resources. No external side effects. |
+| **DEFERRED LIVE** | HubSpot · Calendly · Twilio/failover · Stripe · Redis · Node voice gateway | Remain in the target stack and in the staged ladder (§5). **Not** acceptance criteria for the demo. |
+
+**Rationale.** The demonstrable claim is *call → canonical intelligence → durable memory →
+explainable decision → sandbox action → provenance*. A real HubSpot write or a real Calendly booking
+adds no evidence for that claim, while adding live-integration risk and external side effects to a
+prospect-facing demo. Sandbox adapters are strictly *better* demo behaviour, not a compromise: they
+make the controlled-environment requirement provable rather than incidental.
+
+**Twilio failover is deliberately deferred** — failover from a carrier that is not yet live is
+premature, and adding it to demo acceptance doubles the telephony surface before the primary path
+has been proven once.
+
+This narrowing changes **acceptance scope only**. It removes nothing from the architecture, and every
+deferred system keeps its stage in §5 under the same authorization requirements.
+
 ---
 
 ## 2. In scope (founding pilot)
