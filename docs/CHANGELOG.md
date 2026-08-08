@@ -11,6 +11,10 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - Dashboard: `#27` → Review (awaiting signed Stage A+); **V-02** / **V-03** → Done. Deploy/live tasks untouched.
 - Documentation only — no code, schema, secrets, accounts, or deploy jobs.
 
+## Unreleased — chore: pin nanoid 3.3.17 to clear GHSA-2v37-7h3g-55p8
+
+- Added a `package.json` overrides pin for transitive `nanoid` `3.3.17` (via `postcss`, whose `^3.3.16` range the pin satisfies) so `npm audit --audit-level=high` stays green in validate and integration CI. `master` at `ed77c26` resolved `nanoid` `3.3.16`, which the advisory published 2026-08-08 marks high severity. Lockfile change is limited to that one package's `version`/`resolved`/`integrity`. No app runtime, provider, secret, or deploy changes.
+
 ## Unreleased — chore: pin js-yaml 4.3.1 to clear GHSA-5p4m-2wfm-xmqj
 
 - Added a `package.json` overrides pin for transitive `js-yaml` `4.3.1` (via `eslint` → `@eslint/eslintrc`) so `npm audit --audit-level=high` stays green in validate and integration CI. No app runtime, provider, secret, or deploy changes.
