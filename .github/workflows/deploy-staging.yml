@@ -1,0 +1,114 @@
+# Staging-only deploy scaffold (Path A / Live Pilot Ship Phase 2).
+#
+# Hard rules:
+# - Manual trigger only (workflow_dispatch). Never runs on push to master.
+# - Uses the GitHub Environment named `staging` so required reviewers /
+#   wait timers can gate the job (create that Environment in repo Settings).
+# - Does NOT deploy production. Do not add a production job here until
+#   founding-pilot readiness gates + human prod approval clear.
+# - Providers stay mock until separately authorized live stages.
+#
+# Operator setup (secrets + Neon + Clerk) is documented in:
+#   docs/ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md
+
+name: Deploy Staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "staging" to confirm a non-production deploy'
+        required: true
+        type: string
+      skip_migrate:
+        description: "Skip prisma migrate deploy (use only if DB already current)"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  deployments: write
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    name: Confirm staging intent
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reject accidental triggers
+        if: ${{ inputs.confirm != 'staging' }}
+        run: |
+          echo "::error::Confirmation input must be exactly 'staging'. Refusing deploy."
+          exit 1
+
+  deploy-staging:
+    name: Deploy to staging
+    needs: guard
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: ${{ steps.deploy.outputs.url }}
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      # Prefer environment-scoped token; fall back to repo secret name.
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.STAGING_DIRECT_URL }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.18.0
+          cache: npm
+
+      - name: Require deploy secrets
+        run: |
+          missing=0
+          for name in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing secret: $name (set on GitHub Environment 'staging' or repo secrets). See docs/ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
+      - run: npm ci
+      - run: npx prisma generate
+
+      - name: Migrate staging database
+        if: ${{ inputs.skip_migrate == false }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::Missing secret STAGING_DATABASE_URL. Set Neon staging pooled URL on Environment 'staging'."
+            exit 1
+          fi
+          if [ -z "$DIRECT_URL" ]; then
+            echo "::warning::STAGING_DIRECT_URL unset; using STAGING_DATABASE_URL for migrations (Neon prefers DIRECT_URL for migrate)."
+            export DIRECT_URL="$DATABASE_URL"
+          fi
+          npx prisma migrate deploy
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@41.7.0
+
+      - name: Pull Vercel staging env metadata
+        run: vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
+
+      - name: Build for Vercel
+        run: vercel build --token="$VERCEL_TOKEN"
+
+      - name: Deploy prebuilt to Vercel (non-prod)
+        id: deploy
+        run: |
+          url=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN")
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Deployed staging candidate: $url"
+          echo "::notice::Alias/promote to the staging hostname is an operator step — see RESPONSEOS_STAGING_HOSTING_RUNBOOK.md. This job never targets production."

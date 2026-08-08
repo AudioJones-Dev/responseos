@@ -4,7 +4,7 @@
 **Status:** Canonical (go-forward). Extends [`../DEPLOYMENT.md`](../DEPLOYMENT.md) (three lanes, IaC, CI/CD, SLOs, rollback) with the go-forward topology. **Planning baseline (ADR-0031/0032/0033/0036/0037):** Telnyx / Vapi / HubSpot / Calendly on Neon + Vercel; **Node voice gateway + Redis are deferred** for the first founding-pilot slice (they remain documented as optional later topology, not a go-live hard dependency).
 **Anchored by:** ADR-0001 (no deploy until v0.3) · ADR-0004 (lanes) · ADR-0036 (gateway/Redis deferred) · ADR-0013/0014 (gateway/Redis retained as deferred design)
 
-> **Hard rule (unchanged):** do **not** deploy from this repo until v0.3 readiness gates clear. This document is the **target** posture so we can move fast when v0.3 unlocks. Current state: GitHub remote live (`audiojones-dev/responseos`); CI runs `validate` + `integration` on every push/PR; **no deploy jobs yet**.
+> **Hard rule (unchanged):** do **not** deploy **production** from this repo until v0.3 readiness gates clear. Current state: GitHub remote live (`audiojones-dev/responseos`); CI runs `validate` + `integration` on every push/PR; **staging-only** manual deploy scaffolding lives in `.github/workflows/deploy-staging.yml` (Environment `staging` + human approval). Operator runbook: [`RESPONSEOS_STAGING_HOSTING_RUNBOOK.md`](./RESPONSEOS_STAGING_HOSTING_RUNBOOK.md).
 
 ---
 
@@ -57,7 +57,7 @@ If/when the deferred gateway is introduced, it deploys per lane alongside the ap
 | Env | Purpose | Providers |
 |---|---|---|
 | `dev` | local + preview per PR | mock adapters (zero keys) |
-| `staging` | preprod; provider-readiness gate; golden calls | staging Telnyx/Vapi/Twilio/HubSpot/Calendly accounts (mock until each live stage is authorized) |
+| `staging` | Path A host first (Clerk + Neon + portal); then provider-readiness gate + golden calls | mock until each live stage is authorized — Telnyx + Vapi first; HubSpot, Calendly, Twilio failover deferred-live (scope §1.1). See [`RESPONSEOS_STAGING_HOSTING_RUNBOOK.md`](./RESPONSEOS_STAGING_HOSTING_RUNBOOK.md) |
 | `prod` | Standard / Privacy-hardened | live |
 | `prod-hipaa` | HIPAA-ready (future) | per BAA; voice blocked until verified |
 
@@ -67,7 +67,7 @@ Mock-first everywhere keys are absent (ADR-0001).
 
 ## 4. CI/CD
 
-Current CI (unchanged): `validate` + `integration`. Target deploy pipeline (v0.3+):
+Current CI: `validate` + `integration`. Staging Path A: manual `Deploy Staging` workflow (see runbook). Target deploy pipeline (v0.3+ prod still gated):
 
 | Stage | Gate | Env |
 |---|---|---|
@@ -76,6 +76,7 @@ Current CI (unchanged): `validate` + `integration`. Target deploy pipeline (v0.3
 | Integration tests (Postgres) | required | all |
 | Contract tests (gateway↔core, provider mocks) | required | all |
 | DB migration validation (`prisma migrate diff/deploy`) | required | all |
+| Staging host deploy (Path A, mock providers) | manual + Environment `staging` approval | staging |
 | Golden-call regression | required before prompt/voice release | staging |
 | Provider-readiness gate | required before live voice | staging |
 | Security scan + dependency audit | required | all |

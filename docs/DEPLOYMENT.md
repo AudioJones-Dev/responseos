@@ -2,7 +2,7 @@
 
 > **Hard rule:** do NOT deploy production from this repo yet. No Vercel production deploy, no AWS deploy — production deploys are gated to explicit v0.3 readiness approval. This document captures the **target** deployment posture so we can move fast when v0.3 unlocks.
 >
-> **Current state.** GitHub remote is live (`audiojones-dev/responseos`) and CI runs on every push and PR — `validate` (lint + typecheck + unit test + build) and `integration` (Postgres 16 service container, `prisma migrate diff`, `prisma migrate deploy`, `prisma db seed`, integration tests, DB-backed build). No deploy jobs yet.
+> **Current state.** GitHub remote is live (`audiojones-dev/responseos`) and CI runs on every push and PR — `validate` (lint + typecheck + unit test + build) and `integration` (Postgres 16 service container, `prisma migrate diff`, `prisma migrate deploy`, `prisma db seed`, integration tests, DB-backed build). **Staging-only** deploy scaffolding exists as a manual `workflow_dispatch` job (GitHub Environment `staging` + human approval). Automatic production deploy from `master` remains disabled (`vercel.json`). Operator steps: [`ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md`](./ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md).
 
 ## Three deployment lanes
 
@@ -63,7 +63,17 @@ State lives in S3 with state locking + versioning per AWS prescriptive guidance.
 
 ## CI/CD Target
 
-Current GitHub Actions run validation only; there are no deploy jobs yet. The target deployment pipeline uses GitHub Actions with **OIDC federation to AWS** so the deploy pipeline never needs long-lived cloud secrets. n8n workflow definitions live in Git — n8n source-control mode is downstream of Git, not the source of truth.
+**Today (Path A prep):**
+
+| Workflow | Trigger | Gate |
+|---|---|---|
+| `.github/workflows/ci.yml` | push + PR | `validate` + `integration` (required) |
+| `.github/workflows/deploy-staging.yml` | **manual** `workflow_dispatch` only | confirmation input `staging` + GitHub Environment **`staging`** (required reviewers) |
+| Production deploy | **none** | Forbidden until founding-pilot readiness + human prod approval |
+
+`vercel.json` sets `git.deploymentEnabled.master: false` so Vercel does not auto-promote `master` to production.
+
+**Future target** (post–Stage I): GitHub Actions with **OIDC federation to AWS** for HIPAA-lane primitives so the deploy pipeline never needs long-lived cloud secrets. n8n workflow definitions live in Git — n8n source-control mode is downstream of Git, not the source of truth.
 
 Pipeline gates:
 | Stage | Gate |
@@ -72,11 +82,12 @@ Pipeline gates:
 | Unit tests | required |
 | Contract tests against connector mocks | required |
 | DB migration validation | required |
+| Staging deploy (Path A) | manual + Environment approval |
 | Playwright/Cypress e2e on preview env | required |
 | Load test on webhook + quote endpoints | staging only |
 | Security scan + dependency audit | required |
 | Terraform plan | staging/prod required |
-| Manual approval | prod and prod-hipaa |
+| Manual approval | staging (now); prod and prod-hipaa (later) |
 | Blue/green or canary deploy | prod and prod-hipaa |
 
 ## Observability
@@ -108,10 +119,18 @@ Pipeline gates:
 ## Environments
 
 - `dev` — local development plus CI validation.
-- `preview` — future per-PR preview target once deploy jobs are approved.
-- `staging` — future shared preprod against staging Telnyx/Vapi/Twilio/HubSpot/Calendly accounts (Path A host first; live providers one-at-a-time per founding-pilot staged auths).
-- `prod` — future Standard / Privacy-hardened production after v0.3 readiness approval ([`product/responseos-v0.3-founding-pilot-scope.md`](./product/responseos-v0.3-founding-pilot-scope.md)).
+- `preview` — Vercel preview deployments (connected branches); may host Path A while a stable staging alias is set.
+- `staging` — shared preprod for Path A (Clerk + Neon + portal smoke; providers mock). Operator checklist + tenant bootstrap: [`ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md`](./ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md). Live providers arrive **one at a time** per the staged authorizations in [`product/responseos-v0.3-founding-pilot-scope.md`](./product/responseos-v0.3-founding-pilot-scope.md) §5 — Telnyx and Vapi first. HubSpot, Calendly, and Twilio failover are **deferred-live** per §1.1 and are not Demo-MVP dependencies.
+- `prod` — Standard / Privacy-hardened production **after** v0.3 readiness approval ([`product/responseos-v0.3-founding-pilot-scope.md`](./product/responseos-v0.3-founding-pilot-scope.md) §4). Not enabled from this repo yet.
 - `prod-hipaa` — future HIPAA-ready production, isolated VPC + database + eligible provider accounts after independent review.
+
+### Staging env vars (Path A — placeholders)
+
+Required on the staging host (see [`env-spec.md`](./env-spec.md); never commit real values):
+
+`DATABASE_URL`, `DIRECT_URL`, `CLERK_SECRET_KEY`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_WEBHOOK_SECRET`, `AJ_DIGITAL_CLERK_ORG_ID`, `NEXT_PUBLIC_APP_URL`, `RESPONSEOS_REQUIRE_AUTH`, optional `RESPONSEOS_PROVIDER_KEY`.
+
+Never set `RESPONSEOS_DEV_SESSION` on hosted staging/prod.
 
 ## Multi-tenant deployment model
 
