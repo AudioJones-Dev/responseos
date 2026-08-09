@@ -47,6 +47,35 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - **Replaced dashboard automation's direct pushes to `master`** with updates to the dedicated `automation/dashboard-sync` branch and a bot-created pull request for human review. Documented the required repository Actions permission and workflow-approval behavior in [`dashboard/README.md`](../dashboard/README.md), and added the P0 containment task to the dashboard data in Review state.
 - **Applied review hardening:** scoped GitHub token permissions per job, suppressed timestamp-only dashboard rewrites so substantive no-ops do not create pull-request churn, and added focused unit coverage for both no-op and changed-data sync behavior.
 
+## Unreleased — feat: harden the public demo surface (PR #94)
+
+- `getCurrentSession()` now fails closed in production when Clerk is not configured: the placeholder dev-session is never granted to anonymous traffic on a deployed surface. Previously every visitor to the live demo received a mock `aj_admin` session, leaving `/admin` publicly browsable.
+- `proxy.ts` blocks non-public routes at the edge when Clerk is absent in production, redirecting to `/` (defense in depth above the session fix).
+- Reclassified `/audit` and `/trust` as public marketing routes in `lib/auth/route-protection.ts`; both are prospect-facing pages linked from the marketing header and were caught by the new production redirect. `/audit` had been listed as protected since PR #41 — an oversight, not a decision.
+- Added a demo-environment banner to the marketing layout per the mock-first demo deploy gate (checkpoint 2026-07-04). Banner copy is a draft pending operator approval.
+- Repointed public marketing/demo CTAs away from protected `/admin` and `/client/dashboard` routes and added read-only `/demo/operator-console` and `/demo/client-dashboard` variants so the GTM demo does not dead-end after fail-closed auth ships.
+- Fixed the pricing-page retainer bullet layout, reconciled operator/client KPI storytelling to the same sample-month revenue metrics, relabeled the client dashboard as "Sample Month," and added operator-console client-health/escalation structure.
+- Raised the Vitest `testTimeout` to 20s to eliminate the two known local timeout flakes noted in the deploy checkpoint.
+- Unit tests updated/added for the fail-closed session path, production proxy redirect, and public-route reclassification.
+
+## Unreleased — docs: scope v0.3 live-call demo slice
+
+- Added [`product/responseos-v0.3-live-call-demo-slice.md`](./product/responseos-v0.3-live-call-demo-slice.md) to define the next v0.3 slice: Telnyx-first live-call path, Sent.dm-assisted verification/follow-up messaging, Vapi optional behind `VoiceAgentProvider`, a dedicated ResponseOS demo number, inbound lead-call journey first, outbound request-call journey second, demo-only tenant isolation, consent/rate-limit controls, spend cap, kill switch, and webhook-signature-first persistence.
+- Added [`product/responseos-v0.3-live-call-demo-implementation-brief.md`](./product/responseos-v0.3-live-call-demo-implementation-brief.md) to break ADR-0045 into safe implementation PRs: contracts and mocks first, signed webhook ingest second, inbound normalization third, outbound request gates fourth, and live activation last.
+- Kept Telnyx + Sent.dm as the active demo configuration while documenting Linq as a migration-ready messaging option to revisit after the provider demo; the `MessagingProvider` contract remains provider-neutral above the adapter boundary.
+- Added ADR-0045 to record that the live-call demo uses a dedicated demo number, never the operator's personal number, and that implementation remains split into separate scoped PRs under the Telnyx-first / Sent.dm-assisted stack decision.
+- Updated [`ROADMAP.md`](./ROADMAP.md) and the progress dashboard so the live-call demo slice is visible as planned/scoped work rather than hidden scope.
+- Documentation/planning only. No provider adapter, schema migration, env var, secret, account configuration, webhook mutation, billing, or live-call cutover is included.
+
+## Unreleased — docs: v0.3 mock-first demo deploy checkpoint
+
+- Added [`product/responseos-v0.3-demo-deploy-checkpoint.md`](./product/responseos-v0.3-demo-deploy-checkpoint.md) to record the selected next path after the deployment-readiness review: **mock-first demo deployment readiness**, not live production traffic. The checkpoint includes the minimum PRD, success criteria, scope, out-of-scope items, constraints, risks, open questions, and separate gates for demo deploy versus live production.
+- Created and documented the Neon `demo` branch metadata for the `responseos` project, stored the generated `DATABASE_URL` / `DIRECT_URL` in Doppler `response-os/stg_staging_demo` without printing values, and verified Prisma validate / migrate / seed / DB-backed build against that branch.
+- Created and linked the Vercel `audiojones/responseos` project for the mock-first demo path, corrected the project settings to Next.js / Node 22 / `npm ci` / `npm run build` / `.next`, attached `responseos.ajdigital.app`, added production and all-preview runtime envs without printing values, and created the Cloudflare A record for the demo domain. Vercel Git integration later became active and automatically promoted commit `4578cd91a56be792f83b7ca9d5a6cc49d9c1db49` to the public demo aliases; no manual `vercel --prod` command was run.
+- Corrected `doppler.yaml` to point at the actual Doppler project slug, `response-os`.
+- Updated the progress dashboard to reflect that the demo surface / feature-cut decision is now selected while acceptance-gate documentation remains in progress.
+- Documentation/progress/config metadata only. No runtime code, schema, provider adapter, webhook mutation, billing, live integration, or deploy is authorized.
+
 ## Unreleased — docs: add Web3 opportunity research
 
 - Added [`research/RESPONSEOS_WEB3_BLOCKCHAIN_OPPORTUNITY_RESEARCH.md`](./research/RESPONSEOS_WEB3_BLOCKCHAIN_OPPORTUNITY_RESEARCH.md) — evaluates Web3/blockchain/crypto opportunities against the current ResponseOS architecture and recommends a **non-crypto** path: a Level-1 tamper-evident AI interaction ledger (canonical JSON, hash chains, Ed25519 signatures, signed exports) before any optional Merkle-root anchoring. Research-only; no app code, schema, auth, provider, dependency, secret, or deploy changes.

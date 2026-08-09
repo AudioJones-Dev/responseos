@@ -332,7 +332,7 @@
       "start": "2026-07-06",
       "due": "2026-07-24",
       "blocked": true,
-      "blockedReason": "Gated on v0.3 scope decision"
+      "blockedReason": "ADR-0045 selects Telnyx-first and Sent.dm-assisted; implementation still requires dedicated number, Telnyx AI/Vapi validation, signature validation, Sent.dm consent messaging, rate limits, and kill switch PRs"
     },
     {
       "id": "I-06",
@@ -370,6 +370,32 @@
       "priority": "Med",
       "start": "2026-07-27",
       "due": "2026-08-07"
+    },
+    {
+      "id": "I-04",
+      "phase": "Integrations",
+      "title": "Telnyx + Sent.dm live-call demo implementation brief",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-07-05",
+      "due": "2026-07-08",
+      "ref": 94,
+      "refType": "pull"
+    },
+    {
+      "id": "I-05",
+      "phase": "Integrations",
+      "title": "Live-call provider contracts and mocks",
+      "owner": "Codex",
+      "status": "To Do",
+      "progress": 0,
+      "priority": "High",
+      "start": "2026-07-06",
+      "due": "2026-07-10",
+      "blocked": true,
+      "blockedReason": "Requires explicit scoped approval for PR A from the live-call implementation brief; active target remains Telnyx + Sent.dm, with Linq migration kept behind the MessagingProvider boundary"
     },
     {
       "id": "Q-01",
@@ -429,6 +455,19 @@
       "priority": "High",
       "start": "2026-08-13",
       "due": "2026-08-15"
+    },
+    {
+      "id": "L-04",
+      "phase": "Launch / Demo Deploy",
+      "title": "Demo surface hardening and P0 screenshot fixes",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-07-05",
+      "due": "2026-07-05",
+      "ref": 94,
+      "refType": "pull"
     }
   ],
   "liveIssues": [

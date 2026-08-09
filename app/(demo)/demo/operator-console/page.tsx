@@ -1,24 +1,19 @@
 import StatCard from "@/components/dashboard/StatCard";
 import {
-  PageHeader,
   AlertBanner,
   Card,
   CardHeading,
+  PageHeader,
   StatusBadge,
   Table,
-  THead,
   TBody,
-  TR,
   TD,
+  THead,
+  TR,
 } from "@/components/ui";
-import {
-  Appointments,
-  Calls,
-  Leads,
-  Accounts,
-  Quotes,
-  RevenueMetrics,
-} from "@/lib/data";
+import { getMockAccounts } from "@/lib/mock/accounts";
+import { getMockLeadEvents } from "@/lib/mock/leads";
+import { getCurrentMockRevenueMetrics } from "@/lib/mock/revenueMetrics";
 
 const formatUsd = (cents: number): string =>
   (cents / 100).toLocaleString("en-US", {
@@ -27,36 +22,11 @@ const formatUsd = (cents: number): string =>
     maximumFractionDigits: 0,
   });
 
-export default async function AdminHome() {
-  const [orgsR, callsR, leadsR, appointmentsR, quotesR, revenueR] =
-    await Promise.all([
-      Accounts.listAccounts(),
-      Calls.listCalls({}),
-      Leads.listLeads({}),
-      Appointments.listAppointments({}),
-      Quotes.listQuoteRequests({}),
-      RevenueMetrics.getCurrentRevenueMetrics({}),
-    ]);
-
-  const accounts = orgsR.ok ? orgsR.data : [];
-  const calls = callsR.ok ? callsR.data : [];
-  const leads = leadsR.ok ? leadsR.data : [];
-  const appointments = appointmentsR.ok ? appointmentsR.data : [];
-  const quotes = quotesR.ok ? quotesR.data : [];
-  const revenue = revenueR.ok ? revenueR.data : null;
-
-  const missed =
-    revenue?.missed_calls ?? calls.filter((c) => c.status === "missed").length;
-  const aiAnswered = revenue?.calls_answered_by_ai ?? calls.filter(
-    (c) =>
-      c.status === "answered" && ["retell", "vapi", "bland"].includes(c.provider),
-  ).length;
-  const qualified =
-    revenue?.qualified_leads ??
-    leads.filter((l) => l.status === "qualified").length;
-  const booked = revenue?.appointments_booked ?? appointments.length;
-  const quoteCount = revenue?.quotes_requested ?? quotes.length;
-  const activeClients = accounts.filter((o) => o.status === "active").length;
+export default function DemoOperatorConsole() {
+  const accounts = getMockAccounts();
+  const leads = getMockLeadEvents();
+  const revenue = getCurrentMockRevenueMetrics();
+  const activeClients = accounts.filter((a) => a.status === "active").length;
   const urgentLeads = leads
     .filter((l) => l.urgency === "high" && ["new", "qualified", "booked"].includes(l.status))
     .slice(0, 3);
@@ -81,13 +51,13 @@ export default async function AdminHome() {
   return (
     <>
       <PageHeader
-        eyebrow="AJ Digital Operator Console"
+        eyebrow="Operator Console Demo"
         title="Admin Overview"
-        description="Portfolio health across all workspaces."
+        description="Portfolio health across demo workspaces."
       />
 
       <AlertBanner className="mb-6">
-        Mock data shown across all workspaces — live providers connect in v0.3.
+        Public read-only demo — no live calls, texts, providers, or customer data.
       </AlertBanner>
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -98,39 +68,39 @@ export default async function AdminHome() {
         />
         <StatCard
           label="Missed Calls Detected"
-          value={missed}
+          value={revenue.missed_calls}
           hint="Sample month"
         />
         <StatCard
           label="Calls Answered by AI"
-          value={aiAnswered}
+          value={revenue.calls_answered_by_ai}
           hint="Sample month"
         />
         <StatCard
           label="Qualified Leads Captured"
-          value={qualified}
+          value={revenue.qualified_leads}
           hint={`${leads.length} total lead events`}
         />
         <StatCard
           label="Appointments Booked"
-          value={booked}
+          value={revenue.appointments_booked}
           hint="Sample month"
         />
         <StatCard
           label="Quote Requests Created"
-          value={quoteCount}
+          value={revenue.quotes_requested}
           hint="Sample month"
         />
         <StatCard
           label="Estimated Recovered Revenue"
-          value={revenue ? formatUsd(revenue.estimated_recovered_revenue) : "—"}
+          value={formatUsd(revenue.estimated_recovered_revenue)}
           hint="Sample month"
           accent="primary"
         />
         <StatCard
           label="ROI Multiple"
           value={
-            revenue?.roi_multiple ? `${revenue.roi_multiple.toFixed(1)}x` : "—"
+            revenue.roi_multiple ? `${revenue.roi_multiple.toFixed(1)}x` : "-"
           }
           hint="Recovered revenue / monthly cost"
         />
@@ -145,7 +115,15 @@ export default async function AdminHome() {
             </p>
           </div>
           <Table className="border-0">
-            <THead columns={["Client", "Status", "Leads waiting", "Last event", "Next action"]} />
+            <THead
+              columns={[
+                "Client",
+                "Status",
+                "Leads waiting",
+                "Last event",
+                "Next action",
+              ]}
+            />
             <TBody>
               {clientHealth.map((row) => (
                 <TR key={row.account.id}>
@@ -168,32 +146,26 @@ export default async function AdminHome() {
         <Card>
           <CardHeading>Urgent escalations</CardHeading>
           <div className="mt-4 space-y-3">
-            {urgentLeads.length > 0 ? (
-              urgentLeads.map((lead) => (
-                <div
-                  key={lead.id}
-                  className="rounded-lg border border-line bg-canvas-soft p-4"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <StatusBadge label="High urgency" tone="warning" />
-                    <span className="font-mono text-xs text-ink-muted">
-                      {lead.id}
-                    </span>
-                  </div>
-                  <p className="mt-3 text-sm font-medium capitalize text-ink">
-                    {lead.event_type.replaceAll("_", " ")}
-                  </p>
-                  <p className="mt-1 text-xs text-ink-muted">
-                    Estimated value {formatUsd(lead.estimated_value ?? 0)} ·
-                    review before next follow-up window.
-                  </p>
+            {urgentLeads.map((lead) => (
+              <div
+                key={lead.id}
+                className="rounded-lg border border-line bg-canvas-soft p-4"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <StatusBadge label="High urgency" tone="warning" />
+                  <span className="font-mono text-xs text-ink-muted">
+                    {lead.id}
+                  </span>
                 </div>
-              ))
-            ) : (
-              <p className="text-sm text-ink-muted">
-                No urgent demo escalations in this sample month.
-              </p>
-            )}
+                <p className="mt-3 text-sm font-medium capitalize text-ink">
+                  {lead.event_type.replaceAll("_", " ")}
+                </p>
+                <p className="mt-1 text-xs text-ink-muted">
+                  Estimated value {formatUsd(lead.estimated_value ?? 0)} ·
+                  review before next follow-up window.
+                </p>
+              </div>
+            ))}
           </div>
         </Card>
       </section>

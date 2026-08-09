@@ -1,7 +1,6 @@
 import StatCard from "@/components/dashboard/StatCard";
-import { PageHeader, EmptyState } from "@/components/ui";
-import { getCurrentAccount } from "@/lib/auth/session";
-import { RevenueMetrics } from "@/lib/data";
+import { AlertBanner, PageHeader } from "@/components/ui";
+import { getCurrentMockRevenueMetrics } from "@/lib/mock/revenueMetrics";
 
 const formatUsd = (cents: number): string =>
   (cents / 100).toLocaleString("en-US", {
@@ -17,38 +16,23 @@ const formatPeriod = (start: string, end: string): string => {
   const s = new Date(start);
   const e = new Date(end);
   const month = new Intl.DateTimeFormat("en-US", { month: "long" }).format(s);
-  const year = e.getUTCFullYear();
-  return `${month} ${s.getUTCDate()}-${e.getUTCDate()}, ${year}`;
+  return `${month} ${s.getUTCDate()}-${e.getUTCDate()}, ${e.getUTCFullYear()}`;
 };
 
-const FALLBACK_ACCOUNT_ID = "org_mock_1";
-
-export default async function ClientDashboard() {
-  const org = await getCurrentAccount();
-  const result = await RevenueMetrics.getCurrentRevenueMetrics({
-    accountId: org?.id ?? FALLBACK_ACCOUNT_ID,
-  });
-  const m = result.ok ? result.data : null;
-
-  if (!m) {
-    return (
-      <>
-        <PageHeader eyebrow="Client Dashboard" title="Sample Month" />
-        <EmptyState
-          title="No revenue metrics yet"
-          description="Once missed demand is captured and recovered, your recovered-revenue summary will appear here."
-        />
-      </>
-    );
-  }
+export default function DemoClientDashboard() {
+  const m = getCurrentMockRevenueMetrics();
 
   return (
     <>
       <PageHeader
-        eyebrow="Client Dashboard"
+        eyebrow="Client Dashboard Demo"
         title="Sample Month"
         description={`${formatPeriod(m.period_start, m.period_end)} · mock data`}
       />
+
+      <AlertBanner className="mb-6">
+        Public read-only demo — no live calls, texts, providers, or customer data.
+      </AlertBanner>
 
       <section className="mb-6 overflow-hidden rounded-lg border border-accent/30 bg-surface">
         <div className="bg-accent-soft p-8">
@@ -62,8 +46,8 @@ export default async function ClientDashboard() {
             </span>
           </p>
           <p className="mt-2 text-sm text-ink-secondary">
-            {m.roi_multiple ? `${m.roi_multiple.toFixed(1)}x` : "—"} estimated ROI
-            · {formatUsd(m.verified_recovered_revenue)} verified to date
+            {m.roi_multiple ? `${m.roi_multiple.toFixed(1)}x` : "-"} estimated
+            ROI · {formatUsd(m.verified_recovered_revenue)} verified to date
           </p>
         </div>
       </section>
