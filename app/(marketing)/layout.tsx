@@ -15,6 +15,11 @@ const NAV = [
 export default function MarketingLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col">
+      {/* Demo-surface labeling (mock-first demo deploy gate, checkpoint 2026-07-04). */}
+      <div className="border-b border-line bg-surface px-4 py-1.5 text-center text-xs text-ink-muted">
+        Demo environment — everything you see runs on sample data. No live
+        calls, texts, or customer data.
+      </div>
       <header className="sticky top-0 z-20 border-b border-line bg-base/80 backdrop-blur">
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-6 px-4 sm:px-6">
           <Logo />
@@ -31,7 +36,7 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
           </nav>
           <div className="flex items-center gap-3">
             <Link
-              href="/admin"
+              href="/demo/operator-console"
               className="hidden text-sm text-ink-secondary transition-colors hover:text-ink sm:inline"
             >
               Operator console

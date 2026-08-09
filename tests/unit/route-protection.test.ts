@@ -17,6 +17,8 @@ describe("isPublicPath", () => {
     "/sign-up/verify",
     "/industries",
     "/industries/contractors",
+    "/audit",
+    "/trust",
     "/api/webhooks",
     "/api/webhooks/clerk",
     "/api/webhooks/stripe",

@@ -10,6 +10,9 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
+    // Two suites exceed the 5s default on slower local machines; CI on
+    // Node 20 passes either way (release-hygiene note, checkpoint 2026-07-04).
+    testTimeout: 20_000,
     include: ["tests/unit/**/*.test.ts"],
     exclude: ["tests/integration/**", "tests/e2e/**", "node_modules/**"],
     coverage: {

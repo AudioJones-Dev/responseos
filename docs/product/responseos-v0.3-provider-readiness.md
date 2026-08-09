@@ -62,7 +62,7 @@ The research README ([#71](../research/communications-stack/README.md)) is **cor
 4. **A2P 10DLC / number-registration ownership** (platform vs per-client) — ADR-0031 open readiness item.
 5. **Scheduling provider for v0.3** — `CalendarProvider` enums exist (google, calcom, ghl) but there is no adapter, no env, and no ADR selecting one.
 6. **Sendblue / iMessage scope** — research candidate only; in or out of v0.3.
-7. **`grok` reconciliation** — Grok remains in the schema enum / docs as **legacy or open-provider residue** and needs reconciliation against ADR-0031/0032 (it is not the current orchestration/carrier canon, but carries older ADR history rather than being unbacked).
+7. **`grok` / xAI reconciliation** — Grok remains in the schema enum / docs as **legacy or open-provider residue** and needs reconciliation against ADR-0031/0032 (it is not the current orchestration/carrier canon, but carries older ADR history rather than being unbacked). The current xAI docs review is captured in [`responseos-xai-voice-readiness-spike.md`](./responseos-xai-voice-readiness-spike.md) and keeps xAI experimental unless a later approved spike or ADR changes that placement.
 8. **Stale docs cleanup** — `docs/README.md` (still summarizes "Twilio edge · Grok Voice primary / OpenAI Realtime fallback …") and `SECURITY.md` ("Standard mode runs on Twilio + Retell + Supabase + Vercel" + the webhook table missing Telnyx/Vapi rows) predate ADR-0031/0032 and need updating. (`RESPONSEOS_BUILD_SOURCE.md` is already reconciled — PR #49.)
 9. **Per-tenant BAA / retention** sign-off for any regulated (HIPAA-lane) tenant before live traffic (SECURITY.md vendor matrix).
 
