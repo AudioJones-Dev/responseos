@@ -12,7 +12,7 @@ The authoritative provider-stack baseline is the decision log: Telnyx primary / 
 |---|---|
 | Product | [`BUILD_SOURCE`](./product/RESPONSEOS_BUILD_SOURCE.md) · [`PRD`](./product/RESPONSEOS_PRD.md) · [`ROADMAP`](./product/RESPONSEOS_ROADMAP.md) · [`PHASE_PLAN`](./product/RESPONSEOS_PHASE_PLAN.md) · [`IMPLEMENTATION_PLAN`](./product/RESPONSEOS_IMPLEMENTATION_PLAN.md) · [`BACKLOG`](./product/RESPONSEOS_BACKLOG.md) · [`GTM_ROADMAP`](./product/responseos-gtm-product-roadmap.md) (GTM/brand/voice/pricing planning spec) · [`COMMS_STACK`](./product/responseos-communications-stack.md) (communications stack CTO decision) · [`FOUNDING_PILOT_SCOPE`](./product/responseos-v0.3-founding-pilot-scope.md) (v0.3 Path B freeze + acceptance gates + staged auths) · [`V0_3_AUTH_BRIEF`](./product/responseos-v0.3-authorization-brief.md) (mock-CAL decision checkpoint) · [`DEMO_PLAN`](./product/responseos-demo-narrative-and-asset-plan.md) (demo narrative + asset plan) |
 | Architecture | [`SYSTEM_ARCHITECTURE`](./architecture/RESPONSEOS_SYSTEM_ARCHITECTURE.md) · [`MODULE_BOUNDARIES`](./architecture/RESPONSEOS_MODULE_BOUNDARIES.md) · [`FRONTEND_SPEC`](./architecture/RESPONSEOS_FRONTEND_SPEC.md) · [`BACKEND_SPEC`](./architecture/RESPONSEOS_BACKEND_SPEC.md) · [`DATA_MODEL`](./architecture/RESPONSEOS_DATA_MODEL.md) · [`API_CONTRACTS`](./architecture/RESPONSEOS_API_CONTRACTS.md) · [`EVENT_SCHEMA`](./architecture/RESPONSEOS_EVENT_SCHEMA.md) · [`INTEGRATION_MAP`](./architecture/RESPONSEOS_INTEGRATION_MAP.md) |
-| Ops | [`OBSERVABILITY_AND_GOVERNANCE`](./ops/RESPONSEOS_OBSERVABILITY_AND_GOVERNANCE.md) · [`SECURITY_AND_COMPLIANCE`](./ops/RESPONSEOS_SECURITY_AND_COMPLIANCE.md) · [`RUNBOOK`](./ops/RESPONSEOS_RUNBOOK.md) · [`STAGING_HOSTING_RUNBOOK`](./ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md) (Path A Neon/Clerk/Vercel) · [`QA_VALIDATION_PLAN`](./ops/RESPONSEOS_QA_VALIDATION_PLAN.md) · [`DEPLOYMENT_PLAN`](./ops/RESPONSEOS_DEPLOYMENT_PLAN.md) |
+| Ops | [`CLIENT_DELIVERY`](./ops/client-delivery/README.md) (future-client qualification, discovery, costing, gates, launch, measurement, and templates) · [`OBSERVABILITY_AND_GOVERNANCE`](./ops/RESPONSEOS_OBSERVABILITY_AND_GOVERNANCE.md) · [`SECURITY_AND_COMPLIANCE`](./ops/RESPONSEOS_SECURITY_AND_COMPLIANCE.md) · [`RUNBOOK`](./ops/RESPONSEOS_RUNBOOK.md) · [`STAGING_HOSTING_RUNBOOK`](./ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md) (Path A Neon/Clerk/Vercel) · [`QA_VALIDATION_PLAN`](./ops/RESPONSEOS_QA_VALIDATION_PLAN.md) · [`DEPLOYMENT_PLAN`](./ops/RESPONSEOS_DEPLOYMENT_PLAN.md) |
 | Brand | [`POSITIONING`](./brand/RESPONSEOS_POSITIONING.md) · [`BRAND_VOICE`](./brand/RESPONSEOS_BRAND_VOICE.md) · [`SALES_NARRATIVE`](./brand/RESPONSEOS_SALES_NARRATIVE.md) · [`WEBSITE_COPY_SPEC`](./brand/RESPONSEOS_WEBSITE_COPY_SPEC.md) |
 | Research | [`MARKET_RESEARCH`](./research/RESPONSEOS_MARKET_RESEARCH.md) · [`NAMING_RISK_RESEARCH`](./research/RESPONSEOS_NAMING_RISK_RESEARCH.md) · [`COMPETITOR_RESEARCH`](./research/RESPONSEOS_COMPETITOR_RESEARCH.md) |
 | Governance | [`DOCUMENTATION_REMEDIATION_PLAN`](./governance/RESPONSEOS_DOCUMENTATION_REMEDIATION_PLAN.md) · [`PROJECT_CONSTITUTION`](./governance/PROJECT_CONSTITUTION.md) · [`DEFINITION_OF_READY`](./governance/DEFINITION_OF_READY.md) · [`DEFINITION_OF_DONE`](./governance/DEFINITION_OF_DONE.md) · [`DEFINITION_OF_STABLE`](./governance/DEFINITION_OF_STABLE.md) · [`RISK_REGISTER`](./governance/RISK_REGISTER.md) · [`WORKTREE_PLAN`](./governance/WORKTREE_PLAN.md) · [`REQUIREMENTS_TRACEABILITY_MATRIX`](./governance/REQUIREMENTS_TRACEABILITY_MATRIX.md) |
@@ -38,23 +38,24 @@ The authoritative provider-stack baseline is the decision log: Telnyx primary / 
 
 10. [`DESIGN.md`](./DESIGN.md) — visual system, UX spine, design maturity ladder.
 11. [`client-facing-offer.md`](./client-facing-offer.md) — buyer-facing summary.
-12. [`pricing-and-onboarding.md`](./pricing-and-onboarding.md) — commercial strategy and qualification gates.
+12. [`pricing-and-onboarding.md`](./pricing-and-onboarding.md) — provisional commercial strategy and qualification gates; numeric terms remain unvalidated for publication.
+13. [`ops/client-delivery/README.md`](./ops/client-delivery/README.md) — canonical future-client delivery standards, reconciliation, and reusable templates.
 
 ## Environment, deployment, security
 
-13. [`env-spec.md`](./env-spec.md) — environment variables.
-14. [`DEPLOYMENT.md`](./DEPLOYMENT.md) — three deployment lanes, CI/CD, SLOs, rollback plan.
-15. [`SECURITY.md`](./SECURITY.md) — secrets, webhook signatures, tenant isolation, BAA matrix, incident response.
+14. [`env-spec.md`](./env-spec.md) — environment variables.
+15. [`DEPLOYMENT.md`](./DEPLOYMENT.md) — three deployment lanes, CI/CD, SLOs, rollback plan.
+16. [`SECURITY.md`](./SECURITY.md) — secrets, webhook signatures, tenant isolation, BAA matrix, incident response.
 
 ## Governance, quality, and reference
 
-16. [`governance/RESPONSEOS_DOCUMENTATION_REMEDIATION_PLAN.md`](./governance/RESPONSEOS_DOCUMENTATION_REMEDIATION_PLAN.md) — remediation sequence and remaining canonicalization decisions.
-17. [`governance/PROJECT_CONSTITUTION.md`](./governance/PROJECT_CONSTITUTION.md) — draft project constitution.
-18. [`governance/DEFINITION_OF_READY.md`](./governance/DEFINITION_OF_READY.md), [`DEFINITION_OF_DONE.md`](./governance/DEFINITION_OF_DONE.md), [`DEFINITION_OF_STABLE.md`](./governance/DEFINITION_OF_STABLE.md) — draft governance gates.
-19. [`governance/RISK_REGISTER.md`](./governance/RISK_REGISTER.md), [`WORKTREE_PLAN.md`](./governance/WORKTREE_PLAN.md), [`REQUIREMENTS_TRACEABILITY_MATRIX.md`](./governance/REQUIREMENTS_TRACEABILITY_MATRIX.md) — draft risk, worktree, and traceability controls.
-20. [`quality/ACCEPTANCE_TEST_PLAN.md`](./quality/ACCEPTANCE_TEST_PLAN.md), [`PERFORMANCE.md`](./quality/PERFORMANCE.md), [`FAILURE_MODES.md`](./quality/FAILURE_MODES.md) — draft quality baselines.
-21. [`reference/DOCUMENTATION_INDEX.md`](./reference/DOCUMENTATION_INDEX.md), [`GLOSSARY.md`](./reference/GLOSSARY.md), [`OPEN_QUESTIONS.md`](./reference/OPEN_QUESTIONS.md), [`CODING_STANDARDS.md`](./reference/CODING_STANDARDS.md) — draft reference baselines.
-22. [`research-report.md`](./research-report.md) — curated summary of the canonical product + architecture research.
+17. [`governance/RESPONSEOS_DOCUMENTATION_REMEDIATION_PLAN.md`](./governance/RESPONSEOS_DOCUMENTATION_REMEDIATION_PLAN.md) — remediation sequence and remaining canonicalization decisions.
+18. [`governance/PROJECT_CONSTITUTION.md`](./governance/PROJECT_CONSTITUTION.md) — draft project constitution.
+19. [`governance/DEFINITION_OF_READY.md`](./governance/DEFINITION_OF_READY.md), [`DEFINITION_OF_DONE.md`](./governance/DEFINITION_OF_DONE.md), [`DEFINITION_OF_STABLE.md`](./governance/DEFINITION_OF_STABLE.md) — draft governance gates.
+20. [`governance/RISK_REGISTER.md`](./governance/RISK_REGISTER.md), [`WORKTREE_PLAN.md`](./governance/WORKTREE_PLAN.md), [`REQUIREMENTS_TRACEABILITY_MATRIX.md`](./governance/REQUIREMENTS_TRACEABILITY_MATRIX.md) — draft risk, worktree, and traceability controls.
+21. [`quality/ACCEPTANCE_TEST_PLAN.md`](./quality/ACCEPTANCE_TEST_PLAN.md), [`PERFORMANCE.md`](./quality/PERFORMANCE.md), [`FAILURE_MODES.md`](./quality/FAILURE_MODES.md) — draft quality baselines.
+22. [`reference/DOCUMENTATION_INDEX.md`](./reference/DOCUMENTATION_INDEX.md), [`GLOSSARY.md`](./reference/GLOSSARY.md), [`OPEN_QUESTIONS.md`](./reference/OPEN_QUESTIONS.md), [`CODING_STANDARDS.md`](./reference/CODING_STANDARDS.md) — draft reference baselines.
+23. [`research-report.md`](./research-report.md) — curated summary of the canonical product + architecture research.
 
 ## Archive
 
