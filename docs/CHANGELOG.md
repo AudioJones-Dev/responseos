@@ -4,6 +4,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: mock-first CAL provider scaffolding (Phase 1)
+
+- Added Communications Abstraction Layer (CAL) interfaces + **deterministic mock adapters only** for `carrier`, `voiceAgent`, `sms`, `crm`, and `scheduling`, mirroring `lib/providers/voice/` (`types` + `mock` + resolver).
+- Added shared `lib/providers/resolve.ts` (env-absent → mock; no live factory wired in this slice).
+- Added unit tests asserting each resolver returns mock and fixtures are deterministic.
+- **Mock-only.** No schema, routes, webhooks, secrets, live SDKs, or deploys. App still boots with zero provider credentials (ADR-0001 / authorization brief).
 ## Unreleased — chore: Path A staging hosting prep (workflow + operator runbook)
 
 - Added **staging-only** GitHub Actions workflow [`.github/workflows/deploy-staging.yml`](../.github/workflows/deploy-staging.yml): `workflow_dispatch` with confirmation input `staging`, GitHub Environment `staging` (human approval), `prisma migrate deploy`, then Vercel prebuilt deploy. **No** automatic production deploy from `master` (`vercel.json` containment unchanged).
