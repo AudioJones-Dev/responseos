@@ -12,6 +12,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - **Added ADR-0040 → ADR-0044** ([`DECISIONS.md`](./DECISIONS.md)): product boundary; Founder Intelligence nine-layer architecture; revenue-attribution states (`ESTIMATED` → `COLLECTED`, with outcome fees blocked until the Revenue Gate passes); provider-portability proof standard and review triggers (**extends** ADR-0031/0032/0033/0036/0037 rather than duplicating them); and Trust Infrastructure — *blockchain-compatible, not blockchain-dependent*, ratifying the Web3 research recommendation as a decision of record.
 - **Cross-linked and lightly corrected existing docs:** doctrine added to the `docs/README.md` and root `README.md` indexes and to the `AGENTS.md` pre-work list; `AGENTS.md` gained a status-language hard rule and an architecture-review section; `ROADMAP.md` gained a strategy-vs-shipping note; `PRD.md` gained a positioning note; `pricing-and-onboarding.md` gained the diagnostic-first and outcome-fee-gate constraints; `architecture.md` gained a supersession banner (Supabase → Neon, Twilio/Retell/Grok → Telnyx/Vapi, Clerk shipped, eight migrations exist) with its body left intact for provenance.
 - **Documentation only.** No runtime code, dependency, schema, migration, environment variable, provider configuration, secret, account, or deployment behavior changed. ADR-0001 (mock-first) and ADR-0019 (v0.3 gate) hold; the doctrine authorizes no implementation.
+## Unreleased — feat: mock-first CAL provider scaffolding (Phase 1)
+
+- Added Communications Abstraction Layer (CAL) interfaces + **deterministic mock adapters only** for `carrier`, `voiceAgent`, `sms`, `crm`, and `scheduling`, mirroring `lib/providers/voice/` (`types` + `mock` + resolver).
+- Added shared `lib/providers/resolve.ts` (env-absent → mock; no live factory wired in this slice).
+- Added unit tests asserting each resolver returns mock and fixtures are deterministic.
+- **Mock-only.** No schema, routes, webhooks, secrets, live SDKs, or deploys. App still boots with zero provider credentials (ADR-0001 / authorization brief).
 ## Unreleased — chore: Path A staging hosting prep (workflow + operator runbook)
 
 - Added **staging-only** GitHub Actions workflow [`.github/workflows/deploy-staging.yml`](../.github/workflows/deploy-staging.yml): `workflow_dispatch` with confirmation input `staging`, GitHub Environment `staging` (human approval), `prisma migrate deploy`, then Vercel prebuilt deploy. **No** automatic production deploy from `master` (`vercel.json` containment unchanged).
