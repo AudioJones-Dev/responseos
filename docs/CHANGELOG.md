@@ -4,6 +4,28 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: close out the build status report; PR backlog fully drained
+
+- Recorded the final five merges — #98 (`b50d2f2`), #94 (`1250faf`), #108 (`a790ba3`), #105 (`96fdfed`), #103 (`897c866`) — leaving **#107 as the only open PR**. Noted #109/#110/#111/#112/#113 landing alongside.
+- **Marked D2 resolved.** #109 froze the v0.3 founding-pilot scope with concrete acceptance gates and a staged authorization checklist (mock CAL → schema → staging → each live provider → prod); #108 satisfies stage 1. Every later stage still requires written human authorization.
+- **Pointed the reader at [`readiness/`](./readiness/) for build truth.** The #113 audit is more recent and more pessimistic than this document — core chain unimplemented, controlled demo not present, pilot readiness NO with 12 blockers. Where the two disagree on build state, `readiness/` wins.
+- Recorded the #108 mock-only audit: `createLive` is never passed by any of the five factories, so the mock branch is unconditional even with all five provider keys set; zero network calls. Flagged that `TELNYX_API_KEY` and `CALENDLY_API_KEY` are probed but missing from `.env.example`, and that the guarantee is structural rather than test-enforced.
+- Noted the ADR allocation (0039 / 0040–0044 / 0045) held across every re-resolution, and that a second conflict species — field-level board disagreement, not index collision — required a real 3-way merge rather than a union.
+- Recommended a `.gitattributes` union merge driver for `docs/CHANGELOG.md`: it caused a re-conflict on nearly every merge in the tail.
+
+## Unreleased — docs: update the build status report as the PR backlog drained
+
+- Recorded the six merges that landed during the sweep — #96 (`8fffd57`, the fail-closed auth gate), then the five-PR documentation chain #89–#93 (`b35669f` → `83038d5`) — and marked the fail-open auth finding **resolved**.
+- **Confirmed the squash-cascade prediction in practice.** #89 merged clean and every subsequent step conflicted, exactly as simulated: #90/#91/#92 on `dashboard/dashboard-data.json`, #93 on that plus two add/add `.md` collisions caused by squashing. The board finished at the predicted 28 tasks with `G-01`–`G-05` intact and no duplicate ids.
+- **Recorded a defect a clean auto-merge introduced.** Merging master into #94 produced no conflict in `lib/auth/route-protection.ts` yet left `/audit` and `/trust` in both `PUBLIC_EXACT` and `PUBLIC_PREFIXES`; because `isPublicPath` matches either, the prefix rule won and `/audit/*` and `/trust/*` silently became public. Caught only by master's own test.
+- Flagged that `RESPONSEOS_REQUIRE_AUTH` is **opt-in** — the gate now exists but `master` remains fail-open by default until the hosted deploy sets it — and that `/api/audit-requests` is absent from the public path list, so the `/audit` form would submit into a redirect once the flag is on.
+
+## Unreleased — docs: record build status vs docs and the GTM pipeline
+
+- Added [`BUILD_STATUS_AND_GTM_PIPELINE.md`](./BUILD_STATUS_AND_GTM_PIPELINE.md) — a build-vs-docs reconciliation covering git topology, the docs-behind/docs-ahead split with `file:line` evidence, a SHA-pinned merge sheet for the open pull-request backlog, the four GTM lanes and their real gates, and a founder decision register. Documentation only; no app code, schema, auth, provider, dependency, secret, or deploy changes, and no merges to `master`.
+- **Recorded a quadruple `ADR-0039` collision.** Master's highest ADR is `0038`, but four branches each introduced a different `ADR-0039`. Allocated: #96 keeps `0039`, #105 moves to `0040`–`0044`, #94 moves to `0045`, and the unlanded editorial-design-doctrine branch needs `0046` if it is ever promoted.
+- **Reconciled the progress board with merged reality** — `P0-02` closed out against #102, `P0-01` linked to #100, and `Q-02` linked to the contract-level demo smoke test in #96 (browser-level e2e remains unwritten; `tests/e2e/` is still empty).
+- **Reconciled local git with `origin`.** Removed six branches after verifying each was already landed in `master` or preserved on `origin`, deregistered six orphan worktrees, and dropped two disposable stashes. Rescued `codex/preserve-primary-dirty-2026-07-01` from deletion — it held a 188-line design doctrine document, 192 lines of `globals.css`, and an ADR that existed nowhere else — and pushed it to `origin` so it is mirrored rather than lost.
 ## Unreleased — docs: ratify ResponseOS platform doctrine v1
 
 - Added [`strategy/responseos-platform-doctrine-v1.md`](./strategy/responseos-platform-doctrine-v1.md) — the strategic source of truth consolidating product boundary, current-state truth, the nine-layer architecture (Communications → Business Memory → Operational Models → Revenue Intelligence → Operational Intelligence → Verified Outcomes → Benchmark Intelligence → Founder Intelligence → Trust Infrastructure), the intelligence flywheel, moat doctrine, build-vs-buy rules, provider strategy, revenue-attribution states, trust-infrastructure posture, human-authority boundaries, evidence-gated roadmap phases, kill criteria, the public-claims policy, and a fifteen-question architecture-review checklist. **Proposed — pending operator ratification.**
