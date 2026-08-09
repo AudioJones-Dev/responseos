@@ -4,42 +4,58 @@ import { AtmosphereBackground } from "@/components/layout/AtmosphereBackground";
 export const metadata = {
   title: "Pricing",
   description:
-    "ResponseOS is priced against the revenue we recover. Compare the Recovery tiers and what each one includes.",
+    "ResponseOS is priced by business-memory capacity and measured by recovered revenue. Compare the memory tiers and what each one includes.",
 };
 
+// Public pricing model per ADR-0028: capacity-based Business-Memory tiers.
+// Price points stay off this page until the Phase 3 cost model lands (ADR-0028 §3).
 const tiers = [
   {
-    name: "Recovery Core",
+    name: "Starter Memory System",
     price: "Setup + monthly",
-    summary: "Stop the bleeding. Recover the calls you're already missing.",
+    summary: "One managed memory vault for a solo operator's calls and files.",
     bullets: [
-      "Missed-call recovery",
-      "AI inbound answering (mock)",
-      "Lead qualification scoring",
-      "Monthly ROI report",
+      "1 Business Memory Vault",
+      "Missed-call capture + qualification",
+      "Monthly memory summary",
+      "1 connected system",
     ],
   },
   {
-    name: "Recovery Pro",
+    name: "Operator System",
     price: "Setup + monthly",
-    summary: "Turn recovered demand into booked, attributed jobs.",
+    summary:
+      "The default tier for a service business running on phone, email, and follow-up.",
     bullets: [
-      "Everything in Core",
-      "Quote + booking flows",
-      "Outbound recovery campaigns",
-      "Client portal access",
+      "Everything in Starter, at higher capacity",
+      "Voice/transcription capacity + preset personas",
+      "CRM, call, and email context capture",
+      "Weekly memory updates · up to 3 systems",
     ],
     featured: true,
   },
   {
-    name: "Recovery Performance",
-    price: "Setup + monthly + outcome",
-    summary: "We front the work and earn on the revenue we recover.",
+    name: "Growth Intelligence System",
+    price: "Setup + monthly",
+    summary:
+      "For multi-staff operations with real automation and reporting needs.",
     bullets: [
-      "Everything in Pro",
-      "Earn-on-outcomes structure",
-      "AJ Digital operator support",
-      "Quarterly business reviews",
+      "Everything in Operator, at higher capacity",
+      "Tuned voice persona + multilingual routing",
+      "Automations, dashboards, SOP creation",
+      "Weekly intelligence reports · up to 6 systems",
+    ],
+  },
+  {
+    name: "Enterprise",
+    price: "Custom",
+    summary:
+      "High-volume calls, files, and teams — with governance and a custom SLA.",
+    bullets: [
+      "Custom capacity + retention policy",
+      "Team access + governance controls",
+      "Dedicated integrations + custom reporting",
+      "Compliance review · custom SLA",
     ],
   },
 ];
@@ -51,12 +67,12 @@ export default function PricingPage() {
         Pricing
       </p>
       <h1 className="mt-2 max-w-3xl font-display text-3xl font-semibold leading-[1.1] text-ink sm:text-4xl">
-        Priced against the revenue we recover
+        Priced by memory capacity. Measured by recovered revenue.
       </h1>
       <p className="mt-4 max-w-2xl text-lg text-ink-secondary">
-        ROI-aligned partnerships, not seat licenses. We front the work and tie
-        every tier to recovered revenue — so the cost only matters next to the
-        dollars it returns.
+        Capacity-based partnerships, not seat licenses. Each tier is sized to
+        the business memory you actually generate — calls, records, and
+        follow-up — and judged against the revenue that memory recovers.
       </p>
 
       <section className="mt-10 grid gap-4 lg:grid-cols-[1.15fr_1fr]">
@@ -106,8 +122,8 @@ export default function PricingPage() {
               <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
               Every engagement combines a one-time{" "}
               <span className="text-ink">setup fee</span> with a{" "}
-              <span className="text-ink">monthly retainer</span>, sized to your
-              volume.
+              <span className="text-ink">monthly retainer</span>, sized to your{" "}
+              <span className="text-ink">memory capacity</span> and volume.
             </li>
             <li className="flex gap-2.5">
               <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
@@ -128,11 +144,12 @@ export default function PricingPage() {
       </h2>
       <p className="mt-2 max-w-2xl text-sm text-ink-secondary">
         Your setup and monthly figures are tailored from the assessment — that&apos;s
-        what the diagnostic produces. The tiers below show what each scope
-        includes.
+        what the diagnostic produces. The tiers below show the capacity and
+        scope each one includes. Overages are billed as pass-through plus
+        margin, so growth never lands as a surprise.
       </p>
 
-      <div className="mt-8 grid gap-4 lg:grid-cols-3">
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {tiers.map((tier) => (
           <Card
             key={tier.name}
