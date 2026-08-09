@@ -143,23 +143,24 @@
       "phase": "v0.3 · Demo Scope",
       "title": "Define authorized v0.3 demo scope",
       "owner": "Audio",
-      "status": "In Progress",
-      "progress": 50,
+      "status": "Review",
+      "progress": 85,
       "priority": "High",
       "start": "2026-05-29",
       "due": "2026-06-13",
       "ref": 27,
       "refType": "issue",
       "refState": "open",
-      "refUrl": "https://github.com/AudioJones-Dev/responseos/issues/27"
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/issues/27",
+      "blockedReason": "Scope + gates written (founding-pilot scope doc); awaiting Audio staged written auths (§5 Stage A+)"
     },
     {
       "id": "V-02",
       "phase": "v0.3 · Demo Scope",
       "title": "Decide demo surface / feature cut",
-      "owner": "Audio",
-      "status": "In Progress",
-      "progress": 30,
+      "owner": "Claude Code",
+      "status": "Done",
+      "progress": 100,
       "priority": "High",
       "start": "2026-06-02",
       "due": "2026-06-16"
@@ -168,12 +169,26 @@
       "id": "V-03",
       "phase": "v0.3 · Demo Scope",
       "title": "Document v0.3 acceptance gates",
-      "owner": "Audio",
-      "status": "To Do",
-      "progress": 0,
+      "owner": "Claude Code",
+      "status": "Done",
+      "progress": 100,
       "priority": "Med",
       "start": "2026-06-16",
       "due": "2026-06-23"
+    },
+    {
+      "id": "R-01",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Readiness audit + critical-path amendment",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-08-07",
+      "due": "2026-08-08",
+      "ref": 113,
+      "refType": "pull",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/113"
     },
     {
       "id": "26",
@@ -306,14 +321,14 @@
       "title": "v0.3 demo deploy",
       "owner": "Claude Code",
       "status": "To Do",
-      "progress": 0,
+      "progress": 15,
       "priority": "High",
       "start": "2026-07-13",
       "due": "2026-08-01",
       "ref": 14,
       "refType": "pull",
       "blocked": true,
-      "blockedReason": "PR #14 closed unmerged (draft); gated on v0.3 scope (#27)",
+      "blockedReason": "Historical #14 closed; Path A staging scaffold in chore/v0.3-staging-hosting-prep — still blocked on Audio Neon/Clerk/Vercel secrets + Stage C auth; no staging URL live",
       "refState": "closed",
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/14"
     },
@@ -328,7 +343,22 @@
       "start": "2026-07-06",
       "due": "2026-07-24",
       "blocked": true,
-      "blockedReason": "Gated on v0.3 scope decision"
+      "blockedReason": "ADR-0045 selects Telnyx-first and Sent.dm-assisted; implementation still requires dedicated number, Telnyx AI/Vapi validation, signature validation, Sent.dm consent messaging, rate limits, and kill switch PRs"
+    },
+    {
+      "id": "I-06",
+      "phase": "Integrations",
+      "title": "xAI voice readiness spike",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 100,
+      "priority": "Med",
+      "start": "2026-07-13",
+      "due": "2026-07-13",
+      "ref": 97,
+      "refType": "issue",
+      "refState": "open",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/issues/97"
     },
     {
       "id": "I-02",
@@ -351,6 +381,32 @@
       "priority": "Med",
       "start": "2026-07-27",
       "due": "2026-08-07"
+    },
+    {
+      "id": "I-04",
+      "phase": "Integrations",
+      "title": "Telnyx + Sent.dm live-call demo implementation brief",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-07-05",
+      "due": "2026-07-08",
+      "ref": 94,
+      "refType": "pull"
+    },
+    {
+      "id": "I-05",
+      "phase": "Integrations",
+      "title": "Live-call provider contracts and mocks",
+      "owner": "Codex",
+      "status": "To Do",
+      "progress": 0,
+      "priority": "High",
+      "start": "2026-07-06",
+      "due": "2026-07-10",
+      "blocked": true,
+      "blockedReason": "Requires explicit scoped approval for PR A from the live-call implementation brief; active target remains Telnyx + Sent.dm, with Linq migration kept behind the MessagingProvider boundary"
     },
     {
       "id": "Q-01",
@@ -377,13 +433,28 @@
     {
       "id": "L-02",
       "phase": "Launch / Demo Deploy",
-      "title": "Production env + secrets",
+      "title": "Staging/prod env + secrets (Path A first)",
       "owner": "Audio",
-      "status": "Backlog",
-      "progress": 0,
+      "status": "In Progress",
+      "progress": 35,
       "priority": "High",
       "start": "2026-08-03",
-      "due": "2026-08-12"
+      "due": "2026-08-12",
+      "blocked": false,
+      "blockedReason": "Code/docs/CI staging scaffold ready; Neon staging DB, Clerk staging app, GH Environment staging secrets, and live staging URL still require Audio provision — not Done until portal smoke passes"
+    },
+    {
+      "id": "L-02a",
+      "phase": "Launch / Demo Deploy",
+      "title": "Path A staging host scaffold (workflow + runbook)",
+      "owner": "Codex",
+      "status": "In Progress",
+      "progress": 80,
+      "priority": "High",
+      "start": "2026-08-06",
+      "due": "2026-08-08",
+      "blocked": false,
+      "blockedReason": "Scaffold complete in PR; mark Done only after merge + Environment staging created (URL still Audio-owned)"
     },
     {
       "id": "L-03",
@@ -395,6 +466,19 @@
       "priority": "High",
       "start": "2026-08-13",
       "due": "2026-08-15"
+    },
+    {
+      "id": "L-04",
+      "phase": "Launch / Demo Deploy",
+      "title": "Demo surface hardening and P0 screenshot fixes",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-07-05",
+      "due": "2026-07-05",
+      "ref": 94,
+      "refType": "pull"
     }
   ],
   "liveIssues": [

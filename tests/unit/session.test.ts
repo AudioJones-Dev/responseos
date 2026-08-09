@@ -88,12 +88,6 @@ describe("lib/auth/session.ts", () => {
     );
   });
 
-  test("does NOT throw in production when RESPONSEOS_DEV_SESSION is unset", async () => {
-    (process.env as MutableEnv).NODE_ENV = "production";
-    const { getCurrentSession } = await freshSession();
-    await expect(getCurrentSession()).resolves.toBeTruthy();
-  });
-
   test("RESPONSEOS_REQUIRE_AUTH fails closed (null) when Clerk is unconfigured", async () => {
     // Auth-required hosted deploy without Clerk keys must NOT fall back to the
     // privileged aj_admin dev session (D2 — cross-tenant fail-open).

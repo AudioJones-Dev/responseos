@@ -764,3 +764,23 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 7. **Agent-action provenance is part of this layer, not of the intelligence layers.** The record set required of every agent action — actor, agent identity, model and version, prompt or policy version, tool, inputs, output, confidence, approval state, timestamp, tenant, correction history — is a Trust Infrastructure obligation. `AuditLog` today carries actor, role, category, reason, before/after refs, IP, and user agent; agent identity, model version, prompt version, confidence, and approval state are absent. Closing that gap is Phase-7 work and blocks no earlier phase.
 
 **Consequences.** Blockchain is settled as an optional, deferred, externally-justified adapter rather than a recurring strategic question. The strongest identified moat — a provider-neutral, replayable, exportable proof graph — is placed inside the existing event-ledger discipline instead of requiring a new vendor category. Research tracks (DID/VC, C2PA, AP2/x402, anchoring networks) remain research. Mock-first (ADR-0001) and the v0.3 gate (ADR-0019) are unchanged.
+## ADR-0045 — v0.3 live-call demo slice: Telnyx-first, Sent.dm-assisted, inbound first
+
+**Status:** Accepted (2026-07-05) as a scoped v0.3 planning decision. **No provider adapter, schema migration, env var, secret, account configuration, webhook mutation, or live call cutover is implemented by this ADR.**
+
+**Context.** The public ResponseOS demo now proves deployment and mock walkthrough mechanics, but the operator wants a lead to experience the core product promise through live telephony: calling a ResponseOS number and optionally requesting an outbound demo call. That is a meaningful scope change from mock-only demo to live-provider demo traffic, so it must be recorded before implementation.
+
+**Decision.**
+
+1. The live-call demo uses a **dedicated ResponseOS demo number**, never the operator's personal number.
+2. The first implementation slice is **inbound call demo first**: lead calls the demo number, AI answers, qualifies, and writes verified events into the ResponseOS demo account.
+3. The outbound "call me now" journey is **second** and requires explicit consent, rate limiting, abuse controls, a daily spend cap, and a kill switch before any public form can initiate calls.
+4. The demo runs against a **demo-only tenant/account**. Public requests must never supply or override `accountId`; server code owns demo account resolution.
+5. Webhook signature validation remains mandatory before any business mutation (ADR-0009). Invalid or stale provider webhooks must be rejected before parsing/mutation and logged to the security/audit stream.
+6. The live-call demo stack is **Telnyx-first, Sent.dm-assisted, Vapi optional**:
+   - Telnyx owns the phone path: dedicated demo number, inbound/outbound voice, call-control events, and signed call webhooks.
+   - Sent.dm owns verification and follow-up messaging: OTP/consent confirmation, post-call recap, demo links, and fallback messaging.
+   - Vapi stays optional behind `VoiceAgentProvider`, introduced only if Telnyx AI Assistant cannot satisfy the first demo conversation.
+7. The broader provider baseline remains ADR-0031/0032/0036. This demo-slice decision tests whether the first live demo can ship with fewer vendors; it does not reverse Vapi's broader v0.3 orchestration role.
+
+**Consequences.** v0.3 now has a concrete first live-provider experience target: a bounded public demo, not a general production cutover. The slice is allowed to be specified and broken into implementation PRs, but each implementation step still needs its own scoped approval and must carry tests for signature validation, tenant isolation, kill switch behavior, Sent.dm idempotent messaging, and outbound abuse controls. This ADR does not authorize live CRM sync, billing, HIPAA-ready behavior, or use of real client data.
