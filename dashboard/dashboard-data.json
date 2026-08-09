@@ -128,6 +128,17 @@
       "due": "2026-05-29"
     },
     {
+      "id": "D-01",
+      "phase": "Tech Debt & Hardening",
+      "title": "Platform doctrine v1 (docs)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-07-31",
+      "due": "2026-07-31"
+    },
+    {
       "id": "27",
       "phase": "v0.3 · Demo Scope",
       "title": "Define authorized v0.3 demo scope",

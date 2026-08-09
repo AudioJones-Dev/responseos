@@ -674,6 +674,96 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 5. **`/audit` and `/trust` are public routes.** Both are prospect-facing marketing pages in the public nav, and `/audit` is the lead-capture form; neither was in the public set, so a Clerk-enabled deploy would have put the top of the funnel behind sign-in. Classified as `PUBLIC_EXACT` (like `/pricing`), not prefixes.
 
 **Consequences.** Supersedes the `NODE_ENV`-gated approach in PR #94; that PR's session and proxy changes should be dropped in favour of this gate when it is reconciled, and its `/audit` + `/trust` fix is carried here. A hosted deploy must now set `RESPONSEOS_REQUIRE_AUTH=1` explicitly — the cost of the opt-in trigger is that forgetting it leaves the deploy fail-open, so it belongs in the demo-deploy checklist alongside the Clerk keys. This ADR ships no deploy config, no secret, and no provider wiring.
+## ADR-0040 — ResponseOS product boundary: a managed revenue-recovery and operational-intelligence layer, not a CRM, FSM, carrier, or automation platform
+
+**Status:** Proposed (2026-07-31), pending operator ratification with [`strategy/responseos-platform-doctrine-v1.md`](./strategy/responseos-platform-doctrine-v1.md). Consolidates the boundary language scattered across ADR-0007 (QuoteIQ), ADR-0015/0027/0033 (CRM ownership), and ADR-0022 (positioning) into one testable rule. **Documentation only — no code, schema, env, provider, or deploy change.**
+
+**Context.** The repo has stated its boundary in fragments: QuoteIQ is a connector not a system of record (ADR-0007); the external CRM is client-owned and pluggable (ADR-0027, ADR-0033); positioning composes Business Memory with Revenue Recovery (ADR-0022). Nothing states the boundary as a single rule a proposal can be tested against, so feature requests that would drift ResponseOS into CRM, FSM, telecom, or generic-automation territory have no crisp basis for rejection. The platform doctrine makes the boundary explicit and reviewable.
+
+**Decision.**
+
+1. **ResponseOS is a managed revenue-recovery and operational-intelligence system for founder-led service businesses.** Its job is to capture inbound demand, prevent silent lead loss, recover conversations after missed calls, qualify opportunities, preserve customer and operational context, route or schedule follow-up, measure estimated and verified outcomes separately, and give the owner an accountable operational view.
+2. **ResponseOS is explicitly not:** a general-purpose CRM · a field-service management platform · a native telecom carrier · a native voice-foundation-model provider · a generic automation builder · a replacement for ServiceTitan, Housecall Pro, Jobber, HubSpot, or GoHighLevel · a crypto or blockchain platform · an agent marketplace · a tokenized business network · an enterprise BI replacement today · a production-proven revenue-attribution system until live reconciliation is demonstrated.
+3. **The build-vs-buy test.** If a capability remains valuable when the underlying vendor is swapped, build it. If it is valuable only because a specific vendor provides it, buy it and put it behind an adapter (doctrine §11).
+4. **A proposal that moves ResponseOS toward any item in decision 2 requires a superseding ADR**, not a backlog ticket — regardless of customer demand (doctrine §19).
+
+**Consequences.** Scope creep now has a named cost: an ADR. The doctrine's §21 review checklist operationalizes the boundary as fifteen questions every architecture proposal answers. ADR-0007, ADR-0027, and ADR-0033 are unchanged and remain the specific decisions on QuoteIQ and CRM ownership; this ADR generalizes them. No product behavior changes.
+
+---
+
+## ADR-0041 — Founder Intelligence architecture: a nine-layer progression from Communications to Trust Infrastructure
+
+**Status:** Proposed (2026-07-31), pending operator ratification with the platform doctrine. Extends ADR-0002 (event-ledger-first) and ADR-0022 (positioning). **Does not relax any v0.4 knowledge/RAG gate** (ADR-0016, ADR-0029, ADR-0034). **Documentation only.**
+
+**Context.** ADR-0022 established that Business Memory is the mechanism and recovered revenue the proof, but the architecture between "capture a call" and "advise a founder" was never named. Without a layer model, every intelligence-adjacent proposal argues from scratch, and there is no shared vocabulary for saying "that belongs three layers above where we are."
+
+**Decision.**
+
+1. **The long-term architecture is a nine-layer progression:** (1) Communications Capture → (2) Business Memory → (3) Operational Models → (4) Revenue Intelligence → (5) Operational Intelligence → (6) Verified Outcomes → (7) Benchmark Intelligence → (8) Founder Intelligence → (9) Trust Infrastructure. Each layer's purpose, contents, output, and current status are specified in doctrine §8.
+2. **Layer 6 (Verified Outcomes) is the load-bearing layer.** Nothing above it is defensible without it. Every state change in the outcome chain preserves source, timestamp, evidence, actor, tenant, confidence, attribution status, and correction history.
+3. **Layer 7 (Benchmark Intelligence) must never expose client-specific data** and requires tenant isolation, privacy review, aggregation thresholds, a lawful processing basis, de-identification, small-cohort suppression, documented metric definitions, data-quality gates, and confidence ranges.
+4. **Layer 8 (Founder Intelligence) produces evidence-linked recommendations, not autonomous executive authority** (ADR-0043 §governance, doctrine §16).
+5. **Layer status must be stated wherever a layer is described.** Today, Layers 1, 2, 4, and 9 are `PARTIALLY_SHIPPED` (substrate only) and Layers 3, 5, 6, 7, 8 are `DOCUMENTED_ONLY`.
+6. **The intelligence flywheel becomes defensible only when it contains real operating data, verified outcomes, durable metric definitions, evidence-linked interventions, lawful cross-client aggregation, vertical-specific models, and repeatable findings.** Documentation, schemas, prompts, and dashboards do not by themselves create a moat.
+
+**Consequences.** Proposals gain an address ("this is a Layer 5 feature; we are at Layer 1") and a sequencing argument. The v0.4 knowledge-layer gates are untouched — Layer 2 remains split between the Phase-1 operational capture permitted by ADR-0034 and the per-tenant knowledge/RAG behavior that stays v0.4-gated. No schema, model, or pipeline is authorized by this ADR.
+
+---
+
+## ADR-0042 — Revenue attribution states: estimated, influenced, qualified, booked, completed, and collected revenue remain distinct
+
+**Status:** Proposed (2026-07-31), pending operator ratification with the platform doctrine. Extends ADR-0002. Interacts with ADR-0010 (billing in v0.5). **No schema change is authorized** — introducing these states requires a separate approved PR.
+
+**Context.** `RevenueMetrics` carries exactly two revenue figures: `estimated_recovered_revenue` and `verified_recovered_revenue`. The commercial model already supports outcome fees keyed to `per_verified_recovered_lead` and `pct_recovered_revenue` (`Engagement.outcome_fee_kind`). A two-value model cannot express the difference between a lead we influenced, a job that was booked, a job that was completed, and cash that was collected — yet outcome fees are priced against exactly those distinctions. Charging on an attribution model the system cannot represent is the single largest commercial-integrity risk in the product.
+
+**Decision.**
+
+1. **Canonical revenue states:** `ESTIMATED`, `INFLUENCED`, `QUALIFIED`, `BOOKED`, `COMPLETED`, `COLLECTED`, `DISPUTED`, `REJECTED`, `UNATTRIBUTED`. These are distinct and never collapsed in storage, reporting, or copy.
+2. **Every revenue claim carries:** amount, state, evidence source, originating event, intervention, customer or lead, timestamp, confidence, attribution rule, human verification status, and correction history.
+3. **Four invariant rules.** Estimated revenue is not recovered revenue. Booked revenue is not collected revenue. Influence is not causation. **Outcome fees must not be charged until the attribution and dispute process is operationally validated** (doctrine §18 Revenue Gate).
+4. **Reconciliation starts manual.** The smallest useful loop — one pilot, reconciled by hand, with a measured error rate — is built before any generalized attribution infrastructure.
+5. **Planning only.** No Prisma model, enum, migration, or reporting change ships under this ADR. The existing two-column shape stands until a separate approved PR implements the state set.
+
+**Consequences.** The commercial model and the data model are placed on a path to agreement. ADR-0010's v0.5 billing timing is unchanged; this ADR constrains *what* the billing engine may bill on when it is built. Until the Revenue Gate passes, `pct_recovered_revenue` and `per_verified_recovered_lead` outcome fees are not billable, and "ResponseOS proves every recovered dollar" remains a prohibited claim (doctrine §20).
+
+---
+
+## ADR-0043 — Provider portability is proven by two adapters or one live provider plus a tested fallback — not by an interface plus a mock
+
+**Status:** Proposed (2026-07-31), pending operator ratification with the platform doctrine. **Extends** ADR-0001 (mock-first) and the provider-stack decisions ADR-0031 / ADR-0032 / ADR-0033 / ADR-0036 / ADR-0037 — it does **not** re-decide the stack and creates no duplicate provider ADR. **Documentation only.**
+
+**Context.** The provider stack is fully decided (Telnyx primary / Twilio failover, Vapi primary / Retell secondary, OpenAI preferred in-Vapi brain, HubSpot default commercial SoR, Calendly MVP scheduling). What is not decided is the **evidentiary standard** for the claims that stack invites. The communications-stack document describes the Communications Abstraction Layer as "the platform's primary infrastructure moat," while the repository contains exactly one provider interface (`lib/providers/voice/`) with one mock adapter and no consumer. `ProviderConnectionProvider` still enumerates a superseded stack and contains neither `telnyx` nor `calendly`. Without a standard, "provider-independent" gets claimed on the strength of a TypeScript interface.
+
+**Decision.**
+
+1. **Portability is not proven until either** (a) at least two adapters implement the same interface, **or** (b) one live provider and one verified fallback path have been tested end to end.
+2. **A TypeScript interface plus a mock adapter is architecture preparation, not proven provider portability.** Until decision 1 is satisfied, "ResponseOS is provider-independent" and "the abstraction layer is our moat" are prohibited claims (doctrine §20, §10.6).
+3. **The provider-abstraction rule is restated and retained:** ResponseOS controls canonical event schemas, business rules, memory, attribution, audit history, workflow state, and outcome reporting; providers control only their commodity function; provider payloads are translated to canonical events at the adapter boundary; no provider-specific logic exists above it.
+4. **Provider review triggers.** Reassess a provider when reliability falls below target, cost materially harms unit economics, required compliance support is unavailable, feature access becomes restrictive, vendor lock-in threatens canonical data ownership, latency harms the customer experience, pricing changes materially, the provider becomes a direct strategic competitor, or required functionality cannot be implemented cleanly. **A trigger opens a review; a review produces an ADR.** Preference alone changes nothing.
+5. **Bundling is not a sufficient reason to replace a provider.** A change must be justified by measurable reliability, materially better economics, required functionality, reduced implementation complexity, stronger compliance posture, superior control of data and workflows, or proven architectural fit.
+6. **Candidate systems are classified by role, not treated as interchangeable** — carrier infrastructure, voice-agent infrastructure, business phone system, unified communications, contact center, receptionist product, CRM platform, workflow platform, direct competitor, distribution gatekeeper, or integration partner. A system may be a partner in one role and a competitor in another.
+
+**Consequences.** The stack decisions are unchanged and unduplicated. What changes is what may be *said* about them, and what evidence a future provider swap must produce. The `telnyx` / `calendly` schema gap remains governed by ADR-0036 §4 — a separate approved PR — and is now recorded in the doctrine as the canonical illustration that a ratified decision is not an implementation.
+
+---
+
+## ADR-0044 — Trust Infrastructure: ResponseOS is blockchain-compatible, not blockchain-dependent
+
+**Status:** Proposed (2026-07-31), pending operator ratification with the platform doctrine. Ratifies the recommendation of [`research/RESPONSEOS_WEB3_BLOCKCHAIN_OPPORTUNITY_RESEARCH.md`](./research/RESPONSEOS_WEB3_BLOCKCHAIN_OPPORTUNITY_RESEARCH.md) as decision. Extends ADR-0002. **Authorizes no implementation** — no hashing, signing, anchoring, SDK, dependency, schema change, or wallet surface.
+
+**Context.** The Web3/blockchain research report evaluated crypto opportunities against the current architecture and concluded that ResponseOS should not become a crypto product; that the real opportunity is verifiable trust infrastructure for AI-operated business communications; and that the correct first step is conventional cryptography in Postgres, not a chain. That conclusion has lived as research with no decision of record, leaving the door open for blockchain to re-enter as a positioning idea.
+
+**Decision.**
+
+1. **Canonical principle: ResponseOS is blockchain-compatible, not blockchain-dependent.**
+2. **The internal system of record is and remains the ResponseOS event ledger** (ADR-0002, ADR-0033 §1). **Blockchain must never become the system of record for private operational data.**
+3. **Architecture:** business systems → canonical events → evidence and audit history → internal verification → optional verification adapters → external ledger or blockchain, if ever justified. Each arrow is a boundary, not a coupling.
+4. **Sequenced path.** *Level 1* — an append-only proof layer in Postgres using canonical JSON, SHA-256 hash chains, Ed25519 signatures, tenant-scoped signing keys, and signed exports. *Level 2* — optional external anchoring of a Merkle root or timestamped commitment, **only** if a concrete buyer, regulatory, insurance, audit, or partner requirement exists. Level 1 is a Phase-7 candidate; neither level is authorized here.
+5. **Prohibited current scope:** tokens · NFTs · public-chain customer records · customer wallet onboarding · crypto payments as a dependency · DAO governance · speculative assets · blockchain-first architecture · smart contracts in the MVP · **Web3 positioning in market-facing copy**. "ResponseOS supports blockchain verification" is a prohibited claim.
+6. **No PII, phone number, customer name, transcript, recording, CRM payload, provider secret, or payment detail may ever be written to a public chain or public decentralized storage.**
+7. **Agent-action provenance is part of this layer, not of the intelligence layers.** The record set required of every agent action — actor, agent identity, model and version, prompt or policy version, tool, inputs, output, confidence, approval state, timestamp, tenant, correction history — is a Trust Infrastructure obligation. `AuditLog` today carries actor, role, category, reason, before/after refs, IP, and user agent; agent identity, model version, prompt version, confidence, and approval state are absent. Closing that gap is Phase-7 work and blocks no earlier phase.
+
+**Consequences.** Blockchain is settled as an optional, deferred, externally-justified adapter rather than a recurring strategic question. The strongest identified moat — a provider-neutral, replayable, exportable proof graph — is placed inside the existing event-ledger discipline instead of requiring a new vendor category. Research tracks (DID/VC, C2PA, AP2/x402, anchoring networks) remain research. Mock-first (ADR-0001) and the v0.3 gate (ADR-0019) are unchanged.
 ## ADR-0045 — v0.3 live-call demo slice: Telnyx-first, Sent.dm-assisted, inbound first
 
 **Status:** Accepted (2026-07-05) as a scoped v0.3 planning decision. **No provider adapter, schema migration, env var, secret, account configuration, webhook mutation, or live call cutover is implemented by this ADR.**

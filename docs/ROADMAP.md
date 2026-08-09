@@ -1,6 +1,8 @@
 # ROADMAP — ResponseOS
 
-**Status:** Live. The board below is the single forward source of truth. Historical implementation briefs live in [`archive/`](./archive/).
+**Status:** Live. The board below is the single forward source of truth **for what ships when**. Historical implementation briefs live in [`archive/`](./archive/).
+
+> **Strategy vs. shipping.** This roadmap tracks version milestones. The *capability phases* behind them — Communications → Verified Revenue Loop → Business Memory → Operational Intelligence → Benchmark Intelligence → Founder Intelligence → Trust Infrastructure — and their evidence-based exit gates live in [`strategy/responseos-platform-doctrine-v1.md`](./strategy/responseos-platform-doctrine-v1.md) §17–§18, which also maps the two axes onto each other. Where they disagree, **this roadmap governs shipping status and the doctrine governs sequencing rationale**. Phase 0 (architecture + internal console) is complete; Phase 1 (live pilot communications) is gated on explicit v0.3 authorization, not on engineering work.
 
 ## Version table
 
