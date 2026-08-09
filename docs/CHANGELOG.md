@@ -4,6 +4,15 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: close out the build status report; PR backlog fully drained
+
+- Recorded the final five merges — #98 (`b50d2f2`), #94 (`1250faf`), #108 (`a790ba3`), #105 (`96fdfed`), #103 (`897c866`) — leaving **#107 as the only open PR**. Noted #109/#110/#111/#112/#113 landing alongside.
+- **Marked D2 resolved.** #109 froze the v0.3 founding-pilot scope with concrete acceptance gates and a staged authorization checklist (mock CAL → schema → staging → each live provider → prod); #108 satisfies stage 1. Every later stage still requires written human authorization.
+- **Pointed the reader at [`readiness/`](./readiness/) for build truth.** The #113 audit is more recent and more pessimistic than this document — core chain unimplemented, controlled demo not present, pilot readiness NO with 12 blockers. Where the two disagree on build state, `readiness/` wins.
+- Recorded the #108 mock-only audit: `createLive` is never passed by any of the five factories, so the mock branch is unconditional even with all five provider keys set; zero network calls. Flagged that `TELNYX_API_KEY` and `CALENDLY_API_KEY` are probed but missing from `.env.example`, and that the guarantee is structural rather than test-enforced.
+- Noted the ADR allocation (0039 / 0040–0044 / 0045) held across every re-resolution, and that a second conflict species — field-level board disagreement, not index collision — required a real 3-way merge rather than a union.
+- Recommended a `.gitattributes` union merge driver for `docs/CHANGELOG.md`: it caused a re-conflict on nearly every merge in the tail.
+
 ## Unreleased — docs: update the build status report as the PR backlog drained
 
 - Recorded the six merges that landed during the sweep — #96 (`8fffd57`, the fail-closed auth gate), then the five-PR documentation chain #89–#93 (`b35669f` → `83038d5`) — and marked the fail-open auth finding **resolved**.
@@ -17,6 +26,42 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - **Recorded a quadruple `ADR-0039` collision.** Master's highest ADR is `0038`, but four branches each introduced a different `ADR-0039`. Allocated: #96 keeps `0039`, #105 moves to `0040`–`0044`, #94 moves to `0045`, and the unlanded editorial-design-doctrine branch needs `0046` if it is ever promoted.
 - **Reconciled the progress board with merged reality** — `P0-02` closed out against #102, `P0-01` linked to #100, and `Q-02` linked to the contract-level demo smoke test in #96 (browser-level e2e remains unwritten; `tests/e2e/` is still empty).
 - **Reconciled local git with `origin`.** Removed six branches after verifying each was already landed in `master` or preserved on `origin`, deregistered six orphan worktrees, and dropped two disposable stashes. Rescued `codex/preserve-primary-dirty-2026-07-01` from deletion — it held a 188-line design doctrine document, 192 lines of `globals.css`, and an ADR that existed nowhere else — and pushed it to `origin` so it is mirrored rather than lost.
+## Unreleased — docs: ratify ResponseOS platform doctrine v1
+
+- Added [`strategy/responseos-platform-doctrine-v1.md`](./strategy/responseos-platform-doctrine-v1.md) — the strategic source of truth consolidating product boundary, current-state truth, the nine-layer architecture (Communications → Business Memory → Operational Models → Revenue Intelligence → Operational Intelligence → Verified Outcomes → Benchmark Intelligence → Founder Intelligence → Trust Infrastructure), the intelligence flywheel, moat doctrine, build-vs-buy rules, provider strategy, revenue-attribution states, trust-infrastructure posture, human-authority boundaries, evidence-gated roadmap phases, kill criteria, the public-claims policy, and a fifteen-question architecture-review checklist. **Proposed — pending operator ratification.**
+- **Resolved the two-narrative positioning gap.** "AI Revenue Recovery Platform" and "Managed Business Memory System" are recorded as adjacent stages of one progression rather than competing brands: business memory is the mechanism, recovered revenue is the proof, founder intelligence is the destination. Consolidates ADR-0022 (positioning), ADR-0028 (pricing model), and ADR-0035 (CTA) into one answer.
+- **Corrected current-state claims against the code.** Every capability is labeled `SHIPPED` / `PARTIALLY_SHIPPED` / `DOCUMENTED_ONLY`, verified against schema, routes, and tests — including that provider webhook signature validation exists only on the Clerk path (the rest are acknowledgement stubs), that the voice provider abstraction has one mock adapter and no consumer, that `ProviderConnectionProvider` contains neither `telnyx` nor `calendly`, and that the estimated/verified revenue split exists as two columns with no verification workflow.
+- **Added ADR-0040 → ADR-0044** ([`DECISIONS.md`](./DECISIONS.md)): product boundary; Founder Intelligence nine-layer architecture; revenue-attribution states (`ESTIMATED` → `COLLECTED`, with outcome fees blocked until the Revenue Gate passes); provider-portability proof standard and review triggers (**extends** ADR-0031/0032/0033/0036/0037 rather than duplicating them); and Trust Infrastructure — *blockchain-compatible, not blockchain-dependent*, ratifying the Web3 research recommendation as a decision of record.
+- **Cross-linked and lightly corrected existing docs:** doctrine added to the `docs/README.md` and root `README.md` indexes and to the `AGENTS.md` pre-work list; `AGENTS.md` gained a status-language hard rule and an architecture-review section; `ROADMAP.md` gained a strategy-vs-shipping note; `PRD.md` gained a positioning note; `pricing-and-onboarding.md` gained the diagnostic-first and outcome-fee-gate constraints; `architecture.md` gained a supersession banner (Supabase → Neon, Twilio/Retell/Grok → Telnyx/Vapi, Clerk shipped, eight migrations exist) with its body left intact for provenance.
+- **Documentation only.** No runtime code, dependency, schema, migration, environment variable, provider configuration, secret, account, or deployment behavior changed. ADR-0001 (mock-first) and ADR-0019 (v0.3 gate) hold; the doctrine authorizes no implementation.
+## Unreleased — feat: mock-first CAL provider scaffolding (Phase 1)
+
+- Added Communications Abstraction Layer (CAL) interfaces + **deterministic mock adapters only** for `carrier`, `voiceAgent`, `sms`, `crm`, and `scheduling`, mirroring `lib/providers/voice/` (`types` + `mock` + resolver).
+- Added shared `lib/providers/resolve.ts` (env-absent → mock; no live factory wired in this slice).
+- Added unit tests asserting each resolver returns mock and fixtures are deterministic.
+- **Mock-only.** No schema, routes, webhooks, secrets, live SDKs, or deploys. App still boots with zero provider credentials (ADR-0001 / authorization brief).
+## Unreleased — chore: Path A staging hosting prep (workflow + operator runbook)
+
+- Added **staging-only** GitHub Actions workflow [`.github/workflows/deploy-staging.yml`](../.github/workflows/deploy-staging.yml): `workflow_dispatch` with confirmation input `staging`, GitHub Environment `staging` (human approval), `prisma migrate deploy`, then Vercel prebuilt deploy. **No** automatic production deploy from `master` (`vercel.json` containment unchanged).
+- Added operator runbook [`ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md`](./ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md) — env checklist (placeholders), Neon/Clerk/Vercel/GH Environment provision steps, tenant bootstrap smoke (Clerk org → Account → portal), credential gap audit (names only), observability tagging contract.
+- Documented Path A staging posture in [`DEPLOYMENT.md`](./DEPLOYMENT.md), [`env-spec.md`](./env-spec.md), [`ops/RESPONSEOS_DEPLOYMENT_PLAN.md`](./ops/RESPONSEOS_DEPLOYMENT_PLAN.md); observability stubs in [`ops/RESPONSEOS_OBSERVABILITY_AND_GOVERNANCE.md`](./ops/RESPONSEOS_OBSERVABILITY_AND_GOVERNANCE.md) § A7 (docs-first; no Sentry/PostHog SDK wiring without DSNs).
+- Dashboard: **L-02** → In Progress (partial; staging URL not live); added **L-02a** scaffold task; deploy task **14** progress note only — not Done. Providers remain mock; no secrets committed; pilot go-live not claimed.
+- Note: rebase/merge conflicts likely with open draft PRs [#109](https://github.com/AudioJones-Dev/responseos/pull/109) (Phase 0 docs) and [#108](https://github.com/AudioJones-Dev/responseos/pull/108) (Phase 1 CAL) on `CHANGELOG` / `DEPLOYMENT` / dashboard.
+
+## Unreleased — docs: readiness audit + critical-path architecture amendment (#113 / R-01)
+
+- Added [`readiness/`](./readiness/) — an evidence-first audit of `master` against three gates (Operational / Serviceable / GTM-ready) plus a controlled-demo assessment: `CURRENT_STATE_AUDIT.md`, `OPERATIONAL_SERVICEABILITY_GAP.md`, `GTM_GAP.md`, `CONTROLLED_DEMO_SPEC.md`, `CRITICAL_PATH.md`, `PILOT_READINESS.md`.
+- Headline findings, all from repository evidence: the call → intelligence → memory → decision → action chain has **no implementation at any link**; `lib/automations/` is an empty `.gitkeep`; no extraction/intelligence/memory code exists repo-wide; Telnyx appears only as display strings in demo fixtures; the Vapi `call-ended` webhook is a 9-line ack-and-discard stub; the demo walkthrough is a 171-line hardcoded scenario with zero database access. Controlled demo: **NOT PRESENT**. Pilot readiness: **NO**, 12 blockers.
+- Added [`readiness/CRITICAL_PATH_AMENDMENT.md`](./readiness/CRITICAL_PATH_AMENDMENT.md) correcting the critical path after provider verification (documentation-based; nothing verified against a live account). Telnyx routes inbound via SIP directly into Vapi, so ResponseOS needs no carrier webhook; Vapi structured outputs may serve as the first extraction adapter behind a ResponseOS-owned canonical schema; recording consent is Enterprise-tier gated and promoted into the demo path. Register 56 → 55, demo-critical 29 → 25, sequential depth 16 → 13 — the correction shrinks sequence depth, effort, and risk front-loading rather than the register.
+- Corrects two of the audit's own findings: `Call` has no write accessor anywhere in application code (call persistence needs a migration, not just wiring), and three incompatible qualification vocabularies already exist independent of any provider.
+- Documentation only — no runtime code, schema, provider, secret, or deploy changes.
+
+## Unreleased — docs: freeze v0.3 founding-pilot scope + acceptance gates (#27 / V-02 / V-03)
+
+- Added [`product/responseos-v0.3-founding-pilot-scope.md`](./product/responseos-v0.3-founding-pilot-scope.md) — written Path B freeze (Standard-lane home-services founding pilot), Path A staging intermediate, Telnyx/Vapi/Twilio/HubSpot/Calendly stack, deferred gateway/Redis, out-of-scope HIPAA / v0.4 vault / v0.5 billing, acceptance gates, and **staged authorization checklist** with templates for Audio to sign. **Does not authorize** live providers, secrets, or deploys; human written auth remains required ([`product/responseos-v0.3-authorization-brief.md`](./product/responseos-v0.3-authorization-brief.md)).
+- Reconciled stale stack lines toward Telnyx/Vapi/Neon/Calendly (gateway/Redis deferred; GTM vault marked v0.4) in [`DEPLOYMENT.md`](./DEPLOYMENT.md), [`ops/RESPONSEOS_DEPLOYMENT_PLAN.md`](./ops/RESPONSEOS_DEPLOYMENT_PLAN.md), [`SECURITY.md`](./SECURITY.md), and [`product/RESPONSEOS_PHASE_PLAN.md`](./product/RESPONSEOS_PHASE_PLAN.md).
+- Dashboard: `#27` → Review (awaiting signed Stage A+); **V-02** / **V-03** → Done. Deploy/live tasks untouched.
+- Documentation only — no code, schema, secrets, accounts, or deploy jobs.
 
 ## Unreleased — chore: pin nanoid 3.3.17 to clear GHSA-2v37-7h3g-55p8
 
@@ -32,11 +77,47 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - Pinned the repository and CI runtime to Node `24.18.0` with npm `11.16.0`; CI now runs explicit dependency-audit and Prisma-generation gates after clean install. No application runtime behavior, schema, migration, provider integration, secret, environment, domain, or deployment setting changed.
 - Excluded Git-ignored Claude worktree build artifacts from the root lint traversal so the documented local lint gate evaluates this worktree's source rather than generated output from nested worktrees.
 
+## Unreleased — docs: add future-client delivery system
+
+- Added the canonical [`ops/client-delivery/`](./ops/client-delivery/README.md) system for future ResponseOS engagements: pre-client readiness gates R0–R3; qualification-to-retrospective delivery controls; internal cost-model evidence classes and P50/P80 planning-proxy rules; and twelve client-agnostic templates for qualification, discovery, current state, readiness, revenue leak, assumptions, costing, implementation, risk/compliance, onboarding, launch/hypercare, and telemetry.
+- Added a no-silent-overwrite canon reconciliation covering the preliminary source pack, existing pricing/onboarding material, provider and credential ownership, usage billing, support objectives, qualification heuristics, platform controls, decision ownership, and remaining unknowns. No ADR was added because architecture, provider doctrine, milestone sequencing, and public pricing remain unchanged.
+- Added non-destructive status banners to the existing pricing and client-facing offer documents so their numeric terms, bundled usage, and SLA defaults are not mistaken for validated public pricing or demonstrated service performance. Documentation only: no client, code, schema, provider, secret, environment, deployment, or public pricing change.
+- Ratified the internal opening posture: public pricing remains unpublished; clients bear attributable variable usage through compatible direct billing or pass-through plus an explicit administration/platform fee; bundled allowances are deferred; support uses business-hours planning objectives with no after-hours human coverage; and numeric qualification thresholds remain evidence prompts rather than automatic gates. Price points, fee amounts, contractual SLAs, client terms, and empirical performance remain unapproved or unknown.
+
 ## Unreleased — ci: contain automatic production deployments and dashboard writes
 
 - **Disabled automatic Vercel deployments from `master`** in `vercel.json` while leaving connected-branch preview behavior available; this change does not deploy, promote, or alter domains, environment variables, or provider settings.
 - **Replaced dashboard automation's direct pushes to `master`** with updates to the dedicated `automation/dashboard-sync` branch and a bot-created pull request for human review. Documented the required repository Actions permission and workflow-approval behavior in [`dashboard/README.md`](../dashboard/README.md), and added the P0 containment task to the dashboard data in Review state.
 - **Applied review hardening:** scoped GitHub token permissions per job, suppressed timestamp-only dashboard rewrites so substantive no-ops do not create pull-request churn, and added focused unit coverage for both no-op and changed-data sync behavior.
+
+## Unreleased — feat: harden the public demo surface (PR #94)
+
+- `getCurrentSession()` now fails closed in production when Clerk is not configured: the placeholder dev-session is never granted to anonymous traffic on a deployed surface. Previously every visitor to the live demo received a mock `aj_admin` session, leaving `/admin` publicly browsable.
+- `proxy.ts` blocks non-public routes at the edge when Clerk is absent in production, redirecting to `/` (defense in depth above the session fix).
+- Reclassified `/audit` and `/trust` as public marketing routes in `lib/auth/route-protection.ts`; both are prospect-facing pages linked from the marketing header and were caught by the new production redirect. `/audit` had been listed as protected since PR #41 — an oversight, not a decision.
+- Added a demo-environment banner to the marketing layout per the mock-first demo deploy gate (checkpoint 2026-07-04). Banner copy is a draft pending operator approval.
+- Repointed public marketing/demo CTAs away from protected `/admin` and `/client/dashboard` routes and added read-only `/demo/operator-console` and `/demo/client-dashboard` variants so the GTM demo does not dead-end after fail-closed auth ships.
+- Fixed the pricing-page retainer bullet layout, reconciled operator/client KPI storytelling to the same sample-month revenue metrics, relabeled the client dashboard as "Sample Month," and added operator-console client-health/escalation structure.
+- Raised the Vitest `testTimeout` to 20s to eliminate the two known local timeout flakes noted in the deploy checkpoint.
+- Unit tests updated/added for the fail-closed session path, production proxy redirect, and public-route reclassification.
+
+## Unreleased — docs: scope v0.3 live-call demo slice
+
+- Added [`product/responseos-v0.3-live-call-demo-slice.md`](./product/responseos-v0.3-live-call-demo-slice.md) to define the next v0.3 slice: Telnyx-first live-call path, Sent.dm-assisted verification/follow-up messaging, Vapi optional behind `VoiceAgentProvider`, a dedicated ResponseOS demo number, inbound lead-call journey first, outbound request-call journey second, demo-only tenant isolation, consent/rate-limit controls, spend cap, kill switch, and webhook-signature-first persistence.
+- Added [`product/responseos-v0.3-live-call-demo-implementation-brief.md`](./product/responseos-v0.3-live-call-demo-implementation-brief.md) to break ADR-0045 into safe implementation PRs: contracts and mocks first, signed webhook ingest second, inbound normalization third, outbound request gates fourth, and live activation last.
+- Kept Telnyx + Sent.dm as the active demo configuration while documenting Linq as a migration-ready messaging option to revisit after the provider demo; the `MessagingProvider` contract remains provider-neutral above the adapter boundary.
+- Added ADR-0045 to record that the live-call demo uses a dedicated demo number, never the operator's personal number, and that implementation remains split into separate scoped PRs under the Telnyx-first / Sent.dm-assisted stack decision.
+- Updated [`ROADMAP.md`](./ROADMAP.md) and the progress dashboard so the live-call demo slice is visible as planned/scoped work rather than hidden scope.
+- Documentation/planning only. No provider adapter, schema migration, env var, secret, account configuration, webhook mutation, billing, or live-call cutover is included.
+
+## Unreleased — docs: v0.3 mock-first demo deploy checkpoint
+
+- Added [`product/responseos-v0.3-demo-deploy-checkpoint.md`](./product/responseos-v0.3-demo-deploy-checkpoint.md) to record the selected next path after the deployment-readiness review: **mock-first demo deployment readiness**, not live production traffic. The checkpoint includes the minimum PRD, success criteria, scope, out-of-scope items, constraints, risks, open questions, and separate gates for demo deploy versus live production.
+- Created and documented the Neon `demo` branch metadata for the `responseos` project, stored the generated `DATABASE_URL` / `DIRECT_URL` in Doppler `response-os/stg_staging_demo` without printing values, and verified Prisma validate / migrate / seed / DB-backed build against that branch.
+- Created and linked the Vercel `audiojones/responseos` project for the mock-first demo path, corrected the project settings to Next.js / Node 22 / `npm ci` / `npm run build` / `.next`, attached `responseos.ajdigital.app`, added production and all-preview runtime envs without printing values, and created the Cloudflare A record for the demo domain. Vercel Git integration later became active and automatically promoted commit `4578cd91a56be792f83b7ca9d5a6cc49d9c1db49` to the public demo aliases; no manual `vercel --prod` command was run.
+- Corrected `doppler.yaml` to point at the actual Doppler project slug, `response-os`.
+- Updated the progress dashboard to reflect that the demo surface / feature-cut decision is now selected while acceptance-gate documentation remains in progress.
+- Documentation/progress/config metadata only. No runtime code, schema, provider adapter, webhook mutation, billing, live integration, or deploy is authorized.
 
 ## Unreleased — docs: add Web3 opportunity research
 

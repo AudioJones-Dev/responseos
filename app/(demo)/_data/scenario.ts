@@ -158,6 +158,8 @@ export const integrations: { name: string; state: IntegrationState; detail: stri
 // Ordered walkthrough steps for the stepper navigation.
 export const steps = [
   { slug: "", label: "Overview", href: "/demo/walkthrough" },
+  { slug: "operator-console", label: "Operator", href: "/demo/operator-console" },
+  { slug: "client-dashboard", label: "Client", href: "/demo/client-dashboard" },
   { slug: "call", label: "Call", href: "/demo/walkthrough/call" },
   { slug: "lead", label: "Lead", href: "/demo/walkthrough/lead" },
   { slug: "memory", label: "Memory", href: "/demo/walkthrough/memory" },

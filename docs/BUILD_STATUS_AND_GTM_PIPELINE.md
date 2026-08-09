@@ -1,6 +1,8 @@
 # Build Status & GTM Pipeline
 
-**Date:** 2026-08-03 · **Master:** `83038d5` · **Scope:** documentation + reconciliation only — no feature work.
+**Date:** 2026-08-08 · **Master:** `897c866` · **Scope:** documentation + reconciliation only — no feature work.
+
+> ⚠️ **Read [`readiness/`](./readiness/) first for current build truth.** The #113 readiness audit is a deeper, more recent, and considerably more pessimistic assessment of what is implemented — it concludes the call → intelligence → memory → decision → action chain has **no implementation at any link**, controlled demo **NOT PRESENT**, pilot readiness **NO** with 12 blockers. This document is the *reconciliation and merge* record; where the two disagree on build state, `readiness/` wins.
 
 This document answers one question: **what is actually built, what do the docs claim, and what stands between here and a GTM pipeline?** It was produced by a full sweep of local and remote git plus a line-level audit of the build against its documentation, then updated as the backlog was drained.
 
@@ -10,9 +12,11 @@ This document answers one question: **what is actually built, what do the docs c
 
 ## 1. Headline
 
-**ResponseOS was not behind on code. It was behind on landing.** Six of the ten stranded pull requests have now merged.
+**ResponseOS was not behind on code. It was behind on landing. The backlog is now drained — all ten stranded pull requests have merged.**
 
-`master` is healthy: CI green, 22 Prisma models with consistent tenant scoping, 8 migrations, **177 unit tests** passing (plus ~60 integration tests in CI), a working mock-safe demo walkthrough, and deployment correctly contained. The v0.2 substrate is genuinely complete.
+`master` is healthy: CI green, 22 Prisma models with consistent tenant scoping, 8 migrations, **192 unit tests** passing (plus integration tests in CI), a mock-safe demo walkthrough, mock-first CAL provider scaffolding, and deployment correctly contained.
+
+**"Healthy" here means the substrate compiles, is tenant-safe, and ships nothing live — not that the product works end to end.** It does not: see [`readiness/`](./readiness/).
 
 ### What the sweep found
 
@@ -32,12 +36,23 @@ This document answers one question: **what is actually built, what do the docs c
 | #91 | `335f044` | API, data, and PRD specs reconciled |
 | #92 | `a7790ad` | Quality + reference baselines |
 | #93 | `83038d5` | Documentation governance index |
+| #98 | `b50d2f2` | xAI voice readiness spike |
+| #94 | `1250faf` | v0.3 demo deploy checkpoint (ADR-0045) |
+| #108 | `a790ba3` | Mock-first CAL provider scaffolding — **mock-only, audited** |
+| #105 | `96fdfed` | Platform doctrine v1 + ADR-0040–0044 — **proposed, not ratified** |
+| #103 | `897c866` | Future-client delivery system |
+
+Landed independently alongside the sweep: **#109** (v0.3 founding-pilot scope freeze + acceptance gates), **#110** (Path A staging prep), **#111**/**#112** (dependency audit pins), **#113** (readiness audit).
+
+**Still open:** #107 only — never reviewed as part of this sweep.
 
 **The squash-cascade prediction was confirmed in practice:** #89 merged clean, then **every** subsequent step conflicted — #90/#91/#92 on `dashboard/dashboard-data.json`, #93 on that plus two add/add `.md` collisions. All were mechanical; at each step the resolution was verified to lose nothing from *either* side. The board ended at exactly the predicted **28 tasks, `G-01`–`G-05` present, no duplicate ids**.
 
-**Still open:** #94, #103, #105, #98, and this document (#106).
+**The ADR allocation held across five days and every re-resolution.** `0039` (#96) · `0040–0044` (#105) · `0045` (#94) landed in ascending order with no duplicates — despite each PR being re-merged three separate times as `master` moved beneath it.
 
-The declared launch in `dashboard/dashboard-data.json` is **2026-08-15 — 12 days out**.
+**A second conflict species appeared later.** The docs-chain conflicts were *additions at the same array index*, which a union resolves. #94's board conflict was **field-level disagreement on the same five tasks** (`status`, `owner`, `progress`, `blockedReason`) because both sides edited the same work items five days apart. A text union produced invalid JSON. It needed a real 3-way merge: each side contributed 3 unique tasks, `master` won the 5 both-edited (newer), #94 won the 1 it alone changed — **34 tasks, nothing lost from either side.**
+
+The declared launch in `dashboard/dashboard-data.json` is **2026-08-15 — 7 days out**.
 
 ---
 
@@ -196,17 +211,15 @@ All resolutions were mechanical — union the JSON task objects, take #93's vers
 
 > **Add/add conflicts are an artefact of squashing, not a real disagreement.** #93 edits files that #89 and #92 created; because those landed as squash commits, git saw the files as independently added on both sides. Check which side is a superset rather than assuming.
 
-### Remaining order
+### Backlog drained ✅
 
-| Order | PR | State |
-|---|---|---|
-| 1 | **#94** | Conflicts resolved against post-#96 master; ADR→0045; gates green (179/179). |
-| 2 | **#105** | Draft. ADR→0040–0044; `docs/PRD.md` re-merged after #91. |
-| 3 | **#103** | Draft. `docs/README.md` re-merged after #93. |
-| 4 | **#98** | Draft. Fix its dangling `ADR-0039` anchor first — that number now belongs to #96's auth ADR, and #98 means #94's, which is **0045**. |
-| 5 | **#106** | This document. |
+All ten stranded PRs merged, plus #108. Only **#107** remains open — it was never part of this sweep and has not been reviewed here.
 
-> **⚠️ Every merge re-conflicts the next.** `docs/CHANGELOG.md` for #94/#103/#106, `docs/DECISIONS.md` for #94/#105, `dashboard/dashboard-data.json` for anything touching the board. Mechanical each time, but unavoidable — merge one, re-resolve, repeat. Consider a `.gitattributes` union merge driver for `CHANGELOG.md` if the pattern persists.
+> **⚠️ Every merge re-conflicted the next, exactly as predicted.** `docs/CHANGELOG.md`, `docs/DECISIONS.md`, and `dashboard/dashboard-data.json` each collided on nearly every merge; #94, #105, and #103 were re-resolved **three times apiece** as `master` moved beneath them. Mechanical each time, but it made a five-PR tail cost far more than five merges. **A `.gitattributes` union merge driver on `docs/CHANGELOG.md` would remove most of it** — that is the single highest-leverage hygiene fix for this repo.
+
+**#108 was merged against an explicit mock-only bar, verified empirically:**
+`createLive` is referenced **only inside `lib/providers/resolve.ts` itself** — never passed by any of the five factories — so `resolveProvider` takes the mock branch **unconditionally**, even with `TELNYX_API_KEY`, `VAPI_API_KEY`, `TWILIO_ACCOUNT_SID`, `HUBSPOT_ACCESS_TOKEN` and `CALENDLY_API_KEY` all populated. Zero network calls in `lib/providers/`. The only new env read is a configured-ness probe that cannot select a live path.
+> Two caveats: **`TELNYX_API_KEY` and `CALENDLY_API_KEY` are probed but absent from `.env.example`** (gap in the env contract, harmless while unset means mock); and **the mock-only guarantee is structural, not enforced** — adding a `createLive` to any of those five files is a one-line change that would flip a provider live. A test asserting `createLive` is never passed would make that hard to do by accident.
 
 > **⚠️ #94 and #96 both changed auth — #96 won.** #94 carried an earlier variant gated on `NODE_ENV=production`; master now has the reconciled `RESPONSEOS_REQUIRE_AUTH` gate. #94's conflicts were resolved **in master's favour**, and two of its tests asserting the superseded semantics were removed (master's `proxy.test.ts` and `session.test.ts` already cover the same ground more thoroughly).
 
@@ -272,8 +285,8 @@ These are yours. None is an engineering task; each blocks work downstream.
 
 | # | Decision | Blocks | Notes |
 |---|---|---|---|
-| **D1** | **Which GTM narrative is canonical?** "AI Revenue Recovery Platform" (what the code, the marketing site, and the `Engagement` enum implement) vs "Managed Business Memory System" (ADR-0022 + ADR-0028), vs a third hardcoded tier mock in admin billing. **Nothing currently decides what a prospect is quoted.** | All sales assets, CTA copy, brand assets, pricing pages | Cascades widely. Highest-leverage single decision in the repo. |
-| **D2** | **Define the v0.3 readiness gates.** Write the concrete list, against the *current* provider canon. | Every deploy in Lanes 1 and 2 | Critical path for 2026-08-15. Dashboard `V-03`. |
+| **D1** | **Which GTM narrative is canonical?** "AI Revenue Recovery Platform" (what the code, the marketing site, and the `Engagement` enum implement) vs "Managed Business Memory System" (ADR-0022 + ADR-0028), vs a third hardcoded tier mock in admin billing. **Nothing currently decides what a prospect is quoted.** | All sales assets, CTA copy, brand assets, pricing pages | **Now has a proposed answer on `master`.** #105 added `docs/strategy/responseos-platform-doctrine-v1.md` as item 0 of the docs index, reconciling the two as *stages of one progression* — explicitly marked **"Proposed — pending operator ratification."** Merging it did not ratify it. Ratify or reject deliberately, before it hardens into assumed canon. |
+| ~~**D2**~~ | ✅ **RESOLVED by #109.** `docs/product/responseos-v0.3-founding-pilot-scope.md` freezes Path B founding-pilot scope with concrete acceptance gates and a **staged authorization checklist** (mock CAL → schema → staging → each live provider → prod). | — | Stage 1 (mock CAL) is satisfied by #108. **Every later stage still needs written human authorization** — #109 authorizes nothing live. |
 | **D3** | **Authorize the Aug-15 demo deploy** and grant the carve-out from the no-production-deploys rule. | Lane 1 entirely | Per ADR-0019, also requires real Clerk login. |
 | **D4** | **Authorize v0.3** (or don't, yet). | Lane 2 entirely | Separate from D3. Explicitly written authorization required. |
 | **D5** | **Disposition `codex/preserve-primary-dirty-2026-07-01`** — the rescued branch. Its editorial design doctrine supersedes part of ADR-0021 (brand palette + fonts) and changes 192 lines of `globals.css`. Promote to a PR (needs ADR-0046), or close out? | Brand/visual system; interacts with **D1** | This is brand doctrine — squarely yours. Now safely mirrored on `origin`. |
@@ -285,12 +298,13 @@ These are yours. None is an engineering task; each blocks work downstream.
 
 ## 7. Recommended sequence
 
-1. ~~Merge #96~~ — ✅ done (`8fffd57`). The fail-closed gate now exists on `master`.
-2. ~~Drain the #89→#93 chain~~ — ✅ done (`b35669f` → `83038d5`). A month of stranded documentation is landed.
-3. **Decide D2** (define the v0.3 readiness gates) — **now the critical path.** Every deploy is blocked behind it and the 2026-08-15 date depends on it. Nothing else in this list unblocks as much.
-4. **Decide D1** (positioning) — unblocks every sales asset. Note #105 (unmerged) proposes a reconciliation: revenue recovery and business memory as *stages of one progression* rather than competing brands. **Ratifying or rejecting that framing is the decision.**
-5. **Merge #94, #105, #103, #98, #106** — all resolved and gated; expect one mechanical re-conflict per merge.
-6. **Then, and only then**, take up D3 and the demo deploy — including setting `RESPONSEOS_REQUIRE_AUTH` and verifying the `/audit` form still submits.
+1. ~~Merge #96~~ — ✅ `8fffd57`. Fail-closed gate exists on `master`.
+2. ~~Drain the #89→#93 chain~~ — ✅ `b35669f` → `83038d5`.
+3. ~~Decide D2~~ — ✅ **resolved by #109.** Acceptance gates and a staged authorization checklist now exist.
+4. ~~Merge the tail~~ — ✅ #98, #94, #108, #105, #103 all landed. **Backlog drained.**
+5. **Read [`readiness/`](./readiness/) and reconcile ambition with it.** The #113 audit says the core chain is unimplemented, controlled demo is not present, and pilot readiness is **NO** with 12 blockers — against a launch date **7 days out**. That gap, not the merge queue, is now the real problem. **Deciding what 2026-08-15 actually means — full pilot, controlled demo, or a date change — is the next call.**
+6. **Decide D1** (positioning). #105 put a proposed reconciliation on `master`, unratified. Ratify or reject it deliberately.
+7. **Then** take up D3 and the demo deploy — including setting `RESPONSEOS_REQUIRE_AUTH` and confirming the `/audit` form still submits behind it.
 
 ---
 

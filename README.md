@@ -105,6 +105,7 @@ CI runs `validate` (lint → typecheck → test → build) and `integration` (Po
 ## Where to read next
 
 - [`docs/README.md`](./docs/README.md) — index of all product + architecture docs.
+- [`docs/strategy/responseos-platform-doctrine-v1.md`](./docs/strategy/responseos-platform-doctrine-v1.md) — **platform doctrine**: what ResponseOS is and is not, current-state truth, layered architecture, build-vs-buy, provider strategy, claims policy.
 - [`docs/PRD.md`](./docs/PRD.md) — short product source of truth.
 - [`docs/ROADMAP.md`](./docs/ROADMAP.md) — version table, what ships when.
 - [`docs/CHANGELOG.md`](./docs/CHANGELOG.md) — per-PR history.

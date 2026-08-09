@@ -104,20 +104,27 @@ export default function PricingPage() {
           <ul className="mt-4 space-y-3 text-sm text-ink-secondary">
             <li className="flex gap-2.5">
               <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
-              Every engagement combines a one-time{" "}
-              <span className="text-ink">setup fee</span> with a{" "}
-              <span className="text-ink">monthly retainer</span>, sized to your
-              volume.
+              <span>
+                Every engagement combines a one-time{" "}
+                <span className="text-ink">setup fee</span> with a{" "}
+                <span className="text-ink">monthly retainer</span>, sized to
+                your volume.
+              </span>
             </li>
             <li className="flex gap-2.5">
               <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
-              Optional <span className="text-ink">outcome fees</span> are upside
-              only — tied to verified booked appointments or recovered revenue.
+              <span>
+                Optional <span className="text-ink">outcome fees</span> are
+                upside only — tied to verified booked appointments or recovered
+                revenue.
+              </span>
             </li>
             <li className="flex gap-2.5">
               <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
-              No performance-only deals and no seat licenses. You always know
-              the base before you start.
+              <span>
+                No performance-only deals and no seat licenses. You always know
+                the base before you start.
+              </span>
             </li>
           </ul>
         </Card>

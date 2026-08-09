@@ -13,6 +13,14 @@ const formatUsd = (cents: number): string =>
 const formatSeconds = (s: number): string =>
   s < 60 ? `${s}s` : `${Math.round(s / 60)}m ${s % 60}s`;
 
+const formatPeriod = (start: string, end: string): string => {
+  const s = new Date(start);
+  const e = new Date(end);
+  const month = new Intl.DateTimeFormat("en-US", { month: "long" }).format(s);
+  const year = e.getUTCFullYear();
+  return `${month} ${s.getUTCDate()}-${e.getUTCDate()}, ${year}`;
+};
+
 const FALLBACK_ACCOUNT_ID = "org_mock_1";
 
 export default async function ClientDashboard() {
@@ -25,7 +33,7 @@ export default async function ClientDashboard() {
   if (!m) {
     return (
       <>
-        <PageHeader eyebrow="Client Dashboard" title="This Month" />
+        <PageHeader eyebrow="Client Dashboard" title="Sample Month" />
         <EmptyState
           title="No revenue metrics yet"
           description="Once missed demand is captured and recovered, your recovered-revenue summary will appear here."
@@ -38,18 +46,18 @@ export default async function ClientDashboard() {
     <>
       <PageHeader
         eyebrow="Client Dashboard"
-        title="This Month"
-        description={`${m.period_start.slice(0, 10)} → ${m.period_end.slice(0, 10)} · mock data`}
+        title="Sample Month"
+        description={`${formatPeriod(m.period_start, m.period_end)} · mock data`}
       />
 
       <section className="mb-6 overflow-hidden rounded-lg border border-accent/30 bg-surface">
         <div className="bg-accent-soft p-8">
           <p className="text-xs font-semibold uppercase tracking-widest text-accent">
-            Recovered Revenue This Month
+            Recovered Revenue - Sample Month
           </p>
           <p className="mt-3 font-display text-4xl font-semibold tabular-nums text-ink sm:text-5xl">
             {formatUsd(m.estimated_recovered_revenue)}
-            <span className="ml-3 text-base font-medium text-ink-secondary">
+            <span className="ml-3 align-middle text-sm font-medium text-ink-secondary">
               estimated
             </span>
           </p>
@@ -71,7 +79,11 @@ export default async function ClientDashboard() {
           value={m.qualified_leads}
           hint={`From ${m.total_calls} total calls`}
         />
-        <StatCard label="Appointments Booked" value={m.appointments_booked} />
+        <StatCard
+          label="Appointments Booked"
+          value={m.appointments_booked}
+          hint="Confirmed from recovered demand"
+        />
         <StatCard
           label="Quote Requests"
           value={m.quotes_requested}
