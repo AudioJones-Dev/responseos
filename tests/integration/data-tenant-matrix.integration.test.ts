@@ -20,6 +20,8 @@ import {
   SmsMessages,
   Users,
   WorkflowRuns,
+  AgentProfiles,
+  Opportunities,
 } from "@/lib/data";
 import { disconnectTestDb, prisma, resetAndSeedTestDb, setDevSession } from "./setup";
 
@@ -49,6 +51,8 @@ const listCases: Array<{
   { name: "listConversations", read: (accountId) => Conversations.listConversations({ accountId }) },
   { name: "listProviderConnections", read: (accountId) => ProviderConnections.listProviderConnections({ accountId }) },
   { name: "listWorkflowRuns", read: (accountId) => WorkflowRuns.listWorkflowRuns({ accountId }) },
+  { name: "listAgentProfiles", read: (accountId) => AgentProfiles.listAgentProfiles({ accountId }) },
+  { name: "listOpportunities", read: (accountId) => Opportunities.listOpportunities({ accountId }) },
   { name: "listSmsMessagesByConversation", read: (accountId) => SmsMessages.listSmsMessagesByConversation({ accountId: accountId as string, conversationId: "conv_mock_1" }) },
   { name: "listCallSegmentsByCall", read: (accountId) => CallSegments.listCallSegmentsByCall({ accountId: accountId as string, callId: "call_mock_2" }) },
   { name: "listQaLogsByCall", read: (accountId) => QaLogs.listQaLogsByCall({ accountId: accountId as string, callId: "call_mock_2" }) },
@@ -95,7 +99,14 @@ describe("account read tenant matrix", () => {
     const result = await Accounts.listAccounts();
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(new Set(result.data.map((org) => org.id))).toEqual(new Set(["org_mock_1", "org_mock_2"]));
+    expect(new Set(result.data.map((org) => org.id))).toEqual(
+      new Set([
+        "org_mock_1",
+        "org_mock_2",
+        "acct_internal_demo_tyrone",
+        "acct_responseos_demo",
+      ]),
+    );
   });
 
   test("client_admin reads own tenant", async () => {

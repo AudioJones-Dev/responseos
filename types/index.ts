@@ -17,3 +17,5 @@ export * from "./callSegment";
 export * from "./callTranscript";
 export * from "./qaLog";
 export * from "./workflowRun";
+export * from "./agentProfile";
+export * from "./opportunity";

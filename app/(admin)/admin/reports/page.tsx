@@ -10,7 +10,8 @@ import {
   TR,
   TD,
 } from "@/components/ui";
-import { RevenueMetrics } from "@/lib/data";
+import { Accounts, RevenueMetrics } from "@/lib/data";
+import { filterCommercialRecords } from "@/lib/reporting/accountClassification";
 
 const formatUsd = (cents: number): string =>
   (cents / 100).toLocaleString("en-US", {
@@ -20,8 +21,14 @@ const formatUsd = (cents: number): string =>
   });
 
 export default async function AdminReportsPage() {
-  const result = await RevenueMetrics.listRevenueMetrics({});
-  const metrics = result.ok ? result.data : [];
+  const [metricsResult, accountsResult] = await Promise.all([
+    RevenueMetrics.listRevenueMetrics({}),
+    Accounts.listAccounts(),
+  ]);
+  const metrics = filterCommercialRecords(
+    metricsResult.ok ? metricsResult.data : [],
+    accountsResult.ok ? accountsResult.data : [],
+  );
 
   const totalRecovered = metrics.reduce(
     (sum, m) => sum + m.estimated_recovered_revenue,
@@ -38,7 +45,7 @@ export default async function AdminReportsPage() {
       <PageHeader
         eyebrow="Operator Console"
         title="Reports"
-        description="Trended revenue recovery across reporting periods. Mock data until live providers connect in v0.3."
+        description="Customer revenue metrics across reporting periods. Internal and sandbox activity remains operationally visible but is excluded here."
       />
 
       {metrics.length === 0 ? (

@@ -4,6 +4,13 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: internal reference tenant foundation
+
+- Added explicit `AccountType` classification and seeded Tyrone Nelms as an `internal_demo` tenant, separate from the `responseos-demo` sandbox.
+- Added generic, tenant-scoped `AgentProfile` and `Opportunity` primitives with deterministic mock/DB fixtures for four professional receptionist profiles, a synthetic recruiter contact, a manual mock appointment, and a labeled Censys opportunity scenario.
+- Added operator-console classification badges and views for agent profiles, opportunities, and appointments. Commercial reports and active-customer counts now include only `customer` accounts while operational data remains available.
+- Added tenant-isolation, mock-parity, seed-determinism, and reporting-policy coverage. No live providers, Career OS retrieval, secrets, deployment, or runtime professional workflow were added.
+
 ## Unreleased — docs: close out the build status report; PR backlog fully drained
 
 - Recorded the final five merges — #98 (`b50d2f2`), #94 (`1250faf`), #108 (`a790ba3`), #105 (`96fdfed`), #103 (`897c866`) — leaving **#107 as the only open PR**. Noted #109/#110/#111/#112/#113 landing alongside.

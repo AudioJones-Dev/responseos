@@ -39,7 +39,12 @@ describe("data accessors against Postgres", () => {
     const list = await Accounts.listAccounts();
     expect(list.ok).toBe(true);
     if (!list.ok) return;
-    expect(list.data.map((org) => org.id)).toEqual(["org_mock_1", "org_mock_2"]);
+    expect(list.data.map((org) => org.id)).toEqual([
+      "org_mock_1",
+      "org_mock_2",
+      "acct_internal_demo_tyrone",
+      "acct_responseos_demo",
+    ]);
 
     const found = await Accounts.getAccountById("org_mock_1");
     expect(found.ok).toBe(true);

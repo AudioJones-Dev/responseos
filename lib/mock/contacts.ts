@@ -37,6 +37,19 @@ export const mockContacts: Contact[] = [
     zip: "33755",
     source: "sms",
   }),
+  MockContact({
+    id: "contact_tyrone_demo_recruiter",
+    account_id: "acct_internal_demo_tyrone",
+    first_name: "Jane",
+    last_name: "Smith",
+    phone: "+15555550499",
+    email: "jane.smith@example.com",
+    address: undefined,
+    city: undefined,
+    state: undefined,
+    zip: undefined,
+    source: "manual",
+  }),
 ];
 
 export function getMockContacts(): Contact[] {

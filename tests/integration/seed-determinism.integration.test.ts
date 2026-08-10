@@ -42,6 +42,8 @@ const TABLE_READS = {
     prisma.callTranscript.findMany({ orderBy: { id: "asc" } }),
   qaLogs: () => prisma.qaLog.findMany({ orderBy: { id: "asc" } }),
   workflowRuns: () => prisma.workflowRun.findMany({ orderBy: { id: "asc" } }),
+  agentProfiles: () => prisma.agentProfile.findMany({ orderBy: { id: "asc" } }),
+  opportunities: () => prisma.opportunity.findMany({ orderBy: { id: "asc" } }),
 };
 
 function migrateResetAndSeed(): void {

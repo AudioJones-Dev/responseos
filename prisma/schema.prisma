@@ -28,6 +28,41 @@ enum AccountStatus {
   cancelled
 }
 
+enum AccountType {
+  customer
+  internal
+  internal_demo
+  sandbox
+}
+
+enum AgentProfileType {
+  recruiter_receptionist
+  consulting_receptionist
+  professional_assistant
+  demo_mode
+}
+
+enum OpportunityType {
+  service
+  employment
+  contract
+  consulting
+  partnership
+  media
+  demo
+  other
+}
+
+enum OpportunityStatus {
+  new
+  qualified
+  scheduled
+  escalated
+  closed_won
+  closed_lost
+  archived
+}
+
 enum UserRole {
   aj_admin
   operator
@@ -191,12 +226,54 @@ model Account {
   primary_phone String?
   timezone      String
   status        AccountStatus @default(lead)
+  account_type  AccountType   @default(customer)
   // 32A — Clerk integration substrate per ADR-0005 + step-2.4 plan §4.3.
   // Nullable so existing seeded accounts stay valid without backfill.
   // Wiring (session derivation, webhook sync) lands in 32B/32C.
   clerk_org_id  String?            @unique
   created_at    DateTime           @default(now())
   updated_at    DateTime           @updatedAt
+}
+
+model AgentProfile {
+  id            String           @id @default(cuid())
+  account_id    String
+  name          String
+  slug          String
+  profile_type  AgentProfileType
+  enabled       Boolean          @default(true)
+  is_default    Boolean          @default(false)
+  policy_json   Json?
+  metadata_json Json?
+  created_at    DateTime         @default(now())
+  updated_at    DateTime         @updatedAt
+
+  @@unique([account_id, slug])
+  @@index([account_id])
+}
+
+model Opportunity {
+  id                      String            @id @default(cuid())
+  account_id              String
+  contact_id              String?
+  source_call_id          String?
+  source_conversation_id  String?
+  appointment_id          String?
+  opportunity_type        OpportunityType
+  status                  OpportunityStatus @default(new)
+  interest_level          String?
+  summary                 String?
+  details_json            Json?
+  questions_asked         Json?
+  recommended_preparation Json?
+  next_action             String?
+  created_at              DateTime          @default(now())
+  updated_at              DateTime          @updatedAt
+
+  @@index([account_id])
+  @@index([account_id, status])
+  @@index([contact_id])
+  @@index([appointment_id])
 }
 
 model User {

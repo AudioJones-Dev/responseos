@@ -784,3 +784,23 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 7. The broader provider baseline remains ADR-0031/0032/0036. This demo-slice decision tests whether the first live demo can ship with fewer vendors; it does not reverse Vapi's broader v0.3 orchestration role.
 
 **Consequences.** v0.3 now has a concrete first live-provider experience target: a bounded public demo, not a general production cutover. The slice is allowed to be specified and broken into implementation PRs, but each implementation step still needs its own scoped approval and must carry tests for signature validation, tenant isolation, kill switch behavior, Sent.dm idempotent messaging, and outbound abuse controls. This ADR does not authorize live CRM sync, billing, HIPAA-ready behavior, or use of real client data.
+
+---
+
+## ADR-0047 — Internal reference tenants use the production account model with explicit classification
+
+**Status:** Accepted (2026-08-10) for the mock-first foundation only. ADR-0046 remains reserved for the preserved editorial-design doctrine noted in the build-status reconciliation. **No live provider, knowledge retrieval, Career OS integration, secret, deployment, or production traffic is authorized.**
+
+**Context.** ResponseOS needs a first-class internal account for Tyrone Nelms that can dogfood the same tenant, appointment, conversation, QA, audit, and reporting primitives sold to customers. A parallel demo application would hide tenant-isolation and workflow defects. Treating the account as a paying customer, however, would contaminate customer counts and commercial revenue reporting. The public `responseos-demo` tenant selected by ADR-0045 has a different trust boundary: it is an anonymous demo sandbox, not Tyrone's internal professional account.
+
+**Decision.**
+
+1. `Account.account_type` classifies accounts as `customer`, `internal`, `internal_demo`, or `sandbox`. Classification changes administration and reporting only; it never bypasses auth, tenant scope, audit, provider adapters, scheduling, persistence, QA, or usage measurement.
+2. Tyrone Nelms is seeded as `tyrone-nelms` / `internal_demo`. The public demo account is seeded separately as `responseos-demo` / `sandbox`.
+3. Reusable, tenant-scoped `AgentProfile` records hold receptionist roles and safe policy metadata. They do not contain a live system prompt, provider credential, professional knowledge corpus, or Career OS data model.
+4. A generic `Opportunity` record represents qualified demand across service, employment, contract, consulting, partnership, media, demo, and other contexts. Professional details remain validated metadata at the application boundary; ResponseOS does not gain a career-specific core model.
+5. Commercial reporting includes only `customer` accounts. Internal, internal-demo, and sandbox usage remains visible to operational, QA, reliability, and provider-cost reporting.
+6. The deterministic Tyrone scenario is synthetic and labeled as fixture data. Its mock appointment uses the existing `Appointment` model and manual calendar provider.
+7. This foundation adds no professional-knowledge provider, Career OS retrieval, runtime conversation orchestration, domain-event emitter, webhook mutation, or live scheduling behavior. Those require later, separately approved slices under existing roadmap gates.
+
+**Consequences.** ResponseOS can exercise a real internal tenant without inventing a second application or polluting customer revenue totals. The generic profile and opportunity primitives are available to later workflows, but the receptionist cannot yet answer career questions, conduct a live conversation, emit professional events, or book against a real calendar. The v0.4 knowledge/RAG gate and all v0.3 provider/activation gates remain unchanged.

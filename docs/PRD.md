@@ -78,6 +78,13 @@ Explicitly out:
 - Knowledge layer → v0.4+.
 - Production deploys → gated on v0.3 readiness.
 
+Approved internal dogfooding foundation (ADR-0047; mock-only, not yet shipped):
+
+- Tyrone Nelms uses a standard tenant classified as `internal_demo`; the public demo sandbox remains a separate account.
+- Reusable tenant-scoped agent-profile and opportunity records support operator-console inspection and deterministic QA fixtures.
+- Internal and sandbox activity remains operationally measurable but is excluded from commercial customer and revenue reporting.
+- Professional knowledge retrieval, Career OS handoff, live conversations, and live scheduling remain outside this foundation and behind their existing gates.
+
 See [`ROADMAP.md`](./ROADMAP.md) for the full version table and milestone status.
 
 ## Communications stack (v0.3 direction)
