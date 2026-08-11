@@ -13,6 +13,8 @@ import { getMockCallSegments } from "@/lib/mock/callSegments";
 import { getMockCallTranscripts } from "@/lib/mock/callTranscripts";
 import { getMockQaLogs } from "@/lib/mock/qaLogs";
 import { getMockWorkflowRuns } from "@/lib/mock/workflowRuns";
+import { getMockAgentProfiles } from "@/lib/mock/agentProfiles";
+import { getMockProfessionalOpportunities } from "@/lib/mock/professionalOpportunities";
 import { disconnectTestDb, normalize, prisma, resetAndSeedTestDb } from "./setup";
 
 function clean(value: unknown): unknown {
@@ -320,6 +322,54 @@ describe("seeded mock fixture parity", () => {
     const rows = await prisma.workflowRun.findMany({ orderBy: { id: "asc" } });
     expect(clean(normalize(rows.map((row) => pick(row, keys))))).toEqual(
       clean(getMockWorkflowRuns().map((row) => pick(row, keys))),
+    );
+  });
+
+  test("agent profiles match lib/mock agent profiles field-for-field", async () => {
+    const keys = [
+      "id",
+      "account_id",
+      "name",
+      "slug",
+      "type",
+      "enabled",
+      "is_default",
+      "system_policy_json",
+      "metadata_json",
+    ];
+    const rows = await prisma.agentProfile.findMany({ orderBy: { id: "asc" } });
+    expect(clean(normalize(rows.map((row) => pick(row, keys))))).toEqual(
+      clean(getMockAgentProfiles().map((row) => pick(row, keys))),
+    );
+  });
+
+  test("professional opportunities match lib/mock professional opportunities field-for-field", async () => {
+    const keys = [
+      "id",
+      "account_id",
+      "contact_id",
+      "agent_profile_id",
+      "opportunity_type",
+      "company",
+      "role_title",
+      "recruiter_name",
+      "recruiter_email",
+      "recruiter_phone",
+      "interest_level",
+      "status",
+      "source_call_id",
+      "source_conversation_id",
+      "appointment_id",
+      "questions_asked",
+      "summary",
+      "recommended_preparation",
+      "next_action",
+    ];
+    const rows = await prisma.professionalOpportunity.findMany({
+      orderBy: { id: "asc" },
+    });
+    expect(clean(normalize(rows.map((row) => pick(row, keys))))).toEqual(
+      clean(getMockProfessionalOpportunities().map((row) => pick(row, keys))),
     );
   });
 

@@ -2,6 +2,17 @@ import { ISODate, UUID, newId, nowIso } from "./common";
 
 export type AccountStatus = "lead" | "active" | "paused" | "cancelled";
 
+/**
+ * Administrative classification of a tenant (ADR-0046). Drives revenue
+ * reporting exclusion and console labelling only — never isolation,
+ * auth, audit, or provider behaviour.
+ */
+export type AccountType =
+  | "customer"
+  | "internal"
+  | "internal_demo"
+  | "sandbox";
+
 export interface Account {
   id: UUID;
   name: string;
@@ -11,6 +22,7 @@ export interface Account {
   primary_phone?: string;
   timezone: string;
   status: AccountStatus;
+  account_type: AccountType;
   /**
    * 32A — Clerk external organization identity. Nullable for seeded
    * fixture accounts and for any pre-Clerk row that has not yet been
@@ -32,6 +44,7 @@ export function MockAccount(overrides: Partial<Account> = {}): Account {
     primary_phone: "+15555550100",
     timezone: "America/New_York",
     status: "active",
+    account_type: "customer",
     created_at: now,
     updated_at: now,
     ...overrides,

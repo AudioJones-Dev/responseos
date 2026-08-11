@@ -4,6 +4,18 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: internal demo account + professional receptionist (ADR-0046)
+
+- Added `Account.account_type` (`customer` / `internal` / `internal_demo` / `sandbox`) plus the `AgentProfile` and `ProfessionalOpportunity` tables in migration `0009`. Purely additive; `account_type` defaults to `customer`, so no existing row needed backfill.
+- Seeded **Tyrone Nelms** (`tyrone-nelms`, `internal_demo`) as a first-class tenant — owner, four agent profiles, recruiter contact, answered call with segments/transcript/QA log, SMS thread, booked recruiter screen, one professional opportunity, workflow run, and audit row — all through the existing accessors, with matching `lib/mock/*` fixtures.
+- Added `ProfessionalKnowledgeProvider` (fixture-backed) and `ProfessionalHandoffProvider` (no-op, carrying the `professional.opportunity.created` / `professional.escalation.requested` contracts). Neither passes `createLive`, so both stay mock even with `CAREER_OS_API_KEY` / `CAREER_OS_WEBHOOK_URL` set — the whole tenant runs with zero credentials and makes no network call.
+- Added the `lib/professional/*` domain layer: intent detection, question classification, the claim-authority matrix, per-profile disclosure policy, verified-only answering, asset sharing, meeting windows, and the audited intake/booking write path.
+- **The receptionist declines every unsourced career claim by design.** Career fixture records ship `verified: false`, and an answer requires a record that is both verified *and* in the category asked about — so work history, projects, skills, education, and certifications resolve to the fallback line rather than an invented fact. Turning them on is a data change, not a code change.
+- **Reporting split:** non-`customer` tenants are excluded from cross-tenant revenue rollups while scoped per-tenant reads (and operational/QA metrics) still measure them.
+- Operator console: classification badge column on `/admin/clients` and a new `/admin/receptionist` view for agent profiles and professional opportunities.
+- **Two spec deviations recorded in ADR-0046** rather than silently applied: the example recruiter opportunity uses a synthetic company on an `.example` domain instead of a named real company (seed fake-only rule; doctrine §20), and the fallback line takes the owner name as an argument so no demo identity is compiled into shared logic.
+- Per ADR-0043, each new interface has exactly one adapter — architecture preparation, **not** proven provider portability. No live provider, no v0.3 gate change, no deploy.
+
 ## Unreleased — docs: close out the build status report; PR backlog fully drained
 
 - Recorded the final five merges — #98 (`b50d2f2`), #94 (`1250faf`), #108 (`a790ba3`), #105 (`96fdfed`), #103 (`897c866`) — leaving **#107 as the only open PR**. Noted #109/#110/#111/#112/#113 landing alongside.

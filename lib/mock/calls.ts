@@ -4,6 +4,12 @@ const baseTime = new Date("2026-05-04T14:30:00.000Z").getTime();
 const at = (offsetMinutes: number): string =>
   new Date(baseTime + offsetMinutes * 60_000).toISOString();
 
+// Internal demo tenant anchors mirror prisma/seed.ts (ADR-0046).
+export const DEMO_CALL_STARTED = "2026-08-03T14:15:00.000Z";
+export const DEMO_CALL_ENDED = "2026-08-03T14:21:00.000Z";
+export const DEMO_CALL_SUMMARY_TEXT =
+  "Recruiter asked about business systems experience, AI implementation experience and stakeholder management. No verified career record is loaded, so each question was captured rather than answered, and a recruiter screen was scheduled.";
+
 export const mockCalls: Call[] = [
   MockCall({
     id: "call_mock_1",
@@ -73,6 +79,25 @@ export const mockCalls: Call[] = [
     sentiment: "positive",
     spam_score: 0,
     lead_score: 79,
+  }),
+  MockCall({
+    id: "call_tyrone_1",
+    account_id: "org_tyrone_1",
+    contact_id: "contact_tyrone_recruiter_1",
+    provider: "vapi",
+    direction: "inbound",
+    status: "answered",
+    from_number: "+15555550701",
+    to_number: "+15555550700",
+    started_at: DEMO_CALL_STARTED,
+    ended_at: DEMO_CALL_ENDED,
+    duration_seconds: 360,
+    transcript: DEMO_CALL_SUMMARY_TEXT,
+    summary:
+      "Recruiter screen requested for a Business Systems Analyst role; three career questions captured for follow-up.",
+    sentiment: "positive",
+    spam_score: 0,
+    lead_score: 88,
   }),
 ];
 

@@ -28,6 +28,17 @@ enum AccountStatus {
   cancelled
 }
 
+// Administrative classification of a tenant (ADR-0046). `internal_demo`
+// is the ResponseOS dogfooding / demonstration lane: it changes
+// reporting and console labelling only — never tenant isolation, auth,
+// audit, provider resolution, or any other runtime behaviour.
+enum AccountType {
+  customer
+  internal
+  internal_demo
+  sandbox
+}
+
 enum UserRole {
   aj_admin
   operator
@@ -191,6 +202,9 @@ model Account {
   primary_phone String?
   timezone      String
   status        AccountStatus @default(lead)
+  // ADR-0046 — administrative classification. Defaults to `customer`
+  // so every existing row stays valid without backfill.
+  account_type  AccountType   @default(customer)
   // 32A — Clerk integration substrate per ADR-0005 + step-2.4 plan §4.3.
   // Nullable so existing seeded accounts stay valid without backfill.
   // Wiring (session derivation, webhook sync) lands in 32B/32C.
@@ -809,4 +823,102 @@ model WorkflowRun {
   @@index([workflow_id])
   @@index([status])
   @@index([started_at])
+}
+
+// --- Internal demo professional receptionist (ADR-0046) -------------------
+//
+// Substrate for the ResponseOS reference tenant: which agent profile
+// answers, and the structured professional opportunity a recruiter or
+// prospect interaction produces. Both tables are ordinary per-tenant
+// tables — `account_id` scoping, no relations (matching the rest of
+// this schema), no FK constraints, and no privileged read path.
+
+enum AgentProfileType {
+  recruiter_receptionist
+  consulting_receptionist
+  professional_assistant
+  demo_mode
+}
+
+enum ProfessionalOpportunityType {
+  employment
+  contract
+  consulting
+  partnership
+  media
+}
+
+enum ProfessionalOpportunityStatus {
+  new
+  qualifying
+  scheduled
+  escalated
+  closed
+}
+
+enum ProfessionalInterestLevel {
+  low
+  medium
+  high
+}
+
+model AgentProfile {
+  id                 String           @id @default(cuid())
+  account_id         String
+  name               String
+  slug               String
+  type               AgentProfileType
+  enabled            Boolean          @default(true)
+  // The profile the receptionist answers with when the caller has not
+  // selected one. The resolver falls back to the first enabled profile
+  // when no row is marked.
+  is_default         Boolean          @default(false)
+  // Per-profile disclosure and capability policy — compensation and
+  // reference disclosure, allowed appointment types, allowed asset
+  // types, knowledge fallback mode. Parsed as `AgentProfilePolicy`
+  // in lib/professional/policy.ts.
+  system_policy_json Json?
+  metadata_json      Json?
+  created_at         DateTime         @default(now())
+  updated_at         DateTime         @updatedAt
+
+  @@unique([account_id, slug])
+  @@index([account_id])
+}
+
+model ProfessionalOpportunity {
+  id               String  @id @default(cuid())
+  account_id       String
+  contact_id       String?
+  // Which agent profile handled the interaction that produced this row.
+  agent_profile_id String?
+
+  opportunity_type ProfessionalOpportunityType
+  company          String?
+  role_title       String?
+  recruiter_name   String?
+  recruiter_email  String?
+  recruiter_phone  String?
+
+  interest_level ProfessionalInterestLevel?
+  status         ProfessionalOpportunityStatus @default(new)
+
+  // Interaction provenance. Both channels are carried because the
+  // receptionist is reachable by voice (Call) and by messaging
+  // (Conversation).
+  source_call_id         String?
+  source_conversation_id String?
+  appointment_id         String?
+
+  questions_asked         Json?
+  summary                 String?
+  recommended_preparation Json?
+  next_action             String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([account_id])
+  @@index([account_id, status])
+  @@index([created_at])
 }

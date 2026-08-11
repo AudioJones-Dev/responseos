@@ -1,6 +1,7 @@
 import type { QaLog } from "@/types/qaLog";
 
 const REVIEWED_AT = "2026-05-04T16:00:00.000Z";
+const DEMO_REVIEWED_AT = "2026-08-03T14:22:00.000Z";
 
 export const mockQaLogs: QaLog[] = [
   {
@@ -18,6 +19,24 @@ export const mockQaLogs: QaLog[] = [
     notes: "Caller qualified; estimate visit scheduled.",
     reviewed_at: REVIEWED_AT,
     created_at: REVIEWED_AT,
+  },
+  {
+    id: "qa_tyrone_1",
+    account_id: "org_tyrone_1",
+    call_id: "call_tyrone_1",
+    rubric_version: "v1",
+    reviewer_type: "system",
+    score: 91,
+    findings_json: {
+      greeting: "pass",
+      grounding: "pass",
+      unverified_claim_avoided: "pass",
+      next_step: "pass",
+    },
+    notes:
+      "Receptionist declined all three unverified career questions and captured them instead; recruiter screen scheduled.",
+    reviewed_at: DEMO_REVIEWED_AT,
+    created_at: DEMO_REVIEWED_AT,
   },
 ];
 

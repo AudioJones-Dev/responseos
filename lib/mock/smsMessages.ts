@@ -5,6 +5,8 @@ const SMS_1_AT = "2026-05-04T15:43:00.000Z";
 const SMS_2_AT = "2026-05-04T15:45:00.000Z";
 const SMS_3_AT = "2026-05-04T17:25:00.000Z";
 const SMS_4_AT = "2026-05-04T17:30:00.000Z";
+const DEMO_SMS_AT = "2026-08-03T14:25:00.000Z";
+const DEMO_SMS_REPLY_AT = "2026-08-03T14:31:00.000Z";
 
 export const mockSmsMessages: SmsMessage[] = [
   {
@@ -66,6 +68,36 @@ export const mockSmsMessages: SmsMessage[] = [
     sent_at: SMS_4_AT,
     delivered_at: SMS_4_AT,
     created_at: SMS_4_AT,
+  },
+  {
+    id: "sms_tyrone_1",
+    account_id: "org_tyrone_1",
+    conversation_id: "conv_tyrone_1",
+    provider: "manual",
+    provider_message_id: "SM_tyrone_1",
+    direction: "outbound",
+    from_number: "+15555550700",
+    to_number: "+15555550701",
+    body: "Recruiter screen confirmed for Aug 13, 2:00pm ET. Your three questions were passed along for Tyrone to answer directly.",
+    status: "delivered",
+    segment_count: 1,
+    sent_at: DEMO_SMS_AT,
+    delivered_at: DEMO_SMS_AT,
+    created_at: DEMO_SMS_AT,
+  },
+  {
+    id: "sms_tyrone_2",
+    account_id: "org_tyrone_1",
+    conversation_id: "conv_tyrone_1",
+    provider: "manual",
+    provider_message_id: "SM_tyrone_2",
+    direction: "inbound",
+    from_number: "+15555550701",
+    to_number: "+15555550700",
+    body: "Great — I'll send the role description before the call.",
+    status: "received",
+    segment_count: 1,
+    created_at: DEMO_SMS_REPLY_AT,
   },
 ];
 

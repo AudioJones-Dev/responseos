@@ -1,4 +1,5 @@
 import type { CallTranscript } from "@/types/callTranscript";
+import { DEMO_CALL_ENDED, DEMO_CALL_SUMMARY_TEXT } from "@/lib/mock/calls";
 
 // Anchored to call_mock_2's ended_at + a small normalizer delay.
 const CREATED_AT = "2026-05-04T15:18:30.000Z";
@@ -13,6 +14,15 @@ export const mockCallTranscripts: CallTranscript[] = [
     language: "en",
     retention_lane: "full",
     created_at: CREATED_AT,
+  },
+  {
+    id: "xcr_tyrone_1",
+    account_id: "org_tyrone_1",
+    call_id: "call_tyrone_1",
+    inline_text: DEMO_CALL_SUMMARY_TEXT,
+    language: "en",
+    retention_lane: "full",
+    created_at: DEMO_CALL_ENDED,
   },
 ];
 

@@ -18,6 +18,7 @@ function rowToAccount(row: {
   primary_phone: string | null;
   timezone: string;
   status: string;
+  account_type: string;
   clerk_org_id: string | null;
   created_at: Date;
   updated_at: Date;
@@ -31,6 +32,7 @@ function rowToAccount(row: {
     primary_phone: row.primary_phone ?? undefined,
     timezone: row.timezone,
     status: row.status as Account["status"],
+    account_type: row.account_type as Account["account_type"],
     clerk_org_id: row.clerk_org_id ?? undefined,
     created_at: row.created_at.toISOString(),
     updated_at: row.updated_at.toISOString(),

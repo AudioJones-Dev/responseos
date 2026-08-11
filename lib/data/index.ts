@@ -31,3 +31,5 @@ export * as CallSegments from "./callSegments";
 export * as CallTranscripts from "./callTranscripts";
 export * as QaLogs from "./qaLogs";
 export * as WorkflowRuns from "./workflowRuns";
+export * as AgentProfiles from "./agentProfiles";
+export * as ProfessionalOpportunities from "./professionalOpportunities";
