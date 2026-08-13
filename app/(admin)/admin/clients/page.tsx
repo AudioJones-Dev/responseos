@@ -18,6 +18,13 @@ const statusTone: Record<string, Tone> = {
   churned: "danger",
 };
 
+const accountTypeTone: Record<string, Tone> = {
+  customer: "success",
+  internal: "neutral",
+  internal_demo: "warning",
+  sandbox: "neutral",
+};
+
 const titleCase = (s: string): string =>
   s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
@@ -40,11 +47,19 @@ export default async function AdminClientsPage() {
         />
       ) : (
         <Table>
-          <THead columns={["Client", "Slug", "Industry", "Status"]} />
+          <THead
+            columns={["Workspace", "Classification", "Slug", "Industry", "Status"]}
+          />
           <TBody>
             {orgs.map((o) => (
               <TR key={o.id}>
                 <TD className="font-medium text-ink">{o.name}</TD>
+                <TD>
+                  <StatusBadge
+                    label={titleCase(o.account_type)}
+                    tone={accountTypeTone[o.account_type] ?? "neutral"}
+                  />
+                </TD>
                 <TD mono>{o.slug}</TD>
                 <TD>{titleCase(o.industry)}</TD>
                 <TD>

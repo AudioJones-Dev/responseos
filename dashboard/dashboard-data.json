@@ -532,6 +532,18 @@
       "due": "2026-07-05",
       "ref": 94,
       "refType": "pull"
+    },
+    {
+      "id": "V-05",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Internal reference tenant foundation",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-08-10",
+      "due": "2026-08-10",
+      "blocked": false
     }
   ],
   "liveIssues": [

@@ -19,6 +19,10 @@ import {
   Quotes,
   RevenueMetrics,
 } from "@/lib/data";
+import {
+  filterCommercialRecords,
+  isCommercialAccount,
+} from "@/lib/reporting/accountClassification";
 
 const formatUsd = (cents: number): string =>
   (cents / 100).toLocaleString("en-US", {
@@ -35,7 +39,7 @@ export default async function AdminHome() {
       Leads.listLeads({}),
       Appointments.listAppointments({}),
       Quotes.listQuoteRequests({}),
-      RevenueMetrics.getCurrentRevenueMetrics({}),
+      RevenueMetrics.listRevenueMetrics({}),
     ]);
 
   const accounts = orgsR.ok ? orgsR.data : [];
@@ -43,7 +47,13 @@ export default async function AdminHome() {
   const leads = leadsR.ok ? leadsR.data : [];
   const appointments = appointmentsR.ok ? appointmentsR.data : [];
   const quotes = quotesR.ok ? quotesR.data : [];
-  const revenue = revenueR.ok ? revenueR.data : null;
+  const commercialRevenue = filterCommercialRecords(
+    revenueR.ok ? revenueR.data : [],
+    accounts,
+  );
+  const revenue = commercialRevenue
+    .slice()
+    .sort((a, b) => b.period_start.localeCompare(a.period_start))[0] ?? null;
 
   const missed =
     revenue?.missed_calls ?? calls.filter((c) => c.status === "missed").length;
@@ -56,7 +66,9 @@ export default async function AdminHome() {
     leads.filter((l) => l.status === "qualified").length;
   const booked = revenue?.appointments_booked ?? appointments.length;
   const quoteCount = revenue?.quotes_requested ?? quotes.length;
-  const activeClients = accounts.filter((o) => o.status === "active").length;
+  const activeClients = accounts.filter(
+    (account) => isCommercialAccount(account) && account.status === "active",
+  ).length;
   const urgentLeads = leads
     .filter((l) => l.urgency === "high" && ["new", "qualified", "booked"].includes(l.status))
     .slice(0, 3);

@@ -51,6 +51,7 @@ async function seedAccounts() {
       primary_phone: "+15555550100",
       timezone: "America/New_York",
       status: "active",
+      account_type: "customer",
     },
   });
 
@@ -66,6 +67,37 @@ async function seedAccounts() {
       primary_phone: "+15555550200",
       timezone: "America/New_York",
       status: "active",
+      account_type: "customer",
+    },
+  });
+
+  await prisma.account.upsert({
+    where: { id: "acct_internal_demo_tyrone" },
+    update: {},
+    create: {
+      id: "acct_internal_demo_tyrone",
+      name: "Tyrone Nelms",
+      slug: "tyrone-nelms",
+      industry: "professional-services",
+      primary_phone: "+15555550400",
+      timezone: "America/New_York",
+      status: "active",
+      account_type: "internal_demo",
+    },
+  });
+
+  await prisma.account.upsert({
+    where: { id: "acct_responseos_demo" },
+    update: {},
+    create: {
+      id: "acct_responseos_demo",
+      name: "ResponseOS Demo",
+      slug: "responseos-demo",
+      industry: "demo",
+      primary_phone: "+15555550500",
+      timezone: "America/New_York",
+      status: "active",
+      account_type: "sandbox",
     },
   });
 }
@@ -166,6 +198,20 @@ async function seedContacts() {
       state: "FL",
       zip: "33755",
       source: "sms",
+    },
+  });
+
+  await prisma.contact.upsert({
+    where: { id: "contact_tyrone_demo_recruiter" },
+    update: {},
+    create: {
+      id: "contact_tyrone_demo_recruiter",
+      account_id: "acct_internal_demo_tyrone",
+      first_name: "Jane",
+      last_name: "Smith",
+      phone: "+15555550499",
+      email: "jane.smith@example.com",
+      source: "manual",
     },
   });
 }
@@ -469,6 +515,8 @@ async function seedAppointments() {
   const BOOKING_1_END = new Date("2026-05-08T16:30:00.000Z");
   const BOOKING_2_START = new Date("2026-05-09T17:00:00.000Z");
   const BOOKING_2_END = new Date("2026-05-09T18:00:00.000Z");
+  const TYRONE_SCREEN_START = new Date("2026-08-13T18:00:00.000Z");
+  const TYRONE_SCREEN_END = new Date("2026-08-13T18:30:00.000Z");
 
   await prisma.appointment.upsert({
     where: { id: "booking_mock_1" },
@@ -501,6 +549,114 @@ async function seedAppointments() {
       end_time: BOOKING_2_END,
       status: "scheduled",
       location: "880 Gulf Blvd, Clearwater, FL 33755",
+    },
+  });
+
+  await prisma.appointment.upsert({
+    where: { id: "appointment_tyrone_recruiter_screen" },
+    update: {},
+    create: {
+      id: "appointment_tyrone_recruiter_screen",
+      account_id: "acct_internal_demo_tyrone",
+      contact_id: "contact_tyrone_demo_recruiter",
+      calendar_provider: "manual",
+      title: "Recruiter screening — Jane Smith",
+      start_time: TYRONE_SCREEN_START,
+      end_time: TYRONE_SCREEN_END,
+      status: "scheduled",
+      location: "Video call",
+      notes: "Synthetic fixture created by the mock professional receptionist.",
+    },
+  });
+}
+
+async function seedAgentProfiles() {
+  const fallback =
+    "I don't have verified information available for that, but I can note the question for Tyrone or help schedule a conversation with him.";
+  const profiles = [
+    {
+      id: "agent_profile_tyrone_recruiter",
+      name: "Recruiter Receptionist",
+      slug: "recruiter-receptionist",
+      profile_type: "recruiter_receptionist" as const,
+      is_default: true,
+      policy_json: { verified_only: true, unknown_claim_fallback: fallback },
+    },
+    {
+      id: "agent_profile_tyrone_consulting",
+      name: "Consulting Receptionist",
+      slug: "consulting-receptionist",
+      profile_type: "consulting_receptionist" as const,
+      is_default: false,
+      policy_json: { verified_only: true, unknown_claim_fallback: fallback },
+    },
+    {
+      id: "agent_profile_tyrone_professional",
+      name: "Professional Assistant",
+      slug: "professional-assistant",
+      profile_type: "professional_assistant" as const,
+      is_default: false,
+      policy_json: { verified_only: true, unknown_claim_fallback: fallback },
+    },
+    {
+      id: "agent_profile_tyrone_demo",
+      name: "Demo Mode",
+      slug: "demo-mode",
+      profile_type: "demo_mode" as const,
+      is_default: false,
+      policy_json: {
+        verified_only: true,
+        unknown_claim_fallback: fallback,
+        disclose_demo_workflow: true,
+      },
+    },
+  ];
+
+  for (const profile of profiles) {
+    await prisma.agentProfile.upsert({
+      where: { id: profile.id },
+      update: {},
+      create: {
+        account_id: "acct_internal_demo_tyrone",
+        enabled: true,
+        ...profile,
+      },
+    });
+  }
+}
+
+async function seedOpportunities() {
+  await prisma.opportunity.upsert({
+    where: { id: "opportunity_tyrone_censys_bsa" },
+    update: {},
+    create: {
+      id: "opportunity_tyrone_censys_bsa",
+      account_id: "acct_internal_demo_tyrone",
+      contact_id: "contact_tyrone_demo_recruiter",
+      appointment_id: "appointment_tyrone_recruiter_screen",
+      opportunity_type: "employment",
+      status: "scheduled",
+      interest_level: "high",
+      summary:
+        "Synthetic demo recruiter inquiry about systems analysis, AI automation, and stakeholder management.",
+      details_json: {
+        fixture: true,
+        company: "Censys",
+        roleTitle: "Business Systems Analyst",
+        recruiterName: "Jane Smith",
+        recruiterEmail: "jane.smith@example.com",
+        source: "demo_fixture",
+      },
+      questions_asked: [
+        "systems analysis experience",
+        "AI automation experience",
+        "stakeholder management",
+      ],
+      recommended_preparation: [
+        "Review the role description",
+        "Prepare approved systems-analysis examples",
+      ],
+      next_action: "Prepare for recruiter screening",
     },
   });
 }
@@ -1111,6 +1267,8 @@ async function main() {
   await seedCallTranscripts();
   await seedQaLogs();
   await seedWorkflowRuns();
+  await seedAgentProfiles();
+  await seedOpportunities();
   // WebhookEvent intentionally seeded empty per spec §5; the v0.3 ingest path
   // is the first writer.
 }

@@ -10,6 +10,7 @@ export const mockAccounts: Account[] = [
     primary_phone: "+15555550100",
     timezone: "America/New_York",
     status: "active",
+    account_type: "customer",
   }),
   MockAccount({
     id: "org_mock_2",
@@ -20,6 +21,29 @@ export const mockAccounts: Account[] = [
     primary_phone: "+15555550200",
     timezone: "America/New_York",
     status: "active",
+    account_type: "customer",
+  }),
+  MockAccount({
+    id: "acct_internal_demo_tyrone",
+    name: "Tyrone Nelms",
+    slug: "tyrone-nelms",
+    industry: "professional-services",
+    website_url: undefined,
+    primary_phone: "+15555550400",
+    timezone: "America/New_York",
+    status: "active",
+    account_type: "internal_demo",
+  }),
+  MockAccount({
+    id: "acct_responseos_demo",
+    name: "ResponseOS Demo",
+    slug: "responseos-demo",
+    industry: "demo",
+    website_url: undefined,
+    primary_phone: "+15555550500",
+    timezone: "America/New_York",
+    status: "active",
+    account_type: "sandbox",
   }),
 ];
 

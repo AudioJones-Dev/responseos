@@ -13,6 +13,8 @@ import { getMockCallSegments } from "@/lib/mock/callSegments";
 import { getMockCallTranscripts } from "@/lib/mock/callTranscripts";
 import { getMockQaLogs } from "@/lib/mock/qaLogs";
 import { getMockWorkflowRuns } from "@/lib/mock/workflowRuns";
+import { getMockAgentProfiles } from "@/lib/mock/agentProfiles";
+import { getMockOpportunities } from "@/lib/mock/opportunities";
 import { disconnectTestDb, normalize, prisma, resetAndSeedTestDb } from "./setup";
 
 function clean(value: unknown): unknown {
@@ -45,7 +47,18 @@ afterAll(async () => {
 describe("seeded mock fixture parity", () => {
   test("accounts match lib/mock accounts field-for-field", async () => {
     const rows = await prisma.account.findMany({ orderBy: { id: "asc" } });
-    expect(clean(normalize(rows))).toEqual(clean(getMockAccounts()));
+    const fixtures = [...getMockAccounts()].sort((a, b) => a.id.localeCompare(b.id));
+    expect(clean(normalize(rows))).toEqual(clean(fixtures));
+  });
+
+  test("agent profiles match lib/mock profiles field-for-field", async () => {
+    const rows = await prisma.agentProfile.findMany({ orderBy: { created_at: "asc" } });
+    expect(clean(normalize(rows))).toEqual(clean(getMockAgentProfiles()));
+  });
+
+  test("opportunities match lib/mock opportunities field-for-field", async () => {
+    const rows = await prisma.opportunity.findMany({ orderBy: { id: "asc" } });
+    expect(clean(normalize(rows))).toEqual(clean(getMockOpportunities()));
   });
 
   test("contacts match lib/mock contacts field-for-field", async () => {
@@ -121,8 +134,11 @@ describe("seeded mock fixture parity", () => {
       "notes",
     ];
     const rows = await prisma.appointment.findMany({ orderBy: { id: "asc" } });
+    const fixtures = [...getMockAppointments()].sort((a, b) =>
+      a.id.localeCompare(b.id),
+    );
     expect(clean(normalize(rows.map((row) => pick(row, keys))))).toEqual(
-      clean(getMockAppointments().map((row) => pick(row, keys))),
+      clean(fixtures.map((row) => pick(row, keys))),
     );
   });
 
