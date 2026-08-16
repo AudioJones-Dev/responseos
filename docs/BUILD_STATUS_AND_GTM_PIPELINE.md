@@ -8,6 +8,8 @@ This document answers one question: **what is actually built, what do the docs c
 
 > **Reading note.** Sections 1–3 are verified fact. Section 4 is the merge sheet. Section 5 is the pipeline. Section 6 lists the decisions only the founder can make — nothing in Section 6 is an engineering task.
 
+> **Update (#107).** Gate definitions now live in [`ops/RESPONSEOS_V0_3_READINESS_GATES.md`](./ops/RESPONSEOS_V0_3_READINESS_GATES.md) (Set A = mock-safe demo; Set B = live providers). Founder defaults for the hybrid narrative + demo carve-out are **ADR-0046**. `/api/audit-requests` is on the public allowlist and persists to the inbound prospect pool when a DB is present. Mock-only CAL interfaces landed separately in #108 and are the canonical implementation.
+
 ---
 
 ## 1. Headline

@@ -257,4 +257,40 @@ Reversible, no-authorization-needed drafts landed **on this branch, uncommitted*
 
 ---
 
-*ResponseOS — GTM Gap & Deployment Plan. Documentation/recommend-only. No deploys, no live providers, no positioning changes authorized by this document.*
+---
+
+## Addendum — closure progress (2026-08-06)
+
+Refreshed against `master` @ `83038d5` + this closure branch. Supersedes the Jul-12 “immediate actions” status where noted.
+
+### Closed / landed since Jul-12
+
+| Gap | Status |
+|---|---|
+| Doc stranding #89–#93 | ✅ Merged |
+| D2 fail-closed gate | ✅ `RESPONSEOS_REQUIRE_AUTH` on master (ADR-0039 / #96) |
+| D6 security headers | ✅ `next.config.ts` |
+| D8 docs PR pile | ✅ Mostly closed; #94 still open for remaining demo surface |
+| P1/P3/P9 doc canon | ✅ Largely reconciled |
+| Deploy containment | ✅ `vercel.json` disables `master` auto-deploy (#100) |
+
+### Defined this closure
+
+| Item | Artifact |
+|---|---|
+| **v0.3 readiness gates** | [`ops/RESPONSEOS_V0_3_READINESS_GATES.md`](./ops/RESPONSEOS_V0_3_READINESS_GATES.md) — Gate Set A (demo) vs Gate Set B (live) |
+| Founder defaults | **ADR-0046** — hybrid narrative, demo carve-out, defer live, manual invoice, `/audit` write path |
+| Demo runbook | [`ops/RESPONSEOS_DEMO_DEPLOY_RUNBOOK.md`](./ops/RESPONSEOS_DEMO_DEPLOY_RUNBOOK.md) |
+| BUILD_STATUS | [`BUILD_STATUS_AND_GTM_PIPELINE.md`](./BUILD_STATUS_AND_GTM_PIPELINE.md) |
+
+### PR #94 triage
+
+Keep demo pages (`operator-console`, `client-dashboard`) and checkpoint docs; **drop** any remaining `NODE_ENV`-based auth (superseded by ADR-0039). Rebase onto ADR-0046 / Gate Set A runbook before merge.
+
+### Still founder-operated (not engineering)
+
+- Promote hosted demo (secrets L-02 + Gate Set A go-live)
+- Separate written auth for live Gate Set B providers
+- Close issue #27 demo scope cut
+
+*ResponseOS — GTM Gap & Deployment Plan. Updated 2026-08-06.*

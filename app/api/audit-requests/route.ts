@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { createInboundAudit } from "@/lib/data/inboundAudits";
+import { notifyInboundAudit } from "@/lib/notify/inboundAudit";
 import {
   errorResponse,
   methodNotAllowed,
@@ -7,7 +9,8 @@ import {
 import { AuditRequestSchema } from "@/lib/validation/audit-request";
 
 // Public marketing capture for the /audit form. Unauthenticated by design —
-// it acknowledges the request only (mock). No CRM/provider write until v0.3.
+// persists to the inbound prospect pool when DB is available (ADR-0046).
+// No CRM/provider write until Gate Set B / live v0.3.
 export async function POST(req: Request) {
   const parsed = await safeJson(req);
   if (!parsed.ok) {
@@ -28,16 +31,26 @@ export async function POST(req: Request) {
     });
   }
 
-  const reference = `audit_${Date.now().toString(36)}`;
-  if (process.env.NODE_ENV !== "test") {
-    // Reference only — never log untrusted prospect PII to the server stream.
-    console.log(`[audit-request] mock capture ref=${reference}`);
+  const created = await createInboundAudit(result.data);
+  if (!created.ok) {
+    return errorResponse(500, {
+      code: created.error.code,
+      message: created.error.message,
+    });
   }
+
+  const notify = await notifyInboundAudit(created.data);
 
   return NextResponse.json({
     ok: true,
-    mock: true,
-    data: { reference, status: "received", ...result.data },
+    mock: !created.data.persisted,
+    data: {
+      reference: created.data.reference,
+      id: created.data.id,
+      status: created.data.status,
+      persisted: created.data.persisted,
+      notified: notify.notified,
+    },
   });
 }
 

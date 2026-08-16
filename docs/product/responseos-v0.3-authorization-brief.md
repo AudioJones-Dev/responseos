@@ -1,7 +1,7 @@
 # v0.3 Implementation Authorization Brief (decision checkpoint)
 
-**Status:** Decision-support brief. **This document authorizes nothing.** It exists so the operator can make a controlled yes/no on a single **mock-first** v0.3 slice without opening the live-integration gate. Live provider work begins only with a separate, explicit, written authorization referencing this brief.
-**Added:** 2026-06-03
+**Status:** Decision-support brief. **Mock-only CAL interface scaffolding (§1) is pre-authorized by ADR-0046.** Live provider work still begins only with a separate, explicit, written authorization referencing Gate Set B in [`../ops/RESPONSEOS_V0_3_READINESS_GATES.md`](../ops/RESPONSEOS_V0_3_READINESS_GATES.md).
+**Added:** 2026-06-03 · **Updated:** 2026-08-06 (ADR-0046)
 **Governing canon:** ADR-0001 (mock-first), ADR-0019 (v0.3 gate), ADR-0031/0032/0033/0036/0037 (provider baseline), and [`responseos-v0.3-provider-readiness.md`](./responseos-v0.3-provider-readiness.md).
 
 ---

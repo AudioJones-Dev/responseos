@@ -9,7 +9,7 @@
 - **v0.1** foundation shipped: internal operator console, read-only client dashboard, marketing surface, 11 typed domain models, mock provider adapters, canonical API envelopes.
 - **v0.2 Phases A–D** merged: real Postgres schema + deterministic seed (PR #5), auth + tenant-aware data access layer (PR #6), consumers routed through the v0.2 data layer (PR #7), integration test suite + Postgres-backed CI job (PR #12).
 - **v0.2 closeout** shipped: `Organization` → `Account` rename, `Booking` → `Appointment` rename, Clerk auth wiring, UI rebuild against `DESIGN.md` tokens, and remaining v0.2 data-model expansion (`provider_connections`, conversations / SMS, call segments / transcripts, workflow runs, QA logs, expanded audit logs).
-- **Live provider integrations are still gated to v0.3.** No Twilio / Retell / Vapi / Stripe / GHL / HubSpot calls run against real accounts from this repo. No production deploys.
+- **Live provider integrations are still gated to v0.3 Gate Set B.** No Twilio / Retell / Vapi / Stripe / GHL / HubSpot calls run against real accounts from this repo. Mock-safe demo deploys follow Gate Set A ([`docs/ops/RESPONSEOS_V0_3_READINESS_GATES.md`](./docs/ops/RESPONSEOS_V0_3_READINESS_GATES.md), ADR-0046).
 
 For the full version table and milestone state see [`docs/ROADMAP.md`](./docs/ROADMAP.md); for the per-PR history see [`docs/CHANGELOG.md`](./docs/CHANGELOG.md).
 
@@ -99,7 +99,7 @@ CI runs `validate` (lint → typecheck → test → build) and `integration` (Po
 
 - No Firebase.
 - No live provider integrations until v0.3 is explicitly authorized — `lib/providers/*` mocks stay in force.
-- No production deploys from this repo (no Vercel, no AWS) until v0.3 readiness gates clear.
+- No live-provider (Gate Set B) deploys until [`docs/ops/RESPONSEOS_V0_3_READINESS_GATES.md`](./docs/ops/RESPONSEOS_V0_3_READINESS_GATES.md) clears; mock-safe Gate Set A demo deploys follow ADR-0046.
 - ResponseOS is **not** HIPAA-certified. The HIPAA-ready lane is a future architectural pattern, not a current product capability.
 
 ## Where to read next

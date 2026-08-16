@@ -1,8 +1,8 @@
 # Deployment
 
-> **Hard rule:** do NOT deploy production from this repo yet. No Vercel production deploy, no AWS deploy — production deploys are gated to explicit v0.3 readiness approval. This document captures the **target** deployment posture so we can move fast when v0.3 unlocks.
+> **Hard rule:** do NOT promote a **live-provider / Gate Set B** production deploy until [`ops/RESPONSEOS_V0_3_READINESS_GATES.md`](./ops/RESPONSEOS_V0_3_READINESS_GATES.md) Gate Set B clears and live v0.3 is explicitly authorized. A **mock-safe demo deploy** (Gate Set A, ADR-0046) is the allowed near-term path — see [`ops/RESPONSEOS_DEMO_DEPLOY_RUNBOOK.md`](./ops/RESPONSEOS_DEMO_DEPLOY_RUNBOOK.md).
 >
-> **Current state.** GitHub remote is live (`audiojones-dev/responseos`) and CI runs on every push and PR — `validate` (lint + typecheck + unit test + build) and `integration` (Postgres 16 service container, `prisma migrate diff`, `prisma migrate deploy`, `prisma db seed`, integration tests, DB-backed build). **Staging-only** deploy scaffolding exists as a manual `workflow_dispatch` job (GitHub Environment `staging` + human approval). Automatic production deploy from `master` remains disabled (`vercel.json`). Operator steps: [`ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md`](./ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md).
+> **Current state.** GitHub remote is live (`audiojones-dev/responseos`) and CI runs on every push and PR — `validate` (lint + typecheck + unit test + build) and `integration` (Postgres 16 service container, `prisma migrate diff`, `prisma migrate deploy`, `prisma db seed`, integration tests, DB-backed build). **Staging-only** deploy scaffolding exists as a manual `workflow_dispatch` job (GitHub Environment `staging` + human approval). Automatic production deploy from `master` remains disabled (`vercel.json`). No Gate Set B deploy jobs yet. Operator steps: [`ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md`](./ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md).
 
 ## Three deployment lanes
 

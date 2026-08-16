@@ -3,9 +3,9 @@ import { z } from "zod";
 /**
  * Public marketing inbound — the "request a revenue recovery audit" form on
  * /audit. This is an UNAUTHENTICATED system boundary: prospects have no
- * session and no account, so it is deliberately separate from the
- * tenant-scoped Assessments data layer. The route only acknowledges the
- * request (mock capture) — no provider/CRM write until v0.3.
+ * session, so capture writes to the inbound pool account via
+ * `lib/data/inboundAudits` (ADR-0046). No live CRM/provider write until
+ * Gate Set B.
  */
 
 const trimmedString = (max: number) => z.string().trim().min(1).max(max);

@@ -68,6 +68,23 @@ async function seedAccounts() {
       status: "active",
     },
   });
+
+  // Inbound marketing pool for public `/audit` captures (ADR-0046). Not a
+  // client tenant — operator/aj_admin reads only via inboundAudits accessor.
+  await prisma.account.upsert({
+    where: { id: "org_inbound_prospects" },
+    update: {},
+    create: {
+      id: "org_inbound_prospects",
+      name: "Inbound Prospects",
+      slug: "inbound-prospects",
+      industry: "internal",
+      website_url: "https://responseos.example/audit",
+      primary_phone: "+15555550000",
+      timezone: "America/New_York",
+      status: "active",
+    },
+  });
 }
 
 async function seedUsers() {
