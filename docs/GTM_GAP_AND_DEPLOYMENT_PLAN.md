@@ -279,13 +279,13 @@ Refreshed against `master` @ `83038d5` + this closure branch. Supersedes the Jul
 | Item | Artifact |
 |---|---|
 | **v0.3 readiness gates** | [`ops/RESPONSEOS_V0_3_READINESS_GATES.md`](./ops/RESPONSEOS_V0_3_READINESS_GATES.md) — Gate Set A (demo) vs Gate Set B (live) |
-| Founder defaults | **ADR-0040** — hybrid narrative, demo carve-out, defer live, manual invoice, `/audit` write path |
+| Founder defaults | **ADR-0046** — hybrid narrative, demo carve-out, defer live, manual invoice, `/audit` write path |
 | Demo runbook | [`ops/RESPONSEOS_DEMO_DEPLOY_RUNBOOK.md`](./ops/RESPONSEOS_DEMO_DEPLOY_RUNBOOK.md) |
 | BUILD_STATUS | [`BUILD_STATUS_AND_GTM_PIPELINE.md`](./BUILD_STATUS_AND_GTM_PIPELINE.md) |
 
 ### PR #94 triage
 
-Keep demo pages (`operator-console`, `client-dashboard`) and checkpoint docs; **drop** any remaining `NODE_ENV`-based auth (superseded by ADR-0039). Rebase onto ADR-0040 / Gate Set A runbook before merge.
+Keep demo pages (`operator-console`, `client-dashboard`) and checkpoint docs; **drop** any remaining `NODE_ENV`-based auth (superseded by ADR-0039). Rebase onto ADR-0046 / Gate Set A runbook before merge.
 
 ### Still founder-operated (not engineering)
 

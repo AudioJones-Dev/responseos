@@ -3,7 +3,7 @@
  *
  * System boundary: unauthenticated prospects have no session. Writes land on
  * the dedicated inbound pool account (`org_inbound_prospects`) as draft
- * AssessmentReport rows (ADR-0040). When DATABASE_URL is absent, falls back to
+ * AssessmentReport rows (ADR-0046). When DATABASE_URL is absent, falls back to
  * an in-memory ring buffer so mock-first boot still acknowledges capture.
  */
 

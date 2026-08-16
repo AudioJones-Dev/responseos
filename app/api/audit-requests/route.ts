@@ -9,7 +9,7 @@ import {
 import { AuditRequestSchema } from "@/lib/validation/audit-request";
 
 // Public marketing capture for the /audit form. Unauthenticated by design —
-// persists to the inbound prospect pool when DB is available (ADR-0040).
+// persists to the inbound prospect pool when DB is available (ADR-0046).
 // No CRM/provider write until Gate Set B / live v0.3.
 export async function POST(req: Request) {
   const parsed = await safeJson(req);

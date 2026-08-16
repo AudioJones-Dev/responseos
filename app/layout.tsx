@@ -23,7 +23,7 @@ const SITE_TAGLINE = "ResponseOS — Business Memory · Revenue Recovery";
 const SITE_DESCRIPTION =
   "Explore a mock-safe ResponseOS demo designed to turn calls, notes, and follow-up into Business Memory for attributable Revenue Recovery.";
 
-// Social-card copy — hybrid narrative (ADR-0040 / ADR-0022).
+// Social-card copy — hybrid narrative (ADR-0046 / ADR-0022).
 const OG_TITLE = "Stop leaking memory, context, and missed revenue.";
 const OG_DESCRIPTION =
   "See a mock-safe demo of how ResponseOS is designed to turn service-business activity into Business Memory and attributable opportunities.";

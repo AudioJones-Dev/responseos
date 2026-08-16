@@ -4,7 +4,7 @@ import { z } from "zod";
  * Public marketing inbound — the "request a revenue recovery audit" form on
  * /audit. This is an UNAUTHENTICATED system boundary: prospects have no
  * session, so capture writes to the inbound pool account via
- * `lib/data/inboundAudits` (ADR-0040). No live CRM/provider write until
+ * `lib/data/inboundAudits` (ADR-0046). No live CRM/provider write until
  * Gate Set B.
  */
 

@@ -1,7 +1,7 @@
 # ResponseOS — Mock-Safe Demo Deploy Runbook
 
 **Status:** Operational checklist for Gate Set A ([`RESPONSEOS_V0_3_READINESS_GATES.md`](./RESPONSEOS_V0_3_READINESS_GATES.md)).
-**Does not authorize a deploy by itself** — founder must complete ADR-0040 Gate A1 and provision secrets (L-02).
+**Does not authorize a deploy by itself** — founder must complete ADR-0046 Gate A1 and provision secrets (L-02).
 
 ## Host topology (ADR-0019 / ADR-0026)
 

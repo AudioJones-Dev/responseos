@@ -3,9 +3,9 @@
 **Owner:** AJ Digital LLC / Audio Jones
 **Status:** Canonical checklist. Defines the phrase “v0.3 readiness gates” cited in `AGENTS.md`, `ROADMAP.md`, and deploy docs.
 **Date:** 2026-08-06
-**Canon:** ADR-0019 · ADR-0031–0037 · ADR-0039 · ADR-0040
+**Canon:** ADR-0019 · ADR-0031–0037 · ADR-0039 · ADR-0046
 
-> These gates are **two lists**. Conflating them is what blocked honest go-live language. A mock-safe hosted demo may clear **Gate Set A** without clearing **Gate Set B**. Live providers and paying-pilot phone/CRM traffic require **Gate Set B** plus written authorization (ADR-0040).
+> These gates are **two lists**. Conflating them is what blocked honest go-live language. A mock-safe hosted demo may clear **Gate Set A** without clearing **Gate Set B**. Live providers and paying-pilot phone/CRM traffic require **Gate Set B** plus written authorization (ADR-0046).
 
 ---
 
@@ -15,7 +15,7 @@ Clears a **production-facing, mock-safe hosted demo** (ADR-0019). No live Telnyx
 
 | # | Gate | Evidence |
 |---|---|---|
-| A1 | Founder authorizes the demo carve-out | ADR-0040 + ROADMAP carve-out |
+| A1 | Founder authorizes the demo carve-out | ADR-0046 + ROADMAP carve-out |
 | A2 | `RESPONSEOS_REQUIRE_AUTH=1` on the hosted env | Host env checklist |
 | A3 | Clerk keys present (`CLERK_SECRET_KEY`, publishable key) | Host env; no basic-auth shim |
 | A4 | Public allowlist includes marketing + demo + `/api/audit-requests` + `/api/health` | `lib/auth/route-protection.ts` |
@@ -44,7 +44,7 @@ Required before any live phone, SMS, CRM sync, or provider webhook mutation.
 
 | # | Gate | Evidence |
 |---|---|---|
-| B1 | Written v0.3 live-integration authorization | Separate written auth referencing ADR-0040 / authorization brief |
+| B1 | Written v0.3 live-integration authorization | Separate written auth referencing ADR-0046 / authorization brief |
 | B2 | CAL interfaces + mock adapters merged | `lib/providers/{carrier,voiceAgent,sms,crm,scheduling}` |
 | B3 | Provider enums include Telnyx + Calendly (and match ADR baseline) | Prisma migration + docs |
 | B4 | Webhook signature validation per ADR-0009 for every live provider before mutation | Route tests |
@@ -63,4 +63,4 @@ Required before any live phone, SMS, CRM sync, or provider webhook mutation.
 
 - [`RESPONSEOS_DEPLOYMENT_PLAN.md`](./RESPONSEOS_DEPLOYMENT_PLAN.md) — target topology; defers to **this** doc for gate definitions. Voice gateway + Redis remain **deferred** for the first live slice (ADR-0036).
 - [`responseos-v0.3-provider-readiness.md`](../product/responseos-v0.3-provider-readiness.md) — planning baseline; Gate Set B consumes it.
-- [`responseos-v0.3-authorization-brief.md`](../product/responseos-v0.3-authorization-brief.md) — mock-only CAL slice may proceed under ADR-0040 without clearing Gate Set B.
+- [`responseos-v0.3-authorization-brief.md`](../product/responseos-v0.3-authorization-brief.md) — mock-only CAL slice may proceed under ADR-0046 without clearing Gate Set B.

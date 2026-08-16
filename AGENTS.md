@@ -22,7 +22,7 @@ This file is the contract for any AI agent (Claude Code, Codex, etc.) working in
 - **No live provider integrations** until v0.3 is explicitly authorized. `lib/providers/*` mocks stay in force.
 - **No real secrets in the repo.** `.env.example` is placeholders only. If you need a credential to test, ask the human — don't paste one in.
 - **No Firebase.**
-- **No live-provider / Gate Set B production deploys** until [`docs/ops/RESPONSEOS_V0_3_READINESS_GATES.md`](./docs/ops/RESPONSEOS_V0_3_READINESS_GATES.md) Gate Set B clears and live v0.3 is explicitly authorized. A **mock-safe demo deploy** (Gate Set A, ADR-0040 / ADR-0019) is the allowed near-term carve-out — Clerk + `RESPONSEOS_REQUIRE_AUTH`, no live provider secrets.
+- **No live-provider / Gate Set B production deploys** until [`docs/ops/RESPONSEOS_V0_3_READINESS_GATES.md`](./docs/ops/RESPONSEOS_V0_3_READINESS_GATES.md) Gate Set B clears and live v0.3 is explicitly authorized. A **mock-safe demo deploy** (Gate Set A, ADR-0046 / ADR-0019) is the allowed near-term carve-out — Clerk + `RESPONSEOS_REQUIRE_AUTH`, no live provider secrets.
 - **Tenant isolation is non-negotiable.** Every read/write filters by `accountId` derived from the session, never from client input. See [`docs/SECURITY.md`](./docs/SECURITY.md).
 - **Webhook signature validation is mandatory** before any business mutation. See ADR-0009 in [`docs/DECISIONS.md`](./docs/DECISIONS.md).
 - **Provider adapters must fall back to mock** when env vars are missing. The app boots and runs without secrets at every version.

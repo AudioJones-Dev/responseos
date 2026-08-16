@@ -17,7 +17,7 @@ We capture every call, qualify every lead, automate the follow-up, book the appo
 
 ## What it is
 
-ResponseOS is the Business Memory system that delivers Revenue Recovery for service businesses (ADR-0022 / ADR-0040). Built on the OFFER + RECOVER frameworks. Operated by AJ Digital. White-labelable for partners.
+ResponseOS is the Business Memory system that delivers Revenue Recovery for service businesses (ADR-0022 / ADR-0046). Built on the OFFER + RECOVER frameworks. Operated by AJ Digital. White-labelable for partners.
 
 **Primary CTA:** Revenue Recovery Demo.
 

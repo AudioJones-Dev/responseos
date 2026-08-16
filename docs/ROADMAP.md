@@ -106,6 +106,6 @@ Architectural placement: [`architecture.md`](./architecture.md) § Future Knowle
 
 - No Firebase.
 - No real secrets in the repo.
-- No live-provider (Gate Set B) deploys until [`ops/RESPONSEOS_V0_3_READINESS_GATES.md`](./ops/RESPONSEOS_V0_3_READINESS_GATES.md) clears; mock-safe Gate Set A demo deploys follow ADR-0040.
+- No live-provider (Gate Set B) deploys until [`ops/RESPONSEOS_V0_3_READINESS_GATES.md`](./ops/RESPONSEOS_V0_3_READINESS_GATES.md) clears; mock-safe Gate Set A demo deploys follow ADR-0046.
 - Provider adapters fall back to mock when env vars are missing — the app must boot and run without live keys at every version.
 - ResponseOS is not HIPAA-certified or HIPAA-compliant out of the box. The HIPAA-ready lane is an architectural pattern, not a current product capability.

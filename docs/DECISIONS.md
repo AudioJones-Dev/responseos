@@ -805,7 +805,7 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 
 ---
 
-## ADR-0041 — Public web intake ledger and idempotency contract
+## ADR-0047 — Public web intake ledger and idempotency contract
 
 **Status:** Proposed (2026-08-06). Requires explicit operator acceptance before
 any schema migration or persistent `/audit` implementation. This proposal does

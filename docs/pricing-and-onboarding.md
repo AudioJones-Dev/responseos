@@ -19,7 +19,7 @@ Commercial strategy and onboarding workflow for ResponseOS. This is documentatio
 
 ## Why this exists
 
-ResponseOS is sold as a **Business Memory system that delivers revenue recovery** (ADR-0040), not as a generic "AI receptionist install." Public quotes use the **Recovery Core / Pro / Performance** table (matches the shipped site and `EngagementTier`). Memory capacity tiers (ADR-0028) stay planning-only until the v0.5 billing engine. First 1–3 pilots may invoice **manually** (Stripe Dashboard).
+ResponseOS is sold as a **Business Memory system that delivers revenue recovery** (ADR-0046), not as a generic "AI receptionist install." Public quotes use the **Recovery Core / Pro / Performance** table (matches the shipped site and `EngagementTier`). Memory capacity tiers (ADR-0028) stay planning-only until the v0.5 billing engine. First 1–3 pilots may invoice **manually** (Stripe Dashboard).
 
 That positioning only holds if every engagement starts with proof that revenue is leaking and that the client is operationally ready to plug it. So the commercial motion is two phases, in order:
 

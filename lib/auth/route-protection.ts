@@ -20,7 +20,7 @@ const PUBLIC_EXACT = new Set<string>([
   "/trust",
   "/api/health",
   // Lead-capture POST must stay reachable when RESPONSEOS_REQUIRE_AUTH is on
-  // (BUILD_STATUS §3e / ADR-0039 / ADR-0040).
+  // (BUILD_STATUS §3e / ADR-0039 / ADR-0046).
   "/api/audit-requests",
 ]);
 
