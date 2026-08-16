@@ -72,6 +72,58 @@ export async function listAppointments(params: {
   }
 }
 
+/**
+ * Creates an appointment in the session's effective tenant scope. The
+ * account is derived from the session, never from the caller's claim.
+ */
+export async function createAppointment(entry: {
+  accountId: string;
+  contactId: string;
+  calendarProvider: CalendarProvider;
+  title: string;
+  startTime: Date;
+  endTime: Date;
+  status?: AppointmentStatus;
+  externalEventId?: string;
+  leadEventId?: string;
+  location?: string;
+  notes?: string;
+}): Promise<Result<Appointment>> {
+  const scope = await withTenantScope(entry.accountId);
+  if (!scope.ok) return err(scope.error.code, scope.error.message);
+  if (!scope.effectiveAccountId) {
+    return err("invalid_input", "An account id is required.");
+  }
+
+  if (db === null) {
+    return err(
+      "not_available",
+      "createAppointment requires a database connection.",
+    );
+  }
+
+  try {
+    const row = await db.appointment.create({
+      data: {
+        account_id: scope.effectiveAccountId,
+        contact_id: entry.contactId,
+        lead_event_id: entry.leadEventId ?? null,
+        calendar_provider: entry.calendarProvider,
+        external_event_id: entry.externalEventId ?? null,
+        title: entry.title,
+        start_time: entry.startTime,
+        end_time: entry.endTime,
+        status: entry.status ?? "scheduled",
+        location: entry.location ?? null,
+        notes: entry.notes ?? null,
+      },
+    });
+    return ok(rowToAppointment(row));
+  } catch (e) {
+    return errFromThrown<Appointment>(e);
+  }
+}
+
 export async function getAppointmentById(id: string): Promise<Result<Appointment>> {
   const scope = await withTenantScope(undefined);
   if (!scope.ok) return err(scope.error.code, scope.error.message);

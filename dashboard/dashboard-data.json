@@ -460,6 +460,19 @@
       "blockedReason": "Requires explicit scoped approval for PR A from the live-call implementation brief; active target remains Telnyx + Sent.dm, with Linq migration kept behind the MessagingProvider boundary"
     },
     {
+      "id": "V-05",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Internal demo tenant + professional receptionist",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-08-11",
+      "due": "2026-08-11",
+      "ref": 116,
+      "refType": "pull"
+    },
+    {
       "id": "Q-01",
       "phase": "Testing & QA",
       "title": "Unit coverage expansion",

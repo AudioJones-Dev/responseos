@@ -5,6 +5,8 @@ const BOOKING_1_START = "2026-05-08T15:00:00.000Z";
 const BOOKING_1_END = "2026-05-08T16:30:00.000Z";
 const BOOKING_2_START = "2026-05-09T17:00:00.000Z";
 const BOOKING_2_END = "2026-05-09T18:00:00.000Z";
+const DEMO_APPOINTMENT_START = "2026-08-13T18:00:00.000Z";
+const DEMO_APPOINTMENT_END = "2026-08-13T18:30:00.000Z";
 
 export const mockAppointments: Appointment[] = [
   MockAppointment({
@@ -30,6 +32,20 @@ export const mockAppointments: Appointment[] = [
     end_time: BOOKING_2_END,
     status: "scheduled",
     location: "880 Gulf Blvd, Clearwater, FL 33755",
+  }),
+  MockAppointment({
+    id: "booking_tyrone_1",
+    account_id: "org_tyrone_1",
+    contact_id: "contact_tyrone_recruiter_1",
+    lead_event_id: undefined,
+    calendar_provider: "manual",
+    title: "Recruiter screen — Jane Smith (Northwind Systems)",
+    start_time: DEMO_APPOINTMENT_START,
+    end_time: DEMO_APPOINTMENT_END,
+    status: "scheduled",
+    location: undefined,
+    notes:
+      "Booked by the ResponseOS professional receptionist (recruiter_screen).",
   }),
 ];
 

@@ -38,6 +38,17 @@ const ASSESSMENT_SIGNED_AT = new Date("2026-04-23T17:30:00.000Z");
 const ENGAGEMENT_STARTED_AT = new Date("2026-04-24T13:00:00.000Z");
 const PILOT_ENDS_AT = new Date("2026-07-23T17:30:00.000Z");
 
+// Internal demo tenant anchors (ADR-0046). Fixed so the reference
+// account seeds byte-identically on every run.
+const DEMO_PROFILE_AT = new Date("2026-08-03T12:00:00.000Z");
+const DEMO_CALL_STARTED = new Date("2026-08-03T14:15:00.000Z");
+const DEMO_CALL_ENDED = new Date("2026-08-03T14:21:00.000Z");
+const DEMO_OPPORTUNITY_AT = new Date("2026-08-03T14:22:00.000Z");
+const DEMO_APPOINTMENT_START = new Date("2026-08-13T18:00:00.000Z");
+const DEMO_APPOINTMENT_END = new Date("2026-08-13T18:30:00.000Z");
+const DEMO_SMS_AT = new Date("2026-08-03T14:25:00.000Z");
+const DEMO_SMS_REPLY_AT = new Date("2026-08-03T14:31:00.000Z");
+
 async function seedAccounts() {
   await prisma.account.upsert({
     where: { id: "org_mock_1" },
@@ -66,6 +77,26 @@ async function seedAccounts() {
       primary_phone: "+15555550200",
       timezone: "America/New_York",
       status: "active",
+    },
+  });
+
+  // ResponseOS reference tenant (ADR-0046). An ordinary account in
+  // every respect — same accessors, same isolation, same audit — with
+  // `internal_demo` classification so it never counts as customer
+  // revenue.
+  await prisma.account.upsert({
+    where: { id: "org_tyrone_1" },
+    update: {},
+    create: {
+      id: "org_tyrone_1",
+      name: "Tyrone Nelms",
+      slug: "tyrone-nelms",
+      industry: "professional-services",
+      website_url: "https://tyronenelms.example",
+      primary_phone: "+15555550700",
+      timezone: "America/New_York",
+      status: "active",
+      account_type: "internal_demo",
     },
   });
 }
@@ -110,6 +141,20 @@ async function seedUsers() {
       name: "Sunshine Office Manager",
       email: "manager@sunshine-hvac.example",
       phone: "+15555550102",
+    },
+  });
+
+  // Owner of the internal demo tenant.
+  await prisma.user.upsert({
+    where: { id: "user_tyrone_1" },
+    update: {},
+    create: {
+      id: "user_tyrone_1",
+      account_id: "org_tyrone_1",
+      role: "client_admin",
+      name: "Tyrone Nelms",
+      email: "tyrone@tyronenelms.example",
+      phone: "+15555550700",
     },
   });
 }
@@ -166,6 +211,21 @@ async function seedContacts() {
       state: "FL",
       zip: "33755",
       source: "sms",
+    },
+  });
+
+  // Recruiter who reached the internal demo tenant's receptionist.
+  await prisma.contact.upsert({
+    where: { id: "contact_tyrone_recruiter_1" },
+    update: {},
+    create: {
+      id: "contact_tyrone_recruiter_1",
+      account_id: "org_tyrone_1",
+      first_name: "Jane",
+      last_name: "Smith",
+      phone: "+15555550701",
+      email: "jane.smith@northwind.example",
+      source: "call",
     },
   });
 }
@@ -257,6 +317,34 @@ async function seedCalls() {
       sentiment: "positive",
       spam_score: 0,
       lead_score: 79,
+    },
+  });
+
+  // Internal demo tenant — recruiter call answered by the professional
+  // receptionist. The transcript deliberately shows the receptionist
+  // declining to answer unverified career questions.
+  await prisma.call.upsert({
+    where: { id: "call_tyrone_1" },
+    update: {},
+    create: {
+      id: "call_tyrone_1",
+      account_id: "org_tyrone_1",
+      contact_id: "contact_tyrone_recruiter_1",
+      provider: "vapi",
+      direction: "inbound",
+      status: "answered",
+      from_number: "+15555550701",
+      to_number: "+15555550700",
+      started_at: DEMO_CALL_STARTED,
+      ended_at: DEMO_CALL_ENDED,
+      duration_seconds: 360,
+      transcript:
+        "Recruiter asked about business systems experience, AI implementation experience and stakeholder management. No verified career record is loaded, so each question was captured rather than answered, and a recruiter screen was scheduled.",
+      summary:
+        "Recruiter screen requested for a Business Systems Analyst role; three career questions captured for follow-up.",
+      sentiment: "positive",
+      spam_score: 0,
+      lead_score: 88,
     },
   });
 }
@@ -501,6 +589,24 @@ async function seedAppointments() {
       end_time: BOOKING_2_END,
       status: "scheduled",
       location: "880 Gulf Blvd, Clearwater, FL 33755",
+    },
+  });
+
+  // Internal demo tenant — recruiter screen booked by the receptionist.
+  await prisma.appointment.upsert({
+    where: { id: "booking_tyrone_1" },
+    update: {},
+    create: {
+      id: "booking_tyrone_1",
+      account_id: "org_tyrone_1",
+      contact_id: "contact_tyrone_recruiter_1",
+      calendar_provider: "manual",
+      title: "Recruiter screen — Jane Smith (Northwind Systems)",
+      start_time: DEMO_APPOINTMENT_START,
+      end_time: DEMO_APPOINTMENT_END,
+      status: "scheduled",
+      notes:
+        "Booked by the ResponseOS professional receptionist (recruiter_screen).",
     },
   });
 }
@@ -781,6 +887,23 @@ async function seedAuditLogs() {
       expires_at: new Date("2026-05-04T17:30:00.000Z"),
       created_at: new Date("2026-05-04T16:30:00.000Z"),
     },
+    // Internal demo tenant — the receptionist's own write path is
+    // audited exactly like a customer tenant's.
+    {
+      id: "audit_tyrone_1",
+      account_id: "org_tyrone_1",
+      actor_user_id: null,
+      actor_type: "system",
+      action: "professional.opportunity.created",
+      category: "workflow",
+      target_type: "ProfessionalOpportunity",
+      target_id: "popp_tyrone_1",
+      metadata_json: {
+        agent_profile_id: "agent_tyrone_recruiter",
+        opportunity_type: "employment",
+      },
+      created_at: DEMO_OPPORTUNITY_AT,
+    },
   ];
 
   for (const data of rows) {
@@ -875,6 +998,21 @@ async function seedConversations() {
       created_at: CONV_2_LAST_MESSAGE,
     },
   });
+
+  await prisma.conversation.upsert({
+    where: { id: "conv_tyrone_1" },
+    update: {},
+    create: {
+      id: "conv_tyrone_1",
+      account_id: "org_tyrone_1",
+      contact_id: "contact_tyrone_recruiter_1",
+      business_number: "+15555550700",
+      peer_number: "+15555550701",
+      status: "open",
+      last_message_at: DEMO_SMS_REPLY_AT,
+      created_at: DEMO_SMS_AT,
+    },
+  });
 }
 
 async function seedSmsMessages() {
@@ -957,6 +1095,46 @@ async function seedSmsMessages() {
       created_at: SMS_4_AT,
     },
   });
+
+  await prisma.smsMessage.upsert({
+    where: { id: "sms_tyrone_1" },
+    update: {},
+    create: {
+      id: "sms_tyrone_1",
+      account_id: "org_tyrone_1",
+      conversation_id: "conv_tyrone_1",
+      provider: "manual",
+      provider_message_id: "SM_tyrone_1",
+      direction: "outbound",
+      from_number: "+15555550700",
+      to_number: "+15555550701",
+      body: "Recruiter screen confirmed for Aug 13, 2:00pm ET. Your three questions were passed along for Tyrone to answer directly.",
+      status: "delivered",
+      segment_count: 1,
+      sent_at: DEMO_SMS_AT,
+      delivered_at: DEMO_SMS_AT,
+      created_at: DEMO_SMS_AT,
+    },
+  });
+
+  await prisma.smsMessage.upsert({
+    where: { id: "sms_tyrone_2" },
+    update: {},
+    create: {
+      id: "sms_tyrone_2",
+      account_id: "org_tyrone_1",
+      conversation_id: "conv_tyrone_1",
+      provider: "manual",
+      provider_message_id: "SM_tyrone_2",
+      direction: "inbound",
+      from_number: "+15555550701",
+      to_number: "+15555550700",
+      body: "Great — I'll send the role description before the call.",
+      status: "received",
+      segment_count: 1,
+      created_at: DEMO_SMS_REPLY_AT,
+    },
+  });
 }
 
 // --- v0.2 closeout step 2.3, PR 31B — call intelligence substrate seeds ---
@@ -1005,6 +1183,56 @@ async function seedCallSegments() {
       created_at: SEG_2_END,
     },
   });
+
+  const demoTurns = [
+    {
+      id: "seg_tyrone_1",
+      sequence: 1,
+      speaker: "caller" as const,
+      text: "Hi — I'm a recruiter at Northwind Systems. Can you tell me about Tyrone's business systems experience?",
+      confidence: 0.94,
+      offsetSeconds: 0,
+    },
+    {
+      id: "seg_tyrone_2",
+      sequence: 2,
+      speaker: "agent" as const,
+      text: "I don't have verified information available for that, but I can note the question for Tyrone or help schedule a conversation with Tyrone.",
+      confidence: 0.97,
+      offsetSeconds: 12,
+    },
+    {
+      id: "seg_tyrone_3",
+      sequence: 3,
+      speaker: "caller" as const,
+      text: "Let's schedule a recruiter screen for the Business Systems Analyst role.",
+      confidence: 0.95,
+      offsetSeconds: 24,
+    },
+  ];
+
+  for (const turn of demoTurns) {
+    const startedAt = new Date(
+      DEMO_CALL_STARTED.getTime() + turn.offsetSeconds * 1_000,
+    );
+    const endedAt = new Date(startedAt.getTime() + 10_000);
+    await prisma.callSegment.upsert({
+      where: { id: turn.id },
+      update: {},
+      create: {
+        id: turn.id,
+        account_id: "org_tyrone_1",
+        call_id: "call_tyrone_1",
+        sequence: turn.sequence,
+        speaker: turn.speaker,
+        text: turn.text,
+        confidence: turn.confidence,
+        started_at: startedAt,
+        ended_at: endedAt,
+        created_at: endedAt,
+      },
+    });
+  }
 }
 
 async function seedCallTranscripts() {
@@ -1020,6 +1248,21 @@ async function seedCallTranscripts() {
       language: "en",
       retention_lane: "full",
       created_at: TRANSCRIPT_CREATED_AT,
+    },
+  });
+
+  await prisma.callTranscript.upsert({
+    where: { id: "xcr_tyrone_1" },
+    update: {},
+    create: {
+      id: "xcr_tyrone_1",
+      account_id: "org_tyrone_1",
+      call_id: "call_tyrone_1",
+      inline_text:
+        "Recruiter asked about business systems experience, AI implementation experience and stakeholder management. No verified career record is loaded, so each question was captured rather than answered, and a recruiter screen was scheduled.",
+      language: "en",
+      retention_lane: "full",
+      created_at: DEMO_CALL_ENDED,
     },
   });
 }
@@ -1043,6 +1286,29 @@ async function seedQaLogs() {
       notes: "Caller qualified; estimate visit scheduled.",
       reviewed_at: QA_REVIEWED_AT,
       created_at: QA_REVIEWED_AT,
+    },
+  });
+
+  await prisma.qaLog.upsert({
+    where: { id: "qa_tyrone_1" },
+    update: {},
+    create: {
+      id: "qa_tyrone_1",
+      account_id: "org_tyrone_1",
+      call_id: "call_tyrone_1",
+      rubric_version: "v1",
+      reviewer_type: "system",
+      score: 91,
+      findings_json: {
+        greeting: "pass",
+        grounding: "pass",
+        unverified_claim_avoided: "pass",
+        next_step: "pass",
+      },
+      notes:
+        "Receptionist declined all three unverified career questions and captured them instead; recruiter screen scheduled.",
+      reviewed_at: DEMO_OPPORTUNITY_AT,
+      created_at: DEMO_OPPORTUNITY_AT,
     },
   });
 }
@@ -1089,6 +1355,170 @@ async function seedWorkflowRuns() {
       created_at: WFR_2_STARTED,
     },
   });
+
+  await prisma.workflowRun.upsert({
+    where: { id: "wfr_tyrone_1" },
+    update: {},
+    create: {
+      id: "wfr_tyrone_1",
+      account_id: "org_tyrone_1",
+      workflow_run_id: "internal_run_tyrone_1",
+      workflow_id: "professional_opportunity_intake",
+      provider: "internal",
+      trigger_event_id: "call_tyrone_1",
+      status: "completed",
+      started_at: DEMO_OPPORTUNITY_AT,
+      ended_at: DEMO_OPPORTUNITY_AT,
+      created_at: DEMO_OPPORTUNITY_AT,
+    },
+  });
+}
+
+// --- Internal demo professional receptionist (ADR-0046) -------------------
+
+async function seedAgentProfiles() {
+  const profiles: Array<
+    Parameters<typeof prisma.agentProfile.create>[0]["data"]
+  > = [
+    {
+      id: "agent_tyrone_consulting",
+      account_id: "org_tyrone_1",
+      name: "Consulting Receptionist",
+      slug: "consulting-receptionist",
+      type: "consulting_receptionist",
+      enabled: true,
+      is_default: false,
+      system_policy_json: {
+        allowedAppointmentTypes: ["consulting_discovery"],
+        allowedAssetTypes: ["portfolio", "case_study"],
+        compensationDisclosure: "escalate",
+        referencesDisclosure: "escalate",
+        knowledgeFallback: "verified_only",
+      },
+      metadata_json: {
+        description:
+          "Qualifies consulting and advisory inquiries, captures the operational problem, and routes discovery calls.",
+      },
+      created_at: DEMO_PROFILE_AT,
+      updated_at: DEMO_PROFILE_AT,
+    },
+    {
+      id: "agent_tyrone_demo",
+      account_id: "org_tyrone_1",
+      name: "Demo Mode",
+      slug: "demo-mode",
+      type: "demo_mode",
+      enabled: true,
+      is_default: false,
+      system_policy_json: {
+        allowedAppointmentTypes: ["demo"],
+        allowedAssetTypes: [],
+        compensationDisclosure: "escalate",
+        referencesDisclosure: "escalate",
+        knowledgeFallback: "verified_only",
+      },
+      metadata_json: {
+        description:
+          "Narrates the ResponseOS workflow being exercised during a live demonstration while staying grounded in this account's real records.",
+      },
+      created_at: DEMO_PROFILE_AT,
+      updated_at: DEMO_PROFILE_AT,
+    },
+    {
+      id: "agent_tyrone_professional",
+      account_id: "org_tyrone_1",
+      name: "Professional Assistant",
+      slug: "professional-assistant",
+      type: "professional_assistant",
+      enabled: true,
+      is_default: false,
+      system_policy_json: {
+        allowedAppointmentTypes: ["professional_intro"],
+        allowedAssetTypes: ["portfolio", "linkedin"],
+        compensationDisclosure: "escalate",
+        referencesDisclosure: "escalate",
+        knowledgeFallback: "verified_only",
+      },
+      metadata_json: {
+        description:
+          "General professional front door — who Tyrone is, what he works on, and how to reach him.",
+      },
+      created_at: DEMO_PROFILE_AT,
+      updated_at: DEMO_PROFILE_AT,
+    },
+    {
+      id: "agent_tyrone_recruiter",
+      account_id: "org_tyrone_1",
+      name: "Recruiter Receptionist",
+      slug: "recruiter-receptionist",
+      type: "recruiter_receptionist",
+      enabled: true,
+      is_default: true,
+      system_policy_json: {
+        allowedAppointmentTypes: [
+          "recruiter_screen",
+          "hiring_manager_interview",
+        ],
+        allowedAssetTypes: ["resume", "portfolio", "linkedin", "github"],
+        compensationDisclosure: "escalate",
+        referencesDisclosure: "escalate",
+        knowledgeFallback: "verified_only",
+      },
+      metadata_json: {
+        description:
+          "Answers verified questions about Tyrone Nelms' professional experience, projects and capabilities, captures recruiting opportunities, and helps schedule interviews.",
+      },
+      created_at: DEMO_PROFILE_AT,
+      updated_at: DEMO_PROFILE_AT,
+    },
+  ];
+
+  for (const data of profiles) {
+    await prisma.agentProfile.upsert({
+      where: { id: data.id! },
+      update: {},
+      create: data,
+    });
+  }
+}
+
+async function seedProfessionalOpportunities() {
+  await prisma.professionalOpportunity.upsert({
+    where: { id: "popp_tyrone_1" },
+    update: {},
+    create: {
+      id: "popp_tyrone_1",
+      account_id: "org_tyrone_1",
+      contact_id: "contact_tyrone_recruiter_1",
+      agent_profile_id: "agent_tyrone_recruiter",
+      opportunity_type: "employment",
+      company: "Northwind Systems",
+      role_title: "Business Systems Analyst",
+      recruiter_name: "Jane Smith",
+      recruiter_email: "jane.smith@northwind.example",
+      recruiter_phone: "+15555550701",
+      interest_level: "high",
+      status: "scheduled",
+      source_call_id: "call_tyrone_1",
+      source_conversation_id: "conv_tyrone_1",
+      appointment_id: "booking_tyrone_1",
+      questions_asked: [
+        "business systems experience",
+        "AI implementation experience",
+        "stakeholder management",
+      ],
+      summary:
+        "Recruiter screen requested for a Business Systems Analyst role. Career questions were not answered from memory — no verified Career OS record is loaded, so each one was captured for follow-up.",
+      recommended_preparation: [
+        "review the company platform",
+        "prepare an operations case study",
+        "prepare a business systems transformation example",
+      ],
+      next_action: "prepare for recruiter interview",
+      created_at: DEMO_OPPORTUNITY_AT,
+      updated_at: DEMO_OPPORTUNITY_AT,
+    },
+  });
 }
 
 async function main() {
@@ -1111,6 +1541,8 @@ async function main() {
   await seedCallTranscripts();
   await seedQaLogs();
   await seedWorkflowRuns();
+  await seedAgentProfiles();
+  await seedProfessionalOpportunities();
   // WebhookEvent intentionally seeded empty per spec §5; the v0.3 ingest path
   // is the first writer.
 }

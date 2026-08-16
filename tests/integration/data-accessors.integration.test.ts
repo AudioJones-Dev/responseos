@@ -39,7 +39,11 @@ describe("data accessors against Postgres", () => {
     const list = await Accounts.listAccounts();
     expect(list.ok).toBe(true);
     if (!list.ok) return;
-    expect(list.data.map((org) => org.id)).toEqual(["org_mock_1", "org_mock_2"]);
+    expect(list.data.map((org) => org.id)).toEqual([
+      "org_mock_1",
+      "org_mock_2",
+      "org_tyrone_1",
+    ]);
 
     const found = await Accounts.getAccountById("org_mock_1");
     expect(found.ok).toBe(true);
@@ -406,7 +410,11 @@ describe("data accessors against Postgres", () => {
     const list = await WorkflowRuns.listWorkflowRuns({});
     expect(list.ok).toBe(true);
     if (!list.ok) return;
-    expect(list.data.map((r) => r.id).sort()).toEqual(["wfr_mock_1", "wfr_mock_2"]);
+    expect(list.data.map((r) => r.id).sort()).toEqual([
+      "wfr_mock_1",
+      "wfr_mock_2",
+      "wfr_tyrone_1",
+    ]);
 
     const failed = await WorkflowRuns.listWorkflowRuns({ status: "failed" });
     expect(failed.ok).toBe(true);

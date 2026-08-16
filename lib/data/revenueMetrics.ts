@@ -1,9 +1,12 @@
 import "@/lib/serverOnlyGuard";
 import { db } from "@/lib/db/client";
+import { getMockAccounts } from "@/lib/mock/accounts";
 import {
   getCurrentMockRevenueMetrics,
   getMockRevenueMetrics,
 } from "@/lib/mock/revenueMetrics";
+import { CUSTOMER_REVENUE_ACCOUNT_TYPES } from "@/lib/revenue/customerRevenueScope";
+import type { AccountType } from "@/types/account";
 import type { RevenueMetrics } from "@/types/revenue";
 import { err, errFromThrown, ok, type Result } from "./result";
 import {
@@ -56,6 +59,31 @@ function rowToRev(row: RevRow): RevenueMetrics {
   };
 }
 
+/**
+ * Account ids that may appear in cross-tenant revenue rollups.
+ *
+ * Scoped (per-tenant) reads are untouched — an internal demo tenant can
+ * still see its own numbers. Only the unscoped operator rollup drops
+ * non-customer tenants, so dogfooding activity never inflates paid
+ * customer counts or recovered customer revenue (ADR-0046).
+ */
+async function customerAccountIds(): Promise<string[]> {
+  if (db === null) {
+    return getMockAccounts()
+      .filter((account) =>
+        CUSTOMER_REVENUE_ACCOUNT_TYPES.includes(account.account_type),
+      )
+      .map((account) => account.id);
+  }
+  const rows = await db.account.findMany({
+    where: {
+      account_type: { in: CUSTOMER_REVENUE_ACCOUNT_TYPES as AccountType[] },
+    },
+    select: { id: true },
+  });
+  return rows.map((row) => row.id);
+}
+
 export async function listRevenueMetrics(params: {
   accountId?: string;
 }): Promise<Result<RevenueMetrics[]>> {
@@ -67,14 +95,15 @@ export async function listRevenueMetrics(params: {
     if (scope.effectiveAccountId) {
       return ok(all.filter((r) => r.account_id === scope.effectiveAccountId));
     }
-    return ok(all);
+    const customerIds = await customerAccountIds();
+    return ok(all.filter((r) => customerIds.includes(r.account_id)));
   }
 
   try {
     const rows = await db.revenueMetrics.findMany({
       where: scope.effectiveAccountId
         ? { account_id: scope.effectiveAccountId }
-        : undefined,
+        : { account_id: { in: await customerAccountIds() } },
       orderBy: { period_start: "desc" },
     });
     return ok(rows.map(rowToRev));
@@ -104,7 +133,7 @@ export async function getCurrentRevenueMetrics(params: {
     const row = await db.revenueMetrics.findFirst({
       where: scope.effectiveAccountId
         ? { account_id: scope.effectiveAccountId }
-        : undefined,
+        : { account_id: { in: await customerAccountIds() } },
       orderBy: { period_start: "desc" },
     });
     if (!row) return ok(null);

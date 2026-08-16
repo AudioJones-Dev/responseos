@@ -18,6 +18,17 @@ const statusTone: Record<string, Tone> = {
   churned: "danger",
 };
 
+/**
+ * Classification badge (ADR-0046). Non-customer tenants are labelled so
+ * an operator never mistakes dogfooding activity for customer activity.
+ */
+const accountTypeTone: Record<string, Tone> = {
+  customer: "neutral",
+  internal: "info",
+  internal_demo: "accent",
+  sandbox: "warning",
+};
+
 const titleCase = (s: string): string =>
   s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
@@ -40,13 +51,19 @@ export default async function AdminClientsPage() {
         />
       ) : (
         <Table>
-          <THead columns={["Client", "Slug", "Industry", "Status"]} />
+          <THead columns={["Client", "Slug", "Industry", "Type", "Status"]} />
           <TBody>
             {orgs.map((o) => (
               <TR key={o.id}>
                 <TD className="font-medium text-ink">{o.name}</TD>
                 <TD mono>{o.slug}</TD>
                 <TD>{titleCase(o.industry)}</TD>
+                <TD>
+                  <StatusBadge
+                    label={titleCase(o.account_type)}
+                    tone={accountTypeTone[o.account_type] ?? "neutral"}
+                  />
+                </TD>
                 <TD>
                   <StatusBadge
                     label={titleCase(o.status)}

@@ -95,7 +95,9 @@ describe("account read tenant matrix", () => {
     const result = await Accounts.listAccounts();
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(new Set(result.data.map((org) => org.id))).toEqual(new Set(["org_mock_1", "org_mock_2"]));
+    expect(new Set(result.data.map((org) => org.id))).toEqual(
+      new Set(["org_mock_1", "org_mock_2", "org_tyrone_1"]),
+    );
   });
 
   test("client_admin reads own tenant", async () => {
