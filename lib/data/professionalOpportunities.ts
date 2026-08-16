@@ -1,6 +1,7 @@
 import "@/lib/serverOnlyGuard";
 import { db } from "@/lib/db/client";
 import { getMockProfessionalOpportunities } from "@/lib/mock/professionalOpportunities";
+import { getAppointmentById } from "./appointments";
 import type {
   ProfessionalInterestLevel,
   ProfessionalOpportunity,
@@ -221,7 +222,12 @@ export async function createProfessionalOpportunity(entry: {
 
 /**
  * Links a booked appointment back to its opportunity and moves the row
- * to `scheduled`. Scoped the same way as the writer above.
+ * to `scheduled`.
+ *
+ * Both sides are authorized, not just the opportunity: a cross-tenant
+ * caller passes the opportunity check on any row, so the appointment's
+ * account is compared explicitly. Otherwise an appointment from tenant
+ * A could be linked onto an opportunity in tenant B.
  */
 export async function attachAppointmentToOpportunity(entry: {
   opportunityId: string;
@@ -229,6 +235,16 @@ export async function attachAppointmentToOpportunity(entry: {
 }): Promise<Result<ProfessionalOpportunity>> {
   const existing = await getProfessionalOpportunityById(entry.opportunityId);
   if (!existing.ok) return existing;
+
+  const appointment = await getAppointmentById(entry.appointmentId);
+  if (!appointment.ok) return appointment;
+
+  if (appointment.data.account_id !== existing.data.account_id) {
+    return err(
+      "tenant_scope_denied",
+      "Appointment and opportunity belong to different tenants.",
+    );
+  }
 
   if (db === null) {
     return err(

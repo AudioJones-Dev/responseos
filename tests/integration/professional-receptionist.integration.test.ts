@@ -153,14 +153,16 @@ describe("professional opportunities", () => {
   });
 
   test("escalation is audited and emitted without answering anything", async () => {
-    const receipt = await requestProfessionalEscalation({
+    const result = await requestProfessionalEscalation({
       accountId: DEMO_ACCOUNT,
       reason: "compensation question",
       category: "compensation",
       opportunityId: "popp_tyrone_1",
     });
-    expect(receipt.event).toBe("professional.escalation.requested");
-    expect(receipt.delivered).toBe(false);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.event).toBe("professional.escalation.requested");
+    expect(result.data.delivered).toBe(false);
 
     const audits = await prisma.auditLog.findMany({
       where: {
@@ -170,6 +172,22 @@ describe("professional opportunities", () => {
     });
     expect(audits).toHaveLength(1);
     expect(audits[0].reason).toBe("compensation question");
+  });
+
+  test("a tenant user cannot escalate against another tenant", async () => {
+    setDevSession("client_admin@org_mock_1");
+    const result = await requestProfessionalEscalation({
+      accountId: DEMO_ACCOUNT,
+      reason: "should not be recorded",
+      category: "compensation",
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe("tenant_scope_denied");
+
+    const audits = await prisma.auditLog.findMany({
+      where: { action: "professional.escalation.requested" },
+    });
+    expect(audits).toEqual([]);
   });
 });
 
@@ -215,6 +233,43 @@ describe("scheduling from the receptionist", () => {
     if (!linked.ok) return;
     expect(linked.data.appointment_id).toBe(booked.data.appointment.id);
     expect(linked.data.status).toBe("scheduled");
+  });
+
+  test("an out-of-scope opportunity is rejected before any booking or appointment is written", async () => {
+    const before = await prisma.appointment.count();
+    const denied = await bookProfessionalAppointment({
+      accountId: DEMO_ACCOUNT,
+      contactId: "contact_tyrone_recruiter_1",
+      opportunityId: "popp_does_not_exist",
+      appointmentType: "recruiter_screen",
+      slotId: "slot-1",
+      inviteeName: "Jane Smith",
+      inviteeEmail: "jane.smith@northwind.example",
+      title: "Should not be booked",
+      policy: parseAgentProfilePolicy({
+        allowedAppointmentTypes: ["recruiter_screen"],
+      }),
+    });
+    expect(denied.ok).toBe(false);
+    if (!denied.ok) expect(denied.error.code).toBe("not_found");
+    expect(await prisma.appointment.count()).toBe(before);
+  });
+
+  test("an appointment cannot be linked to an opportunity in another tenant", async () => {
+    const linked = await ProfessionalOpportunities.attachAppointmentToOpportunity(
+      {
+        opportunityId: "popp_tyrone_1",
+        // booking_mock_1 belongs to org_mock_1, not the demo tenant.
+        appointmentId: "booking_mock_1",
+      },
+    );
+    expect(linked.ok).toBe(false);
+    if (!linked.ok) expect(linked.error.code).toBe("tenant_scope_denied");
+
+    const row = await prisma.professionalOpportunity.findUnique({
+      where: { id: "popp_tyrone_1" },
+    });
+    expect(row?.appointment_id).toBe("booking_tyrone_1");
   });
 
   test("a type the profile does not allow is refused before anything is written", async () => {

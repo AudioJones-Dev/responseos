@@ -14,6 +14,7 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - **Reporting split:** non-`customer` tenants are excluded from cross-tenant revenue rollups while scoped per-tenant reads (and operational/QA metrics) still measure them.
 - Operator console: classification badge column on `/admin/clients` and a new `/admin/receptionist` view for agent profiles and professional opportunities.
 - **Two spec deviations recorded in ADR-0046** rather than silently applied: the example recruiter opportunity uses a synthetic company on an `.example` domain instead of a named real company (seed fake-only rule; doctrine §20), and the fallback line takes the owner name as an argument so no demo identity is compiled into shared logic.
+- **Tenant-scope hardening from PR review:** `attachAppointmentToOpportunity` now authorizes both sides (a cross-tenant operator could otherwise link tenant A's appointment onto tenant B's opportunity); `requestProfessionalEscalation` derives its account from the session instead of trusting the caller (`recordAuditLog` performs no tenant authorization of its own); and `bookProfessionalAppointment` resolves the opportunity before the first side effect, so a rejected request can no longer leave an orphan appointment behind.
 - Per ADR-0043, each new interface has exactly one adapter — architecture preparation, **not** proven provider portability. No live provider, no v0.3 gate change, no deploy.
 
 ## Unreleased — docs: close out the build status report; PR backlog fully drained
