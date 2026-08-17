@@ -31,6 +31,9 @@ describe("inbound audit database boundary", () => {
       email: "db-prospect@example.com",
       business_name: "Database HVAC",
       industry: "home_services",
+      monthly_missed_calls: 20,
+      avg_job_value_usd: 850,
+      close_rate_pct: 30,
     });
 
     expect(created.ok).toBe(true);
@@ -40,11 +43,17 @@ describe("inbound audit database boundary", () => {
       persisted: true,
       status: "draft",
     });
-    await expect(
-      prisma.assessmentReport.findUnique({ where: { id: created.data.id } }),
-    ).resolves.toMatchObject({
+    const stored = await prisma.assessmentReport.findUnique({
+      where: { id: created.data.id },
+    });
+    expect(stored).toMatchObject({
       account_id: INBOUND_PROSPECT_ACCOUNT_ID,
       status: "draft",
+    });
+    expect(stored?.inputs_json).toMatchObject({
+      monthly_missed_calls: 20,
+      avg_job_value_usd: 850,
+      close_rate_pct: 30,
     });
   });
 });

@@ -31,6 +31,11 @@ const optionalUsd = z.preprocess(
   z.coerce.number().nonnegative().max(10_000_000).optional(),
 );
 
+const optionalPercent = z.preprocess(
+  dropEmpty,
+  z.coerce.number().min(0).max(100).optional(),
+);
+
 export const AuditIndustrySchema = z.enum([
   "contractors",
   "home_services",
@@ -47,6 +52,7 @@ export const AuditRequestSchema = z.object({
   industry: AuditIndustrySchema.optional(),
   monthly_missed_calls: optionalCount,
   avg_job_value_usd: optionalUsd,
+  close_rate_pct: optionalPercent,
   notes: optionalText(2000),
 });
 export type AuditRequest = z.infer<typeof AuditRequestSchema>;

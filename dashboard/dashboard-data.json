@@ -425,6 +425,18 @@
       "blocked": false
     },
     {
+      "id": "GTM-04",
+      "phase": "Launch / Demo Deploy",
+      "title": "Homepage CRO, canonical brand assets, SEO and AI discovery",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-08-17",
+      "due": "2026-08-18",
+      "blocked": false
+    },
+    {
       "id": "I-01",
       "phase": "Integrations",
       "title": "Live voice integration (real adapter)",

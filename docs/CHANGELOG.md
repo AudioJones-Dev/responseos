@@ -4,6 +4,13 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: rebuild the homepage conversion and discovery path
+
+- Reworked the public homepage around the home-services pain point, an ungated visitor-input revenue-exposure estimator, source-labeled industry evidence, plain-language recovery steps, visible FAQs, and an estimate-to-audit handoff.
+- Extended the audit intake contract with optional `close_rate_pct`, server-validated URL prefilling, and copy that distinguishes planning estimates from verified or recovered revenue.
+- Replaced reconstructed header/footer marks and favicon exports with derivatives of the supplied ResponseOS raster artwork; refreshed the Open Graph card and documented source hashes and asset readiness.
+- Added canonical homepage metadata, JSON-LD, sitemap, robots policy (`OAI-SearchBot` allowed; `GPTBot` blocked), and an experimental `llms.txt`. No autonomous agent-submission API, external analytics, live provider, secret, deployment, or production activation was added.
+
 ## Unreleased — docs: close out the build status report; PR backlog fully drained
 
 - Recorded the final five merges — #98 (`b50d2f2`), #94 (`1250faf`), #108 (`a790ba3`), #105 (`96fdfed`), #103 (`897c866`) — leaving **#107 as the only open PR**. Noted #109/#110/#111/#112/#113 landing alongside.

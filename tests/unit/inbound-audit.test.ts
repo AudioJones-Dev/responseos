@@ -29,6 +29,9 @@ describe("inbound audit capture", () => {
       email: "pat@example.com",
       business_name: "Pat HVAC",
       industry: "home_services",
+      monthly_missed_calls: 20,
+      avg_job_value_usd: 850,
+      close_rate_pct: 30,
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -36,6 +39,7 @@ describe("inbound audit capture", () => {
     expect(result.data.persisted).toBe(false);
     expect(result.data.reference).toMatch(/^audit_/);
     expect(result.data.inputs.email).toBe("pat@example.com");
+    expect(result.data.inputs.close_rate_pct).toBe(30);
   });
 
   test("notifyInboundAudit logs without webhook", async () => {
