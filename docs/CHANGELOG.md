@@ -4,6 +4,20 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: lock the H0 Telnyx-to-HubSpot contract
+
+- Added additive `CrmSyncRequest` / `CrmSyncResult` contracts, supporting CRM-sync value types, the readonly `telnyx-hubspot-h0-v1` default policy, and deterministic request/result fixtures under `lib/providers/crm/`.
+- Review hardening keeps explicit provider, tenant, call, source-event, and policy identity on every result; lets the policy type represent separately gated note/deal states while defaults remain disabled; and keeps fixture completion time causally after the source event.
+- Locked the approved defaults: E.164 phone then verified email, ambiguous matches require review, existing fields are preserved/fill-empty-only, sanitized summaries only, and recording/note/deal creation remain disabled.
+- Added contract tests without expanding the existing `CrmProvider` methods. No schema, environment variable, secret, live adapter, network call, provider configuration, deployment, or CRM record changed; H1 and Stage G remain separately gated.
+- Current review-fix validation passed: lint, typecheck, 232 unit tests, and production build. Initial H0 validation also passed all nine migrations plus seed against ephemeral Postgres 16, 132 integration tests, and the database-backed production build; the temporary validation container was removed.
+
+## Unreleased — docs: specify Telnyx-to-HubSpot ingestion boundary
+
+- Added [`product/responseos-v0.3-telnyx-hubspot-ingestion-implementation-brief.md`](./product/responseos-v0.3-telnyx-hubspot-ingestion-implementation-brief.md), a Git Spec-ready definition of the ledger-first call-to-CRM contract, guarded contact resolution, HubSpot call mapping, idempotency, tenant isolation, staged work packages, validation, rollback, and open operator decisions.
+- Preserved the Demo-MVP sandbox boundary and the founding-pilot authorization ladder: the document authorizes no runtime, schema, credential, provider, CRM-record, deployment, or production change; live HubSpot staging remains gated on a separate Stage G approval.
+- Documentation/progress-board only. The HubSpot CLI personal-access key is explicitly excluded from runtime use.
+
 ## Unreleased — feat: internal demo account + professional receptionist (ADR-0046)
 
 - Added `Account.account_type` (`customer` / `internal` / `internal_demo` / `sandbox`) plus the `AgentProfile` and `ProfessionalOpportunity` tables in migration `0009`. Purely additive; `account_type` defaults to `customer`, so no existing row needed backfill.

@@ -460,6 +460,32 @@
       "blockedReason": "Requires explicit scoped approval for PR A from the live-call implementation brief; active target remains Telnyx + Sent.dm, with Linq migration kept behind the MessagingProvider boundary"
     },
     {
+      "id": "I-07",
+      "phase": "Integrations",
+      "title": "Telnyx-to-HubSpot ingestion implementation brief",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-08-16",
+      "due": "2026-08-16",
+      "blocked": true,
+      "blockedReason": "Documentation is ready for review; implementation requires separately scoped v0.3 work-package approvals, and live HubSpot staging remains deferred until founding-pilot Stage G"
+    },
+    {
+      "id": "I-08",
+      "phase": "Integrations",
+      "title": "H0 Telnyx-to-HubSpot contract lock",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-08-16",
+      "due": "2026-08-16",
+      "blocked": true,
+      "blockedReason": "H0 is implemented locally with deterministic mocks and contract tests; H1 CRM boundary expansion requires a separate scoped authorization"
+    },
+    {
       "id": "V-05",
       "phase": "v0.3 · Demo Scope",
       "title": "Internal demo tenant + professional receptionist",
