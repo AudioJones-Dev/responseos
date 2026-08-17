@@ -134,7 +134,7 @@ Deploy work (historical draft #14 or a replacement) stays **draft / blocked** un
 | **D — Live Telnyx (staging)** | Telnyx voice + SMS + signatures → ledger | Other live providers, prod | Stages A–C; readiness §7 for Telnyx |
 | **E — Live Vapi (staging)** | Vapi orchestration + tools/escalation | Prod | Stage D green |
 | **F — Live Twilio failover (staging)** | Failover drill + kill-switch | Prod | Stage E green |
-| **G — Live HubSpot (staging)** | CRM event sync (ledger remains internal SoR) | Prod | Stage F green (or parallel only if isolation tests cover both) |
+| **G — Live HubSpot (staging)** | CRM event sync (ledger remains internal SoR), implemented per the [`Telnyx-to-HubSpot ingestion brief`](./responseos-v0.3-telnyx-hubspot-ingestion-implementation-brief.md) | Prod | Stage F green (or parallel only if isolation tests cover both) |
 | **H — Live Calendly (staging)** | Booking webhooks → Appointment | Prod | Stage G green |
 | **I — Production founding pilot** | Prod app deploy + one Standard home-services tenant go-live | HIPAA, vault/RAG, Stripe outcome engine | §4 gates + Stages A–H |
 

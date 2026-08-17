@@ -16,6 +16,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:integration": "vitest run --config vitest.integration.config.ts",
+    "demo:reset": "tsx scripts/reset-demo-sandbox.ts",
     "dev:doppler": "doppler run -- next dev",
     "build:doppler": "doppler run -- next build",
     "start:doppler": "doppler run -- next start",

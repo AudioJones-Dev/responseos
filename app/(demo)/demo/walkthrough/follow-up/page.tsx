@@ -1,7 +1,12 @@
 import { PageHeader, Card, StatusBadge, AlertBanner, ButtonLink, Table, THead, TBody, TR, TD } from "@/components/ui";
-import { followUps, usdRange } from "../../../_data/scenario";
+import { connection } from "next/server";
+import { DemoDataBanner } from "../../../_components/DemoDataBanner";
+import { getWalkthroughScenario } from "../../../_data/getWalkthroughScenario";
+import { usdRange } from "../../../_data/scenario";
 
-export default function FollowUpQueue() {
+export default async function FollowUpQueue() {
+  await connection();
+  const { source, error, followUps } = await getWalkthroughScenario();
   return (
     <>
       <PageHeader
@@ -9,6 +14,8 @@ export default function FollowUpQueue() {
         title="What needs a human, and when"
         description="Prioritised by urgency and revenue at risk"
       />
+
+      <DemoDataBanner source={source} error={error} />
 
       <Table className="mb-6">
         <THead columns={["Lead", "Reason", "Owner", "Due", "Est. value", "Urgency", "CRM"]} />
@@ -24,7 +31,7 @@ export default function FollowUpQueue() {
                 <StatusBadge label={f.urgency} tone={f.urgency === "high" ? "danger" : "neutral"} />
               </TD>
               <TD>
-                <StatusBadge label={f.crmStatus} tone="success" />
+                <StatusBadge label={f.crmStatus} tone="warning" />
               </TD>
             </TR>
           ))}

@@ -4,6 +4,8 @@ import { resolveProvider } from "@/lib/providers/resolve"
 
 export * from "@/lib/providers/crm/types"
 export * from "@/lib/providers/crm/mock"
+export * from "@/lib/providers/crm/policy"
+export * from "@/lib/providers/crm/fixtures"
 
 export function getCrmProvider(): CrmProvider {
   return resolveProvider({

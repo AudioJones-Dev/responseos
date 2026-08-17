@@ -1,6 +1,9 @@
 import { PageHeader, Card, StatusBadge, AlertBanner, ButtonLink } from "@/components/ui";
+import { connection } from "next/server";
 import type { Tone } from "@/components/ui";
-import { integrations, type IntegrationState } from "../../../_data/scenario";
+import { DemoDataBanner } from "../../../_components/DemoDataBanner";
+import { getWalkthroughScenario } from "../../../_data/getWalkthroughScenario";
+import type { IntegrationState } from "../../../_data/scenario";
 
 const STATE: Record<IntegrationState, { label: string; tone: Tone }> = {
   synced: { label: "Synced", tone: "success" },
@@ -9,7 +12,9 @@ const STATE: Record<IntegrationState, { label: string; tone: Tone }> = {
   captured: { label: "Captured", tone: "accent" },
 };
 
-export default function IntegrationStatus() {
+export default async function IntegrationStatus() {
+  await connection();
+  const { source, error, integrations } = await getWalkthroughScenario();
   return (
     <>
       <PageHeader
@@ -17,6 +22,8 @@ export default function IntegrationStatus() {
         title="Everything you just saw ran on mock data"
         description="No live providers are connected in this walkthrough"
       />
+
+      <DemoDataBanner source={source} error={error} />
 
       <AlertBanner variant="warning" className="mb-6">
         Demo mode — provider integrations are mocked or disabled. No Telnyx, Vapi, HubSpot, SMS, or
