@@ -115,6 +115,7 @@ export async function listInboundAudits(params?: {
             industry: inputs.industry,
             monthly_missed_calls: inputs.monthly_missed_calls,
             avg_job_value_usd: inputs.avg_job_value_usd,
+            close_rate_pct: inputs.close_rate_pct,
             notes: inputs.notes,
           },
           created_at: row.created_at.toISOString(),

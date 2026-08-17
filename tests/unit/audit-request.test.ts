@@ -38,9 +38,11 @@ describe("validation/audit-request", () => {
       phone: "",
       monthly_missed_calls: "42",
       avg_job_value_usd: "850",
+      close_rate_pct: "35",
     });
     expect(parsed.monthly_missed_calls).toBe(42);
     expect(parsed.avg_job_value_usd).toBe(850);
+    expect(parsed.close_rate_pct).toBe(35);
     expect(parsed.phone).toBeUndefined();
   });
 
@@ -53,6 +55,15 @@ describe("validation/audit-request", () => {
   test("rejects negative missed-call counts", () => {
     expect(() =>
       AuditRequestSchema.parse({ ...valid, monthly_missed_calls: "-5" }),
+    ).toThrow();
+  });
+
+  test("rejects close rates outside 0 through 100", () => {
+    expect(() =>
+      AuditRequestSchema.parse({ ...valid, close_rate_pct: "100.1" }),
+    ).toThrow();
+    expect(() =>
+      AuditRequestSchema.parse({ ...valid, close_rate_pct: "-1" }),
     ).toThrow();
   });
 });

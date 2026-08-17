@@ -38,35 +38,33 @@ This is the copy spec for every public marketing page. It defines goal, audience
 ## 1. Home / landing — `/`
 
 - **Goal:** Establish the category and the leak; drive to the assessment.
-- **Audience:** Owner/operator or office manager of a founder-led service business (cold).
-- **Primary conversion action:** Book the Readiness Assessment.
+- **Audience:** Owner/operator or office manager of a phone-driven home-service business (cold); adjacent service businesses are secondary.
+- **Primary conversion action:** Complete the ungated revenue-exposure estimate, then request the Readiness Assessment.
 
 **Hero**
 
-- Headline options:
-  - A. "Stop paying for marketing that walks into voicemail."
-  - B. "Recover the revenue your business is already losing."
-  - C. "Revenue Recovery Infrastructure for founder-led service businesses."
-- Subhead: "ResponseOS captures every call, qualifies the lead, books the work, and reports the recovered revenue — across phone, text, and web. The receptionist is one input; ResponseOS is the recovery layer on top."
-- CTAs: Primary "Book the Readiness Assessment" → `/audit`. Secondary "See a demo" → `/demo`.
+- Headline: "Stop losing jobs you already paid to attract."
+- Subhead: "Missed calls, slow follow-up, and forgotten estimates turn paid-for demand into lost work. ResponseOS helps you find those leaks, estimate the revenue exposed, and build a practical recovery plan."
+- CTAs: Primary "Estimate my revenue leak" → calculator on `/`. Secondary "See how ResponseOS works" → `/demo`.
+- Disclosure: "The product preview uses sample data. Live phone, customer-management, and scheduling integrations are not active."
 
 **Section blocks**
 
-1. **The leak** — "Calls during jobs, after-hours inquiries, web leads nobody worked. You paid to make the phone ring; the revenue leaks silently." (Plain, no fear-mongering.)
-2. **The reframe** — "It's not an answering problem. It's a recovery problem." Short contrast with hiring/voicemail/AI-receptionist apps.
-3. **How it works — the RECOVER loop** — seven compact stages in buyer language: Revenue Leak Detection · Engagement Automation · Call Capture System · Outcome-Based Booking · Verification + Qualification · Economic ROI Tracking · Reporting + Retention. One line each.
-4. **What you get** — four outcome cards: missed-call response under 60s; AI inbound answering on your rules; self-schedule + self-quote; verified monthly ROI report.
-5. **The proof** — the 9 KPIs as a labeled grid (no fabricated values; show as "what we report," not "results we got").
-6. **Why not just an AI receptionist** — short block restating: a receptionist answers, ResponseOS recovers and proves it. Link to industries.
-7. **How we work** — two phases: paid assessment first, then implementation + retainer. No performance-only pricing.
-8. **Closing CTA banner** — "See what you're leaving in voicemail. Book the Readiness Assessment."
+1. **Revenue-exposure calculator** — missed new-customer calls × average booked job value × close rate. Show the result immediately with no email gate and label it as a planning estimate based only on visitor inputs.
+2. **External evidence** — source-labeled 2025–2026 contractor/homeowner survey findings with survey audience and methodology links. Never present them as ResponseOS results.
+3. **Where revenue leaks** — missed calls go cold; estimates disappear; results stay invisible.
+4. **The ResponseOS recovery method** — Capture the opportunity · Respond while interest is high · Keep follow-up moving · Tie outcomes to revenue.
+5. **Evidence, not AI hype** — human control, estimate-vs-verified separation, and an assessment that can say no-fit.
+6. **Home services first** — HVAC, plumbing, roofing, electrical, and general contracting.
+7. **Visible FAQ** — direct answers on the problem, formula, staff role, current integration status, and what happens after an audit request.
+8. **Closing CTA banner** — "Find the revenue leaks hiding in your current follow-up. Request my revenue audit."
 
-**Proof elements:** 9-KPI grid, the two-phase model, the under-60s response claim, framework transparency (RECOVER). No logos/testimonials until real ones exist (mark as a Future slot).
+**Proof elements:** transparent visitor-supplied formula, source-labeled industry research, fit/no-fit honesty, and explicit sample-data status. No client logos, testimonials, performance claims, or fabricated statistics until verified evidence exists.
 
 **SEO**
 
-- Title: "ResponseOS — Revenue Recovery Infrastructure for Service Businesses"
-- Meta: "ResponseOS captures missed calls, qualifies leads, books appointments, and reports recovered revenue for founder-led service businesses. Start with a Readiness Assessment."
+- Title: "Revenue Recovery for Home Service Businesses | ResponseOS"
+- Meta: "Find missed-call and follow-up leaks, estimate revenue exposure, and request a practical recovery audit for your home service business."
 
 ---
 
@@ -302,7 +300,7 @@ All copy must comply with [`./RESPONSEOS_BRAND_VOICE.md`](./RESPONSEOS_BRAND_VOI
 | White-label / partner marketing surfaces | **Phase 2** | Branded portals land in v0.3+; partner-facing copy is a separate spec |
 | Real customer logos / testimonials / case studies | **Future** | Only after real, attributable results exist; placeholder slots stay empty |
 | Additional verticals (auto repair, real estate, legal/medical) | **Future** | Each gated on its compliance lane (see [`../product-spec.md`](../product-spec.md)) |
-| Interactive ROI calculator on `/audit` | **Future** | Must label outputs illustrative until backed by real benchmarks |
+| Ungated revenue-exposure calculator on `/` | **MVP** | Uses visitor inputs only; labels output estimated and carries inputs into `/audit` |
 
 ---
 
@@ -310,7 +308,7 @@ All copy must comply with [`./RESPONSEOS_BRAND_VOICE.md`](./RESPONSEOS_BRAND_VOI
 
 - The seven routes above are the full public marketing surface for MVP; no blog/resources hub in scope yet.
 - The assessment is the single primary conversion site-wide; demo is the secondary path.
-- Visual system (dark-first, #FF4500 accent) is governed by [`../DESIGN.md`](../DESIGN.md); this spec covers copy only.
+- Visual system (true black, Signal Yellow `#E8FF5A`, restrained glass) is governed by [`../DESIGN.md`](../DESIGN.md); this spec covers copy only.
 
 ## Open questions
 

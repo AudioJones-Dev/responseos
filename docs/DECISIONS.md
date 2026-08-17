@@ -840,3 +840,23 @@ accepted decision must settle:
 `LeadEvent`, and `WorkflowRun` must not be repurposed to avoid this decision.
 The direct-write implementation in PR #107 is not merge-ready until this ADR is
 accepted and implemented or that persistence path is removed.
+
+---
+
+## ADR-0048 — Homepage conversion path: revenue-exposure estimate into the readiness assessment
+
+**Status:** Accepted (2026-08-17) by direct operator authorization of the homepage CRO, brand, SEO, and AEO implementation plan. Amends the homepage CTA portion of ADR-0035 and ADR-0046 without changing the named **Revenue Recovery Demo** experience. Authorizes no provider, secret, analytics vendor, merge, or deployment.
+
+**Context.** ADR-0035 and ADR-0046 made the Revenue Recovery Demo the single primary CTA. The public intake path now captures readiness-assessment requests, and the homepage needs a lower-friction way for a home-service owner to understand the problem using their own business inputs. The prior homepage also presented unverified speed and availability claims as proof and left the primary pain point less direct than the current home-services-first GTM direction.
+
+**Decision.**
+
+1. **Homepage conversion path:** an ungated revenue-exposure calculator is the primary homepage interaction; its result routes into the existing readiness and revenue-leak assessment with non-PII inputs prefilled. The assessment remains the commercial conversion and must be allowed to return a fit or no-fit recommendation.
+2. **Demo role:** **Revenue Recovery Demo** remains the name of the sample-data product walkthrough and the secondary homepage path. This ADR does not rename or retire the demo.
+3. **Estimate contract:** monthly missed new-customer calls × average booked job value × close-rate percentage. The UI labels the result **Estimated monthly revenue exposed**, attributes it only to visitor-supplied inputs, and never describes it as recovered, verified, guaranteed, or lost revenue.
+4. **Primary audience:** homepage copy leads with HVAC, plumbing, roofing, electrical, general contracting, and adjacent phone-driven home services. AI remains the mechanism, not the headline.
+5. **Evidence policy:** third-party industry figures must show the source, year, survey audience, and methodology link. They are supporting context, never ResponseOS performance or client results.
+6. **Discovery policy:** public marketing content may be exposed through canonical metadata, sitemap, JSON-LD, visible FAQ content, and an experimental `llms.txt`. `OAI-SearchBot` is allowed for search discovery; `GPTBot` is disallowed. This is machine-readable discovery only, not autonomous agent submission, purchasing, or product authority.
+7. **Status honesty:** the global demo banner may be replaced by an inline disclosure near preview and intake actions, provided the page still states that the preview uses sample data and no live providers are connected.
+
+**Consequences.** The homepage and copy specification move from demo-first to estimate → assessment, while `/demo` remains available for buyers who want to inspect the mechanism. `AuditRequest` gains optional `close_rate_pct`; the existing JSON input storage can retain it without a Prisma migration. External analytics remains a no-op/local contract until separately authorized under ADR-0018 and the live-provider gates.

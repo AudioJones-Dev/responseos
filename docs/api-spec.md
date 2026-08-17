@@ -98,7 +98,7 @@ Mock-safe mutation routes may include a `mock: true` flag inside the success env
 - `GET /api/reports/client/:accountId` → metrics list for one workspace
 
 ### Marketing capture
-- `POST /api/audit-requests` → public `/audit` form capture; validates payload and returns a mock-safe reference without provider/CRM writes.
+- `POST /api/audit-requests` → public `/audit` form capture; required body fields are `name`, `email`, and `business_name`. Optional fields are `phone`, `industry`, `monthly_missed_calls`, `avg_job_value_usd`, `close_rate_pct` (0–100), and `notes`. Returns a persisted or mock-safe reference without provider/CRM writes.
 
 ## Webhook routes
 

@@ -1,4 +1,4 @@
-import type { ComponentProps, ReactNode } from "react";
+import type { ComponentProps, MouseEventHandler, ReactNode } from "react";
 import Link from "next/link";
 import { cn } from "./cn";
 
@@ -52,6 +52,7 @@ export function ButtonLink({
   className,
   children,
   href,
+  onClick,
 }: {
   variant?: Variant;
   size?: Size;
@@ -59,9 +60,14 @@ export function ButtonLink({
   className?: string;
   children: ReactNode;
   href: string;
+  onClick?: MouseEventHandler<HTMLAnchorElement>;
 }) {
   return (
-    <Link href={href} className={cn(base, variants[variant], sizes[size], glow && glowCls, className)}>
+    <Link
+      href={href}
+      onClick={onClick}
+      className={cn(base, variants[variant], sizes[size], glow && glowCls, className)}
+    >
       {children}
     </Link>
   );

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Syne, Inter, JetBrains_Mono } from "next/font/google";
+import { getSiteUrl } from "@/lib/site";
 import "./globals.css";
 
 const syne = Syne({
@@ -19,17 +20,16 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 const SITE_NAME = "ResponseOS";
-const SITE_TAGLINE = "ResponseOS — Business Memory · Revenue Recovery";
+const SITE_TAGLINE = "ResponseOS — Revenue Recovery for Home Service Businesses";
 const SITE_DESCRIPTION =
-  "Explore a mock-safe ResponseOS demo designed to turn calls, notes, and follow-up into Business Memory for attributable Revenue Recovery.";
+  "Find missed-call and follow-up leaks, estimate revenue exposure, and request a practical recovery audit for your home service business.";
 
-// Social-card copy — hybrid narrative (ADR-0046 / ADR-0022).
-const OG_TITLE = "Stop leaking memory, context, and missed revenue.";
+const OG_TITLE = "Stop losing jobs you already paid to attract.";
 const OG_DESCRIPTION =
-  "See a mock-safe demo of how ResponseOS is designed to turn service-business activity into Business Memory and attributable opportunities.";
-const TWITTER_TITLE = "Business Memory that recovers missed revenue.";
+  "Find the missed-call and follow-up gaps exposing revenue in your home service business.";
+const TWITTER_TITLE = "Stop losing jobs you already paid to attract.";
 const TWITTER_DESCRIPTION =
-  "Mock demo: capture the call, qualify the lead, and trace the Revenue Recovery workflow.";
+  "Estimate your revenue exposure, then validate it with a practical recovery audit.";
 const OG_IMAGE = {
   url: "/og/responseos-og.png",
   width: 1200,
@@ -37,21 +37,8 @@ const OG_IMAGE = {
   alt: "ResponseOS — Business Memory · Revenue Recovery",
 };
 
-// A malformed NEXT_PUBLIC_APP_URL must not crash the build/boot — fall back.
-function resolveMetadataBase(): URL {
-  const fromEnv = process.env.NEXT_PUBLIC_APP_URL;
-  if (fromEnv) {
-    try {
-      return new URL(fromEnv);
-    } catch {
-      // fall through to the safe default
-    }
-  }
-  return new URL("http://localhost:3000");
-}
-
 export const metadata: Metadata = {
-  metadataBase: resolveMetadataBase(),
+  metadataBase: getSiteUrl(),
   title: {
     default: SITE_TAGLINE,
     template: "%s — ResponseOS",
@@ -73,8 +60,10 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon.svg", type: "image/svg+xml" },
       { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon-16.png", type: "image/png", sizes: "16x16" },
+      { url: "/favicon-32.png", type: "image/png", sizes: "32x32" },
+      { url: "/favicon-48.png", type: "image/png", sizes: "48x48" },
     ],
     apple: "/apple-touch-icon.png",
   },
