@@ -23,6 +23,7 @@
  */
 
 import { PrismaClient } from "@prisma/client";
+import { seedResponseOsDemoSandbox } from "./demo-sandbox";
 
 const prisma = new PrismaClient();
 
@@ -1543,6 +1544,7 @@ async function main() {
   await seedWorkflowRuns();
   await seedAgentProfiles();
   await seedProfessionalOpportunities();
+  await seedResponseOsDemoSandbox(prisma);
   // WebhookEvent intentionally seeded empty per spec §5; the v0.3 ingest path
   // is the first writer.
 }

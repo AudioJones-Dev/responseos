@@ -14,6 +14,7 @@ import {
   type IntegrationState,
 } from "@/app/(demo)/_data/scenario";
 import { isPublicPath } from "@/lib/auth/route-protection";
+import { getWalkthroughScenario } from "@/app/(demo)/_data/getWalkthroughScenario";
 
 /**
  * Smoke test for the mock-safe clickable demo walkthrough — the surface the
@@ -70,5 +71,13 @@ describe("demo walkthrough — smoke (D7)", () => {
   test("currency formatting helpers", () => {
     expect(usd(1500)).toBe("$1,500");
     expect(usdRange({ min: 1500, max: 4500 })).toBe("$1,500–$4,500");
+  });
+
+  test("uses an explicitly disclosed static fallback without a database", async () => {
+    const scenario = await getWalkthroughScenario();
+
+    expect(scenario.source).toBe("static-fallback");
+    expect(scenario.call.crmSyncStatus).toContain("Not synced");
+    expect(scenario.lead.hubspotDealId).toBe("No live HubSpot record");
   });
 });

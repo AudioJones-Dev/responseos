@@ -1,7 +1,12 @@
 import { PageHeader, Card, CardHeading, StatusBadge, MetricCard, ButtonLink } from "@/components/ui";
-import { call, usdRange } from "../../../_data/scenario";
+import { connection } from "next/server";
+import { DemoDataBanner } from "../../../_components/DemoDataBanner";
+import { getWalkthroughScenario } from "../../../_data/getWalkthroughScenario";
+import { usdRange } from "../../../_data/scenario";
 
-export default function CallIntelligence() {
+export default async function CallIntelligence() {
+  await connection();
+  const { source, error, call } = await getWalkthroughScenario();
   return (
     <>
       <PageHeader
@@ -11,9 +16,11 @@ export default function CallIntelligence() {
         actions={<StatusBadge label={`Urgency: ${call.urgency}`} tone="danger" />}
       />
 
+      <DemoDataBanner source={source} error={error} />
+
       <section className="mb-6 grid gap-4 sm:grid-cols-3">
         <MetricCard label="Qualification score" value={`${call.qualificationScore}/100`} hint={call.disposition} emphasis />
-        <MetricCard label="Est. opportunity" value={usdRange(call.revenueRange)} hint="Ramp repair / replacement" revenue />
+        <MetricCard label="Illustrative opportunity" value={usdRange(call.revenueRange)} hint="Not verified revenue" revenue />
         <MetricCard label="Disposition" value={call.intent} hint={call.appointmentStatus} />
       </section>
 
@@ -53,7 +60,7 @@ export default function CallIntelligence() {
               <div className="flex justify-between gap-3">
                 <dt className="text-ink-muted">Consent</dt>
                 <dd className="text-right text-ink">
-                  {call.consent.call ? "Call ✓" : "Call ✗"} · {call.consent.sms ? "SMS ✓" : "SMS ✗"}
+                  Not collected in this simulation
                 </dd>
               </div>
             </dl>
@@ -66,7 +73,7 @@ export default function CallIntelligence() {
               {call.nextAction.owner} · {call.nextAction.dueAt}
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
-              <StatusBadge label={call.crmSyncStatus} tone="success" />
+              <StatusBadge label={call.crmSyncStatus} tone="warning" />
               <StatusBadge label={call.memoryStatus} tone="accent" />
             </div>
           </Card>

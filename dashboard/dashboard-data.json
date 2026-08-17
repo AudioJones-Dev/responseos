@@ -499,6 +499,19 @@
       "refType": "pull"
     },
     {
+      "id": "V-06",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Persisted prospect sandbox walkthrough",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-08-17",
+      "due": "2026-08-17",
+      "blocked": true,
+      "blockedReason": "Local implementation and tests are ready for review; controlled staging deployment remains a separate human approval gate"
+    },
+    {
       "id": "Q-01",
       "phase": "Testing & QA",
       "title": "Unit coverage expansion",

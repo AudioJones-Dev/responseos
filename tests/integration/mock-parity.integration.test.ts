@@ -16,6 +16,7 @@ import { getMockWorkflowRuns } from "@/lib/mock/workflowRuns";
 import { getMockAgentProfiles } from "@/lib/mock/agentProfiles";
 import { getMockProfessionalOpportunities } from "@/lib/mock/professionalOpportunities";
 import { disconnectTestDb, normalize, prisma, resetAndSeedTestDb } from "./setup";
+import { RESPONSEOS_DEMO_ACCOUNT_ID } from "@/lib/demo/constants";
 
 function clean(value: unknown): unknown {
   if (value instanceof Date) return value.toISOString();
@@ -46,12 +47,18 @@ afterAll(async () => {
 
 describe("seeded mock fixture parity", () => {
   test("accounts match lib/mock accounts field-for-field", async () => {
-    const rows = await prisma.account.findMany({ orderBy: { id: "asc" } });
+    const rows = await prisma.account.findMany({
+      where: { id: { not: RESPONSEOS_DEMO_ACCOUNT_ID } },
+      orderBy: { id: "asc" },
+    });
     expect(clean(normalize(rows))).toEqual(clean(getMockAccounts()));
   });
 
   test("contacts match lib/mock contacts field-for-field", async () => {
-    const rows = await prisma.contact.findMany({ orderBy: { id: "asc" } });
+    const rows = await prisma.contact.findMany({
+      where: { account_id: { not: RESPONSEOS_DEMO_ACCOUNT_ID } },
+      orderBy: { id: "asc" },
+    });
     expect(clean(normalize(rows))).toEqual(clean(getMockContacts()));
   });
 
@@ -75,7 +82,10 @@ describe("seeded mock fixture parity", () => {
       "spam_score",
       "lead_score",
     ];
-    const rows = await prisma.call.findMany({ orderBy: { id: "asc" } });
+    const rows = await prisma.call.findMany({
+      where: { account_id: { not: RESPONSEOS_DEMO_ACCOUNT_ID } },
+      orderBy: { id: "asc" },
+    });
     expect(clean(normalize(rows.map((row) => pick(row, keys))))).toEqual(
       clean(getMockCalls().map((row) => pick(row, keys))),
     );
@@ -97,7 +107,10 @@ describe("seeded mock fixture parity", () => {
       "created_at",
       "updated_at",
     ];
-    const rows = await prisma.leadEvent.findMany({ orderBy: { id: "asc" } });
+    const rows = await prisma.leadEvent.findMany({
+      where: { account_id: { not: RESPONSEOS_DEMO_ACCOUNT_ID } },
+      orderBy: { id: "asc" },
+    });
     const fixtureRows = [...getMockLeadEvents()].sort((a, b) =>
       a.id.localeCompare(b.id),
     );
@@ -122,7 +135,10 @@ describe("seeded mock fixture parity", () => {
       "location",
       "notes",
     ];
-    const rows = await prisma.appointment.findMany({ orderBy: { id: "asc" } });
+    const rows = await prisma.appointment.findMany({
+      where: { account_id: { not: RESPONSEOS_DEMO_ACCOUNT_ID } },
+      orderBy: { id: "asc" },
+    });
     expect(clean(normalize(rows.map((row) => pick(row, keys))))).toEqual(
       clean(getMockAppointments().map((row) => pick(row, keys))),
     );
@@ -141,7 +157,10 @@ describe("seeded mock fixture parity", () => {
       "estimated_value",
       "status",
     ];
-    const rows = await prisma.quoteRequest.findMany({ orderBy: { id: "asc" } });
+    const rows = await prisma.quoteRequest.findMany({
+      where: { account_id: { not: RESPONSEOS_DEMO_ACCOUNT_ID } },
+      orderBy: { id: "asc" },
+    });
     expect(clean(normalize(rows.map((row) => pick(row, keys))))).toEqual(
       clean(getMockQuoteRequests().map((row) => pick(row, keys))),
     );
@@ -234,7 +253,10 @@ describe("seeded mock fixture parity", () => {
       "started_at",
       "ended_at",
     ];
-    const rows = await prisma.callSegment.findMany({ orderBy: { id: "asc" } });
+    const rows = await prisma.callSegment.findMany({
+      where: { account_id: { not: RESPONSEOS_DEMO_ACCOUNT_ID } },
+      orderBy: { id: "asc" },
+    });
     expect(clean(normalize(rows.map((row) => pick(row, keys))))).toEqual(
       clean(getMockCallSegments().map((row) => pick(row, keys))),
     );
@@ -255,6 +277,7 @@ describe("seeded mock fixture parity", () => {
       "redacted_at",
     ];
     const rows = await prisma.callTranscript.findMany({
+      where: { account_id: { not: RESPONSEOS_DEMO_ACCOUNT_ID } },
       orderBy: { id: "asc" },
       select: {
         id: true,
@@ -319,7 +342,10 @@ describe("seeded mock fixture parity", () => {
       "error_message",
       "payload_json",
     ];
-    const rows = await prisma.workflowRun.findMany({ orderBy: { id: "asc" } });
+    const rows = await prisma.workflowRun.findMany({
+      where: { account_id: { not: RESPONSEOS_DEMO_ACCOUNT_ID } },
+      orderBy: { id: "asc" },
+    });
     expect(clean(normalize(rows.map((row) => pick(row, keys))))).toEqual(
       clean(getMockWorkflowRuns().map((row) => pick(row, keys))),
     );
@@ -393,7 +419,10 @@ describe("seeded mock fixture parity", () => {
       "response_time_avg_seconds",
       "roi_multiple",
     ];
-    const rows = await prisma.revenueMetrics.findMany({ orderBy: { id: "asc" } });
+    const rows = await prisma.revenueMetrics.findMany({
+      where: { account_id: { not: RESPONSEOS_DEMO_ACCOUNT_ID } },
+      orderBy: { id: "asc" },
+    });
     expect(clean(normalize(rows.map((row) => pick(row, keys))))).toEqual(
       clean(getMockRevenueMetrics().map((row) => pick(row, keys))),
     );

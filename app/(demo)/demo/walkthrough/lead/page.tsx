@@ -1,7 +1,12 @@
 import { PageHeader, Card, CardHeading, StatusBadge, MetricCard, ButtonLink } from "@/components/ui";
-import { lead, usdRange } from "../../../_data/scenario";
+import { connection } from "next/server";
+import { DemoDataBanner } from "../../../_components/DemoDataBanner";
+import { getWalkthroughScenario } from "../../../_data/getWalkthroughScenario";
+import { usdRange } from "../../../_data/scenario";
 
-export default function LeadOpportunity() {
+export default async function LeadOpportunity() {
+  await connection();
+  const { source, error, lead } = await getWalkthroughScenario();
   const facts: { label: string; value: string }[] = [
     { label: "Service category", value: lead.serviceCategory },
     { label: "Work type", value: lead.workType },
@@ -17,12 +22,14 @@ export default function LeadOpportunity() {
         eyebrow="Step 3 · Lead / Opportunity"
         title={lead.name}
         description={`${lead.dealStage} · ${lead.region}`}
-        actions={<StatusBadge label={`HubSpot: ${lead.crmSyncStatus}`} tone="success" />}
+        actions={<StatusBadge label={`CRM: ${lead.crmSyncStatus}`} tone="warning" />}
       />
+
+      <DemoDataBanner source={source} error={error} />
 
       <section className="mb-6 grid gap-4 sm:grid-cols-3">
         <MetricCard label="Qualification" value={`${lead.qualificationScore}/100`} hint={lead.qualificationBand} emphasis />
-        <MetricCard label="Est. deal value" value={usdRange(lead.estimatedValue)} hint={lead.workType} revenue />
+        <MetricCard label="Illustrative value" value={usdRange(lead.estimatedValue)} hint="Not verified revenue" revenue />
         <MetricCard label="Urgency" value={lead.urgency} hint={lead.appointmentIntent} />
       </section>
 
@@ -44,7 +51,7 @@ export default function LeadOpportunity() {
             <CardHeading>Linked records</CardHeading>
             <dl className="mt-4 flex flex-col gap-3 text-sm">
               <div className="flex justify-between gap-4">
-                <dt className="text-ink-muted">HubSpot deal</dt>
+                <dt className="text-ink-muted">CRM record</dt>
                 <dd className="font-mono text-xs text-ink-secondary">{lead.hubspotDealId}</dd>
               </div>
               <div className="flex justify-between gap-4">

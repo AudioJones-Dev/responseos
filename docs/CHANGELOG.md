@@ -4,6 +4,14 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: persist the prospect sandbox walkthrough
+
+- Added the dedicated `org_responseos_demo` sandbox tenant with deterministic fictional call, transcript, qualification, appointment, quote, workflow, audit, and illustrative revenue fixtures.
+- Added tenant-scoped and fixed-public lifecycle readers. The public reader accepts no client tenant or call identifier and exposes no raw transcript artifact references.
+- Converted the prospect walkthrough to cached server-rendered persisted data with explicit simulation/no-provider/no-verified-revenue disclosures and a prominent static fallback when no database is configured.
+- Added a transaction-scoped, allowlisted non-production reset command plus unit and Postgres integration coverage for production refusal, deterministic double-reset, hosted-auth access, and cross-tenant protection.
+- No schema migration, dependency, secret, provider call, external record, deployment, or production behavior was added.
+
 ## Unreleased — feat: lock the H0 Telnyx-to-HubSpot contract
 
 - Added additive `CrmSyncRequest` / `CrmSyncResult` contracts, supporting CRM-sync value types, the readonly `telnyx-hubspot-h0-v1` default policy, and deterministic request/result fixtures under `lib/providers/crm/`.

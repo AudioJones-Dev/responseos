@@ -3,9 +3,9 @@
  *
  * DEMO-ONLY, mock data. Mirrors the approved demo-content assets in
  * `docs/product/demo-assets/*` (Maria Santos / DemoLift accessibility scenario)
- * WITHOUT importing them — the docs assets stay the spec source-of-truth; this
- * is the runtime mirror (per the wireframe-spec runtime non-goal). No real
- * customer/PII data, no provider calls, no DB. Money is in whole USD.
+ * WITHOUT importing them — the docs assets stay the spec source-of-truth. This
+ * file is now the no-database fallback for the persisted sandbox walkthrough.
+ * No real customer/PII data or provider calls. Money is in whole USD.
  */
 
 export const DEMO_ONLY = true as const;
@@ -19,21 +19,21 @@ export const business = {
 
 export const overview = {
   period: "This month",
-  revenueProtected: 12450,
-  revenueProtectedDelta: "+18% vs last month",
-  recoveredCalls: 31,
-  qualifiedLeads: 14,
-  appointments: 8,
-  followUpsDue: 3,
-  missedCallRecoveryRate: 0.86,
-  atRiskCount: 1,
+  revenueProtected: 0,
+  revenueProtectedDelta: "Static illustrative scenario — not measured",
+  recoveredCalls: 0,
+  qualifiedLeads: 1,
+  appointments: 1,
+  followUpsDue: 1,
+  missedCallRecoveryRate: 0,
+  atRiskCount: 0,
 } as const;
 
 export const founderBriefing = {
   whatChanged:
-    "1 high-intent call recovered after hours that would otherwise have hit voicemail.",
-  revenueProtectedLine: "$1,500–$4,500 estimated opportunity captured (ramp repair/replacement).",
-  topNextAction: "Call Maria Santos first thing to confirm the urgent assessment window.",
+    "One fictional high-intent call is represented in this static fallback.",
+  revenueProtectedLine: "$1,500–$4,500 illustrative opportunity; no verified or recovered revenue.",
+  topNextAction: "Review the fictional assessment record; do not contact a real person.",
   points: [
     "After-hours demand — historically the most-leaked window for service businesses.",
     "Time-sensitive + safety-critical; the follow-up queue has it flagged urgent.",
@@ -45,7 +45,7 @@ export type TranscriptLine = { t: string; speaker: "AI" | "Caller"; text: string
 
 export const call = {
   id: "demo_call_8F3K29",
-  channel: "Inbound voice · after-hours · AI receptionist",
+  channel: "Static simulated inbound voice · no live provider",
   startedAt: "2026-05-31 21:47 (local)",
   duration: "2m 38s",
   disposition: "Qualified — urgent on-site assessment requested",
@@ -56,7 +56,7 @@ export const call = {
   qualificationScore: 88,
   intent: "Urgent on-site assessment",
   serviceRequested: "Wheelchair ramp — repair / replacement (safety)",
-  appointmentStatus: "Requested — callback to confirm window",
+  appointmentStatus: "Seeded fixture — no calendar write",
   summary:
     "After-hours, high-intent caller needs an urgent wheelchair-ramp safety assessment for her father in Pembroke Pines within 48 hours. Decision-maker confirmed; call + SMS consent granted.",
   nextAction: {
@@ -64,8 +64,8 @@ export const call = {
     owner: "On-call accessibility specialist",
     dueAt: "by 9:00 AM tomorrow",
   },
-  crmSyncStatus: "Synced to HubSpot",
-  memoryStatus: "Captured (Phase-1 event-ledger)",
+  crmSyncStatus: "Not synced — static fallback",
+  memoryStatus: "Static fallback only",
   transcript: [
     { t: "00:00", speaker: "AI", text: "Thank you for calling DemoLift Accessibility Services — this is the after-hours line. I can help you get an urgent accessibility issue handled. May I ask what's going on?" },
     { t: "00:07", speaker: "Caller", text: "My father just came home from the hospital today and he's in a wheelchair now. The ramp at his front door isn't safe — too steep, and one side is loose. We can't get him in and out." },
@@ -90,12 +90,12 @@ export const lead = {
   qualificationScore: 88,
   qualificationBand: "Qualified",
   urgency: "high" as const,
-  dealStage: "Qualified — appointment requested",
-  hubspotDealId: "hs_deal_demo_90115",
-  crmSyncStatus: "Synced",
+  dealStage: "Seeded qualification fixture",
+  hubspotDealId: "No live HubSpot record",
+  crmSyncStatus: "Not synced",
   followUpOwner: "On-call accessibility specialist",
   appointmentIntent: "Urgent on-site assessment",
-  sourceAttribution: "After-hours inbound call (carrier + AI receptionist)",
+  sourceAttribution: "Static fictional fallback",
   relatedCallId: call.id,
   relatedMemoryId: "bm_evt_demo_77c310",
 } as const;
@@ -103,7 +103,7 @@ export const lead = {
 export const memory = {
   id: "bm_evt_demo_77c310",
   capturedAt: "2026-05-31 21:49 (local)",
-  model: "Phase-1 event-ledger capture",
+  model: "Static fallback — no persisted event-ledger read",
   sourceEvent: { type: "call.qualified", callId: call.id, channel: call.channel },
   entities: [
     { label: "Contact", value: "Maria Santos" },
@@ -118,9 +118,9 @@ export const memory = {
     { label: "Callback to confirm assessment window", owner: "On-call accessibility specialist", dueAt: "by 9:00 AM tomorrow" },
   ],
   trail: [
-    { t: "21:47", event: "Call captured", detail: "Inbound after-hours; AI receptionist answered." },
-    { t: "21:49", event: "Qualified", detail: "Score 88; urgency high; consent granted." },
-    { t: "21:50", event: "Memory captured", detail: "Transcript, summary, intent, next action recorded to the event ledger." },
+    { t: "21:47", event: "Static call displayed", detail: "Fictional fallback; no provider event." },
+    { t: "21:49", event: "Seeded qualification displayed", detail: "Illustrative score 88; no runtime model execution." },
+    { t: "21:50", event: "Fallback disclosure", detail: "No database or live provider data is represented." },
   ],
   // Phase-1 gates — these MUST render as disabled/not-active (ADR-0034).
   gates: {

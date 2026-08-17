@@ -33,3 +33,4 @@ export * as QaLogs from "./qaLogs";
 export * as WorkflowRuns from "./workflowRuns";
 export * as AgentProfiles from "./agentProfiles";
 export * as ProfessionalOpportunities from "./professionalOpportunities";
+export * as DemoCallLifecycle from "./demoCallLifecycle";

@@ -1,7 +1,13 @@
-import { PageHeader, MetricCard, Card, ButtonLink, AlertBanner } from "@/components/ui";
-import { overview, founderBriefing, lead, usd, usdRange } from "../../_data/scenario";
+import { PageHeader, MetricCard, Card, ButtonLink } from "@/components/ui";
+import { connection } from "next/server";
+import { DemoDataBanner } from "../../_components/DemoDataBanner";
+import { getWalkthroughScenario } from "../../_data/getWalkthroughScenario";
+import { usd, usdRange } from "../../_data/scenario";
 
-export default function RevenueRecoveryOverview() {
+export default async function RevenueRecoveryOverview() {
+  await connection();
+  const { source, error, overview, founderBriefing, lead } =
+    await getWalkthroughScenario();
   return (
     <>
       <PageHeader
@@ -10,9 +16,7 @@ export default function RevenueRecoveryOverview() {
         description={`${overview.period} · what revenue we protected and what needs action`}
       />
 
-      <AlertBanner className="mb-6">
-        Guided walkthrough on mock data — no live calls, CRM, or providers are connected.
-      </AlertBanner>
+      <DemoDataBanner source={source} error={error} />
 
       <section className="relative mb-6 overflow-hidden rounded-lg border border-line bg-surface p-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
         <div
@@ -27,14 +31,13 @@ export default function RevenueRecoveryOverview() {
             {usd(overview.revenueProtected)}
           </p>
           <p className="mt-2 text-sm text-ink-secondary">
-            {overview.revenueProtectedDelta} · {Math.round(overview.missedCallRecoveryRate * 100)}%
-            missed-call recovery rate
+            {overview.revenueProtectedDelta}
           </p>
         </div>
       </section>
 
       <section className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricCard label="Recovered Calls" value={overview.recoveredCalls} hint="Captured + followed up" />
+        <MetricCard label="Verified recoveries" value={overview.recoveredCalls} hint="None in this simulation" />
         <MetricCard label="Qualified Leads" value={overview.qualifiedLeads} hint="Scored opportunities" />
         <MetricCard label="Appointments" value={overview.appointments} hint="Requested / booked" />
         <MetricCard

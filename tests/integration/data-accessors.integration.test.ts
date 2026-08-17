@@ -39,9 +39,10 @@ describe("data accessors against Postgres", () => {
     const list = await Accounts.listAccounts();
     expect(list.ok).toBe(true);
     if (!list.ok) return;
-    expect(list.data.map((org) => org.id)).toEqual([
+    expect(list.data.map((org) => org.id).sort()).toEqual([
       "org_mock_1",
       "org_mock_2",
+      "org_responseos_demo",
       "org_tyrone_1",
     ]);
 
@@ -414,6 +415,7 @@ describe("data accessors against Postgres", () => {
       "wfr_mock_1",
       "wfr_mock_2",
       "wfr_tyrone_1",
+      "workflow_responseos_demo",
     ]);
 
     const failed = await WorkflowRuns.listWorkflowRuns({ status: "failed" });
