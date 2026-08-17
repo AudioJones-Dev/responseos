@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { ButtonLink } from "@/components/ui";
 import { SocialLinks } from "@/components/layout/SocialLinks";
 import { Logo } from "@/components/layout/Logo";
+import { MarketingButtonLink } from "@/components/marketing/MarketingButtonLink";
 
 const NAV = [
   { label: "Platform", href: "/" },
@@ -15,11 +15,6 @@ const NAV = [
 export default function MarketingLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col">
-      {/* Demo-surface labeling (mock-first demo deploy gate, checkpoint 2026-07-04). */}
-      <div className="border-b border-line bg-surface px-4 py-1.5 text-center text-xs text-ink-muted">
-        Demo environment — everything you see runs on sample data. No live
-        calls, texts, or customer data.
-      </div>
       <header className="sticky top-0 z-20 border-b border-line bg-base/80 backdrop-blur">
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-6 px-4 sm:px-6">
           <Logo />
@@ -41,9 +36,15 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
             >
               Operator console
             </Link>
-            <ButtonLink href="/audit" size="sm" glow>
-              Request audit
-            </ButtonLink>
+            <MarketingButtonLink
+              event="homepage_nav_audit_clicked"
+              href="/audit"
+              size="sm"
+              glow
+              className="whitespace-nowrap"
+            >
+              Request a revenue audit
+            </MarketingButtonLink>
           </div>
         </div>
       </header>
@@ -53,10 +54,8 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
       <footer className="border-t border-line">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-2 px-4 py-8 text-xs text-ink-muted sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-              <span className="font-display text-sm font-semibold text-ink-secondary">
-                ResponseOS
-              </span>
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+              <Logo className="mr-1" />
               <Link href="/pricing" className="hover:text-ink-secondary">
                 Pricing
               </Link>
@@ -73,9 +72,12 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
             <SocialLinks />
           </div>
           <p>
-            © {new Date().getFullYear()} AJ Digital LLC. ResponseOS is an
-            internal-first product in active development — this is a local
-            scaffold with mock data and no live integrations.
+            Revenue recovery infrastructure for founder-led service businesses.
+            ResponseOS is built by AJ Digital LLC and is not HIPAA-certified.
+          </p>
+          <p>
+            © {new Date().getFullYear()} AJ Digital LLC. The current product
+            preview uses sample data and has no live provider integrations.
           </p>
         </div>
       </footer>

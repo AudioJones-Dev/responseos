@@ -1,0 +1,32 @@
+# ResponseOS
+
+ResponseOS is a revenue-recovery product under development by AJ Digital LLC for founder-led home-service businesses.
+
+## Primary audience
+
+HVAC, plumbing, roofing, electrical, general contracting, and adjacent phone-driven service businesses.
+
+## Buyer problem
+
+Legitimate customer demand can disappear after a missed call, delayed response, forgotten estimate, or inconsistent follow-up. ResponseOS is designed to help identify those gaps and build a practical recovery plan.
+
+## Current public actions
+
+- Homepage: /
+- Revenue exposure estimate and audit request: /audit
+- Home-services use case: /industries/home-services
+- Sample-data product preview: /demo
+- Trust and security posture: /trust
+
+## Important status
+
+- The current product preview uses fictional sample data.
+- Live phone, CRM, scheduling, and payment-provider integrations are not active.
+- Calculator outputs are planning estimates based only on visitor-supplied inputs.
+- Estimated revenue is not verified or recovered revenue.
+- ResponseOS is not HIPAA-certified.
+- The public site does not provide an autonomous agent-submission or purchasing API.
+
+## Source policy
+
+Public statistics should be read with their visible source, survey audience, and year. ResponseOS does not present third-party industry statistics as client results.

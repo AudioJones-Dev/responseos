@@ -1,27 +1,32 @@
+import type { Metadata } from "next";
 import { ButtonLink, Card } from "@/components/ui";
-import { AuditRequestForm } from "./AuditRequestForm";
+import {
+  AuditRequestForm,
+  type AuditRequestInitialValues,
+} from "./AuditRequestForm";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Revenue recovery audit",
   description:
-    "Map your missed-demand surface and get an estimated recovered-revenue number for the next 30 days — a clear figure, not a sales pitch.",
+    "Validate missed-call and follow-up gaps, review your revenue-exposure assumptions, and get a practical fit or no-fit recovery recommendation.",
+  alternates: { canonical: "/audit" },
 };
 
 const STEPS = [
   {
     n: "01",
-    title: "Connect your call log + CRM",
-    body: "We pull your missed calls, after-hours traffic, and quote history (mock for now). No rip-and-replace — we read what you already have.",
+    title: "Share the current numbers",
+    body: "Start with your estimate of missed calls, average booked job value, close rate, and the way your team handles follow-up today.",
   },
   {
     n: "02",
-    title: "We size the missed-demand surface",
-    body: "Missed calls, unanswered SMS, lost quote requests, and slow follow-up are mapped against your average job value to find the leak.",
+    title: "We validate the assumptions",
+    body: "AJ Digital reviews the missed-demand pattern, response process, lead quality, and what can be measured without treating an estimate as a result.",
   },
   {
     n: "03",
-    title: "You get a recovery plan with an ROI estimate",
-    body: "A RECOVER deployment plan and an estimated recovered-revenue number for the next 30 days — proof before you commit a dollar.",
+    title: "You get a fit or no-fit recommendation",
+    body: "The assessment maps a practical recovery path, a simpler process fix, or a clear conclusion that ResponseOS is not the right next step.",
   },
 ];
 
@@ -32,26 +37,57 @@ const SURFACE = [
   "Slow first-response on warm leads",
 ];
 
-export default function AuditPage() {
+type AuditPageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+function readNumber(
+  value: string | string[] | undefined,
+  options: { max: number; integer?: boolean },
+): number | undefined {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (raw === undefined || raw.trim() === "") return undefined;
+
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed < 0 || parsed > options.max) {
+    return undefined;
+  }
+  if (options.integer && !Number.isInteger(parsed)) return undefined;
+  return parsed;
+}
+
+export default async function AuditPage({ searchParams }: AuditPageProps) {
+  const params = await searchParams;
+  const initialValues: AuditRequestInitialValues = {
+    monthly_missed_calls: readNumber(params.monthly_missed_calls, {
+      max: 1_000_000,
+      integer: true,
+    }),
+    avg_job_value_usd: readNumber(params.avg_job_value_usd, {
+      max: 10_000_000,
+    }),
+    close_rate_pct: readNumber(params.close_rate_pct, { max: 100 }),
+  };
+
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-16 sm:px-6">
       <p className="text-xs font-semibold uppercase tracking-widest text-ink-muted">
         Revenue recovery audit
       </p>
       <h1 className="mt-2 max-w-3xl font-display text-3xl font-semibold leading-[1.1] text-ink sm:text-4xl">
-        See the revenue you&apos;re already missing
+        Validate where paid-for demand may be leaking
       </h1>
       <p className="mt-4 max-w-2xl text-lg text-ink-secondary">
-        We map your missed-demand surface area and hand you an estimated
-        recovered-revenue number for the next 30 days. A clear figure, not a
-        sales pitch.
+        Start with your numbers. We review the missed-demand pattern, test the
+        assumptions behind the estimate, and give you a practical fit or no-fit
+        recommendation before any implementation decision.
       </p>
       <div className="mt-8 flex flex-wrap gap-3">
         <ButtonLink href="#request" glow>
           Request my audit
         </ButtonLink>
         <ButtonLink href="/demo" variant="secondary">
-          See it on real workflows
+          Explore the sample preview
         </ButtonLink>
       </div>
 
@@ -79,8 +115,8 @@ export default function AuditPage() {
           What we look for
         </h2>
         <p className="mt-2 max-w-2xl text-sm text-ink-secondary">
-          Every leak is logged as a lead event and priced against your average
-          job value.
+          The assessment checks the points where a legitimate customer request
+          can stall or disappear.
         </p>
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
           {SURFACE.map((item) => (
@@ -97,11 +133,11 @@ export default function AuditPage() {
           Request your audit
         </h2>
         <p className="mt-2 max-w-2xl text-sm text-ink-secondary">
-          Tell us where the demand is leaking. We&apos;ll come back with a
-          recovery plan and a 30-day recovered-revenue estimate.
+          Tell us where demand may be leaking. AJ Digital will validate the
+          inputs and follow up with a recovery recommendation.
         </p>
         <Card className="mt-8" as="section">
-          <AuditRequestForm />
+          <AuditRequestForm initialValues={initialValues} />
         </Card>
       </section>
     </main>
