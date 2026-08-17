@@ -44,6 +44,7 @@ Before proposing a feature, refactor, or architectural change, answer the fiftee
 ## Validation gates (must pass locally and in CI before merge)
 
 ```bash
+npm run runtime:check
 npm run lint
 npm run typecheck
 npm test

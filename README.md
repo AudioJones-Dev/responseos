@@ -37,8 +37,18 @@ For the full version table and milestone state see [`docs/ROADMAP.md`](./docs/RO
 
 ## Local development
 
+ResponseOS requires Node 24.18.0 and npm 11.16.0 exactly. [Volta](https://docs.volta.sh/guide/getting-started) is the recommended Windows runtime manager:
+
 ```bash
-npm install
+winget install Volta.Volta
+volta install node@24.18.0 npm@11.16.0
+npm run runtime:check
+```
+
+Open a new terminal after installing Volta so its shims are available. The runtime check fails when Volta, `engines`, `packageManager`, `.nvmrc`, application CI, or the active Node/npm versions drift. The dashboard workflow's Node 20 declaration is intentionally excluded because it is an action runtime, not the ResponseOS application runtime.
+
+```bash
+npm ci
 npm run dev      # http://localhost:3000
 ```
 
@@ -80,6 +90,7 @@ npx prisma migrate deploy && npx prisma db seed && npm run test:integration
 ## Validation
 
 ```bash
+npm run runtime:check
 npm run lint
 npm run typecheck
 npm test

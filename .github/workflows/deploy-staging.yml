@@ -67,6 +67,11 @@ jobs:
           node-version: 24.18.0
           cache: npm
 
+      - name: Install and verify pinned npm runtime
+        run: |
+          npm install --global npm@11.16.0
+          npm run runtime:check
+
       - name: Require deploy secrets
         run: |
           missing=0
