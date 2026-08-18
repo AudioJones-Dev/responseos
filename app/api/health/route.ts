@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
+import packageJson from "@/package.json";
 
 export async function GET() {
   return NextResponse.json({
     status: "ok",
     service: "responseos",
-    version: "0.2.0",
+    version: packageJson.version,
+    build_sha: process.env.RESPONSEOS_BUILD_SHA ?? "local",
+    environment: process.env.VERCEL_ENV ?? "local",
   });
 }

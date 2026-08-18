@@ -1,7 +1,7 @@
 # ResponseOS — Deployment Plan
 
 **Owner:** AJ Digital LLC / Audio Jones
-**Status:** Canonical (go-forward). Extends [`../DEPLOYMENT.md`](../DEPLOYMENT.md) (three lanes, IaC, CI/CD, SLOs, rollback) with the go-forward topology. **Planning baseline (ADR-0031/0032/0033/0036/0037):** Telnyx / Vapi / HubSpot / Calendly on Neon + Vercel; **Node voice gateway + Redis are deferred** for the first founding-pilot slice (they remain documented as optional later topology, not a go-live hard dependency).
+**Status:** Canonical (go-forward). Extends [`../DEPLOYMENT.md`](../DEPLOYMENT.md) (three lanes, IaC, CI/CD, SLOs, rollback) with the go-forward topology. Staging and live-provider evidence are defined in [`RESPONSEOS_V0_3_READINESS_GATES.md`](./RESPONSEOS_V0_3_READINESS_GATES.md). **Planning baseline (ADR-0031/0032/0033/0036/0037):** Telnyx / Vapi / HubSpot / Calendly on Neon + Vercel; **Node voice gateway + Redis are deferred** for the first founding-pilot slice (they remain documented as optional later topology, not a go-live hard dependency).
 **Anchored by:** ADR-0001 (no deploy until v0.3) · ADR-0004 (lanes) · ADR-0036 (gateway/Redis deferred) · ADR-0013/0014 (gateway/Redis retained as deferred design)
 
 > **Hard rule (unchanged):** do **not** deploy **production** from this repo until v0.3 readiness gates clear. Current state: GitHub remote live (`audiojones-dev/responseos`); CI runs `validate` + `integration` on every push/PR; **staging-only** manual deploy scaffolding lives in `.github/workflows/deploy-staging.yml` (Environment `staging` + human approval). Operator runbook: [`RESPONSEOS_STAGING_HOSTING_RUNBOOK.md`](./RESPONSEOS_STAGING_HOSTING_RUNBOOK.md).

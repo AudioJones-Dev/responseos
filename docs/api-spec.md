@@ -51,7 +51,7 @@ Mock-safe mutation routes may include a `mock: true` flag inside the success env
 ## REST routes
 
 ### Health
-`GET /api/health` → `{ status: 'ok', service: 'responseos', version: '0.1.0' }`
+`GET /api/health` → `{ status: 'ok', service: 'responseos', version: '0.2.0', build_sha: '<reviewed commit or local>', environment: '<preview|production|local>' }`. Build and environment identity are non-secret release evidence; the staging workflow rejects a deployed SHA that differs from the reviewed workflow SHA.
 
 ### Accounts
 - `GET /api/accounts` → account list

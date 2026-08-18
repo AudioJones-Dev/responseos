@@ -21,6 +21,7 @@ placeholder keys are present. **Local development never requires a secret.**
 ### App
 - `NEXT_PUBLIC_APP_URL` — base URL the browser sees (e.g. `http://localhost:3000`).
 - `NODE_ENV` — `development` / `production` / `test`.
+- `RESPONSEOS_BUILD_SHA` — non-secret deployment identity injected by the staging workflow; `/api/health` reports it so the deployed artifact can be matched to the reviewed commit.
 
 ### Database (Postgres — Neon default per ADR-0026)
 - `DATABASE_URL` — pooled connection string used at runtime.
@@ -31,15 +32,14 @@ placeholder keys are present. **Local development never requires a secret.**
 - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` — client-side.
 - `CLERK_WEBHOOK_SECRET` — Svix HMAC for `/api/webhooks/clerk` (ADR-0009). Absent → webhook fails closed (503), no mutation.
 - `AJ_DIGITAL_CLERK_ORG_ID` — the AJ Digital cross-tenant control org (members → `Session.account = null`).
-- `RESPONSEOS_REQUIRE_AUTH` — **optional**, read by `lib/auth/auth-required.ts` and consumed by both
+- `RESPONSEOS_REQUIRE_AUTH` — **optional locally and required on hosted staging**, read by `lib/auth/auth-required.ts` and consumed by both
   `lib/auth/session.ts` and `proxy.ts` (ADR-0039). Set it (any value other than `0`/`false`) on any
   hosted surface that must authenticate. With it set and `CLERK_SECRET_KEY` absent, the session
   resolves to `null` and the proxy redirects non-public paths to `/`, instead of falling back to the
   privileged cross-tenant `aj_admin` placeholder (gap D2).
-  - **Absent → unchanged mock-first behaviour** for local dev, CI, `next build`, and the mock-safe
-    hosted demo, whose prerendered pages must still render mock data (ADR-0001).
-  - **Deploy checklist item:** because the trigger is opt-in, forgetting it leaves a hosted deploy
-    fail-open. Set it alongside the Clerk keys, not after.
+  - **Absent → unchanged mock-first behaviour** for local dev, CI, and `next build` (ADR-0001).
+  - **Hosted staging contract:** set it alongside the Clerk keys. The manual staging workflow rejects
+    the deployment before migration or build when this flag is absent or disabled.
 
 ### Dev session override (local / test / dev only)
 - `RESPONSEOS_DEV_SESSION` — **optional**, read by `lib/auth/session.ts`. Forces a fixed placeholder
@@ -94,7 +94,8 @@ placeholder keys are present. **Local development never requires a secret.**
 | **`RESPONSEOS_DEV_SESSION`** | opt | set by tests | **never** (hosted) | **never** | opt | dev/test override; hard-fails in production |
 | **`RESPONSEOS_REQUIRE_AUTH`** | — | — | req (any hosted surface) | req | opt | absent → mock-first fallback; set → session + proxy fail closed (ADR-0039) |
 | **`RESPONSEOS_PROVIDER_KEY`** | mock | mock | opt (Path A) | req (live creds, v0.3+) | mock-first | base64 32-byte AES; absent → encryption mock mode |
-| R2 / Telnyx / Twilio / Retell / Vapi / Bland / Resend / Stripe / n8n / GHL / HubSpot / Calendly | mock | mock | mock (Path A) | req (when live) | mock-first | keys alone do not activate a live factory |
+| R2 / Telnyx / Twilio / Retell / Vapi / Bland / Stripe / GHL / HubSpot / Calendly | mock | mock | **never (Path A)** | req (when live) | mock-first | staging preflight rejects live-provider/storage credentials; keys alone do not activate a live factory |
+| Resend / n8n | mock | mock | mock (Path A) | req (when live) | mock-first | no live behavior in the mock staging slice |
 | `SENTRY_DSN` / `POSTHOG_KEY` / `NEXT_PUBLIC_POSTHOG_KEY` | opt | opt | opt | opt | opt | observability; see staging runbook §6 |
 
 Path A staging checklist (operator): [`ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md`](./ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md).
