@@ -7,7 +7,7 @@ export * from "@/lib/providers/sms/mock"
 
 export function getSmsProvider(): SmsProvider {
   return resolveProvider({
-    envVarName: "TWILIO_ACCOUNT_SID",
+    envVarName: "TELNYX_API_KEY",
     createMock: () => new MockSmsProvider(),
   })
 }

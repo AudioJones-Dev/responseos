@@ -11,15 +11,17 @@ only**). Copy it to `.env.local` (gitignored) and fill in real values for local 
 > gitignored and must never be committed. Real values live in the platform's env store (Vercel env
 > today; see [Future work](#future-work) for the secret-store decision) — not in this repo.
 
-**Mock-first invariant (ADR-0001):** the app **boots and runs with zero secrets**. Every provider is
-mocked until its key is present, and the two ResponseOS-internal overrides below are optional. **Local
-development never requires a secret.**
+**Mock-first invariant (ADR-0001):** the app **boots and runs with zero secrets**. A provider key can
+select a live path only when its factory also supplies an explicitly authorized `createLive`
+implementation. The current CAL factories omit `createLive`, so they remain mock even when their
+placeholder keys are present. **Local development never requires a secret.**
 
 ## Variable groups
 
 ### App
 - `NEXT_PUBLIC_APP_URL` — base URL the browser sees (e.g. `http://localhost:3000`).
 - `NODE_ENV` — `development` / `production` / `test`.
+- `RESPONSEOS_BUILD_SHA` — non-secret deployment identity injected by the staging workflow; `/api/health` reports it so the deployed artifact can be matched to the reviewed commit.
 
 ### Database (Postgres — Neon default per ADR-0026)
 - `DATABASE_URL` — pooled connection string used at runtime.
@@ -30,15 +32,14 @@ development never requires a secret.**
 - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` — client-side.
 - `CLERK_WEBHOOK_SECRET` — Svix HMAC for `/api/webhooks/clerk` (ADR-0009). Absent → webhook fails closed (503), no mutation.
 - `AJ_DIGITAL_CLERK_ORG_ID` — the AJ Digital cross-tenant control org (members → `Session.account = null`).
-- `RESPONSEOS_REQUIRE_AUTH` — **optional**, read by `lib/auth/auth-required.ts` and consumed by both
+- `RESPONSEOS_REQUIRE_AUTH` — **optional locally and required on hosted staging**, read by `lib/auth/auth-required.ts` and consumed by both
   `lib/auth/session.ts` and `proxy.ts` (ADR-0039). Set it (any value other than `0`/`false`) on any
   hosted surface that must authenticate. With it set and `CLERK_SECRET_KEY` absent, the session
   resolves to `null` and the proxy redirects non-public paths to `/`, instead of falling back to the
   privileged cross-tenant `aj_admin` placeholder (gap D2).
-  - **Absent → unchanged mock-first behaviour** for local dev, CI, `next build`, and the mock-safe
-    hosted demo, whose prerendered pages must still render mock data (ADR-0001).
-  - **Deploy checklist item:** because the trigger is opt-in, forgetting it leaves a hosted deploy
-    fail-open. Set it alongside the Clerk keys, not after.
+  - **Absent → unchanged mock-first behaviour** for local dev, CI, and `next build` (ADR-0001).
+  - **Hosted staging contract:** set it alongside the Clerk keys. The manual staging workflow rejects
+    the deployment before migration or build when this flag is absent or disabled.
 
 ### Dev session override (local / test / dev only)
 - `RESPONSEOS_DEV_SESSION` — **optional**, read by `lib/auth/session.ts`. Forces a fixed placeholder
@@ -62,13 +63,14 @@ development never requires a secret.**
 ### Storage (Cloudflare R2)
 - `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME` — call recordings + quote photos.
 
-### Telephony / AI Voice / Email / Billing / Workflows / CRM / Observability
-- **Telephony (Twilio):** `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`.
+### Telephony / AI Voice / Email / Billing / Workflows / CRM / Scheduling / Observability
+- **Telephony / SMS:** `TELNYX_API_KEY` (primary carrier declaration), plus `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` (failover declarations).
 - **AI Voice:** `RETELL_API_KEY`, `VAPI_API_KEY`, `BLAND_API_KEY`.
 - **Email (Resend):** `RESEND_API_KEY`, `EMAIL_FROM`.
 - **Billing (Stripe):** `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`.
 - **Workflows (n8n):** `N8N_WEBHOOK_SECRET`, `N8N_BASE_URL`.
 - **CRM:** `GHL_API_KEY` (HighLevel), `HUBSPOT_ACCESS_TOKEN`.
+- **Scheduling:** `CALENDLY_API_KEY`.
 - **Observability:** `SENTRY_DSN`, `POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_KEY`.
 
 > All provider-group vars are **optional until v0.3** — their adapters fall back to mock when absent
@@ -92,7 +94,8 @@ development never requires a secret.**
 | **`RESPONSEOS_DEV_SESSION`** | opt | set by tests | **never** (hosted) | **never** | opt | dev/test override; hard-fails in production |
 | **`RESPONSEOS_REQUIRE_AUTH`** | — | — | req (any hosted surface) | req | opt | absent → mock-first fallback; set → session + proxy fail closed (ADR-0039) |
 | **`RESPONSEOS_PROVIDER_KEY`** | mock | mock | opt (Path A) | req (live creds, v0.3+) | mock-first | base64 32-byte AES; absent → encryption mock mode |
-| R2 / Twilio / Retell / Vapi / Bland / Resend / Stripe / n8n / GHL / HubSpot | mock | mock | mock (Path A) | req (when live) | mock-first | provider adapters mock until authorized |
+| R2 / Telnyx / Twilio / Retell / Vapi / Bland / Stripe / GHL / HubSpot / Calendly | mock | mock | **never (Path A)** | req (when live) | mock-first | staging preflight rejects live-provider/storage credentials; keys alone do not activate a live factory |
+| Resend / n8n | mock | mock | mock (Path A) | req (when live) | mock-first | no live behavior in the mock staging slice |
 | `SENTRY_DSN` / `POSTHOG_KEY` / `NEXT_PUBLIC_POSTHOG_KEY` | opt | opt | opt | opt | opt | observability; see staging runbook §6 |
 
 Path A staging checklist (operator): [`ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md`](./ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md).
@@ -101,8 +104,8 @@ Path A staging checklist (operator): [`ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md
 
 1. **The app boots with no env file.** Unit tests, `npm run build`, and local `npm run dev` all run
    keyless; mock fixtures back every screen (ADR-0001).
-2. **Provider adapters fall back to mock** when their env vars are missing — they read env at
-   construction, log once if empty, and expose the mock implementation.
+2. **Provider adapters fall back to mock** when their env vars are missing. The Stage B CAL factories
+   also remain mock when keys are present because they do not supply `createLive`.
 3. **`RESPONSEOS_PROVIDER_KEY` absent → encryption mock mode** (redacted sentinel; deterministic mock
    credentials). Never an error.
 4. **`RESPONSEOS_DEV_SESSION` absent → default placeholder session** (`aj_admin`) when Clerk is also

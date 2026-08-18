@@ -1,6 +1,12 @@
 import { ISODate, UUID, newId, nowIso } from "./common";
 
-export type CallProvider = "twilio" | "retell" | "vapi" | "bland" | "manual";
+export type CallProvider =
+  | "telnyx"
+  | "twilio"
+  | "retell"
+  | "vapi"
+  | "bland"
+  | "manual";
 
 export type CallDirection = "inbound" | "outbound";
 

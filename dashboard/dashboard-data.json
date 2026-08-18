@@ -460,6 +460,18 @@
       "blockedReason": "Requires explicit scoped approval for PR A from the live-call implementation brief; active target remains Telnyx + Sent.dm, with Linq migration kept behind the MessagingProvider boundary"
     },
     {
+      "id": "I-08",
+      "phase": "Integrations",
+      "title": "Stage B provider schema and env contract alignment",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-08-18",
+      "due": "2026-08-18",
+      "blocked": false
+    },
+    {
       "id": "V-05",
       "phase": "v0.3 · Demo Scope",
       "title": "Internal demo tenant + professional receptionist",
@@ -506,21 +518,21 @@
       "priority": "High",
       "start": "2026-08-03",
       "due": "2026-08-12",
-      "blocked": false,
-      "blockedReason": "Code/docs/CI staging scaffold ready; Neon staging DB, Clerk staging app, GH Environment staging secrets, and live staging URL still require Audio provision — not Done until portal smoke passes"
+      "blocked": true,
+      "blockedReason": "Repository hardening is in review; Audio must choose an isolated Vercel staging target, create the GitHub staging Environment, provision dedicated Neon/Clerk resources, inject scoped secrets, align Node 24.x, and separately authorize the deploy"
     },
     {
       "id": "L-02a",
       "phase": "Launch / Demo Deploy",
       "title": "Path A staging host scaffold (workflow + runbook)",
       "owner": "Codex",
-      "status": "In Progress",
-      "progress": 80,
+      "status": "Review",
+      "progress": 100,
       "priority": "High",
       "start": "2026-08-06",
       "due": "2026-08-08",
       "blocked": false,
-      "blockedReason": "Scaffold complete in PR; mark Done only after merge + Environment staging created (URL still Audio-owned)"
+      "blockedReason": "Manual workflow, env preflight, exact-SHA health evidence, protected-route smoke, and runbook hardening are review-ready; no deploy or platform mutation performed"
     },
     {
       "id": "L-03",

@@ -1,6 +1,6 @@
 # ResponseOS — Staging Hosting Runbook (Path A)
 
-**Owner:** Audio (AJ Digital LLC) · **Status:** Operator runbook (Phase 2 prep)  
+**Owner:** Audio (AJ Digital LLC) · **Status:** Operator runbook (Stage C hardening in review)
 **Scope:** Hosted **staging only** — Neon + Clerk + Vercel client access while providers remain **mock**.  
 **Does not authorize:** live Telnyx/Vapi/Twilio/HubSpot/Calendly, production deploy, or pilot go-live.  
 **Canon:** [`../product/responseos-v0.3-founding-pilot-scope.md`](../product/responseos-v0.3-founding-pilot-scope.md) Stage **C**, [`../env-spec.md`](../env-spec.md), [`../DEPLOYMENT.md`](../DEPLOYMENT.md), ADR-0001 / ADR-0019.
@@ -17,6 +17,7 @@
 | Data | Neon staging DB migrated; seed optional for demo fixtures |
 | Providers | Still mock (no telephony/CRM/scheduling secrets required) |
 | Prod | **Still off** — `vercel.json` keeps `master` auto-deploy disabled; no prod GH job |
+| Identity | `/api/health` reports the exact reviewed build SHA and staging environment |
 
 Until the staging URL is live with Clerk login, dashboard **L-02** stays partial / In Progress — not Done.
 
@@ -28,13 +29,13 @@ Snapshot from Phase 2 prep (operator may re-run):
 
 | Surface | Observed | Gap for Path A staging |
 |---|---|---|
-| **GitHub Environments** | `Preview`, `Production`, `github-pages`, `copilot` | **Create `staging`** with required reviewers (human approval). Do not wire auto-prod. |
+| **GitHub Environments** | `Preview`, `Production`, `github-pages`, `copilot`; no `staging` Environment verified on 2026-08-18 | **Create `staging`** with required reviewers (human approval). Do not wire auto-prod. |
 | **GitHub Actions secrets (repo)** | `NEON_API_KEY`, `NOTION_TOKEN` present | Add staging deploy secrets below (prefer **Environment `staging`** scope, not repo-wide). |
-| **Vercel** | Project `audiojones/responseos` exists (`responseos.vercel.app`); CLI user can link; `vercel.json` disables auto-deploy from `master` | Confirm Preview/Production env vars; create staging alias hostname; set Node **24.x** to match `package.json` engines (`24.18.0`). Production auto-deploy must stay off. |
+| **Vercel** | Project `audiojones/responseos` exists (`responseos.vercel.app`); current project setting reports Node 22.x; `vercel.json` disables auto-deploy from `master` | Prefer a separate `responseos-staging` project (or true branch-scoped staging environment), create a staging alias, and set Node **24.x** to match `package.json` engines (`24.18.0`). Production aliases and auto-deploy stay untouched. |
 | **Neon** | Repo has `NEON_API_KEY` (API access possible) | Create **staging** project or branch DB; copy pooled + direct URLs into GH/Vercel (never into git). |
 | **Clerk** | App code ready (`lib/auth/session.ts`, `clerk-sync.ts`, webhook) | Staging Clerk application (or staging instance) + org + webhook to staging URL. |
 | **Sentry / PostHog** | Env placeholders in `.env.example`; **no SDK packages wired** | Optional for Path A: create projects, set DSNs later; tagging contract documented in §6. |
-| **Live providers** | Forbidden until Stage D+ | Leave Telnyx/Vapi/etc. unset → mock fallback. |
+| **Live providers** | Forbidden until Stage D+ | Leave Telnyx/Vapi/etc. unset. The staging preflight rejects live-provider credentials before migration or build. |
 
 ---
 
@@ -55,6 +56,8 @@ Copy from [`.env.example`](../../.env.example) / [`../env-spec.md`](../env-spec.
 | `NEXT_PUBLIC_APP_URL` | Vercel only | Public staging base URL (e.g. `https://staging.example`) |
 | `RESPONSEOS_REQUIRE_AUTH` | Vercel only | Set (`1` or `true`) on hosted staging so auth cannot fail-open (ADR-0039) |
 | `RESPONSEOS_PROVIDER_KEY` | Vercel only | Optional for Path A mock; base64 32-byte AES if encrypting stored creds later |
+
+The workflow loads these names from the selected Vercel Preview/Staging scope and validates the contract without printing any values. Missing auth/application variables stop the job before database migration.
 
 ### Must NOT be set on staging/prod
 
@@ -81,7 +84,7 @@ Copy from [`.env.example`](../../.env.example) / [`../env-spec.md`](../env-spec.
 
 ### Explicitly out of Path A
 
-Telephony / voice / CRM / calendar / Stripe / R2 keys — leave blank; adapters stay mock (ADR-0001).
+Telephony / voice / CRM / calendar / Stripe / R2 keys — leave blank. The preflight rejects them even though the current CAL factories are mock-only (ADR-0001).
 
 ---
 
@@ -109,9 +112,9 @@ Do these in order. Stop if any step needs a credential you do not have — do no
 
 ### 3.3 Vercel staging surface
 
-1. Confirm project `responseos` under the AudioJones Vercel team.
+1. Choose a dedicated `responseos-staging` project (recommended) or a true staging environment with strict branch scoping. Do not reuse a broad Preview environment without verifying database and secret isolation.
 2. Keep **Production auto-deploy from `master` disabled** (`vercel.json` → `git.deploymentEnabled.master: false`).
-3. Set Path A env vars for Preview (or Staging) — placeholders never in git.
+3. Set Path A env vars for Preview (or Staging) — values live only in the platform store, never in git.
 4. Prefer a stable alias (e.g. `responseos-staging.vercel.app` or custom domain) after the first successful deploy.
 5. Align Node version to **24.x** (`24.18.0` in CI/`package.json`).
 
@@ -125,12 +128,13 @@ Do these in order. Stop if any step needs a credential you do not have — do no
 
 ### 3.5 First staging deploy
 
-1. Merge this prep PR (and preferably Phase 0/1 PRs #109 / #108) to `master` when ready.
+1. Merge the reviewed Stage B/staging-hardening PR when ready.
 2. Actions → **Deploy Staging** → Run workflow.
 3. Confirmation input: type exactly `staging`.
 4. Approve the Environment gate when prompted.
 5. On success: note the deployment URL; alias it if needed; set `NEXT_PUBLIC_APP_URL` to that host; re-deploy if the URL changed.
-6. Run tenant bootstrap smoke (§4).
+6. Confirm the automated health/build-identity, public-demo, and anonymous protected-route smoke checks passed.
+7. Run tenant bootstrap smoke (§4).
 
 ---
 
@@ -192,10 +196,10 @@ Do not run seed/migrate against production until Stage I.
 - Trigger: **manual** `workflow_dispatch` only
 - Guard: confirmation string must equal `staging`
 - Environment: `staging` (approval gate)
-- Behavior: `prisma migrate deploy` → `vercel pull` (preview metadata) → `vercel build` → `vercel deploy --prebuilt`
+- Behavior: secret-name guard → `vercel pull` → mock-only env preflight → `prisma migrate deploy` → `vercel build` → `vercel deploy --prebuilt` → build-identity/auth smoke
 - Explicit non-goals: no `on: push` to `master`; no production target; no live provider cutover
 
-Rollback: redeploy previous Vercel deployment from the Vercel UI, or re-run the workflow on a known-good SHA. App continues to boot with mock providers if provider secrets are absent.
+Rollback: redeploy the previous **staging** deployment from the Vercel UI, or re-run the workflow on a known-good SHA. Production aliases are never part of this workflow. The app continues to boot with mock providers because the staging preflight rejects live-provider credentials.
 
 ---
 
@@ -215,7 +219,7 @@ Until SDKs land: rely on Vercel runtime logs + Clerk webhook logs + Neon metrics
 
 ## 7. Authorization reminder
 
-Staging host cutover still needs **written Stage C** authorization per founding-pilot scope §5–§6. This runbook is reversible prep only.
+Repository-side Stage C hardening was authorized on 2026-08-18. Creating platform resources, injecting secret values, and running the actual staging deployment remain operator/platform steps and are not implied by that code authorization.
 
 | Stage | This runbook |
 |---|---|

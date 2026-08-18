@@ -4,6 +4,17 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — chore: align v0.3 provider contracts and harden staging
+
+- Added migration `0010_v0_3_provider_enum_alignment`: additive `telnyx` values for call, SMS, and provider-connection records plus additive `calendly` values for appointment and provider-connection records.
+- Aligned the TypeScript unions and empty `.env.example` declarations with ADR-0031/ADR-0037. The SMS factory now probes the Telnyx primary-carrier declaration instead of the superseded Twilio default.
+- Added unit coverage proving configured provider keys still resolve every CAL factory to mock and integration coverage proving the new enum values persist against Postgres.
+- Pinned the transitive `deepmerge-ts` dependency to patched release `8.0.1`, clearing `GHSA-ggr8-5vv4-36mx` without accepting npm's Prisma downgrade recommendation. This changes no application or provider behavior.
+- Added the missing `RESPONSEOS_REQUIRE_AUTH` placeholder and a value-redacting staging preflight that requires Clerk/database/application configuration while rejecting dev-session and live-provider credentials.
+- Removed the staging migration bypass and pooled-URL fallback. The manual workflow now validates the environment before mutation, always deploys migrations through the direct URL, reports exact build identity through `/api/health`, and rejects anonymous `200` responses from protected routes.
+- Added canonical readiness gates separating mock-only staging evidence from separately authorized live-provider evidence. Production aliases and provider accounts remain untouched.
+- **No live provider behavior:** no factory supplies `createLive`; no secret value, provider account, webhook mutation, deployment, or phone-number configuration is included.
+
 ## Unreleased — feat: internal demo account + professional receptionist (ADR-0046)
 
 - Added `Account.account_type` (`customer` / `internal` / `internal_demo` / `sandbox`) plus the `AgentProfile` and `ProfessionalOpportunity` tables in migration `0009`. Purely additive; `account_type` defaults to `customer`, so no existing row needed backfill.

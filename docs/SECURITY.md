@@ -84,7 +84,7 @@ Invalid signature → 401, no body parse, no business mutation, log to security 
 
 ### Route protection (`proxy.ts`)
 
-When `CLERK_SECRET_KEY` is set, `proxy.ts` runs `clerkMiddleware` and enforces sign-in on every route except the public set (`lib/auth/route-protection.ts`): `/`, `/pricing`, `/demo`, `/api/health`, `/sign-in/*`, `/sign-up/*`, `/industries/*`, and `/api/webhooks/*` (webhooks self-validate signatures). When Clerk is absent the proxy is a pass-through and the app runs on the placeholder dev-session (ADR-0001 mock-first).
+When `CLERK_SECRET_KEY` is set, `proxy.ts` runs `clerkMiddleware` and enforces sign-in on every route except the public set (`lib/auth/route-protection.ts`): `/`, `/pricing`, `/audit`, `/trust`, `/demo`, `/api/health`, `/sign-in/*`, `/sign-up/*`, `/industries/*`, and `/api/webhooks/*` (webhooks self-validate signatures). When Clerk is absent and `RESPONSEOS_REQUIRE_AUTH` is unset, the proxy is a pass-through and the app runs on the placeholder dev-session (ADR-0001 mock-first). Hosted staging must set `RESPONSEOS_REQUIRE_AUTH`; without Clerk configuration, that combination fails closed at both the proxy and session layers. The staging workflow verifies the auth flag before migration and rejects anonymous `200` responses from protected routes after deploy.
 
 ## Tenant RBAC
 

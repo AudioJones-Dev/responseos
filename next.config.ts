@@ -21,6 +21,12 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  env: {
+    RESPONSEOS_BUILD_SHA:
+      process.env.RESPONSEOS_BUILD_SHA ??
+      process.env.VERCEL_GIT_COMMIT_SHA ??
+      "local",
+  },
   // Don't advertise the framework.
   poweredByHeader: false,
   // Self-contained server output for the hosted/containerized demo deploy.
