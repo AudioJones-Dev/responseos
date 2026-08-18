@@ -1,6 +1,7 @@
 import { ISODate, UUID } from "./common";
 
 export type ProviderConnectionProvider =
+  | "telnyx"
   | "twilio"
   | "grok"
   | "openai"
@@ -8,6 +9,7 @@ export type ProviderConnectionProvider =
   | "vapi"
   | "bland"
   | "hubspot"
+  | "calendly"
   | "google_calendar"
   | "calcom"
   | "stripe";

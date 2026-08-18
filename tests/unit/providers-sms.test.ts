@@ -7,8 +7,8 @@ import {
 } from "@/lib/providers/sms"
 
 describe("SmsProvider mock", () => {
-  it("resolves to mock when TWILIO_ACCOUNT_SID is absent", () => {
-    delete process.env.TWILIO_ACCOUNT_SID
+  it("resolves to mock when TELNYX_API_KEY is absent", () => {
+    delete process.env.TELNYX_API_KEY
     const provider = getSmsProvider()
     expect(provider).toBeInstanceOf(MockSmsProvider)
     expect(provider.providerId).toBe("mock")

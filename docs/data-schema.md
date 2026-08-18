@@ -10,7 +10,7 @@ The schema mirrors `types/*.ts` and `prisma/schema.prisma`. Conventions:
 
 ## Current implementation snapshot
 
-The source of truth for exact fields, enum values, relations, and indexes is `prisma/schema.prisma`. As of the v0.2 closeout, the schema has migrations `0001_v0_2_foundation` through `0008_clerk_identity_columns`.
+The source of truth for exact fields, enum values, relations, and indexes is `prisma/schema.prisma`. The current migration chain runs from `0001_v0_2_foundation` through `0010_v0_3_provider_enum_alignment`.
 
 Current Prisma models:
 
@@ -51,6 +51,8 @@ Current migration history:
 | `0006_workflow_run_substrate` | Adds workflow run tracking. |
 | `0007_audit_logs_expansion` | Expands audit logging. |
 | `0008_clerk_identity_columns` | Adds Clerk identity wiring columns. |
+| `0009_internal_demo_professional_receptionist` | Adds internal-demo account classification and professional receptionist substrate. |
+| `0010_v0_3_provider_enum_alignment` | Adds Telnyx carrier/SMS/connection and Calendly scheduling/connection enum values only; no live provider behavior. |
 
 The sections below retain historical v0.1/v0.2 design context. If they conflict with `prisma/schema.prisma`, the Prisma schema wins until this document is fully rewritten from the live schema.
 

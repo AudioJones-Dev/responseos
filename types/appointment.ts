@@ -1,6 +1,11 @@
 import { ISODate, UUID, newId, nowIso } from "./common";
 
-export type CalendarProvider = "google" | "calcom" | "ghl" | "manual";
+export type CalendarProvider =
+  | "calendly"
+  | "google"
+  | "calcom"
+  | "ghl"
+  | "manual";
 
 export type AppointmentStatus =
   | "scheduled"

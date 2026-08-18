@@ -60,6 +60,7 @@ enum CallProvider {
   vapi
   bland
   manual
+  telnyx
 }
 
 enum CallDirection {
@@ -140,6 +141,7 @@ enum CalendarProvider {
   calcom
   ghl
   manual
+  calendly
 }
 
 enum AppointmentStatus {
@@ -606,6 +608,8 @@ enum ProviderConnectionProvider {
   google_calendar
   calcom
   stripe
+  telnyx
+  calendly
 }
 
 enum ProviderConnectionStatus {
@@ -625,6 +629,7 @@ enum ConversationStatus {
 enum SmsProvider {
   twilio
   manual
+  telnyx
 }
 
 enum SmsDirection {

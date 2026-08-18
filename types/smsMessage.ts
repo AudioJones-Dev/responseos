@@ -1,6 +1,6 @@
 import { ISODate, UUID } from "./common";
 
-export type SmsProvider = "twilio" | "manual";
+export type SmsProvider = "telnyx" | "twilio" | "manual";
 
 export type SmsDirection = "inbound" | "outbound";
 

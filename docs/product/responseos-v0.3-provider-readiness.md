@@ -27,17 +27,17 @@ Mock-first (ADR-0001) holds; live wiring is v0.3-gated (ADR-0001, ADR-0019).
 
 | Capability | Schema enum (`prisma/schema.prisma`) | Adapter (`lib/providers/`) | Env (`.env.example`) |
 |---|---|---|---|
-| Carrier / voice transport | `CallProvider`: twilio, retell, vapi, bland, manual | `twilio/` (`.gitkeep` stub) | `TWILIO_*` |
+| Carrier / voice transport | `CallProvider`: telnyx, twilio, retell, vapi, bland, manual | `CarrierProvider` + deterministic mock; no live factory | `TELNYX_API_KEY`, `TWILIO_*` placeholders |
 | AI orchestration | (via `CallProvider` / `ProviderConnectionProvider`) | `vapi/`, `retell/`, `bland/` (stubs) | `VAPI_API_KEY`, `RETELL_API_KEY`, `BLAND_API_KEY` |
-| SMS / A2P | `SmsProvider`: twilio, manual | (under `twilio/`) | `TWILIO_*` |
-| CRM SoR | `ProviderConnectionProvider`: **hubspot** (GHL is *not* in this enum — it's a `CalendarProvider` value + connector stub) | `hubspot/`, `ghl/` (stubs) | `HUBSPOT_ACCESS_TOKEN`, `GHL_API_KEY` |
-| Scheduling | `CalendarProvider`: google, calcom, ghl, manual | (none) | (none) |
+| SMS / A2P | `SmsProvider`: telnyx, twilio, manual | `SmsProvider` + deterministic mock; no live factory | `TELNYX_API_KEY`, `TWILIO_*` placeholders |
+| CRM SoR | `ProviderConnectionProvider`: **hubspot** plus the carrier/scheduling baseline | `CrmProvider` + deterministic mock; no live factory | `HUBSPOT_ACCESS_TOKEN`, `GHL_API_KEY` |
+| Scheduling | `CalendarProvider`: calendly, google, calcom, ghl, manual | `SchedulingProvider` + deterministic mock; no live factory | `CALENDLY_API_KEY` placeholder |
 | Billing | `ProviderConnectionProvider`: stripe | `stripe/` (stub) | `STRIPE_*` |
 | Email | — | `resend/` (stub) | `RESEND_API_KEY` |
 | Workflow | `WorkflowProvider`: n8n, make, internal | `n8n/` (stub) | `N8N_*` |
 | LLM brain | `ProviderConnectionProvider`: grok, openai | (none) | (none) |
 
-**Implemented today:** `lib/providers/voice/` (`index.ts` + `mock.ts` + `types.ts` — the single real, mock-only CAL slice), `lib/providers/encryption/` (AES-256-GCM at the adapter boundary, ADR-0020), and `lib/providers/webhook-helpers.ts` (shared webhook response / signature + mock-ack helpers). `ProviderConnection` stores `credentials_encrypted` (Bytes) under a unique `(account_id, provider)` with tenant scoping. **Every provider-specific adapter is an empty `.gitkeep` stub.** This is correct for mock-first/v0.2 — it means v0.3 starts from near-zero adapter code.
+**Implemented today:** the mock-only CAL interfaces (`carrier`, `voiceAgent`, `sms`, `crm`, `scheduling`) plus `voice/`, `encryption/`, the provider resolver, and webhook helpers. All five new factories omit `createLive`, so declared keys still resolve to deterministic mocks. `ProviderConnection` stores `credentials_encrypted` (Bytes) under a unique `(account_id, provider)` with tenant scoping. No live provider adapter or provider webhook mutation path exists.
 
 ## 3. Research-vs-ADR reconciliation
 
@@ -58,9 +58,9 @@ The research README ([#71](../research/communications-stack/README.md)) is **cor
 
 1. **LLM brain (ADR-0032 §3):** OpenAI inside the Vapi-orchestrated agent **vs** Vapi owning model selection.
 2. **Voice gateway / Redis relationship (ADR-0013/0014):** retained behind a Vapi path **vs** subsumed by Vapi.
-3. **Telnyx enum/schema representation:** Telnyx is **absent from code/schema/env surfaces** (not in `CallProvider`/`SmsProvider`/`ProviderConnectionProvider`, no `telnyx/` adapter, no `TELNYX_*` env) even though it is **present in docs/ADRs as the primary carrier** (ADR-0031). Decide how the carrier abstraction (`CarrierProvider`) and enum coverage are added.
+3. **Telnyx enum/schema representation — resolved for Stage B:** additive `telnyx` values in `CallProvider`, `SmsProvider`, and `ProviderConnectionProvider`, with `TELNYX_API_KEY` declared as a placeholder. No live adapter is authorized.
 4. **A2P 10DLC / number-registration ownership** (platform vs per-client) — ADR-0031 open readiness item.
-5. **Scheduling provider for v0.3** — `CalendarProvider` enums exist (google, calcom, ghl) but there is no adapter, no env, and no ADR selecting one.
+5. **Scheduling provider for v0.3 — resolved by ADR-0037 and Stage B:** Calendly is represented in scheduling/connection enums and `CALENDLY_API_KEY` is declared as a placeholder. The factory remains mock-only.
 6. **Sendblue / iMessage scope** — research candidate only; in or out of v0.3.
 7. **`grok` / xAI reconciliation** — Grok remains in the schema enum / docs as **legacy or open-provider residue** and needs reconciliation against ADR-0031/0032 (it is not the current orchestration/carrier canon, but carries older ADR history rather than being unbacked). The current xAI docs review is captured in [`responseos-xai-voice-readiness-spike.md`](./responseos-xai-voice-readiness-spike.md) and keeps xAI experimental unless a later approved spike or ADR changes that placement.
 8. **Stale docs cleanup** — `docs/README.md` (still summarizes "Twilio edge · Grok Voice primary / OpenAI Realtime fallback …") and `SECURITY.md` ("Standard mode runs on Twilio + Retell + Supabase + Vercel" + the webhook table missing Telnyx/Vapi rows) predate ADR-0031/0032 and need updating. (`RESPONSEOS_BUILD_SOURCE.md` is already reconciled — PR #49.)
@@ -68,20 +68,20 @@ The research README ([#71](../research/communications-stack/README.md)) is **cor
 
 ## 5. Current schema / provider-adapter gaps
 
-1. **Telnyx not represented in code/schema/env** (present only in docs/ADRs) — the primary carrier has no enum value, adapter, or env placeholder yet.
-2. **All provider-specific adapters are `.gitkeep` stubs** except `voice/` (mock), `encryption/`, and `webhook-helpers.ts`. No `CarrierProvider` / `VoiceAgentProvider` / `CrmProvider` interfaces exist in code — only the `voice/` types.
+1. **No live Telnyx implementation** — Stage B represents the provider in schema/types/env only; the carrier/SMS factories remain deterministic mocks.
+2. **No live Vapi, HubSpot, or Calendly implementation** — the CAL interfaces and mocks exist, but no factory supplies `createLive`.
 3. **Webhook-signature coverage incomplete** — `SECURITY.md` lists Twilio, Retell, Stripe, HighLevel, n8n, Clerk but **not Telnyx or Vapi**. ADR-0009 requires signature validation *before any business mutation*; that path is unimplemented (v0.3 wires).
-4. **Schema enum drift** — `grok`/`openai` present (LLM-brain open), `telnyx`/`sendblue` absent; no dedicated `CarrierProvider` enum despite ADR-0031 referencing one.
+4. **Residual schema history** — `grok`/`openai` and `calcom` remain for backward compatibility. Stage B is additive and does not destructively remove historical enum values.
 5. **No LLM-brain env placeholders** (`OPENAI_*` / `GROK_*`).
 
 ## 6. Minimal safe implementation sequence (only after explicit written approval; mock-first per ADR-0001)
 
 1. **Docs reconciliation (docs-only):** update `docs/README.md` (stack summary) and `SECURITY.md` (webhook table + standard-mode line) — `RESPONSEOS_BUILD_SOURCE.md` is already reconciled (#49); record the resolved §4 decisions (LLM brain, gateway/Redis) as a new ADR.
-2. **CAL interfaces in code (mock-only):** define `CarrierProvider`, `VoiceAgentProvider`, `SmsProvider`, `CrmProvider` mirroring the existing `voice/` pattern; env-absent → mock fallback.
-3. **Schema alignment (migration, gated):** add `telnyx` to carrier/SMS/connection enums; resolve `grok`/`sendblue`. No new knowledge/RAG/vector tables under this provider-readiness slice; any new v0.3 schema must be separately scoped and approved.
+2. **CAL interfaces in code (mock-only) — complete:** `CarrierProvider`, `VoiceAgentProvider`, `SmsProvider`, `CrmProvider`, and `SchedulingProvider` resolve to deterministic mocks.
+3. **Schema alignment — Stage B review-ready in this branch:** additive Telnyx and Calendly enum values only. The dependency-audit blocker was cleared with a validated `deepmerge-ts` `8.0.1` override; historical enum removal and all other schema work remain separately gated.
 4. **Mock adapters** for Telnyx/Vapi/HubSpot behind the CAL returning deterministic data; persist into the existing ledger / `conversations` / `call_transcripts` substrate (Phase-1 Business Memory capture, ADR-0034).
 5. **Webhook ingress with signature validation first** (ADR-0009): validate → reject-on-bad → *then* mutate; mock mode validates and no-ops.
-6. **Env placeholders only** (`TELNYX_*`, `OPENAI_*`/`GROK_*`, etc.) — **no real secrets**.
+6. **Env placeholders only — implemented for active factory probes:** `TELNYX_API_KEY` and `CALENDLY_API_KEY` are declared with empty values; **no real secrets**.
 7. **Live cutover, one provider at a time, flag-gated, non-prod first** — only after BAA / registration / observability / rollback are in place and explicitly authorized.
 
 ## 7. Provider-readiness checklist (per provider, before live)
