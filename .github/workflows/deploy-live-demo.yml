@@ -1,0 +1,101 @@
+name: Deploy Live Demo Staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "live-demo-staging" to confirm an isolated non-production deploy'
+        required: true
+        type: string
+      sha:
+        description: "Exact reviewed 40-character commit SHA to deploy"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  deployments: write
+
+concurrency:
+  group: deploy-live-demo-staging
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reject accidental triggers
+        if: ${{ inputs.confirm != 'live-demo-staging' }}
+        run: exit 1
+
+  deploy:
+    needs: guard
+    runs-on: ubuntu-latest
+    environment:
+      name: live-demo-staging
+      url: ${{ steps.deploy.outputs.url }}
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      DATABASE_URL: ${{ secrets.LIVE_DEMO_DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.LIVE_DEMO_DIRECT_URL }}
+      RESPONSEOS_BUILD_SHA: ${{ inputs.sha }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.sha }}
+
+      - name: Verify exact reviewed SHA
+        shell: bash
+        run: |
+          if [[ ! "${{ inputs.sha }}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::sha must be a full 40-character lowercase commit SHA."
+            exit 1
+          fi
+          test "$(git rev-parse HEAD)" = "${{ inputs.sha }}"
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.18.0
+          cache: npm
+
+      - name: Require isolated deploy secrets
+        shell: bash
+        run: |
+          missing=0
+          for name in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID DATABASE_URL DIRECT_URL; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing live-demo-staging secret: $name"
+              missing=1
+            fi
+          done
+          test "$missing" -eq 0
+
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npm install -g vercel@41.7.0
+      - run: vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
+      - run: node scripts/validate-live-demo-env.mjs .vercel/.env.preview.local
+      - run: npx prisma migrate deploy
+      - run: vercel build --token="$VERCEL_TOKEN"
+
+      - name: Deploy isolated candidate
+        id: deploy
+        shell: bash
+        run: |
+          url=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN")
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Verify exact artifact and access boundaries
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
+        shell: bash
+        run: |
+          health=$(curl --fail --silent --show-error --max-time 30 "$DEPLOYMENT_URL/api/health")
+          test "$(printf '%s' "$health" | jq -r '.build_sha')" = "${{ inputs.sha }}"
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' "$DEPLOYMENT_URL/demo")" = "200"
+          for path in /admin/demo-operations /client/calls /api/admin/crm-sync-operations; do
+            code=$(curl --silent --output /dev/null --write-out '%{http_code}' "$DEPLOYMENT_URL$path")
+            case "$code" in 301|302|303|307|308|401|403|404) ;; *) exit 1 ;; esac
+          done

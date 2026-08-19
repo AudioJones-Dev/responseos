@@ -1,8 +1,10 @@
 import { PageHeader, Card, CardHeading, StatusBadge, ButtonLink } from "@/components/ui";
 import { MemoryGatesPanel } from "../../../_components/MemoryGatesPanel";
-import { memory } from "../../../_data/scenario";
+import { DemoDataBanner } from "../../../_components/DemoDataBanner";
+import { getWalkthroughScenario } from "../../../_data/getWalkthroughScenario";
 
-export default function BusinessMemory() {
+export default async function BusinessMemory() {
+  const { memory, source, error } = await getWalkthroughScenario();
   return (
     <>
       <PageHeader
@@ -11,6 +13,7 @@ export default function BusinessMemory() {
         description={`${memory.model} · captured ${memory.capturedAt}`}
         actions={<StatusBadge label="Phase 1" tone="accent" />}
       />
+      <DemoDataBanner source={source} error={error} />
 
       <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
         <div className="flex flex-col gap-4">

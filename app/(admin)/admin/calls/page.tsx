@@ -37,7 +37,7 @@ export default async function AdminCallsPage() {
       <PageHeader
         eyebrow="Operator Console"
         title="Calls"
-        description="Inbound and outbound call events across providers (Twilio, Retell, Vapi, Bland, manual)."
+        description="Inbound and outbound call events across providers (including Telnyx, Twilio, Retell, Vapi, Bland, and manual records)."
       />
 
       {calls.length === 0 ? (

@@ -64,7 +64,7 @@ export const call = {
     owner: "On-call accessibility specialist",
     dueAt: "by 9:00 AM tomorrow",
   },
-  crmSyncStatus: "Synced to HubSpot",
+  crmSyncStatus: "Mock only — no HubSpot write",
   memoryStatus: "Captured (Phase-1 event-ledger)",
   transcript: [
     { t: "00:00", speaker: "AI", text: "Thank you for calling DemoLift Accessibility Services — this is the after-hours line. I can help you get an urgent accessibility issue handled. May I ask what's going on?" },
@@ -90,9 +90,9 @@ export const lead = {
   qualificationScore: 88,
   qualificationBand: "Qualified",
   urgency: "high" as const,
-  dealStage: "Qualified — appointment requested",
-  hubspotDealId: "hs_deal_demo_90115",
-  crmSyncStatus: "Synced",
+  dealStage: "Illustrative qualified state",
+  hubspotDealId: "No HubSpot record",
+  crmSyncStatus: "Mock only",
   followUpOwner: "On-call accessibility specialist",
   appointmentIntent: "Urgent on-site assessment",
   sourceAttribution: "After-hours inbound call (carrier + AI receptionist)",
@@ -113,7 +113,7 @@ export const memory = {
   summary: "Urgent after-hours wheelchair-ramp safety assessment requested.",
   operationalContext:
     "Safety-critical: caller's father just discharged from hospital; ramp unsafe. Route to nearest accessibility crew; confirm same-day or next-morning window.",
-  commercialContext: "Estimated opportunity $1,500–$4,500 · CRM: HubSpot.",
+  commercialContext: "Estimated opportunity $1,500–$4,500 · target CRM: HubSpot (mock only).",
   nextActions: [
     { label: "Callback to confirm assessment window", owner: "On-call accessibility specialist", dueAt: "by 9:00 AM tomorrow" },
   ],
@@ -139,7 +139,7 @@ export const followUps = [
     dueAt: "by 9:00 AM tomorrow",
     owner: "On-call accessibility specialist",
     estimatedValue: { min: 1500, max: 4500 },
-    crmStatus: "Synced",
+    crmStatus: "Mock only",
     suggestedAction: "Call (consent on file) to lock same-day / next-morning window",
     riskIfIgnored: "Lost service/install job; safety-critical caller likely to call a competitor.",
   },
@@ -148,7 +148,7 @@ export const followUps = [
 export type IntegrationState = "synced" | "mock" | "disabled" | "captured";
 
 export const integrations: { name: string; state: IntegrationState; detail: string }[] = [
-  { name: "HubSpot CRM sync", state: "mock", detail: "Mock sync — contact / activity / deal / task created in the demo (no live HubSpot)." },
+  { name: "HubSpot CRM sync", state: "mock", detail: "Illustrative contract only — no HubSpot record was written." },
   { name: "Telephony event delivery", state: "mock", detail: "Mock inbound event (no live Telnyx/Twilio in the demo)." },
   { name: "Calendar / scheduling", state: "disabled", detail: "Placeholder — not connected in the demo." },
   { name: "Business Memory capture", state: "captured", detail: "Phase-1 event-ledger capture active (mock data)." },

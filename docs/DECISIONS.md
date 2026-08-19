@@ -813,3 +813,24 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 - The spec's canonical fallback line names the account owner inline. The shared helper takes the owner name as an argument so no demo identity is compiled into core logic.
 
 **Consequences.** ResponseOS gains a reference tenant that proves the platform on itself, and a claim-authority boundary that makes the honest answer the default one. The cost is real: until Career OS (or the owner) supplies verified records, the receptionist answers most career questions with the fallback line. That is the correct behaviour for an unsourced claim, and flipping it on is a data change, not a code change. `ProfessionalKnowledgeProvider` and `ProfessionalHandoffProvider` each have exactly one adapter, so per ADR-0043 they are **architecture preparation, not proven provider portability** — nothing here licenses a provider-independence claim.
+
+---
+
+## ADR-0047 — The first prospect proof is an isolated, supervised post-call evidence chain
+
+**Status:** Accepted (2026-08-18) for repository implementation. Platform provisioning, secret injection, Telnyx/HubSpot account mutation, deployment, number exposure, and prospect release remain separate operator gates.
+
+**Context.** Keys alone could not produce a live demonstration because both carrier and CRM factories were mock-only. The smallest credible proof does not require ResponseOS to control realtime audio: Telnyx AI Assistant can own the conversation while ResponseOS verifies and persists post-call evidence, then synchronizes a bounded commercial record into a HubSpot developer test account.
+
+**Decision.**
+
+1. Two isolated non-production lanes are required: authenticated provider-free `responseos-staging-mock`, and supervised `responseos-live-demo` with its own database, Clerk application, HubSpot test account, and Telnyx demo resources.
+2. Telnyx webhook ingestion is enabled only when `RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED=true` and the verification key, server-owned demo account, and demo number are configured. The unmodified raw body is verified before parsing or mutation; valid events land in `WebhookEvent` before normalization.
+3. Canonical call identity is unique on account, provider, and provider call ID. Recording stays disabled; transcripts remain inside authenticated ResponseOS.
+4. HubSpot execution requires both a token and `RESPONSEOS_LIVE_HUBSPOT_ENABLED=true`. Contact ambiguity requires human review. The export is limited to a contact, sanitized call activity, and qualified follow-up task; no deal, transcript, or recording URL is sent.
+5. `CrmSyncOperation` is the durable retry/idempotency record. Provider object IDs are persisted independently so partial retries reconcile before creating another object.
+6. Public audit requests use a dedicated `ProspectIntake`, a server-owned tenant, required idempotency key, audited operator transitions, and 90-day PII expiry for unqualified records. Public route exposure remains behind an explicit flag until a path-scoped WAF rule produces observed `429` evidence.
+7. `/demo/live-call` renders its number server-side only behind an explicit visibility flag and carries automation, transcription, demo-context, and no-scheduling disclosures.
+8. `CarrierProvider` remains mock-only because this slice does not control realtime audio. Outbound dialing, scheduling providers, recording, deal creation, production aliases, real client data, and unattended public availability remain excluded.
+
+**Consequences.** Repository code can prove the bounded chain without claiming production readiness. A passing local or fixture test does not authorize live provider use; Gate Set A, exact-SHA hosted smoke, private call drills, rollback, duplicate-effect checks, and one outside-number rehearsal remain required before a human go/no-go can expose the number to a prospect.

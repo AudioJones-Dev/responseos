@@ -1,7 +1,10 @@
-import { PageHeader, MetricCard, Card, ButtonLink, AlertBanner } from "@/components/ui";
-import { overview, founderBriefing, lead, usd, usdRange } from "../../_data/scenario";
+import { PageHeader, MetricCard, Card, ButtonLink } from "@/components/ui";
+import { DemoDataBanner } from "../../_components/DemoDataBanner";
+import { getWalkthroughScenario } from "../../_data/getWalkthroughScenario";
+import { usd, usdRange } from "../../_data/scenario";
 
-export default function RevenueRecoveryOverview() {
+export default async function RevenueRecoveryOverview() {
+  const { overview, founderBriefing, lead, source, error } = await getWalkthroughScenario();
   return (
     <>
       <PageHeader
@@ -10,9 +13,7 @@ export default function RevenueRecoveryOverview() {
         description={`${overview.period} · what revenue we protected and what needs action`}
       />
 
-      <AlertBanner className="mb-6">
-        Guided walkthrough on mock data — no live calls, CRM, or providers are connected.
-      </AlertBanner>
+      <DemoDataBanner source={source} error={error} />
 
       <section className="relative mb-6 overflow-hidden rounded-lg border border-line bg-surface p-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
         <div

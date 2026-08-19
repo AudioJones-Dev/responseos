@@ -1,7 +1,10 @@
 import { PageHeader, Card, StatusBadge, AlertBanner, ButtonLink, Table, THead, TBody, TR, TD } from "@/components/ui";
-import { followUps, usdRange } from "../../../_data/scenario";
+import { DemoDataBanner } from "../../../_components/DemoDataBanner";
+import { getWalkthroughScenario } from "../../../_data/getWalkthroughScenario";
+import { usdRange } from "../../../_data/scenario";
 
-export default function FollowUpQueue() {
+export default async function FollowUpQueue() {
+  const { followUps, source, error } = await getWalkthroughScenario();
   return (
     <>
       <PageHeader
@@ -9,6 +12,7 @@ export default function FollowUpQueue() {
         title="What needs a human, and when"
         description="Prioritised by urgency and revenue at risk"
       />
+      <DemoDataBanner source={source} error={error} />
 
       <Table className="mb-6">
         <THead columns={["Lead", "Reason", "Owner", "Due", "Est. value", "Urgency", "CRM"]} />

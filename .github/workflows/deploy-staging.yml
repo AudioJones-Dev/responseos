@@ -20,6 +20,10 @@ on:
         description: 'Type "staging" to confirm a non-production deploy'
         required: true
         type: string
+      sha:
+        description: "Exact reviewed 40-character commit SHA to deploy"
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -54,9 +58,24 @@ jobs:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
       DIRECT_URL: ${{ secrets.STAGING_DIRECT_URL }}
-      RESPONSEOS_BUILD_SHA: ${{ github.sha }}
+      RESPONSEOS_BUILD_SHA: ${{ inputs.sha }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.sha }}
+
+      - name: Verify exact reviewed SHA
+        shell: bash
+        run: |
+          if [[ ! "${{ inputs.sha }}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::sha must be a full 40-character lowercase commit SHA."
+            exit 1
+          fi
+          actual=$(git rev-parse HEAD)
+          if [ "$actual" != "${{ inputs.sha }}" ]; then
+            echo "::error::Checked-out SHA does not match the requested reviewed SHA."
+            exit 1
+          fi
 
       - uses: actions/setup-node@v6
         with:
@@ -108,7 +127,7 @@ jobs:
         run: |
           health=$(curl --fail --silent --show-error --max-time 30 "$DEPLOYMENT_URL/api/health")
           actual_sha=$(printf '%s' "$health" | jq -r '.build_sha')
-          if [ "$actual_sha" != "$GITHUB_SHA" ]; then
+          if [ "$actual_sha" != "${{ inputs.sha }}" ]; then
             echo "::error::Health build SHA does not match the reviewed workflow SHA."
             exit 1
           fi

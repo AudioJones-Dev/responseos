@@ -4,6 +4,15 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: implement the isolated GTM and supervised prospect-demo chain
+
+- Added a database-backed fictional sandbox lifecycle with tenant-scoped reads, explicit persisted/static-fallback disclosure, zero verified revenue, and a reset command restricted to the mock-staging lane.
+- Replaced mock audit acknowledgements with idempotent `ProspectIntake` persistence, a protected operator workflow, audited transitions, reference-only three-second notifications, and a guarded 90-day PII purge path. Public exposure remains flag- and WAF-gated.
+- Added Ed25519/raw-body Telnyx post-call ingestion with stale-signature rejection, ledger-first persistence, provider-event dedupe, canonical call identity, out-of-order normalization, transcript/summary/qualification persistence, and no recording or realtime carrier control.
+- Added an explicitly gated HubSpot adapter plus durable `CrmSyncOperation` reconciliation: phone-first contact resolution, ambiguity review, sanitized call activity, qualified follow-up task, partial-write recovery, operator retry, and no deals/transcripts/recording URLs.
+- Added the hidden `/demo/live-call` disclosure page, authenticated demo-operations console, exact-SHA manual workflows, environment preflights, and the two-lane deployment/rehearsal runbook.
+- **Not activated:** no platform resource, secret, provider account, deployment, phone routing, public number, or prospect traffic is changed by this repository work.
+
 ## Unreleased — chore: align v0.3 provider contracts and harden staging
 
 - Added migration `0010_v0_3_provider_enum_alignment`: additive `telnyx` values for call, SMS, and provider-connection records plus additive `calendly` values for appointment and provider-connection records.
