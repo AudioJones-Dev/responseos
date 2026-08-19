@@ -4,6 +4,10 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — chore: pin deepmerge-ts 8.0.1 to clear GHSA-ggr8-5vv4-36mx
+
+- Added a transitive `deepmerge-ts` `8.0.1` override for Prisma's configuration package because the current advisory range marks releases below `8.0.0` high severity. The override avoids npm's proposed Prisma downgrade; compatibility is checked through Prisma generation, migrations, seed, integration tests, and DB-backed build. No application logic, provider, secret, or deploy changes.
+
 ## Unreleased — docs: close out the build status report; PR backlog fully drained
 
 - Recorded the final five merges — #98 (`b50d2f2`), #94 (`1250faf`), #108 (`a790ba3`), #105 (`96fdfed`), #103 (`897c866`) — leaving **#107 as the only open PR**. Noted #109/#110/#111/#112/#113 landing alongside.
