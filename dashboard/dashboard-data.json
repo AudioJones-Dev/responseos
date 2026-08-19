@@ -501,6 +501,19 @@
       "blockedReason": "Requires explicit scoped approval for PR A from the live-call implementation brief; active target remains Telnyx + Sent.dm, with Linq migration kept behind the MessagingProvider boundary"
     },
     {
+      "id": "I-07",
+      "phase": "Integrations",
+      "title": "Telnyx AI Assistant post-call ingestion PRD",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-08-18",
+      "due": "2026-08-18",
+      "blocked": true,
+      "blockedReason": "Planning complete; implementation requires separate Stage B, Stage C, and Stage D authorizations plus Gate Set B prerequisites"
+    },
+    {
       "id": "Q-01",
       "phase": "Testing & QA",
       "title": "Unit coverage expansion",

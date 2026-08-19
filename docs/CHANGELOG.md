@@ -4,6 +4,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: Telnyx AI Assistant post-call ingestion PRD
+
+- Added [`product/responseos-v0.3-telnyx-post-call-ingestion-prd.md`](./product/responseos-v0.3-telnyx-post-call-ingestion-prd.md), which scopes post-call ingestion — signed Telnyx webhook → verified `WebhookEvent` ledger record → demo-tenant `Call` / `LeadEvent` / qualification / transcript records — as the safest first live-provider slice, ahead of realtime audio control. Capability status is `DOCUMENTED_ONLY`; the live path is a **candidate Stage D** and remains unauthorized.
+- Planning only. No provider account, phone number, secret, schema, runtime, webhook, CRM, deployment, or public claim changes. Live HubSpot stays sandboxed at Stage G. Each consequential step still requires its matching staged authorization plus Gate Set B prerequisites.
+- Tracked on the progress board as **I-07** (Integrations, Review, blocked pending those authorizations).
+
 ## Unreleased — chore: pin deepmerge-ts 8.0.1 to clear GHSA-ggr8-5vv4-36mx
 
 - Added a transitive `deepmerge-ts` `8.0.1` override for Prisma's configuration package because the current advisory range marks releases below `8.0.0` high severity. The override avoids npm's proposed Prisma downgrade; compatibility is checked through Prisma generation, migrations, seed, integration tests, and DB-backed build. No application logic, provider, secret, or deploy changes.
