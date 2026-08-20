@@ -531,8 +531,10 @@
       "priority": "Med",
       "start": "2026-08-20",
       "due": "2026-08-20",
+      "ref": 123,
+      "refType": "pull",
       "blocked": true,
-      "blockedReason": "Local implementation and all validation gates are green; commit, push, PR, merge, and every persistence/live-provider stage remain separately gated"
+      "blockedReason": "Draft PR #123 awaits CI and human review; merge and every persistence/live-provider stage remain separately gated"
     },
     {
       "id": "L-05",
