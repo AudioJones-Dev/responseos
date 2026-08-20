@@ -4,6 +4,13 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: add deterministic virtual-extension routing contracts
+
+- Added provider-neutral virtual-extension request, decision, destination, availability, reason-code, and mock-event contracts.
+- Added a pure account-scoped resolver with deterministic two-account fixtures, exact DTMF precedence, exact spoken-alias matching, one clarification, message-taking fallback, and stable decision/event identities.
+- Added unit coverage for route resolution, normalization, tenant isolation, idempotency, fallback behavior, evidence-state honesty, and the absence of live phone/SIP destinations.
+- **Mock-only policy seam:** no Prisma model, API route, provider adapter, prompt, SDK, env var, secret, number, network call, deployment, or activation behavior is added.
+
 ## Unreleased — feat: implement the isolated GTM and supervised prospect-demo chain
 
 - Added a database-backed fictional sandbox lifecycle with tenant-scoped reads, explicit persisted/static-fallback disclosure, zero verified revenue, and a reset command restricted to the mock-staging lane.
