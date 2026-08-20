@@ -511,6 +511,32 @@
       "blockedReason": "Adapter and durable operation code require integration validation plus mapping proof in an isolated HubSpot developer test account"
     },
     {
+      "id": "I-11",
+      "phase": "Integrations",
+      "title": "ResponseOS virtual extension routing PRD",
+      "owner": "Codex",
+      "status": "Done",
+      "progress": 100,
+      "priority": "Med",
+      "start": "2026-08-20",
+      "due": "2026-08-20"
+    },
+    {
+      "id": "I-12",
+      "phase": "Integrations",
+      "title": "Virtual extension routing contracts and deterministic mocks",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 100,
+      "priority": "Med",
+      "start": "2026-08-20",
+      "due": "2026-08-20",
+      "ref": 123,
+      "refType": "pull",
+      "blocked": true,
+      "blockedReason": "Draft PR #123 awaits CI and human review; merge and every persistence/live-provider stage remain separately gated"
+    },
+    {
       "id": "L-05",
       "phase": "Launch / Demo Deploy",
       "title": "Isolated supervised live-demo lane",
