@@ -21,6 +21,7 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - Pinned the transitive `deepmerge-ts` dependency to patched release `8.0.1`, clearing `GHSA-ggr8-5vv4-36mx` without accepting npm's Prisma downgrade recommendation. This changes no application or provider behavior.
 - Added the missing `RESPONSEOS_REQUIRE_AUTH` placeholder and a value-redacting staging preflight that requires Clerk/database/application configuration while rejecting dev-session and live-provider credentials.
 - Removed the staging migration bypass and pooled-URL fallback. The manual workflow now validates the environment before mutation, always deploys migrations through the direct URL, reports exact build identity through `/api/health`, and rejects anonymous `200` responses from protected routes.
+- Pinned the staging workflow to Vercel CLI `52.2.1`, added a status-only project-token access preflight, and moved token consumption to the job environment. This prepares a separately authorized non-production retry; it performs no deployment or provider activation.
 - Added canonical readiness gates separating mock-only staging evidence from separately authorized live-provider evidence. Production aliases and provider accounts remain untouched.
 - **No live provider behavior:** no factory supplies `createLive`; no secret value, provider account, webhook mutation, deployment, or phone-number configuration is included.
 
