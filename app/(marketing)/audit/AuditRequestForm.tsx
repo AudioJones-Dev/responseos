@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button, Card } from "@/components/ui";
 
 const fieldCls =
@@ -17,6 +17,7 @@ export function AuditRequestForm() {
   const [status, setStatus] = useState<Status>("idle");
   const [reference, setReference] = useState("");
   const [error, setError] = useState("");
+  const idempotencyKey = useRef<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -40,10 +41,15 @@ export function AuditRequestForm() {
       payload.avg_job_value_usd = Number(raw.avg_job_value_usd);
     if (raw.notes) payload.notes = raw.notes;
 
+    idempotencyKey.current ??= crypto.randomUUID();
+
     try {
       const res = await fetch("/api/audit-requests", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: {
+          "content-type": "application/json",
+          "idempotency-key": idempotencyKey.current,
+        },
         body: JSON.stringify(payload),
       });
       const body = (await res.json()) as {

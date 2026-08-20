@@ -31,7 +31,16 @@ const PUBLIC_PREFIXES: readonly string[] = [
   "/api/webhooks",
 ];
 
-export function isPublicPath(pathname: string): boolean {
+export function isPublicPath(
+  pathname: string,
+  env: Readonly<Record<string, string | undefined>> = process.env,
+): boolean {
+  if (
+    pathname === "/api/audit-requests" &&
+    env.RESPONSEOS_PUBLIC_AUDIT_INTAKE_ENABLED === "true"
+  ) {
+    return true;
+  }
   if (PUBLIC_EXACT.has(pathname)) {
     return true;
   }

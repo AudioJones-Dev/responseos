@@ -1,7 +1,10 @@
 import { PageHeader, Card, CardHeading, StatusBadge, MetricCard, ButtonLink } from "@/components/ui";
-import { lead, usdRange } from "../../../_data/scenario";
+import { DemoDataBanner } from "../../../_components/DemoDataBanner";
+import { getWalkthroughScenario } from "../../../_data/getWalkthroughScenario";
+import { usdRange } from "../../../_data/scenario";
 
-export default function LeadOpportunity() {
+export default async function LeadOpportunity() {
+  const { lead, source, error } = await getWalkthroughScenario();
   const facts: { label: string; value: string }[] = [
     { label: "Service category", value: lead.serviceCategory },
     { label: "Work type", value: lead.workType },
@@ -19,6 +22,7 @@ export default function LeadOpportunity() {
         description={`${lead.dealStage} · ${lead.region}`}
         actions={<StatusBadge label={`HubSpot: ${lead.crmSyncStatus}`} tone="success" />}
       />
+      <DemoDataBanner source={source} error={error} />
 
       <section className="mb-6 grid gap-4 sm:grid-cols-3">
         <MetricCard label="Qualification" value={`${lead.qualificationScore}/100`} hint={lead.qualificationBand} emphasis />

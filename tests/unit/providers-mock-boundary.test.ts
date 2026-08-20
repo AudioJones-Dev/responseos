@@ -17,6 +17,7 @@ afterEach(() => {
   for (const key of CONFIGURED_PROVIDER_KEYS) {
     delete process.env[key]
   }
+  delete process.env.RESPONSEOS_LIVE_HUBSPOT_ENABLED
 })
 
 describe("Stage B mock-only provider boundary", () => {

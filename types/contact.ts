@@ -9,6 +9,7 @@ export interface Contact {
   last_name?: string;
   phone?: string;
   email?: string;
+  email_verified: boolean;
   address?: string;
   city?: string;
   state?: string;
@@ -27,6 +28,7 @@ export function MockContact(overrides: Partial<Contact> = {}): Contact {
     last_name: "Customer",
     phone: "+15555550199",
     email: "pat@example.com",
+    email_verified: false,
     address: "123 Main St",
     city: "Tampa",
     state: "FL",

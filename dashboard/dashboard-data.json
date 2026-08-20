@@ -472,6 +472,58 @@
       "blocked": false
     },
     {
+      "id": "GTM-01",
+      "phase": "Launch / Demo Deploy",
+      "title": "Persisted prospect intake and operator workflow",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 95,
+      "priority": "High",
+      "start": "2026-08-18",
+      "due": "2026-08-18",
+      "blocked": true,
+      "blockedReason": "Repository implementation is under validation; public exposure remains blocked on isolated staging, WAF/bot configuration, and observed 429 evidence"
+    },
+    {
+      "id": "I-09",
+      "phase": "Integrations",
+      "title": "Signed Telnyx post-call ingestion and canonical evidence",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 95,
+      "priority": "High",
+      "start": "2026-08-18",
+      "due": "2026-08-18",
+      "blocked": true,
+      "blockedReason": "Code and local tests are in progress; provider configuration, secrets, deployment, and private-call evidence remain separately gated"
+    },
+    {
+      "id": "I-10",
+      "phase": "Integrations",
+      "title": "Controlled HubSpot call and follow-up synchronization",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-08-18",
+      "due": "2026-08-18",
+      "blocked": true,
+      "blockedReason": "Adapter and durable operation code require integration validation plus mapping proof in an isolated HubSpot developer test account"
+    },
+    {
+      "id": "L-05",
+      "phase": "Launch / Demo Deploy",
+      "title": "Isolated supervised live-demo lane",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 65,
+      "priority": "High",
+      "start": "2026-08-18",
+      "due": "2026-08-18",
+      "blocked": true,
+      "blockedReason": "Repository workflow and runbook are in progress; Vercel, Neon, Clerk, Telnyx, HubSpot, secret injection, deployment, rehearsal, and prospect release remain unexecuted"
+    },
+    {
       "id": "V-05",
       "phase": "v0.3 · Demo Scope",
       "title": "Internal demo tenant + professional receptionist",

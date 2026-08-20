@@ -1,5 +1,6 @@
 import "@/lib/serverOnlyGuard";
 import { createHash } from "node:crypto";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
 import { err, errFromThrown, ok, type Result } from "./result";
 import { requireRole } from "@/lib/auth/session";
@@ -126,10 +127,53 @@ export async function recordWebhookEvent(entry: {
       process_status: created.process_status as WebhookProcessStatus,
     });
   } catch (e) {
+    if (
+      e instanceof Prisma.PrismaClientKnownRequestError &&
+      e.code === "P2002"
+    ) {
+      const existing = await db.webhookEvent.findUnique({
+        where: { dedupe_hash },
+        select: { id: true },
+      });
+      if (existing) return ok({ id: existing.id, process_status: "duplicate" });
+    }
     return errFromThrown<{ id: string; process_status: WebhookProcessStatus }>(
       e,
     );
   }
+}
+
+export async function setWebhookProcessStatus(params: {
+  id: string;
+  process_status: "processed" | "rejected" | "error";
+  process_error?: string;
+}): Promise<void> {
+  if (db === null) return;
+  await db.webhookEvent.update({
+    where: { id: params.id },
+    data: {
+      process_status: params.process_status,
+      process_error: params.process_error?.slice(0, 500) ?? null,
+      processed_at: new Date(),
+    },
+  });
+}
+
+export async function getWebhookProcessingState(id: string): Promise<
+  | { process_status: WebhookProcessStatus; received_at: Date }
+  | null
+> {
+  if (db === null) return null;
+  const event = await db.webhookEvent.findUnique({
+    where: { id },
+    select: { process_status: true, received_at: true },
+  });
+  return event
+    ? {
+        process_status: event.process_status as WebhookProcessStatus,
+        received_at: event.received_at,
+      }
+    : null;
 }
 
 /**

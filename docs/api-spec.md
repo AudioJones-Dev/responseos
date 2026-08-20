@@ -98,9 +98,11 @@ Mock-safe mutation routes may include a `mock: true` flag inside the success env
 - `GET /api/reports/client/:accountId` → metrics list for one workspace
 
 ### Marketing capture
-- `POST /api/audit-requests` → public `/audit` form capture; validates payload and returns a mock-safe reference without provider/CRM writes.
+- `POST /api/audit-requests` → flag-gated public intake with required `Idempotency-Key`; returns `201` for a persisted request, `200` for an exact replay, `422` for invalid input/key reuse, `429` from the required edge WAF rule, and `503` while disabled or unavailable.
 
 ## Webhook routes
+
+- `POST /api/webhooks/telnyx/calls` → signed post-call ingest. Returns `202` for a newly ledgered event, `200` for a duplicate, `401` for missing/invalid/stale signatures, `422` for an invalid signed envelope, and `503` while the explicit live-ingest configuration or ledger is unavailable.
 
 Provider webhook endpoints accept POST only and reject other methods. Live provider webhooks remain mock-safe until v0.3 authorization: most provider routes parse safely and acknowledge with `{ ok: true, received: <provider>, mock: true }` while signature validation remains a TODO. Clerk is the exception: `/api/webhooks/clerk` verifies Svix headers before parsing or mutating identity records.
 

@@ -1,8 +1,12 @@
 import type {
   CrmContact,
+  CrmContactCreate,
+  CrmContactMatch,
   CrmContactUpsert,
+  CrmCallActivityCreate,
   CrmEvent,
   CrmEventResult,
+  CrmFollowUpTaskCreate,
   CrmProvider,
 } from "@/lib/providers/crm/types"
 
@@ -32,5 +36,39 @@ export class MockCrmProvider implements CrmProvider {
       status: "accepted",
       recordedAt: FIXED_RECORDED_AT,
     }
+  }
+
+  async findContacts(): Promise<CrmContactMatch[]> {
+    return []
+  }
+
+  async createContact(contact: CrmContactCreate): Promise<CrmContactMatch> {
+    return {
+      providerContactId: `mock-contact:${contact.phone}`,
+    }
+  }
+
+  async createCallActivity(activity: CrmCallActivityCreate) {
+    return {
+      providerActivityId: `mock-call:${activity.evidenceReference}`,
+    }
+  }
+
+  async findCallActivity() {
+    return null
+  }
+
+  async createFollowUpTask(task: CrmFollowUpTaskCreate) {
+    return {
+      providerTaskId: `mock-task:${task.evidenceReference}`,
+    }
+  }
+
+  async findFollowUpTask() {
+    return null
+  }
+
+  async associateContact() {
+    return undefined
   }
 }

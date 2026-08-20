@@ -47,4 +47,13 @@ describe("isPublicPath", () => {
   ])("treats %s as protected", (path) => {
     expect(isPublicPath(path)).toBe(false);
   });
+
+  test("opens audit intake only behind the explicit public gate", () => {
+    expect(isPublicPath("/api/audit-requests", {})).toBe(false);
+    expect(
+      isPublicPath("/api/audit-requests", {
+        RESPONSEOS_PUBLIC_AUDIT_INTAKE_ENABLED: "true",
+      }),
+    ).toBe(true);
+  });
 });

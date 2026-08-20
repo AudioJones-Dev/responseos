@@ -5,7 +5,7 @@ The compliance posture is chosen **per tenant tier**, not hard-coded globally. S
 ## Hard rules (always)
 
 - **No hardcoded secrets** anywhere in the repo. `.env.example` is placeholders only.
-- **Webhook signatures verified** before any business mutation (v0.3 wires; v0.1 marks TODO).
+- **Webhook signatures verified** before any business mutation. Clerk and the flag-gated Telnyx post-call route implement this; remaining provider stubs are not live integrations.
 - **Tenant isolation** enforced at every read/write — `account_id` derived from session, never trusted from client input.
 - **Payment boundary:** never store card data. Stripe hosted pages or Payment Intents only.
 - **Audit logging** on every admin action, prompt change, and data export.
@@ -30,7 +30,7 @@ Local and runtime secrets are injected with **Doppler** as an **opt-in** layer (
 | Encryption | TLS in transit; encrypted storage + backups (KMS in HIPAA lane) |
 | Access control | Tenant RBAC; least privilege; admin break-glass policy |
 | Auditability | Immutable event ledger (v0.2); admin action logs; prompt/version history |
-| Webhook security | Signature validation on Telnyx, Vapi, Twilio, Retell, Stripe, HighLevel (Telnyx/Vapi wire in v0.3) |
+| Webhook security | Implemented on Clerk and flag-gated Telnyx post-call ingest; required but not yet implemented on the remaining provider stubs |
 | Payment boundary | Never store cards; hosted pages / Payment Intents only |
 | Deletion + export | Tenant-scoped delete/export workflows |
 | QA governance | Separate raw artifacts from redacted review copies |
@@ -71,7 +71,7 @@ Maintain an explicit **vendor allowlist per compliance tier**. Onboarding a heal
 
 | Provider | Header | Validation |
 |---|---|---|
-| Telnyx _(primary carrier; wires v0.3, ADR-0031)_ | `telnyx-signature-ed25519` + `telnyx-timestamp` | Ed25519 public-key verify over `timestamp\|raw-body` against the Telnyx public key; reject stale timestamps (replay) |
+| Telnyx post-call demo ingest _(repository implementation; live activation separately gated, ADR-0047)_ | `telnyx-signature-ed25519` + `telnyx-timestamp` | Ed25519 public-key verify over `timestamp\|raw-body` against the Telnyx public key; reject timestamps outside five minutes before parsing or mutation |
 | Vapi _(primary orchestration; wires v0.3, ADR-0032)_ | Configured HMAC signature header, e.g. `X-Vapi-Signature`, plus optional timestamp header | Verify HMAC-SHA256 over the raw inbound webhook request body (the Vapi server-message payload) with the configured secret; constant-time compare; reject stale timestamps when configured |
 | Twilio | `X-Twilio-Signature` | HMAC-SHA1 using auth token + full URL + sorted form params; preserve raw body |
 | Retell | `x-retell-signature` | Raw-body HMAC; reject events older than 5 minutes (replay protection) |

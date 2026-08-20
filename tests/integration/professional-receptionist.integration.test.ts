@@ -24,13 +24,14 @@ afterAll(async () => {
 });
 
 describe("internal demo account classification", () => {
-  test("the reference tenant is seeded as internal_demo and every other tenant stays customer", async () => {
+  test("the reference tenant and prospect sandbox keep distinct classifications", async () => {
     const accounts = await prisma.account.findMany({ orderBy: { id: "asc" } });
     expect(
       accounts.map((account) => [account.id, account.account_type]),
     ).toEqual([
       ["org_mock_1", "customer"],
       ["org_mock_2", "customer"],
+      ["org_responseos_demo", "sandbox"],
       ["org_tyrone_1", "internal_demo"],
     ]);
   });

@@ -16,6 +16,7 @@ interface ContactRow {
   last_name: string | null;
   phone: string | null;
   email: string | null;
+  email_verified: boolean;
   address: string | null;
   city: string | null;
   state: string | null;
@@ -33,6 +34,7 @@ function rowToContact(row: ContactRow): Contact {
     last_name: row.last_name ?? undefined,
     phone: row.phone ?? undefined,
     email: row.email ?? undefined,
+    email_verified: row.email_verified,
     address: row.address ?? undefined,
     city: row.city ?? undefined,
     state: row.state ?? undefined,

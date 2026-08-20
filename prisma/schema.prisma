@@ -196,9 +196,9 @@ enum NotificationStatus {
 }
 
 model Account {
-  id            String             @id @default(cuid())
+  id            String        @id @default(cuid())
   name          String
-  slug          String             @unique
+  slug          String        @unique
   industry      String
   website_url   String?
   primary_phone String?
@@ -210,43 +210,44 @@ model Account {
   // 32A — Clerk integration substrate per ADR-0005 + step-2.4 plan §4.3.
   // Nullable so existing seeded accounts stay valid without backfill.
   // Wiring (session derivation, webhook sync) lands in 32B/32C.
-  clerk_org_id  String?            @unique
-  created_at    DateTime           @default(now())
-  updated_at    DateTime           @updatedAt
+  clerk_org_id  String?       @unique
+  created_at    DateTime      @default(now())
+  updated_at    DateTime      @updatedAt
 }
 
 model User {
-  id              String   @id @default(cuid())
-  account_id String?
-  role            UserRole
-  name            String
-  email           String   @unique
-  phone           String?
+  id            String   @id @default(cuid())
+  account_id    String?
+  role          UserRole
+  name          String
+  email         String   @unique
+  phone         String?
   // 32A — Clerk integration substrate per ADR-0005 + step-2.4 plan §4.2.
   // Nullable so existing seeded users stay valid without backfill.
   // Wiring (session derivation, webhook sync, JIT provisioning) lands
   // in 32B/32C.
-  clerk_user_id   String?  @unique
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  clerk_user_id String?  @unique
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
 
   @@index([account_id])
 }
 
 model Contact {
-  id              String        @id @default(cuid())
-  account_id String
-  first_name      String?
-  last_name       String?
-  phone           String?
-  email           String?
-  address         String?
-  city            String?
-  state           String?
-  zip             String?
-  source          ContactSource
-  created_at      DateTime      @default(now())
-  updated_at      DateTime      @updatedAt
+  id             String        @id @default(cuid())
+  account_id     String
+  first_name     String?
+  last_name      String?
+  phone          String?
+  email          String?
+  email_verified Boolean       @default(false)
+  address        String?
+  city           String?
+  state          String?
+  zip            String?
+  source         ContactSource
+  created_at     DateTime      @default(now())
+  updated_at     DateTime      @updatedAt
 
   @@index([account_id])
   @@index([phone])
@@ -255,7 +256,7 @@ model Contact {
 
 model Call {
   id               String         @id @default(cuid())
-  account_id  String
+  account_id       String
   contact_id       String?
   provider         CallProvider
   provider_call_id String?
@@ -274,6 +275,7 @@ model Call {
   lead_score       Int?
   created_at       DateTime       @default(now())
 
+  @@unique([account_id, provider, provider_call_id])
   @@index([account_id])
   @@index([contact_id])
   @@index([started_at])
@@ -281,7 +283,7 @@ model Call {
 
 model LeadEvent {
   id              String          @id @default(cuid())
-  account_id String
+  account_id      String
   contact_id      String?
   call_id         String?
   source          LeadEventSource
@@ -316,8 +318,8 @@ model LeadQualification {
 }
 
 model Appointment {
-  id                String           @id @default(cuid())
-  account_id   String
+  id                String            @id @default(cuid())
+  account_id        String
   contact_id        String
   lead_event_id     String?
   calendar_provider CalendarProvider
@@ -325,11 +327,11 @@ model Appointment {
   title             String
   start_time        DateTime
   end_time          DateTime
-  status            AppointmentStatus    @default(scheduled)
+  status            AppointmentStatus @default(scheduled)
   location          String?
   notes             String?
-  created_at        DateTime         @default(now())
-  updated_at        DateTime         @updatedAt
+  created_at        DateTime          @default(now())
+  updated_at        DateTime          @updatedAt
 
   @@index([account_id])
   @@index([contact_id])
@@ -339,7 +341,7 @@ model Appointment {
 
 model QuoteRequest {
   id               String      @id @default(cuid())
-  account_id  String
+  account_id       String
   contact_id       String
   lead_event_id    String?
   service_type     String
@@ -357,7 +359,7 @@ model QuoteRequest {
 
 model Automation {
   id                String                @id @default(cuid())
-  account_id   String
+  account_id        String
   name              String
   trigger_type      AutomationTriggerType
   status            AutomationStatus      @default(draft)
@@ -372,16 +374,16 @@ model Automation {
 }
 
 model Notification {
-  id              String              @id @default(cuid())
-  account_id String
-  lead_event_id   String?
-  channel         NotificationChannel
-  recipient       String
-  subject         String?
-  message         String
-  status          NotificationStatus  @default(queued)
-  sent_at         DateTime?
-  created_at      DateTime            @default(now())
+  id            String              @id @default(cuid())
+  account_id    String
+  lead_event_id String?
+  channel       NotificationChannel
+  recipient     String
+  subject       String?
+  message       String
+  status        NotificationStatus  @default(queued)
+  sent_at       DateTime?
+  created_at    DateTime            @default(now())
 
   @@index([account_id])
   @@index([lead_event_id])
@@ -389,7 +391,7 @@ model Notification {
 
 model RevenueMetrics {
   id                          String   @id @default(cuid())
-  account_id             String
+  account_id                  String
   period_start                DateTime
   period_end                  DateTime
   total_calls                 Int      @default(0)
@@ -467,6 +469,28 @@ enum WebhookProcessStatus {
   error
 }
 
+enum ProspectIntakeStatus {
+  received
+  reviewed
+  qualified
+  rejected
+}
+
+enum ProspectNotificationStatus {
+  pending
+  sent
+  failed
+}
+
+enum CrmSyncOperationStatus {
+  pending
+  processing
+  succeeded
+  retryable_failed
+  review_required
+  cancelled
+}
+
 // --- v0.2 closeout step 2.3, PR 31D — audit_logs expansion ----------------
 //
 // Adds the `AuditCategory` enum and the six new nullable columns
@@ -484,9 +508,9 @@ enum AuditCategory {
 }
 
 model AssessmentReport {
-  id              String           @id @default(cuid())
+  id         String           @id @default(cuid())
   account_id String
-  status          AssessmentStatus @default(draft)
+  status     AssessmentStatus @default(draft)
 
   inputs_json Json
 
@@ -515,7 +539,7 @@ model AssessmentReport {
 
 model Engagement {
   id                   String @id @default(cuid())
-  account_id      String
+  account_id           String
   assessment_report_id String @unique
 
   tier   EngagementTier
@@ -545,27 +569,27 @@ model Engagement {
 }
 
 model AuditLog {
-  id              String         @id @default(cuid())
-  account_id String?
-  actor_user_id   String?
-  actor_type      ActorType
+  id            String         @id @default(cuid())
+  account_id    String?
+  actor_user_id String?
+  actor_type    ActorType
   // 31D additions — all nullable so existing seeded rows stay valid
   // without backfill. `category` enables the break-glass filter that
   // the future privileged raw-transcript read accessor will write
   // against (see RESPONSEOS_DATA_MODEL.md §6 + planning artifact Q7).
-  actor_role      UserRole?
-  action          String
-  category        AuditCategory?
-  target_type     String?
-  target_id       String?
-  reason          String?
-  before_ref      Json?
-  after_ref       Json?
-  expires_at      DateTime?
-  metadata_json   Json?
-  ip_address      String?
-  user_agent      String?
-  created_at      DateTime  @default(now())
+  actor_role    UserRole?
+  action        String
+  category      AuditCategory?
+  target_type   String?
+  target_id     String?
+  reason        String?
+  before_ref    Json?
+  after_ref     Json?
+  expires_at    DateTime?
+  metadata_json Json?
+  ip_address    String?
+  user_agent    String?
+  created_at    DateTime       @default(now())
 
   @@index([account_id])
   @@index([actor_user_id])
@@ -576,7 +600,7 @@ model AuditLog {
 
 model WebhookEvent {
   id                String               @id @default(cuid())
-  account_id   String?
+  account_id        String?
   provider          String
   provider_event_id String
   event_type        String
@@ -589,10 +613,58 @@ model WebhookEvent {
   process_status    WebhookProcessStatus @default(received)
   process_error     String?
 
+  @@unique([provider, provider_event_id])
   @@index([account_id])
   @@index([provider])
   @@index([received_at])
   @@index([process_status])
+}
+
+model ProspectIntake {
+  id                  String                     @id @default(cuid())
+  account_id          String
+  reference           String                     @unique
+  idempotency_key     String
+  payload_hash        String
+  request_json        Json?
+  status              ProspectIntakeStatus       @default(received)
+  notification_status ProspectNotificationStatus @default(pending)
+  notification_error  String?
+  reviewed_by         String?
+  reviewed_at         DateTime?
+  expires_at          DateTime
+  purged_at           DateTime?
+  created_at          DateTime                   @default(now())
+  updated_at          DateTime                   @updatedAt
+
+  @@unique([account_id, idempotency_key])
+  @@index([account_id, status])
+  @@index([expires_at])
+  @@index([created_at])
+}
+
+model CrmSyncOperation {
+  id                   String                 @id @default(cuid())
+  account_id           String
+  operation_key        String                 @unique
+  provider             String
+  call_id              String
+  source_webhook_id    String?
+  status               CrmSyncOperationStatus @default(pending)
+  attempt_count        Int                    @default(0)
+  provider_contact_id  String?
+  provider_activity_id String?
+  provider_task_id     String?
+  last_error_code      String?
+  last_error_redacted  String?
+  next_attempt_at      DateTime?
+  completed_at         DateTime?
+  created_at           DateTime               @default(now())
+  updated_at           DateTime               @updatedAt
+
+  @@index([account_id, status])
+  @@index([call_id])
+  @@index([source_webhook_id])
 }
 
 // --- v0.2 closeout step 2.3, PR 31A — communication substrate -------------
@@ -647,22 +719,22 @@ enum SmsMessageStatus {
 }
 
 model ProviderConnection {
-  id                              String                     @id @default(cuid())
-  account_id                      String
-  provider                        ProviderConnectionProvider
+  id                            String                     @id @default(cuid())
+  account_id                    String
+  provider                      ProviderConnectionProvider
   // Opaque AES-256-GCM ciphertext with envelope framing per ADR-0020:
   //   [version: u8 | algorithm: u8 | nonce: 12 bytes | ciphertext+tag]
   // Never logged; never returned as JSON. Decryption happens in
   // lib/providers/encryption/* at the adapter boundary, never in
   // lib/data/* accessors.
-  credentials_encrypted           Bytes
-  oauth_refresh_token_encrypted   Bytes?
-  status                          ProviderConnectionStatus   @default(connected)
-  scopes                          String[]
-  connected_by                    String
-  last_verified_at                DateTime?
-  created_at                      DateTime                   @default(now())
-  updated_at                      DateTime                   @updatedAt
+  credentials_encrypted         Bytes
+  oauth_refresh_token_encrypted Bytes?
+  status                        ProviderConnectionStatus   @default(connected)
+  scopes                        String[]
+  connected_by                  String
+  last_verified_at              DateTime?
+  created_at                    DateTime                   @default(now())
+  updated_at                    DateTime                   @updatedAt
 
   @@unique([account_id, provider])
   @@index([account_id])
@@ -755,34 +827,34 @@ model CallTranscript {
   // Privileged raw-transcript read lands after 31D ships
   // `audit_logs.category = "break_glass"` so every elevated read is
   // recorded. See ADR-0019 step 2.3 + planning artifact Q7.
-  id              String                  @id @default(cuid())
-  account_id      String
-  call_id         String                  @unique
-  raw_ref         String?
-  redacted_ref    String?
-  inline_text     String?
-  language        String                  @default("en")
-  retention_lane  TranscriptRetentionLane @default(full)
-  expires_at      DateTime?
-  redacted_at     DateTime?
-  created_at      DateTime                @default(now())
+  id             String                  @id @default(cuid())
+  account_id     String
+  call_id        String                  @unique
+  raw_ref        String?
+  redacted_ref   String?
+  inline_text    String?
+  language       String                  @default("en")
+  retention_lane TranscriptRetentionLane @default(full)
+  expires_at     DateTime?
+  redacted_at    DateTime?
+  created_at     DateTime                @default(now())
 
   @@index([account_id])
   @@index([expires_at])
 }
 
 model QaLog {
-  id                String         @id @default(cuid())
-  account_id        String
-  call_id           String
-  rubric_version    String
-  reviewer_type     QaReviewerType
-  reviewer_user_id  String?
-  score             Int?
-  findings_json     Json
-  notes             String?
-  reviewed_at       DateTime
-  created_at        DateTime       @default(now())
+  id               String         @id @default(cuid())
+  account_id       String
+  call_id          String
+  rubric_version   String
+  reviewer_type    QaReviewerType
+  reviewer_user_id String?
+  score            Int?
+  findings_json    Json
+  notes            String?
+  reviewed_at      DateTime
+  created_at       DateTime       @default(now())
 
   @@index([account_id])
   @@index([call_id])
@@ -800,29 +872,29 @@ enum WorkflowRunStatus {
 }
 
 model WorkflowRun {
-  id                String            @id @default(cuid())
-  account_id        String
+  id               String            @id @default(cuid())
+  account_id       String
   // Provider-stable idempotency / dedupe spine per
   // RESPONSEOS_EVENT_SCHEMA.md §4. A replay of the same `workflow_run_id`
   // is a no-op on the writer, not a duplicate row.
-  workflow_run_id   String            @unique
+  workflow_run_id  String            @unique
   // Workflow definition label (e.g. `missed_call_recovery`). Not a FK
   // in v0.2 — workflow definitions live in n8n / Git, not in
   // ResponseOS. See ADR-0017 and planning artifact Q11.
-  workflow_id       String
+  workflow_id      String
   // Reuses the existing `WorkflowProvider` enum (n8n / make / internal)
   // per planning artifact Q12 — the semantic set already matches.
-  provider          WorkflowProvider
+  provider         WorkflowProvider
   // Forward-compat hook for a future link into the events ledger; held
   // as a string today (no FK enforced) so the substrate is ready
   // without coupling to ledger persistence.
-  trigger_event_id  String?
-  status            WorkflowRunStatus @default(started)
-  started_at        DateTime
-  ended_at          DateTime?
-  error_message     String?
-  payload_json      Json?
-  created_at        DateTime          @default(now())
+  trigger_event_id String?
+  status           WorkflowRunStatus @default(started)
+  started_at       DateTime
+  ended_at         DateTime?
+  error_message    String?
+  payload_json     Json?
+  created_at       DateTime          @default(now())
 
   @@index([account_id])
   @@index([workflow_id])

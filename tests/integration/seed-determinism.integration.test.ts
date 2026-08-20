@@ -33,6 +33,8 @@ const TABLE_READS = {
   engagements: () => prisma.engagement.findMany({ orderBy: { id: "asc" } }),
   auditLogs: () => prisma.auditLog.findMany({ orderBy: { id: "asc" } }),
   webhookEvents: () => prisma.webhookEvent.findMany({ orderBy: { id: "asc" } }),
+  prospectIntakes: () => prisma.prospectIntake.findMany({ orderBy: { id: "asc" } }),
+  crmSyncOperations: () => prisma.crmSyncOperation.findMany({ orderBy: { id: "asc" } }),
   providerConnections: () =>
     prisma.providerConnection.findMany({ orderBy: { id: "asc" } }),
   conversations: () => prisma.conversation.findMany({ orderBy: { id: "asc" } }),

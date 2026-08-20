@@ -64,17 +64,29 @@ placeholder keys are present. **Local development never requires a secret.**
 - `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME` — call recordings + quote photos.
 
 ### Telephony / AI Voice / Email / Billing / Workflows / CRM / Scheduling / Observability
-- **Telephony / SMS:** `TELNYX_API_KEY` (primary carrier declaration), plus `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` (failover declarations).
+- **Telnyx post-call ingest:** `TELNYX_PUBLIC_KEY` verifies Ed25519 webhooks; `RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED=true`, `RESPONSEOS_DEMO_ACCOUNT_ID`, and `RESPONSEOS_DEMO_PHONE_E164` are all required before ingestion accepts traffic. `TELNYX_API_KEY` alone activates nothing, and `CarrierProvider` remains mock-only because ResponseOS does not control realtime audio in this slice.
 - **AI Voice:** `RETELL_API_KEY`, `VAPI_API_KEY`, `BLAND_API_KEY`.
 - **Email (Resend):** `RESEND_API_KEY`, `EMAIL_FROM`.
 - **Billing (Stripe):** `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`.
 - **Workflows (n8n):** `N8N_WEBHOOK_SECRET`, `N8N_BASE_URL`.
-- **CRM:** `GHL_API_KEY` (HighLevel), `HUBSPOT_ACCESS_TOKEN`.
+- **CRM:** `GHL_API_KEY` (HighLevel); HubSpot execution requires both `HUBSPOT_ACCESS_TOKEN` and `RESPONSEOS_LIVE_HUBSPOT_ENABLED=true`. Missing configuration or a disabled flag resolves to the deterministic mock adapter.
 - **Scheduling:** `CALENDLY_API_KEY`.
 - **Observability:** `SENTRY_DSN`, `POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_KEY`.
 
-> All provider-group vars are **optional until v0.3** — their adapters fall back to mock when absent
-> (ADR-0001). Provider integrations are not wired yet.
+> Provider-group vars remain optional and mock-safe (ADR-0001). Telnyx post-call ingestion and the
+> HubSpot adapter are wired only behind their explicit enable flags and complete live-demo
+> configuration; every other provider listed here remains mock or unimplemented.
+
+### Demo and GTM controls
+- `RESPONSEOS_DEPLOYMENT_LANE` — non-secret lane label. Supported operational values are `mock-staging` and `live-demo`; it never activates providers by itself.
+- `RESPONSEOS_DEMO_ACCOUNT_ID` — server-owned tenant receiving signed live-demo call evidence.
+- `RESPONSEOS_INBOUND_ACCOUNT_ID` — server-owned tenant receiving public audit requests.
+- `RESPONSEOS_PUBLIC_AUDIT_INTAKE_ENABLED` — exact public-path gate for `POST /api/audit-requests`. Keep false until path-scoped WAF rate limiting and bot protection are configured and a real `429` has been observed.
+- `RESPONSEOS_AUDIT_NOTIFICATION_WEBHOOK_URL` — optional reference-only notification target. No prospect PII is included; delivery times out after three seconds and cannot roll back a persisted intake.
+- `RESPONSEOS_LIVE_CALL_DEMO_PUBLIC` — controls whether `/demo/live-call` and its server-rendered number are visible.
+- `RESPONSEOS_DEMO_PHONE_E164` — server-only E.164 demo number rendered only behind the visibility flag and used to reject events for other destinations.
+- `RESPONSEOS_DEMO_RESET` — explicit reset-command enable; the command additionally requires `RESPONSEOS_DEPLOYMENT_LANE=mock-staging` and refuses production.
+- `RESPONSEOS_PROSPECT_PURGE_ENABLED` — explicit non-production PII purge-command enable.
 
 ## Required / optional matrix
 

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import {
   getCrmProvider,
   MockCrmProvider,
+  HubSpotCrmProvider,
   type CrmProvider,
 } from "@/lib/providers/crm"
 
@@ -12,6 +13,20 @@ describe("CrmProvider mock", () => {
     const provider = getCrmProvider()
     expect(provider).toBeInstanceOf(MockCrmProvider)
     expect(provider.providerId).toBe("mock")
+  })
+
+  it("does not activate HubSpot from token presence alone", () => {
+    process.env.HUBSPOT_ACCESS_TOKEN = "placeholder"
+    delete process.env.RESPONSEOS_LIVE_HUBSPOT_ENABLED
+    expect(getCrmProvider()).toBeInstanceOf(MockCrmProvider)
+  })
+
+  it("activates HubSpot only when the explicit flag and token are both present", () => {
+    process.env.HUBSPOT_ACCESS_TOKEN = "placeholder"
+    process.env.RESPONSEOS_LIVE_HUBSPOT_ENABLED = "true"
+    expect(getCrmProvider()).toBeInstanceOf(HubSpotCrmProvider)
+    delete process.env.RESPONSEOS_LIVE_HUBSPOT_ENABLED
+    delete process.env.HUBSPOT_ACCESS_TOKEN
   })
 
   it("returns deterministic contact and event fixtures", async () => {

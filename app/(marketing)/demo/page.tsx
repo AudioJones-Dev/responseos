@@ -4,7 +4,7 @@ import { AtmosphereBackground } from "@/components/layout/AtmosphereBackground";
 export const metadata = {
   title: "Product demo",
   description:
-    "Walk ResponseOS from missed call to recovered revenue on seeded mock data — capture, qualify, follow-up, booking, and reporting.",
+    "Walk through a fictional, persisted ResponseOS call lifecycle with qualification, follow-up, and illustrative reporting.",
 };
 
 const PAINS = [
@@ -17,45 +17,45 @@ const PAINS = [
 ];
 
 const LOOP = [
-  "Call",
-  "Qualify",
-  "CRM sync",
-  "Business Memory",
+  "Call evidence",
+  "Qualification",
+  "Mock CRM state",
+  "Operational memory",
   "Founder action",
 ];
 
 const STEPS = [
   {
     n: "01",
-    title: "A missed call lands",
-    body: "After-hours or while on a job, an inbound call goes unanswered. ResponseOS logs it as a lead event the moment it happens.",
+    title: "A fictional call is persisted",
+    body: "The sandbox begins with tenant-scoped call evidence for a fictional after-hours inquiry.",
   },
   {
     n: "02",
-    title: "AI follow-up triggers",
-    body: "Within seconds, an SMS and AI callback open the conversation — capturing intent before the caller dials a competitor.",
+    title: "A follow-up state is recorded",
+    body: "The walkthrough shows the intended follow-up state without sending a text, placing a callback, or invoking a provider.",
   },
   {
     n: "03",
-    title: "The lead qualifies",
-    body: "Service area, urgency, and job type are scored 0–100. Qualified demand is routed to booking; the rest is nurtured.",
+    title: "The fictional lead is qualified",
+    body: "Seeded service-area, urgency, and job-type facts produce an illustrative qualification record for operator review.",
   },
   {
     n: "04",
-    title: "Booking + quote created",
-    body: "A confirmed appointment or quote request is generated, attributed back to the original missed call.",
+    title: "A human callback is queued",
+    body: "The next action is a human callback. No appointment, quote, deal, or scheduling-provider action is created.",
   },
   {
     n: "05",
-    title: "Recovered revenue reported",
-    body: "The dashboard reconciles recovered revenue, ROI multiple, and response time — proof, not vanity metrics.",
+    title: "Illustrative value is displayed",
+    body: "The dashboard labels estimated opportunity value separately from verified outcomes and recovered revenue.",
   },
 ];
 
 const FAQS = [
   {
     q: "Is ResponseOS just an AI receptionist?",
-    a: "No. Answering the call is the wedge. ResponseOS is a revenue-recovery and founder-intelligence system — it qualifies the lead, keeps the CRM updated, captures the business context, and shows you what to do next.",
+    a: "No. The product direction connects call evidence, qualification, CRM synchronization, operational context, and a human next action. This public walkthrough demonstrates that model with fictional records.",
   },
   {
     q: "Is this real customer data?",
@@ -63,7 +63,7 @@ const FAQS = [
   },
   {
     q: "Is the demo live or simulated?",
-    a: "The current demo is a guided, simulated walkthrough on seeded mock data. Live provider integrations are gated until v0.3.",
+    a: "This public walkthrough is simulated on persisted fictional data. A separate supervised live-call surface remains hidden unless its environment and release gates are explicitly enabled.",
   },
   {
     q: "Is advanced AI memory active?",
@@ -71,7 +71,7 @@ const FAQS = [
   },
   {
     q: "Will I be locked into one phone or CRM vendor?",
-    a: "No. ResponseOS is designed with provider abstraction so your CRM stays yours and your numbers stay portable — the system is built to route around any single provider.",
+    a: "ResponseOS uses provider-adapter boundaries to reduce coupling. Actual portability still depends on each provider's account, number, data-export, and contract rules.",
   },
 ];
 
@@ -88,15 +88,15 @@ export default function DemoPage() {
           Guided walkthrough
         </p>
         <h1 className="mt-2 font-display text-3xl font-semibold text-ink sm:text-4xl">
-          From missed call to recovered revenue
+          From fictional call to evidence-backed follow-up
         </h1>
         <p className="mt-4 max-w-2xl text-lg text-ink-secondary">
-          Walk through ResponseOS on mock data — the full RECOVER loop, end to
-          end. Every step ties back to a dollar figure on the dashboard.
+          Walk through a persisted fictional lifecycle in an isolated sandbox.
+          Every value and provider effect is labeled by its evidence status.
         </p>
         <p className="mt-3 max-w-2xl text-sm text-ink-muted">
-          Every missed call is a missed job. ResponseOS catches the ones that
-          pay.
+          This walkthrough demonstrates the operating model; it does not claim
+          a live call, CRM write, booking, or recovered revenue.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <ButtonLink href="/demo/walkthrough" glow>
@@ -129,12 +129,12 @@ export default function DemoPage() {
 
       <section className="mt-16">
         <h2 className="font-display text-2xl font-semibold text-ink">
-          One system, from the call to the next action
+          One evidence chain, from the call record to the next action
         </h2>
         <p className="mt-2 max-w-2xl text-sm text-ink-secondary">
-          ResponseOS captures inbound demand, qualifies the caller, updates the
-          CRM, records the operational context, and surfaces the next action —
-          so the opportunity moves forward instead of leaking.
+          The sandbox demonstrates how call evidence, qualification, mock CRM
+          state, operational context, and a human next action connect without
+          invoking a live provider.
         </p>
         <div className="mt-6 flex flex-wrap items-center gap-2">
           {LOOP.map((step, i) => (
@@ -215,8 +215,8 @@ export default function DemoPage() {
             Start with a Revenue Recovery Demo
           </h2>
           <p className="mt-1 max-w-xl text-sm text-ink-secondary">
-            See how ResponseOS captures missed demand, qualifies leads, keeps
-            the CRM updated, and turns calls into business memory — on mock data.
+            Inspect how fictional call evidence, qualification, mock CRM state,
+            and a human follow-up remain linked inside the sandbox.
           </p>
         </div>
         <div className="flex shrink-0 flex-wrap gap-3">

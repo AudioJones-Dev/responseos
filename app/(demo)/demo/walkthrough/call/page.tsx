@@ -1,7 +1,10 @@
 import { PageHeader, Card, CardHeading, StatusBadge, MetricCard, ButtonLink } from "@/components/ui";
-import { call, usdRange } from "../../../_data/scenario";
+import { DemoDataBanner } from "../../../_components/DemoDataBanner";
+import { getWalkthroughScenario } from "../../../_data/getWalkthroughScenario";
+import { usdRange } from "../../../_data/scenario";
 
-export default function CallIntelligence() {
+export default async function CallIntelligence() {
+  const { call, source, error } = await getWalkthroughScenario();
   return (
     <>
       <PageHeader
@@ -10,6 +13,7 @@ export default function CallIntelligence() {
         description={`${call.channel} · ${call.startedAt} · ${call.duration}`}
         actions={<StatusBadge label={`Urgency: ${call.urgency}`} tone="danger" />}
       />
+      <DemoDataBanner source={source} error={error} />
 
       <section className="mb-6 grid gap-4 sm:grid-cols-3">
         <MetricCard label="Qualification score" value={`${call.qualificationScore}/100`} hint={call.disposition} emphasis />

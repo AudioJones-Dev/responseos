@@ -96,7 +96,12 @@ describe("account read tenant matrix", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(new Set(result.data.map((org) => org.id))).toEqual(
-      new Set(["org_mock_1", "org_mock_2", "org_tyrone_1"]),
+      new Set([
+        "org_mock_1",
+        "org_mock_2",
+        "org_responseos_demo",
+        "org_tyrone_1",
+      ]),
     );
   });
 
