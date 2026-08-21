@@ -77,3 +77,27 @@ export function getTelnyxCallId(payload: Record<string, unknown>): string | null
   }
   return null;
 }
+
+function targetValue(value: unknown): string | null {
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const record = value as Record<string, unknown>;
+  for (const key of ["phone_number", "number", "uri"]) {
+    if (typeof record[key] === "string" && record[key].trim()) return record[key].trim();
+  }
+  return null;
+}
+
+export function getTelnyxAgentTarget(payload: Record<string, unknown>): string | null {
+  for (const key of ["telnyx_agent_target", "to", "called_number", "destination"]) {
+    const target = targetValue(payload[key]);
+    if (target) return target;
+  }
+  return null;
+}
+
+export function getTelnyxOccurredAt(event: TelnyxWebhookEnvelope): Date | null {
+  if (typeof event.data.occurred_at !== "string") return null;
+  const occurredAt = new Date(event.data.occurred_at);
+  return Number.isNaN(occurredAt.getTime()) ? null : occurredAt;
+}

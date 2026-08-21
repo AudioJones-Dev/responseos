@@ -533,6 +533,19 @@
       "blockedReason": "Repository workflow and runbook are in progress; Vercel, Neon, Clerk, Telnyx, HubSpot, secret injection, deployment, rehearsal, and prospect release remain unexecuted"
     },
     {
+      "id": "L-06",
+      "phase": "Launch / Demo Deploy",
+      "title": "Personalized prospect bootstrap foundation",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-08-20",
+      "due": "2026-08-20",
+      "blocked": true,
+      "blockedReason": "Repository implementation is complete and awaiting review; readiness gates, provider resources, number routing, deployment, rehearsal, production import, and prospect exposure remain separately gated"
+    },
+    {
       "id": "V-05",
       "phase": "v0.3 · Demo Scope",
       "title": "Internal demo tenant + professional receptionist",

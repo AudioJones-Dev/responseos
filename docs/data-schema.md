@@ -290,9 +290,15 @@ The v0.1 schema was forward-compatible with the shipped v0.2 expansion. Future s
 
 ---
 
-## Future Knowledge Layer (v0.4+) — planning only
+## Bounded prospect-bootstrap knowledge slice (ADR-0048)
 
-ResponseOS may later add a client-specific **knowledge layer** that grounds AI voice, SMS, booking, quote, and support workflows in approved business knowledge. **These tables are roadmap candidates for v0.4 or later. Do not implement them in v0.2 or v0.3.** They are not present in `prisma/schema.prisma`, not represented as TypeScript types, and not wired into any API surface.
+ADR-0048 implements a deliberately narrow subset for short-lived, operator-controlled `sandbox` accounts. `prospect_bootstraps`, `knowledge_ingestion_runs`, `knowledge_sources`, `knowledge_facts`, and `business_memory_snapshots` provide website provenance, cross-source references, fact-level review, immutable approved context, and expiry without embeddings, vector search, free-form retrieval, file uploads, client logins, or production activation. `telephony_numbers` and temporal `telephony_number_assignments` bind a called number to one bootstrap; `bootstrap_promotions` records an allowlisted export manifest. Every tenant-bearing row carries `account_id`, and source/caller content is purged independently on the 30-day demo schedule.
+
+This slice does not implement the general layer described below. It is available only under ADR-0048's operator, environment, retention, and supervised-demo gates.
+
+## Future Knowledge Layer (v0.4+) — planning only beyond ADR-0048
+
+ResponseOS may later add a general client-specific **knowledge layer** that grounds AI voice, SMS, booking, quote, and support workflows in approved business knowledge. Those production/client-facing capabilities remain roadmap candidates for v0.4 or later. ADR-0048 authorizes only the bounded prospect-demo subset above.
 
 Architectural placement and product framing are documented in `architecture.md` and `research-report.md`. Roadmap gating and required security controls are documented in `ROADMAP.md` and `SECURITY.md`.
 
@@ -322,4 +328,4 @@ Architectural placement and product framing are documented in `architecture.md` 
 - No vector / embeddings columns are committed to. The retrieval substrate is a v0.4 decision.
 - No file-upload schema is committed to. Uploads are gated on the `files` / `media` model already on the v0.2 roadmap above.
 - No third-party knowledge integrations (Obsidian, Notion, Confluence, etc.) are committed to.
-- No Prisma models, migrations, or TypeScript types ship from this roadmap entry.
+- No additional general-knowledge Prisma models, retrieval runtime, or provider integration ships from this roadmap entry.

@@ -4,6 +4,13 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: add the gated personalized prospect bootstrap foundation
+
+- Added ADR-0048's operator-only sandbox lifecycle, pinned-IP acquisition of the canonical site plus manually approved same-site URLs, provenance-backed fact review, immutable approved memory snapshots, temporal phone-number assignment, and 14-day ready/active and 30-day content-retention controls.
+- Added signed Telnyx assistant-initialization context and assignment-time post-call routing so personalized calls resolve from the called number to one approved tenant snapshot; unresolved events fail closed and personalized calls never dispatch HubSpot sync.
+- Added operator review/activation surfaces, short-lived signed provider-readback attestations, retention reconciliation, and allowlisted promotion manifests that exclude credentials, caller data, transcripts, recordings, raw webhooks, and unapproved facts. Imported snapshots are rebound to the new disabled customer tenant identity.
+- **Not activated:** no provider resource, number purchase/routing, secret, deployment, production tenant, client membership, CRM write, or prospect exposure is changed by this repository work.
+
 ## Unreleased — feat: implement the isolated GTM and supervised prospect-demo chain
 
 - Added a database-backed fictional sandbox lifecycle with tenant-scoped reads, explicit persisted/static-fallback disclosure, zero verified revenue, and a reset command restricted to the mock-staging lane.

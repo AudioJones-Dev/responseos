@@ -100,15 +100,30 @@ Mock-safe mutation routes may include a `mock: true` flag inside the success env
 ### Marketing capture
 - `POST /api/audit-requests` → flag-gated public intake with required `Idempotency-Key`; returns `201` for a persisted request, `200` for an exact replay, `422` for invalid input/key reuse, `429` from the required edge WAF rule, and `503` while disabled or unavailable.
 
+### Personalized prospect bootstrap (operator only; ADR-0048)
+- `POST /api/admin/prospect-bootstraps` → create a new sandbox account/bootstrap from a canonical public HTTPS site.
+- `POST /api/admin/prospect-bootstraps/:id/ingest` → acquire the canonical page plus an optional `approvedSameSiteUrls` string array and persist observed facts. Discovered links are evidence only and are never followed automatically.
+- `PATCH /api/admin/prospect-bootstrap-facts/:id` → approve or reject one fact with an operator decision.
+- `POST /api/admin/prospect-bootstraps/:id/approve` → compile and approve an immutable snapshot.
+- `POST /api/admin/telephony-numbers` → register already-provisioned provider inventory plus a short-lived Ed25519-signed provider-readback attestation; the number identity, versioned template checksum, initialization webhook, recording-off, memory-off, and hangup-only controls must match. The app stores only the verification public key; the protected workflow signing key and Telnyx API key remain outside the runtime. This route never purchases or releases a number.
+- `POST /api/admin/prospect-bootstraps/:id/assign-number` → create an exclusive temporal assignment from eligible inventory.
+- `POST /api/admin/prospect-bootstraps/:id/activate` → activate for 14 days; requires the separate bootstrap feature gate and ready-state controls.
+- `POST /api/admin/prospect-bootstraps/:id/complete` → mark the supervised demonstration complete.
+- `POST /api/admin/prospect-bootstraps/:id/promotion` → produce an allowlisted, checksummed export manifest; it does not create a production tenant.
+- `POST /api/admin/telephony-number-assignments/:id/approve-reuse` → after the sliding quarantine has elapsed, verify there are no unresolved calls/events and explicitly return the pool number to available inventory. Reconciliation never auto-reuses a number.
+- `POST /api/admin/bootstrap-promotions/import` → separately gated production-side import. Validates the manifest and source snapshot hashes, creates a new disabled `customer` account with a new ID, rebinds the imported snapshot's embedded tenant identity, and imports only the approved snapshot/policy package. Replays return the existing imported tenant.
+
 ## Webhook routes
 
 - `POST /api/webhooks/telnyx/calls` → signed post-call ingest. Returns `202` for a newly ledgered event, `200` for a duplicate, `401` for missing/invalid/stale signatures, `422` for an invalid signed envelope, and `503` while the explicit live-ingest configuration or ledger is unavailable.
+- `POST /api/webhooks/telnyx/assistant-initialization` → signed, replay-safe initialization. Resolves `telnyx_agent_target` to one active temporal assignment and returns only the current approved snapshot's bounded dynamic variables. Missing or inactive assignments return a generic unavailable-demo context, never another tenant's context.
 
 Provider webhook endpoints accept POST only and reject other methods. Live provider webhooks remain mock-safe until v0.3 authorization: most provider routes parse safely and acknowledge with `{ ok: true, received: <provider>, mock: true }` while signature validation remains a TODO. Clerk is the exception: `/api/webhooks/clerk` verifies Svix headers before parsing or mutating identity records.
 
 | Route | Provider | Signature header (v0.3) |
 |---|---|---|
 | `POST /api/webhooks/clerk` | Clerk auth sync | `svix-id`, `svix-timestamp`, `svix-signature` — implemented |
+| `POST /api/webhooks/telnyx/assistant-initialization` | Telnyx AI Assistant | `telnyx-signature-ed25519`, `telnyx-timestamp` — implemented; requires live-ingest and bootstrap flags |
 | `POST /api/webhooks/twilio/call-status` | Twilio voice | `X-Twilio-Signature` |
 | `POST /api/webhooks/twilio/sms` | Twilio messaging | `X-Twilio-Signature` |
 | `POST /api/webhooks/retell/call-ended` | Retell AI | `x-retell-signature` (raw body, 5-min freshness) |
