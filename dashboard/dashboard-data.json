@@ -656,7 +656,11 @@
       "start": "2026-08-21",
       "due": "2026-08-21",
       "blocked": true,
-      "blockedReason": "Awaiting review/merge plus project-scoped NEON_API_KEY before configuration verification may run; deployment and migrations remain separately gated"
+      "blockedReason": "Awaiting PR #128 review/merge plus project-scoped NEON_API_KEY before configuration verification may run; deployment and migrations remain separately gated",
+      "ref": 128,
+      "refType": "pull",
+      "refState": "open",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/128"
     },
     {
       "id": "L-03",
