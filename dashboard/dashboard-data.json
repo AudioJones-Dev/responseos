@@ -151,8 +151,7 @@
       "ref": 27,
       "refType": "issue",
       "refState": "closed",
-      "refUrl": "https://github.com/AudioJones-Dev/responseos/issues/27",
-      "blockedReason": "Scope + gates written (founding-pilot scope doc); awaiting Audio staged written auths (§5 Stage A+)"
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/issues/27"
     },
     {
       "id": "V-02",
@@ -574,7 +573,7 @@
     {
       "id": "Q-02",
       "phase": "Testing & QA",
-      "title": "End-to-end demo smoke test",
+      "title": "Static demo walkthrough smoke contract",
       "owner": "Codex",
       "status": "Done",
       "progress": 100,
@@ -585,6 +584,19 @@
       "refType": "pull",
       "refState": "merged",
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/96"
+    },
+    {
+      "id": "Q-03",
+      "phase": "Testing & QA",
+      "title": "Hosted authenticated end-to-end demo smoke",
+      "owner": "Audio",
+      "status": "To Do",
+      "progress": 0,
+      "priority": "High",
+      "start": "2026-08-21",
+      "due": "2026-08-28",
+      "blocked": true,
+      "blockedReason": "Gate Set A hosted Clerk, Neon, and Vercel staging, exact-SHA deployment, and operator authorization remain uncleared"
     },
     {
       "id": "L-02",

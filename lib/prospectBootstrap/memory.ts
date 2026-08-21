@@ -15,6 +15,11 @@ interface CompilableFact {
   status: string;
   source_id: string;
   source_ids_json?: unknown;
+  source_evidence_json?: unknown;
+  evidence_excerpt?: string;
+  confidence?: number | null;
+  reviewed_by?: string | null;
+  reviewed_at?: Date | null;
   valid_as_of?: Date | null;
   conflict_group?: string | null;
 }
@@ -110,6 +115,29 @@ export function compileBusinessMemorySnapshot(params: {
       : [fact.source_id];
     const source = sourceById.get(sourceIds[0]);
     if (!source?.content_hash || !source.fetched_at) continue;
+    if (!fact.reviewed_by || !fact.reviewed_at) {
+      throw new Error(`approved_fact_review_metadata_missing:${fact.id}`);
+    }
+    const storedEvidence = Array.isArray(fact.source_evidence_json)
+      ? fact.source_evidence_json
+      : [];
+    const sourceEvidence = sourceIds.map((sourceId) => {
+      const evidence = storedEvidence.find((value) => (
+        value && typeof value === "object" && !Array.isArray(value) && (value as Record<string, unknown>).sourceId === sourceId
+      )) as Record<string, unknown> | undefined;
+      const linkedSource = sourceById.get(sourceId);
+      if (!linkedSource?.content_hash || !linkedSource.fetched_at) return null;
+      return {
+        sourceId,
+        sourceUrl: linkedSource.normalized_url,
+        contentHash: linkedSource.content_hash,
+        evidenceExcerptHash: typeof evidence?.evidenceExcerptHash === "string"
+          ? evidence.evidenceExcerptHash
+          : contentHash(fact.evidence_excerpt ?? ""),
+        fetchedAt: linkedSource.fetched_at.toISOString(),
+      };
+    }).filter((value): value is NonNullable<typeof value> => Boolean(value));
+    if (sourceEvidence.length === 0) continue;
     const target = sectionForFactKey(fact.fact_key);
     memory[target].push({
       id: fact.id,
@@ -117,6 +145,10 @@ export function compileBusinessMemorySnapshot(params: {
       value: fact.value_json,
       status: fact.status,
       sourceIds,
+      sourceEvidence,
+      confidence: fact.confidence ?? null,
+      reviewedBy: fact.reviewed_by,
+      reviewedAt: fact.reviewed_at.toISOString(),
       ...(fact.valid_as_of ? { validAsOf: fact.valid_as_of.toISOString() } : {}),
     });
   }

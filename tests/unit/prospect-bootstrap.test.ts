@@ -215,7 +215,7 @@ describe("fact review compiler and promotion boundary", () => {
       sources: [source],
       unknowns: ["Scheduling is not connected."],
       facts: [
-        { id: "approved", fact_key: "contact.phone", value_json: "+13055550110", status: "operator_approved_for_demo", source_id: source.id },
+        { id: "approved", fact_key: "contact.phone", value_json: "+13055550110", status: "operator_approved_for_demo", source_id: source.id, evidence_excerpt: "Call 305-555-0110", confidence: 0.9, reviewed_by: "operator-1", reviewed_at: now },
         { id: "observed", fact_key: "service.roof", value_json: "Roof repair", status: "source_observed", source_id: source.id },
         { id: "rejected", fact_key: "policy.price", value_json: "$1", status: "rejected", source_id: source.id },
       ],
@@ -257,6 +257,10 @@ describe("fact review compiler and promotion boundary", () => {
         status: "operator_approved_for_demo",
         source_id: source.id,
         source_ids_json: [source.id, secondSource.id],
+        evidence_excerpt: "Call 305-555-0110",
+        confidence: 0.9,
+        reviewed_by: "operator-1",
+        reviewed_at: now,
       }],
     });
     expect(compiled.memory.contactPaths[0].sourceIds).toEqual([source.id, secondSource.id]);
@@ -269,7 +273,7 @@ describe("fact review compiler and promotion boundary", () => {
       generatedAt: now,
       sources: [source],
       unknowns: [],
-      facts: [{ id: "approved", fact_key: "contact.phone", value_json: "+13055550110", status: "operator_approved_for_demo", source_id: source.id }],
+      facts: [{ id: "approved", fact_key: "contact.phone", value_json: "+13055550110", status: "operator_approved_for_demo", source_id: source.id, evidence_excerpt: "Call 305-555-0110", confidence: 0.9, reviewed_by: "operator-1", reviewed_at: now }],
     });
     const params = {
       bootstrapId: "bootstrap-1",

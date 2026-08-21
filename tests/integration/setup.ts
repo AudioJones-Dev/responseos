@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import path from "node:path";
 import { PrismaClient } from "@prisma/client";
 import { resetFactoryCounters } from "../factories";
 
@@ -58,11 +59,11 @@ export async function resetTestDb(): Promise<void> {
 }
 
 export async function seedTestDb(): Promise<void> {
-  execFileSync("npx", ["prisma", "db", "seed"], {
+  const tsxCli = path.resolve(process.cwd(), "node_modules", "tsx", "dist", "cli.mjs");
+  execFileSync(process.execPath, [tsxCli, "prisma/seed.ts"], {
     cwd: process.cwd(),
     env: process.env,
     stdio: "pipe",
-    shell: process.platform === "win32",
   });
 }
 

@@ -3,6 +3,7 @@ import { z } from "zod";
 export const PROSPECT_BOOTSTRAP_SCHEMA_VERSION = "prospect-bootstrap.v1";
 export const PROSPECT_AGENT_TEMPLATE_VERSION = "home-services-receptionist.v1";
 export const PROSPECT_ACTIVE_DAYS = 14;
+export const PROSPECT_REVIEW_DAYS = 7;
 export const PROSPECT_CONTENT_RETENTION_DAYS = 30;
 export const PROSPECT_NUMBER_QUARANTINE_DAYS = 14;
 export const PROSPECT_AUDIT_RETENTION_DAYS = 365;
@@ -43,8 +44,24 @@ export const ApprovedKnowledgeFactSchema = z.object({
   value: z.unknown(),
   status: z.enum(["operator_approved_for_demo", "owner_confirmed"]),
   sourceIds: z.array(z.string().min(1)).min(1),
+  sourceEvidence: z.array(z.object({
+    sourceId: z.string().min(1),
+    sourceUrl: z.url({ protocol: /^https$/ }),
+    contentHash: z.string().length(64),
+    evidenceExcerptHash: z.string().length(64),
+    fetchedAt: z.iso.datetime(),
+  })).min(1),
+  confidence: z.number().min(0).max(1).nullable(),
+  reviewedBy: z.string().min(1),
+  reviewedAt: z.iso.datetime(),
   validAsOf: z.iso.datetime().optional(),
 });
+
+export const PROSPECT_MEMORY_UNKNOWNS = Object.freeze([
+  "Binding prices and quotes require human confirmation.",
+  "Scheduling availability is not connected in the prospect demo.",
+  "Unlisted services, policies, and operating details are unknown.",
+]);
 
 const SourceManifestItemSchema = z.object({
   id: z.string().min(1),

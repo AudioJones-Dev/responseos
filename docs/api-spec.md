@@ -103,15 +103,17 @@ Mock-safe mutation routes may include a `mock: true` flag inside the success env
 ### Personalized prospect bootstrap (operator only; ADR-0048)
 - `POST /api/admin/prospect-bootstraps` → create a new sandbox account/bootstrap from a canonical public HTTPS site.
 - `POST /api/admin/prospect-bootstraps/:id/ingest` → acquire the canonical page plus an optional `approvedSameSiteUrls` string array and persist observed facts. Discovered links are evidence only and are never followed automatically.
+- `POST /api/admin/prospect-bootstraps/:id/facts` → create a reviewable string fact tied to one acquired source. The submitted evidence excerpt must exactly occur in that source; the fact remains unapproved until the separate review action.
 - `PATCH /api/admin/prospect-bootstrap-facts/:id` → approve or reject one fact with an operator decision.
-- `POST /api/admin/prospect-bootstraps/:id/approve` → compile and approve an immutable snapshot.
+- `POST /api/admin/prospect-bootstraps/:id/approve` → require `reviewAcknowledged: true`, then compile and approve an immutable snapshot with fact-level source hashes, evidence-excerpt hashes, confidence, and reviewer provenance. Raw excerpts are not put into assistant context.
 - `POST /api/admin/telephony-numbers` → register already-provisioned provider inventory plus a short-lived Ed25519-signed provider-readback attestation; the number identity, versioned template checksum, initialization webhook, recording-off, memory-off, and hangup-only controls must match. The app stores only the verification public key; the protected workflow signing key and Telnyx API key remain outside the runtime. This route never purchases or releases a number.
 - `POST /api/admin/prospect-bootstraps/:id/assign-number` → create an exclusive temporal assignment from eligible inventory.
-- `POST /api/admin/prospect-bootstraps/:id/activate` → activate for 14 days; requires the separate bootstrap feature gate and ready-state controls.
+- `POST /api/admin/prospect-bootstraps/:id/activate` → require `activationAcknowledged: true` after the final assigned-number/attestation review, then activate for 14 days; also requires the separate bootstrap feature gate and ready-state controls.
 - `POST /api/admin/prospect-bootstraps/:id/complete` → mark the supervised demonstration complete.
 - `POST /api/admin/prospect-bootstraps/:id/promotion` → produce an allowlisted, checksummed export manifest; it does not create a production tenant.
 - `POST /api/admin/telephony-number-assignments/:id/approve-reuse` → after the sliding quarantine has elapsed, verify there are no unresolved calls/events and explicitly return the pool number to available inventory. Reconciliation never auto-reuses a number.
 - `POST /api/admin/bootstrap-promotions/import` → separately gated production-side import. Validates the manifest and source snapshot hashes, creates a new disabled `customer` account with a new ID, rebinds the imported snapshot's embedded tenant identity, and imports only the approved snapshot/policy package. Replays return the existing imported tenant.
+- `POST /api/admin/bootstrap-promotions/:correlationId/acknowledge` → source-side operator acknowledgment of the exact manifest hash and imported customer account reference. Only this explicit handshake marks the export imported and the sandbox bootstrap converted.
 
 ## Webhook routes
 

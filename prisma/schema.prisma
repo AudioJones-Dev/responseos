@@ -763,6 +763,8 @@ model ProspectBootstrap {
   approved_at                DateTime?
   activated_at               DateTime?
   completed_at               DateTime?
+  converted_at               DateTime?
+  review_expires_at          DateTime?
   expires_at                 DateTime?
   content_expires_at         DateTime?
   content_purged_at          DateTime?
@@ -772,6 +774,7 @@ model ProspectBootstrap {
   updated_at                 DateTime                @updatedAt
 
   @@index([account_id, status])
+  @@index([review_expires_at])
   @@index([expires_at])
   @@index([content_expires_at])
   @@index([created_at])
@@ -823,23 +826,24 @@ model KnowledgeSource {
 }
 
 model KnowledgeFact {
-  id               String              @id @default(cuid())
-  account_id       String
-  bootstrap_id     String
-  source_id        String
-  source_ids_json  Json
-  fact_key         String
-  value_json       Json
-  evidence_excerpt String
-  status           KnowledgeFactStatus @default(source_observed)
-  confidence       Float?
-  conflict_group   String?
-  valid_as_of      DateTime?
-  reviewed_by      String?
-  reviewed_at      DateTime?
-  expires_at       DateTime?
-  created_at       DateTime            @default(now())
-  updated_at       DateTime            @updatedAt
+  id                   String              @id @default(cuid())
+  account_id           String
+  bootstrap_id         String
+  source_id            String
+  source_ids_json      Json
+  source_evidence_json Json?
+  fact_key             String
+  value_json           Json
+  evidence_excerpt     String
+  status               KnowledgeFactStatus @default(source_observed)
+  confidence           Float?
+  conflict_group       String?
+  valid_as_of          DateTime?
+  reviewed_by          String?
+  reviewed_at          DateTime?
+  expires_at           DateTime?
+  created_at           DateTime            @default(now())
+  updated_at           DateTime            @updatedAt
 
   @@index([account_id, bootstrap_id])
   @@index([source_id])

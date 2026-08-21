@@ -87,6 +87,9 @@ placeholder keys are present. **Local development never requires a secret.**
 - `RESPONSEOS_DEMO_PHONE_E164` — server-only E.164 demo number rendered only behind the visibility flag and used to reject events for other destinations.
 - `RESPONSEOS_DEMO_RESET` — explicit reset-command enable; the command additionally requires `RESPONSEOS_DEPLOYMENT_LANE=mock-staging` and refuses production.
 - `RESPONSEOS_PROSPECT_PURGE_ENABLED` — explicit non-production PII purge-command enable.
+- `RESPONSEOS_PROSPECT_BOOTSTRAP_ENABLED` — exact activation gate for an already-reviewed, number-assigned personalized bootstrap. It does not acquire or purchase a number and is insufficient without signed Telnyx ingest, a current approved snapshot, and valid provider attestation.
+- `RESPONSEOS_PROVIDER_ATTESTATION_PUBLIC_KEY` — Ed25519 public key used only to verify short-lived provider-workflow readback attestations. The signing key and Telnyx API credential never enter the app runtime.
+- `RESPONSEOS_PROMOTION_IMPORT_ENABLED` — separate default-deny gate for importing an allowlisted promotion manifest into a new disabled customer tenant. It does not activate the imported tenant and is never required for demo operation.
 
 ## Required / optional matrix
 
@@ -106,6 +109,9 @@ placeholder keys are present. **Local development never requires a secret.**
 | **`RESPONSEOS_DEV_SESSION`** | opt | set by tests | **never** (hosted) | **never** | opt | dev/test override; hard-fails in production |
 | **`RESPONSEOS_REQUIRE_AUTH`** | — | — | req (any hosted surface) | req | opt | absent → mock-first fallback; set → session + proxy fail closed (ADR-0039) |
 | **`RESPONSEOS_PROVIDER_KEY`** | mock | mock | opt (Path A) | req (live creds, v0.3+) | mock-first | base64 32-byte AES; absent → encryption mock mode |
+| `RESPONSEOS_PROSPECT_BOOTSTRAP_ENABLED` | opt | opt | **never (Path A)** | req (personalized live-demo only) | opt/default-deny | activation gate only; no provider resource mutation |
+| `RESPONSEOS_PROVIDER_ATTESTATION_PUBLIC_KEY` | opt | opt | **never (Path A)** | req (personalized live-demo only) | opt/default-deny | verification-only public key; signing key stays outside runtime |
+| `RESPONSEOS_PROMOTION_IMPORT_ENABLED` | opt | opt | **never (Path A)** | req (authorized import only) | opt/default-deny | creates a disabled customer draft; never enables it |
 | R2 / Telnyx / Twilio / Retell / Vapi / Bland / Stripe / GHL / HubSpot / Calendly | mock | mock | **never (Path A)** | req (when live) | mock-first | staging preflight rejects live-provider/storage credentials; keys alone do not activate a live factory |
 | Resend / n8n | mock | mock | mock (Path A) | req (when live) | mock-first | no live behavior in the mock staging slice |
 | `SENTRY_DSN` / `POSTHOG_KEY` / `NEXT_PUBLIC_POSTHOG_KEY` | opt | opt | opt | opt | opt | observability; see staging runbook §6 |

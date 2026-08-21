@@ -2,16 +2,19 @@ import { afterAll, beforeEach, describe, expect, test } from "vitest";
 import { generateKeyPairSync, sign } from "node:crypto";
 import {
   activateProspectBootstrap,
+  acknowledgeImportedBootstrapPromotion,
   approveQuarantinedNumberReuse,
   assignTelephonyNumber,
   cleanupExpiredProspectBootstraps,
   completeProspectBootstrap,
   createAndApproveMemorySnapshot,
+  createManualKnowledgeFact,
   createProspectBootstrap,
   getProspectBootstrapDetail,
   ingestProspectBootstrap,
   importBootstrapPromotion,
   exportBootstrapPromotion,
+  expireDueProspectBootstraps,
   purgeExpiredProspectContent,
   registerTelephonyNumber,
   releaseQuarantinedAssignments,
@@ -87,7 +90,7 @@ async function prepareActiveProspect(params: {
       unwrap(await reviewKnowledgeFact({ factId: fact.id, status: "operator_approved_for_demo" }));
     }
   }
-  unwrap(await createAndApproveMemorySnapshot(created.bootstrap.id));
+  unwrap(await createAndApproveMemorySnapshot({ bootstrapId: created.bootstrap.id, reviewAcknowledged: true }));
   const number = unwrap(await registerTelephonyNumber({
     providerNumberId: params.providerNumberId,
     e164: params.phone,
@@ -102,7 +105,13 @@ async function prepareActiveProspect(params: {
     telephonyNumberId: number.id,
   }, startedAt));
   expect(assigned.bootstrap).toMatchObject({ status: "ready", expires_at: expect.any(Date) });
-  unwrap(await activateProspectBootstrap(created.bootstrap.id, startedAt));
+  const unacknowledgedActivation = await activateProspectBootstrap({
+    bootstrapId: created.bootstrap.id,
+    activationAcknowledged: false,
+  }, startedAt);
+  expect(unacknowledgedActivation.ok).toBe(false);
+  if (!unacknowledgedActivation.ok) expect(unacknowledgedActivation.error.code).toBe("activation_acknowledgment_required");
+  unwrap(await activateProspectBootstrap({ bootstrapId: created.bootstrap.id, activationAcknowledged: true }, startedAt));
   return { ...created, number };
 }
 
@@ -118,6 +127,94 @@ describe("personalized prospect bootstrap persistence and isolation", () => {
     delete process.env.RESPONSEOS_PROMOTION_IMPORT_ENABLED;
     delete process.env.RESPONSEOS_PROVIDER_ATTESTATION_PUBLIC_KEY;
     await disconnectTestDb();
+  });
+
+  test("requires explicit review acknowledgment and keeps manual corrections source-bound", async () => {
+    const alpha = unwrap(await createProspectBootstrap({
+      businessName: "Review Alpha",
+      canonicalWebsite: "https://review-alpha.example/",
+    }));
+    unwrap(await ingestProspectBootstrap({
+      bootstrapId: alpha.bootstrap.id,
+      fetchFn: websiteFetch("Review Alpha", "+13055550121"),
+      lookupFn: publicLookup,
+      now: startedAt,
+    }));
+    const beta = unwrap(await createProspectBootstrap({
+      businessName: "Review Beta",
+      canonicalWebsite: "https://review-beta.example/",
+    }));
+    unwrap(await ingestProspectBootstrap({
+      bootstrapId: beta.bootstrap.id,
+      fetchFn: websiteFetch("Review Beta", "+13055550122"),
+      lookupFn: publicLookup,
+      now: startedAt,
+    }));
+    const alphaDetail = unwrap(await getProspectBootstrapDetail(alpha.bootstrap.id));
+    const betaDetail = unwrap(await getProspectBootstrapDetail(beta.bootstrap.id));
+    const source = alphaDetail.sources[0];
+    const crossTenant = await createManualKnowledgeFact({
+      bootstrapId: beta.bootstrap.id,
+      sourceId: source.id,
+      factKey: "service.statement",
+      value: "Roof repair",
+      evidenceExcerpt: "roof repair",
+    });
+    expect(crossTenant.ok).toBe(false);
+    if (!crossTenant.ok) expect(crossTenant.error.code).toBe("source_unavailable");
+    const manual = unwrap(await createManualKnowledgeFact({
+      bootstrapId: alpha.bootstrap.id,
+      sourceId: source.id,
+      factKey: "service.statement",
+      value: "Roof repair",
+      evidenceExcerpt: "roof repair",
+    }));
+    expect(manual).toMatchObject({ status: "source_observed", source_id: source.id });
+    expect(manual.source_evidence_json).toEqual([expect.objectContaining({
+      sourceId: source.id,
+      sourceUrl: source.normalized_url,
+      contentHash: source.content_hash,
+      evidenceExcerptHash: expect.stringMatching(/^[a-f0-9]{64}$/),
+    })]);
+    unwrap(await reviewKnowledgeFact({ factId: manual.id, status: "operator_approved_for_demo" }));
+    const unacknowledged = await createAndApproveMemorySnapshot({
+      bootstrapId: alpha.bootstrap.id,
+      reviewAcknowledged: false,
+    });
+    expect(unacknowledged.ok).toBe(false);
+    if (!unacknowledged.ok) expect(unacknowledged.error.code).toBe("review_acknowledgment_required");
+    const approved = unwrap(await createAndApproveMemorySnapshot({
+      bootstrapId: alpha.bootstrap.id,
+      reviewAcknowledged: true,
+    }));
+    expect(approved.snapshot.memory_json).toMatchObject({
+      services: [expect.objectContaining({
+        reviewedBy: expect.any(String),
+        reviewedAt: expect.any(String),
+        confidence: null,
+        sourceEvidence: [expect.objectContaining({ sourceId: source.id })],
+      })],
+    });
+    const memory = approved.snapshot.memory_json as { services: Array<{ sourceEvidence: Array<Record<string, unknown>> }> };
+    expect(memory.services[0].sourceEvidence[0]).not.toHaveProperty("evidenceExcerpt");
+    expect(betaDetail.account?.id).not.toBe(alpha.account.id);
+  });
+
+  test("expires abandoned pre-activation bootstraps and starts the cleanup clock", async () => {
+    const created = unwrap(await createProspectBootstrap({
+      businessName: "Abandoned Review",
+      canonicalWebsite: "https://abandoned.example/",
+    }));
+    const dueAt = new Date("2026-08-21T00:00:00.000Z");
+    await prisma.prospectBootstrap.update({ where: { id: created.bootstrap.id }, data: {
+      review_expires_at: new Date("2026-08-20T00:00:00.000Z"),
+    } });
+    expect(unwrap(await expireDueProspectBootstraps(dueAt))).toEqual({ expired: 1 });
+    expect(await prisma.prospectBootstrap.findUnique({ where: { id: created.bootstrap.id } })).toMatchObject({
+      status: "expired",
+      review_expires_at: null,
+      expires_at: dueAt,
+    });
   });
 
   test("keeps two simultaneous prospect contexts isolated by assigned destination", async () => {
@@ -364,6 +461,23 @@ describe("personalized prospect bootstrap persistence and isolation", () => {
     if (!replayResult.ok) throw new Error(replayResult.error.message);
     const replay = replayResult.data;
     expect(replay).toMatchObject({ replay: true, account: { id: first.account.id }, snapshot: { id: first.snapshot.id } });
+
+    const acknowledged = unwrap(await acknowledgeImportedBootstrapPromotion({
+      correlationId: exported.promotion.correlation_id,
+      manifestHash: exported.promotion.manifest_hash,
+      importedAccountRef: first.account.id,
+    }, new Date("2026-08-21T01:00:00.000Z")));
+    expect(acknowledged).toMatchObject({ replay: false, promotion: { status: "imported", imported_account_ref: first.account.id }, bootstrap: { status: "converted" } });
+    expect(await prisma.prospectBootstrap.findUnique({ where: { id: prepared.bootstrap.id } })).toMatchObject({
+      status: "converted",
+      converted_at: new Date("2026-08-21T01:00:00.000Z"),
+      active_account_key: null,
+    });
+    expect(unwrap(await acknowledgeImportedBootstrapPromotion({
+      correlationId: exported.promotion.correlation_id,
+      manifestHash: exported.promotion.manifest_hash,
+      importedAccountRef: first.account.id,
+    }, new Date("2026-08-21T02:00:00.000Z")))).toMatchObject({ replay: true });
   });
 
   test("never reuses a quarantined number without explicit operator approval", async () => {

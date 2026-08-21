@@ -12,6 +12,8 @@ import {
   PROSPECT_AUDIT_RETENTION_DAYS,
   PROSPECT_CONTENT_RETENTION_DAYS,
   PROSPECT_NUMBER_QUARANTINE_DAYS,
+  PROSPECT_REVIEW_DAYS,
+  PROSPECT_MEMORY_UNKNOWNS,
   BusinessMemorySnapshotSchema,
   type KnowledgeFactStatus,
   type ProspectBootstrapStatus,
@@ -201,6 +203,7 @@ export async function createProspectBootstrap(params: {
           prospect_intake_id: params.prospectIntakeId,
           canonical_website: canonicalWebsite,
           active_account_key: account.id,
+          review_expires_at: addDays(new Date(), PROSPECT_REVIEW_DAYS),
         },
       });
       await tx.agentProfile.create({
@@ -255,7 +258,10 @@ export async function ingestProspectBootstrap(params: {
     return err("invalid_transition", `Cannot ingest a bootstrap in ${bootstrap.status}.`);
   }
   const run = await db.$transaction(async (tx) => {
-    await tx.prospectBootstrap.update({ where: { id: bootstrap.id }, data: { status: "ingesting" } });
+    await tx.prospectBootstrap.update({ where: { id: bootstrap.id }, data: {
+      status: "ingesting",
+      review_expires_at: addDays(now, PROSPECT_REVIEW_DAYS),
+    } });
     const createdRun = await tx.knowledgeIngestionRun.create({ data: {
       account_id: bootstrap.account_id,
       bootstrap_id: bootstrap.id,
@@ -328,22 +334,26 @@ export async function ingestProspectBootstrap(params: {
         status: { notIn: [...APPROVED_FACT_STATUSES] },
       } });
       const grouped = new Map<string, Set<string>>();
-      const collapsed = new Map<string, { fact: (typeof observedFacts)[number]; sourceUrls: Set<string> }>();
+      const collapsed = new Map<string, {
+        fact: (typeof observedFacts)[number];
+        sourceEvidence: Map<string, string>;
+      }>();
       for (const fact of observedFacts) {
         const serialized = JSON.stringify(fact.value);
         const values = grouped.get(fact.key) ?? new Set<string>();
         values.add(serialized);
         grouped.set(fact.key, values);
         const signature = `${fact.key}:${serialized}`;
-        const existing = collapsed.get(signature) ?? { fact, sourceUrls: new Set<string>() };
-        existing.sourceUrls.add(fact.sourceUrl);
+        const existing = collapsed.get(signature) ?? { fact, sourceEvidence: new Map<string, string>() };
+        existing.sourceEvidence.set(fact.sourceUrl, fact.evidenceExcerpt);
         collapsed.set(signature, existing);
       }
       let conflictCount = 0;
-      for (const { fact, sourceUrls } of collapsed.values()) {
+      const acquiredPageByUrl = new Map(acquisition.pages.map((page) => [page.normalizedUrl, page]));
+      for (const { fact, sourceEvidence } of collapsed.values()) {
         const conflicting = !MULTI_VALUE_FACT_KEYS.has(fact.key) && (grouped.get(fact.key)?.size ?? 0) > 1;
         if (conflicting) conflictCount += 1;
-        const factSourceIds = [...sourceUrls].map((url) => sourceIds.get(url)).filter((value): value is string => Boolean(value));
+        const factSourceIds = [...sourceEvidence.keys()].map((url) => sourceIds.get(url)).filter((value): value is string => Boolean(value));
         const sourceId = factSourceIds[0];
         if (!sourceId) continue;
         await tx.knowledgeFact.create({ data: {
@@ -351,6 +361,18 @@ export async function ingestProspectBootstrap(params: {
           bootstrap_id: bootstrap.id,
           source_id: sourceId,
           source_ids_json: factSourceIds,
+          source_evidence_json: [...sourceEvidence.entries()].flatMap(([sourceUrl, evidenceExcerpt]) => {
+            const linkedSourceId = sourceIds.get(sourceUrl);
+            const page = acquiredPageByUrl.get(sourceUrl);
+            if (!linkedSourceId || !page) return [];
+            return [{
+              sourceId: linkedSourceId,
+              sourceUrl,
+              contentHash: page.contentHash,
+              evidenceExcerptHash: contentHash(evidenceExcerpt),
+              fetchedAt: page.fetchedAt,
+            }];
+          }),
           fact_key: fact.key,
           value_json: fact.value as never,
           evidence_excerpt: fact.evidenceExcerpt,
@@ -368,7 +390,10 @@ export async function ingestProspectBootstrap(params: {
         conflict_count: conflictCount,
         ended_at: now,
       } });
-      const updated = await tx.prospectBootstrap.update({ where: { id: bootstrap.id }, data: { status: "review_required" } });
+      const updated = await tx.prospectBootstrap.update({ where: { id: bootstrap.id }, data: {
+        status: "review_required",
+        review_expires_at: addDays(now, PROSPECT_REVIEW_DAYS),
+      } });
       await tx.auditLog.create({ data: auditData({
         accountId: bootstrap.account_id,
         actorUserId: operator.data.user.id,
@@ -386,7 +411,10 @@ export async function ingestProspectBootstrap(params: {
     const code = error instanceof Error ? error.message.slice(0, 120) : "website_acquisition_failed";
     await db.$transaction(async (tx) => {
       await tx.knowledgeIngestionRun.update({ where: { id: run.id }, data: { status: "failed", error_code: code, error_redacted: "Website acquisition failed.", ended_at: new Date() } });
-      await tx.prospectBootstrap.update({ where: { id: bootstrap.id }, data: { status: "failed" } });
+      await tx.prospectBootstrap.update({ where: { id: bootstrap.id }, data: {
+        status: "failed",
+        review_expires_at: addDays(new Date(), PROSPECT_REVIEW_DAYS),
+      } });
       await tx.auditLog.create({ data: auditData({
         accountId: bootstrap.account_id,
         actorUserId: operator.data.user.id,
@@ -452,12 +480,86 @@ export async function reviewKnowledgeFact(params: { factId: string; status: Know
   }
 }
 
-export async function createAndApproveMemorySnapshot(bootstrapId: string) {
+export async function createManualKnowledgeFact(params: {
+  bootstrapId: string;
+  sourceId: string;
+  factKey: string;
+  value: string;
+  evidenceExcerpt: string;
+}) {
+  const operator = await requireOperator();
+  if (!operator.ok) return operator;
+  if (!db) return err("no_database", "Manual fact entry requires DATABASE_URL.");
+  const factKey = params.factKey.trim();
+  const value = params.value.trim();
+  const evidenceExcerpt = params.evidenceExcerpt.trim();
+  if (!/^[a-z][a-z0-9_.-]{2,79}$/.test(factKey)) {
+    return err("invalid_fact_key", "Fact key must be 3-80 lowercase letters, digits, dots, underscores, or hyphens.");
+  }
+  if (!value || value.length > 2_000) return err("invalid_fact_value", "Fact value must be 1-2000 characters.");
+  if (!evidenceExcerpt || evidenceExcerpt.length > 500) return err("invalid_evidence", "Evidence excerpt must be 1-500 characters.");
+  try {
+    const bootstrap = await db.prospectBootstrap.findUnique({ where: { id: params.bootstrapId } });
+    if (!bootstrap || bootstrap.status !== "review_required") return err("bootstrap_not_in_review", "Manual facts may only be added during review.");
+    const source = await db.knowledgeSource.findFirst({ where: {
+      id: params.sourceId,
+      account_id: bootstrap.account_id,
+      bootstrap_id: bootstrap.id,
+      status: "acquired",
+    } });
+    if (!source?.extracted_text || !source.content_hash || !source.fetched_at) {
+      return err("source_unavailable", "The selected acquired source is unavailable.");
+    }
+    if (!source.extracted_text.includes(evidenceExcerpt)) {
+      return err("evidence_not_in_source", "The evidence excerpt must exactly match text in the selected source.");
+    }
+    const fetchedAt = source.fetched_at;
+    const fact = await db.$transaction(async (tx) => {
+      const created = await tx.knowledgeFact.create({ data: {
+        account_id: bootstrap.account_id,
+        bootstrap_id: bootstrap.id,
+        source_id: source.id,
+        source_ids_json: [source.id],
+        source_evidence_json: [{
+          sourceId: source.id,
+          sourceUrl: source.normalized_url,
+          contentHash: source.content_hash,
+          evidenceExcerptHash: contentHash(evidenceExcerpt),
+          fetchedAt: fetchedAt.toISOString(),
+        }],
+        fact_key: factKey,
+        value_json: value,
+        evidence_excerpt: evidenceExcerpt,
+        status: "source_observed",
+        confidence: null,
+        valid_as_of: fetchedAt,
+        expires_at: source.expires_at,
+      } });
+      await tx.auditLog.create({ data: auditData({
+        accountId: bootstrap.account_id,
+        actorUserId: operator.data.user.id,
+        actorRole: operator.data.user.role,
+        action: "prospect_bootstrap.fact_created_from_source",
+        targetType: "KnowledgeFact",
+        targetId: created.id,
+        reason: "Operator created a reviewable fact tied to exact acquired-source evidence.",
+        metadata: { factKey, sourceId: source.id },
+      }) });
+      return created;
+    });
+    return ok(fact);
+  } catch (error) {
+    return errFromThrown(error);
+  }
+}
+
+export async function createAndApproveMemorySnapshot(params: { bootstrapId: string; reviewAcknowledged: boolean }) {
   const operator = await requireOperator();
   if (!operator.ok) return operator;
   if (!db) return err("no_database", "Memory approval requires DATABASE_URL.");
   try {
-    const bootstrap = await db.prospectBootstrap.findUnique({ where: { id: bootstrapId } });
+    if (params.reviewAcknowledged !== true) return err("review_acknowledgment_required", "Confirm the sources, facts, unknowns, conflicts, instructions, number state, and action boundaries before approval.");
+    const bootstrap = await db.prospectBootstrap.findUnique({ where: { id: params.bootstrapId } });
     if (!bootstrap) return err("not_found", "Prospect bootstrap was not found.");
     if (bootstrap.status !== "review_required") return err("invalid_transition", "Bootstrap is not awaiting review.");
     const [facts, sources, latest] = await Promise.all([
@@ -467,12 +569,13 @@ export async function createAndApproveMemorySnapshot(bootstrapId: string) {
     ]);
     const approved = facts.filter((fact) => APPROVED_FACT_STATUSES.includes(fact.status as never));
     if (approved.length === 0) return err("no_approved_facts", "Approve at least one sourced fact before creating a snapshot.");
-    const unknowns = [
-      "Binding prices and quotes require human confirmation.",
-      "Scheduling availability is not connected in the prospect demo.",
-      "Unlisted services, policies, and operating details are unknown.",
-    ];
-    const compiled = compileBusinessMemorySnapshot({ bootstrapId: bootstrap.id, accountId: bootstrap.account_id, facts, sources, unknowns });
+    const compiled = compileBusinessMemorySnapshot({
+      bootstrapId: bootstrap.id,
+      accountId: bootstrap.account_id,
+      facts,
+      sources,
+      unknowns: [...PROSPECT_MEMORY_UNKNOWNS],
+    });
     const approvedAt = new Date();
     const result = await db.$transaction(async (tx) => {
       const snapshot = await tx.businessMemorySnapshot.create({ data: {
@@ -492,6 +595,7 @@ export async function createAndApproveMemorySnapshot(bootstrapId: string) {
         current_memory_snapshot_id: snapshot.id,
         approved_by: operator.data.user.id,
         approved_at: approvedAt,
+        review_expires_at: addDays(approvedAt, PROSPECT_REVIEW_DAYS),
         content_expires_at: addDays(approvedAt, PROSPECT_CONTENT_RETENTION_DAYS),
       } });
       await tx.auditLog.create({ data: auditData({
@@ -502,7 +606,12 @@ export async function createAndApproveMemorySnapshot(bootstrapId: string) {
         targetType: "BusinessMemorySnapshot",
         targetId: snapshot.id,
         reason: "Operator approved an immutable prospect demo memory snapshot.",
-        metadata: { snapshotHash: compiled.hash, approvedFactCount: approved.length, version: snapshot.version },
+        metadata: {
+          snapshotHash: compiled.hash,
+          approvedFactCount: approved.length,
+          version: snapshot.version,
+          reviewAcknowledged: true,
+        },
       }) });
       return { bootstrap: updated, snapshot };
     });
@@ -618,6 +727,7 @@ export async function assignTelephonyNumber(params: { bootstrapId: string; telep
       const updated = await tx.prospectBootstrap.update({ where: { id: bootstrap.id }, data: {
         status: "ready",
         active_assignment_id: assignment.id,
+        review_expires_at: null,
         expires_at: addDays(now, PROSPECT_ACTIVE_DAYS),
       } });
       await tx.auditLog.create({ data: auditData({
@@ -639,16 +749,19 @@ export async function assignTelephonyNumber(params: { bootstrapId: string; telep
   }
 }
 
-export async function activateProspectBootstrap(bootstrapId: string, now = new Date()) {
+export async function activateProspectBootstrap(params: { bootstrapId: string; activationAcknowledged: boolean }, now = new Date()) {
   const operator = await requireOperator();
   if (!operator.ok) return operator;
+  if (params.activationAcknowledged !== true) {
+    return err("activation_acknowledgment_required", "Confirm the final number, attestation, snapshot, instructions, and action boundaries before activation.");
+  }
   if (process.env.RESPONSEOS_PROSPECT_BOOTSTRAP_ENABLED !== "true") {
     return err("prospect_bootstrap_disabled", "Prospect bootstrap activation is disabled.");
   }
   if (!db) return err("no_database", "Activation requires DATABASE_URL.");
   try {
     const result = await db.$transaction(async (tx) => {
-      const bootstrap = await tx.prospectBootstrap.findUnique({ where: { id: bootstrapId } });
+      const bootstrap = await tx.prospectBootstrap.findUnique({ where: { id: params.bootstrapId } });
       if (!bootstrap || bootstrap.status !== "ready" || !bootstrap.current_memory_snapshot_id || !bootstrap.active_assignment_id) throw new Error("bootstrap_not_ready");
       const [snapshot, assignment, profile] = await Promise.all([
         tx.businessMemorySnapshot.findUnique({ where: { id: bootstrap.current_memory_snapshot_id } }),
@@ -678,7 +791,12 @@ export async function activateProspectBootstrap(bootstrapId: string, now = new D
         targetType: "ProspectBootstrap",
         targetId: bootstrap.id,
         reason: "Operator activated a supervised inbound-only prospect demo.",
-        metadata: { expiresAt: expiresAt.toISOString(), recordingEnabled: false, crmSyncEnabled: false },
+        metadata: {
+          expiresAt: expiresAt.toISOString(),
+          recordingEnabled: false,
+          crmSyncEnabled: false,
+          activationAcknowledged: true,
+        },
       }) });
       return { bootstrap: updated, assignment: updatedAssignment };
     });
@@ -844,7 +962,16 @@ export async function shouldDispatchCrmForAccount(accountId: string): Promise<bo
 export async function expireDueProspectBootstraps(now = new Date()) {
   if (!db) return err("no_database", "Expiry requires DATABASE_URL.");
   try {
-    const due = await db.prospectBootstrap.findMany({ where: { status: { in: ["ready", "active", "completed", "promotion_pending"] }, expires_at: { lte: now } } });
+    const due = await db.prospectBootstrap.findMany({ where: { OR: [
+      {
+        status: { in: ["draft", "ingesting", "review_required", "approved", "provisioning", "failed"] },
+        review_expires_at: { lte: now },
+      },
+      {
+        status: { in: ["ready", "active", "completed", "promotion_pending"] },
+        expires_at: { lte: now },
+      },
+    ] } });
     let expired = 0;
     for (const bootstrap of due) {
       await db.$transaction(async (tx) => {
@@ -866,7 +993,11 @@ export async function expireDueProspectBootstraps(now = new Date()) {
           }
         }
         await tx.agentProfile.updateMany({ where: { account_id: bootstrap.account_id, type: "demo_mode" }, data: { enabled: false } });
-        await tx.prospectBootstrap.update({ where: { id: bootstrap.id }, data: { status: "expired" } });
+        await tx.prospectBootstrap.update({ where: { id: bootstrap.id }, data: {
+          status: "expired",
+          review_expires_at: null,
+          expires_at: now,
+        } });
         await tx.auditLog.create({ data: {
           account_id: bootstrap.account_id,
           actor_type: "system",
@@ -874,8 +1005,11 @@ export async function expireDueProspectBootstraps(now = new Date()) {
           category: "workflow",
           target_type: "ProspectBootstrap",
           target_id: bootstrap.id,
-          reason: "Prospect demo reached its configured TTL.",
-          metadata_json: { quarantineUntil: quarantineUntil.toISOString() },
+          reason: "Prospect bootstrap reached its configured review or demo TTL.",
+          metadata_json: {
+            previousStatus: bootstrap.status,
+            quarantineUntil: quarantineUntil.toISOString(),
+          },
           expires_at: addDays(now, PROSPECT_AUDIT_RETENTION_DAYS),
         } });
       });
@@ -1269,6 +1403,71 @@ export async function importBootstrapPromotion(params: { manifest: unknown; mani
       ? error.message
       : "promotion_import_invalid";
     return err(code, "The promotion package failed validation or import.");
+  }
+}
+
+export async function acknowledgeImportedBootstrapPromotion(params: {
+  correlationId: string;
+  manifestHash: string;
+  importedAccountRef: string;
+}, now = new Date()) {
+  const operator = await requireOperator();
+  if (!operator.ok) return operator;
+  if (!db) return err("no_database", "Promotion acknowledgment requires DATABASE_URL.");
+  const importedAccountRef = params.importedAccountRef.trim();
+  if (!importedAccountRef || importedAccountRef.length > 200) {
+    return err("invalid_imported_account_ref", "Imported account reference must be 1-200 characters.");
+  }
+  try {
+    const promotion = await db.bootstrapPromotion.findUnique({ where: { correlation_id: params.correlationId } });
+    if (!promotion) return err("promotion_not_found", "Promotion export was not found.");
+    if (promotion.manifest_hash !== params.manifestHash) {
+      return err("promotion_manifest_hash_mismatch", "Manifest hash does not match the exported package.");
+    }
+    if (promotion.status === "imported") {
+      if (promotion.imported_account_ref !== importedAccountRef) {
+        return err("promotion_already_acknowledged", "Promotion was acknowledged with a different account reference.");
+      }
+      const bootstrap = await db.prospectBootstrap.findUnique({ where: { id: promotion.bootstrap_id } });
+      if (!bootstrap) return err("promotion_source_missing", "Promotion source bootstrap is missing.");
+      return ok({ replay: true as boolean, promotion, bootstrap });
+    }
+    if (promotion.status !== "exported") return err("promotion_not_exported", "Only an exported promotion may be acknowledged.");
+    const acknowledged = await db.$transaction(async (tx) => {
+      const bootstrap = await tx.prospectBootstrap.findUnique({ where: { id: promotion.bootstrap_id } });
+      if (!bootstrap || bootstrap.status !== "promotion_pending" || bootstrap.promotion_correlation_id !== promotion.correlation_id) {
+        throw new Error("promotion_source_not_pending");
+      }
+      const updatedPromotion = await tx.bootstrapPromotion.update({ where: { id: promotion.id }, data: {
+        status: "imported",
+        imported_account_ref: importedAccountRef,
+        imported_at: now,
+      } });
+      const updatedBootstrap = await tx.prospectBootstrap.update({ where: { id: bootstrap.id }, data: {
+        status: "converted",
+        converted_at: now,
+        active_account_key: null,
+      } });
+      await tx.auditLog.create({ data: auditData({
+        accountId: bootstrap.account_id,
+        actorUserId: operator.data.user.id,
+        actorRole: operator.data.user.role,
+        action: "prospect_bootstrap.promotion_import_acknowledged",
+        targetType: "BootstrapPromotion",
+        targetId: promotion.id,
+        reason: "Operator acknowledged the exact exported manifest as imported into a disabled customer tenant.",
+        metadata: {
+          correlationId: promotion.correlation_id,
+          manifestHash: promotion.manifest_hash,
+          importedAccountRef,
+        },
+      }) });
+      return { promotion: updatedPromotion, bootstrap: updatedBootstrap };
+    });
+    return ok({ replay: false as boolean, ...acknowledged });
+  } catch (error) {
+    const code = error instanceof Error ? error.message : "promotion_acknowledgment_failed";
+    return err(code, "Promotion import acknowledgment failed.");
   }
 }
 
