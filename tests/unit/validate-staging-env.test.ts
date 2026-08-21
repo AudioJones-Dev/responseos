@@ -6,6 +6,7 @@ import {
   validateCanonicalStagingDatabaseSource,
   validateStagingEnvironment,
   validateVercelPreviewEnvironment,
+  validateVercelPreviewPosture,
 } from "@/scripts/validate-staging-env.mjs";
 
 const ENDPOINT_ID = "ep-young-morning-a6oeu9vv";
@@ -177,6 +178,61 @@ function validatePreview(
 }
 
 describe("Vercel Preview staging contract", () => {
+  test("accepts REST-derived readable posture before database synchronization", () => {
+    expect(
+      validateVercelPreviewPosture(PULLED_PREVIEW_ENV, BASE_PREVIEW_METADATA),
+    ).toEqual([]);
+  });
+
+  test.each([
+    [
+      "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+      "pk_live_production-placeholder",
+      "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY must be a Clerk test-mode key",
+    ],
+    [
+      "AJ_DIGITAL_CLERK_ORG_ID",
+      "user_wrong_shape",
+      "AJ_DIGITAL_CLERK_ORG_ID must have Clerk organization shape",
+    ],
+    [
+      "NEXT_PUBLIC_APP_URL",
+      "https://responseos.ajdigital.app",
+      "NEXT_PUBLIC_APP_URL must not use a production hostname",
+    ],
+    [
+      "RESPONSEOS_REQUIRE_AUTH",
+      "false",
+      "RESPONSEOS_REQUIRE_AUTH must be enabled for hosted staging",
+    ],
+  ])("rejects unsafe pre-sync readable posture for %s", (name, value, message) => {
+    const errors = validateVercelPreviewPosture(
+      { ...PULLED_PREVIEW_ENV, [name]: value },
+      BASE_PREVIEW_METADATA,
+    );
+
+    expect(errors).toContain(message);
+  });
+
+  test("rejects forbidden providers before database synchronization", () => {
+    const errors = validateVercelPreviewPosture(PULLED_PREVIEW_ENV, {
+      envs: [
+        ...BASE_PREVIEW_METADATA.envs,
+        {
+          key: "TELNYX_API_KEY",
+          id: "sensitive-provider-id",
+          target: ["preview"],
+          type: "sensitive",
+          gitBranch: null,
+        },
+      ],
+    });
+
+    expect(errors).toContain(
+      "Forbidden in mock-only Preview metadata: TELNYX_API_KEY",
+    );
+  });
+
   test("accepts the canonical GitHub staging database source before Vercel synchronization", () => {
     expect(
       validateCanonicalStagingDatabaseSource(

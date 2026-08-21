@@ -113,6 +113,20 @@ jobs:
             "$RUNNER_TEMP/vercel-project.json" \
             "$RUNNER_TEMP/vercel-project-domains.json"
 
+      - name: Validate readable Preview posture before database synchronization
+        run: |
+          curl --fail --silent --show-error --max-time 30 \
+            --output "$RUNNER_TEMP/vercel-preview-env-before.json" \
+            --header "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v10/projects/$EXPECTED_VERCEL_PROJECT_NAME/env?teamId=$VERCEL_ORG_ID"
+          node scripts/fetch-staging-vercel-readable-env.mjs \
+            posture \
+            "$RUNNER_TEMP/vercel-preview-env-before.json" \
+            "$RUNNER_TEMP/vercel-preview-readable-before.json"
+          node scripts/validate-staging-vercel-posture.mjs \
+            "$RUNNER_TEMP/vercel-preview-readable-before.json" \
+            "$RUNNER_TEMP/vercel-preview-env-before.json"
+
       - name: Fetch canonical Neon identity
         run: |
           neon_api="https://console.neon.tech/api/v2/projects/$EXPECTED_NEON_PROJECT_ID"
@@ -137,13 +151,6 @@ jobs:
             "$RUNNER_TEMP/neon-branch.json" \
             "$RUNNER_TEMP/neon-endpoints.json" \
             "$RUNNER_TEMP/neon-databases.json"
-
-      - name: Fetch current Vercel Preview revisions
-        run: |
-          curl --fail --silent --show-error --max-time 30 \
-            --output "$RUNNER_TEMP/vercel-preview-env-before.json" \
-            --header "Authorization: Bearer $VERCEL_TOKEN" \
-            "https://api.vercel.com/v10/projects/$EXPECTED_VERCEL_PROJECT_NAME/env?teamId=$VERCEL_ORG_ID"
 
       - name: Synchronize verified database values to Vercel Preview
         run: |
@@ -240,21 +247,16 @@ jobs:
 
       - name: Validate final protected mock-staging contract
         run: |
-          npm install -g vercel@52.2.1
-          vercel link --yes \
-            --project "$VERCEL_PROJECT_ID" \
-            --scope "$VERCEL_ORG_ID" \
-            --token "$VERCEL_TOKEN"
-          vercel env pull "$RUNNER_TEMP/vercel-preview.env" --yes \
-            --environment=preview \
-            --scope "$VERCEL_ORG_ID" \
-            --token "$VERCEL_TOKEN"
           curl --fail --silent --show-error --max-time 30 \
             --output "$RUNNER_TEMP/vercel-preview-env-final.json" \
             --header "Authorization: Bearer $VERCEL_TOKEN" \
             "https://api.vercel.com/v10/projects/$EXPECTED_VERCEL_PROJECT_NAME/env?teamId=$VERCEL_ORG_ID"
+          node scripts/fetch-staging-vercel-readable-env.mjs \
+            final \
+            "$RUNNER_TEMP/vercel-preview-env-final.json" \
+            "$RUNNER_TEMP/vercel-preview-readable-final.json"
           node scripts/validate-staging-env.mjs \
-            "$RUNNER_TEMP/vercel-preview.env" \
+            "$RUNNER_TEMP/vercel-preview-readable-final.json" \
             "$RUNNER_TEMP/vercel-preview-env-final.json" \
             "$RUNNER_TEMP/neon-project.json" \
             "$RUNNER_TEMP/neon-branch.json" \

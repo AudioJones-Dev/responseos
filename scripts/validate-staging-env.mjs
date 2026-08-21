@@ -32,6 +32,17 @@ const SENSITIVE_REQUIRED_NAMES = new Set([
   "CLERK_WEBHOOK_SECRET",
 ]);
 
+const PRE_SYNC_REQUIRED_NAMES = REQUIRED_NAMES.filter(
+  (name) => name !== DATABASE_IDENTITY_NAME,
+);
+
+const READABLE_POSTURE_NAMES = [
+  "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+  "AJ_DIGITAL_CLERK_ORG_ID",
+  "NEXT_PUBLIC_APP_URL",
+  "RESPONSEOS_REQUIRE_AUTH",
+];
+
 const FORBIDDEN_NAMES = [
   "RESPONSEOS_DEV_SESSION",
   "TELNYX_API_KEY",
@@ -130,6 +141,92 @@ function identityFingerprint(identity) {
 function unwrapMetadata(metadata, name) {
   const value = metadata?.[name];
   return value?.[name] ?? value;
+}
+
+function previewMetadataErrors(entries, requiredNames) {
+  const errors = [];
+
+  for (const name of requiredNames) {
+    const matches = matchingPreviewEntries(entries, name);
+    if (matches.length === 0) {
+      errors.push(`Missing required Preview variable metadata: ${name}`);
+      continue;
+    }
+    if (matches.length > 1) {
+      errors.push(`Conflicting unbranched Preview variable metadata: ${name}`);
+      continue;
+    }
+
+    if (SENSITIVE_REQUIRED_NAMES.has(name) && matches[0].type !== "sensitive") {
+      errors.push(`Required Preview variable must be Sensitive: ${name}`);
+    }
+  }
+
+  for (const name of FORBIDDEN_NAMES) {
+    if (entries.some((entry) => entry?.key === name && targetsPreview(entry))) {
+      errors.push(`Forbidden in mock-only Preview metadata: ${name}`);
+    }
+  }
+
+  return errors;
+}
+
+function readablePostureErrors(readableEnv) {
+  const errors = [];
+
+  for (const name of READABLE_POSTURE_NAMES) {
+    if (!hasValue(readableEnv[name])) {
+      errors.push(`Missing readable Preview variable: ${name}`);
+    }
+  }
+
+  if (!authIsRequired(readableEnv.RESPONSEOS_REQUIRE_AUTH)) {
+    errors.push("RESPONSEOS_REQUIRE_AUTH must be enabled for hosted staging");
+  }
+
+  if (
+    hasValue(readableEnv.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) &&
+    !readableEnv.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.startsWith("pk_test_")
+  ) {
+    errors.push(
+      "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY must be a Clerk test-mode key",
+    );
+  }
+
+  if (
+    hasValue(readableEnv.AJ_DIGITAL_CLERK_ORG_ID) &&
+    !readableEnv.AJ_DIGITAL_CLERK_ORG_ID.startsWith("org_")
+  ) {
+    errors.push("AJ_DIGITAL_CLERK_ORG_ID must have Clerk organization shape");
+  }
+
+  if (hasValue(readableEnv.NEXT_PUBLIC_APP_URL)) {
+    try {
+      const appUrl = new URL(readableEnv.NEXT_PUBLIC_APP_URL);
+      if (appUrl.protocol !== "https:") {
+        errors.push("NEXT_PUBLIC_APP_URL must use HTTPS in hosted staging");
+      }
+      if (PRODUCTION_HOSTS.has(appUrl.hostname)) {
+        errors.push("NEXT_PUBLIC_APP_URL must not use a production hostname");
+      }
+    } catch {
+      errors.push("NEXT_PUBLIC_APP_URL must be a valid absolute URL");
+    }
+  }
+
+  return errors;
+}
+
+export function validateVercelPreviewPosture(readableEnv, metadata) {
+  const entries = Array.isArray(metadata) ? metadata : metadata?.envs;
+  if (!Array.isArray(entries)) {
+    return ["Vercel environment metadata must contain an envs array"];
+  }
+
+  return [
+    ...previewMetadataErrors(entries, PRE_SYNC_REQUIRED_NAMES),
+    ...readablePostureErrors(readableEnv),
+  ];
 }
 
 export function validateCanonicalStagingDatabaseSource(
@@ -467,66 +564,20 @@ export function validateVercelPreviewEnvironment(
     return ["Vercel environment metadata must contain an envs array"];
   }
 
+  errors.push(...previewMetadataErrors(entries, REQUIRED_NAMES));
+
   for (const name of REQUIRED_NAMES) {
     const matches = matchingPreviewEntries(entries, name);
-    if (matches.length === 0) {
-      errors.push(`Missing required Preview variable metadata: ${name}`);
-      continue;
-    }
-    if (matches.length > 1) {
-      errors.push(`Conflicting unbranched Preview variable metadata: ${name}`);
-      continue;
-    }
-
-    const entry = matches[0];
-    if (SENSITIVE_REQUIRED_NAMES.has(name) && entry.type !== "sensitive") {
-      errors.push(`Required Preview variable must be Sensitive: ${name}`);
-    }
-
-    if (!SENSITIVE_REQUIRED_NAMES.has(name) && !hasValue(pulledEnv[name])) {
+    if (
+      matches.length === 1 &&
+      !SENSITIVE_REQUIRED_NAMES.has(name) &&
+      !hasValue(pulledEnv[name])
+    ) {
       errors.push(`Missing readable Preview variable: ${name}`);
     }
   }
 
-  for (const name of FORBIDDEN_NAMES) {
-    if (entries.some((entry) => entry?.key === name && targetsPreview(entry))) {
-      errors.push(`Forbidden in mock-only Preview metadata: ${name}`);
-    }
-  }
-
-  if (!authIsRequired(pulledEnv.RESPONSEOS_REQUIRE_AUTH)) {
-    errors.push("RESPONSEOS_REQUIRE_AUTH must be enabled for hosted staging");
-  }
-
-  if (
-    hasValue(pulledEnv.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) &&
-    !pulledEnv.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.startsWith("pk_test_")
-  ) {
-    errors.push(
-      "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY must be a Clerk test-mode key",
-    );
-  }
-
-  if (
-    hasValue(pulledEnv.AJ_DIGITAL_CLERK_ORG_ID) &&
-    !pulledEnv.AJ_DIGITAL_CLERK_ORG_ID.startsWith("org_")
-  ) {
-    errors.push("AJ_DIGITAL_CLERK_ORG_ID must have Clerk organization shape");
-  }
-
-  if (hasValue(pulledEnv.NEXT_PUBLIC_APP_URL)) {
-    try {
-      const appUrl = new URL(pulledEnv.NEXT_PUBLIC_APP_URL);
-      if (appUrl.protocol !== "https:") {
-        errors.push("NEXT_PUBLIC_APP_URL must use HTTPS in hosted staging");
-      }
-      if (PRODUCTION_HOSTS.has(appUrl.hostname)) {
-        errors.push("NEXT_PUBLIC_APP_URL must not use a production hostname");
-      }
-    } catch {
-      errors.push("NEXT_PUBLIC_APP_URL must be a valid absolute URL");
-    }
-  }
+  errors.push(...readablePostureErrors(pulledEnv));
 
   if (
     hasValue(expectedDatabaseEnv.DATABASE_URL) &&
@@ -551,12 +602,17 @@ const invokedPath = process.argv[1]
   ? pathToFileURL(process.argv[1]).href
   : undefined;
 
+function readEnvironmentFile(filePath) {
+  const contents = fs.readFileSync(filePath, "utf8");
+  return filePath.endsWith(".json") ? JSON.parse(contents) : parseEnv(contents);
+}
+
 if (invokedPath === import.meta.url) {
   const pulledEnvPath = process.argv[2];
   const metadataPath = process.argv[3];
   const neonMetadataPaths = process.argv.slice(4, 8);
   const checkedEnv = pulledEnvPath
-    ? parseEnv(fs.readFileSync(pulledEnvPath, "utf8"))
+    ? readEnvironmentFile(pulledEnvPath)
     : process.env;
   const neonMetadataNames = ["project", "branch", "endpoints", "databases"];
   const neonMetadata = Object.fromEntries(

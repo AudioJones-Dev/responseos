@@ -80,6 +80,30 @@ describe("configuration-only staging workflow", () => {
     }
   });
 
+  test("uses REST-only Preview configuration retrieval without Vercel CLI identity", () => {
+    const commands = runScripts(workflow).join("\n").toLowerCase();
+
+    expect(commands).not.toContain("vercel link");
+    expect(commands).not.toContain("vercel env pull");
+    expect(commands).not.toContain("npm install -g vercel");
+    expect(commands).toContain(
+      "https://api.vercel.com/v10/projects/$expected_vercel_project_name/env",
+    );
+    expect(commands).toContain("fetch-staging-vercel-readable-env.mjs");
+  });
+
+  test("validates readable project posture before database synchronization", () => {
+    const posture = workflow.indexOf(
+      "Validate readable Preview posture before database synchronization",
+    );
+    const synchronize = workflow.indexOf(
+      "Synchronize verified database values to Vercel Preview",
+    );
+
+    expect(posture).toBeGreaterThan(-1);
+    expect(synchronize).toBeGreaterThan(posture);
+  });
+
   test("separates workflow-control SHA from the future application SHA", () => {
     expect(workflow).toContain(
       "INTENDED_APPLICATION_SHA: 4a5b29b83cb3f18137b0151ae6242b2ac484ef08",
