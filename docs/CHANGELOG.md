@@ -10,6 +10,7 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - Kept the workflow configuration-only: it has read-only repository permissions and contains no Prisma migration, Vercel deployment, alias, production, provider, phone-routing, or prospect-exposure step.
 - Added reusable source and Vercel control-plane validators plus unit coverage so wrong projects, branches, endpoints, databases, pooled/direct roles, production posture, aliases, domains, or stale revisions fail closed.
 - Separated the PR's future workflow-control SHA from application SHA `4a5b29b83cb3f18137b0151ae6242b2ac484ef08`, kept dispatch inputs out of Bash source, and documented the redundant repository-level `NEON_API_KEY` for separately authorized removal.
+- Serialized configuration synchronization/attestation and staging deployment under the shared non-cancelling `responseos-staging-exclusive` lock, and corrected Neon credential status to name-present but validity/scope unverified until preflight.
 
 ## Unreleased — ci: fail closed on the dedicated mock-staging target
 

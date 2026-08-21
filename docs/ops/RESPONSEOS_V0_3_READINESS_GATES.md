@@ -26,7 +26,7 @@ Clears a non-production staging surface for private operator testing. It authori
 | A11 | Tenant user resolves only the mapped staging account | Integration suite + authenticated staging smoke |
 | A12 | Rollback to the previous staging artifact is recorded and exercised | Staging runbook evidence |
 
-**Current state:** PR #126 is merged and post-merge CI is green. The dedicated Vercel project, GitHub staging Environment including its project-scoped `NEON_API_KEY`, Node 24.x, core Preview variable names, protected-smoke bypass, and private Clerk same-development-instance provenance are verified. PR #128 contains the unmerged configuration-only verification controls. A current Vercel database revision attestation, staging deployment/migration, authenticated tenant smoke, and rollback exercise remain uncleared.
+**Current state:** PR #126 is merged and post-merge CI is green. The dedicated Vercel project, GitHub staging Environment, Node 24.x, core Preview variable names, protected-smoke bypass, and private Clerk same-development-instance provenance are verified. A staging Environment secret named `NEON_API_KEY` exists, but its value, validity, and project scope remain unverified until the protected preflight succeeds. PR #128 contains the unmerged configuration-only verification controls and shared staging concurrency lock. A current Vercel database revision attestation, staging deployment/migration, authenticated tenant smoke, and rollback exercise remain uncleared.
 
 The public `/audit` form is not a Gate Set A prospect-capture path until canonical persistence/idempotency and durable host-level abuse controls are implemented and verified. Do not make `/api/audit-requests` public merely to make the form submit.
 

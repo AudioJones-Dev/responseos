@@ -9,6 +9,10 @@ const workflowPath = path.join(
   "verify-staging-configuration.yml",
 );
 const workflow = fs.readFileSync(workflowPath, "utf8");
+const deployWorkflow = fs.readFileSync(
+  path.join(process.cwd(), ".github", "workflows", "deploy-staging.yml"),
+  "utf8",
+);
 
 function runScripts(yaml: string) {
   const lines = yaml.split(/\r?\n/);
@@ -34,7 +38,27 @@ function runScripts(yaml: string) {
   return scripts;
 }
 
+function concurrencyContract(yaml: string) {
+  const match = yaml.match(
+    /^concurrency:\r?\n  group: ([a-z0-9-]+)\r?\n  cancel-in-progress: (true|false)$/m,
+  );
+  return match
+    ? { group: match[1], cancelInProgress: match[2] === "true" }
+    : undefined;
+}
+
 describe("configuration-only staging workflow", () => {
+  test("shares one non-cancelling exclusive lock with staging deployment", () => {
+    const preflightConcurrency = concurrencyContract(workflow);
+    const deployConcurrency = concurrencyContract(deployWorkflow);
+
+    expect(preflightConcurrency).toEqual({
+      group: "responseos-staging-exclusive",
+      cancelInProgress: false,
+    });
+    expect(deployConcurrency).toEqual(preflightConcurrency);
+  });
+
   test("keeps dispatch inputs out of Bash source", () => {
     expect(runScripts(workflow).join("\n")).not.toContain("${{ inputs.");
   });

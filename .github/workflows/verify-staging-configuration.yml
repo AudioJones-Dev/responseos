@@ -22,7 +22,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: verify-staging-configuration
+  group: responseos-staging-exclusive
   cancel-in-progress: false
 
 jobs:
