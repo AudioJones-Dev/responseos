@@ -1,0 +1,264 @@
+# Configuration-only mock-staging gate.
+#
+# This workflow may synchronize verified database variables and their non-secret
+# identity attestation. It never migrates, deploys, aliases, or activates a
+# provider. Deployment remains a separate exact-SHA authorization.
+
+name: Verify Staging Configuration
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "configuration-only" to confirm no deployment'
+        required: true
+        type: string
+      sha:
+        description: "Exact 40-character master workflow-control SHA"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: responseos-staging-exclusive
+  cancel-in-progress: false
+
+jobs:
+  verify-staging-configuration:
+    name: Verify mock-staging configuration
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+    env:
+      EXPECTED_VERCEL_PROJECT_NAME: responseos-staging-mock
+      EXPECTED_VERCEL_PROJECT_ID: prj_pbzqdkzp322jcHWIsi19GhsnWXRm
+      EXPECTED_VERCEL_ORG_ID: team_BHxIkAGPW6qEKKQBAt9c0NGz
+      EXPECTED_NEON_PROJECT_NAME: responseos-staging-mock
+      EXPECTED_NEON_PROJECT_ID: patient-snow-16014934
+      EXPECTED_NEON_BRANCH_NAME: main
+      EXPECTED_NEON_BRANCH_ID: br-mute-boat-a6ylen11
+      EXPECTED_NEON_ENDPOINT_ID: ep-young-morning-a6oeu9vv
+      EXPECTED_NEON_DATABASE_NAME: neondb
+      INTENDED_APPLICATION_SHA: 4a5b29b83cb3f18137b0151ae6242b2ac484ef08
+      DISPATCH_CONFIRM: ${{ inputs.confirm }}
+      CONTROL_SHA: ${{ inputs.sha }}
+      DISPATCH_REF: ${{ github.ref }}
+      DISPATCHED_WORKFLOW_SHA: ${{ github.sha }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+      DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.STAGING_DIRECT_URL }}
+    steps:
+      - name: Reject deploy intent or non-master controls
+        run: |
+          if [ "$DISPATCH_CONFIRM" != "configuration-only" ]; then
+            echo "::error::Confirmation must be exactly configuration-only."
+            exit 1
+          fi
+          if [ "$DISPATCH_REF" != "refs/heads/master" ]; then
+            echo "::error::Configuration verification must be dispatched from master."
+            exit 1
+          fi
+          if [[ ! "$CONTROL_SHA" =~ ^[0-9a-f]{40}$ ]] || [ "$CONTROL_SHA" != "$DISPATCHED_WORKFLOW_SHA" ]; then
+            echo "::error::sha must exactly match the current master workflow-control SHA."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.sha }}
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.18.0
+          cache: npm
+
+      - name: Verify exact control SHA and required secrets
+        run: |
+          if [ "$(git rev-parse HEAD)" != "$CONTROL_SHA" ]; then
+            echo "::error::Checked-out controls do not match the requested SHA."
+            exit 1
+          fi
+          missing=0
+          for name in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID VERCEL_AUTOMATION_BYPASS_SECRET NEON_API_KEY DATABASE_URL DIRECT_URL; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing staging Environment secret: $name"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+          if [ "$VERCEL_ORG_ID" != "$EXPECTED_VERCEL_ORG_ID" ] || [ "$VERCEL_PROJECT_ID" != "$EXPECTED_VERCEL_PROJECT_ID" ]; then
+            echo "::error::GitHub staging Vercel ids do not match the canonical mock-staging target."
+            exit 1
+          fi
+
+      - name: Verify protected non-production Vercel project
+        run: |
+          curl --fail --silent --show-error --max-time 30 \
+            --output "$RUNNER_TEMP/vercel-project.json" \
+            --header "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v9/projects/$EXPECTED_VERCEL_PROJECT_NAME?teamId=$VERCEL_ORG_ID"
+          curl --fail --silent --show-error --max-time 30 \
+            --output "$RUNNER_TEMP/vercel-project-domains.json" \
+            --header "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v9/projects/$EXPECTED_VERCEL_PROJECT_NAME/domains?teamId=$VERCEL_ORG_ID"
+          node scripts/validate-staging-vercel-project.mjs \
+            "$RUNNER_TEMP/vercel-project.json" \
+            "$RUNNER_TEMP/vercel-project-domains.json"
+
+      - name: Fetch canonical Neon identity
+        run: |
+          neon_api="https://console.neon.tech/api/v2/projects/$EXPECTED_NEON_PROJECT_ID"
+          auth_header="Authorization: Bearer $NEON_API_KEY"
+          curl --fail --silent --show-error --max-time 30 \
+            --output "$RUNNER_TEMP/neon-project.json" \
+            --header "$auth_header" "$neon_api"
+          curl --fail --silent --show-error --max-time 30 \
+            --output "$RUNNER_TEMP/neon-branch.json" \
+            --header "$auth_header" "$neon_api/branches/$EXPECTED_NEON_BRANCH_ID"
+          curl --fail --silent --show-error --max-time 30 \
+            --output "$RUNNER_TEMP/neon-endpoints.json" \
+            --header "$auth_header" "$neon_api/endpoints"
+          curl --fail --silent --show-error --max-time 30 \
+            --output "$RUNNER_TEMP/neon-databases.json" \
+            --header "$auth_header" "$neon_api/branches/$EXPECTED_NEON_BRANCH_ID/databases"
+
+      - name: Verify GitHub database source against canonical Neon
+        run: |
+          node scripts/validate-staging-database-source.mjs \
+            "$RUNNER_TEMP/neon-project.json" \
+            "$RUNNER_TEMP/neon-branch.json" \
+            "$RUNNER_TEMP/neon-endpoints.json" \
+            "$RUNNER_TEMP/neon-databases.json"
+
+      - name: Fetch current Vercel Preview revisions
+        run: |
+          curl --fail --silent --show-error --max-time 30 \
+            --output "$RUNNER_TEMP/vercel-preview-env-before.json" \
+            --header "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v10/projects/$EXPECTED_VERCEL_PROJECT_NAME/env?teamId=$VERCEL_ORG_ID"
+
+      - name: Synchronize verified database values to Vercel Preview
+        run: |
+          sync_database_variable() {
+            local name="$1"
+            local value="$2"
+            local metadata="$RUNNER_TEMP/vercel-preview-env-before.json"
+            local count
+            local env_id
+            count=$(jq --arg name "$name" '[.envs[] | select(
+              .key == $name
+              and .type == "sensitive"
+              and (.target | type == "array" and index("preview") != null)
+              and (.gitBranch == null)
+            )] | length' "$metadata")
+            if [ "$count" != "1" ]; then
+              echo "::error::Expected one unbranched Preview Sensitive variable named $name."
+              exit 1
+            fi
+            env_id=$(jq -r --arg name "$name" '.envs[] | select(
+              .key == $name
+              and .type == "sensitive"
+              and (.target | type == "array" and index("preview") != null)
+              and (.gitBranch == null)
+            ) | .id' "$metadata")
+            jq -n --arg value "$value" \
+              '{type:"sensitive", value:$value, target:["preview"]}' | \
+              curl --fail --silent --show-error --max-time 30 \
+                --output /dev/null \
+                --request PATCH \
+                --header "Authorization: Bearer $VERCEL_TOKEN" \
+                --header "Content-Type: application/json" \
+                --data-binary @- \
+                "https://api.vercel.com/v9/projects/$EXPECTED_VERCEL_PROJECT_NAME/env/$env_id?teamId=$VERCEL_ORG_ID"
+          }
+          sync_database_variable DATABASE_URL "$DATABASE_URL"
+          sync_database_variable DIRECT_URL "$DIRECT_URL"
+
+      - name: Generate and store current database identity attestation
+        run: |
+          curl --fail --silent --show-error --max-time 30 \
+            --output "$RUNNER_TEMP/vercel-preview-env-current.json" \
+            --header "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v10/projects/$EXPECTED_VERCEL_PROJECT_NAME/env?teamId=$VERCEL_ORG_ID"
+          node scripts/create-staging-db-identity-attestation.mjs \
+            "$RUNNER_TEMP/vercel-preview-env-current.json" \
+            > "$RUNNER_TEMP/database-identity.json"
+
+          identity_count=$(jq '[.envs[] | select(
+            .key == "RESPONSEOS_DATABASE_IDENTITY"
+            and (.target | type == "array" and index("preview") != null)
+            and (.gitBranch == null)
+          )] | length' "$RUNNER_TEMP/vercel-preview-env-current.json")
+          if [ "$identity_count" -gt 1 ]; then
+            echo "::error::Conflicting unbranched Preview database identity variables."
+            exit 1
+          fi
+
+          if [ "$identity_count" = "0" ]; then
+            jq -n --rawfile value "$RUNNER_TEMP/database-identity.json" \
+              '{key:"RESPONSEOS_DATABASE_IDENTITY", type:"encrypted", value:($value | rtrimstr("\n")), target:["preview"]}' | \
+              curl --fail --silent --show-error --max-time 30 \
+                --output /dev/null \
+                --request POST \
+                --header "Authorization: Bearer $VERCEL_TOKEN" \
+                --header "Content-Type: application/json" \
+                --data-binary @- \
+                "https://api.vercel.com/v10/projects/$EXPECTED_VERCEL_PROJECT_NAME/env?teamId=$VERCEL_ORG_ID"
+          else
+            identity_type=$(jq -r '.envs[] | select(
+              .key == "RESPONSEOS_DATABASE_IDENTITY"
+              and (.target | type == "array" and index("preview") != null)
+              and (.gitBranch == null)
+            ) | .type' "$RUNNER_TEMP/vercel-preview-env-current.json")
+            identity_id=$(jq -r '.envs[] | select(
+              .key == "RESPONSEOS_DATABASE_IDENTITY"
+              and (.target | type == "array" and index("preview") != null)
+              and (.gitBranch == null)
+            ) | .id' "$RUNNER_TEMP/vercel-preview-env-current.json")
+            if [ "$identity_type" != "encrypted" ]; then
+              echo "::error::RESPONSEOS_DATABASE_IDENTITY must be readable encrypted metadata."
+              exit 1
+            fi
+            jq -n --rawfile value "$RUNNER_TEMP/database-identity.json" \
+              '{type:"encrypted", value:($value | rtrimstr("\n")), target:["preview"]}' | \
+              curl --fail --silent --show-error --max-time 30 \
+                --output /dev/null \
+                --request PATCH \
+                --header "Authorization: Bearer $VERCEL_TOKEN" \
+                --header "Content-Type: application/json" \
+                --data-binary @- \
+                "https://api.vercel.com/v9/projects/$EXPECTED_VERCEL_PROJECT_NAME/env/$identity_id?teamId=$VERCEL_ORG_ID"
+          fi
+
+      - name: Validate final protected mock-staging contract
+        run: |
+          npm install -g vercel@52.2.1
+          vercel link --yes \
+            --project "$VERCEL_PROJECT_ID" \
+            --scope "$VERCEL_ORG_ID" \
+            --token "$VERCEL_TOKEN"
+          vercel env pull "$RUNNER_TEMP/vercel-preview.env" --yes \
+            --environment=preview \
+            --scope "$VERCEL_ORG_ID" \
+            --token "$VERCEL_TOKEN"
+          curl --fail --silent --show-error --max-time 30 \
+            --output "$RUNNER_TEMP/vercel-preview-env-final.json" \
+            --header "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v10/projects/$EXPECTED_VERCEL_PROJECT_NAME/env?teamId=$VERCEL_ORG_ID"
+          node scripts/validate-staging-env.mjs \
+            "$RUNNER_TEMP/vercel-preview.env" \
+            "$RUNNER_TEMP/vercel-preview-env-final.json" \
+            "$RUNNER_TEMP/neon-project.json" \
+            "$RUNNER_TEMP/neon-branch.json" \
+            "$RUNNER_TEMP/neon-endpoints.json" \
+            "$RUNNER_TEMP/neon-databases.json"
+          echo "Configuration-only verification complete for workflow controls $CONTROL_SHA."
+          echo "No migration or deployment was run; future application source remains $INTENDED_APPLICATION_SHA."

@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest";
 import {
   CANONICAL_STAGING_DATABASE,
   createDatabaseIdentityAttestation,
+  validateCanonicalStagingDatabaseSource,
   validateStagingEnvironment,
   validateVercelPreviewEnvironment,
 } from "@/scripts/validate-staging-env.mjs";
@@ -176,19 +177,124 @@ function validatePreview(
 }
 
 describe("Vercel Preview staging contract", () => {
+  test("accepts the canonical GitHub staging database source before Vercel synchronization", () => {
+    expect(
+      validateCanonicalStagingDatabaseSource(
+        GITHUB_DATABASE_ENV,
+        NEON_METADATA,
+      ),
+    ).toEqual([]);
+  });
+
+  test("rejects a non-canonical GitHub staging endpoint before Vercel synchronization", () => {
+    const errors = validateCanonicalStagingDatabaseSource(
+      {
+        DATABASE_URL: DATABASE_URL.replace(
+          ENDPOINT_ID,
+          "ep-wrong-source-a1b2c3d4",
+        ),
+        DIRECT_URL: DIRECT_URL.replace(
+          ENDPOINT_ID,
+          "ep-wrong-source-a1b2c3d4",
+        ),
+      },
+      NEON_METADATA,
+    );
+
+    expect(errors).toContain(
+      "DATABASE_URL must use the canonical Neon staging endpoint",
+    );
+    expect(errors).toContain(
+      "DIRECT_URL must use the canonical Neon staging endpoint",
+    );
+  });
+
+  test("rejects reversed pooled and direct GitHub database roles", () => {
+    const errors = validateCanonicalStagingDatabaseSource(
+      {
+        DATABASE_URL: DIRECT_URL,
+        DIRECT_URL: DATABASE_URL,
+      },
+      NEON_METADATA,
+    );
+
+    expect(errors).toContain(
+      "DATABASE_URL must use the canonical pooled Neon hostname",
+    );
+    expect(errors).toContain(
+      "DIRECT_URL must use the canonical direct Neon hostname",
+    );
+  });
+
+  test("rejects a non-canonical GitHub staging database", () => {
+    const errors = validateCanonicalStagingDatabaseSource(
+      {
+        DATABASE_URL: DATABASE_URL.replace("/neondb", "/postgres"),
+        DIRECT_URL: DIRECT_URL.replace("/neondb", "/postgres"),
+      },
+      NEON_METADATA,
+    );
+
+    expect(errors).toContain(
+      "DATABASE_URL must use the canonical Neon staging database",
+    );
+    expect(errors).toContain(
+      "DIRECT_URL must use the canonical Neon staging database",
+    );
+  });
+
+  test("rejects malformed GitHub staging connection strings", () => {
+    const errors = validateCanonicalStagingDatabaseSource(
+      {
+        DATABASE_URL: "not-a-postgres-url",
+        DIRECT_URL: "postgresql://missing-host",
+      },
+      NEON_METADATA,
+    );
+
+    expect(errors).toContain(
+      "DATABASE_URL must resolve to an identifiable Neon endpoint and database",
+    );
+    expect(errors).toContain(
+      "DIRECT_URL must resolve to an identifiable Neon endpoint and database",
+    );
+  });
+
   test("accepts the canonical staging database identity", () => {
     expect(validatePreview()).toEqual([]);
   });
 
+  test("generates a credential-free canonical attestation", () => {
+    expect(DATABASE_ATTESTATION.identity).toEqual(
+      CANONICAL_STAGING_DATABASE,
+    );
+    expect(DATABASE_ATTESTATION.fingerprint).toMatch(/^sha256:[0-9a-f]{64}$/);
+    const revisions = DATABASE_ATTESTATION.vercel as Record<
+      string,
+      { envId: string; updatedAt: number }
+    >;
+    expect(revisions.DATABASE_URL).toEqual({
+      envId: BASE_PREVIEW_METADATA.envs.find(
+        (entry) => entry.key === "DATABASE_URL",
+      )?.id,
+      updatedAt: BASE_PREVIEW_METADATA.envs.find(
+        (entry) => entry.key === "DATABASE_URL",
+      )?.updatedAt,
+    });
+    expect(JSON.stringify(DATABASE_ATTESTATION)).not.toContain("runtime-secret");
+    expect(JSON.stringify(DATABASE_ATTESTATION)).not.toContain("migration-secret");
+    expect(JSON.stringify(DATABASE_ATTESTATION)).not.toContain("postgresql://");
+  });
+
   test("rejects migration and Vercel runtime database mismatch", () => {
     const differentEndpoint = "ep-wrong-runtime-a1b2c3d4";
-    const runtimeAttestation = createDatabaseIdentityAttestation(
-      {
-        DATABASE_URL: DATABASE_URL.replace(ENDPOINT_ID, differentEndpoint),
-        DIRECT_URL: DIRECT_URL.replace(ENDPOINT_ID, differentEndpoint),
+    const runtimeAttestation = {
+      ...DATABASE_ATTESTATION,
+      identity: {
+        ...DATABASE_ATTESTATION.identity,
+        endpointId: differentEndpoint,
       },
-      BASE_PREVIEW_METADATA,
-    );
+    };
     const errors = validatePreview({
       ...PULLED_PREVIEW_ENV,
       RESPONSEOS_DATABASE_IDENTITY: JSON.stringify(runtimeAttestation),
@@ -277,6 +383,20 @@ describe("Vercel Preview staging contract", () => {
 
     expect(validatePreview(PULLED_PREVIEW_ENV, metadata)).toContain(
       "Vercel database identity evidence is stale for DIRECT_URL",
+    );
+  });
+
+  test("rejects a Vercel database variable id mismatch", () => {
+    const metadata = {
+      envs: BASE_PREVIEW_METADATA.envs.map((entry) =>
+        entry.key === "DATABASE_URL"
+          ? { ...entry, id: "replacement-database-variable" }
+          : entry,
+      ),
+    };
+
+    expect(validatePreview(PULLED_PREVIEW_ENV, metadata)).toContain(
+      "Vercel database identity evidence is stale for DATABASE_URL",
     );
   });
 
