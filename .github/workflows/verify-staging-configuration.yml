@@ -14,7 +14,7 @@ on:
         required: true
         type: string
       sha:
-        description: "Exact 40-character master SHA containing these controls"
+        description: "Exact 40-character master workflow-control SHA"
         required: true
         type: string
 
@@ -39,6 +39,13 @@ jobs:
       EXPECTED_NEON_PROJECT_ID: patient-snow-16014934
       EXPECTED_NEON_BRANCH_NAME: main
       EXPECTED_NEON_BRANCH_ID: br-mute-boat-a6ylen11
+      EXPECTED_NEON_ENDPOINT_ID: ep-young-morning-a6oeu9vv
+      EXPECTED_NEON_DATABASE_NAME: neondb
+      INTENDED_APPLICATION_SHA: 4a5b29b83cb3f18137b0151ae6242b2ac484ef08
+      DISPATCH_CONFIRM: ${{ inputs.confirm }}
+      CONTROL_SHA: ${{ inputs.sha }}
+      DISPATCH_REF: ${{ github.ref }}
+      DISPATCHED_WORKFLOW_SHA: ${{ github.sha }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -49,15 +56,15 @@ jobs:
     steps:
       - name: Reject deploy intent or non-master controls
         run: |
-          if [ "${{ inputs.confirm }}" != "configuration-only" ]; then
+          if [ "$DISPATCH_CONFIRM" != "configuration-only" ]; then
             echo "::error::Confirmation must be exactly configuration-only."
             exit 1
           fi
-          if [ "${{ github.ref }}" != "refs/heads/master" ]; then
+          if [ "$DISPATCH_REF" != "refs/heads/master" ]; then
             echo "::error::Configuration verification must be dispatched from master."
             exit 1
           fi
-          if [[ ! "${{ inputs.sha }}" =~ ^[0-9a-f]{40}$ ]] || [ "${{ inputs.sha }}" != "${{ github.sha }}" ]; then
+          if [[ ! "$CONTROL_SHA" =~ ^[0-9a-f]{40}$ ]] || [ "$CONTROL_SHA" != "$DISPATCHED_WORKFLOW_SHA" ]; then
             echo "::error::sha must exactly match the current master workflow-control SHA."
             exit 1
           fi
@@ -73,7 +80,7 @@ jobs:
 
       - name: Verify exact control SHA and required secrets
         run: |
-          if [ "$(git rev-parse HEAD)" != "${{ inputs.sha }}" ]; then
+          if [ "$(git rev-parse HEAD)" != "$CONTROL_SHA" ]; then
             echo "::error::Checked-out controls do not match the requested SHA."
             exit 1
           fi
@@ -94,26 +101,17 @@ jobs:
 
       - name: Verify protected non-production Vercel project
         run: |
-          project_metadata=$(curl --fail --silent --show-error --max-time 30 \
+          curl --fail --silent --show-error --max-time 30 \
+            --output "$RUNNER_TEMP/vercel-project.json" \
             --header "Authorization: Bearer $VERCEL_TOKEN" \
-            "https://api.vercel.com/v9/projects/$EXPECTED_VERCEL_PROJECT_NAME?teamId=$VERCEL_ORG_ID")
-          if ! jq -e \
-            --arg project_id "$EXPECTED_VERCEL_PROJECT_ID" \
-            --arg org_id "$EXPECTED_VERCEL_ORG_ID" \
-            --arg project_name "$EXPECTED_VERCEL_PROJECT_NAME" \
-            --arg bypass "$VERCEL_AUTOMATION_BYPASS_SECRET" \
-            '(.id == $project_id)
-              and (.accountId == $org_id)
-              and (.name == $project_name)
-              and (.nodeVersion == "24.x")
-              and (.live == false)
-              and (.ssoProtection.deploymentType == "all_except_custom_domains")
-              and ((.protectionBypass // {}) | has($bypass))' \
-            <<<"$project_metadata" >/dev/null; then
-            echo "::error::Vercel identity, runtime, non-production state, protection, or bypass does not match the staging contract."
-            exit 1
-          fi
-          unset project_metadata
+            "https://api.vercel.com/v9/projects/$EXPECTED_VERCEL_PROJECT_NAME?teamId=$VERCEL_ORG_ID"
+          curl --fail --silent --show-error --max-time 30 \
+            --output "$RUNNER_TEMP/vercel-project-domains.json" \
+            --header "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v9/projects/$EXPECTED_VERCEL_PROJECT_NAME/domains?teamId=$VERCEL_ORG_ID"
+          node scripts/validate-staging-vercel-project.mjs \
+            "$RUNNER_TEMP/vercel-project.json" \
+            "$RUNNER_TEMP/vercel-project-domains.json"
 
       - name: Fetch canonical Neon identity
         run: |
@@ -244,10 +242,10 @@ jobs:
         run: |
           npm install -g vercel@52.2.1
           vercel link --yes \
-            --project "$EXPECTED_VERCEL_PROJECT_NAME" \
+            --project "$VERCEL_PROJECT_ID" \
             --scope "$VERCEL_ORG_ID" \
             --token "$VERCEL_TOKEN"
-          vercel pull --yes \
+          vercel env pull "$RUNNER_TEMP/vercel-preview.env" --yes \
             --environment=preview \
             --scope "$VERCEL_ORG_ID" \
             --token "$VERCEL_TOKEN"
@@ -256,10 +254,11 @@ jobs:
             --header "Authorization: Bearer $VERCEL_TOKEN" \
             "https://api.vercel.com/v10/projects/$EXPECTED_VERCEL_PROJECT_NAME/env?teamId=$VERCEL_ORG_ID"
           node scripts/validate-staging-env.mjs \
-            .vercel/.env.preview.local \
+            "$RUNNER_TEMP/vercel-preview.env" \
             "$RUNNER_TEMP/vercel-preview-env-final.json" \
             "$RUNNER_TEMP/neon-project.json" \
             "$RUNNER_TEMP/neon-branch.json" \
             "$RUNNER_TEMP/neon-endpoints.json" \
             "$RUNNER_TEMP/neon-databases.json"
-          echo "Configuration-only verification complete. No migration or deployment was run."
+          echo "Configuration-only verification complete for workflow controls $CONTROL_SHA."
+          echo "No migration or deployment was run; future application source remains $INTENDED_APPLICATION_SHA."

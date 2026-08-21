@@ -8,7 +8,8 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 - Added a protected manual workflow that validates the GitHub staging database URLs against the canonical Neon project/branch/endpoint/database, synchronizes those verified values to Vercel Preview, and stores a revision-bound non-secret identity attestation.
 - Kept the workflow configuration-only: it has read-only repository permissions and contains no Prisma migration, Vercel deployment, alias, production, provider, phone-routing, or prospect-exposure step.
-- Added a reusable source-identity validator and unit coverage so wrong endpoints fail before any Vercel configuration write.
+- Added reusable source and Vercel control-plane validators plus unit coverage so wrong projects, branches, endpoints, databases, pooled/direct roles, production posture, aliases, domains, or stale revisions fail closed.
+- Separated the PR's future workflow-control SHA from application SHA `4a5b29b83cb3f18137b0151ae6242b2ac484ef08`, kept dispatch inputs out of Bash source, and documented the redundant repository-level `NEON_API_KEY` for separately authorized removal.
 
 ## Unreleased — ci: fail closed on the dedicated mock-staging target
 
