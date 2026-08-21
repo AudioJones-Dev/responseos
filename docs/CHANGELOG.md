@@ -4,6 +4,14 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — ci: certify staging configuration through Vercel REST
+
+- Disabled all automatic Vercel Git-triggered deployments through `git.deploymentEnabled: false`; separately authorized explicit deployment workflows remain available.
+- Replaced the configuration-only lane's final `vercel link` / `vercel env pull` dependency with allowlisted Vercel REST retrieval using `decrypt=true` only after each readable Preview variable passes exact name, type, scope, and uniqueness checks; Sensitive database and Clerk values remain metadata-only.
+- Added a pre-synchronization posture gate for the exact protected non-production project, readable Clerk/auth/app configuration, Sensitive-variable types, and absence of live-provider variables before either database variable can be updated.
+- Kept final database certification bound to canonical GitHub URLs, live Neon ownership, Vercel variable ids/revisions, and the credential-free `RESPONSEOS_DATABASE_IDENTITY` attestation.
+- Recorded run `32530229689`: canonical database synchronization and attestation completed, while final certification stopped solely because Vercel CLI user resolution returned `User not found. (404)`; no migration or deployment ran.
+
 ## Unreleased — ci: add a configuration-only staging identity gate
 
 - Added a protected manual workflow that validates the GitHub staging database URLs against the canonical Neon project/branch/endpoint/database, synchronizes those verified values to Vercel Preview, and stores a revision-bound non-secret identity attestation.
