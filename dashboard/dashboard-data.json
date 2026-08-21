@@ -673,7 +673,11 @@
       "start": "2026-08-21",
       "due": "2026-08-21",
       "blocked": true,
-      "blockedReason": "REST-only remediation is awaiting PR review/merge and a separately authorized second configuration-only run; deployment and migrations remain gated"
+      "blockedReason": "REST-only remediation is awaiting PR review/merge and a separately authorized second configuration-only run; deployment and migrations remain gated",
+      "ref": 129,
+      "refType": "pull",
+      "refState": "open",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/129"
     },
     {
       "id": "L-03",
