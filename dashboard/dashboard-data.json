@@ -639,7 +639,11 @@
       "start": "2026-08-21",
       "due": "2026-08-21",
       "blocked": true,
-      "blockedReason": "Awaiting remediation PR review/merge and private Clerk same-instance verification; deployment retry remains separately gated"
+      "blockedReason": "Awaiting PR #126 review/merge and private Clerk same-instance verification; deployment retry remains separately gated",
+      "ref": 126,
+      "refType": "pull",
+      "refState": "open",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/126"
     },
     {
       "id": "L-03",
