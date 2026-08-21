@@ -30,7 +30,7 @@ Verified snapshot from the 2026-08-21 remediation (operator must re-check before
 | Surface | Observed | Gap for Path A staging |
 |---|---|---|
 | **GitHub Environment** | `staging` exists with required reviewer `AudioJones-Dev` and a `master`-only deployment branch policy | Keep all deploy credentials Environment-scoped; deployment retry still requires a separate approval. |
-| **GitHub staging secrets** | Database URLs, verified Vercel team/project ids, Vercel token, and automation-bypass secret names are present | Add a least-privilege `NEON_API_KEY`; values remain unreadable by design and the workflow must prove database identity before migration. |
+| **GitHub staging secrets** | Database URLs, verified Vercel team/project ids, Vercel token, and automation-bypass secret names are present | Add a project-scoped `NEON_API_KEY`; values remain unreadable by design and the configuration-only workflow must prove and attest database identity before deployment is authorized. |
 | **Vercel** | Dedicated `audiojones/responseos-staging-mock`; Node **24.x**; `live=false`; no deployments, production target, aliases, custom domains, or Git integration | Keep Vercel Authentication enabled (`all_except_custom_domains`). Use only a project-scoped automation bypass for CI smoke. |
 | **Neon** | Canonical project `responseos-staging-mock` (`patient-snow-16014934`), branch `main` (`br-mute-boat-a6ylen11`), and read/write endpoint ownership were verified read-only | Never substitute the separate `responseos` project. Add live read-only API evidence and the Vercel database revision attestation before retry. |
 | **Clerk** | All eight required Preview names exist; the publishable key is test-mode and resolves to a Clerk development instance | Before retry, re-enter/verify the write-only `CLERK_SECRET_KEY`, webhook secret, and control org against that same development instance. Presence alone does not prove their provenance. |
@@ -98,13 +98,13 @@ Do these in order. Stop if any step needs a credential you do not have — do no
 ### 3.1 Neon staging database
 
 1. Use only project `responseos-staging-mock` (`patient-snow-16014934`) and branch `main` (`br-mute-boat-a6ylen11`). The separate `responseos` project must never satisfy this gate.
-2. From that branch, copy **pooled** → Vercel Preview `DATABASE_URL` and GitHub staging `STAGING_DATABASE_URL`.
-3. From the same branch/database, copy **direct** → Vercel Preview `DIRECT_URL` and GitHub staging `STAGING_DIRECT_URL`.
-4. Keep both Vercel database variables Sensitive and unbranched Preview-scoped.
-5. Fetch Vercel Preview environment metadata to a temporary file without requesting decrypted values. With the same just-provisioned database URLs supplied only through the process environment, run `node scripts/create-staging-db-identity-attestation.mjs <vercel-env-metadata.json>` and store its non-secret JSON output as encrypted unbranched Preview `RESPONSEOS_DATABASE_IDENTITY`.
-6. Add a least-privilege Neon API key to GitHub Environment `staging` as `NEON_API_KEY`. Do not add it to Vercel.
-7. If either Vercel database URL changes, regenerate the attestation. Its stored variable id/`updatedAt` bindings intentionally make the previous evidence stale.
-8. Never print, persist, diff, hash in full, or compare plaintext connection strings. The script emits only resource identity and a credential-free SHA-256 fingerprint.
+2. From that branch, set **pooled** only in GitHub staging `STAGING_DATABASE_URL` and **direct** only in GitHub staging `STAGING_DIRECT_URL`.
+3. Keep the existing Vercel `DATABASE_URL` and `DIRECT_URL` variables Sensitive and unbranched Preview-scoped. Their values are write-only.
+4. Add a project-scoped Neon API key to GitHub Environment `staging` as `NEON_API_KEY`. Neon project-scoped keys are the narrowest available project boundary; the verification workflow uses only `GET` requests and never passes the key to Vercel or the app.
+5. After the configuration workflow is merged under a separately reviewed SHA, run **Verify Staging Configuration** from `master` with confirmation `configuration-only` and that exact SHA. The protected job validates the GitHub URLs against live canonical Neon metadata before any write, synchronizes those same verified values to the two existing Vercel Preview Sensitive variables, then creates/updates encrypted `RESPONSEOS_DATABASE_IDENTITY` against their new ids/revisions.
+6. Confirm the job ends with the configuration-only success notice. It contains no migration or deployment step; **Deploy Staging** remains a separate authorization.
+7. If either GitHub database URL changes, rerun configuration verification before any deployment. The Vercel ids/`updatedAt` bindings intentionally make old evidence stale.
+8. Never print, persist, diff, hash in full, or compare plaintext connection strings. The workflow streams values between protected stores and emits only resource identity and a credential-free SHA-256 fingerprint.
 
 ### 3.2 Clerk staging application
 
@@ -201,6 +201,15 @@ Do not run seed/migrate against production until Stage I.
 ---
 
 ## 5. Deploy workflow reference
+
+Configuration gate:
+
+- Workflow file: [`.github/workflows/verify-staging-configuration.yml`](../../.github/workflows/verify-staging-configuration.yml)
+- Trigger: manual `workflow_dispatch` from `master` only, with `configuration-only` plus the exact current master SHA
+- Behavior: exact control SHA → protected Vercel posture → canonical Neon control-plane evidence → GitHub database source verification → Preview Sensitive-variable synchronization → non-secret attestation → final mock-only validator
+- Explicit non-goals: no migration, deploy, alias, production target, provider activation, phone routing, or prospect exposure
+
+Deployment gate:
 
 - Workflow file: [`.github/workflows/deploy-staging.yml`](../../.github/workflows/deploy-staging.yml)
 - Trigger: **manual** `workflow_dispatch` only

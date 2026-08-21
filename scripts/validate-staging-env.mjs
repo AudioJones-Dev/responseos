@@ -129,9 +129,7 @@ function unwrapMetadata(metadata, name) {
   return value?.[name] ?? value;
 }
 
-function databaseIdentityErrors(
-  pulledEnv,
-  entries,
+export function validateCanonicalStagingDatabaseSource(
   migrationEnv,
   neonMetadata,
 ) {
@@ -160,6 +158,75 @@ function databaseIdentityErrors(
       "GitHub migration and runtime database URLs must resolve to the same Neon endpoint and database",
     );
   }
+
+  const migrationTarget = migrationTargets.DIRECT_URL;
+  const project = unwrapMetadata(neonMetadata, "project");
+  const branch = unwrapMetadata(neonMetadata, "branch");
+  const endpoints = neonMetadata?.endpoints?.endpoints;
+  const databases = neonMetadata?.databases?.databases;
+
+  if (
+    project?.id !== CANONICAL_STAGING_DATABASE.projectId ||
+    project?.name !== CANONICAL_STAGING_DATABASE.projectName
+  ) {
+    errors.push("Neon project identity is not the canonical mock-staging project");
+  }
+
+  if (
+    branch?.id !== CANONICAL_STAGING_DATABASE.branchId ||
+    branch?.project_id !== CANONICAL_STAGING_DATABASE.projectId ||
+    branch?.name !== CANONICAL_STAGING_DATABASE.branchName
+  ) {
+    errors.push("Neon branch identity is not the canonical mock-staging branch");
+  }
+
+  if (migrationTarget) {
+    const matchingEndpoints = Array.isArray(endpoints)
+      ? endpoints.filter(
+          (endpoint) =>
+            endpoint?.id === migrationTarget.endpointId &&
+            endpoint?.project_id === CANONICAL_STAGING_DATABASE.projectId &&
+            endpoint?.branch_id === CANONICAL_STAGING_DATABASE.branchId &&
+            endpoint?.type === "read_write" &&
+            endpoint?.disabled !== true,
+        )
+      : [];
+    if (matchingEndpoints.length !== 1) {
+      errors.push(
+        "Neon endpoint evidence does not bind the migration connection to the canonical staging branch",
+      );
+    }
+
+    const matchingDatabases = Array.isArray(databases)
+      ? databases.filter(
+          (database) =>
+            database?.name === migrationTarget.databaseName &&
+            database?.branch_id === CANONICAL_STAGING_DATABASE.branchId,
+        )
+      : [];
+    if (matchingDatabases.length !== 1) {
+      errors.push(
+        "Neon database evidence does not bind the migration connection to the canonical staging branch",
+      );
+    }
+  }
+
+  return errors;
+}
+
+function databaseIdentityErrors(
+  pulledEnv,
+  entries,
+  migrationEnv,
+  neonMetadata,
+) {
+  const errors = validateCanonicalStagingDatabaseSource(
+    migrationEnv,
+    neonMetadata,
+  );
+  const migrationTargets = Object.fromEntries(
+    DATABASE_URL_NAMES.map((name) => [name, parseNeonTarget(migrationEnv[name])]),
+  );
 
   const identityEntries = matchingPreviewEntries(
     entries,
@@ -236,57 +303,6 @@ function databaseIdentityErrors(
       ) {
         errors.push(`Vercel database identity evidence is stale for ${name}`);
       }
-    }
-  }
-
-  const project = unwrapMetadata(neonMetadata, "project");
-  const branch = unwrapMetadata(neonMetadata, "branch");
-  const endpoints = neonMetadata?.endpoints?.endpoints;
-  const databases = neonMetadata?.databases?.databases;
-
-  if (
-    project?.id !== CANONICAL_STAGING_DATABASE.projectId ||
-    project?.name !== CANONICAL_STAGING_DATABASE.projectName
-  ) {
-    errors.push("Neon project identity is not the canonical mock-staging project");
-  }
-
-  if (
-    branch?.id !== CANONICAL_STAGING_DATABASE.branchId ||
-    branch?.project_id !== CANONICAL_STAGING_DATABASE.projectId ||
-    branch?.name !== CANONICAL_STAGING_DATABASE.branchName
-  ) {
-    errors.push("Neon branch identity is not the canonical mock-staging branch");
-  }
-
-  if (migrationTarget) {
-    const matchingEndpoints = Array.isArray(endpoints)
-      ? endpoints.filter(
-          (endpoint) =>
-            endpoint?.id === migrationTarget.endpointId &&
-            endpoint?.project_id === CANONICAL_STAGING_DATABASE.projectId &&
-            endpoint?.branch_id === CANONICAL_STAGING_DATABASE.branchId &&
-            endpoint?.type === "read_write" &&
-            endpoint?.disabled !== true,
-        )
-      : [];
-    if (matchingEndpoints.length !== 1) {
-      errors.push(
-        "Neon endpoint evidence does not bind the migration connection to the canonical staging branch",
-      );
-    }
-
-    const matchingDatabases = Array.isArray(databases)
-      ? databases.filter(
-          (database) =>
-            database?.name === migrationTarget.databaseName &&
-            database?.branch_id === CANONICAL_STAGING_DATABASE.branchId,
-        )
-      : [];
-    if (matchingDatabases.length !== 1) {
-      errors.push(
-        "Neon database evidence does not bind the migration connection to the canonical staging branch",
-      );
     }
   }
 

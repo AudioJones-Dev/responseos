@@ -4,6 +4,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — ci: add a configuration-only staging identity gate
+
+- Added a protected manual workflow that validates the GitHub staging database URLs against the canonical Neon project/branch/endpoint/database, synchronizes those verified values to Vercel Preview, and stores a revision-bound non-secret identity attestation.
+- Kept the workflow configuration-only: it has read-only repository permissions and contains no Prisma migration, Vercel deployment, alias, production, provider, phone-routing, or prospect-exposure step.
+- Added a reusable source-identity validator and unit coverage so wrong endpoints fail before any Vercel configuration write.
+
 ## Unreleased — ci: fail closed on the dedicated mock-staging target
 
 - Bound the manual staging workflow to `audiojones/responseos-staging-mock`, Node 24.x, non-live project state, Vercel Authentication, and a matching project-scoped automation bypass before migrations can run.

@@ -604,12 +604,12 @@
       "title": "Staging/prod env + secrets (Path A first)",
       "owner": "Audio",
       "status": "In Progress",
-      "progress": 60,
+      "progress": 70,
       "priority": "High",
       "start": "2026-08-03",
       "due": "2026-08-12",
       "blocked": true,
-      "blockedReason": "Dedicated mock-staging project, GitHub Environment, Node 24.x, Preview variable names, and protected-smoke bypass are configured; private Clerk same-instance verification, remediation PR merge, deployment approval, hosted auth smoke, and rollback evidence remain"
+      "blockedReason": "Dedicated mock-staging project, GitHub Environment, Node 24.x, Preview variables, protected-smoke bypass, PR #126 merge, and private Clerk provenance are verified; Neon API key, database attestation, configuration-only workflow review, deployment approval, hosted auth smoke, and rollback evidence remain"
     },
     {
       "id": "L-02a",
@@ -633,17 +633,30 @@
       "phase": "Launch / Demo Deploy",
       "title": "Repair exact-SHA mock-staging project linkage and protected smoke",
       "owner": "Codex",
+      "status": "Done",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-08-21",
+      "due": "2026-08-21",
+      "blocked": false,
+      "blockedReason": "PR #126 merged at reviewed head; exact-SHA, Vercel identity, protection, database identity, and pre-migration controls are on master. Deployment remains separately gated.",
+      "ref": 126,
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/126"
+    },
+    {
+      "id": "L-02c",
+      "phase": "Launch / Demo Deploy",
+      "title": "Add configuration-only staging database identity verification",
+      "owner": "Codex",
       "status": "Review",
-      "progress": 95,
+      "progress": 90,
       "priority": "High",
       "start": "2026-08-21",
       "due": "2026-08-21",
       "blocked": true,
-      "blockedReason": "Awaiting PR #126 review/merge, canonical Neon identity configuration (read-only API key plus current Vercel DB revision attestation), and private Clerk same-instance verification; deployment retry remains separately gated",
-      "ref": 126,
-      "refType": "pull",
-      "refState": "open",
-      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/126"
+      "blockedReason": "Awaiting review/merge plus project-scoped NEON_API_KEY before configuration verification may run; deployment and migrations remain separately gated"
     },
     {
       "id": "L-03",

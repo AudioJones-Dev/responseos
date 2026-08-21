@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest";
 import {
   CANONICAL_STAGING_DATABASE,
   createDatabaseIdentityAttestation,
+  validateCanonicalStagingDatabaseSource,
   validateStagingEnvironment,
   validateVercelPreviewEnvironment,
 } from "@/scripts/validate-staging-env.mjs";
@@ -176,6 +177,35 @@ function validatePreview(
 }
 
 describe("Vercel Preview staging contract", () => {
+  test("accepts the canonical GitHub staging database source before Vercel synchronization", () => {
+    expect(
+      validateCanonicalStagingDatabaseSource(
+        GITHUB_DATABASE_ENV,
+        NEON_METADATA,
+      ),
+    ).toEqual([]);
+  });
+
+  test("rejects a non-canonical GitHub staging endpoint before Vercel synchronization", () => {
+    const errors = validateCanonicalStagingDatabaseSource(
+      {
+        DATABASE_URL: DATABASE_URL.replace(
+          ENDPOINT_ID,
+          "ep-wrong-source-a1b2c3d4",
+        ),
+        DIRECT_URL: DIRECT_URL.replace(
+          ENDPOINT_ID,
+          "ep-wrong-source-a1b2c3d4",
+        ),
+      },
+      NEON_METADATA,
+    );
+
+    expect(errors).toContain(
+      "Neon endpoint evidence does not bind the migration connection to the canonical staging branch",
+    );
+  });
+
   test("accepts the canonical staging database identity", () => {
     expect(validatePreview()).toEqual([]);
   });
