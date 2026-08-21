@@ -58,7 +58,7 @@ Copy from [`.env.example`](../../.env.example) / [`../env-spec.md`](../env-spec.
 | `RESPONSEOS_REQUIRE_AUTH` | Vercel only | Set (`1` or `true`) on hosted staging so auth cannot fail-open (ADR-0039) |
 | `RESPONSEOS_PROVIDER_KEY` | Vercel only | Optional for Path A mock; base64 32-byte AES if encrypting stored creds later |
 
-Vercel does not return values marked Sensitive. The configuration-only workflow therefore verifies those variables by name, unbranched Preview scope, and Sensitive type through authenticated REST metadata; it retrieves only the allowlisted readable flags, HTTPS app URL, `pk_test_` publishable key, control-org id, and non-secret database attestation through the per-variable REST endpoint. Readable responses exist only under `RUNNER_TEMP` and are never logged or uploaded. For the database pair, existence is insufficient: the workflow requires a readable non-secret identity attestation bound to each Sensitive variable's exact Vercel id and `updatedAt` revision, derives the migration target from the GitHub URLs in memory, and verifies project/branch/endpoint/database ownership against the Neon API. The private Clerk key/webhook provenance remains a human same-instance gate. Missing, mismatched, stale, duplicated, or unverifiable configuration stops the job before database migration.
+Vercel does not return values marked Sensitive. The configuration-only workflow therefore verifies those variables by name, unbranched Preview scope, and Sensitive type through authenticated REST metadata; it sends `decrypt=true` only for the exact allowlist of readable flags, HTTPS app URL, `pk_test_` publishable key, control-org id, and final non-secret database attestation after each entry passes name, encrypted type, scope, and uniqueness checks. Readable responses exist only under `RUNNER_TEMP` and are never logged or uploaded. Database URLs, Clerk private keys, webhook secrets, and arbitrary variables cannot enter the decrypted-fetch path. For the database pair, existence is insufficient: the workflow requires a readable non-secret identity attestation bound to each Sensitive variable's exact Vercel id and `updatedAt` revision, derives the migration target from the GitHub URLs in memory, and verifies project/branch/endpoint/database ownership against the Neon API. The private Clerk key/webhook provenance remains a human same-instance gate. Missing, mismatched, stale, duplicated, or unverifiable configuration stops the job before database migration.
 
 ### Must NOT be set on staging/prod
 
@@ -129,7 +129,7 @@ Both **Verify Staging Configuration** and **Deploy Staging** use the top-level c
 ### 3.3 Vercel staging surface
 
 1. Use only the dedicated `responseos-staging-mock` project. The workflow fails closed on any name, team, project-id, or account-id mismatch.
-2. Keep **Production auto-deploy from `master` disabled** (`vercel.json` → `git.deploymentEnabled.master: false`).
+2. Keep **all automatic Git-triggered Vercel deployments disabled** (`vercel.json` → `git.deploymentEnabled: false`). Explicit governed deployment workflows remain separately gated.
 3. Set Path A env vars for Preview (or Staging) — values live only in the platform store, never in git.
 4. Add the database identity attestation from §3.1 as readable encrypted metadata. Do not mark it Sensitive because the workflow must read it; it contains no credential material.
 5. Keep Vercel Authentication enabled. Create one Protection Bypass for Automation secret for GitHub staging smoke; do not create a public exception domain or disable protection.

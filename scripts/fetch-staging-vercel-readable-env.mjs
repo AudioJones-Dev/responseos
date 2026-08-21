@@ -81,6 +81,7 @@ export async function fetchReadablePreviewEnvironment({
       `https://api.vercel.com/v1/projects/${encodeURIComponent(projectName)}/env/${encodeURIComponent(entry.id)}`,
     );
     url.searchParams.set("teamId", teamId);
+    url.searchParams.set("decrypt", "true");
     const response = await fetchImpl(url, {
       headers: { Authorization: `Bearer ${token}` },
       signal: AbortSignal.timeout(30_000),

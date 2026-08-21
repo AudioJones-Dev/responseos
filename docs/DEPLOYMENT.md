@@ -71,7 +71,7 @@ State lives in S3 with state locking + versioning per AWS prescriptive guidance.
 | `.github/workflows/deploy-staging.yml` | **manual** `workflow_dispatch` only | confirmation input `staging` + GitHub Environment **`staging`** (required reviewers) |
 | Production deploy | **none** | Forbidden until founding-pilot readiness + human prod approval |
 
-`vercel.json` sets `git.deploymentEnabled.master: false` so Vercel does not auto-promote `master` to production.
+`vercel.json` sets `git.deploymentEnabled: false` so Vercel does not automatically create deployments for Git pushes or pull requests. Separately authorized explicit deployment workflows remain available.
 
 **Future target** (post–Stage I): GitHub Actions with **OIDC federation to AWS** for HIPAA-lane primitives so the deploy pipeline never needs long-lived cloud secrets. n8n workflow definitions live in Git — n8n source-control mode is downstream of Git, not the source of truth.
 
