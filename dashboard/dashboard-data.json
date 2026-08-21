@@ -584,7 +584,9 @@
       "start": "2026-08-06",
       "due": "2026-08-08",
       "blocked": false,
-      "blockedReason": "Manual workflow, env preflight, exact-SHA health evidence, protected-route smoke, and runbook hardening are review-ready; no deploy or platform mutation performed"
+      "blockedReason": "Manual workflow, env preflight, exact-SHA health evidence, protected-route smoke, and runbook hardening are review-ready; no deploy or platform mutation performed",
+      "ref": 122,
+      "refType": "pull"
     },
     {
       "id": "L-03",

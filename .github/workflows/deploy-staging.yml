@@ -99,10 +99,25 @@ jobs:
       - run: npx prisma generate
 
       - name: Install Vercel CLI
-        run: npm install -g vercel@41.7.0
+        run: |
+          npm install -g vercel@52.2.1
+          vercel --version
+
+      - name: Verify Vercel project token access
+        shell: bash
+        run: |
+          status=$(curl --silent --show-error --max-time 30 \
+            --output /dev/null \
+            --write-out '%{http_code}' \
+            --header "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v9/projects/$VERCEL_PROJECT_ID?teamId=$VERCEL_ORG_ID")
+          if [ "$status" != "200" ]; then
+            echo "::error::Vercel project access preflight failed with HTTP $status."
+            exit 1
+          fi
 
       - name: Pull Vercel staging env metadata
-        run: vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
+        run: vercel pull --yes --environment=preview
 
       - name: Validate mock-only staging environment
         run: node scripts/validate-staging-env.mjs .vercel/.env.preview.local
@@ -111,12 +126,12 @@ jobs:
         run: npx prisma migrate deploy
 
       - name: Build for Vercel
-        run: vercel build --token="$VERCEL_TOKEN"
+        run: vercel build
 
       - name: Deploy prebuilt to Vercel (non-prod)
         id: deploy
         run: |
-          url=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN")
+          url=$(vercel deploy --prebuilt)
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "Deployed staging candidate: $url"
           echo "::notice::Alias/promote to the staging hostname is an operator step — see RESPONSEOS_STAGING_HOSTING_RUNBOOK.md. This job never targets production."
