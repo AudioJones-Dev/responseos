@@ -1,13 +1,23 @@
 import { describe, expect, test } from "vitest";
 
 import {
+  CANONICAL_STAGING_DATABASE,
+  createDatabaseIdentityAttestation,
   validateStagingEnvironment,
   validateVercelPreviewEnvironment,
 } from "@/scripts/validate-staging-env.mjs";
 
+const ENDPOINT_ID = "ep-young-morning-a6oeu9vv";
+const DATABASE_NAME = "neondb";
+const DATABASE_URL =
+  `postgresql://runtime:runtime-secret@${ENDPOINT_ID}-pooler.us-west-2.aws.neon.tech/${DATABASE_NAME}`;
+const DIRECT_URL =
+  `postgresql://migrator:migration-secret@${ENDPOINT_ID}.us-west-2.aws.neon.tech/${DATABASE_NAME}`;
+
 const VALID_ENV = {
-  DATABASE_URL: "postgresql://staging-pooled.example/db",
-  DIRECT_URL: "postgresql://staging-direct.example/db",
+  DATABASE_URL,
+  DIRECT_URL,
+  RESPONSEOS_DATABASE_IDENTITY: "identity-placeholder",
   CLERK_SECRET_KEY: "clerk-secret-placeholder",
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "clerk-public-placeholder",
   CLERK_WEBHOOK_SECRET: "clerk-webhook-placeholder",
@@ -79,9 +89,11 @@ describe("staging environment contract", () => {
   });
 });
 
-const PREVIEW_METADATA = {
-  envs: Object.keys(VALID_ENV).map((key) => ({
+const BASE_PREVIEW_METADATA = {
+  envs: Object.keys(VALID_ENV).map((key, index) => ({
     key,
+    id: `env-${index}`,
+    updatedAt: 1_787_220_000_000 + index,
     target: ["preview"],
     type: [
       "DATABASE_URL",
@@ -95,7 +107,14 @@ const PREVIEW_METADATA = {
   })),
 };
 
+const DATABASE_ATTESTATION = createDatabaseIdentityAttestation(
+  { DATABASE_URL, DIRECT_URL },
+  BASE_PREVIEW_METADATA,
+  1_787_220_100_000,
+);
+
 const PULLED_PREVIEW_ENV = {
+  RESPONSEOS_DATABASE_IDENTITY: JSON.stringify(DATABASE_ATTESTATION),
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_development-placeholder",
   AJ_DIGITAL_CLERK_ORG_ID: VALID_ENV.AJ_DIGITAL_CLERK_ORG_ID,
   NEXT_PUBLIC_APP_URL: VALID_ENV.NEXT_PUBLIC_APP_URL,
@@ -103,30 +122,191 @@ const PULLED_PREVIEW_ENV = {
 };
 
 const GITHUB_DATABASE_ENV = {
-  DATABASE_URL: VALID_ENV.DATABASE_URL,
-  DIRECT_URL: VALID_ENV.DIRECT_URL,
+  DATABASE_URL,
+  DIRECT_URL,
 };
 
+const NEON_METADATA = {
+  project: {
+    project: {
+      id: CANONICAL_STAGING_DATABASE.projectId,
+      name: CANONICAL_STAGING_DATABASE.projectName,
+    },
+  },
+  branch: {
+    branch: {
+      id: CANONICAL_STAGING_DATABASE.branchId,
+      project_id: CANONICAL_STAGING_DATABASE.projectId,
+      name: CANONICAL_STAGING_DATABASE.branchName,
+    },
+  },
+  endpoints: {
+    endpoints: [
+      {
+        id: ENDPOINT_ID,
+        project_id: CANONICAL_STAGING_DATABASE.projectId,
+        branch_id: CANONICAL_STAGING_DATABASE.branchId,
+        type: "read_write",
+        disabled: false,
+      },
+    ],
+  },
+  databases: {
+    databases: [
+      {
+        name: DATABASE_NAME,
+        branch_id: CANONICAL_STAGING_DATABASE.branchId,
+      },
+    ],
+  },
+};
+
+function validatePreview(
+  pulledEnv: Record<string, string | undefined> = PULLED_PREVIEW_ENV,
+  metadata: { envs: Array<Record<string, unknown>> } = BASE_PREVIEW_METADATA,
+  githubDatabaseEnv: Record<string, string | undefined> = GITHUB_DATABASE_ENV,
+  neonMetadata: Record<string, unknown> = NEON_METADATA,
+) {
+  return validateVercelPreviewEnvironment(
+    pulledEnv,
+    metadata,
+    githubDatabaseEnv,
+    neonMetadata,
+  );
+}
+
 describe("Vercel Preview staging contract", () => {
-  test("accepts Sensitive server variables by metadata and readable test auth values", () => {
-    expect(
-      validateVercelPreviewEnvironment(
-        PULLED_PREVIEW_ENV,
-        PREVIEW_METADATA,
-        GITHUB_DATABASE_ENV,
+  test("accepts the canonical staging database identity", () => {
+    expect(validatePreview()).toEqual([]);
+  });
+
+  test("rejects migration and Vercel runtime database mismatch", () => {
+    const differentEndpoint = "ep-wrong-runtime-a1b2c3d4";
+    const runtimeAttestation = createDatabaseIdentityAttestation(
+      {
+        DATABASE_URL: DATABASE_URL.replace(ENDPOINT_ID, differentEndpoint),
+        DIRECT_URL: DIRECT_URL.replace(ENDPOINT_ID, differentEndpoint),
+      },
+      BASE_PREVIEW_METADATA,
+    );
+    const errors = validatePreview({
+      ...PULLED_PREVIEW_ENV,
+      RESPONSEOS_DATABASE_IDENTITY: JSON.stringify(runtimeAttestation),
+    });
+
+    expect(errors).toContain(
+      "Vercel runtime database identity does not match the GitHub migration database identity",
+    );
+    expect(errors.join(" ")).not.toContain("migration-secret");
+    expect(errors.join(" ")).not.toContain("runtime-secret");
+  });
+
+  test("rejects the separate responseos Neon project", () => {
+    const errors = validatePreview(
+      PULLED_PREVIEW_ENV,
+      BASE_PREVIEW_METADATA,
+      GITHUB_DATABASE_ENV,
+      {
+        ...NEON_METADATA,
+        project: {
+          project: {
+            id: "withered-dream-94312345",
+            name: "responseos",
+          },
+        },
+      },
+    );
+
+    expect(errors).toContain(
+      "Neon project identity is not the canonical mock-staging project",
+    );
+  });
+
+  test("rejects the wrong Neon branch", () => {
+    const errors = validatePreview(
+      PULLED_PREVIEW_ENV,
+      BASE_PREVIEW_METADATA,
+      GITHUB_DATABASE_ENV,
+      {
+        ...NEON_METADATA,
+        branch: {
+          branch: {
+            id: "br-wrong-branch-a1b2c3d4",
+            project_id: CANONICAL_STAGING_DATABASE.projectId,
+            name: "demo",
+          },
+        },
+      },
+    );
+
+    expect(errors).toContain(
+      "Neon branch identity is not the canonical mock-staging branch",
+    );
+  });
+
+  test("rejects missing database identity evidence", () => {
+    const metadata = {
+      envs: BASE_PREVIEW_METADATA.envs.filter(
+        (entry) => entry.key !== "RESPONSEOS_DATABASE_IDENTITY",
       ),
-    ).toEqual([]);
+    };
+    const errors = validatePreview(
+      {
+        ...PULLED_PREVIEW_ENV,
+        RESPONSEOS_DATABASE_IDENTITY: "",
+      },
+      metadata,
+    );
+
+    expect(errors).toContain(
+      "Missing required Preview variable metadata: RESPONSEOS_DATABASE_IDENTITY",
+    );
+    expect(errors).toContain(
+      "Expected exactly one unbranched Preview identity variable: RESPONSEOS_DATABASE_IDENTITY",
+    );
+  });
+
+  test("rejects stale database identity evidence", () => {
+    const metadata = {
+      envs: BASE_PREVIEW_METADATA.envs.map((entry) =>
+        entry.key === "DIRECT_URL"
+          ? { ...entry, updatedAt: entry.updatedAt + 1 }
+          : entry,
+      ),
+    };
+
+    expect(validatePreview(PULLED_PREVIEW_ENV, metadata)).toContain(
+      "Vercel database identity evidence is stale for DIRECT_URL",
+    );
+  });
+
+  test("rejects conflicting database identity evidence", () => {
+    const metadata = {
+      envs: [
+        ...BASE_PREVIEW_METADATA.envs,
+        {
+          ...BASE_PREVIEW_METADATA.envs.find(
+            (entry) => entry.key === "RESPONSEOS_DATABASE_IDENTITY",
+          ),
+          id: "conflicting-identity",
+        },
+      ],
+    };
+    const errors = validatePreview(PULLED_PREVIEW_ENV, metadata);
+
+    expect(errors).toContain(
+      "Conflicting unbranched Preview variable metadata: RESPONSEOS_DATABASE_IDENTITY",
+    );
+    expect(errors).toContain(
+      "Expected exactly one unbranched Preview identity variable: RESPONSEOS_DATABASE_IDENTITY",
+    );
   });
 
   test("rejects a production Clerk publishable key", () => {
-    const errors = validateVercelPreviewEnvironment(
-      {
-        ...PULLED_PREVIEW_ENV,
-        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_live_production-placeholder",
-      },
-      PREVIEW_METADATA,
-      GITHUB_DATABASE_ENV,
-    );
+    const errors = validatePreview({
+      ...PULLED_PREVIEW_ENV,
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_live_production-placeholder",
+    });
 
     expect(errors).toContain(
       "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY must be a Clerk test-mode key",
@@ -135,26 +315,22 @@ describe("Vercel Preview staging contract", () => {
 
   test("requires server and database variables to stay Sensitive", () => {
     const metadata = {
-      envs: PREVIEW_METADATA.envs.map((entry) =>
+      envs: BASE_PREVIEW_METADATA.envs.map((entry) =>
         entry.key === "CLERK_SECRET_KEY"
           ? { ...entry, type: "encrypted" }
           : entry,
       ),
     };
 
-    expect(
-      validateVercelPreviewEnvironment(
-        PULLED_PREVIEW_ENV,
-        metadata,
-        GITHUB_DATABASE_ENV,
-      ),
-    ).toContain("Required Preview variable must be Sensitive: CLERK_SECRET_KEY");
+    expect(validatePreview(PULLED_PREVIEW_ENV, metadata)).toContain(
+      "Required Preview variable must be Sensitive: CLERK_SECRET_KEY",
+    );
   });
 
   test("rejects branch-scoped required variables and forbidden Preview names", () => {
     const metadata = {
       envs: [
-        ...PREVIEW_METADATA.envs.map((entry) =>
+        ...BASE_PREVIEW_METADATA.envs.map((entry) =>
           entry.key === "AJ_DIGITAL_CLERK_ORG_ID"
             ? { ...entry, gitBranch: "feature" }
             : entry,
@@ -167,11 +343,7 @@ describe("Vercel Preview staging contract", () => {
         },
       ],
     };
-    const errors = validateVercelPreviewEnvironment(
-      PULLED_PREVIEW_ENV,
-      metadata,
-      GITHUB_DATABASE_ENV,
-    );
+    const errors = validatePreview(PULLED_PREVIEW_ENV, metadata);
 
     expect(errors).toContain(
       "Missing required Preview variable metadata: AJ_DIGITAL_CLERK_ORG_ID",
@@ -182,12 +354,12 @@ describe("Vercel Preview staging contract", () => {
   });
 
   test("rejects missing or shared GitHub staging database secrets", () => {
-    const errors = validateVercelPreviewEnvironment(
+    const errors = validatePreview(
       PULLED_PREVIEW_ENV,
-      PREVIEW_METADATA,
+      BASE_PREVIEW_METADATA,
       {
-        DATABASE_URL: VALID_ENV.DATABASE_URL,
-        DIRECT_URL: VALID_ENV.DATABASE_URL,
+        DATABASE_URL,
+        DIRECT_URL: DATABASE_URL,
       },
     );
 

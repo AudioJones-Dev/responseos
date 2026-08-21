@@ -9,6 +9,7 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - Bound the manual staging workflow to `audiojones/responseos-staging-mock`, Node 24.x, non-live project state, Vercel Authentication, and a matching project-scoped automation bypass before migrations can run.
 - Separated the current workflow-control checkout from the exact reviewed application SHA, added explicit Vercel token authentication, and moved the Preview build into Vercel because Sensitive runtime variables cannot be downloaded for a local prebuilt build.
 - Added value-redacting Preview metadata validation for required Sensitive variables, `pk_test_` Clerk posture, auth enforcement, database-secret shape/separation, and forbidden live-provider names. Deployment retry and private Clerk same-instance verification remain separate human gates.
+- Added a pre-migration canonical Neon identity gate: GitHub URLs are reduced to credential-free endpoint/database identity, Vercel Sensitive variables are revision-bound to a non-secret fingerprint attestation, and live Neon control-plane metadata must map the endpoint/database to project `patient-snow-16014934` branch `br-mute-boat-a6ylen11`. Missing, stale, conflicting, or wrong-project evidence stops before Prisma.
 
 ## Unreleased — feat: add the gated personalized prospect bootstrap foundation
 

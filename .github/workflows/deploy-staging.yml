@@ -57,6 +57,10 @@ jobs:
       url: ${{ steps.deploy.outputs.url }}
     env:
       EXPECTED_VERCEL_PROJECT_NAME: responseos-staging-mock
+      EXPECTED_NEON_PROJECT_NAME: responseos-staging-mock
+      EXPECTED_NEON_PROJECT_ID: patient-snow-16014934
+      EXPECTED_NEON_BRANCH_NAME: main
+      EXPECTED_NEON_BRANCH_ID: br-mute-boat-a6ylen11
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -101,9 +105,11 @@ jobs:
           cache-dependency-path: source/package-lock.json
 
       - name: Require deploy secrets
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
         run: |
           missing=0
-          for name in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID VERCEL_AUTOMATION_BYPASS_SECRET DATABASE_URL DIRECT_URL; do
+          for name in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID VERCEL_AUTOMATION_BYPASS_SECRET NEON_API_KEY DATABASE_URL DIRECT_URL; do
             if [ -z "${!name}" ]; then
               echo "::error::Missing secret: $name (set on GitHub Environment 'staging' or repo secrets). See docs/ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md"
               missing=1
@@ -170,11 +176,62 @@ jobs:
             exit 1
           fi
 
+      - name: Fetch canonical Neon staging identity
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+        run: |
+          neon_api="https://console.neon.tech/api/v2/projects/$EXPECTED_NEON_PROJECT_ID"
+          auth_header="Authorization: Bearer $NEON_API_KEY"
+
+          project_status=$(curl --silent --show-error --max-time 30 \
+            --output "$RUNNER_TEMP/neon-project.json" \
+            --write-out '%{http_code}' \
+            --header "$auth_header" \
+            "$neon_api")
+          if [ "$project_status" != "200" ]; then
+            echo "::error::Canonical Neon project identity preflight failed with HTTP $project_status."
+            exit 1
+          fi
+
+          branch_status=$(curl --silent --show-error --max-time 30 \
+            --output "$RUNNER_TEMP/neon-branch.json" \
+            --write-out '%{http_code}' \
+            --header "$auth_header" \
+            "$neon_api/branches/$EXPECTED_NEON_BRANCH_ID")
+          if [ "$branch_status" != "200" ]; then
+            echo "::error::Canonical Neon branch identity preflight failed with HTTP $branch_status."
+            exit 1
+          fi
+
+          endpoints_status=$(curl --silent --show-error --max-time 30 \
+            --output "$RUNNER_TEMP/neon-endpoints.json" \
+            --write-out '%{http_code}' \
+            --header "$auth_header" \
+            "$neon_api/endpoints")
+          if [ "$endpoints_status" != "200" ]; then
+            echo "::error::Canonical Neon endpoint identity preflight failed with HTTP $endpoints_status."
+            exit 1
+          fi
+
+          databases_status=$(curl --silent --show-error --max-time 30 \
+            --output "$RUNNER_TEMP/neon-databases.json" \
+            --write-out '%{http_code}' \
+            --header "$auth_header" \
+            "$neon_api/branches/$EXPECTED_NEON_BRANCH_ID/databases")
+          if [ "$databases_status" != "200" ]; then
+            echo "::error::Canonical Neon database identity preflight failed with HTTP $databases_status."
+            exit 1
+          fi
+
       - name: Validate mock-only staging environment
         run: |
           node ../workflow-control/scripts/validate-staging-env.mjs \
             .vercel/.env.preview.local \
-            "$RUNNER_TEMP/vercel-preview-env.json"
+            "$RUNNER_TEMP/vercel-preview-env.json" \
+            "$RUNNER_TEMP/neon-project.json" \
+            "$RUNNER_TEMP/neon-branch.json" \
+            "$RUNNER_TEMP/neon-endpoints.json" \
+            "$RUNNER_TEMP/neon-databases.json"
 
       - run: npm ci
       - run: npx prisma generate

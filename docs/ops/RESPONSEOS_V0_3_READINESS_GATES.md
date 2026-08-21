@@ -18,7 +18,7 @@ Clears a non-production staging surface for private operator testing. It authori
 | A3 | GitHub `staging` Environment has reviewer and branch protection | GitHub Environment settings |
 | A4 | `RESPONSEOS_REQUIRE_AUTH=1` and same-instance development Clerk variables are present | Value-redacting Preview metadata preflight + human verification of write-only private key/webhook/org provenance |
 | A5 | `RESPONSEOS_DEV_SESSION` and all live-provider credentials are absent | Value-redacting workflow preflight |
-| A6 | Dedicated Neon staging database verified; direct and pooled URLs are distinct and scoped | Operator platform evidence |
+| A6 | GitHub migration URLs and Vercel Preview runtime URLs are proven to resolve to canonical Neon project `patient-snow-16014934`, branch `br-mute-boat-a6ylen11`, and the same endpoint/database before migration | Credential-free URL-derived identity + Vercel Sensitive-variable revision attestation + live Neon control-plane metadata |
 | A7 | Migration deploy is mandatory; no skip or pooled-URL fallback | `.github/workflows/deploy-staging.yml` |
 | A8 | Project/build use Node 24.x and exact reviewed SHA | Fail-closed project metadata + workflow log + `/api/health` |
 | A9 | Public `/demo` responds while anonymous protected routes do not return application content | Post-deploy smoke |
@@ -26,7 +26,7 @@ Clears a non-production staging surface for private operator testing. It authori
 | A11 | Tenant user resolves only the mapped staging account | Integration suite + authenticated staging smoke |
 | A12 | Rollback to the previous staging artifact is recorded and exercised | Staging runbook evidence |
 
-**Current state:** the dedicated Vercel project, GitHub staging Environment, Node 24.x, Preview variable names, and protected-smoke bypass are configured. The workflow remediation, private Clerk same-instance verification, staging deployment/migration, authenticated tenant smoke, and rollback exercise remain uncleared.
+**Current state:** the dedicated Vercel project, GitHub staging Environment, Node 24.x, core Preview variable names, and protected-smoke bypass are configured. The database identity contract is in review; `NEON_API_KEY`, a current Vercel database revision attestation, private Clerk same-instance verification, staging deployment/migration, authenticated tenant smoke, and rollback exercise remain uncleared.
 
 The public `/audit` form is not a Gate Set A prospect-capture path until canonical persistence/idempotency and durable host-level abuse controls are implemented and verified. Do not make `/api/audit-requests` public merely to make the form submit.
 

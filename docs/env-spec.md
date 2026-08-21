@@ -26,6 +26,9 @@ placeholder keys are present. **Local development never requires a secret.**
 ### Database (Postgres — Neon default per ADR-0026)
 - `DATABASE_URL` — pooled connection string used at runtime.
 - `DIRECT_URL` — non-pooled connection string used by Prisma migrations.
+- `RESPONSEOS_DATABASE_IDENTITY` — Preview-only, non-secret JSON attestation binding the canonical Neon project/branch/endpoint/database fingerprint to the exact Vercel Sensitive `DATABASE_URL` and `DIRECT_URL` ids and `updatedAt` revisions. The staging workflow reads it before migration; changing either Sensitive variable invalidates the attestation.
+
+The GitHub `staging` Environment also requires a least-privilege `NEON_API_KEY` for read-only control-plane verification. It is workflow-only, is never passed to Vercel or the application, and must not appear in `.env.example` as an application variable.
 
 ### Auth (Clerk)
 - `CLERK_SECRET_KEY` — server-side; setting it activates the Clerk session path (`lib/auth/session.ts`) + `proxy.ts` route protection. Absent → placeholder dev-session + pass-through proxy (ADR-0001).
@@ -107,6 +110,7 @@ placeholder keys are present. **Local development never requires a secret.**
 | `NEXT_PUBLIC_APP_URL` | opt | opt | req | req | opt locally | base browser URL; staging host per Path A runbook |
 | `DATABASE_URL` | mock | req (integration) | req | req | mock-first | unit tests run keyless; integration needs Postgres |
 | `DIRECT_URL` | mock | req (integration) | req | req | mock-first | Prisma migrations only |
+| `RESPONSEOS_DATABASE_IDENTITY` | — | — | req (Path A) | — | staging-only | non-secret Vercel revision attestation; missing/stale/conflicting evidence blocks migration |
 | `CLERK_SECRET_KEY` | mock | — | req (Path A) | req (live auth) | mock-first | absent → dev-session + pass-through proxy |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | mock | — | req (Path A) | req (live auth) | mock-first | client-side |
 | `CLERK_WEBHOOK_SECRET` | mock | — | req (Path A) | req (clerk webhook) | mock-first | absent → 503 fail-closed |
@@ -135,6 +139,7 @@ Path A staging checklist (operator): [`ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md
    absent. Setting it in production is a hard fail by design.
 5. **CI integration** is the only lane that needs a real connection — a throwaway Postgres 16 service
    container with a `DATABASE_URL` to it. No vendor secrets are required for CI.
+6. **Hosted staging migration** additionally requires canonical Neon identity proof: both GitHub URLs must derive the same endpoint/database, Vercel's non-secret attestation must match those identities and the current Sensitive-variable revisions, and the Neon API must bind that endpoint/database to project `patient-snow-16014934` branch `br-mute-boat-a6ylen11`.
 
 ## Secret handling rules
 
