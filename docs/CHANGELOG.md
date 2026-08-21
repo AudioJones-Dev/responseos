@@ -4,6 +4,13 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — ci: fail closed on the dedicated mock-staging target
+
+- Bound the manual staging workflow to `audiojones/responseos-staging-mock`, Node 24.x, non-live project state, Vercel Authentication, and a matching project-scoped automation bypass before migrations can run.
+- Separated the current workflow-control checkout from the exact reviewed application SHA, added explicit Vercel token authentication, and moved the Preview build into Vercel because Sensitive runtime variables cannot be downloaded for a local prebuilt build.
+- Added value-redacting Preview metadata validation for required Sensitive variables, `pk_test_` Clerk posture, auth enforcement, database-secret shape/separation, and forbidden live-provider names. Deployment retry and private Clerk same-instance verification remain separate human gates.
+- Added a pre-migration canonical Neon identity gate: GitHub URLs are reduced to credential-free endpoint/database identity, Vercel Sensitive variables are revision-bound to a non-secret fingerprint attestation, and live Neon control-plane metadata must map the endpoint/database to project `patient-snow-16014934` branch `br-mute-boat-a6ylen11`. Missing, stale, conflicting, or wrong-project evidence stops before Prisma.
+
 ## Unreleased — feat: add the gated personalized prospect bootstrap foundation
 
 - Added ADR-0048's operator-only sandbox lifecycle, pinned-IP acquisition of the canonical site plus manually approved same-site URLs, provenance-backed fact review, immutable approved memory snapshots, temporal phone-number assignment, and 14-day ready/active and 30-day content-retention controls.
