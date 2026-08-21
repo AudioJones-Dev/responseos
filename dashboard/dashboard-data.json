@@ -143,14 +143,14 @@
       "phase": "v0.3 · Demo Scope",
       "title": "Define authorized v0.3 demo scope",
       "owner": "Audio",
-      "status": "Review",
-      "progress": 85,
+      "status": "Done",
+      "progress": 100,
       "priority": "High",
       "start": "2026-05-29",
       "due": "2026-06-13",
       "ref": 27,
       "refType": "issue",
-      "refState": "open",
+      "refState": "closed",
       "refUrl": "https://github.com/AudioJones-Dev/responseos/issues/27",
       "blockedReason": "Scope + gates written (founding-pilot scope doc); awaiting Audio staged written auths (§5 Stage A+)"
     },
@@ -181,27 +181,30 @@
       "phase": "v0.3 · Demo Scope",
       "title": "Readiness audit + critical-path amendment",
       "owner": "Claude Code",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "High",
       "start": "2026-08-07",
       "due": "2026-08-08",
       "ref": 113,
       "refType": "pull",
-      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/113"
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/113",
+      "refState": "merged"
     },
     {
       "id": "V-04",
       "phase": "v0.3 · Demo Scope",
       "title": "Integrate future-client delivery standards and opening posture",
       "owner": "Codex",
-      "status": "Review",
+      "status": "Done",
       "progress": 100,
       "priority": "High",
       "start": "2026-07-28",
       "due": "2026-07-28",
       "ref": 103,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/103"
     },
     {
       "id": "26",
@@ -223,14 +226,14 @@
       "phase": "Tech Debt & Hardening",
       "title": "Governance gate docs",
       "owner": "Codex",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "High",
       "start": "2026-06-30",
       "due": "2026-06-30",
       "ref": 89,
       "refType": "pull",
-      "refState": "open",
+      "refState": "merged",
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/89"
     },
     {
@@ -238,14 +241,14 @@
       "phase": "Tech Debt & Hardening",
       "title": "Stale docs reconciliation",
       "owner": "Codex",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "High",
       "start": "2026-07-01",
       "due": "2026-07-01",
       "ref": 90,
       "refType": "pull",
-      "refState": "open",
+      "refState": "merged",
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/90"
     },
     {
@@ -253,14 +256,14 @@
       "phase": "Tech Debt & Hardening",
       "title": "API/data/PRD spec reconciliation",
       "owner": "Codex",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "High",
       "start": "2026-07-01",
       "due": "2026-07-01",
       "ref": 91,
       "refType": "pull",
-      "refState": "open",
+      "refState": "merged",
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/91"
     },
     {
@@ -268,14 +271,14 @@
       "phase": "Tech Debt & Hardening",
       "title": "Quality and reference docs",
       "owner": "Codex",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "Med",
       "start": "2026-07-01",
       "due": "2026-07-01",
       "ref": 92,
       "refType": "pull",
-      "refState": "open",
+      "refState": "merged",
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/92"
     },
     {
@@ -283,14 +286,14 @@
       "phase": "Tech Debt & Hardening",
       "title": "Documentation index cleanup",
       "owner": "Codex",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "Med",
       "start": "2026-07-01",
       "due": "2026-07-01",
       "ref": 93,
       "refType": "pull",
-      "refState": "open",
+      "refState": "merged",
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/93"
     },
     {
@@ -338,7 +341,9 @@
       "due": "2026-07-26",
       "ref": 100,
       "refType": "pull",
-      "blocked": false
+      "blocked": false,
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/100"
     },
     {
       "id": "P0-02",
@@ -352,7 +357,9 @@
       "due": "2026-07-28",
       "ref": 102,
       "refType": "pull",
-      "blocked": false
+      "blocked": false,
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/102"
     },
     {
       "id": "P0-03",
@@ -401,14 +408,14 @@
       "phase": "Integrations",
       "title": "xAI voice readiness spike",
       "owner": "Codex",
-      "status": "Review",
+      "status": "Done",
       "progress": 100,
       "priority": "Med",
       "start": "2026-07-13",
       "due": "2026-07-13",
       "ref": 97,
       "refType": "issue",
-      "refState": "open",
+      "refState": "closed",
       "refUrl": "https://github.com/AudioJones-Dev/responseos/issues/97"
     },
     {
@@ -438,13 +445,15 @@
       "phase": "Integrations",
       "title": "Telnyx + Sent.dm live-call demo implementation brief",
       "owner": "Codex",
-      "status": "Review",
+      "status": "Done",
       "progress": 100,
       "priority": "High",
       "start": "2026-07-05",
       "due": "2026-07-08",
       "ref": 94,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/94"
     },
     {
       "id": "I-05",
@@ -528,13 +537,15 @@
       "phase": "v0.3 · Demo Scope",
       "title": "Internal demo tenant + professional receptionist",
       "owner": "Claude Code",
-      "status": "Review",
+      "status": "Done",
       "progress": 100,
       "priority": "High",
       "start": "2026-08-11",
       "due": "2026-08-11",
       "ref": 116,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/116"
     },
     {
       "id": "Q-01",
@@ -552,13 +563,15 @@
       "phase": "Testing & QA",
       "title": "End-to-end demo smoke test",
       "owner": "Codex",
-      "status": "In Progress",
-      "progress": 50,
+      "status": "Done",
+      "progress": 100,
       "priority": "High",
       "start": "2026-07-27",
       "due": "2026-08-10",
       "ref": 96,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/96"
     },
     {
       "id": "L-02",
@@ -578,7 +591,7 @@
       "phase": "Launch / Demo Deploy",
       "title": "Path A staging host scaffold (workflow + runbook)",
       "owner": "Codex",
-      "status": "Review",
+      "status": "Done",
       "progress": 100,
       "priority": "High",
       "start": "2026-08-06",
@@ -586,7 +599,9 @@
       "blocked": false,
       "blockedReason": "Manual workflow, env preflight, exact-SHA health evidence, protected-route smoke, and runbook hardening are review-ready; no deploy or platform mutation performed",
       "ref": 122,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/122"
     },
     {
       "id": "L-03",
@@ -604,37 +619,18 @@
       "phase": "Launch / Demo Deploy",
       "title": "Demo surface hardening and P0 screenshot fixes",
       "owner": "Claude Code",
-      "status": "Review",
+      "status": "Done",
       "progress": 100,
       "priority": "High",
       "start": "2026-07-05",
       "due": "2026-07-05",
       "ref": 94,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/94"
     }
   ],
   "liveIssues": [
-    {
-      "number": 97,
-      "title": "xAI Voice Agent readiness spike",
-      "url": "https://github.com/AudioJones-Dev/responseos/issues/97",
-      "state": "open",
-      "labels": [
-        "documentation",
-        "codex",
-        "roadmap"
-      ]
-    },
-    {
-      "number": 27,
-      "title": "Roadmap checkpoint: v0.2 stabilization complete, prepare v0.3 demo scope",
-      "url": "https://github.com/AudioJones-Dev/responseos/issues/27",
-      "state": "open",
-      "labels": [
-        "roadmap",
-        "checkpoint"
-      ]
-    },
     {
       "number": 26,
       "title": "Make prisma/seed.ts genuinely idempotent (or document create-only)",
@@ -645,5 +641,5 @@
       ]
     }
   ],
-  "generatedAt": "2026-07-27T13:48:41.322Z"
+  "generatedAt": "2026-08-21T00:51:44.624Z"
 }
