@@ -40,6 +40,11 @@ placeholder keys are present. **Local development never requires a secret.**
   - **Absent → unchanged mock-first behaviour** for local dev, CI, and `next build` (ADR-0001).
   - **Hosted staging contract:** set it alongside the Clerk keys. The manual staging workflow rejects
     the deployment before migration or build when this flag is absent or disabled.
+  - **Mock-staging Clerk posture:** the publishable key must be `pk_test_`; the private key must be a
+    known `sk_test_` from the same Clerk development instance. Keep the private key and webhook
+    secret marked Sensitive in Vercel Preview. Vercel intentionally does not return Sensitive values
+    to `vercel pull`, so the workflow verifies their name/scope/type and the human approval gate
+    verifies same-instance provenance before a deployment retry.
 
 ### Dev session override (local / test / dev only)
 - `RESPONSEOS_DEV_SESSION` — **optional**, read by `lib/auth/session.ts`. Forces a fixed placeholder

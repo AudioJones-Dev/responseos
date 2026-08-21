@@ -604,12 +604,12 @@
       "title": "Staging/prod env + secrets (Path A first)",
       "owner": "Audio",
       "status": "In Progress",
-      "progress": 35,
+      "progress": 60,
       "priority": "High",
       "start": "2026-08-03",
       "due": "2026-08-12",
       "blocked": true,
-      "blockedReason": "Repository hardening is in review; Audio must choose an isolated Vercel staging target, create the GitHub staging Environment, provision dedicated Neon/Clerk resources, inject scoped secrets, align Node 24.x, and separately authorize the deploy"
+      "blockedReason": "Dedicated mock-staging project, GitHub Environment, Node 24.x, Preview variable names, and protected-smoke bypass are configured; private Clerk same-instance verification, remediation PR merge, deployment approval, hosted auth smoke, and rollback evidence remain"
     },
     {
       "id": "L-02a",
@@ -627,6 +627,19 @@
       "refType": "pull",
       "refState": "merged",
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/122"
+    },
+    {
+      "id": "L-02b",
+      "phase": "Launch / Demo Deploy",
+      "title": "Repair exact-SHA mock-staging project linkage and protected smoke",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-08-21",
+      "due": "2026-08-21",
+      "blocked": true,
+      "blockedReason": "Awaiting remediation PR review/merge and private Clerk same-instance verification; deployment retry remains separately gated"
     },
     {
       "id": "L-03",
