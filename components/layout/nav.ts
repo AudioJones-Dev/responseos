@@ -9,6 +9,7 @@ export const ADMIN_NAV: NavItem[] = [
   { label: "Workspaces", href: "/admin/workspaces", icon: "workspaces" },
   { label: "Calls", href: "/admin/calls", icon: "calls" },
   { label: "Demo Ops", href: "/admin/demo-operations", icon: "reports" },
+  { label: "Prospect Demos", href: "/admin/prospect-bootstraps", icon: "workspaces" },
   { label: "Leads", href: "/admin/leads", icon: "leads" },
   { label: "Receptionist", href: "/admin/receptionist", icon: "playbooks" },
   { label: "Automations", href: "/admin/automations", icon: "automations" },

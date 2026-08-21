@@ -491,6 +491,80 @@ enum CrmSyncOperationStatus {
   cancelled
 }
 
+enum ProspectBootstrapStatus {
+  draft
+  ingesting
+  review_required
+  approved
+  provisioning
+  ready
+  active
+  completed
+  promotion_pending
+  converted
+  expired
+  cleanup_pending
+  cleaned
+  failed
+}
+
+enum KnowledgeIngestionStatus {
+  pending
+  running
+  completed
+  failed
+}
+
+enum KnowledgeSourceType {
+  website_page
+  manual_reference
+}
+
+enum KnowledgeSourceStatus {
+  pending
+  acquired
+  blocked
+  failed
+  purged
+}
+
+enum KnowledgeFactStatus {
+  source_observed
+  cross_source_confirmed
+  operator_approved_for_demo
+  owner_confirmed
+  conflicted
+  rejected
+}
+
+enum BusinessMemorySnapshotStatus {
+  draft
+  approved
+  revoked
+}
+
+enum TelephonyNumberStatus {
+  available
+  assigned
+  quarantined
+  released
+  error
+}
+
+enum TelephonyNumberAssignmentStatus {
+  assigned
+  active
+  quarantined
+  released
+}
+
+enum BootstrapPromotionStatus {
+  draft
+  exported
+  imported
+  cancelled
+}
+
 // --- v0.2 closeout step 2.3, PR 31D — audit_logs expansion ----------------
 //
 // Adds the `AuditCategory` enum and the six new nullable columns
@@ -599,25 +673,28 @@ model AuditLog {
 }
 
 model WebhookEvent {
-  id                String               @id @default(cuid())
-  account_id        String?
-  provider          String
-  provider_event_id String
-  event_type        String
-  raw_body          String
-  signature_header  String?
-  signature_valid   Boolean              @default(false)
-  dedupe_hash       String               @unique
-  received_at       DateTime             @default(now())
-  processed_at      DateTime?
-  process_status    WebhookProcessStatus @default(received)
-  process_error     String?
+  id                 String               @id @default(cuid())
+  account_id         String?
+  provider           String
+  provider_event_id  String
+  event_type         String
+  raw_body           String
+  signature_header   String?
+  signature_valid    Boolean              @default(false)
+  dedupe_hash        String               @unique
+  received_at        DateTime             @default(now())
+  processed_at       DateTime?
+  process_status     WebhookProcessStatus @default(received)
+  process_error      String?
+  payload_expires_at DateTime?
+  payload_purged_at  DateTime?
 
   @@unique([provider, provider_event_id])
   @@index([account_id])
   @@index([provider])
   @@index([received_at])
   @@index([process_status])
+  @@index([payload_expires_at])
 }
 
 model ProspectIntake {
@@ -665,6 +742,197 @@ model CrmSyncOperation {
   @@index([account_id, status])
   @@index([call_id])
   @@index([source_webhook_id])
+}
+
+// --- Personalized prospect bootstrap (ADR-0048) ---------------------------
+//
+// A prospect bootstrap is an operator-only, sandbox-tenant workflow. Public
+// source content is never treated as owner-confirmed truth, approved snapshots
+// are immutable, and number routing is resolved from temporal assignments.
+
+model ProspectBootstrap {
+  id                         String                  @id @default(cuid())
+  account_id                 String
+  prospect_intake_id         String?
+  canonical_website          String
+  status                     ProspectBootstrapStatus @default(draft)
+  active_account_key         String?                 @unique
+  current_memory_snapshot_id String?
+  active_assignment_id       String?
+  approved_by                String?
+  approved_at                DateTime?
+  activated_at               DateTime?
+  completed_at               DateTime?
+  converted_at               DateTime?
+  review_expires_at          DateTime?
+  expires_at                 DateTime?
+  content_expires_at         DateTime?
+  content_purged_at          DateTime?
+  cleanup_completed_at       DateTime?
+  promotion_correlation_id   String?
+  created_at                 DateTime                @default(now())
+  updated_at                 DateTime                @updatedAt
+
+  @@index([account_id, status])
+  @@index([review_expires_at])
+  @@index([expires_at])
+  @@index([content_expires_at])
+  @@index([created_at])
+}
+
+model KnowledgeIngestionRun {
+  id                String                   @id @default(cuid())
+  account_id        String
+  bootstrap_id      String
+  status            KnowledgeIngestionStatus @default(pending)
+  extractor_version String
+  template_version  String
+  source_count      Int                      @default(0)
+  fact_count        Int                      @default(0)
+  conflict_count    Int                      @default(0)
+  error_code        String?
+  error_redacted    String?
+  started_at        DateTime?
+  ended_at          DateTime?
+  created_at        DateTime                 @default(now())
+
+  @@index([account_id, bootstrap_id])
+  @@index([status, created_at])
+}
+
+model KnowledgeSource {
+  id               String                @id @default(cuid())
+  account_id       String
+  bootstrap_id     String
+  ingestion_run_id String?
+  source_type      KnowledgeSourceType
+  url              String
+  normalized_url   String
+  status           KnowledgeSourceStatus @default(pending)
+  robots_decision  String?
+  http_status      Int?
+  content_type     String?
+  content_hash     String?
+  extracted_text   String?
+  fetched_at       DateTime?
+  expires_at       DateTime?
+  purged_at        DateTime?
+  created_at       DateTime              @default(now())
+  updated_at       DateTime              @updatedAt
+
+  @@unique([bootstrap_id, normalized_url])
+  @@index([account_id, bootstrap_id])
+  @@index([expires_at])
+}
+
+model KnowledgeFact {
+  id                   String              @id @default(cuid())
+  account_id           String
+  bootstrap_id         String
+  source_id            String
+  source_ids_json      Json
+  source_evidence_json Json?
+  fact_key             String
+  value_json           Json
+  evidence_excerpt     String
+  status               KnowledgeFactStatus @default(source_observed)
+  confidence           Float?
+  conflict_group       String?
+  valid_as_of          DateTime?
+  reviewed_by          String?
+  reviewed_at          DateTime?
+  expires_at           DateTime?
+  created_at           DateTime            @default(now())
+  updated_at           DateTime            @updatedAt
+
+  @@index([account_id, bootstrap_id])
+  @@index([source_id])
+  @@index([fact_key, status])
+}
+
+model BusinessMemorySnapshot {
+  id                       String                       @id @default(cuid())
+  account_id               String
+  bootstrap_id             String?
+  promotion_correlation_id String?                      @unique
+  schema_version           String
+  version                  Int
+  memory_json              Json
+  content_hash             String
+  template_version         String
+  status                   BusinessMemorySnapshotStatus @default(draft)
+  approved_by              String?
+  approved_at              DateTime?
+  revoked_at               DateTime?
+  created_at               DateTime                     @default(now())
+
+  @@unique([bootstrap_id, version])
+  @@unique([bootstrap_id, content_hash])
+  @@index([account_id, bootstrap_id, status])
+}
+
+model TelephonyNumber {
+  id                    String                @id @default(cuid())
+  provider              String
+  provider_number_id    String
+  e164                  String
+  capabilities_json     Json?
+  status                TelephonyNumberStatus @default(available)
+  monthly_cost_micros   Int?
+  deletion_lock_enabled Boolean               @default(true)
+  evergreen             Boolean               @default(false)
+  acquired_at           DateTime?
+  released_at           DateTime?
+  created_at            DateTime              @default(now())
+  updated_at            DateTime              @updatedAt
+
+  @@unique([provider, provider_number_id])
+  @@unique([provider, e164])
+  @@index([status])
+}
+
+model TelephonyNumberAssignment {
+  id                        String                          @id @default(cuid())
+  account_id                String
+  bootstrap_id              String
+  telephony_number_id       String
+  provider_assistant_id     String
+  status                    TelephonyNumberAssignmentStatus @default(assigned)
+  number_exclusivity_key    String?                         @unique
+  bootstrap_exclusivity_key String?                         @unique
+  assigned_at               DateTime                        @default(now())
+  activated_at              DateTime?
+  unassigned_at             DateTime?
+  quarantine_until          DateTime?
+  last_inbound_at           DateTime?
+  created_at                DateTime                        @default(now())
+  updated_at                DateTime                        @updatedAt
+
+  @@index([account_id, bootstrap_id])
+  @@index([telephony_number_id, assigned_at, unassigned_at], map: "TelephonyNumberAssignment_number_history_idx")
+  @@index([status, quarantine_until])
+}
+
+model BootstrapPromotion {
+  id                   String                   @id @default(cuid())
+  account_id           String
+  bootstrap_id         String
+  correlation_id       String                   @unique
+  source_snapshot_id   String
+  source_snapshot_hash String
+  manifest_json        Json
+  manifest_hash        String
+  status               BootstrapPromotionStatus @default(draft)
+  exported_by          String?
+  exported_at          DateTime?
+  imported_account_ref String?
+  imported_at          DateTime?
+  cancelled_at         DateTime?
+  created_at           DateTime                 @default(now())
+  updated_at           DateTime                 @updatedAt
+
+  @@index([account_id, bootstrap_id])
+  @@index([status, created_at])
 }
 
 // --- v0.2 closeout step 2.3, PR 31A — communication substrate -------------

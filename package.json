@@ -19,6 +19,7 @@
     "validate:staging-env": "node scripts/validate-staging-env.mjs",
     "validate:live-demo-env": "node scripts/validate-live-demo-env.mjs",
     "prospects:purge": "tsx scripts/purge-prospect-pii.ts",
+    "prospect-bootstraps:reconcile": "tsx scripts/reconcile-prospect-bootstraps.ts",
     "demo:reset": "tsx scripts/reset-demo-sandbox.ts",
     "dev:doppler": "doppler run -- next dev",
     "build:doppler": "doppler run -- next build",

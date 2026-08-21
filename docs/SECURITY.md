@@ -72,6 +72,7 @@ Maintain an explicit **vendor allowlist per compliance tier**. Onboarding a heal
 | Provider | Header | Validation |
 |---|---|---|
 | Telnyx post-call demo ingest _(repository implementation; live activation separately gated, ADR-0047)_ | `telnyx-signature-ed25519` + `telnyx-timestamp` | Ed25519 public-key verify over `timestamp\|raw-body` against the Telnyx public key; reject timestamps outside five minutes before parsing or mutation |
+| Telnyx assistant initialization _(personalized bootstrap; repository implementation only, ADR-0048)_ | `telnyx-signature-ed25519` + `telnyx-timestamp` | Same raw-body Ed25519/freshness validation; signed target resolves through the temporal number-assignment ledger before any tenant context is returned |
 | Vapi _(primary orchestration; wires v0.3, ADR-0032)_ | Configured HMAC signature header, e.g. `X-Vapi-Signature`, plus optional timestamp header | Verify HMAC-SHA256 over the raw inbound webhook request body (the Vapi server-message payload) with the configured secret; constant-time compare; reject stale timestamps when configured |
 | Twilio | `X-Twilio-Signature` | HMAC-SHA1 using auth token + full URL + sorted form params; preserve raw body |
 | Retell | `x-retell-signature` | Raw-body HMAC; reject events older than 5 minutes (replay protection) |
@@ -107,6 +108,20 @@ Per-tenant retention mode applies to call recordings, transcripts, and PII-beari
 | Metadata-only | Not stored | Not stored | Outcome metrics only; for compliance-strict tenants |
 
 Raw artifacts and redacted review copies live in **separate** storage paths/policies. QA reviewers see redacted; only `aj_admin` with break-glass sees raw.
+
+### Personalized prospect bootstrap controls
+
+- Acquisition accepts only public HTTPS URLs, enforces robots decisions, denies private/reserved ranges on every redirect, and pins the TLS connection to the validated public address to prevent DNS rebinding. It fetches only the canonical page plus manually approved same-origin HTML/plain-text URLs and caps each run at 20 pages, two MiB per page, and ten seconds per request.
+- Retrieved page text is untrusted evidence. Scripts, forms, and markup are removed; extraction is schema-bounded and cannot invoke tools. Only reviewed facts enter the immutable assistant snapshot.
+- Source-backed operator corrections require an exact excerpt from an acquired source and remain unapproved until a separate fact-review action. Approved snapshot facts retain source URL/content hashes, evidence-excerpt hashes, retrieval time, confidence, and reviewer identity/time; raw excerpts never enter assistant context.
+- Draft, ingestion, review, approved, provisioning, and failed states expire after a renewable seven-day review window. Ready/active and post-demo states use the separate 14-day demo TTL; expiry starts the 30-day cleanup clock so abandoned workspaces cannot persist indefinitely.
+- Source content, personalized transcript text, and raw personalized webhook payloads expire after 30 days. Redacted metadata-only audit tombstones retain no source text, transcript, prompt, caller number, or credential value.
+- Number assignment is exclusive and temporal. Event-time resolution requires an activated interval and advances `last_inbound_at` monotonically; ambiguity, pre-activation events, or missing trustworthy time produce no tenant business mutation. Reuse requires a sliding 14-day quarantine and operator approval.
+- Number registration and activation require a fresh Ed25519-signed provider-readback attestation bound to the Telnyx number and assistant safety configuration. The signing key and provider credential remain outside the application runtime.
+- Activation requires a second explicit operator acknowledgment after the final assigned number, current attestation, approved snapshot, instructions, and action boundaries are visible; snapshot approval alone cannot activate a demo.
+- `RESPONSEOS_PROSPECT_BOOTSTRAP_ENABLED=true` is required in addition to signed Telnyx ingest configuration. Provider key presence alone never enables personalized context.
+- Promotion import is separately default-denied by `RESPONSEOS_PROMOTION_IMPORT_ENABLED`. It validates both manifest and source-snapshot hashes, creates a new disabled tenant ID, and cannot copy demo calls, callers, transcripts, recordings, raw webhooks, provider records, credentials, or audit history.
+- Import does not mutate the source export automatically. A second operator-only acknowledgment must match the exported manifest hash and identify the imported disabled account before the sandbox lifecycle becomes `converted`.
 
 ## Incident response
 
