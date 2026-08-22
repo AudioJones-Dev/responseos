@@ -604,12 +604,12 @@
       "title": "Staging/prod env + secrets (Path A first)",
       "owner": "Audio",
       "status": "In Progress",
-      "progress": 70,
+      "progress": 80,
       "priority": "High",
       "start": "2026-08-03",
       "due": "2026-08-12",
       "blocked": true,
-      "blockedReason": "Dedicated mock-staging project, GitHub Environment, Node 24.x, Preview variables, protected-smoke bypass, PR #126 merge, and private Clerk provenance are verified; Neon API key, database attestation, configuration-only workflow review, deployment approval, hosted auth smoke, and rollback evidence remain"
+      "blockedReason": "Generic Preview configuration certification is green and the empty governed custom environment exists; the nine-variable scope migration, version 2 recertification, deployment workflow hardening, deployment approval, hosted auth smoke, and rollback evidence remain"
     },
     {
       "id": "L-02a",
@@ -667,17 +667,34 @@
       "phase": "Launch / Demo Deploy",
       "title": "Remove Vercel CLI identity from staging configuration certification",
       "owner": "Codex",
+      "status": "Done",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-08-21",
+      "due": "2026-08-21",
+      "blocked": false,
+      "blockedReason": "PR #129 merged and protected run 32538420957 passed REST-only generic Preview certification; no migration or deployment ran",
+      "ref": 129,
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/129"
+    },
+    {
+      "id": "L-02e",
+      "phase": "Launch / Demo Deploy",
+      "title": "Bind staging configuration to governed Vercel custom environment",
+      "owner": "Codex",
       "status": "Review",
       "progress": 90,
       "priority": "High",
       "start": "2026-08-21",
       "due": "2026-08-21",
       "blocked": true,
-      "blockedReason": "REST-only remediation is awaiting PR review/merge and a separately authorized second configuration-only run; deployment and migrations remain gated",
-      "ref": 129,
+      "blockedReason": "PR #130 now stops before scope mutation while Deploy Staging remains generic Preview; a later deployment-workflow hardening PR must establish exact custom-environment compatibility before the one-time migration can run",
+      "ref": 130,
       "refType": "pull",
       "refState": "open",
-      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/129"
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/130"
     },
     {
       "id": "L-03",

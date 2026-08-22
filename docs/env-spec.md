@@ -26,7 +26,7 @@ placeholder keys are present. **Local development never requires a secret.**
 ### Database (Postgres — Neon default per ADR-0026)
 - `DATABASE_URL` — pooled connection string used at runtime.
 - `DIRECT_URL` — non-pooled connection string used by Prisma migrations.
-- `RESPONSEOS_DATABASE_IDENTITY` — Preview-only, non-secret JSON attestation binding the canonical Neon project/branch/endpoint/database fingerprint to the exact Vercel Sensitive `DATABASE_URL` and `DIRECT_URL` ids and `updatedAt` revisions. The staging workflow reads it before migration; changing either Sensitive variable invalidates the attestation.
+- `RESPONSEOS_DATABASE_IDENTITY` — governed-custom-environment-only, non-secret version 2 JSON attestation binding canonical Neon identity and fingerprint, exact Vercel Sensitive DB variable ids/revisions, Vercel project id, and custom environment id/slug. Version 1 or any changed scope/id/revision is rejected for custom-environment certification.
 
 The GitHub `staging` Environment also requires a least-privilege `NEON_API_KEY` for read-only control-plane verification. It is workflow-only, is never passed to Vercel or the application, and must not appear in `.env.example` as an application variable.
 
@@ -45,7 +45,7 @@ The GitHub `staging` Environment also requires a least-privilege `NEON_API_KEY` 
     the deployment before migration or build when this flag is absent or disabled.
   - **Mock-staging Clerk posture:** the publishable key must be `pk_test_`; the private key must be a
     known `sk_test_` from the same Clerk development instance. Keep the private key and webhook
-    secret marked Sensitive in Vercel Preview. Vercel intentionally does not return Sensitive values
+    secret marked Sensitive in the governed Vercel custom environment. Vercel intentionally does not return Sensitive values
     to `vercel pull`, so the workflow verifies their name/scope/type and the human approval gate
     verifies same-instance provenance before a deployment retry.
 

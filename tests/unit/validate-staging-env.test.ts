@@ -5,7 +5,7 @@ import {
   createDatabaseIdentityAttestation,
   validateCanonicalStagingDatabaseSource,
   validateStagingEnvironment,
-  validateVercelPreviewEnvironment,
+  validateVercelCustomEnvironment,
   validateVercelPreviewPosture,
 } from "@/scripts/validate-staging-env.mjs";
 
@@ -15,6 +15,7 @@ const DATABASE_URL =
   `postgresql://runtime:runtime-secret@${ENDPOINT_ID}-pooler.us-west-2.aws.neon.tech/${DATABASE_NAME}`;
 const DIRECT_URL =
   `postgresql://migrator:migration-secret@${ENDPOINT_ID}.us-west-2.aws.neon.tech/${DATABASE_NAME}`;
+const CUSTOM_ENV_ID = "env_uX6Qp8F6w9aBgx2ikH3BiREB8aHH";
 
 const VALID_ENV = {
   DATABASE_URL,
@@ -96,7 +97,8 @@ const BASE_PREVIEW_METADATA = {
     key,
     id: `env-${index}`,
     updatedAt: 1_787_220_000_000 + index,
-    target: ["preview"],
+    target: [],
+    customEnvironmentIds: [CUSTOM_ENV_ID],
     type: [
       "DATABASE_URL",
       "DIRECT_URL",
@@ -121,6 +123,13 @@ const PULLED_PREVIEW_ENV = {
   AJ_DIGITAL_CLERK_ORG_ID: VALID_ENV.AJ_DIGITAL_CLERK_ORG_ID,
   NEXT_PUBLIC_APP_URL: VALID_ENV.NEXT_PUBLIC_APP_URL,
   RESPONSEOS_REQUIRE_AUTH: "1",
+};
+const SOURCE_PREVIEW_METADATA = {
+  envs: BASE_PREVIEW_METADATA.envs.map((entry) => ({
+    ...entry,
+    target: ["preview"],
+    customEnvironmentIds: undefined,
+  })),
 };
 
 const GITHUB_DATABASE_ENV = {
@@ -169,7 +178,7 @@ function validatePreview(
   githubDatabaseEnv: Record<string, string | undefined> = GITHUB_DATABASE_ENV,
   neonMetadata: Record<string, unknown> = NEON_METADATA,
 ) {
-  return validateVercelPreviewEnvironment(
+  return validateVercelCustomEnvironment(
     pulledEnv,
     metadata,
     githubDatabaseEnv,
@@ -177,10 +186,10 @@ function validatePreview(
   );
 }
 
-describe("Vercel Preview staging contract", () => {
+describe("Vercel governed custom-environment staging contract", () => {
   test("accepts REST-derived readable posture before database synchronization", () => {
     expect(
-      validateVercelPreviewPosture(PULLED_PREVIEW_ENV, BASE_PREVIEW_METADATA),
+      validateVercelPreviewPosture(PULLED_PREVIEW_ENV, SOURCE_PREVIEW_METADATA),
     ).toEqual([]);
   });
 
@@ -208,7 +217,7 @@ describe("Vercel Preview staging contract", () => {
   ])("rejects unsafe pre-sync readable posture for %s", (name, value, message) => {
     const errors = validateVercelPreviewPosture(
       { ...PULLED_PREVIEW_ENV, [name]: value },
-      BASE_PREVIEW_METADATA,
+      SOURCE_PREVIEW_METADATA,
     );
 
     expect(errors).toContain(message);
@@ -217,7 +226,7 @@ describe("Vercel Preview staging contract", () => {
   test("rejects forbidden providers before database synchronization", () => {
     const errors = validateVercelPreviewPosture(PULLED_PREVIEW_ENV, {
       envs: [
-        ...BASE_PREVIEW_METADATA.envs,
+        ...SOURCE_PREVIEW_METADATA.envs,
         {
           key: "TELNYX_API_KEY",
           id: "sensitive-provider-id",
@@ -325,7 +334,10 @@ describe("Vercel Preview staging contract", () => {
       CANONICAL_STAGING_DATABASE,
     );
     expect(DATABASE_ATTESTATION.fingerprint).toMatch(/^sha256:[0-9a-f]{64}$/);
-    const revisions = DATABASE_ATTESTATION.vercel as Record<
+    expect(DATABASE_ATTESTATION.version).toBe(2);
+    expect(DATABASE_ATTESTATION.vercel.projectId).toBe("prj_pbzqdkzp322jcHWIsi19GhsnWXRm");
+    expect(DATABASE_ATTESTATION.vercel.customEnvironment).toEqual({ id: CUSTOM_ENV_ID, slug: "staging" });
+    const revisions = DATABASE_ATTESTATION.vercel.variables as Record<
       string,
       { envId: string; updatedAt: number }
     >;
@@ -421,10 +433,10 @@ describe("Vercel Preview staging contract", () => {
     );
 
     expect(errors).toContain(
-      "Missing required Preview variable metadata: RESPONSEOS_DATABASE_IDENTITY",
+      "Expected exactly one custom-environment-only variable: RESPONSEOS_DATABASE_IDENTITY",
     );
     expect(errors).toContain(
-      "Expected exactly one unbranched Preview identity variable: RESPONSEOS_DATABASE_IDENTITY",
+      "Expected exactly one governed staging identity variable: RESPONSEOS_DATABASE_IDENTITY",
     );
   });
 
@@ -471,10 +483,10 @@ describe("Vercel Preview staging contract", () => {
     const errors = validatePreview(PULLED_PREVIEW_ENV, metadata);
 
     expect(errors).toContain(
-      "Conflicting unbranched Preview variable metadata: RESPONSEOS_DATABASE_IDENTITY",
+      "Expected exactly one custom-environment-only variable: RESPONSEOS_DATABASE_IDENTITY",
     );
     expect(errors).toContain(
-      "Expected exactly one unbranched Preview identity variable: RESPONSEOS_DATABASE_IDENTITY",
+      "Expected exactly one governed staging identity variable: RESPONSEOS_DATABASE_IDENTITY",
     );
   });
 
@@ -499,11 +511,11 @@ describe("Vercel Preview staging contract", () => {
     };
 
     expect(validatePreview(PULLED_PREVIEW_ENV, metadata)).toContain(
-      "Required Preview variable must be Sensitive: CLERK_SECRET_KEY",
+      "Required staging variable must be Sensitive: CLERK_SECRET_KEY",
     );
   });
 
-  test("rejects branch-scoped required variables and forbidden Preview names", () => {
+  test("rejects branch-scoped required variables and forbidden governed names", () => {
     const metadata = {
       envs: [
         ...BASE_PREVIEW_METADATA.envs.map((entry) =>
@@ -513,7 +525,8 @@ describe("Vercel Preview staging contract", () => {
         ),
         {
           key: "TELNYX_API_KEY",
-          target: ["preview"],
+          target: [],
+          customEnvironmentIds: [CUSTOM_ENV_ID],
           type: "sensitive",
           gitBranch: null,
         },
@@ -522,10 +535,10 @@ describe("Vercel Preview staging contract", () => {
     const errors = validatePreview(PULLED_PREVIEW_ENV, metadata);
 
     expect(errors).toContain(
-      "Missing required Preview variable metadata: AJ_DIGITAL_CLERK_ORG_ID",
+      "Expected exactly one custom-environment-only variable: AJ_DIGITAL_CLERK_ORG_ID",
     );
     expect(errors).toContain(
-      "Forbidden in mock-only Preview metadata: TELNYX_API_KEY",
+      "Forbidden in governed custom environment metadata: TELNYX_API_KEY",
     );
   });
 
@@ -542,5 +555,33 @@ describe("Vercel Preview staging contract", () => {
     expect(errors).toContain(
       "DATABASE_URL and DIRECT_URL must be distinct staging secrets",
     );
+  });
+
+  test("rejects v1 identity evidence for custom-environment certification", () => {
+    const legacy = { ...DATABASE_ATTESTATION, version: 1 };
+    expect(validatePreview({
+      ...PULLED_PREVIEW_ENV,
+      RESPONSEOS_DATABASE_IDENTITY: JSON.stringify(legacy),
+    })).toContain("Vercel database identity evidence must use version 2");
+  });
+
+  test.each([
+    ["id", "env_wrong", "wrong custom environment id"],
+    ["slug", "other", "wrong custom environment slug"],
+  ])("rejects attestation with wrong custom environment %s", (field, value, message) => {
+    const attestation = {
+      ...DATABASE_ATTESTATION,
+      vercel: {
+        ...DATABASE_ATTESTATION.vercel,
+        customEnvironment: {
+          ...DATABASE_ATTESTATION.vercel.customEnvironment,
+          [field]: value,
+        },
+      },
+    };
+    expect(validatePreview({
+      ...PULLED_PREVIEW_ENV,
+      RESPONSEOS_DATABASE_IDENTITY: JSON.stringify(attestation),
+    }).join(" ")).toContain(message);
   });
 });
