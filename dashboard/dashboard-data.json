@@ -596,7 +596,7 @@
       "start": "2026-08-21",
       "due": "2026-08-28",
       "blocked": true,
-      "blockedReason": "Gate Set A hosted Clerk, Neon, and Vercel staging, exact-SHA deployment, and operator authorization remain uncleared"
+      "blockedReason": "Canonical Neon is migrated, but the exact-SHA Vercel deployment, hosted Clerk and tenant smoke, recovery evidence, and operator authorization remain uncleared"
     },
     {
       "id": "L-02",
@@ -604,12 +604,12 @@
       "title": "Staging/prod env + secrets (Path A first)",
       "owner": "Audio",
       "status": "In Progress",
-      "progress": 80,
+      "progress": 85,
       "priority": "High",
       "start": "2026-08-03",
       "due": "2026-08-12",
       "blocked": true,
-      "blockedReason": "Generic Preview configuration certification is green and the empty governed custom environment exists; the nine-variable scope migration, version 2 recertification, deployment workflow hardening, deployment approval, hosted auth smoke, and rollback evidence remain"
+      "blockedReason": "Governed configuration is certified and canonical Neon migrated successfully in run 32587779315; Vercel deployment remediation/retry, hosted auth smoke, rollback/recovery evidence, and every Production action remain separate gates"
     },
     {
       "id": "L-02a",
@@ -701,17 +701,34 @@
       "phase": "Launch / Demo Deploy",
       "title": "Harden Deploy Staging for exact governed custom environment",
       "owner": "Codex",
+      "status": "Done",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-08-22",
+      "due": "2026-08-22",
+      "blocked": false,
+      "blockedReason": "PR #131 merged at workflow-control SHA 6202da68 and configuration run 32586167278 passed; run 32587779315 migrated canonical Neon, then SAFE STOPPED before Vercel deployment creation, so narrow CLI remediation/retry remains separate",
+      "ref": 131,
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/131"
+    },
+    {
+      "id": "L-02g",
+      "phase": "Launch / Demo Deploy",
+      "title": "Environment Promotion Contract v1",
+      "owner": "Codex",
       "status": "Review",
       "progress": 90,
       "priority": "High",
       "start": "2026-08-22",
       "due": "2026-08-22",
       "blocked": true,
-      "blockedReason": "PR #131 is under review; the one-time custom-environment scope migration, v2 recertification, real migration, and first deployment remain separately gated",
-      "ref": 131,
+      "blockedReason": "PR #133 exact-head review and merge remain gated; no Production provisioning or deployment is authorized",
+      "ref": 133,
       "refType": "pull",
       "refState": "open",
-      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/131"
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/133"
     },
     {
       "id": "L-03",

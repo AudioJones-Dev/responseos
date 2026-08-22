@@ -1,0 +1,226 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://responseos.dev/schemas/environment-contract.v1.json",
+  "title": "ResponseOS Environment Contract v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "contractVersion",
+    "identity",
+    "vercel",
+    "database",
+    "authentication",
+    "deploymentControls",
+    "providerPosture",
+    "humanApprovals"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "responseos.environment.v1" },
+    "contractVersion": { "const": "1.0.0" },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "environmentClass", "lifecycle", "application"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "environmentClass": { "enum": ["staging", "production", "template"] },
+        "lifecycle": { "enum": ["governed", "planned"] },
+        "application": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["framework", "nodeVersion", "packageManager", "schemaLineage"],
+          "properties": {
+            "framework": { "const": "nextjs" },
+            "nodeVersion": { "type": "string", "pattern": "^[0-9]+\\.x$" },
+            "packageManager": { "type": "string", "minLength": 1 },
+            "schemaLineage": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "vercel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "teamId",
+        "projectId",
+        "projectName",
+        "nodeVersion",
+        "customEnvironment",
+        "deploymentMode",
+        "automaticGitDeployments",
+        "manualOnly",
+        "deploymentProtection",
+        "aliasPolicy",
+        "domainPolicy"
+      ],
+      "properties": {
+        "teamId": { "$ref": "#/$defs/resolvableIdentity" },
+        "projectId": { "$ref": "#/$defs/resolvableIdentity" },
+        "projectName": { "$ref": "#/$defs/resolvableIdentity" },
+        "nodeVersion": { "type": "string", "pattern": "^[0-9]+\\.x$" },
+        "customEnvironment": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "slug", "type"],
+          "properties": {
+            "id": { "$ref": "#/$defs/resolvableIdentity" },
+            "slug": { "$ref": "#/$defs/resolvableIdentity" },
+            "type": { "enum": ["preview", "production", null] }
+          }
+        },
+        "deploymentMode": { "const": "manual" },
+        "automaticGitDeployments": { "const": false },
+        "manualOnly": { "const": true },
+        "deploymentProtection": { "const": "required" },
+        "aliasPolicy": { "enum": ["none", "human-approved-production-only"] },
+        "domainPolicy": { "enum": ["none", "human-approved-production-only"] }
+      }
+    },
+    "database": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "projectId",
+        "projectName",
+        "branchId",
+        "branchName",
+        "endpointId",
+        "databaseName",
+        "runtimeConnectionMode",
+        "migrationConnectionMode",
+        "pooledDirectSeparationRequired",
+        "migrationPolicy"
+      ],
+      "properties": {
+        "provider": { "const": "neon-postgres" },
+        "projectId": { "$ref": "#/$defs/resolvableIdentity" },
+        "projectName": { "$ref": "#/$defs/resolvableIdentity" },
+        "branchId": { "$ref": "#/$defs/resolvableIdentity" },
+        "branchName": { "$ref": "#/$defs/resolvableIdentity" },
+        "endpointId": { "$ref": "#/$defs/resolvableIdentity" },
+        "databaseName": { "$ref": "#/$defs/resolvableIdentity" },
+        "runtimeConnectionMode": { "const": "pooled" },
+        "migrationConnectionMode": { "const": "direct" },
+        "pooledDirectSeparationRequired": { "const": true },
+        "migrationPolicy": { "const": "prisma-migrate-deploy-before-application" }
+      }
+    },
+    "authentication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "authRequired", "providerClass", "credentialClass", "requiredVariables", "failClosed"],
+      "properties": {
+        "provider": { "const": "clerk" },
+        "authRequired": { "const": true },
+        "providerClass": { "enum": ["development", "production", "unresolved"] },
+        "credentialClass": { "enum": ["test", "live", "unresolved"] },
+        "requiredVariables": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "failClosed": { "const": true }
+      }
+    },
+    "deploymentControls": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "exactShaRequired",
+        "separateControlAndApplicationSha",
+        "workflowControlSha",
+        "intendedApplicationSha",
+        "concurrency",
+        "promotionPolicy",
+        "healthCheck",
+        "postDeploymentIdentityValidation",
+        "rollbackPolicy",
+        "configurationCertificationRequired"
+      ],
+      "properties": {
+        "exactShaRequired": { "const": true },
+        "separateControlAndApplicationSha": { "const": true },
+        "workflowControlSha": { "$ref": "#/$defs/resolvableSha" },
+        "intendedApplicationSha": { "$ref": "#/$defs/resolvableSha" },
+        "concurrency": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["group", "cancelInProgress"],
+          "properties": {
+            "group": { "type": ["string", "null"], "minLength": 1 },
+            "cancelInProgress": { "const": false }
+          }
+        },
+        "promotionPolicy": { "const": "certify-plan-provision-readback-diff-approve-deploy" },
+        "healthCheck": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["required", "path"],
+          "properties": {
+            "required": { "const": true },
+            "path": { "const": "/api/health" }
+          }
+        },
+        "postDeploymentIdentityValidation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["required", "fields"],
+          "properties": {
+            "required": { "const": true },
+            "fields": {
+              "type": "array",
+              "minItems": 3,
+              "uniqueItems": true,
+              "items": { "enum": ["project", "environment", "applicationSha", "readyState", "aliases"] }
+            }
+          }
+        },
+        "rollbackPolicy": { "const": "redeploy-known-good-exact-sha-no-schema-auto-rollback" },
+        "configurationCertificationRequired": { "const": true }
+      }
+    },
+    "providerPosture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "activationGateRequired",
+        "credentialsAllowed",
+        "enabledProviders",
+        "liveExecutionApprovalState",
+        "secretValuesForbiddenInGit"
+      ],
+      "properties": {
+        "mode": { "enum": ["mock-only", "live-gated"] },
+        "activationGateRequired": { "const": true },
+        "credentialsAllowed": { "enum": ["forbidden", "environment-specific-after-approval"] },
+        "enabledProviders": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "liveExecutionApprovalState": { "enum": ["not-authorized", "pending", "approved"] },
+        "secretValuesForbiddenInGit": { "const": true }
+      }
+    },
+    "humanApprovals": {
+      "type": "object",
+      "additionalProperties": { "enum": ["not-applicable", "pending", "approved"] }
+    }
+  },
+  "$defs": {
+    "resolvableIdentity": {
+      "type": ["string", "null"],
+      "minLength": 1
+    },
+    "resolvableSha": {
+      "anyOf": [
+        { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        { "type": "null" }
+      ]
+    }
+  }
+}

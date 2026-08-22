@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "responseos.environment-certification.v1",
+  "environment": "staging",
+  "configurationContractVersion": "responseos.environment.v1",
+  "certificationType": "configuration",
+  "workflowControlSha": "6202da68cb9b517b39814bab5b1542fd65adae22",
+  "intendedApplicationSha": "4a5b29b83cb3f18137b0151ae6242b2ac484ef08",
+  "certificationWorkflow": "Verify Staging Configuration",
+  "workflowRunId": "32586167278",
+  "certificationStatus": "CONFIGURATION_CERTIFIED",
+  "checksPerformed": [
+    "exact workflow-control SHA",
+    "canonical Vercel team and project identity",
+    "governed Vercel custom-environment identity and posture",
+    "Deployment Protection and automatic Git deployment posture",
+    "deployment-workflow custom-environment compatibility",
+    "complete nine-variable governed scope",
+    "allowlisted readable authentication and application posture",
+    "canonical Neon project branch endpoint and database identity",
+    "pooled runtime and direct migration role separation",
+    "version 2 environment-bound database identity attestation",
+    "absence of live-provider activation posture"
+  ],
+  "environmentContractHash": "sha256:a1d5141fc3b0cc50250bbc2f2828df75d87453c1e7a2e2fc966d4aa5f1709f0a",
+  "configurationHash": "sha256:a04a3d8499408b38479c981e080d6d8ad0a0808ad207fe69e234e369a34400f7",
+  "sourceGitSha": "6202da68cb9b517b39814bab5b1542fd65adae22",
+  "certifiedAt": null,
+  "unresolvedFields": ["certifiedAt"],
+  "evidenceReferences": [
+    {
+      "kind": "workflow-run",
+      "reference": "https://github.com/AudioJones-Dev/responseos/actions/runs/32586167278"
+    },
+    {
+      "kind": "git-sha",
+      "reference": "6202da68cb9b517b39814bab5b1542fd65adae22"
+    },
+    {
+      "kind": "repository-path",
+      "reference": ".github/workflows/verify-staging-configuration.yml"
+    }
+  ]
+}

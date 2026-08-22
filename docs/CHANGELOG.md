@@ -4,6 +4,18 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: add Environment Promotion Contract v1
+
+- Added versioned JSON Schemas for environment contracts, secret metadata, configuration certification, and staging-to-Production promotion policy, with one classification per governed field.
+- Recorded the secret-free certified staging baseline and configuration-only run `32586167278`, plus a Production template that leaves all independent resource identities unresolved.
+- Added deterministic canonical JSON/SHA-256 fingerprints, recursive credential-material rejection, schema/semantic validation, classified environment diffing, fixture-only capture, and a planning-only Production manifest generator.
+- Added explicit `MUST_MATCH`, `MUST_DIFFER`, and `HUMAN_APPROVAL_REQUIRED` enforcement, including rejection of staging resource reuse, Production test/dev auth posture, and provider activation without approval.
+- Required an exact successful source certification before Production plan generation, bound duplicated certification metadata to the hashed environment contract, and applied full semantic validation before environment-diff classification.
+- Documented the contract-driven Production sequence, future read-only drift semantics, and the strict separation between environment promotion and `prospect-promotion.v1`.
+- Reconciled the external staging state after run `32587779315`: canonical database identity was reverified and all 13 migrations applied, then the workflow SAFE STOPPED before Vercel deployment creation; READY/smoke were not reached and the governed project remained at zero deployments.
+- Preserved run `32586167278` as configuration-only certification evidence; the staging manifest and certification record do not claim migration certification, deployment certification, READY, or hosted smoke.
+- **No external mutation by this repository-governance PR:** it dispatched no workflow and changed no Vercel, Neon, Clerk, provider, phone, domain, secret, deployment, or Production resource. Run `32587779315` was a separately authorized external staging operation and is recorded here as evidence only.
+
 ## Unreleased — ci: harden governed custom-environment deployment controls
 
 - Split Deploy Staging dispatch identity into exact `control_sha` and `application_sha` inputs, require current `master` controls before and after the protected Environment wait, and keep all dispatch values out of Bash source.

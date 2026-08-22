@@ -1,0 +1,10 @@
+{
+  "base": "tests/fixtures/environment-contract/valid-production.json",
+  "overrides": {
+    "humanApprovals": {
+      "productionPromotion": "pending",
+      "providerEnablement": "pending",
+      "liveProviderExecution": "pending"
+    }
+  }
+}

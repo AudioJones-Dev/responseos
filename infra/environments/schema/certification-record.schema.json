@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://responseos.dev/schemas/certification-record.v1.json",
+  "title": "ResponseOS Environment Certification Record v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "environment",
+    "configurationContractVersion",
+    "certificationType",
+    "workflowControlSha",
+    "intendedApplicationSha",
+    "certificationWorkflow",
+    "workflowRunId",
+    "certificationStatus",
+    "checksPerformed",
+    "environmentContractHash",
+    "configurationHash",
+    "sourceGitSha",
+    "certifiedAt",
+    "unresolvedFields",
+    "evidenceReferences"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "responseos.environment-certification.v1" },
+    "environment": { "type": "string", "minLength": 1 },
+    "configurationContractVersion": { "const": "responseos.environment.v1" },
+    "certificationType": { "const": "configuration" },
+    "workflowControlSha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "intendedApplicationSha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "certificationWorkflow": { "type": "string", "minLength": 1 },
+    "workflowRunId": { "type": "string", "pattern": "^[0-9]+$" },
+    "certificationStatus": { "enum": ["CONFIGURATION_CERTIFIED", "FAILED", "REVOKED"] },
+    "checksPerformed": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "environmentContractHash": { "$ref": "#/$defs/fingerprint" },
+    "configurationHash": { "$ref": "#/$defs/fingerprint" },
+    "sourceGitSha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "certifiedAt": { "type": ["string", "null"], "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T" },
+    "unresolvedFields": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "evidenceReferences": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "reference"],
+        "properties": {
+          "kind": { "enum": ["workflow-run", "repository-path", "git-sha"] },
+          "reference": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "fingerprint": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+  }
+}
