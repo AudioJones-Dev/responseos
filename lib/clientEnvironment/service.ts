@@ -1,12 +1,14 @@
 import "@/lib/serverOnlyGuard";
 import { randomUUID } from "node:crypto";
+import type { Account, ProspectBootstrap } from "@prisma/client";
 import { db } from "@/lib/db/client";
 import { getCurrentSession } from "@/lib/auth/session";
 import { isCrossTenantRole } from "@/lib/data/session-helpers";
-import { err, errFromThrown, ok } from "@/lib/data/result";
+import { err, errFromThrown, ok, type Result } from "@/lib/data/result";
 import {
   BusinessMemorySnapshotSchema,
   PROSPECT_AGENT_TEMPLATE_VERSION,
+  PROSPECT_AUDIT_RETENTION_DAYS,
   PROSPECT_MEMORY_UNKNOWNS,
 } from "@/lib/prospectBootstrap/contracts";
 import {
@@ -25,6 +27,16 @@ import {
 
 const APPROVED_FACT_STATUSES = ["operator_approved_for_demo", "owner_confirmed"] as const;
 const PENDING_FACT_STATUSES = ["source_observed", "cross_source_confirmed", "conflicted"] as const;
+
+interface DiscoveryPromotionResult {
+  replay: boolean;
+  account: Account;
+  bootstrap: ProspectBootstrap;
+}
+
+function addDays(date: Date, days: number) {
+  return new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
+}
 
 async function requireOperator() {
   const session = await getCurrentSession();
@@ -50,10 +62,14 @@ function discoverySourceUrl(params: {
   return `https://evidence.responseos.invalid/${parent}/${encodeURIComponent(params.bootstrapId)}/${params.sourceId}`;
 }
 
+function auditExpiry(now: Date) {
+  return addDays(now, PROSPECT_AUDIT_RETENTION_DAYS);
+}
+
 export async function promoteProspectToDiscovery(params: {
   bootstrapId: string;
   promotionAcknowledged: boolean;
-}, now = new Date()) {
+}, now = new Date()): Promise<Result<DiscoveryPromotionResult>> {
   const operator = await requireOperator();
   if (!operator.ok) return operator;
   if (params.promotionAcknowledged !== true) {
@@ -70,7 +86,7 @@ export async function promoteProspectToDiscovery(params: {
     if (bootstrap.status === "converted") {
       const account = await db.account.findUnique({ where: { id: bootstrap.account_id } });
       if (!account) return err("account_missing", "The promoted tenant account is missing.");
-      return ok({ replay: true as const, account, bootstrap });
+      return ok<DiscoveryPromotionResult>({ replay: true, account, bootstrap });
     }
     if (bootstrap.status !== "completed" || !bootstrap.current_memory_snapshot_id) {
       return err("bootstrap_not_completed", "Complete the supervised demo before promoting it to discovery.");
@@ -132,14 +148,15 @@ export async function promoteProspectToDiscovery(params: {
             liveActivationAuthorized: false,
             rawSourceRetentionUnchanged: true,
           },
+          expires_at: auditExpiry(now),
         },
       });
       return updatedBootstrap;
     });
 
-    return ok({ replay: false as const, account, bootstrap: promoted });
+    return ok<DiscoveryPromotionResult>({ replay: false, account, bootstrap: promoted });
   } catch (error) {
-    return errFromThrown(error);
+    return errFromThrown<DiscoveryPromotionResult>(error);
   }
 }
 
@@ -254,6 +271,7 @@ export async function createDiscoveryFinding(params: {
             assessmentReportId: input.assessmentReportId ?? null,
             reviewRequired: !reviewed,
           },
+          expires_at: auditExpiry(now),
         },
       });
       return { source, fact };
@@ -322,6 +340,7 @@ export async function reviewDiscoveryFinding(params: {
             factKey: fact.fact_key,
             decision: parsed.data.decision,
           },
+          expires_at: auditExpiry(now),
         },
       });
       return reviewed;
@@ -411,6 +430,7 @@ export async function compileDiscoverySnapshot(params: {
             approvedFactCount: approved.length,
             liveActivationAuthorized: false,
           },
+          expires_at: auditExpiry(now),
         },
       });
       return snapshot;
@@ -439,7 +459,13 @@ export async function buildClientEnvironmentManifest(accountId: string, now = ne
       return err("client_environment_not_ready", "Promote the completed demo and compile an approved snapshot first.");
     }
 
-    const [snapshot, profile, discoverySources, approvedFindings, pendingFindings, assessments] = await Promise.all([
+    const discoverySourceRows = await db.knowledgeSource.findMany({
+      where: { account_id: account.id, bootstrap_id: bootstrap.id, source_type: "manual_reference" },
+      select: { id: true },
+    });
+    const discoverySourceIds = discoverySourceRows.map(({ id }) => id);
+
+    const [snapshot, profile, approvedFindings, pendingFindings, assessments] = await Promise.all([
       db.businessMemorySnapshot.findFirst({
         where: {
           id: bootstrap.current_memory_snapshot_id,
@@ -449,20 +475,12 @@ export async function buildClientEnvironmentManifest(accountId: string, now = ne
         },
       }),
       db.agentProfile.findFirst({ where: { account_id: account.id, type: "demo_mode", is_default: true } }),
-      db.knowledgeSource.count({
-        where: { account_id: account.id, bootstrap_id: bootstrap.id, source_type: "manual_reference" },
-      }),
       db.knowledgeFact.count({
         where: {
           account_id: account.id,
           bootstrap_id: bootstrap.id,
           status: { in: [...APPROVED_FACT_STATUSES] },
-          source_id: {
-            in: (await db.knowledgeSource.findMany({
-              where: { account_id: account.id, bootstrap_id: bootstrap.id, source_type: "manual_reference" },
-              select: { id: true },
-            })).map(({ id }) => id),
-          },
+          source_id: { in: discoverySourceIds },
         },
       }),
       db.knowledgeFact.count({
@@ -470,12 +488,7 @@ export async function buildClientEnvironmentManifest(accountId: string, now = ne
           account_id: account.id,
           bootstrap_id: bootstrap.id,
           status: { in: [...PENDING_FACT_STATUSES] },
-          source_id: {
-            in: (await db.knowledgeSource.findMany({
-              where: { account_id: account.id, bootstrap_id: bootstrap.id, source_type: "manual_reference" },
-              select: { id: true },
-            })).map(({ id }) => id),
-          },
+          source_id: { in: discoverySourceIds },
         },
       }),
       db.assessmentReport.findMany({
@@ -512,7 +525,7 @@ export async function buildClientEnvironmentManifest(accountId: string, now = ne
       },
       discovery: {
         assessmentReportIds: assessments.map(({ id }) => id),
-        discoverySourceCount: discoverySources,
+        discoverySourceCount: discoverySourceIds.length,
         approvedFindingCount: approvedFindings,
         pendingFindingCount: pendingFindings,
       },
