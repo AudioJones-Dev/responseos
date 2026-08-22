@@ -24,7 +24,10 @@ export type DiscoveryFindingAuthority = z.infer<typeof DiscoveryFindingAuthority
 
 export const DiscoveryFindingInputSchema = z.object({
   key: z.string().regex(/^[a-z][a-z0-9_.-]{2,79}$/),
-  value: z.unknown(),
+  // Discovery values must remain portable across HTTP, Prisma JSON, manifests,
+  // and future template/version migrations. `unknown` would also admit
+  // `undefined` and other values that cannot be persisted as JSON.
+  value: z.json(),
   evidenceNote: z.string().trim().min(1).max(2_000),
   authority: DiscoveryFindingAuthoritySchema,
   assessmentReportId: z.string().min(1).optional(),
