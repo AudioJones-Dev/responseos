@@ -11,7 +11,7 @@
 
 | Gate | Done when |
 |---|---|
-| Staging URL | Protected HTTPS Vercel Preview URL; no production alias required |
+| Staging environment | Governed Vercel custom environment `staging` (`env_uX6Qp8F6w9aBgx2ikH3BiREB8aHH`), type `preview`; no branch matcher, domain, alias, or deployment |
 | Auth | Real Clerk login (no `RESPONSEOS_DEV_SESSION`) |
 | Tenant | Clerk org → `Account.clerk_org_id` → membership → portal session with `accountId` |
 | Data | Canonical Neon identity proven before migration; staging DB migrated; seed optional for demo fixtures |
@@ -47,18 +47,18 @@ Copy from [`.env.example`](../../.env.example) / [`../env-spec.md`](../env-spec.
 
 | Variable | Where | Notes |
 |---|---|---|
-| `DATABASE_URL` | Vercel Preview Sensitive + `STAGING_DATABASE_URL` (GH) | Neon **pooled** connection string |
-| `DIRECT_URL` | Vercel Preview Sensitive + `STAGING_DIRECT_URL` (GH) | Neon **direct** (migrations) |
-| `RESPONSEOS_DATABASE_IDENTITY` | Vercel Preview encrypted, unbranched | Non-secret JSON attestation binding project/branch/endpoint/database fingerprint to the exact Vercel `DATABASE_URL` and `DIRECT_URL` ids and `updatedAt` revisions |
-| `CLERK_SECRET_KEY` | Vercel Preview Sensitive | Known `sk_test_` secret from the same development instance as the publishable key |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Vercel only | Staging publishable key |
-| `CLERK_WEBHOOK_SECRET` | Vercel Preview Sensitive | Svix secret for that development instance's `/api/webhooks/clerk` endpoint |
-| `AJ_DIGITAL_CLERK_ORG_ID` | Vercel only | Control-plane Clerk org id (`Session.account = null`) |
-| `NEXT_PUBLIC_APP_URL` | Vercel only | Public staging base URL (e.g. `https://staging.example`) |
-| `RESPONSEOS_REQUIRE_AUTH` | Vercel only | Set (`1` or `true`) on hosted staging so auth cannot fail-open (ADR-0039) |
-| `RESPONSEOS_PROVIDER_KEY` | Vercel only | Optional for Path A mock; base64 32-byte AES if encrypting stored creds later |
+| `DATABASE_URL` | Governed custom environment Sensitive + `STAGING_DATABASE_URL` (GH) | Neon **pooled** connection string |
+| `DIRECT_URL` | Governed custom environment Sensitive + `STAGING_DIRECT_URL` (GH) | Neon **direct** (migrations) |
+| `RESPONSEOS_DATABASE_IDENTITY` | Governed custom environment encrypted | Version 2 non-secret JSON attestation binding Neon identity, Vercel project/custom-environment identity, and exact DB variable ids/revisions |
+| `CLERK_SECRET_KEY` | Governed custom environment Sensitive | Known `sk_test_` secret from the same development instance as the publishable key |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Governed custom environment encrypted | Staging publishable key |
+| `CLERK_WEBHOOK_SECRET` | Governed custom environment Sensitive | Svix secret for that development instance's `/api/webhooks/clerk` endpoint |
+| `AJ_DIGITAL_CLERK_ORG_ID` | Governed custom environment encrypted | Control-plane Clerk org id (`Session.account = null`) |
+| `NEXT_PUBLIC_APP_URL` | Governed custom environment encrypted | Non-production HTTPS base URL |
+| `RESPONSEOS_REQUIRE_AUTH` | Governed custom environment encrypted | Set (`1` or `true`) so auth cannot fail-open (ADR-0039) |
+| `RESPONSEOS_PROVIDER_KEY` | Not migrated by this gate | Optional mock-only key remains separately gated; it is not one of the nine certified variables |
 
-Vercel does not return values marked Sensitive. The configuration-only workflow therefore verifies those variables by name, unbranched Preview scope, and Sensitive type through authenticated REST metadata; it sends `decrypt=true` only for the exact allowlist of readable flags, HTTPS app URL, `pk_test_` publishable key, control-org id, and final non-secret database attestation after each entry passes name, encrypted type, scope, and uniqueness checks. Readable responses exist only under `RUNNER_TEMP` and are never logged or uploaded. Database URLs, Clerk private keys, webhook secrets, and arbitrary variables cannot enter the decrypted-fetch path. For the database pair, existence is insufficient: the workflow requires a readable non-secret identity attestation bound to each Sensitive variable's exact Vercel id and `updatedAt` revision, derives the migration target from the GitHub URLs in memory, and verifies project/branch/endpoint/database ownership against the Neon API. The private Clerk key/webhook provenance remains a human same-instance gate. Missing, mismatched, stale, duplicated, or unverifiable configuration stops the job before database migration.
+Vercel does not return values marked Sensitive. The configuration-only workflow validates the complete nine-variable generic Preview source plan before its first mutation, then edits each existing variable by ID using only `target: []` and the exact `customEnvironmentIds`. No Sensitive value is sent. Unfiltered metadata must prove generic Preview applicability is gone, while `customEnvironmentId`-filtered metadata must prove the same IDs are available to governed staging. `decrypt=true` remains restricted to the five exact readable names after encrypted type, exact scope, ID, and uniqueness checks. Temporary readable responses stay under `RUNNER_TEMP` and are never logged or uploaded. The version 2 database attestation binds live canonical Neon evidence, a credential-free fingerprint, DB variable IDs/revisions, the Vercel project, and the exact custom environment. Any partial scope failure SAFE STOPs, reports only changed IDs and observed scopes, and performs no rollback, migration, or deployment.
 
 ### Must NOT be set on staging/prod
 
@@ -99,18 +99,18 @@ Do these in order. Stop if any step needs a credential you do not have — do no
 
 1. Use only project `responseos-staging-mock` (`patient-snow-16014934`) and branch `main` (`br-mute-boat-a6ylen11`). The separate `responseos` project must never satisfy this gate.
 2. From that branch, set **pooled** only in GitHub staging `STAGING_DATABASE_URL` and **direct** only in GitHub staging `STAGING_DIRECT_URL`.
-3. Keep the existing Vercel `DATABASE_URL` and `DIRECT_URL` variables Sensitive and unbranched Preview-scoped. Their values are write-only.
+3. Before the one-time migration, keep the existing Vercel `DATABASE_URL` and `DIRECT_URL` variables Sensitive and unbranched in their certified generic Preview source scope. The authorized configuration workflow changes scope by ID without reading or sending either value.
 4. Add a project-scoped Neon API key to GitHub Environment `staging` as `NEON_API_KEY`. Neon project-scoped keys are the narrowest available project boundary; the verification workflow uses only `GET` requests and never passes the key to Vercel or the app.
-5. After the configuration workflow is merged under a separately reviewed workflow-control SHA, run **Verify Staging Configuration** from `master` with confirmation `configuration-only` and that exact control SHA. The application SHA reserved for a later separately authorized deployment remains `4a5b29b83cb3f18137b0151ae6242b2ac484ef08`; the preflight never checks out, builds, migrates, or deploys it. The protected job validates the GitHub URLs against live canonical Neon metadata before any write, synchronizes those same verified values to the two existing Vercel Preview Sensitive variables, then creates/updates encrypted `RESPONSEOS_DATABASE_IDENTITY` against their new ids/revisions.
+5. After the custom-environment migration workflow is merged under a separately reviewed workflow-control SHA, run **Verify Staging Configuration** from `master` with confirmation `configuration-only` and that exact control SHA. The reserved application SHA remains `4a5b29b83cb3f18137b0151ae6242b2ac484ef08`; this lane never checks out, builds, migrates, or deploys it. It verifies the complete source plan, readable posture, live Neon identity, and GitHub DB roles before re-scoping the nine existing variables without values. It then proves generic Preview removal, creates version 2 environment-bound identity evidence, certifies the governed custom environment, and stops.
 6. Confirm the job ends with the configuration-only success notice. It contains no migration or deployment step; **Deploy Staging** remains a separate authorization.
 7. If either GitHub database URL changes, rerun configuration verification before any deployment. The Vercel ids/`updatedAt` bindings intentionally make old evidence stale.
 8. Never print, persist, diff, hash in full, or compare plaintext connection strings. The workflow streams values between protected stores and emits only resource identity and a credential-free SHA-256 fingerprint.
 
-The Environment currently contains a secret named `NEON_API_KEY`, but GitHub metadata cannot prove its value, validity, or Neon project scope. Treat provisioning/verification as incomplete until an authorized configuration-only run proves read access to the canonical project, branch, endpoint, and database.
+Protected run `32538420957` proved the staging Environment `NEON_API_KEY` can read the canonical project, branch, endpoint, and database. The key remains confined to the GitHub Environment and is never sent to Vercel or the application.
 
 The repository also contains an older repository-level `NEON_API_KEY`. Repository search finds no legitimate consumer outside jobs that declare `environment: staging`, where GitHub resolves the Environment-scoped secret of the same name. The broader repository secret is redundant and should be removed under a separate credential-cleanup authorization only after the Environment credential passes the protected preflight; do not rotate or delete it as part of this change.
 
-Configuration-only run [`32530229689`](https://github.com/AudioJones-Dev/responseos/actions/runs/32530229689) proved the Environment Neon key could read the canonical project, branch, endpoint, and database; verified the pooled/direct GitHub pair; synchronized both Vercel Preview Sensitive variables; and stored a current revision-bound attestation. Final certification then stopped solely at `vercel link` with `User not found. (404)`. The remediation removes CLI user/link state from this lane: project and environment metadata use `GET /v9/projects/...`, `GET /v9/projects/.../domains`, and `GET /v10/projects/.../env`; only allowlisted encrypted/readable values use `GET /v1/projects/.../env/{id}`. Database values and private Clerk values are never requested from that endpoint.
+Configuration-only run [`32538420957`](https://github.com/AudioJones-Dev/responseos/actions/runs/32538420957) passed REST-only certification for generic Preview scope. A separately authorized control-plane gate then created the empty custom environment `staging`; it has no branch matcher, domain, alias, or deployment. The next run is intentionally different: it moves the certified variables by scope, not value, creates version 2 environment-bound evidence, recertifies, and stops. No migration or deployment is part of that workflow.
 
 Both **Verify Staging Configuration** and **Deploy Staging** use the top-level concurrency group `responseos-staging-exclusive` with `cancel-in-progress: false`. One run queues behind the other, so database synchronization/attestation cannot overlap deployment preflight, migration, build, or staging deployment.
 
@@ -214,7 +214,7 @@ Configuration gate:
 
 - Workflow file: [`.github/workflows/verify-staging-configuration.yml`](../../.github/workflows/verify-staging-configuration.yml)
 - Trigger: manual `workflow_dispatch` from `master` only, with `configuration-only` plus the exact current master SHA
-- Behavior: exact control SHA → protected Vercel posture → REST-derived readable Preview posture → canonical Neon control-plane evidence → GitHub database source verification → Preview Sensitive-variable synchronization → non-secret attestation → REST-derived final mock-only validator
+- Behavior: exact control SHA → protected project + exact custom-environment posture → complete generic Preview source plan → allowlisted readable posture → canonical Neon/GitHub database evidence → value-less nine-variable scope migration → filtered/unfiltered readback → version 2 environment-bound attestation → final custom-environment certification
 - Explicit non-goals: no migration, deploy, alias, production target, provider activation, phone routing, or prospect exposure
 
 Deployment gate:

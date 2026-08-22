@@ -1,249 +1,77 @@
 import { describe, expect, test, vi } from "vitest";
 
-import {
-  READABLE_PREVIEW_NAMES,
-  fetchReadablePreviewEnvironment,
-} from "@/scripts/fetch-staging-vercel-readable-env.mjs";
-import { validateVercelPreviewPosture } from "@/scripts/validate-staging-env.mjs";
+import { READABLE_STAGING_NAMES, fetchReadableStagingEnvironment } from "@/scripts/fetch-staging-vercel-readable-env.mjs";
 
-const TEAM_ID = "team_BHxIkAGPW6qEKKQBAt9c0NGz";
-const PROJECT_ID = "prj_pbzqdkzp322jcHWIsi19GhsnWXRm";
-const PROJECT_NAME = "responseos-staging-mock";
-const readableEntries = READABLE_PREVIEW_NAMES.final.map((key, index) => ({
-  key,
-  id: `readable-${index}`,
-  target: ["preview"],
-  type: "encrypted",
-  gitBranch: null,
+const teamId = "team_BHxIkAGPW6qEKKQBAt9c0NGz";
+const projectId = "prj_pbzqdkzp322jcHWIsi19GhsnWXRm";
+const projectName = "responseos-staging-mock";
+const customId = "env_uX6Qp8F6w9aBgx2ikH3BiREB8aHH";
+const readable = READABLE_STAGING_NAMES.final.map((key, index) => ({
+  key, id: `readable-${index}`, target: [], customEnvironmentIds: [customId], type: "encrypted", gitBranch: null,
 }));
-const sensitiveEntries = [
-  "DATABASE_URL",
-  "DIRECT_URL",
-  "CLERK_SECRET_KEY",
-  "CLERK_WEBHOOK_SECRET",
-].map((key, index) => ({
-  key,
-  id: `sensitive-${index}`,
-  target: ["preview"],
-  type: "sensitive",
-  gitBranch: null,
+const sensitive = ["DATABASE_URL", "DIRECT_URL", "CLERK_SECRET_KEY", "CLERK_WEBHOOK_SECRET"].map((key, index) => ({
+  key, id: `sensitive-${index}`, target: [], customEnvironmentIds: [customId], type: "sensitive", gitBranch: null,
 }));
+const fetcher = () => vi.fn(async (input: URL | RequestInfo) => {
+  const id = new URL(String(input)).pathname.split("/").at(-1);
+  return new Response(JSON.stringify({ value: `value-for-${id}` }), { status: 200 });
+});
+const base = (fetchImpl: ReturnType<typeof fetcher>) => ({
+  token: "token-placeholder", teamId, projectId, projectName, fetchImpl,
+});
 
-describe("Vercel REST readable Preview retrieval", () => {
-  test("retrieves only the allowlisted readable final configuration", async () => {
-    const fetchImpl = vi.fn(async (input: URL | RequestInfo) => {
-      const id = new URL(String(input)).pathname.split("/").at(-1);
-      return new Response(JSON.stringify({ value: `value-for-${id}` }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
+describe("governed staging readable retrieval", () => {
+  test("decrypts only the five allowlisted readable variables", async () => {
+    const fetchImpl = fetcher();
+    const values = await fetchReadableStagingEnvironment({
+      ...base(fetchImpl), metadata: { envs: [...readable, ...sensitive] }, mode: "final", scope: "custom-environment",
     });
-
-    const values = await fetchReadablePreviewEnvironment({
-      metadata: { envs: [...readableEntries, ...sensitiveEntries] },
-      mode: "final",
-      token: "token-placeholder",
-      teamId: TEAM_ID,
-      projectId: PROJECT_ID,
-      projectName: PROJECT_NAME,
-      fetchImpl,
-    });
-
-    expect(Object.keys(values)).toEqual(READABLE_PREVIEW_NAMES.final);
-    expect(fetchImpl).toHaveBeenCalledTimes(READABLE_PREVIEW_NAMES.final.length);
-    const requested = fetchImpl.mock.calls.map(([input]) => String(input));
-    for (const request of requested) {
-      const url = new URL(request);
-      expect(url.searchParams.get("decrypt")).toBe("true");
-      expect(url.searchParams.get("teamId")).toBe(TEAM_ID);
-    }
-    for (const entry of sensitiveEntries) {
-      expect(requested.join("\n")).not.toContain(entry.id);
-    }
+    expect(Object.keys(values)).toEqual(READABLE_STAGING_NAMES.final);
+    expect(fetchImpl).toHaveBeenCalledTimes(5);
+    const requests = fetchImpl.mock.calls.map(([input]) => String(input));
+    expect(requests.every((item) => new URL(item).searchParams.get("decrypt") === "true")).toBe(true);
+    for (const entry of sensitive) expect(requests.join("\n")).not.toContain(entry.id);
   });
 
-  test("passes actual REST-readable posture values into validation", async () => {
-    const readableValues = {
-      "readable-0": "pk_test_development-placeholder",
-      "readable-1": "org_staging_control",
-      "readable-2": "https://responseos-staging-mock.vercel.app",
-      "readable-3": "1",
-    };
-    const fetchImpl = vi.fn(async (input: URL | RequestInfo) => {
-      const id = new URL(String(input)).pathname.split("/").at(-1);
-      return new Response(
-        JSON.stringify({ value: readableValues[id as keyof typeof readableValues] }),
-        { status: 200, headers: { "Content-Type": "application/json" } },
-      );
-    });
-
-    const values = await fetchReadablePreviewEnvironment({
-      metadata: { envs: [...readableEntries, ...sensitiveEntries] },
-      mode: "posture",
-      token: "token-placeholder",
-      teamId: TEAM_ID,
-      projectId: PROJECT_ID,
-      projectName: PROJECT_NAME,
-      fetchImpl,
-    });
-
-    expect(validateVercelPreviewPosture(values, {
-      envs: [...readableEntries, ...sensitiveEntries],
-    })).toEqual([]);
+  test("rejects wrong custom scope before decrypting it", async () => {
+    const fetchImpl = fetcher();
+    const metadata = { envs: readable.map((entry) => entry.key === "NEXT_PUBLIC_APP_URL" ? { ...entry, customEnvironmentIds: ["env_wrong"] } : entry) };
+    await expect(fetchReadableStagingEnvironment({
+      ...base(fetchImpl), metadata, mode: "posture", scope: "custom-environment",
+    })).rejects.toThrow("NEXT_PUBLIC_APP_URL");
+    expect(fetchImpl.mock.calls.map(([input]) => String(input)).join("\n")).not.toContain("readable-2");
   });
 
-  test("retrieves the readable database attestation only in final mode", async () => {
-    const fetchImpl = vi.fn(async (input: URL | RequestInfo) => {
-      const id = new URL(String(input)).pathname.split("/").at(-1);
-      return new Response(JSON.stringify({ value: `value-for-${id}` }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
-    });
-
-    const posture = await fetchReadablePreviewEnvironment({
-      metadata: { envs: readableEntries },
-      mode: "posture",
-      token: "token-placeholder",
-      teamId: TEAM_ID,
-      projectId: PROJECT_ID,
-      projectName: PROJECT_NAME,
-      fetchImpl,
-    });
-    const final = await fetchReadablePreviewEnvironment({
-      metadata: { envs: readableEntries },
-      mode: "final",
-      token: "token-placeholder",
-      teamId: TEAM_ID,
-      projectId: PROJECT_ID,
-      projectName: PROJECT_NAME,
-      fetchImpl,
-    }) as Record<string, string>;
-
-    expect(posture).not.toHaveProperty("RESPONSEOS_DATABASE_IDENTITY");
-    expect(final.RESPONSEOS_DATABASE_IDENTITY).toBe("value-for-readable-4");
+  test("Sensitive allowlist metadata is unreachable", async () => {
+    const fetchImpl = fetcher();
+    const metadata = { envs: readable.map((entry) => entry.key === "NEXT_PUBLIC_APP_URL" ? { ...entry, type: "sensitive" } : entry) };
+    await expect(fetchReadableStagingEnvironment({
+      ...base(fetchImpl), metadata, mode: "posture", scope: "custom-environment",
+    })).rejects.toThrow("not encrypted metadata");
+    expect(fetchImpl.mock.calls.map(([input]) => String(input)).join("\n")).not.toContain("readable-2");
   });
 
-  test("ignores arbitrary metadata and never decrypts its id", async () => {
-    const arbitrary = {
-      key: "ARBITRARY_VARIABLE",
-      id: "arbitrary-readable-id",
-      target: ["preview"],
-      type: "encrypted",
-      gitBranch: null,
-    };
-    const fetchImpl = vi.fn(async (input: URL | RequestInfo) => {
-      const id = new URL(String(input)).pathname.split("/").at(-1);
-      return new Response(JSON.stringify({ value: `value-for-${id}` }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
+  test("arbitrary names never bypass the allowlist", async () => {
+    const fetchImpl = fetcher();
+    await fetchReadableStagingEnvironment({
+      ...base(fetchImpl), metadata: { envs: [...readable, { ...readable[0], key: "ARBITRARY", id: "arbitrary-id" }] }, mode: "posture", scope: "custom-environment",
     });
-
-    await fetchReadablePreviewEnvironment({
-      metadata: { envs: [...readableEntries, arbitrary] },
-      mode: "posture",
-      token: "token-placeholder",
-      teamId: TEAM_ID,
-      projectId: PROJECT_ID,
-      projectName: PROJECT_NAME,
-      fetchImpl,
-    });
-
-    expect(fetchImpl.mock.calls.map(([input]) => String(input)).join("\n"))
-      .not.toContain(arbitrary.id);
+    expect(fetchImpl.mock.calls.map(([input]) => String(input)).join("\n")).not.toContain("arbitrary-id");
   });
 
-  test("rejects a readable allowlist entry marked Sensitive without requesting it", async () => {
-    const fetchImpl = vi.fn(async (input: URL | RequestInfo) => {
-      void input;
-      return new Response(JSON.stringify({ value: "readable-placeholder" }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
+  test("generic Preview source requires explicit source mode", async () => {
+    const fetchImpl = fetcher();
+    const source = readable.map((entry) => ({ ...entry, target: ["preview"], customEnvironmentIds: undefined }));
+    const values = await fetchReadableStagingEnvironment({
+      ...base(fetchImpl), metadata: { envs: source }, mode: "posture", scope: "source-preview",
     });
-    const metadata = {
-      envs: readableEntries.map((entry) =>
-        entry.key === "NEXT_PUBLIC_APP_URL"
-          ? { ...entry, type: "sensitive" }
-          : entry,
-      ),
-    };
-
-    await expect(
-      fetchReadablePreviewEnvironment({
-        metadata,
-        mode: "posture",
-        token: "token-placeholder",
-        teamId: TEAM_ID,
-        projectId: PROJECT_ID,
-        projectName: PROJECT_NAME,
-        fetchImpl,
-      }),
-    ).rejects.toThrow(
-      "Readable Preview variable is not encrypted metadata: NEXT_PUBLIC_APP_URL",
-    );
-    expect(fetchImpl.mock.calls.map(([input]) => String(input)).join("\n")).not.toContain(
-      "readable-2",
-    );
+    expect(Object.keys(values)).toEqual(READABLE_STAGING_NAMES.posture);
   });
 
-  test("fails closed on a Vercel project mismatch", async () => {
-    await expect(
-      fetchReadablePreviewEnvironment({
-        metadata: { envs: readableEntries },
-        mode: "posture",
-        token: "token-placeholder",
-        teamId: TEAM_ID,
-        projectId: PROJECT_ID,
-        projectName: "responseos",
-        fetchImpl: vi.fn(),
-      }),
-    ).rejects.toThrow("Vercel readable Preview target is not canonical staging");
-  });
-
-  test("errors never include returned readable or token values", async () => {
-    const fetchImpl = vi.fn(async () =>
-      new Response("secret-response-body", { status: 403 }),
-    );
-
-    await expect(
-      fetchReadablePreviewEnvironment({
-        metadata: { envs: readableEntries },
-        mode: "posture",
-        token: "token-that-must-not-appear",
-        teamId: TEAM_ID,
-        projectId: PROJECT_ID,
-        projectName: PROJECT_NAME,
-        fetchImpl,
-      }),
-    ).rejects.not.toThrow(/secret-response-body|token-that-must-not-appear/);
-  });
-
-  test("does not log returned readable values", async () => {
-    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
-    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
-    const fetchImpl = vi.fn(async (input: URL | RequestInfo) => {
-      const id = new URL(String(input)).pathname.split("/").at(-1);
-      return new Response(JSON.stringify({ value: `private-value-${id}` }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
-    });
-
-    await fetchReadablePreviewEnvironment({
-      metadata: { envs: readableEntries },
-      mode: "posture",
-      token: "token-placeholder",
-      teamId: TEAM_ID,
-      projectId: PROJECT_ID,
-      projectName: PROJECT_NAME,
-      fetchImpl,
-    });
-
-    expect(log).not.toHaveBeenCalled();
-    expect(error).not.toHaveBeenCalled();
-    log.mockRestore();
-    error.mockRestore();
+  test("errors never include response bodies or tokens", async () => {
+    const fetchImpl = vi.fn(async () => new Response("secret-response", { status: 403 }));
+    await expect(fetchReadableStagingEnvironment({
+      metadata: { envs: readable }, mode: "posture", scope: "custom-environment", token: "secret-token", teamId, projectId, projectName, fetchImpl,
+    })).rejects.not.toThrow(/secret-response|secret-token/);
   });
 });

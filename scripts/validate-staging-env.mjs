@@ -3,6 +3,8 @@ import fs from "node:fs";
 import { parseEnv } from "node:util";
 import { pathToFileURL } from "node:url";
 
+import { CANONICAL_STAGING_VERCEL } from "./staging-vercel-custom-environment.mjs";
+
 export const CANONICAL_STAGING_DATABASE = Object.freeze({
   projectName: "responseos-staging-mock",
   projectId: "patient-snow-16014934",
@@ -15,7 +17,7 @@ export const CANONICAL_STAGING_DATABASE = Object.freeze({
 const DATABASE_IDENTITY_NAME = "RESPONSEOS_DATABASE_IDENTITY";
 const DATABASE_URL_NAMES = ["DATABASE_URL", "DIRECT_URL"];
 
-const REQUIRED_NAMES = [
+export const REQUIRED_STAGING_NAMES = [
   ...DATABASE_URL_NAMES,
   DATABASE_IDENTITY_NAME,
   "CLERK_SECRET_KEY",
@@ -32,7 +34,7 @@ const SENSITIVE_REQUIRED_NAMES = new Set([
   "CLERK_WEBHOOK_SECRET",
 ]);
 
-const PRE_SYNC_REQUIRED_NAMES = REQUIRED_NAMES.filter(
+const PRE_SYNC_REQUIRED_NAMES = REQUIRED_STAGING_NAMES.filter(
   (name) => name !== DATABASE_IDENTITY_NAME,
 );
 
@@ -95,6 +97,25 @@ function targetsPreview(entry) {
 function matchingPreviewEntries(entries, name) {
   return entries.filter(
     (entry) => entry?.key === name && targetsPreview(entry),
+  );
+}
+
+function targetsCanonicalCustomEnvironment(entry) {
+  return (
+    Array.isArray(entry?.target) &&
+    entry.target.length === 0 &&
+    !entry?.gitBranch &&
+    Array.isArray(entry?.customEnvironmentIds) &&
+    entry.customEnvironmentIds.length === 1 &&
+    entry.customEnvironmentIds[0] ===
+      CANONICAL_STAGING_VERCEL.customEnvironmentId
+  );
+}
+
+function matchingCustomEnvironmentEntries(entries, name) {
+  return entries.filter(
+    (entry) =>
+      entry?.key === name && targetsCanonicalCustomEnvironment(entry),
   );
 }
 
@@ -171,6 +192,33 @@ function previewMetadataErrors(entries, requiredNames) {
   return errors;
 }
 
+function customEnvironmentMetadataErrors(entries, requiredNames) {
+  const errors = [];
+
+  for (const name of requiredNames) {
+    const keyed = entries.filter((entry) => entry?.key === name);
+    const matches = matchingCustomEnvironmentEntries(entries, name);
+    if (keyed.length !== 1 || matches.length !== 1) {
+      errors.push(`Expected exactly one custom-environment-only variable: ${name}`);
+      continue;
+    }
+    if (SENSITIVE_REQUIRED_NAMES.has(name) && matches[0].type !== "sensitive") {
+      errors.push(`Required staging variable must be Sensitive: ${name}`);
+    }
+    if (!SENSITIVE_REQUIRED_NAMES.has(name) && matches[0].type !== "encrypted") {
+      errors.push(`Required staging variable must be readable encrypted metadata: ${name}`);
+    }
+  }
+
+  for (const name of FORBIDDEN_NAMES) {
+    if (entries.some((entry) => entry?.key === name && targetsCanonicalCustomEnvironment(entry))) {
+      errors.push(`Forbidden in governed custom environment metadata: ${name}`);
+    }
+  }
+
+  return errors;
+}
+
 function readablePostureErrors(readableEnv) {
   const errors = [];
 
@@ -225,6 +273,18 @@ export function validateVercelPreviewPosture(readableEnv, metadata) {
 
   return [
     ...previewMetadataErrors(entries, PRE_SYNC_REQUIRED_NAMES),
+    ...readablePostureErrors(readableEnv),
+  ];
+}
+
+export function validateVercelCustomEnvironmentPosture(readableEnv, metadata) {
+  const entries = Array.isArray(metadata) ? metadata : metadata?.envs;
+  if (!Array.isArray(entries)) {
+    return ["Vercel environment metadata must contain an envs array"];
+  }
+
+  return [
+    ...customEnvironmentMetadataErrors(entries, PRE_SYNC_REQUIRED_NAMES),
     ...readablePostureErrors(readableEnv),
   ];
 }
@@ -346,13 +406,13 @@ function databaseIdentityErrors(
     DATABASE_URL_NAMES.map((name) => [name, parseNeonTarget(migrationEnv[name])]),
   );
 
-  const identityEntries = matchingPreviewEntries(
+  const identityEntries = matchingCustomEnvironmentEntries(
     entries,
     DATABASE_IDENTITY_NAME,
   );
   if (identityEntries.length !== 1) {
     errors.push(
-      `Expected exactly one unbranched Preview identity variable: ${DATABASE_IDENTITY_NAME}`,
+      `Expected exactly one governed staging identity variable: ${DATABASE_IDENTITY_NAME}`,
     );
   } else if (identityEntries[0].type !== "encrypted") {
     errors.push(`${DATABASE_IDENTITY_NAME} must be readable encrypted metadata`);
@@ -360,9 +420,9 @@ function databaseIdentityErrors(
 
   const databaseEntries = {};
   for (const name of DATABASE_URL_NAMES) {
-    const matches = matchingPreviewEntries(entries, name);
+    const matches = matchingCustomEnvironmentEntries(entries, name);
     if (matches.length !== 1) {
-      errors.push(`Expected exactly one unbranched Preview variable: ${name}`);
+      errors.push(`Expected exactly one governed staging variable: ${name}`);
     } else {
       databaseEntries[name] = matches[0];
     }
@@ -380,8 +440,8 @@ function databaseIdentityErrors(
   const migrationTarget = migrationTargets.DIRECT_URL;
   if (attestation) {
     const identity = attestation.identity;
-    if (attestation.version !== 1 || !identity) {
-      errors.push("Vercel database identity evidence must use version 1");
+    if (attestation.version !== 2 || !identity) {
+      errors.push("Vercel database identity evidence must use version 2");
     } else {
       for (const [field, expected] of Object.entries(
         CANONICAL_STAGING_DATABASE,
@@ -410,8 +470,18 @@ function databaseIdentityErrors(
       }
     }
 
+    if (attestation.vercel?.projectId !== CANONICAL_STAGING_VERCEL.projectId) {
+      errors.push("Vercel database identity has wrong projectId");
+    }
+    if (attestation.vercel?.customEnvironment?.id !== CANONICAL_STAGING_VERCEL.customEnvironmentId) {
+      errors.push("Vercel database identity has wrong custom environment id");
+    }
+    if (attestation.vercel?.customEnvironment?.slug !== CANONICAL_STAGING_VERCEL.customEnvironmentSlug) {
+      errors.push("Vercel database identity has wrong custom environment slug");
+    }
+
     for (const name of DATABASE_URL_NAMES) {
-      const revision = attestation.vercel?.[name];
+      const revision = attestation.vercel?.variables?.[name];
       const entry = databaseEntries[name];
       if (
         !revision ||
@@ -461,9 +531,9 @@ export function createDatabaseIdentityAttestation(
     throw new Error("Database URLs must preserve pooled runtime and direct migration roles");
   }
 
-  const vercel = {};
+  const variables = {};
   for (const name of DATABASE_URL_NAMES) {
-    const matches = matchingPreviewEntries(entries, name);
+    const matches = matchingCustomEnvironmentEntries(entries, name);
     if (
       matches.length !== 1 ||
       !hasValue(matches[0].id) ||
@@ -471,7 +541,7 @@ export function createDatabaseIdentityAttestation(
     ) {
       throw new Error(`Missing unique Vercel revision metadata for ${name}`);
     }
-    vercel[name] = {
+    variables[name] = {
       envId: matches[0].id,
       updatedAt: matches[0].updatedAt,
     };
@@ -479,11 +549,18 @@ export function createDatabaseIdentityAttestation(
 
   const identity = { ...CANONICAL_STAGING_DATABASE };
   return {
-    version: 1,
+    version: 2,
     attestedAt,
     identity,
     fingerprint: identityFingerprint(identity),
-    vercel,
+    vercel: {
+      projectId: CANONICAL_STAGING_VERCEL.projectId,
+      customEnvironment: {
+        id: CANONICAL_STAGING_VERCEL.customEnvironmentId,
+        slug: CANONICAL_STAGING_VERCEL.customEnvironmentSlug,
+      },
+      variables,
+    },
   };
 }
 
@@ -494,7 +571,7 @@ export function createDatabaseIdentityAttestation(
 export function validateStagingEnvironment(env, expectedDatabaseEnv = undefined) {
   const errors = [];
 
-  for (const name of REQUIRED_NAMES) {
+  for (const name of REQUIRED_STAGING_NAMES) {
     if (!hasValue(env[name])) {
       errors.push(`Missing required staging variable: ${name}`);
     }
@@ -551,7 +628,7 @@ export function validateStagingEnvironment(env, expectedDatabaseEnv = undefined)
  * @param {Readonly<Record<string, string | undefined>>} expectedDatabaseEnv
  * @param {Readonly<Record<string, unknown>>} neonMetadata
  */
-export function validateVercelPreviewEnvironment(
+export function validateVercelCustomEnvironment(
   pulledEnv,
   metadata,
   expectedDatabaseEnv,
@@ -564,16 +641,16 @@ export function validateVercelPreviewEnvironment(
     return ["Vercel environment metadata must contain an envs array"];
   }
 
-  errors.push(...previewMetadataErrors(entries, REQUIRED_NAMES));
+  errors.push(...customEnvironmentMetadataErrors(entries, REQUIRED_STAGING_NAMES));
 
-  for (const name of REQUIRED_NAMES) {
-    const matches = matchingPreviewEntries(entries, name);
+  for (const name of REQUIRED_STAGING_NAMES) {
+    const matches = matchingCustomEnvironmentEntries(entries, name);
     if (
       matches.length === 1 &&
       !SENSITIVE_REQUIRED_NAMES.has(name) &&
       !hasValue(pulledEnv[name])
     ) {
-      errors.push(`Missing readable Preview variable: ${name}`);
+      errors.push(`Missing readable governed staging variable: ${name}`);
     }
   }
 
@@ -624,7 +701,7 @@ if (invokedPath === import.meta.url) {
     ]),
   );
   const errors = metadataPath
-    ? validateVercelPreviewEnvironment(
+    ? validateVercelCustomEnvironment(
         checkedEnv,
         JSON.parse(fs.readFileSync(metadataPath, "utf8")),
         process.env,
