@@ -10,6 +10,7 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - Added a complete nine-variable migration plan and value-less scope PATCH contract so existing Sensitive values can move out of generic Preview applicability without being decrypted, copied, logged, or rotated.
 - Upgraded `RESPONSEOS_DATABASE_IDENTITY` to version 2, binding canonical Neon identity and database-variable revisions to the exact Vercel project and custom environment.
 - Added filtered and unfiltered REST readbacks that must prove custom-environment availability and generic Preview removal before final certification; partial mutations SAFE STOP with non-secret scope evidence and no automatic rollback.
+- Added a pre-mutation deployment-compatibility validator that rejects generic `--environment=preview` / `--target=preview` controls and requires exact governed custom-environment identity/readback/targeting before any scope PATCH can run.
 
 ## Unreleased — ci: certify staging configuration through Vercel REST
 

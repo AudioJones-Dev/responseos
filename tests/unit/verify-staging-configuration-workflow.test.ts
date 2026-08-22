@@ -102,6 +102,9 @@ describe("configuration-only staging workflow", () => {
   });
 
   test("validates the full source plan and readable posture before any scope PATCH", () => {
+    const compatibility = workflow.indexOf(
+      "Verify deployment workflow custom-environment compatibility",
+    );
     const plan = workflow.indexOf("Validate complete source migration plan");
     const posture = workflow.indexOf(
       "Validate readable source posture before scope mutation",
@@ -110,10 +113,25 @@ describe("configuration-only staging workflow", () => {
       "Re-scope existing variables without values",
     );
 
-    expect(plan).toBeGreaterThan(-1);
+    expect(compatibility).toBeGreaterThan(-1);
+    expect(plan).toBeGreaterThan(compatibility);
     expect(posture).toBeGreaterThan(plan);
     expect(posture).toBeGreaterThan(-1);
     expect(synchronize).toBeGreaterThan(posture);
+  });
+
+  test("checks deployment compatibility before any migration planning or scope PATCH", () => {
+    const compatibility = workflow.indexOf(
+      "validate-staging-deploy-environment-contract.mjs",
+    );
+    const plan = workflow.indexOf(
+      "staging-custom-environment-migration.mjs plan",
+    );
+    const patch = workflow.indexOf("--request PATCH");
+
+    expect(compatibility).toBeGreaterThan(-1);
+    expect(plan).toBeGreaterThan(compatibility);
+    expect(patch).toBeGreaterThan(plan);
   });
 
   test("binds exact canonical custom environment identity", () => {

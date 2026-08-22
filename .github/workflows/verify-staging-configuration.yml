@@ -107,6 +107,10 @@ jobs:
           curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-custom-environment.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects/$EXPECTED_VERCEL_PROJECT_ID/custom-environments/$EXPECTED_VERCEL_CUSTOM_ENV_ID?teamId=$VERCEL_ORG_ID"
           node scripts/staging-vercel-custom-environment.mjs "$RUNNER_TEMP/vercel-custom-environment.json"
 
+      - name: Verify deployment workflow custom-environment compatibility
+        run: |
+          node scripts/validate-staging-deploy-environment-contract.mjs ".github/workflows/deploy-staging.yml"
+
       - name: Validate complete source migration plan
         run: |
           curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-source-env.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v10/projects/$EXPECTED_VERCEL_PROJECT_ID/env?teamId=$VERCEL_ORG_ID"

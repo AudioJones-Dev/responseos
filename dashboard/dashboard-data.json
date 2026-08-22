@@ -690,7 +690,7 @@
       "start": "2026-08-21",
       "due": "2026-08-21",
       "blocked": true,
-      "blockedReason": "PR #130 is under review; the one-time scope migration and recertification workflow remains separately gated",
+      "blockedReason": "PR #130 now stops before scope mutation while Deploy Staging remains generic Preview; a later deployment-workflow hardening PR must establish exact custom-environment compatibility before the one-time migration can run",
       "ref": 130,
       "refType": "pull",
       "refState": "open",
