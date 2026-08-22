@@ -690,7 +690,11 @@
       "start": "2026-08-21",
       "due": "2026-08-21",
       "blocked": true,
-      "blockedReason": "Repository changes are under review; the one-time scope migration and recertification workflow remains separately gated"
+      "blockedReason": "PR #130 is under review; the one-time scope migration and recertification workflow remains separately gated",
+      "ref": 130,
+      "refType": "pull",
+      "refState": "open",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/130"
     },
     {
       "id": "L-03",
