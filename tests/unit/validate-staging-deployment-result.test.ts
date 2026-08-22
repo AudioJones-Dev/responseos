@@ -31,7 +31,22 @@ function deployment(overrides: Record<string, unknown> = {}) {
 }
 
 describe("governed staging deployment result", () => {
-  test("accepts exact READY custom-environment evidence", () => {
+  test("accepts the exact environment ID when deployment readback omits the optional slug", () => {
+    expect(
+      validateStagingDeployment(
+        deployment({
+          customEnvironment: {
+            id: "env_uX6Qp8F6w9aBgx2ikH3BiREB8aHH",
+          },
+        }),
+        applicationSha,
+        deploymentHost,
+        "ready",
+      ),
+    ).toEqual([]);
+  });
+
+  test("accepts the exact environment ID when deployment readback includes the canonical slug", () => {
     expect(
       validateStagingDeployment(
         deployment(),
@@ -42,13 +57,28 @@ describe("governed staging deployment result", () => {
     ).toEqual([]);
   });
 
+  test("rejects the wrong environment ID even when the deployment slug says staging", () => {
+    expect(
+      validateStagingDeployment(
+        deployment({ customEnvironment: { id: "env_wrong", slug: "staging" } }),
+        applicationSha,
+        deploymentHost,
+      ).join(" "),
+    ).toContain("exact governed custom environment");
+  });
+
+  test("rejects deployment readback without a custom environment", () => {
+    expect(
+      validateStagingDeployment(
+        deployment({ customEnvironment: undefined }),
+        applicationSha,
+        deploymentHost,
+      ).join(" "),
+    ).toContain("exact governed custom environment");
+  });
+
   test.each([
     ["projectId", "prj_wrong", "canonical staging project"],
-    [
-      "customEnvironment",
-      { id: "env_wrong", slug: "staging" },
-      "exact governed custom environment",
-    ],
     ["target", "production", "must not target Production"],
     ["gitSource", { ref: applicationSha, sha: "f".repeat(40) }, "Git source SHA"],
     ["alias", ["staging.example.com"], "must not have aliases"],

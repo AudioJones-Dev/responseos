@@ -54,10 +54,7 @@ export function validateStagingDeployment(metadata, applicationSha, deploymentHo
   if (projectId !== expected.projectId || metadata?.name !== expected.projectName) {
     errors.push("Deployment is not bound to the canonical staging project");
   }
-  if (
-    metadata?.customEnvironment?.id !== expected.customEnvironmentId ||
-    metadata?.customEnvironment?.slug !== expected.customEnvironmentSlug
-  ) {
+  if (metadata?.customEnvironment?.id !== expected.customEnvironmentId) {
     errors.push("Deployment is not bound to the exact governed custom environment");
   }
   if (metadata?.target === "production") {
