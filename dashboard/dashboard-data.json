@@ -596,7 +596,7 @@
       "start": "2026-08-21",
       "due": "2026-08-28",
       "blocked": true,
-      "blockedReason": "Gate Set A hosted Clerk, Neon, and Vercel staging, exact-SHA deployment, and operator authorization remain uncleared"
+      "blockedReason": "Canonical Neon is migrated, but the exact-SHA Vercel deployment, hosted Clerk and tenant smoke, recovery evidence, and operator authorization remain uncleared"
     },
     {
       "id": "L-02",
@@ -609,7 +609,7 @@
       "start": "2026-08-03",
       "due": "2026-08-12",
       "blocked": true,
-      "blockedReason": "Governed custom-environment configuration run 32586167278 is certified and recorded; staging deployment approval, migration, hosted auth smoke, rollback evidence, and every Production action remain separate gates"
+      "blockedReason": "Governed configuration is certified and canonical Neon migrated successfully in run 32587779315; Vercel deployment remediation/retry, hosted auth smoke, rollback/recovery evidence, and every Production action remain separate gates"
     },
     {
       "id": "L-02a",
@@ -707,7 +707,7 @@
       "start": "2026-08-22",
       "due": "2026-08-22",
       "blocked": false,
-      "blockedReason": "PR #131 merged at workflow-control SHA 6202da68; governed configuration run 32586167278 passed, while migration and first deployment remain separately gated",
+      "blockedReason": "PR #131 merged at workflow-control SHA 6202da68 and configuration run 32586167278 passed; run 32587779315 migrated canonical Neon, then SAFE STOPPED before Vercel deployment creation, so narrow CLI remediation/retry remains separate",
       "ref": 131,
       "refType": "pull",
       "refState": "merged",

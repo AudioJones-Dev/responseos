@@ -12,7 +12,9 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - Added explicit `MUST_MATCH`, `MUST_DIFFER`, and `HUMAN_APPROVAL_REQUIRED` enforcement, including rejection of staging resource reuse, Production test/dev auth posture, and provider activation without approval.
 - Required an exact successful source certification before Production plan generation, bound duplicated certification metadata to the hashed environment contract, and applied full semantic validation before environment-diff classification.
 - Documented the contract-driven Production sequence, future read-only drift semantics, and the strict separation between environment promotion and `prospect-promotion.v1`.
-- **No external mutation:** no workflow was dispatched; no Vercel, Neon, Clerk, provider, phone, domain, secret, deployment, or Production resource was changed.
+- Reconciled the external staging state after run `32587779315`: canonical database identity was reverified and all 13 migrations applied, then the workflow SAFE STOPPED before Vercel deployment creation; READY/smoke were not reached and the governed project remained at zero deployments.
+- Preserved run `32586167278` as configuration-only certification evidence; the staging manifest and certification record do not claim migration certification, deployment certification, READY, or hosted smoke.
+- **No external mutation by this repository-governance PR:** it dispatched no workflow and changed no Vercel, Neon, Clerk, provider, phone, domain, secret, deployment, or Production resource. Run `32587779315` was a separately authorized external staging operation and is recorded here as evidence only.
 
 ## Unreleased — ci: harden governed custom-environment deployment controls
 

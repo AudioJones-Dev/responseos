@@ -1,6 +1,6 @@
 # ResponseOS — Staging Hosting Runbook (Path A)
 
-**Owner:** Audio (AJ Digital LLC) · **Status:** Operator runbook (configuration certified; deployment separately gated)
+**Owner:** Audio (AJ Digital LLC) · **Status:** Operator runbook (configuration certified; canonical database migrated; deployment retry separately gated)
 **Scope:** Hosted **staging only** — Neon + Clerk + Vercel client access while providers remain **mock**.  
 **Does not authorize:** live Telnyx/Vapi/Twilio/HubSpot/Calendly, production deploy, or pilot go-live.  
 **Canon:** [`../product/responseos-v0.3-founding-pilot-scope.md`](../product/responseos-v0.3-founding-pilot-scope.md) Stage **C**, [`../env-spec.md`](../env-spec.md), [`../DEPLOYMENT.md`](../DEPLOYMENT.md), ADR-0001 / ADR-0019.
@@ -25,14 +25,14 @@ Until the staging URL is live with Clerk login, dashboard **L-02** stays partial
 
 ## 1. Credential / platform audit (names only — no secrets)
 
-Verified snapshot from the 2026-08-21 remediation (operator must re-check before retry):
+Verified snapshot through the 2026-08-22 post-migration SAFE STOP (operator must re-check before retry):
 
 | Surface | Observed | Gap for Path A staging |
 |---|---|---|
 | **GitHub Environment** | `staging` exists with required reviewer `AudioJones-Dev` and a `master`-only deployment branch policy | Keep all deploy credentials Environment-scoped; deployment retry still requires a separate approval. |
-| **GitHub staging secrets** | Database URLs, verified Vercel team/project ids, Vercel token, automation-bypass secret, and a secret named `NEON_API_KEY` are present | Values remain unreadable by design. The Neon key's validity and project scope are unverified until the protected configuration-only workflow successfully reads the canonical resources; database identity and attestation must also pass before deployment is authorized. |
+| **GitHub staging secrets** | Database URLs, verified Vercel team/project ids, Vercel token, automation-bypass secret, and a secret named `NEON_API_KEY` are present; protected runs proved the key can read the canonical Neon resources | Values remain unreadable by design. Reverify identity and the current version 2 attestation before every deployment retry. |
 | **Vercel** | Dedicated `audiojones/responseos-staging-mock`; Node **24.x**; `live=false`; no deployments, production target, aliases, custom domains, or Git integration | Keep Vercel Authentication enabled (`all_except_custom_domains`). Use only a project-scoped automation bypass for CI smoke. |
-| **Neon** | Canonical project `responseos-staging-mock` (`patient-snow-16014934`), branch `main` (`br-mute-boat-a6ylen11`), endpoint `ep-young-morning-a6oeu9vv`, and database `neondb` were verified read-only | Never substitute the separate `responseos` project. The configuration-only workflow must produce live API evidence and the Vercel database revision attestation before retry. |
+| **Neon** | Canonical project `responseos-staging-mock` (`patient-snow-16014934`), branch `main` (`br-mute-boat-a6ylen11`), endpoint `ep-young-morning-a6oeu9vv`, and database `neondb` were reverified; run `32587779315` applied all 13 Prisma migrations | Never substitute the separate `responseos` project. The retry must reverify identity and should observe a current migration status plus a no-op `prisma migrate deploy`. |
 | **Clerk** | All eight required Preview names and same-development-instance provenance are verified | Do not change Clerk configuration during the database preflight. |
 | **Sentry / PostHog** | Env placeholders in `.env.example`; **no SDK packages wired** | Optional for Path A: create projects, set DSNs later; tagging contract documented in §6. |
 | **Live providers** | Forbidden until Stage D+ | Leave Telnyx/Vapi/etc. unset. The staging preflight rejects live-provider credentials before migration or build. |
@@ -99,12 +99,12 @@ Do these in order. Stop if any step needs a credential you do not have — do no
 
 1. Use only project `responseos-staging-mock` (`patient-snow-16014934`) and branch `main` (`br-mute-boat-a6ylen11`). The separate `responseos` project must never satisfy this gate.
 2. From that branch, set **pooled** only in GitHub staging `STAGING_DATABASE_URL` and **direct** only in GitHub staging `STAGING_DIRECT_URL`.
-3. Before the one-time migration, keep the existing Vercel `DATABASE_URL` and `DIRECT_URL` variables Sensitive and unbranched in their certified generic Preview source scope. The authorized configuration workflow changes scope by ID without reading or sending either value.
-4. Add a project-scoped Neon API key to GitHub Environment `staging` as `NEON_API_KEY`. Neon project-scoped keys are the narrowest available project boundary; the verification workflow uses only `GET` requests and never passes the key to Vercel or the app.
-5. Before authorizing the one-time migration, merge a separately reviewed deployment-workflow hardening PR that makes **Deploy Staging** verify the exact custom-environment ID and explicitly target slug `staging`. The configuration workflow rejects generic `--environment=preview` or `--target=preview` controls before it builds a migration plan or PATCHes scope.
-6. After both workflow-control changes are merged, run **Verify Staging Configuration** from `master` with confirmation `configuration-only` and that exact control SHA. The reserved application SHA remains `4a5b29b83cb3f18137b0151ae6242b2ac484ef08`; this lane never checks out, builds, migrates, or deploys it. It verifies deployment compatibility, the complete source plan, readable posture, live Neon identity, and GitHub DB roles before re-scoping the nine existing variables without values. It then proves generic Preview removal, creates version 2 environment-bound identity evidence, certifies the governed custom environment, and stops.
-7. Confirm the job ends with the configuration-only success notice. It contains no migration or deployment step; **Deploy Staging** remains a separate authorization.
-8. If either GitHub database URL changes, rerun configuration verification before any deployment. The Vercel ids/`updatedAt` bindings intentionally make old evidence stale.
+3. Configuration-only run `32586167278` re-scoped the existing Vercel `DATABASE_URL` and `DIRECT_URL` variables to the exact governed custom environment without reading or sending either value; they remain Sensitive.
+4. The project-scoped `NEON_API_KEY` in GitHub Environment `staging` was proven able to read the canonical project, branch, endpoint, and database. The verification workflow uses only `GET` requests and never passes the key to Vercel or the app.
+5. PR #131 merged the deployment-workflow controls that verify the exact custom-environment ID and explicitly target slug `staging`; configuration run `32586167278` accepted that compatibility contract and completed version 2 recertification.
+6. Authorized Deploy Staging run `32587779315` reverified the canonical Vercel/Neon/database contract, reported all 13 migrations pending, and applied all 13 to canonical staging Neon. Vercel deployment creation then failed before a deployment record existed; READY and hosted smoke were not reached. The post-migration SAFE STOP performed no rollback, alias, domain, promotion, or Production action.
+7. Merge the separately reviewed deployment CLI remediation before any retry. Because canonical staging Neon is now current, the retry should observe `prisma migrate status` as current and `prisma migrate deploy` as a safe no-op; both commands remain mandatory and fail closed.
+8. If either GitHub database URL changes, rerun configuration verification before any deployment retry. The Vercel ids/`updatedAt` bindings intentionally make old evidence stale.
 9. Never print, persist, diff, hash in full, or compare plaintext connection strings. The workflow streams values between protected stores and emits only resource identity and a credential-free SHA-256 fingerprint.
 
 Protected run `32538420957` proved the staging Environment `NEON_API_KEY` can read the canonical project, branch, endpoint, and database. The key remains confined to the GitHub Environment and is never sent to Vercel or the application.
@@ -112,6 +112,8 @@ Protected run `32538420957` proved the staging Environment `NEON_API_KEY` can re
 The repository also contains an older repository-level `NEON_API_KEY`. Repository search finds no legitimate consumer outside jobs that declare `environment: staging`, where GitHub resolves the Environment-scoped secret of the same name. The broader repository secret is redundant and should be removed under a separate credential-cleanup authorization only after the Environment credential passes the protected preflight; do not rotate or delete it as part of this change.
 
 Configuration-only run [`32538420957`](https://github.com/AudioJones-Dev/responseos/actions/runs/32538420957) passed the earlier REST-only generic Preview certification. Configuration-only run [`32586167278`](https://github.com/AudioJones-Dev/responseos/actions/runs/32586167278), controlled by `6202da68cb9b517b39814bab5b1542fd65adae22`, is the certified governed-custom-environment baseline recorded by [Environment Promotion Contract v1](../../infra/environments/staging/certification.json). It certifies configuration only and preserves the separately reviewed intended application SHA `4a5b29b83cb3f18137b0151ae6242b2ac484ef08`; it is not deployment evidence. **Deploy Staging** remains a separate authorization.
+
+Run [`32587779315`](https://github.com/AudioJones-Dev/responseos/actions/runs/32587779315) is separate execution evidence for the successful canonical database migration and the subsequent pre-deployment SAFE STOP. It does not turn the configuration-only certification into migration or deployment certification. `infra/environments/staging/environment.json` intentionally describes the governed configuration contract rather than ephemeral migration/deployment execution state, so no deployed state is recorded there.
 
 Both **Verify Staging Configuration** and **Deploy Staging** use the top-level concurrency group `responseos-staging-exclusive` with `cancel-in-progress: false`. One run queues behind the other, so database synchronization/attestation cannot overlap deployment preflight, migration, build, or staging deployment.
 
@@ -233,7 +235,9 @@ The Vercel-hosted build is deliberate: custom-environment database and Clerk ser
 
 If migration succeeds but deployment, readiness, or smoke fails, the workflow SAFE STOPs. It records non-secret migration/deployment outcome evidence, performs no automatic schema rollback, creates no alias, and requires separate remediation authorization.
 
-Rollback: redeploy the previous **staging** deployment from the Vercel UI, or re-run the workflow on a known-good SHA. Production aliases are never part of this workflow. The app continues to boot with mock providers because the staging preflight rejects live-provider credentials.
+Run `32587779315` exercised that SAFE STOP after migration: the deployment command failed before Vercel created a deployment, so READY and smoke were skipped and the governed project remained at zero deployments. Do not retry until the separate CLI remediation is reviewed and merged. With the database already current, the retry should retain migration status/deploy checks and expect them to no-op before deployment creation.
+
+Recovery remains outstanding because no previous staging deployment exists. After the first READY staging artifact exists, recovery may redeploy a known-good exact SHA without schema auto-rollback; Production aliases are never part of this workflow. The app continues to boot with mock providers because the staging preflight rejects live-provider credentials.
 
 ---
 
@@ -253,7 +257,7 @@ Until SDKs land: rely on Vercel runtime logs + Clerk webhook logs + Neon metrics
 
 ## 7. Authorization reminder
 
-Repository-side Stage C hardening was authorized on 2026-08-18. Creating platform resources, injecting secret values, and running the actual staging deployment remain operator/platform steps and are not implied by that code authorization.
+Repository-side Stage C hardening was authorized on 2026-08-18. Configuration certification and the canonical staging database migration have since completed; creating the first application deployment, proving hosted authentication/smoke, exercising recovery, and every Production action remain separately authorized operator/platform steps.
 
 The [Environment Promotion Runbook](./RESPONSEOS_ENVIRONMENT_PROMOTION_RUNBOOK.md) governs any future staging-to-Production planning. It does not alter this first-staging-deployment path and does not authorize a Production resource, secret, alias, provider, or deploy action.
 
