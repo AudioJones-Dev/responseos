@@ -26,7 +26,7 @@ Clears a non-production staging surface for private operator testing. It authori
 | A11 | Tenant user resolves only the mapped staging account | Integration suite + authenticated staging smoke |
 | A12 | Rollback to the previous staging artifact is recorded and exercised | Staging runbook evidence |
 
-**Current state:** Protected run `32538420957` passed REST-only generic Preview certification. The empty governed Vercel custom environment `staging` (`env_uX6Qp8F6w9aBgx2ikH3BiREB8aHH`) exists with no branch matcher, domain, alias, or deployment. Deployment-control hardening is under review: it binds controls to current `master`, separates the application SHA, reuses REST-only custom-environment/Neon/version 2 attestation certification before migration, and targets the exact-ID-verified `staging` slug without link/pull or generic Preview fallback. The one-time scope migration/recertification run, staging deployment/migration, authenticated tenant smoke, and rollback exercise remain uncleared.
+**Current state:** Protected run `32586167278` configuration-certified the governed custom environment under workflow-control SHA `6202da68cb9b517b39814bab5b1542fd65adae22`, with the reviewed application SHA `4a5b29b83cb3f18137b0151ae6242b2ac484ef08` reserved separately. [Environment Promotion Contract v1](./RESPONSEOS_ENVIRONMENT_PROMOTION_RUNBOOK.md) records that secret-free configuration baseline and its canonical hashes. This is not deployment certification: staging deployment/migration, authenticated tenant smoke, and rollback exercise remain uncleared, and Gate Set B remains entirely separate.
 
 The public `/audit` form is not a Gate Set A prospect-capture path until canonical persistence/idempotency and durable host-level abuse controls are implemented and verified. Do not make `/api/audit-requests` public merely to make the form submit.
 
@@ -52,6 +52,7 @@ Required before any live phone, SMS, CRM, scheduling, billing, or provider-webho
 ## Related runbooks
 
 - [`RESPONSEOS_STAGING_HOSTING_RUNBOOK.md`](./RESPONSEOS_STAGING_HOSTING_RUNBOOK.md) — Gate Set A provisioning, deploy, smoke, and rollback.
+- [`RESPONSEOS_ENVIRONMENT_PROMOTION_RUNBOOK.md`](./RESPONSEOS_ENVIRONMENT_PROMOTION_RUNBOOK.md) — secret-free contract, Production planning, diff, certification, and future drift governance.
 - [`RESPONSEOS_DEPLOYMENT_PLAN.md`](./RESPONSEOS_DEPLOYMENT_PLAN.md) — target topology and release process.
 - [`responseos-v0.3-provider-readiness.md`](../product/responseos-v0.3-provider-readiness.md) — provider planning baseline.
 - [`responseos-v0.3-live-call-demo-slice.md`](../product/responseos-v0.3-live-call-demo-slice.md) — bounded live-call scope; planning only.

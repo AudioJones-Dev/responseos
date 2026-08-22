@@ -151,6 +151,17 @@ Path A staging checklist (operator): [`ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md
 - **Never commit real secrets.** `.env.example` = placeholders; `.env.local` = gitignored; real values
   in the platform env store.
 
+## Environment Promotion Contract v1
+
+Environment-variable meaning is defined here; promotion metadata and environment identity are governed by [`infra/environments/`](../infra/environments/) and the [`Environment Promotion Runbook`](./ops/RESPONSEOS_ENVIRONMENT_PROMOTION_RUNBOOK.md).
+
+- [`staging/secret-contract.json`](../infra/environments/staging/secret-contract.json) records application-runtime and CI/workflow-control metadata separately. It contains names, classifications, required scope, owner, exposure, rotation, transfer prohibition, and activation effect only.
+- [`production/secret-contract.json`](../infra/environments/production/secret-contract.json) requires independent Production values for database credentials, Clerk Production credentials, webhook secrets, project-scoped control credentials, Telnyx/HubSpot/Vapi credentials when separately authorized, and `RESPONSEOS_PROVIDER_KEY` when a Production key posture is approved.
+- Secret values never enter Git, environment/configuration fingerprints, diffs, promotion plans, or certification records.
+- `prospect-promotion.v1` remains a business/customer-state manifest and is not an environment or secret promotion mechanism.
+
+Validate all v1 schemas, manifests, policy coverage, semantic rules, and certification hashes with `npm run config:validate`.
+
 ## Relationship to ADR-0020
 
 `RESPONSEOS_PROVIDER_KEY` is the env-managed key contract from **ADR-0020** (provider credential

@@ -604,12 +604,12 @@
       "title": "Staging/prod env + secrets (Path A first)",
       "owner": "Audio",
       "status": "In Progress",
-      "progress": 80,
+      "progress": 85,
       "priority": "High",
       "start": "2026-08-03",
       "due": "2026-08-12",
       "blocked": true,
-      "blockedReason": "Generic Preview configuration certification is green and the empty governed custom environment exists; the nine-variable scope migration, version 2 recertification, deployment workflow hardening, deployment approval, hosted auth smoke, and rollback evidence remain"
+      "blockedReason": "Governed custom-environment configuration run 32586167278 is certified and recorded; staging deployment approval, migration, hosted auth smoke, rollback evidence, and every Production action remain separate gates"
     },
     {
       "id": "L-02a",
@@ -701,17 +701,30 @@
       "phase": "Launch / Demo Deploy",
       "title": "Harden Deploy Staging for exact governed custom environment",
       "owner": "Codex",
+      "status": "Done",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-08-22",
+      "due": "2026-08-22",
+      "blocked": false,
+      "blockedReason": "PR #131 merged at workflow-control SHA 6202da68; governed configuration run 32586167278 passed, while migration and first deployment remain separately gated",
+      "ref": 131,
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/131"
+    },
+    {
+      "id": "L-02g",
+      "phase": "Launch / Demo Deploy",
+      "title": "Environment Promotion Contract v1",
+      "owner": "Codex",
       "status": "Review",
       "progress": 90,
       "priority": "High",
       "start": "2026-08-22",
       "due": "2026-08-22",
       "blocked": true,
-      "blockedReason": "PR #131 is under review; the one-time custom-environment scope migration, v2 recertification, real migration, and first deployment remain separately gated",
-      "ref": 131,
-      "refType": "pull",
-      "refState": "open",
-      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/131"
+      "blockedReason": "Repository contract, schemas, tooling, tests, and runbook are implemented; review and merge remain the next gate, and no Production provisioning or deployment is authorized"
     },
     {
       "id": "L-03",

@@ -1,0 +1,36 @@
+{
+  "base": "infra/environments/production/environment.template.json",
+  "overrides": {
+    "identity": {
+      "environmentClass": "production",
+      "lifecycle": "governed"
+    },
+    "vercel": {
+      "projectId": "prj_production_fixture_not_real",
+      "projectName": "responseos-production-fixture",
+      "customEnvironment": {
+        "id": "env_production_fixture_not_real",
+        "slug": "production",
+        "type": "production"
+      }
+    },
+    "database": {
+      "projectId": "production-project-fixture",
+      "projectName": "responseos-production-fixture",
+      "branchId": "br-production-fixture",
+      "branchName": "main",
+      "endpointId": "ep-production-fixture"
+    },
+    "authentication": {
+      "providerClass": "production",
+      "credentialClass": "live"
+    },
+    "deploymentControls": {
+      "workflowControlSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "intendedApplicationSha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "concurrency": {
+        "group": "responseos-production-exclusive"
+      }
+    }
+  }
+}

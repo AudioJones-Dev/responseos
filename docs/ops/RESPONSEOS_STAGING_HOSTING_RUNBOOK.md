@@ -1,6 +1,6 @@
 # ResponseOS — Staging Hosting Runbook (Path A)
 
-**Owner:** Audio (AJ Digital LLC) · **Status:** Operator runbook (staging remediation in review)
+**Owner:** Audio (AJ Digital LLC) · **Status:** Operator runbook (configuration certified; deployment separately gated)
 **Scope:** Hosted **staging only** — Neon + Clerk + Vercel client access while providers remain **mock**.  
 **Does not authorize:** live Telnyx/Vapi/Twilio/HubSpot/Calendly, production deploy, or pilot go-live.  
 **Canon:** [`../product/responseos-v0.3-founding-pilot-scope.md`](../product/responseos-v0.3-founding-pilot-scope.md) Stage **C**, [`../env-spec.md`](../env-spec.md), [`../DEPLOYMENT.md`](../DEPLOYMENT.md), ADR-0001 / ADR-0019.
@@ -111,7 +111,7 @@ Protected run `32538420957` proved the staging Environment `NEON_API_KEY` can re
 
 The repository also contains an older repository-level `NEON_API_KEY`. Repository search finds no legitimate consumer outside jobs that declare `environment: staging`, where GitHub resolves the Environment-scoped secret of the same name. The broader repository secret is redundant and should be removed under a separate credential-cleanup authorization only after the Environment credential passes the protected preflight; do not rotate or delete it as part of this change.
 
-Configuration-only run [`32538420957`](https://github.com/AudioJones-Dev/responseos/actions/runs/32538420957) passed REST-only certification for generic Preview scope. A separately authorized control-plane gate then created the empty custom environment `staging`; it has no branch matcher, domain, alias, or deployment. The next run is intentionally different: it moves the certified variables by scope, not value, creates version 2 environment-bound evidence, recertifies, and stops. No migration or deployment is part of that workflow.
+Configuration-only run [`32538420957`](https://github.com/AudioJones-Dev/responseos/actions/runs/32538420957) passed the earlier REST-only generic Preview certification. Configuration-only run [`32586167278`](https://github.com/AudioJones-Dev/responseos/actions/runs/32586167278), controlled by `6202da68cb9b517b39814bab5b1542fd65adae22`, is the certified governed-custom-environment baseline recorded by [Environment Promotion Contract v1](../../infra/environments/staging/certification.json). It certifies configuration only and preserves the separately reviewed intended application SHA `4a5b29b83cb3f18137b0151ae6242b2ac484ef08`; it is not deployment evidence. **Deploy Staging** remains a separate authorization.
 
 Both **Verify Staging Configuration** and **Deploy Staging** use the top-level concurrency group `responseos-staging-exclusive` with `cancel-in-progress: false`. One run queues behind the other, so database synchronization/attestation cannot overlap deployment preflight, migration, build, or staging deployment.
 
@@ -254,6 +254,8 @@ Until SDKs land: rely on Vercel runtime logs + Clerk webhook logs + Neon metrics
 ## 7. Authorization reminder
 
 Repository-side Stage C hardening was authorized on 2026-08-18. Creating platform resources, injecting secret values, and running the actual staging deployment remain operator/platform steps and are not implied by that code authorization.
+
+The [Environment Promotion Runbook](./RESPONSEOS_ENVIRONMENT_PROMOTION_RUNBOOK.md) governs any future staging-to-Production planning. It does not alter this first-staging-deployment path and does not authorize a Production resource, secret, alias, provider, or deploy action.
 
 | Stage | This runbook |
 |---|---|
