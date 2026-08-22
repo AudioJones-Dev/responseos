@@ -31,6 +31,16 @@ interface CompilableSource {
   fetched_at?: Date | null;
 }
 
+const MULTI_VALUE_FACT_KEYS = new Set([
+  "contact.phone",
+  "contact.email",
+  "operating_hours.statement",
+  "service.statement",
+  "service_area.statement",
+  "policy.statement",
+  "location.statement",
+]);
+
 function stableValue(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(stableValue);
   if (value && typeof value === "object") {
@@ -64,6 +74,53 @@ function sectionForFactKey(key: string): keyof Pick<
   if (key.startsWith("contact.")) return "contactPaths";
   if (key.startsWith("brand_voice.")) return "brandVoice";
   return "businessProfile";
+}
+
+function authorityRank(status: string): number {
+  if (status === "owner_confirmed") return 2;
+  if (status === "operator_approved_for_demo") return 1;
+  return 0;
+}
+
+function compareFactAuthority(left: CompilableFact, right: CompilableFact): number {
+  const rank = authorityRank(right.status) - authorityRank(left.status);
+  if (rank !== 0) return rank;
+  const reviewed = (right.reviewed_at?.getTime() ?? 0) - (left.reviewed_at?.getTime() ?? 0);
+  if (reviewed !== 0) return reviewed;
+  const validAsOf = (right.valid_as_of?.getTime() ?? 0) - (left.valid_as_of?.getTime() ?? 0);
+  if (validAsOf !== 0) return validAsOf;
+  return left.id.localeCompare(right.id);
+}
+
+function selectApprovedFacts(facts: CompilableFact[]): CompilableFact[] {
+  const approved = facts.filter((fact) => (
+    fact.status === "operator_approved_for_demo" || fact.status === "owner_confirmed"
+  ));
+  const byKey = new Map<string, CompilableFact[]>();
+  for (const fact of approved) {
+    const group = byKey.get(fact.fact_key) ?? [];
+    group.push(fact);
+    byKey.set(fact.fact_key, group);
+  }
+
+  const selected: CompilableFact[] = [];
+  for (const [key, group] of byKey) {
+    if (!MULTI_VALUE_FACT_KEYS.has(key)) {
+      selected.push([...group].sort(compareFactAuthority)[0]);
+      continue;
+    }
+    const byValue = new Map<string, CompilableFact[]>();
+    for (const fact of group) {
+      const signature = stableJson(fact.value_json);
+      const valueGroup = byValue.get(signature) ?? [];
+      valueGroup.push(fact);
+      byValue.set(signature, valueGroup);
+    }
+    for (const valueGroup of byValue.values()) {
+      selected.push([...valueGroup].sort(compareFactAuthority)[0]);
+    }
+  }
+  return selected;
 }
 
 export function compileBusinessMemorySnapshot(params: {
@@ -108,8 +165,7 @@ export function compileBusinessMemorySnapshot(params: {
       .sort((left, right) => left.url.localeCompare(right.url)),
   };
 
-  for (const fact of params.facts) {
-    if (fact.status !== "operator_approved_for_demo" && fact.status !== "owner_confirmed") continue;
+  for (const fact of selectApprovedFacts(params.facts)) {
     const sourceIds = Array.isArray(fact.source_ids_json)
       ? fact.source_ids_json.filter((value): value is string => typeof value === "string" && sourceById.has(value))
       : [fact.source_id];
@@ -143,7 +199,7 @@ export function compileBusinessMemorySnapshot(params: {
       id: fact.id,
       key: fact.fact_key,
       value: fact.value_json,
-      status: fact.status,
+      status: fact.status as "operator_approved_for_demo" | "owner_confirmed",
       sourceIds,
       sourceEvidence,
       confidence: fact.confidence ?? null,
