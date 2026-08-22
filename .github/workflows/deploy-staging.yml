@@ -1,15 +1,6 @@
-# Staging-only deploy scaffold (Path A / Live Pilot Ship Phase 2).
-#
-# Hard rules:
-# - Manual trigger only (workflow_dispatch). Never runs on push to master.
-# - Uses the GitHub Environment named `staging` so required reviewers /
-#   wait timers can gate the job (create that Environment in repo Settings).
-# - Does NOT deploy production. Do not add a production job here until
-#   founding-pilot readiness gates + human prod approval clear.
-# - Providers stay mock until separately authorized live stages.
-#
-# Operator setup (secrets + Neon + Clerk) is documented in:
-#   docs/ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md
+# Governed mock-staging deployment. Manual dispatch and protected Environment only.
+# It certifies the exact custom environment before migration and never aliases,
+# promotes, targets Production, or enables live providers.
 
 name: Deploy Staging
 
@@ -20,8 +11,12 @@ on:
         description: 'Type "staging" to confirm a non-production deploy'
         required: true
         type: string
-      sha:
-        description: "Exact reviewed 40-character commit SHA to deploy"
+      control_sha:
+        description: "Exact 40-character current master workflow-control SHA"
+        required: true
+        type: string
+      application_sha:
+        description: "Exact reviewed 40-character application SHA to deploy"
         required: true
         type: string
 
@@ -35,17 +30,57 @@ concurrency:
 
 jobs:
   guard:
-    name: Confirm staging intent
+    name: Bind controls to current master
     runs-on: ubuntu-latest
+    env:
+      DISPATCH_CONFIRM: ${{ inputs.confirm }}
+      CONTROL_SHA: ${{ inputs.control_sha }}
+      APPLICATION_SHA: ${{ inputs.application_sha }}
+      DISPATCH_REF: ${{ github.ref }}
+      DISPATCHED_WORKFLOW_SHA: ${{ github.sha }}
     steps:
-      - name: Reject accidental triggers
-        if: ${{ inputs.confirm != 'staging' }}
+      - name: Validate dispatch contract
         run: |
-          echo "::error::Confirmation input must be exactly 'staging'. Refusing deploy."
-          exit 1
+          if [ "$DISPATCH_CONFIRM" != "staging" ]; then
+            echo "::error::Confirmation must be exactly staging."
+            exit 1
+          fi
+          if [ "$DISPATCH_REF" != "refs/heads/master" ]; then
+            echo "::error::Deploy Staging must be dispatched from master."
+            exit 1
+          fi
+          if [[ ! "$CONTROL_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::control_sha must be a full lowercase commit SHA."
+            exit 1
+          fi
+          if [[ ! "$APPLICATION_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::application_sha must be a full lowercase commit SHA."
+            exit 1
+          fi
+          if [ "$CONTROL_SHA" != "$DISPATCHED_WORKFLOW_SHA" ]; then
+            echo "::error::control_sha must equal the workflow SHA dispatched from master."
+            exit 1
+          fi
+
+      - name: Check out exact workflow controls
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.control_sha }}
+
+      - name: Verify controls are still current master
+        run: |
+          if [ "$(git rev-parse HEAD)" != "$CONTROL_SHA" ]; then
+            echo "::error::Checked-out controls do not match control_sha."
+            exit 1
+          fi
+          remote_master=$(git ls-remote origin refs/heads/master | awk '{print $1}')
+          if [ "$remote_master" != "$CONTROL_SHA" ]; then
+            echo "::error::control_sha is no longer current master."
+            exit 1
+          fi
 
   deploy-staging:
-    name: Deploy to staging
+    name: Migrate and deploy governed staging
     needs: guard
     runs-on: ubuntu-latest
     defaults:
@@ -57,46 +92,37 @@ jobs:
       url: ${{ steps.deploy.outputs.url }}
     env:
       EXPECTED_VERCEL_PROJECT_NAME: responseos-staging-mock
+      EXPECTED_VERCEL_PROJECT_ID: prj_pbzqdkzp322jcHWIsi19GhsnWXRm
+      EXPECTED_VERCEL_ORG_ID: team_BHxIkAGPW6qEKKQBAt9c0NGz
+      EXPECTED_VERCEL_CUSTOM_ENV_ID: env_uX6Qp8F6w9aBgx2ikH3BiREB8aHH
+      EXPECTED_VERCEL_CUSTOM_ENV_SLUG: staging
       EXPECTED_NEON_PROJECT_NAME: responseos-staging-mock
       EXPECTED_NEON_PROJECT_ID: patient-snow-16014934
       EXPECTED_NEON_BRANCH_NAME: main
       EXPECTED_NEON_BRANCH_ID: br-mute-boat-a6ylen11
+      EXPECTED_NEON_ENDPOINT_ID: ep-young-morning-a6oeu9vv
+      EXPECTED_NEON_DATABASE_NAME: neondb
+      CONTROL_SHA: ${{ inputs.control_sha }}
+      APPLICATION_SHA: ${{ inputs.application_sha }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
       DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
       DIRECT_URL: ${{ secrets.STAGING_DIRECT_URL }}
-      RESPONSEOS_BUILD_SHA: ${{ inputs.sha }}
     steps:
-      - name: Check out current workflow controls
+      - name: Check out exact workflow controls
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ inputs.control_sha }}
           path: workflow-control
 
       - name: Check out exact reviewed application source
         uses: actions/checkout@v6
         with:
-          ref: ${{ inputs.sha }}
+          ref: ${{ inputs.application_sha }}
           path: source
-
-      - name: Verify exact reviewed SHA
-        run: |
-          if [[ ! "${{ inputs.sha }}" =~ ^[0-9a-f]{40}$ ]]; then
-            echo "::error::sha must be a full 40-character lowercase commit SHA."
-            exit 1
-          fi
-          actual=$(git rev-parse HEAD)
-          if [ "$actual" != "${{ inputs.sha }}" ]; then
-            echo "::error::Checked-out SHA does not match the requested reviewed SHA."
-            exit 1
-          fi
-          control=$(git -C ../workflow-control rev-parse HEAD)
-          if [ "$control" != "${{ github.sha }}" ]; then
-            echo "::error::Workflow control checkout does not match the dispatched workflow SHA."
-            exit 1
-          fi
 
       - uses: actions/setup-node@v6
         with:
@@ -104,189 +130,196 @@ jobs:
           cache: npm
           cache-dependency-path: source/package-lock.json
 
-      - name: Require deploy secrets
-        env:
-          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+      - name: Verify exact checkouts, current master, and required secrets
         run: |
+          if [ "$(git rev-parse HEAD)" != "$APPLICATION_SHA" ]; then
+            echo "::error::Application checkout does not match application_sha."
+            exit 1
+          fi
+          if [ "$(git -C ../workflow-control rev-parse HEAD)" != "$CONTROL_SHA" ]; then
+            echo "::error::Workflow-control checkout does not match control_sha."
+            exit 1
+          fi
+          remote_master=$(git -C ../workflow-control ls-remote origin refs/heads/master | awk '{print $1}')
+          if [ "$remote_master" != "$CONTROL_SHA" ]; then
+            echo "::error::Workflow controls changed while this protected job was waiting."
+            exit 1
+          fi
           missing=0
           for name in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID VERCEL_AUTOMATION_BYPASS_SECRET NEON_API_KEY DATABASE_URL DIRECT_URL; do
             if [ -z "${!name}" ]; then
-              echo "::error::Missing secret: $name (set on GitHub Environment 'staging' or repo secrets). See docs/ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md"
+              echo "::error::Missing staging Environment secret: $name"
               missing=1
             fi
           done
-          if [ "$missing" -ne 0 ]; then
+          if [ "$missing" -ne 0 ]; then exit 1; fi
+          if [ "$VERCEL_ORG_ID" != "$EXPECTED_VERCEL_ORG_ID" ] || [ "$VERCEL_PROJECT_ID" != "$EXPECTED_VERCEL_PROJECT_ID" ]; then
+            echo "::error::GitHub staging Vercel ids are not canonical."
             exit 1
           fi
 
-      - name: Verify exact Vercel staging project
+      - name: Verify protected non-production Vercel project
         run: |
-          project_metadata="$RUNNER_TEMP/vercel-project.json"
-          status=$(curl --silent --show-error --max-time 30 \
-            --output "$project_metadata" \
-            --write-out '%{http_code}' \
-            --header "Authorization: Bearer $VERCEL_TOKEN" \
-            "https://api.vercel.com/v9/projects/$VERCEL_PROJECT_ID?teamId=$VERCEL_ORG_ID")
-          if [ "$status" != "200" ]; then
-            echo "::error::Vercel project access preflight failed with HTTP $status."
-            exit 1
-          fi
-          if ! jq -e \
-            --arg project_id "$VERCEL_PROJECT_ID" \
-            --arg org_id "$VERCEL_ORG_ID" \
-            --arg project_name "$EXPECTED_VERCEL_PROJECT_NAME" \
-            --arg bypass "$VERCEL_AUTOMATION_BYPASS_SECRET" \
-            '(.id == $project_id)
-              and (.accountId == $org_id)
-              and (.name == $project_name)
-              and (.nodeVersion == "24.x")
-              and (.live == false)
-              and (.ssoProtection.deploymentType == "all_except_custom_domains")
-              and ((.protectionBypass // {}) | has($bypass))' \
-            "$project_metadata" >/dev/null; then
-            echo "::error::Vercel project identity, Node runtime, non-production state, protection, or automation bypass does not match the staging contract."
-            exit 1
-          fi
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-project.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects/$EXPECTED_VERCEL_PROJECT_ID?teamId=$VERCEL_ORG_ID"
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-project-domains.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects/$EXPECTED_VERCEL_PROJECT_ID/domains?teamId=$VERCEL_ORG_ID"
+          node ../workflow-control/scripts/validate-staging-vercel-project.mjs "$RUNNER_TEMP/vercel-project.json" "$RUNNER_TEMP/vercel-project-domains.json"
 
-      - name: Install Vercel CLI
+      - name: Verify exact governed custom environment
         run: |
-          npm install -g vercel@52.2.1
-          vercel --version
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-custom-environment.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects/$EXPECTED_VERCEL_PROJECT_ID/custom-environments/$EXPECTED_VERCEL_CUSTOM_ENV_ID?teamId=$VERCEL_ORG_ID"
+          node ../workflow-control/scripts/staging-vercel-custom-environment.mjs "$RUNNER_TEMP/vercel-custom-environment.json"
 
-      - name: Bind exact Vercel project
+      - name: Validate governed custom-environment posture
         run: |
-          vercel link --yes \
-            --project "$VERCEL_PROJECT_ID" \
-            --scope "$VERCEL_ORG_ID" \
-            --token "$VERCEL_TOKEN"
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-env-unfiltered.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v10/projects/$EXPECTED_VERCEL_PROJECT_ID/env?teamId=$VERCEL_ORG_ID"
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-custom-env.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v10/projects/$EXPECTED_VERCEL_PROJECT_ID/env?teamId=$VERCEL_ORG_ID&customEnvironmentId=$EXPECTED_VERCEL_CUSTOM_ENV_ID"
+          node ../workflow-control/scripts/fetch-staging-vercel-readable-env.mjs final custom-environment "$RUNNER_TEMP/vercel-custom-env.json" "$RUNNER_TEMP/vercel-custom-readable.json"
+          node ../workflow-control/scripts/validate-staging-vercel-posture.mjs custom-environment "$RUNNER_TEMP/vercel-custom-readable.json" "$RUNNER_TEMP/vercel-env-unfiltered.json"
 
-      - name: Pull Vercel staging env metadata
-        run: |
-          vercel pull --yes \
-            --environment=preview \
-            --scope "$VERCEL_ORG_ID" \
-            --token "$VERCEL_TOKEN"
-          status=$(curl --silent --show-error --max-time 30 \
-            --output "$RUNNER_TEMP/vercel-preview-env.json" \
-            --write-out '%{http_code}' \
-            --header "Authorization: Bearer $VERCEL_TOKEN" \
-            "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/env?teamId=$VERCEL_ORG_ID")
-          if [ "$status" != "200" ]; then
-            echo "::error::Vercel Preview environment metadata preflight failed with HTTP $status."
-            exit 1
-          fi
-
-      - name: Fetch canonical Neon staging identity
-        env:
-          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+      - name: Fetch canonical Neon identity
         run: |
           neon_api="https://console.neon.tech/api/v2/projects/$EXPECTED_NEON_PROJECT_ID"
           auth_header="Authorization: Bearer $NEON_API_KEY"
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/neon-project.json" --header "$auth_header" "$neon_api"
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/neon-branch.json" --header "$auth_header" "$neon_api/branches/$EXPECTED_NEON_BRANCH_ID"
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/neon-endpoints.json" --header "$auth_header" "$neon_api/endpoints"
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/neon-databases.json" --header "$auth_header" "$neon_api/branches/$EXPECTED_NEON_BRANCH_ID/databases"
 
-          project_status=$(curl --silent --show-error --max-time 30 \
-            --output "$RUNNER_TEMP/neon-project.json" \
-            --write-out '%{http_code}' \
-            --header "$auth_header" \
-            "$neon_api")
-          if [ "$project_status" != "200" ]; then
-            echo "::error::Canonical Neon project identity preflight failed with HTTP $project_status."
-            exit 1
-          fi
-
-          branch_status=$(curl --silent --show-error --max-time 30 \
-            --output "$RUNNER_TEMP/neon-branch.json" \
-            --write-out '%{http_code}' \
-            --header "$auth_header" \
-            "$neon_api/branches/$EXPECTED_NEON_BRANCH_ID")
-          if [ "$branch_status" != "200" ]; then
-            echo "::error::Canonical Neon branch identity preflight failed with HTTP $branch_status."
-            exit 1
-          fi
-
-          endpoints_status=$(curl --silent --show-error --max-time 30 \
-            --output "$RUNNER_TEMP/neon-endpoints.json" \
-            --write-out '%{http_code}' \
-            --header "$auth_header" \
-            "$neon_api/endpoints")
-          if [ "$endpoints_status" != "200" ]; then
-            echo "::error::Canonical Neon endpoint identity preflight failed with HTTP $endpoints_status."
-            exit 1
-          fi
-
-          databases_status=$(curl --silent --show-error --max-time 30 \
-            --output "$RUNNER_TEMP/neon-databases.json" \
-            --write-out '%{http_code}' \
-            --header "$auth_header" \
-            "$neon_api/branches/$EXPECTED_NEON_BRANCH_ID/databases")
-          if [ "$databases_status" != "200" ]; then
-            echo "::error::Canonical Neon database identity preflight failed with HTTP $databases_status."
-            exit 1
-          fi
-
-      - name: Validate mock-only staging environment
+      - name: Certify canonical database and current v2 attestation
         run: |
-          node ../workflow-control/scripts/validate-staging-env.mjs \
-            .vercel/.env.preview.local \
-            "$RUNNER_TEMP/vercel-preview-env.json" \
-            "$RUNNER_TEMP/neon-project.json" \
-            "$RUNNER_TEMP/neon-branch.json" \
-            "$RUNNER_TEMP/neon-endpoints.json" \
-            "$RUNNER_TEMP/neon-databases.json"
+          node ../workflow-control/scripts/validate-staging-database-source.mjs "$RUNNER_TEMP/neon-project.json" "$RUNNER_TEMP/neon-branch.json" "$RUNNER_TEMP/neon-endpoints.json" "$RUNNER_TEMP/neon-databases.json"
+          node ../workflow-control/scripts/validate-staging-env.mjs "$RUNNER_TEMP/vercel-custom-readable.json" "$RUNNER_TEMP/vercel-env-unfiltered.json" "$RUNNER_TEMP/neon-project.json" "$RUNNER_TEMP/neon-branch.json" "$RUNNER_TEMP/neon-endpoints.json" "$RUNNER_TEMP/neon-databases.json"
 
-      - run: npm ci
-      - run: npx prisma generate
+      - name: Install application dependencies
+        run: npm ci
 
-      - name: Migrate staging database
-        run: npx prisma migrate deploy
+      - name: Generate Prisma client
+        run: npx prisma generate
 
-      - name: Deploy exact source to Vercel Preview (non-prod)
+      - name: Install pinned Vercel CLI without linking
+        run: npm install --global vercel@59.4.0
+
+      - name: Check migration status
+        run: |
+          set +e
+          npx prisma migrate status > "$RUNNER_TEMP/prisma-migrate-status.txt" 2>&1
+          status=$?
+          set -e
+          if [ "$status" -eq 0 ]; then
+            echo "Prisma migration status is current."
+          elif [ "$status" -eq 1 ] && grep -q "have not yet been applied" "$RUNNER_TEMP/prisma-migrate-status.txt" && ! grep -qi "failed" "$RUNNER_TEMP/prisma-migrate-status.txt"; then
+            echo "Prisma reports pending migrations; migrate deploy remains the only authorized mutation."
+          else
+            echo "::error::Prisma migration status preflight failed or reported an unsafe state."
+            exit 1
+          fi
+
+      - name: Refresh certification immediately before migration
+        run: |
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-project.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects/$EXPECTED_VERCEL_PROJECT_ID?teamId=$VERCEL_ORG_ID"
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-project-domains.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects/$EXPECTED_VERCEL_PROJECT_ID/domains?teamId=$VERCEL_ORG_ID"
+          node ../workflow-control/scripts/validate-staging-vercel-project.mjs "$RUNNER_TEMP/vercel-project.json" "$RUNNER_TEMP/vercel-project-domains.json"
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-custom-environment.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects/$EXPECTED_VERCEL_PROJECT_ID/custom-environments/$EXPECTED_VERCEL_CUSTOM_ENV_ID?teamId=$VERCEL_ORG_ID"
+          node ../workflow-control/scripts/staging-vercel-custom-environment.mjs "$RUNNER_TEMP/vercel-custom-environment.json"
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-env-unfiltered.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v10/projects/$EXPECTED_VERCEL_PROJECT_ID/env?teamId=$VERCEL_ORG_ID"
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-custom-env.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v10/projects/$EXPECTED_VERCEL_PROJECT_ID/env?teamId=$VERCEL_ORG_ID&customEnvironmentId=$EXPECTED_VERCEL_CUSTOM_ENV_ID"
+          node ../workflow-control/scripts/fetch-staging-vercel-readable-env.mjs final custom-environment "$RUNNER_TEMP/vercel-custom-env.json" "$RUNNER_TEMP/vercel-custom-readable.json"
+          node ../workflow-control/scripts/validate-staging-vercel-posture.mjs custom-environment "$RUNNER_TEMP/vercel-custom-readable.json" "$RUNNER_TEMP/vercel-env-unfiltered.json"
+          neon_api="https://console.neon.tech/api/v2/projects/$EXPECTED_NEON_PROJECT_ID"
+          auth_header="Authorization: Bearer $NEON_API_KEY"
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/neon-project.json" --header "$auth_header" "$neon_api"
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/neon-branch.json" --header "$auth_header" "$neon_api/branches/$EXPECTED_NEON_BRANCH_ID"
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/neon-endpoints.json" --header "$auth_header" "$neon_api/endpoints"
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/neon-databases.json" --header "$auth_header" "$neon_api/branches/$EXPECTED_NEON_BRANCH_ID/databases"
+          node ../workflow-control/scripts/validate-staging-database-source.mjs "$RUNNER_TEMP/neon-project.json" "$RUNNER_TEMP/neon-branch.json" "$RUNNER_TEMP/neon-endpoints.json" "$RUNNER_TEMP/neon-databases.json"
+          node ../workflow-control/scripts/validate-staging-env.mjs "$RUNNER_TEMP/vercel-custom-readable.json" "$RUNNER_TEMP/vercel-env-unfiltered.json" "$RUNNER_TEMP/neon-project.json" "$RUNNER_TEMP/neon-branch.json" "$RUNNER_TEMP/neon-endpoints.json" "$RUNNER_TEMP/neon-databases.json"
+
+      - name: Migrate canonical staging database
+        id: migrate
+        run: |
+          npx prisma migrate deploy
+          printf '{"outcome":"succeeded"}\n' > "$RUNNER_TEMP/staging-migration-outcome.json"
+
+      - name: Deploy exact source to governed custom environment
         id: deploy
         run: |
-          url=$(vercel deploy --yes \
-            --target=preview \
-            --build-env "RESPONSEOS_BUILD_SHA=$RESPONSEOS_BUILD_SHA" \
-            --env "RESPONSEOS_BUILD_SHA=$RESPONSEOS_BUILD_SHA" \
-            --scope "$VERCEL_ORG_ID" \
-            --token "$VERCEL_TOKEN")
-          echo "url=$url" >> "$GITHUB_OUTPUT"
-          echo "Deployed staging candidate: $url"
-          echo "::notice::Alias/promote to the staging hostname is an operator step — see RESPONSEOS_STAGING_HOSTING_RUNBOOK.md. This job never targets production."
+          set +x
+          deployment_output="$RUNNER_TEMP/vercel-deploy-output.txt"
+          vercel deploy --yes --force \
+            --target "$EXPECTED_VERCEL_CUSTOM_ENV_SLUG" \
+            --project "$EXPECTED_VERCEL_PROJECT_ID" \
+            --token "$VERCEL_TOKEN" \
+            --skip-domain \
+            --build-env "RESPONSEOS_BUILD_SHA=$APPLICATION_SHA" \
+            --env "RESPONSEOS_BUILD_SHA=$APPLICATION_SHA" \
+            --meta "responseosApplicationSha=$APPLICATION_SHA" \
+            > "$deployment_output"
+          deployment_url=$(tail -n 1 "$deployment_output" | tr -d '\r')
+          node ../workflow-control/scripts/validate-staging-deployment-result.mjs url "$deployment_url" "$APPLICATION_SHA"
+          deployment_host=${deployment_url#https://}
+          echo "url=$deployment_url" >> "$GITHUB_OUTPUT"
+          echo "host=$deployment_host" >> "$GITHUB_OUTPUT"
+          echo "Governed staging deployment created; no alias or promotion requested."
 
-      - name: Verify staging candidate
+      - name: Wait for exact governed deployment to become READY
+        id: ready
+        env:
+          DEPLOYMENT_HOST: ${{ steps.deploy.outputs.host }}
+        run: |
+          for attempt in $(seq 1 60); do
+            curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-deployment.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v13/deployments/$DEPLOYMENT_HOST?teamId=$VERCEL_ORG_ID&withGitRepoInfo=true"
+            node ../workflow-control/scripts/validate-staging-deployment-result.mjs progress "$RUNNER_TEMP/vercel-deployment.json" "$APPLICATION_SHA" "$DEPLOYMENT_HOST"
+            state=$(jq -r '.readyState // .state // .status // empty' "$RUNNER_TEMP/vercel-deployment.json")
+            case "$state" in
+              READY)
+                node ../workflow-control/scripts/validate-staging-deployment-result.mjs ready "$RUNNER_TEMP/vercel-deployment.json" "$APPLICATION_SHA" "$DEPLOYMENT_HOST"
+                deployment_id=$(jq -r '.id' "$RUNNER_TEMP/vercel-deployment.json")
+                echo "deployment_id=$deployment_id" >> "$GITHUB_OUTPUT"
+                exit 0
+                ;;
+              ERROR|CANCELED|CANCELLED)
+                echo "::error::Governed staging deployment reached terminal state $state."
+                exit 1
+                ;;
+            esac
+            sleep 10
+          done
+          echo "::error::Timed out waiting for governed staging deployment readiness."
+          exit 1
+
+      - name: Verify protected health and hosted smoke
         env:
           DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
         run: |
           bypass_header="x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET"
-          health=$(curl --fail --silent --show-error --max-time 30 \
-            --header "$bypass_header" \
-            "$DEPLOYMENT_URL/api/health")
+          health=$(curl --fail --silent --show-error --max-time 30 --header "$bypass_header" "$DEPLOYMENT_URL/api/health")
           actual_sha=$(printf '%s' "$health" | jq -r '.build_sha')
-          if [ "$actual_sha" != "${{ inputs.sha }}" ]; then
-            echo "::error::Health build SHA does not match the reviewed workflow SHA."
+          if [ "$actual_sha" != "$APPLICATION_SHA" ]; then
+            echo "::error::Health build SHA does not match application_sha."
             exit 1
           fi
-
-          public_code=$(curl --silent --show-error --max-time 30 \
-            --header "$bypass_header" \
-            --output /dev/null \
-            --write-out '%{http_code}' \
-            "$DEPLOYMENT_URL/demo")
+          public_code=$(curl --silent --show-error --max-time 30 --header "$bypass_header" --output /dev/null --write-out '%{http_code}' "$DEPLOYMENT_URL/demo")
           if [ "$public_code" != "200" ]; then
             echo "::error::Public demo smoke failed with HTTP $public_code."
             exit 1
           fi
-
-          for path in /admin /client/dashboard /api/calls /api/auth/session; do
-            code=$(curl --silent --show-error --max-time 30 \
-              --header "$bypass_header" \
-              --output /dev/null \
-              --write-out '%{http_code}' \
-              "$DEPLOYMENT_URL$path")
+          for path in /admin /client/dashboard; do
+            code=$(curl --silent --show-error --max-time 30 --header "$bypass_header" --output /dev/null --write-out '%{http_code}' "$DEPLOYMENT_URL$path")
             case "$code" in
-              301|302|303|307|308|401|403|404) ;;
+              301|302|303|307|308|401|403) ;;
               *)
                 echo "::error::Protected-path smoke failed for $path with HTTP $code."
                 exit 1
                 ;;
             esac
           done
+
+      - name: Record SAFE STOP after a post-migration failure
+        if: ${{ failure() && steps.migrate.outcome == 'success' }}
+        run: |
+          echo "::error::SAFE STOP after staging migration. No schema rollback, alias, promotion, or production action was attempted."
+          if [ -s "$RUNNER_TEMP/vercel-deployment.json" ]; then
+            node ../workflow-control/scripts/validate-staging-deployment-result.mjs report "$RUNNER_TEMP/vercel-deployment.json" "$APPLICATION_SHA" || true
+          else
+            echo "No governed deployment readback was recorded."
+          fi

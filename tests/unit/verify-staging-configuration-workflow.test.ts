@@ -50,10 +50,11 @@ function concurrencyContract(yaml: string) {
 
 describe("configuration-only staging workflow", () => {
   test("all workflow Bash blocks pass syntax validation", () => {
-    for (const script of runScripts(workflow)) {
-      const result = spawnSync("bash", ["-n"], { input: script, encoding: "utf8" });
-      expect(result.status, result.stderr).toBe(0);
-    }
+    const result = spawnSync("bash", ["-n"], {
+      input: runScripts(workflow).join("\n\n"),
+      encoding: "utf8",
+    });
+    expect(result.status, result.stderr).toBe(0);
   });
 
   test("shares one non-cancelling exclusive lock with staging deployment", () => {
