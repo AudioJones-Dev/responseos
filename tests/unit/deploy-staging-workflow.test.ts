@@ -5,8 +5,22 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { describe, expect, test } from "vitest";
 
+import { validatePrismaMigrationStatus } from "@/scripts/validate-prisma-migration-status.mjs";
+
 const workflow = fs.readFileSync(
   path.join(process.cwd(), ".github", "workflows", "deploy-staging.yml"),
+  "utf8",
+);
+const customEnvironmentValidator = fs.readFileSync(
+  path.join(process.cwd(), "scripts", "staging-vercel-custom-environment.mjs"),
+  "utf8",
+);
+const deploymentResultValidator = fs.readFileSync(
+  path.join(process.cwd(), "scripts", "validate-staging-deployment-result.mjs"),
+  "utf8",
+);
+const migrationStatusValidator = fs.readFileSync(
+  path.join(process.cwd(), "scripts", "validate-prisma-migration-status.mjs"),
   "utf8",
 );
 
@@ -96,7 +110,9 @@ describe("Deploy Staging workflow contract", () => {
     expect(commands).not.toContain("vercel link");
     expect(commands).not.toContain("vercel pull");
     expect(commands).not.toContain("--environment=preview");
+    expect(commands).not.toContain("--environment preview");
     expect(commands).not.toContain("--target=preview");
+    expect(commands).not.toContain("--target preview");
     expect(commands).not.toContain("--scope");
   });
 
@@ -111,7 +127,7 @@ describe("Deploy Staging workflow contract", () => {
     expect(commands).toContain('--target "$EXPECTED_VERCEL_CUSTOM_ENV_SLUG"');
     expect(commands).toContain('--project "$EXPECTED_VERCEL_PROJECT_ID"');
     expect(commands).not.toContain("--team");
-    expect(commands).toContain("--skip-domain");
+    expect(commands).not.toContain("--skip-domain");
     expect(commands).toContain(
       '"$VERCEL_ORG_ID" != "$EXPECTED_VERCEL_ORG_ID"',
     );
@@ -120,7 +136,29 @@ describe("Deploy Staging workflow contract", () => {
   test("injects and verifies the shell-safe application SHA", () => {
     expect(commands).toContain('--build-env "RESPONSEOS_BUILD_SHA=$APPLICATION_SHA"');
     expect(commands).toContain('--env "RESPONSEOS_BUILD_SHA=$APPLICATION_SHA"');
+    expect(commands).toContain(
+      '--meta "responseosApplicationSha=$APPLICATION_SHA"',
+    );
     expect(commands).toContain('"$actual_sha" != "$APPLICATION_SHA"');
+  });
+
+  test("preserves zero-domain and zero-alias certification around deployment", () => {
+    expect(commands).toContain("staging-vercel-custom-environment.mjs");
+    expect(customEnvironmentValidator).toContain(
+      "arrayOrEmpty(environment?.domains).length !== 0",
+    );
+    expect(customEnvironmentValidator).toContain(
+      "arrayOrEmpty(environment?.currentDeploymentAliases).length !== 0",
+    );
+    expect(commands).toContain("validate-staging-deployment-result.mjs ready");
+    for (const aliasEvidence of [
+      "metadata?.alias",
+      "metadata?.automaticAliases",
+      "metadata?.userAliases",
+      "metadata?.aliasAssigned === true",
+    ]) {
+      expect(deploymentResultValidator).toContain(aliasEvidence);
+    }
   });
 
   test("certifies project, environment, providers, Neon, and v2 attestation before migration", () => {
@@ -152,9 +190,29 @@ describe("Deploy Staging workflow contract", () => {
 
   test("permits only the expected pending-migration status before migrate deploy", () => {
     expect(commands).toContain("npx prisma migrate status");
-    expect(commands).toContain('grep -q "have not yet been applied"');
-    expect(commands).toContain('grep -qi "failed"');
-    expect(commands).toContain("migrate deploy remains the only authorized mutation");
+    expect(commands).toContain("validate-prisma-migration-status.mjs");
+    expect(migrationStatusValidator).toContain("have not yet been applied");
+    expect(migrationStatusValidator).toContain("!/failed/i.test(output)");
+    expect(migrationStatusValidator).toContain(
+      "migrate deploy remains the only authorized mutation",
+    );
+  });
+
+  test("accepts an already-current migration status for a no-op retry", () => {
+    expect(
+      validatePrismaMigrationStatus(0, "Database schema is up to date!"),
+    ).toEqual({ status: "current", errors: [] });
+  });
+
+  test("fails closed on an unsafe migration status", () => {
+    expect(
+      validatePrismaMigrationStatus(1, "The following migration has failed"),
+    ).toEqual({
+      status: "unsafe",
+      errors: [
+        "Prisma migration status preflight failed or reported an unsafe state.",
+      ],
+    });
   });
 
   test("contains no Production, alias, promotion, seed, or rollback command", () => {
@@ -163,8 +221,11 @@ describe("Deploy Staging workflow contract", () => {
       "--prod",
       "--target=production",
       "--target production",
+      '--target="production"',
+      "--target='production'",
       "vercel alias",
       "vercel promote",
+      "vercel domains",
       "prisma db seed",
       "prisma migrate reset",
       "prisma migrate rollback",
