@@ -199,7 +199,7 @@ export function compileBusinessMemorySnapshot(params: {
       id: fact.id,
       key: fact.fact_key,
       value: fact.value_json,
-      status: fact.status,
+      status: fact.status as "operator_approved_for_demo" | "owner_confirmed",
       sourceIds,
       sourceEvidence,
       confidence: fact.confidence ?? null,
