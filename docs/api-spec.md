@@ -11,7 +11,7 @@ Success:
 
 Error:
 ```json
-{ "ok": false, "error": { "code": "STRING_CODE", "message": "...", "details": {} } }
+{ "ok": false, "error": { "code": "STRING_CODE", "message": "...", "details": {} }
 ```
 
 `details` is optional and may include vendor-context fields like `retry_after_seconds`, `request_id`, or per-field validation breakdowns. Common `code` values:
@@ -114,6 +114,15 @@ Mock-safe mutation routes may include a `mock: true` flag inside the success env
 - `POST /api/admin/telephony-number-assignments/:id/approve-reuse` → after the sliding quarantine has elapsed, verify there are no unresolved calls/events and explicitly return the pool number to available inventory. Reconciliation never auto-reuses a number.
 - `POST /api/admin/bootstrap-promotions/import` → separately gated production-side import. Validates the manifest and source snapshot hashes, creates a new disabled `customer` account with a new ID, rebinds the imported snapshot's embedded tenant identity, and imports only the approved snapshot/policy package. Replays return the existing imported tenant.
 - `POST /api/admin/bootstrap-promotions/:correlationId/acknowledge` → source-side operator acknowledgment of the exact manifest hash and imported customer account reference. Only this explicit handshake marks the export imported and the sandbox bootstrap converted.
+
+### Progressive client environment (operator only; proposed ADR-0049)
+- `POST /api/admin/prospect-bootstraps/:id/promote-to-discovery` — body `{ promotionAcknowledged: true }`; requires a completed supervised demo and current approved snapshot. Preserves the existing sandbox `Account.id`, marks the bootstrap converted, preserves approved normalized facts, and clears the promoted context's short-lived cleanup clock. Raw acquired website sources keep their existing retention policy. This route does **not** create a customer account or activate providers.
+- `POST /api/admin/accounts/:id/discovery-findings` — records one structured diagnostic/discovery finding against the promoted tenant. Input: `{ key, value, evidenceNote, authority, assessmentReportId?, validAsOf? }`, where authority is `consultant_observed`, `client_stated`, or `client_confirmed`. An `assessmentReportId` must belong to the same account.
+- `PATCH /api/admin/discovery-findings/:id` — body `{ decision }`, where decision is `operator_approved_for_demo`, `owner_confirmed`, or `rejected`; applies only to promoted-tenant `manual_reference` findings.
+- `POST /api/admin/accounts/:id/environment-snapshots` — body `{ reviewAcknowledged: true }`; compiles the next immutable approved context snapshot from current provenance-bearing facts. Owner-confirmed facts outrank operator-approved facts for single-value conflicts.
+- `GET /api/admin/accounts/:id/client-environment` — returns the non-secret `client-environment.v1` manifest for the promoted tenant: stable account identity, current snapshot/hash/version, assessment references, agent policy/template identity, and explicit non-live integration/gate state.
+
+The progressive client-environment surface is a **demo/discovery continuity layer**, not the v0.4 general knowledge layer. It does not authorize uploads, embeddings, vector search, RAG, live CRM/scheduling/payment mutations, customer account conversion, or provider activation. ADR-0048's export/import handshake remains a cross-environment portability path while ADR-0049 is reconciled.
 
 ## Webhook routes
 
