@@ -724,7 +724,11 @@
       "start": "2026-08-22",
       "due": "2026-08-22",
       "blocked": true,
-      "blockedReason": "Repository contract, schemas, tooling, tests, and runbook are implemented; review and merge remain the next gate, and no Production provisioning or deployment is authorized"
+      "blockedReason": "PR #133 is open for review; merge remains the next gate, and no Production provisioning or deployment is authorized",
+      "ref": 133,
+      "refType": "pull",
+      "refState": "open",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/133"
     },
     {
       "id": "L-03",
