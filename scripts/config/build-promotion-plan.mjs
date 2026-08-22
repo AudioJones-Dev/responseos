@@ -3,31 +3,40 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import {
   assertNoSecretValues,
+  configurationFingerprint,
   hashCanonical,
   isUnresolved,
   jsonPointerGet,
   prettyCanonicalJson,
   readJson,
+  validateCertificationRecord,
   validateEnvironmentContract,
   validatePromotionPolicy,
-  validateSecretContract,
 } from "./environment-contract.mjs";
 
 export function buildPromotionPlan(
   sourceEnvironment,
+  sourceSecretContract,
+  sourceCertification,
   targetTemplate,
   policy,
   targetSecretContract,
 ) {
   const errors = [
-    ...validateEnvironmentContract(sourceEnvironment),
-    ...validateEnvironmentContract(targetTemplate),
+    ...validateEnvironmentContract(sourceEnvironment, sourceSecretContract),
+    ...validateEnvironmentContract(targetTemplate, targetSecretContract),
     ...validatePromotionPolicy(policy, sourceEnvironment),
-    ...validateSecretContract(
-      targetSecretContract,
-      targetSecretContract.environment,
+    ...validateCertificationRecord(
+      sourceCertification,
+      sourceEnvironment,
+      sourceSecretContract,
     ),
   ];
+  if (sourceCertification?.certificationStatus !== "CONFIGURATION_CERTIFIED") {
+    errors.push(
+      "certification:source status must be CONFIGURATION_CERTIFIED before planning",
+    );
+  }
   if (errors.length > 0) {
     throw new Error(["Promotion plan input validation failed:", ...errors].join("\n"));
   }
@@ -83,7 +92,16 @@ export function buildPromotionPlan(
     schemaVersion: "responseos.environment-promotion-plan.v1",
     sourceEnvironment: sourceEnvironment.identity.name,
     targetEnvironment: targetSecretContract.environment,
-    sourceContractFingerprint: hashCanonical(sourceEnvironment),
+    sourceEnvironmentFingerprint: hashCanonical(sourceEnvironment),
+    sourceConfigurationFingerprint: configurationFingerprint(
+      sourceEnvironment,
+      sourceSecretContract,
+    ),
+    sourceCertificationProvenance: {
+      certificationWorkflow: sourceCertification.certificationWorkflow,
+      workflowRunId: sourceCertification.workflowRunId,
+      workflowControlSha: sourceCertification.workflowControlSha,
+    },
     targetTemplateFingerprint: hashCanonical(targetTemplate),
     executionMode: "planning-only",
     resourcesToProvision,
@@ -122,17 +140,20 @@ if (invokedPath === import.meta.url) {
   const [sourcePath, targetPath, policyPath, outputPath] = process.argv.slice(2);
   if (!sourcePath || !targetPath || !policyPath) {
     console.error(
-      "Usage: node scripts/config/build-promotion-plan.mjs <certified-staging.json> <production-template.json> <promotion-policy.json> [output.json]",
+      "Usage: node scripts/config/build-promotion-plan.mjs <certified-staging-environment.json> <production-template.json> <promotion-policy.json> [output.json]",
     );
     process.exit(1);
   }
   try {
+    const sourceDirectory = path.dirname(sourcePath);
     const secretContractPath = path.join(
       path.dirname(targetPath),
       "secret-contract.json",
     );
     const plan = buildPromotionPlan(
       readJson(sourcePath),
+      readJson(path.join(sourceDirectory, "secret-contract.json")),
+      readJson(path.join(sourceDirectory, "certification.json")),
       readJson(targetPath),
       readJson(policyPath),
       readJson(secretContractPath),

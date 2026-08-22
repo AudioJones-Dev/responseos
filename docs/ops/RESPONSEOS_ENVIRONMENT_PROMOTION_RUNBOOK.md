@@ -110,7 +110,7 @@ Validation fails closed on:
 - `RESPONSEOS_DEV_SESSION` in the Production secret contract;
 - missing pooled/direct separation;
 - provider activation without explicit provider and live-execution approvals;
-- certification hashes that do not match their canonical artifacts.
+- certification hashes or duplicated environment/SHA metadata that do not match their canonical artifacts.
 
 ## 7. Promotion classifications
 
@@ -150,6 +150,7 @@ Output categories:
 | `HUMAN_APPROVAL_REQUIRED` | An operator-held gate remains visible | does not imply approval |
 
 The renderer prints labels and JSON-pointer paths only. It never prints compared values.
+Both environments must pass the full semantic contract before classification begins. A schema-valid but forbidden authentication or provider posture fails instead of being rendered as promotion-safe; a semantically valid human-held decision remains `HUMAN_APPROVAL_REQUIRED`.
 
 ## 9. Build the Production plan
 
@@ -157,7 +158,9 @@ The renderer prints labels and JSON-pointer paths only. It never prints compared
 npm run config:plan:production
 ```
 
-The deterministic plan identifies unresolved resources, invariants, identities that must differ, independently created Production secret names, human approvals, and certification checks. It is planning-only and explicitly forbids resource creation, secret installation, workflow dispatch, deployment, provider activation, and domain/phone assignment.
+The command resolves `secret-contract.json` and `certification.json` beside the source staging environment. It validates the exact source environment, secret metadata, certification hashes, certification metadata, and `CONFIGURATION_CERTIFIED` status before producing a plan. The deterministic plan records only non-secret source fingerprints plus the certification workflow, run ID, and control SHA; it does not copy certification timestamps or claim that the plan is certified.
+
+The plan identifies unresolved resources, invariants, identities that must differ, independently created Production secret names, human approvals, and certification checks. It is planning-only and explicitly forbids resource creation, secret installation, workflow dispatch, deployment, provider activation, and domain/phone assignment.
 
 Provisioning remains a separate operator/platform action. After provisioning, install Production-specific values through the approved platform stores. Never copy staging database URLs, Clerk keys, webhook secrets, provider keys, bypass secrets, signing/private keys, phone resources, or provider encryption keys.
 

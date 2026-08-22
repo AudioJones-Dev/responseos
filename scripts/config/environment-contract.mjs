@@ -427,6 +427,24 @@ export function validateCertificationRecord(
   if (record?.certificationType !== "configuration") {
     errors.push("certification:deployment certification claims are forbidden");
   }
+  if (record?.environment !== environment?.identity?.name) {
+    errors.push("certification:environment does not match the environment contract");
+  }
+  if (record?.configurationContractVersion !== environment?.schemaVersion) {
+    errors.push("certification:configuration contract version mismatch");
+  }
+  if (
+    record?.workflowControlSha !==
+    environment?.deploymentControls?.workflowControlSha
+  ) {
+    errors.push("certification:workflow control SHA mismatch");
+  }
+  if (
+    record?.intendedApplicationSha !==
+    environment?.deploymentControls?.intendedApplicationSha
+  ) {
+    errors.push("certification:intended application SHA mismatch");
+  }
   return [...new Set(errors)];
 }
 

@@ -5,7 +5,7 @@ import {
   isUnresolved,
   jsonPointerGet,
   readJson,
-  validateAgainstSchema,
+  validateEnvironmentContract,
   validatePromotionPolicy,
 } from "./environment-contract.mjs";
 
@@ -18,8 +18,8 @@ export const DIFF_STATUS = Object.freeze({
 });
 
 export function diffEnvironments(source, target, policy) {
-  const sourceErrors = validateAgainstSchema(source, "environment");
-  const targetErrors = validateAgainstSchema(target, "environment");
+  const sourceErrors = validateEnvironmentContract(source);
+  const targetErrors = validateEnvironmentContract(target);
   const policyErrors = validatePromotionPolicy(policy, source);
   try {
     assertNoSecretValues(source, "sourceEnvironment");

@@ -10,6 +10,7 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - Recorded the secret-free certified staging baseline and configuration-only run `32586167278`, plus a Production template that leaves all independent resource identities unresolved.
 - Added deterministic canonical JSON/SHA-256 fingerprints, recursive credential-material rejection, schema/semantic validation, classified environment diffing, fixture-only capture, and a planning-only Production manifest generator.
 - Added explicit `MUST_MATCH`, `MUST_DIFFER`, and `HUMAN_APPROVAL_REQUIRED` enforcement, including rejection of staging resource reuse, Production test/dev auth posture, and provider activation without approval.
+- Required an exact successful source certification before Production plan generation, bound duplicated certification metadata to the hashed environment contract, and applied full semantic validation before environment-diff classification.
 - Documented the contract-driven Production sequence, future read-only drift semantics, and the strict separation between environment promotion and `prospect-promotion.v1`.
 - **No external mutation:** no workflow was dispatched; no Vercel, Neon, Clerk, provider, phone, domain, secret, deployment, or Production resource was changed.
 

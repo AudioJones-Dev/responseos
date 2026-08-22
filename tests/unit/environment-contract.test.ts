@@ -26,8 +26,20 @@ const fixtureRoot = path.join(root, "tests", "fixtures", "environment-contract")
 const stagingSecrets = readJson(
   path.join(root, "infra", "environments", "staging", "secret-contract.json"),
 );
+const stagingCertification = readJson(
+  path.join(root, "infra", "environments", "staging", "certification.json"),
+);
 const productionSecrets = readJson(
   path.join(root, "infra", "environments", "production", "secret-contract.json"),
+);
+const productionTemplate = readJson(
+  path.join(
+    root,
+    "infra",
+    "environments",
+    "production",
+    "environment.template.json",
+  ),
 );
 const policy = readJson(
   path.join(
@@ -48,8 +60,15 @@ type EnvironmentDocument = Record<string, unknown> & {
     enabledProviders: string[];
     liveExecutionApprovalState: string;
   };
+  humanApprovals: Record<string, string>;
+  identity: Record<string, unknown> & {
+    application: Record<string, unknown> & {
+      packageManager: string;
+    };
+  };
   vercel: Record<string, unknown> & {
     projectId: string | null;
+    projectName: string | null;
   };
 };
 
@@ -99,6 +118,21 @@ const production = materialize(path.join(fixtureRoot, "valid-production.json"));
 
 function compare(target: EnvironmentDocument): DiffResult[] {
   return diffEnvironments(staging, target, policy) as DiffResult[];
+}
+
+function planFromCertifiedSource(
+  sourceEnvironment = staging,
+  sourceSecretContract = stagingSecrets,
+  sourceCertification = stagingCertification,
+) {
+  return buildPromotionPlan(
+    sourceEnvironment,
+    sourceSecretContract,
+    sourceCertification,
+    productionTemplate,
+    policy,
+    productionSecrets,
+  );
 }
 
 describe("ResponseOS Environment Contract v1", () => {
@@ -216,15 +250,13 @@ describe("ResponseOS Environment Contract v1", () => {
     ).toBe(DIFF_STATUS.UNAUTHORIZED_DIFFERENCE);
   });
 
-  test("reports missing required Production configuration", () => {
+  test("rejects missing required Production configuration before classification", () => {
     const missing = materialize(
       path.join(fixtureRoot, "missing-production.json"),
     );
-    const results = compare(missing);
-    expect(
-      results.find((result) => result.id === "database-endpoint-id")?.status,
-    ).toBe(DIFF_STATUS.MISSING);
-    expect(environmentDiffFails(results)).toBe(true);
+    expect(() => compare(missing)).toThrow(
+      "production:required field unresolved:/database/endpointId",
+    );
   });
 
   test("reports HUMAN_APPROVAL_REQUIRED without treating it as certification success", () => {
@@ -237,17 +269,15 @@ describe("ResponseOS Environment Contract v1", () => {
     ).toBe(DIFF_STATUS.HUMAN_APPROVAL_REQUIRED);
   });
 
-  test("reports a missing required human-gated SHA selection as MISSING", () => {
+  test("rejects a missing required human-gated SHA selection before classification", () => {
     const missingApprovalInput = structuredClone(production);
     missingApprovalInput.deploymentControls = {
       ...(missingApprovalInput.deploymentControls as Record<string, unknown>),
       workflowControlSha: null,
     };
-    const results = compare(missingApprovalInput);
-    expect(
-      results.find((result) => result.id === "workflow-control-sha")?.status,
-    ).toBe(DIFF_STATUS.MISSING);
-    expect(environmentDiffFails(results)).toBe(true);
+    expect(() => compare(missingApprovalInput)).toThrow(
+      "production:required field unresolved:/deploymentControls/workflowControlSha",
+    );
   });
 
   test("accepts expected differences without missing or unauthorized results", () => {
@@ -289,6 +319,45 @@ describe("ResponseOS Environment Contract v1", () => {
     );
   });
 
+  test("rejects a schema-valid but semantically forbidden provider posture before diff classification", () => {
+    const invalid = structuredClone(production);
+    invalid.providerPosture.enabledProviders = ["telnyx"];
+    invalid.providerPosture.liveExecutionApprovalState = "pending";
+    expect(() => compare(invalid)).toThrow(
+      "enabled provider lacks explicit live-execution approval",
+    );
+  });
+
+  test("classifies an enabled provider only after all semantic approvals are satisfied", () => {
+    const approved = structuredClone(production);
+    approved.providerPosture.enabledProviders = ["telnyx"];
+    approved.providerPosture.liveExecutionApprovalState = "approved";
+    approved.humanApprovals.providerEnablement = "approved";
+    approved.humanApprovals.liveProviderExecution = "approved";
+    const results = compare(approved);
+    expect(
+      results.find((result) => result.id === "enabled-providers")?.status,
+    ).toBe(DIFF_STATUS.HUMAN_APPROVAL_REQUIRED);
+  });
+
+  test("rejects invalid Production authentication posture before diff classification", () => {
+    const invalid = structuredClone(production);
+    invalid.authentication.providerClass = "development";
+    invalid.authentication.credentialClass = "test";
+    expect(() => compare(invalid)).toThrow(
+      "development or test authentication posture is forbidden",
+    );
+  });
+
+  test("rejects secret material before diff classification", () => {
+    const invalid = structuredClone(production);
+    invalid.vercel.projectName = [
+      "postgresql://user",
+      "pass@example.invalid/db",
+    ].join(":");
+    expect(() => compare(invalid)).toThrow("credential-bearing database URL");
+  });
+
   test("renders classifications without printing compared values", () => {
     const output = renderEnvironmentDiff(
       compare(production),
@@ -301,22 +370,17 @@ describe("ResponseOS Environment Contract v1", () => {
   });
 
   test("builds a planning-only manifest with resources, invariants, secrets, approvals, and checks", () => {
-    const template = readJson(
-      path.join(
-        root,
-        "infra",
-        "environments",
-        "production",
-        "environment.template.json",
-      ),
-    );
-    const plan = buildPromotionPlan(
-      staging,
-      template,
-      policy,
-      productionSecrets,
-    );
+    const plan = planFromCertifiedSource();
     expect(plan.executionMode).toBe("planning-only");
+    expect(plan.sourceEnvironmentFingerprint).toBe(hashCanonical(staging));
+    expect(plan.sourceConfigurationFingerprint).toBe(
+      configurationFingerprint(staging, stagingSecrets),
+    );
+    expect(plan.sourceCertificationProvenance).toEqual({
+      certificationWorkflow: stagingCertification.certificationWorkflow,
+      workflowRunId: stagingCertification.workflowRunId,
+      workflowControlSha: stagingCertification.workflowControlSha,
+    });
     expect(plan.resourcesToProvision.length).toBeGreaterThan(0);
     expect(plan.settingsMustMatch.length).toBeGreaterThan(0);
     expect(plan.settingsMustDiffer.length).toBeGreaterThan(0);
@@ -330,20 +394,61 @@ describe("ResponseOS Environment Contract v1", () => {
   });
 
   test("generates deterministic secret-free promotion plans", () => {
-    const template = readJson(
-      path.join(
-        root,
-        "infra",
-        "environments",
-        "production",
-        "environment.template.json",
-      ),
-    );
-    const first = buildPromotionPlan(staging, template, policy, productionSecrets);
-    const second = buildPromotionPlan(staging, template, policy, productionSecrets);
+    const first = planFromCertifiedSource();
+    const second = planFromCertifiedSource();
     expect(first).toEqual(second);
     expect(JSON.stringify(first)).not.toContain("postgresql://");
     expect(() => assertNoSecretValues(first)).not.toThrow();
+  });
+
+  test("rejects a modified source environment with stale certification", () => {
+    const changed = structuredClone(staging);
+    changed.identity.application.packageManager = "npm@11.16.1";
+    expect(() => planFromCertifiedSource(changed)).toThrow(
+      "environment contract hash mismatch",
+    );
+  });
+
+  test("rejects modified source secret metadata with stale certification", () => {
+    const changed = structuredClone(stagingSecrets);
+    changed.variables[0].required = false;
+    expect(() => planFromCertifiedSource(staging, changed)).toThrow(
+      "configuration hash mismatch",
+    );
+  });
+
+  test.each(["FAILED", "REVOKED"])(
+    "rejects a %s source certification before planning",
+    (certificationStatus) => {
+      const certification = structuredClone(stagingCertification);
+      certification.certificationStatus = certificationStatus;
+      expect(() =>
+        planFromCertifiedSource(staging, stagingSecrets, certification),
+      ).toThrow("source status must be CONFIGURATION_CERTIFIED");
+    },
+  );
+
+  test("rejects source certification metadata that contradicts the environment", () => {
+    const cases = [
+      ["environment", "other", "environment does not match"],
+      [
+        "workflowControlSha",
+        "a".repeat(40),
+        "workflow control SHA mismatch",
+      ],
+      [
+        "intendedApplicationSha",
+        "b".repeat(40),
+        "intended application SHA mismatch",
+      ],
+    ] as const;
+    for (const [field, value, message] of cases) {
+      const certification = structuredClone(stagingCertification);
+      certification[field] = value;
+      expect(() =>
+        planFromCertifiedSource(staging, stagingSecrets, certification),
+      ).toThrow(message);
+    }
   });
 
   test("captures and normalizes only repository-controlled non-secret input", () => {
@@ -395,15 +500,7 @@ describe("ResponseOS Environment Contract v1", () => {
   });
 
   test("validates certification as configuration evidence, not deployment evidence", () => {
-    const certification = readJson(
-      path.join(
-        root,
-        "infra",
-        "environments",
-        "staging",
-        "certification.json",
-      ),
-    );
+    const certification = structuredClone(stagingCertification);
     expect(
       validateCertificationRecord(certification, staging, stagingSecrets),
     ).toEqual([]);
@@ -411,6 +508,61 @@ describe("ResponseOS Environment Contract v1", () => {
     expect(
       validateCertificationRecord(certification, staging, stagingSecrets).join(" "),
     ).toContain("environment contract hash mismatch");
+  });
+
+  test("binds certification identity and SHAs to the exact environment contract", () => {
+    const cases = [
+      ["environment", "other", "environment does not match"],
+      [
+        "configurationContractVersion",
+        "responseos.environment.v2",
+        "configuration contract version mismatch",
+      ],
+      [
+        "workflowControlSha",
+        "a".repeat(40),
+        "workflow control SHA mismatch",
+      ],
+      [
+        "intendedApplicationSha",
+        "b".repeat(40),
+        "intended application SHA mismatch",
+      ],
+    ] as const;
+    for (const [field, value, message] of cases) {
+      const certification = structuredClone(stagingCertification);
+      certification[field] = value;
+      expect(
+        validateCertificationRecord(
+          certification,
+          staging,
+          stagingSecrets,
+        ).join(" "),
+      ).toContain(message);
+    }
+    expect(
+      validateCertificationRecord(
+        stagingCertification,
+        staging,
+        stagingSecrets,
+      ),
+    ).toEqual([]);
+  });
+
+  test("CLI promotion planning resolves and validates certified source companions", () => {
+    const result = spawnSync(
+      process.execPath,
+      [
+        "scripts/config/build-promotion-plan.mjs",
+        "infra/environments/staging/environment.json",
+        "infra/environments/production/environment.template.json",
+        "infra/environments/promotion/staging-to-production.rules.json",
+      ],
+      { cwd: root, encoding: "utf8" },
+    );
+    expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+    expect(result.stdout).toContain("sourceCertificationProvenance");
+    expect(result.stdout).toContain(stagingCertification.workflowRunId);
   });
 
   test("CLI validation passes all schemas and example manifests", () => {
@@ -449,6 +601,36 @@ describe("ResponseOS Environment Contract v1", () => {
       expect(result.status).toBe(1);
       expect(result.stdout).toContain("UNAUTHORIZED_DIFFERENCE");
       expect(result.stdout).not.toContain(staging.vercel.projectId as string);
+    } finally {
+      fs.rmSync(temporaryPath, { force: true });
+    }
+  });
+
+  test("CLI diff exits before rendering when a contract is semantically forbidden", () => {
+    const invalid = structuredClone(production);
+    invalid.providerPosture.enabledProviders = ["telnyx"];
+    invalid.providerPosture.liveExecutionApprovalState = "pending";
+    const temporaryPath = path.join(
+      fixtureRoot,
+      ".generated-semantic-invalid.json",
+    );
+    fs.writeFileSync(temporaryPath, JSON.stringify(invalid));
+    try {
+      const result = spawnSync(
+        process.execPath,
+        [
+          "scripts/config/diff-environments.mjs",
+          "infra/environments/staging/environment.json",
+          path.relative(root, temporaryPath),
+          "infra/environments/promotion/staging-to-production.rules.json",
+        ],
+        { cwd: root, encoding: "utf8" },
+      );
+      expect(result.status).toBe(1);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain(
+        "enabled provider lacks explicit live-execution approval",
+      );
     } finally {
       fs.rmSync(temporaryPath, { force: true });
     }

@@ -724,7 +724,7 @@
       "start": "2026-08-22",
       "due": "2026-08-22",
       "blocked": true,
-      "blockedReason": "PR #133 is open for review; merge remains the next gate, and no Production provisioning or deployment is authorized",
+      "blockedReason": "PR #133 exact-head review and merge remain gated; no Production provisioning or deployment is authorized",
       "ref": 133,
       "refType": "pull",
       "refState": "open",
