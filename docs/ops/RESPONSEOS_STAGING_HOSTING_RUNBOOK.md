@@ -16,7 +16,7 @@
 | Tenant | Clerk org → `Account.clerk_org_id` → membership → portal session with `accountId` |
 | Data | Canonical Neon identity proven before migration; staging DB migrated; seed optional for demo fixtures |
 | Providers | Still mock (no telephony/CRM/scheduling secrets required) |
-| Prod | **Still off** — `vercel.json` keeps `master` auto-deploy disabled; no prod GH job |
+| Prod | **Still off** — `vercel.json` disables every automatic Git deployment; no prod GH job |
 | Identity | `/api/health` reports the exact reviewed build SHA and staging environment |
 
 Until the staging URL is live with Clerk login, dashboard **L-02** stays partial / In Progress — not Done.
@@ -147,13 +147,14 @@ Both **Verify Staging Configuration** and **Deploy Staging** use the top-level c
 ### 3.5 First staging deploy
 
 1. Confirm `NEON_API_KEY` and `RESPONSEOS_DATABASE_IDENTITY` are configured and the private Clerk same-instance gate is cleared.
-2. Merge the reviewed Stage B/staging-hardening PR when separately authorized.
+2. Confirm the one-time custom-environment scope migration and version 2 recertification run succeeded after the deployment-control PR merged.
 3. Actions → **Deploy Staging** → Run workflow.
 4. Confirmation input: type exactly `staging`.
-5. Approve the Environment gate when prompted.
-6. On success: record the unique protected Preview URL. Alias/promotion remains a separate operator action and is not part of the first retry.
-7. Confirm the automated database-identity, health/build-identity, public-demo, and anonymous protected-route smoke checks passed.
-8. Run tenant bootstrap smoke (§4).
+5. Control input: enter the exact current `master` workflow-control SHA. Application input: enter the separately reviewed application SHA; the workflow never substitutes one for the other.
+6. Approve the Environment gate when prompted.
+7. On success: record the unique protected custom-environment deployment URL. Alias/promotion remains a separate operator action and is not part of this workflow.
+8. Confirm the automated database-identity, health/build-identity, public-demo, and anonymous protected-route smoke checks passed.
+9. Run tenant bootstrap smoke (§4).
 
 ---
 
@@ -216,19 +217,21 @@ Configuration gate:
 - Workflow file: [`.github/workflows/verify-staging-configuration.yml`](../../.github/workflows/verify-staging-configuration.yml)
 - Trigger: manual `workflow_dispatch` from `master` only, with `configuration-only` plus the exact current master SHA
 - Behavior: exact control SHA → protected project + exact custom-environment posture → deployment-workflow compatibility → complete generic Preview source plan → allowlisted readable posture → canonical Neon/GitHub database evidence → value-less nine-variable scope migration → filtered/unfiltered readback → version 2 environment-bound attestation → final custom-environment certification
-- Compatibility stop: the current Deploy Staging workflow still uses generic Preview, so this gate intentionally fails before migration planning or scope mutation until a later reviewed deployment-workflow PR targets governed `staging`.
+- Compatibility stop: this gate fails before migration planning or scope mutation unless the exact checked-out Deploy Staging controls verify custom environment `env_uX6Qp8F6w9aBgx2ikH3BiREB8aHH` and explicitly target its `staging` slug without a generic Preview fallback.
 - Explicit non-goals: no migration, deploy, alias, production target, provider activation, phone routing, or prospect exposure
 
 Deployment gate:
 
 - Workflow file: [`.github/workflows/deploy-staging.yml`](../../.github/workflows/deploy-staging.yml)
-- Trigger: **manual** `workflow_dispatch` only
-- Guard: confirmation string must equal `staging`
+- Trigger: **manual** `workflow_dispatch` from `master` only, with `staging`, exact current `control_sha`, and separate exact reviewed `application_sha`
+- Guard: both SHAs must be lowercase 40-character values; the control SHA must equal the dispatched workflow SHA and current remote `master` before and after the protected Environment wait
 - Environment: `staging` (approval gate)
-- Behavior: control/source dual checkout → exact project/Node/protection/bypass identity → explicit-token `vercel link` + `pull` → Vercel database-revision attestation + live canonical Neon identity preflight → mock-only Preview preflight → `prisma migrate deploy` → Vercel-hosted Preview build/deploy → bypass-header build-identity/auth smoke
-- Explicit non-goals: no `on: push` to `master`; no production target; no live provider cutover
+- Behavior: control/source dual checkout → REST-only exact project/custom-environment/protection/bypass/posture checks → canonical Neon and GitHub pooled/direct identity → current version 2 DB-variable revision attestation → dependency/Prisma setup → migration status → immediate REST recertification → `prisma migrate deploy` → pinned CLI deployment to REST-verified slug `staging` with exact-checked `VERCEL_ORG_ID`/`VERCEL_PROJECT_ID`, no link/pull, and `--skip-domain` → exact environment/source/alias readback → READY → bypass-header build-identity/auth smoke
+- Explicit non-goals: no `on: push`; no generic Preview or Production target; no seed; no alias/promotion; no live provider cutover
 
-The Vercel-hosted build is deliberate: Preview database and Clerk server values are marked Sensitive and cannot be downloaded for a local prebuilt build. Vercel consumes them inside its protected build/runtime boundary while GitHub retains only the migration database URLs and deploy credentials.
+The Vercel-hosted build is deliberate: custom-environment database and Clerk server values are marked Sensitive and cannot be downloaded for a local prebuilt build. Vercel consumes them inside its protected build/runtime boundary while GitHub retains only the migration database URLs and deploy credentials. `vercel link` and `vercel pull` are not used. The workflow first proves the exact environment ID maps to slug `staging`, then targets that slug explicitly while injecting the non-secret application SHA into build/runtime health evidence.
+
+If migration succeeds but deployment, readiness, or smoke fails, the workflow SAFE STOPs. It records non-secret migration/deployment outcome evidence, performs no automatic schema rollback, creates no alias, and requires separate remediation authorization.
 
 Rollback: redeploy the previous **staging** deployment from the Vercel UI, or re-run the workflow on a known-good SHA. Production aliases are never part of this workflow. The app continues to boot with mock providers because the staging preflight rejects live-provider credentials.
 

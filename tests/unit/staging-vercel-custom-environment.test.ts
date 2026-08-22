@@ -16,6 +16,12 @@ describe("canonical staging custom environment", () => {
     expect(validateStagingCustomEnvironment(valid)).toEqual([]);
   });
 
+  test("requires the canonical staging slug during pre-deployment REST certification", () => {
+    expect(
+      validateStagingCustomEnvironment({ ...valid, slug: undefined }).join(" "),
+    ).toContain("slug");
+  });
+
   test.each([
     [{ id: "env_wrong" }, "id"],
     [{ slug: "preview" }, "slug"],

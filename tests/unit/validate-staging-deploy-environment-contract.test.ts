@@ -24,10 +24,8 @@ jobs:
 `;
 
 describe("Deploy Staging custom-environment compatibility", () => {
-  test("rejects the current generic Preview deployment workflow", () => {
-    const errors = validateStagingDeployEnvironmentContract(currentWorkflow);
-    expect(errors).toContain("Deploy Staging must not pull generic Preview configuration");
-    expect(errors).toContain("Deploy Staging must not target generic Preview");
+  test("accepts the hardened current deployment workflow", () => {
+    expect(validateStagingDeployEnvironmentContract(currentWorkflow)).toEqual([]);
   });
 
   test.each([

@@ -4,6 +4,13 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — ci: harden governed custom-environment deployment controls
+
+- Split Deploy Staging dispatch identity into exact `control_sha` and `application_sha` inputs, require current `master` controls before and after the protected Environment wait, and keep all dispatch values out of Bash source.
+- Removed `vercel link`, `vercel pull`, generic Preview targeting, and slug-style team scope from the deployment lane. Pre-migration checks now reuse REST-only project, custom-environment, readable posture, canonical Neon, database-role, and version 2 attestation validators.
+- Targeted the exact REST-verified custom environment through pinned Vercel CLI `--target staging`, exact-checked `VERCEL_ORG_ID`/`VERCEL_PROJECT_ID`, `--skip-domain`, and deployment-scoped build/runtime SHA injection; post-deploy readback rejects the wrong project/environment/source, Production, aliases, stale SHA metadata, or non-READY state.
+- Required migration status plus a final certification refresh before `prisma migrate deploy`, followed by readiness, protected build-SHA, public demo, and non-404 protected-route smoke. Post-migration failures SAFE STOP without destructive schema rollback, alias, or promotion.
+
 ## Unreleased — ci: bind staging configuration to its governed custom environment
 
 - Bound configuration certification to Vercel custom environment `env_uX6Qp8F6w9aBgx2ikH3BiREB8aHH` (`staging`) with exact type, branch, domain, and alias checks.

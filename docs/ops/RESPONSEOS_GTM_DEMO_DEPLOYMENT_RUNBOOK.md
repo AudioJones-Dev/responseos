@@ -15,7 +15,7 @@ Both projects use Node `24.18.0`, distinct Neon databases, distinct Clerk applic
 
 1. Create the isolated Vercel, Neon, Clerk, and GitHub Environment resources.
 2. Configure a required reviewer on `staging` and keep provider credentials and live enable flags absent.
-3. Run `Deploy Staging` with `confirm=staging` and the reviewed 40-character SHA.
+3. Run `Deploy Staging` from current `master` with `confirm=staging`, the exact current workflow-control SHA, and the separate reviewed 40-character application SHA.
 4. Verify `/api/health` reports that SHA, `/demo` is public, protected routes disclose no application content, invalid Clerk signatures make no mutation, and the mapped test user resolves to only its tenant.
 5. Exercise rollback to the prior Vercel artifact and record the artifact IDs and timestamps.
 
