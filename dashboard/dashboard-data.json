@@ -707,7 +707,11 @@
       "start": "2026-08-22",
       "due": "2026-08-22",
       "blocked": true,
-      "blockedReason": "Deployment controls are under review; the one-time custom-environment scope migration, v2 recertification, real migration, and first deployment remain separately gated"
+      "blockedReason": "PR #131 is under review; the one-time custom-environment scope migration, v2 recertification, real migration, and first deployment remain separately gated",
+      "ref": 131,
+      "refType": "pull",
+      "refState": "open",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/131"
     },
     {
       "id": "L-03",
