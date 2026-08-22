@@ -205,14 +205,7 @@ jobs:
           npx prisma migrate status > "$RUNNER_TEMP/prisma-migrate-status.txt" 2>&1
           status=$?
           set -e
-          if [ "$status" -eq 0 ]; then
-            echo "Prisma migration status is current."
-          elif [ "$status" -eq 1 ] && grep -q "have not yet been applied" "$RUNNER_TEMP/prisma-migrate-status.txt" && ! grep -qi "failed" "$RUNNER_TEMP/prisma-migrate-status.txt"; then
-            echo "Prisma reports pending migrations; migrate deploy remains the only authorized mutation."
-          else
-            echo "::error::Prisma migration status preflight failed or reported an unsafe state."
-            exit 1
-          fi
+          node ../workflow-control/scripts/validate-prisma-migration-status.mjs "$RUNNER_TEMP/prisma-migrate-status.txt" "$status"
 
       - name: Refresh certification immediately before migration
         run: |
@@ -249,7 +242,6 @@ jobs:
             --target "$EXPECTED_VERCEL_CUSTOM_ENV_SLUG" \
             --project "$EXPECTED_VERCEL_PROJECT_ID" \
             --token "$VERCEL_TOKEN" \
-            --skip-domain \
             --build-env "RESPONSEOS_BUILD_SHA=$APPLICATION_SHA" \
             --env "RESPONSEOS_BUILD_SHA=$APPLICATION_SHA" \
             --meta "responseosApplicationSha=$APPLICATION_SHA" \

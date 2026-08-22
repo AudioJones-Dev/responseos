@@ -82,6 +82,9 @@ describe("governed staging deployment result", () => {
     ["target", "production", "must not target Production"],
     ["gitSource", { ref: applicationSha, sha: "f".repeat(40) }, "Git source SHA"],
     ["alias", ["staging.example.com"], "must not have aliases"],
+    ["automaticAliases", ["automatic.example.com"], "must not have aliases"],
+    ["userAliases", ["user.example.com"], "must not have aliases"],
+    ["aliasAssigned", true, "must not have aliases"],
   ])("rejects invalid %s evidence", (field, value, message) => {
     expect(
       validateStagingDeployment(
