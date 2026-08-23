@@ -164,7 +164,11 @@
       "start": "2026-08-23",
       "due": "2026-08-23",
       "blocked": true,
-      "blockedReason": "Planning review only; CRM-1 runtime requires a separately approved exact-scope implementation task and must not begin automatically"
+      "blockedReason": "PR #140 is planning review only; CRM-1 runtime requires a separately approved exact-scope implementation task and must not begin automatically",
+      "ref": 140,
+      "refType": "pull",
+      "refState": "draft",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/140"
     },
     {
       "id": "27",
