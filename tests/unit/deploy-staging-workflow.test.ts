@@ -142,14 +142,19 @@ describe("Deploy Staging workflow contract", () => {
     expect(commands).toContain('"$actual_sha" != "$APPLICATION_SHA"');
   });
 
-  test("preserves zero-domain and zero-alias certification around deployment", () => {
+  test("preserves zero-domain and exact managed-alias certification around deployment", () => {
     expect(commands).toContain("staging-vercel-custom-environment.mjs");
     expect(customEnvironmentValidator).toContain(
-      "arrayOrEmpty(environment?.domains).length !== 0",
+      "environment.domains.length !== 0",
     );
     expect(customEnvironmentValidator).toContain(
-      "arrayOrEmpty(environment?.currentDeploymentAliases).length !== 0",
+      "managedEnvironmentAlias",
     );
+    const deploy = commands.indexOf("vercel deploy --yes --force");
+    const postDeployEnvironmentReadback = commands.indexOf(
+      "vercel-custom-environment-post-deploy.json",
+    );
+    expect(postDeployEnvironmentReadback).toBeGreaterThan(deploy);
     expect(commands).toContain("validate-staging-deployment-result.mjs ready");
     for (const aliasEvidence of [
       "metadata?.alias",
@@ -226,6 +231,10 @@ describe("Deploy Staging workflow contract", () => {
       "vercel alias",
       "vercel promote",
       "vercel domains",
+      "vercel remove",
+      "vercel rm",
+      "vercel project remove",
+      "--method delete",
       "prisma db seed",
       "prisma migrate reset",
       "prisma migrate rollback",

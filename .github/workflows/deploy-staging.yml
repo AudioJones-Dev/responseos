@@ -258,6 +258,8 @@ jobs:
         env:
           DEPLOYMENT_HOST: ${{ steps.deploy.outputs.host }}
         run: |
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-custom-environment-post-deploy.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects/$EXPECTED_VERCEL_PROJECT_ID/custom-environments/$EXPECTED_VERCEL_CUSTOM_ENV_ID?teamId=$VERCEL_ORG_ID"
+          node ../workflow-control/scripts/staging-vercel-custom-environment.mjs "$RUNNER_TEMP/vercel-custom-environment-post-deploy.json"
           for attempt in $(seq 1 60); do
             curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-deployment.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v13/deployments/$DEPLOYMENT_HOST?teamId=$VERCEL_ORG_ID&withGitRepoInfo=true"
             node ../workflow-control/scripts/validate-staging-deployment-result.mjs progress "$RUNNER_TEMP/vercel-deployment.json" "$APPLICATION_SHA" "$DEPLOYMENT_HOST"

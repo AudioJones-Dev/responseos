@@ -1,12 +1,29 @@
 import { describe, expect, test } from "vitest";
+import fs from "node:fs";
+import path from "node:path";
 
 import {
   validateDeploymentUrl,
   validateStagingDeployment,
 } from "@/scripts/validate-staging-deployment-result.mjs";
+import { CANONICAL_STAGING_VERCEL } from "@/scripts/staging-vercel-custom-environment.mjs";
 
 const applicationSha = "4a5b29b83cb3f18137b0151ae6242b2ac484ef08";
 const deploymentHost = "responseos-staging-mock-abc123-audiojones.vercel.app";
+const managedAlias = CANONICAL_STAGING_VERCEL.managedEnvironmentAlias;
+const fixture = (name: string) =>
+  JSON.parse(
+    fs.readFileSync(
+      path.join(
+        process.cwd(),
+        "tests",
+        "fixtures",
+        "vercel-staging",
+        name,
+      ),
+      "utf8",
+    ),
+  );
 
 function deployment(overrides: Record<string, unknown> = {}) {
   return {
@@ -31,6 +48,30 @@ function deployment(overrides: Record<string, unknown> = {}) {
 }
 
 describe("governed staging deployment result", () => {
+  test("rejects the observed first deployment solely for its Production target", () => {
+    const observed = fixture("observed-first-deployment.json");
+    expect(
+      validateStagingDeployment(
+        observed,
+        applicationSha,
+        observed.url,
+        "ready",
+      ),
+    ).toEqual(["Deployment must not target Production"]);
+  });
+
+  test("accepts an expected non-Production deployment with the canonical managed alias", () => {
+    const expected = fixture("expected-second-deployment.json");
+    expect(
+      validateStagingDeployment(
+        expected,
+        applicationSha,
+        expected.url,
+        "ready",
+      ),
+    ).toEqual([]);
+  });
+
   test("accepts the exact environment ID when deployment readback omits the optional slug", () => {
     expect(
       validateStagingDeployment(
@@ -77,14 +118,57 @@ describe("governed staging deployment result", () => {
     ).toContain("exact governed custom environment");
   });
 
+  test("requires explicit target evidence", () => {
+    const metadata: Record<string, unknown> = deployment();
+    delete metadata.target;
+    expect(
+      validateStagingDeployment(metadata, applicationSha, deploymentHost),
+    ).toContain("Deployment target evidence is missing");
+  });
+
+  test("deduplicates the canonical managed alias across provider alias fields", () => {
+    expect(
+      validateStagingDeployment(
+        deployment({
+          alias: [managedAlias],
+          automaticAliases: [managedAlias],
+          aliasAssigned: true,
+        }),
+        applicationSha,
+        deploymentHost,
+        "ready",
+      ),
+    ).toEqual([]);
+  });
+
+  test.each([
+    [{ alias: ["arbitrary.vercel.app"] }, "canonical managed environment alias"],
+    [
+      { alias: [managedAlias, "arbitrary.vercel.app"] },
+      "canonical managed environment alias",
+    ],
+    [
+      { alias: [managedAlias, managedAlias] },
+      "canonical managed environment alias",
+    ],
+    [{ alias: ["staging.example.com"] }, "canonical managed environment alias"],
+    [{ userAliases: [managedAlias] }, "canonical managed environment alias"],
+    [{ aliasAssigned: true }, "canonical managed environment alias"],
+    [{ alias: managedAlias }, "canonical managed environment alias"],
+  ])("rejects unsafe alias evidence %#", (change, message) => {
+    expect(
+      validateStagingDeployment(
+        deployment(change),
+        applicationSha,
+        deploymentHost,
+      ).join(" "),
+    ).toContain(message);
+  });
+
   test.each([
     ["projectId", "prj_wrong", "canonical staging project"],
     ["target", "production", "must not target Production"],
     ["gitSource", { ref: applicationSha, sha: "f".repeat(40) }, "Git source SHA"],
-    ["alias", ["staging.example.com"], "must not have aliases"],
-    ["automaticAliases", ["automatic.example.com"], "must not have aliases"],
-    ["userAliases", ["user.example.com"], "must not have aliases"],
-    ["aliasAssigned", true, "must not have aliases"],
   ])("rejects invalid %s evidence", (field, value, message) => {
     expect(
       validateStagingDeployment(
@@ -113,6 +197,10 @@ describe("governed staging deployment result", () => {
 
   test.each([
     [`https://${deploymentHost}`, []],
+    [
+      `https://${managedAlias}`,
+      ["unique HTTPS vercel.app origin"],
+    ],
     ["http://responseos.vercel.app", ["unique HTTPS vercel.app origin"]],
     ["https://responseos.example.com", ["unique HTTPS vercel.app origin"]],
     ["not-a-url", ["valid absolute URL"]],

@@ -7,10 +7,17 @@ export const CANONICAL_STAGING_VERCEL = Object.freeze({
   projectName: "responseos-staging-mock",
   customEnvironmentId: "env_uX6Qp8F6w9aBgx2ikH3BiREB8aHH",
   customEnvironmentSlug: "staging",
+  managedEnvironmentAlias:
+    "responseos-staging-mock-env-staging-audiojones.vercel.app",
 });
 
-function arrayOrEmpty(value) {
-  return Array.isArray(value) ? value : [];
+function isExactManagedAliasSet(value) {
+  return (
+    Array.isArray(value) &&
+    (value.length === 0 ||
+      (value.length === 1 &&
+        value[0] === CANONICAL_STAGING_VERCEL.managedEnvironmentAlias))
+  );
 }
 
 export function validateStagingCustomEnvironment(environment) {
@@ -28,11 +35,13 @@ export function validateStagingCustomEnvironment(environment) {
   if (environment?.branchMatcher != null) {
     errors.push("Vercel staging custom environment must not track a branch");
   }
-  if (arrayOrEmpty(environment?.domains).length !== 0) {
+  if (!Array.isArray(environment?.domains) || environment.domains.length !== 0) {
     errors.push("Vercel staging custom environment must not have domains");
   }
-  if (arrayOrEmpty(environment?.currentDeploymentAliases).length !== 0) {
-    errors.push("Vercel staging custom environment must not have deployment aliases");
+  if (!isExactManagedAliasSet(environment?.currentDeploymentAliases)) {
+    errors.push(
+      "Vercel staging custom environment may contain only the canonical managed environment alias",
+    );
   }
 
   return errors;

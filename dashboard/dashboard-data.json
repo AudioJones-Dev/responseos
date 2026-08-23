@@ -609,7 +609,7 @@
       "start": "2026-08-03",
       "due": "2026-08-12",
       "blocked": true,
-      "blockedReason": "Governed configuration is certified and canonical Neon migrated successfully in run 32587779315; Vercel deployment remediation/retry, hosted auth smoke, rollback/recovery evidence, and every Production action remain separate gates"
+      "blockedReason": "Run 32606945362 created a READY first-deployment artifact but SAFE STOPPED because Vercel classified it as Production and assigned a managed Custom Environment alias; containment remediation, a separately authorized second deployment, hosted auth smoke, recovery evidence, and every Production action remain open"
     },
     {
       "id": "L-02a",
@@ -701,16 +701,16 @@
       "phase": "Launch / Demo Deploy",
       "title": "Remediate post-migration custom staging deployment CLI",
       "owner": "Codex",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "High",
       "start": "2026-08-22",
       "due": "2026-08-22",
-      "blocked": true,
-      "blockedReason": "PR #131 and configuration run 32586167278 established the governed controls; run 32587779315 migrated canonical Neon and SAFE STOPPED before Vercel deployment creation; PR #134 CLI remediation is under review and retry remains separately gated",
+      "blocked": false,
+      "blockedReason": "PR #134 merged at e6895e5 and run 32606945362 proved deployment creation; the run then SAFE STOPPED on the separate first-deployment Production/managed-alias containment anomaly",
       "ref": 134,
       "refType": "pull",
-      "refState": "open",
+      "refState": "merged",
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/134"
     },
     {
@@ -729,6 +729,19 @@
       "refType": "pull",
       "refState": "merged",
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/133"
+    },
+    {
+      "id": "L-02h",
+      "phase": "Launch / Demo Deploy",
+      "title": "Classify managed staging alias and quarantine first deployment",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-08-22",
+      "due": "2026-08-22",
+      "blocked": true,
+      "blockedReason": "Run 32606945362 deployment dpl_Htoemv2DjREXACEZTKMuwVQRrwAj is REJECTED as a first-deployment Production anomaly; repository containment remediation is under review and deployment #2 remains separately gated"
     },
     {
       "id": "L-03",
