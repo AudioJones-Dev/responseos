@@ -25,13 +25,13 @@ Until the staging URL is live with Clerk login, dashboard **L-02** stays partial
 
 ## 1. Credential / platform audit (names only — no secrets)
 
-Verified snapshot through the 2026-08-22 post-migration SAFE STOP (operator must re-check before retry):
+Verified snapshot through the 2026-08-23 pre-database SAFE STOP (operator must re-check before retry):
 
 | Surface | Observed | Gap for Path A staging |
 |---|---|---|
 | **GitHub Environment** | `staging` exists with required reviewer `AudioJones-Dev` and a `master`-only deployment branch policy | Keep all deploy credentials Environment-scoped; deployment retry still requires a separate approval. |
 | **GitHub staging secrets** | Database URLs, verified Vercel team/project ids, Vercel token, automation-bypass secret, and a secret named `NEON_API_KEY` are present; protected runs proved the key can read the canonical Neon resources | Values remain unreadable by design. Reverify identity and the current version 2 attestation before every deployment retry. |
-| **Vercel** | Dedicated `audiojones/responseos-staging-mock`; Node **24.x**; `live=false`; no deployments, production target, aliases, custom domains, or Git integration | Keep Vercel Authentication enabled (`all_except_custom_domains`). Use only a project-scoped automation bypass for CI smoke. |
+| **Vercel** | Dedicated `audiojones/responseos-staging-mock`; Node **24.x**; `live=false`; exactly one quarantined READY deployment (`dpl_Htoemv2DjREXACEZTKMuwVQRrwAj`) with rejected `target=production`; canonical managed alias still resolves to it; no custom domains or automatic Git deployments | Keep Vercel Authentication enabled (`all_except_custom_domains`). Preserve the quarantined artifact, remediate optional alias telemetry, and require a separate exact-SHA authorization for deployment #2. |
 | **Neon** | Canonical project `responseos-staging-mock` (`patient-snow-16014934`), branch `main` (`br-mute-boat-a6ylen11`), endpoint `ep-young-morning-a6oeu9vv`, and database `neondb` were reverified; run `32587779315` applied all 13 Prisma migrations | Never substitute the separate `responseos` project. The retry must reverify identity and should observe a current migration status plus a no-op `prisma migrate deploy`. |
 | **Clerk** | All eight required Preview names and same-development-instance provenance are verified | Do not change Clerk configuration during the database preflight. |
 | **Sentry / PostHog** | Env placeholders in `.env.example`; **no SDK packages wired** | Optional for Path A: create projects, set DSNs later; tagging contract documented in §6. |
@@ -243,7 +243,11 @@ Classify that artifact as `FIRST_DEPLOYMENT_BOOTSTRAP_ANOMALY`, certification `R
 
 Source SHA proves reviewed application source, the new `dpl_...` identifier proves deployment identity, and `GET /v4/aliases/{idOrAlias}` returning that exact deployment ID proves routing identity. These are separate requirements. A matching `/api/health.build_sha` through the alias is supplementary runtime evidence because two deployments can share the same source SHA.
 
-Recovery remains outstanding because no certifiable staging deployment exists. The governed project contains one quarantined evidence deployment. A second deployment requires separate exact-SHA authorization after the managed-alias remediation merges and must prove `responseos-staging-mock-env-staging-audiojones.vercel.app` maps to the exact second deployment ID before final Custom Environment readback or smoke. No workflow retry is authorized by this documentation. The app continues to boot with mock providers because the staging preflight rejects live-provider credentials.
+`currentDeploymentAliases` in the Custom Environment response is optional alias telemetry, not authoritative routing state. Omitted, `null`, empty, or the single canonical managed alias are acceptable environment-posture evidence; arbitrary, custom-domain, malformed, or multiple aliases still fail closed. The Custom Environment API remains authoritative for environment ID, slug, type, branch matching, and configured domains. The Alias API remains authoritative for the canonical managed alias → exact deployment ID binding, and the Deployment API remains authoritative for deployment identity, immutable URL, target, readiness, project, Custom Environment, and application SHA.
+
+Deploy Staging run [`32654354652`](https://github.com/AudioJones-Dev/responseos/actions/runs/32654354652) SAFE STOPPED at the initial Custom Environment gate because optional alias telemetry was treated as mandatory. The stop occurred before Neon/database verification, migration status, `prisma migrate deploy`, or deployment creation. Deployment #2 does not exist; the governed project still contains only quarantined deployment `dpl_Htoemv2DjREXACEZTKMuwVQRrwAj`, and the Alias API may legitimately show the canonical managed alias still routed to that artifact before a new READY deployment exists. This is pending routing state, not contradictory Custom Environment evidence.
+
+Recovery remains outstanding because no certifiable staging deployment exists. The governed project contains one quarantined evidence deployment. A second deployment requires separate exact-SHA authorization after this optional-telemetry remediation merges and must prove `responseos-staging-mock-env-staging-audiojones.vercel.app` maps to the exact second deployment ID before final Custom Environment posture readback or smoke. No workflow retry is authorized by this documentation. The app continues to boot with mock providers because the staging preflight rejects live-provider credentials.
 
 ---
 

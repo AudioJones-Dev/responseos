@@ -1,51 +1,67 @@
+import fs from "node:fs";
+import path from "node:path";
 import { describe, expect, test } from "vitest";
 
 import {
   CANONICAL_STAGING_VERCEL,
+  classifyStagingCustomEnvironmentAliasTelemetry,
   validateStagingCustomEnvironment,
 } from "@/scripts/staging-vercel-custom-environment.mjs";
 
-const valid = {
-  id: "env_uX6Qp8F6w9aBgx2ikH3BiREB8aHH",
-  slug: "staging",
-  type: "preview",
-  branchMatcher: null,
-  domains: [],
-  currentDeploymentAliases: [],
-};
+const fixture = (name: string) =>
+  JSON.parse(
+    fs.readFileSync(
+      path.join(
+        process.cwd(),
+        "tests",
+        "fixtures",
+        "vercel-staging",
+        name,
+      ),
+      "utf8",
+    ),
+  );
+
+const valid = fixture("custom-environment-empty-alias-telemetry.json");
 
 describe("canonical staging custom environment", () => {
-  test("accepts the exact empty governed environment", () => {
-    expect(validateStagingCustomEnvironment(valid)).toEqual([]);
-  });
+  test.each([
+    ["omitted", fixture("custom-environment-no-alias-telemetry.json"), "missing"],
+    ["null", { ...valid, currentDeploymentAliases: null }, "missing"],
+    ["empty", valid, "empty"],
+    [
+      "canonical",
+      fixture("custom-environment-canonical-alias-telemetry.json"),
+      "canonical",
+    ],
+  ])(
+    "accepts %s optional alias telemetry before deployment",
+    (_label, environment, classification) => {
+      expect(validateStagingCustomEnvironment(environment)).toEqual([]);
+      expect(
+        classifyStagingCustomEnvironmentAliasTelemetry(
+          environment.currentDeploymentAliases,
+        ),
+      ).toBe(classification);
+    },
+  );
 
-  test("accepts only the canonical Vercel-managed environment alias", () => {
-    expect(
-      validateStagingCustomEnvironment({
-        ...valid,
-        currentDeploymentAliases: [
-          CANONICAL_STAGING_VERCEL.managedEnvironmentAlias,
-        ],
-      }),
-    ).toEqual([]);
-  });
-
-  test("requires the canonical managed alias for post-READY certification", () => {
-    expect(validateStagingCustomEnvironment(valid, "post-ready")).toContain(
-      "Vercel staging custom environment must contain the canonical managed environment alias after READY",
-    );
-    expect(
-      validateStagingCustomEnvironment(
-        {
-          ...valid,
-          currentDeploymentAliases: [
-            CANONICAL_STAGING_VERCEL.managedEnvironmentAlias,
-          ],
-        },
-        "post-ready",
-      ),
-    ).toEqual([]);
-  });
+  test.each([
+    ["omitted", fixture("custom-environment-no-alias-telemetry.json")],
+    ["null", { ...valid, currentDeploymentAliases: null }],
+    ["empty", valid],
+    [
+      "canonical",
+      fixture("custom-environment-canonical-alias-telemetry.json"),
+    ],
+  ])(
+    "accepts %s optional alias telemetry after READY",
+    (_label, environment) => {
+      expect(
+        validateStagingCustomEnvironment(environment, "post-ready"),
+      ).toEqual([]);
+    },
+  );
 
   test("requires the canonical staging slug during pre-deployment REST certification", () => {
     expect(
@@ -61,8 +77,8 @@ describe("canonical staging custom environment", () => {
     [{ domains: ["staging.example.com"] }, "must not have domains"],
     [{ domains: "staging.example.com" }, "must not have domains"],
     [
-      { currentDeploymentAliases: ["arbitrary.vercel.app"] },
-      "canonical managed environment alias",
+      fixture("custom-environment-unsafe-alias-telemetry.json"),
+      "unsafe optional alias telemetry",
     ],
     [
       {
@@ -71,13 +87,24 @@ describe("canonical staging custom environment", () => {
           "arbitrary.vercel.app",
         ],
       },
-      "canonical managed environment alias",
+      "unsafe optional alias telemetry",
     ],
     [
       { currentDeploymentAliases: "arbitrary.vercel.app" },
-      "canonical managed environment alias",
+      "unsafe optional alias telemetry",
     ],
   ])("rejects unsafe custom-environment metadata %#", (change, message) => {
     expect(validateStagingCustomEnvironment({ ...valid, ...change }).join(" ")).toContain(message);
+  });
+
+  test("rejects unsafe optional alias telemetry after READY", () => {
+    expect(
+      validateStagingCustomEnvironment(
+        fixture("custom-environment-unsafe-alias-telemetry.json"),
+        "post-ready",
+      ),
+    ).toContain(
+      "Vercel staging custom environment has unsafe optional alias telemetry",
+    );
   });
 });

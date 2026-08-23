@@ -11,18 +11,17 @@ export const CANONICAL_STAGING_VERCEL = Object.freeze({
     "responseos-staging-mock-env-staging-audiojones.vercel.app",
 });
 
-function isExactManagedAliasSet(value, mode) {
-  const hasCanonicalAlias =
-    Array.isArray(value) &&
+export function classifyStagingCustomEnvironmentAliasTelemetry(value) {
+  if (value == null) return "missing";
+  if (!Array.isArray(value)) return "unsafe";
+  if (value.length === 0) return "empty";
+  if (
     value.length === 1 &&
-    value[0] === CANONICAL_STAGING_VERCEL.managedEnvironmentAlias;
-
-  if (mode === "post-ready") return hasCanonicalAlias;
-
-  return (
-    Array.isArray(value) &&
-    (value.length === 0 || hasCanonicalAlias)
-  );
+    value[0] === CANONICAL_STAGING_VERCEL.managedEnvironmentAlias
+  ) {
+    return "canonical";
+  }
+  return "unsafe";
 }
 
 export function validateStagingCustomEnvironment(
@@ -50,12 +49,12 @@ export function validateStagingCustomEnvironment(
   if (!Array.isArray(environment?.domains) || environment.domains.length !== 0) {
     errors.push("Vercel staging custom environment must not have domains");
   }
-  if (!isExactManagedAliasSet(environment?.currentDeploymentAliases, mode)) {
-    errors.push(
-      mode === "post-ready"
-        ? "Vercel staging custom environment must contain the canonical managed environment alias after READY"
-        : "Vercel staging custom environment may contain only the canonical managed environment alias",
-    );
+  if (
+    classifyStagingCustomEnvironmentAliasTelemetry(
+      environment?.currentDeploymentAliases,
+    ) === "unsafe"
+  ) {
+    errors.push("Vercel staging custom environment has unsafe optional alias telemetry");
   }
 
   return errors;
@@ -73,18 +72,20 @@ if (invokedPath === import.meta.url) {
     process.exit(1);
   }
 
-  const errors = validateStagingCustomEnvironment(
-    JSON.parse(fs.readFileSync(environmentPath, "utf8")),
-    mode,
-  );
+  const environment = JSON.parse(fs.readFileSync(environmentPath, "utf8"));
+  const errors = validateStagingCustomEnvironment(environment, mode);
   if (errors.length > 0) {
     console.error(["Staging custom environment verification failed:", ...errors].join("\n"));
     process.exit(1);
   }
 
+  const aliasTelemetry = classifyStagingCustomEnvironmentAliasTelemetry(
+    environment.currentDeploymentAliases,
+  );
+  console.log(`Custom Environment alias telemetry: ${aliasTelemetry}`);
   console.log(
     mode === "post-ready"
-      ? "Canonical governed Vercel custom environment routing verified after READY."
+      ? "Canonical governed Vercel custom environment posture verified after READY; managed-alias routing is certified separately."
       : "Canonical governed Vercel custom environment verified before deployment.",
   );
 }
