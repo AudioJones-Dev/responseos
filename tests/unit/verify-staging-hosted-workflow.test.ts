@@ -94,7 +94,7 @@ describe("Verify Hosted Staging workflow contract", () => {
       "Reverify final custom-environment posture",
     );
     const smoke = workflow.indexOf(
-      "Verify public runtime and anonymous browser auth boundary",
+      "Verify public runtime and Clerk auth-boundary smoke",
     );
 
     expect(commands).toContain(

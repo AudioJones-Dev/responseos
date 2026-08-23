@@ -613,7 +613,7 @@
       "start": "2026-08-21",
       "due": "2026-08-28",
       "blocked": true,
-      "blockedReason": "Deployment #2 identity, exact Alias API routing, health, and public demo passed in run 32659300496. Anonymous browser-document auth redirect awaits read-only recertification; authenticated AJ Digital operator access, recovery evidence, and prospect authorization remain open"
+      "blockedReason": "Read-only run 32663419658 reconfirmed deployment #2 identity, exact Alias API routing, health, and public demo; both protected document routes returned 307. Auth-boundary certification awaits a corrected Clerk handshake/Account Portal classifier and a separately authorized read-only rerun; authenticated operator access, recovery evidence, and prospect authorization remain open"
     },
     {
       "id": "L-02",
@@ -626,7 +626,7 @@
       "start": "2026-08-03",
       "due": "2026-08-12",
       "blocked": true,
-      "blockedReason": "Run 32659300496 created non-Production READY deployment #2 and proved exact deployment/Alias API routing plus health and public demo. Plain-curl /admin returned a non-conclusive Clerk 404; anonymous browser-document auth redirect, authenticated operator access, recovery evidence, and every Production action remain open"
+      "blockedReason": "Run 32663419658 reverified non-Production READY deployment #2, exact Alias API routing, health, and public demo; both protected document routes returned 307 but the first-hop redirect classifier was too narrow. Clerk auth-boundary recertification, authenticated operator access, recovery evidence, and every Production action remain open"
     },
     {
       "id": "L-02a",
