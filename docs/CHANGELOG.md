@@ -4,6 +4,14 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — ci: certify hosted staging auth without redeployment
+
+- Recorded Deploy Staging run `32659300496`: deployment `dpl_SC8XuZJFXFec15ECfCmGtNtdChs4` reached READY as a non-Production deployment in the governed `staging` Custom Environment, exact source/SHA and Alias API routing passed, immutable and managed-alias health passed, and `/demo` returned 200. The retained quarantined first deployment was unchanged.
+- Classified the final `/admin` plain-curl 404 as non-conclusive for browser authentication because resolved `@clerk/nextjs` 7.6.1 classifies page requests from `sec-fetch-dest: document` or an HTML `Accept` header and conceals anonymous non-page requests with a 404.
+- Added a shared protected-page smoke contract that sends explicit document-navigation headers, does not follow redirects, requires Clerk's resolved HTTP 307 test-instance sign-in redirect, validates the derived Account Portal destination, and evaluates both `/admin` and `/client/dashboard` before reporting failure. A document-mode 404 is never accepted.
+- Added a protected, manually dispatched, read-only hosted-staging certification workflow for an exact current-master control SHA, exact application SHA, and exact existing deployment ID. It revalidates deployment, managed-alias, Custom Environment, health, demo, and anonymous auth evidence without loading Neon credentials or invoking migration, deployment, alias, domain, promotion, provider, or Production mutations.
+- Deployment #2 remains the canonical staging candidate. Anonymous browser auth redirect is pending the separately authorized read-only certification run; authenticated operator access, prospect bootstrap, and live providers remain untested/unauthorized.
+
 ## Unreleased — ci: treat Custom Environment alias telemetry as optional
 
 - Classified `currentDeploymentAliases` as optional Custom Environment alias telemetry: omitted, `null`, empty, or the one canonical managed staging alias are accepted, while malformed, arbitrary, custom-domain, or multiple-alias evidence still fails closed.

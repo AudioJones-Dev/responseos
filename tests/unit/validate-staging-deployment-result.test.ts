@@ -4,6 +4,7 @@ import path from "node:path";
 
 import {
   validateDeploymentUrl,
+  validateExistingStagingDeployment,
   validateStagingDeployment,
 } from "@/scripts/validate-staging-deployment-result.mjs";
 import { CANONICAL_STAGING_VERCEL } from "@/scripts/staging-vercel-custom-environment.mjs";
@@ -48,6 +49,28 @@ function deployment(overrides: Record<string, unknown> = {}) {
 }
 
 describe("governed staging deployment result", () => {
+  test("certifies an exact existing READY deployment ID", () => {
+    expect(
+      validateExistingStagingDeployment(
+        deployment({ id: "dpl_expected" }),
+        "dpl_expected",
+        applicationSha,
+      ),
+    ).toEqual([]);
+  });
+
+  test("rejects a different existing deployment with the same application SHA", () => {
+    expect(
+      validateExistingStagingDeployment(
+        deployment({ id: "dpl_other" }),
+        "dpl_expected",
+        applicationSha,
+      ),
+    ).toContain(
+      "Deployment readback does not match the exact requested deployment ID",
+    );
+  });
+
   test("rejects the observed first deployment solely for its Production target", () => {
     const observed = fixture("observed-first-deployment.json");
     expect(

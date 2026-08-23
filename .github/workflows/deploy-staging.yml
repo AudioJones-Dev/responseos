@@ -341,16 +341,7 @@ jobs:
             echo "::error::Public demo smoke failed with HTTP $public_code."
             exit 1
           fi
-          for path in /admin /client/dashboard; do
-            code=$(curl --silent --show-error --max-time 30 --header "$bypass_header" --output /dev/null --write-out '%{http_code}' "$DEPLOYMENT_URL$path")
-            case "$code" in
-              301|302|303|307|308|401|403) ;;
-              *)
-                echo "::error::Protected-path smoke failed for $path with HTTP $code."
-                exit 1
-                ;;
-            esac
-          done
+          node ../workflow-control/scripts/validate-staging-protected-route-smoke.mjs "$DEPLOYMENT_URL" "$RUNNER_TEMP/vercel-custom-readable.json"
 
       - name: Record SAFE STOP after a post-migration failure
         if: ${{ failure() && steps.migrate.outcome == 'success' }}

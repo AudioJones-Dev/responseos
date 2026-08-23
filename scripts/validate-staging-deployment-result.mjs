@@ -4,6 +4,7 @@ import { pathToFileURL } from "node:url";
 import { CANONICAL_STAGING_VERCEL } from "./staging-vercel-custom-environment.mjs";
 
 const SHA_PATTERN = /^[0-9a-f]{40}$/;
+const DEPLOYMENT_ID_PATTERN = /^dpl_[A-Za-z0-9_]+$/;
 const HOST_PATTERN = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.vercel\.app$/;
 const PROGRESS_STATES = new Set([
   "INITIALIZING",
@@ -136,6 +137,30 @@ export function validateStagingDeployment(metadata, applicationSha, deploymentHo
   return errors;
 }
 
+export function validateExistingStagingDeployment(
+  metadata,
+  expectedDeploymentId,
+  applicationSha,
+) {
+  const deploymentHost = metadata?.url;
+  const errors = validateStagingDeployment(
+    metadata,
+    applicationSha,
+    deploymentHost,
+    "ready",
+  );
+
+  if (!DEPLOYMENT_ID_PATTERN.test(expectedDeploymentId)) {
+    errors.push("Expected deployment ID must be an exact Vercel deployment ID");
+  }
+  if (metadata?.id !== expectedDeploymentId) {
+    errors.push("Deployment readback does not match the exact requested deployment ID");
+  }
+  errors.push(...validateDeploymentUrl(`https://${deploymentHost ?? ""}`));
+
+  return errors;
+}
+
 const invokedPath = process.argv[1]
   ? pathToFileURL(process.argv[1]).href
   : undefined;
@@ -150,6 +175,22 @@ if (invokedPath === import.meta.url) {
       process.exit(1);
     }
     console.log("Staging deployment URL is a valid protected candidate origin.");
+  } else if (mode === "existing") {
+    const metadata = JSON.parse(fs.readFileSync(value, "utf8"));
+    const expectedDeploymentId = applicationSha;
+    const expectedApplicationSha = deploymentHost;
+    const errors = validateExistingStagingDeployment(
+      metadata,
+      expectedDeploymentId,
+      expectedApplicationSha,
+    );
+    if (errors.length > 0) {
+      console.error(["Existing staging deployment certification failed:", ...errors].join("\n"));
+      process.exit(1);
+    }
+    console.log(
+      "Existing governed staging deployment is READY with exact deployment, project, environment, and application identity.",
+    );
   } else if (["progress", "ready", "report"].includes(mode)) {
     const metadata = JSON.parse(fs.readFileSync(value, "utf8"));
     if (mode === "report") {
@@ -172,7 +213,7 @@ if (invokedPath === import.meta.url) {
       );
     }
   } else {
-    console.error("Usage: node scripts/validate-staging-deployment-result.mjs <url|progress|ready|report> <value> <application-sha> [deployment-host]");
+    console.error("Usage: node scripts/validate-staging-deployment-result.mjs <url|progress|ready|report|existing> <value> <application-sha-or-deployment-id> [deployment-host-or-application-sha]");
     process.exit(1);
   }
 }
