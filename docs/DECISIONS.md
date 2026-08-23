@@ -878,3 +878,542 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 10. **Prospect promotion stays separate.** `prospect-promotion.v1` governs reviewed business/customer state. Environment promotion governs infrastructure/runtime configuration. A future client instance requires both a certified Production environment and an approved client promotion manifest, plus separate activation authority.
 
 **Consequences.** Production and future client environments can be planned, read back, diffed, fingerprinted, and certified without copying secret values or treating staging resource identity as portable. The cost is deliberate operational ceremony and additional metadata maintenance. Green schema/tooling tests prove repository contract behavior only; they do not prove Production readiness, provider readiness, deployment success, customer activation, or legal/commercial approval. The Production resource/secret/deploy gates in ADR-0019, ADR-0039, ADR-0047, readiness Gate Set B, and the operator governance contract remain intact.
+
+---
+
+## ADR-0050 — CRM interoperability uses canonical models, governed mutation intents, and provider adapters
+
+**Status:** Proposed (2026-08-23), pending exact-head operator review and squash-merge authorization. If accepted, this ADR is architecture doctrine only. **CRM-0 authorizes no runtime implementation, schema or migration change, provider activation, credential configuration, external API call, deployment, or production mutation. CRM-1 and every later phase remain separately gated.**
+
+**Relationship to existing decisions.** This ADR extends ADR-0001 (mock-first provider boundaries), ADR-0002 (event-ledger-first internal truth), ADR-0009 (signature validation before business mutation), ADR-0027 (client-owned and pluggable external CRM), ADR-0033 (HubSpot as the client-overridable default external commercial system of record), ADR-0043 (portability requires evidence), and ADR-0047 (the bounded supervised post-call evidence chain). It does not supersede their deployment, provider, claims, or evidence gates. In particular, HubSpot may remain the default external commercial CRM for an authorized deployment without becoming the schema or business-logic center of ResponseOS.
+
+### 1. Decision
+
+ResponseOS SHALL use a provider-independent canonical relationship and operational model.
+
+External CRMs SHALL integrate through adapters and governed synchronization contracts.
+
+Core ResponseOS business logic SHALL NOT depend directly on one CRM's native schema.
+
+This decision preserves the platform boundary in ADR-0040 and platform doctrine §5: ResponseOS is not a general-purpose CRM. It owns the canonical events, operational evidence, business memory, policy, orchestration, attribution, and audit required for its revenue-recovery workflows; external CRMs continue to own the downstream commercial or service records their teams operate against.
+
+### 2. Current state
+
+The labels in this section are implementation claims verified against the repository at CRM-0 authoring time. The target sections that follow are doctrine, not descriptions of running behavior.
+
+#### Implemented today
+
+- `Account`, `Contact`, `Call`, `LeadEvent`, `LeadQualification`, `Appointment`, and `QuoteRequest` provide the beginning of an account-scoped, provider-independent relationship and operational substrate. They do **not** constitute a complete CRM.
+- `CrmSyncOperation` and `CrmSyncOperationStatus` provide a durable, call-centric synchronization record with `pending`, `processing`, `succeeded`, `retryable_failed`, `review_required`, and `cancelled` states.
+- The existing operation record carries retry, review, and idempotency-oriented primitives including unique `operation_key`, `attempt_count`, `next_attempt_at`, `last_error_code`, `last_error_redacted`, and separately persisted provider contact/activity/task identifiers.
+- `runCrmSyncForCall` implements a narrow finalized-call orchestration seam: account-scoped canonical record lookup, phone normalization, contact ambiguity review, sanitized call-activity creation, qualified follow-up task creation, partial-write recovery, operator retry, and a deterministic operation key.
+- `CrmProviderId` is exactly `"mock" | "hubspot"`. The current `CrmProvider` contract is narrow and call-centric; it is not the target generic adapter contract in §17.
+- `MockCrmProvider` is the deterministic default path.
+- `HubSpotCrmProvider` contains source-proven HTTP operations for contact search/create, call and task search/create, and contact associations. Selection requires both `RESPONSEOS_LIVE_HUBSPOT_ENABLED=true` and a token; otherwise the factory returns mock.
+- Integration tests prove durable operation idempotency and ambiguity-to-review behavior against a mock provider. Unit tests prove token presence alone does not activate HubSpot.
+
+The bounded HubSpot code is therefore `PARTIALLY_SHIPPED`: a real, explicitly gated adapter seam exists, but the repository does not establish production activation, generalized entity/field synchronization, inbound HubSpot reconciliation, multiple connections, autonomous mutation authority, or production-verified interoperability. ADR-0047's test-account, supervised-demo, and separate-operator-gate limitations remain in force.
+
+#### Not implemented today — `TARGET / NOT YET IMPLEMENTED`
+
+- generalized `CrmConnection`
+- generic `CrmEntityMapping`
+- generic `CrmFieldMapping`
+- `CrmMutationIntent`
+- field-level authority and conflict evaluation
+- `CrmConflict`
+- generic inbound `CrmSyncCursor`
+- provider capability negotiation or a generalized provider registry
+- generalized multi-entity or multi-CRM synchronization operations
+- Salesforce adapter
+- GoHighLevel adapter
+- Zoho adapter
+- Twenty adapter
+- Pipedrive or vertical-CRM adapters
+- autonomous agent CRM writes
+- generic inbound CRM webhook application to canonical entities
+- multi-connection or multi-CRM account behavior
+
+No planned entity, contract, adapter, or phase below may be cited as existing implementation merely because this ADR is present or accepted.
+
+### 3. Target architecture — `TARGET / NOT YET IMPLEMENTED`
+
+```text
+External Events
+    ↓
+ResponseOS Event Ledger
+    ↓
+Canonical Domain Model
+    ↓
+Mutation Intent
+    ↓
+Authority + Policy
+    ↓
+CRM Orchestration
+    ↓
+Provider Adapter
+    ↓
+External CRM
+    ↓
+Readback / Reconciliation
+    ↓
+Audit Evidence
+```
+
+The event ledger preserves what happened. Canonical domain records provide provider-independent working state. Mutation intents express proposed effects. Authority and policy decide whether those effects may proceed. Adapters translate approved canonical operations into provider semantics. Readback and reconciliation determine whether the requested effect exists and what authority it deserves.
+
+### 4. Systems of record
+
+#### Operational record — “What happened?”
+
+The ResponseOS event ledger is the internal operational source of truth under ADR-0002. External events land there before downstream business mutation, with stable dedupe identity, tenant context, signature evidence where applicable, timestamps, and provenance.
+
+#### Business Memory — “What does ResponseOS know, why, and with what authority?”
+
+Business Memory is the evidence-linked, tenant-isolated interpretation derived from operational events and approved sources. A fact must retain its source, verification state, authority, time, and correction history. The existence of a CRM value does not automatically make that value authoritative business truth.
+
+#### External CRM — “What commercial or service state should downstream teams operate against?”
+
+An external CRM is a client-owned downstream operating system. ADR-0033 currently selects HubSpot as the client-overridable default external commercial system of record for the authorized communications direction. That deployment default does not make HubSpot the ResponseOS internal ledger, canonical identifier authority, or business-logic schema.
+
+Authority SHALL be configurable by field or domain. ResponseOS explicitly prohibits global last-write-wins synchronization.
+
+### 5. Canonical model
+
+#### Current canonical substrate — implemented
+
+`Account`, `Contact`, `Call`, `LeadEvent`, `LeadQualification`, `Appointment`, and `QuoteRequest` are current source-proven models. Together they establish the beginning of the canonical relationship and operational substrate. Provider identifiers are attributes or mapping evidence at integration boundaries; they are not the identity of the canonical object.
+
+#### Potential future additions — `TARGET / NOT YET IMPLEMENTED`
+
+- `Opportunity` — provider-independent commercial opportunity state and evidence references
+- `Interaction` — normalized relationship interaction across channels
+- `Task` — canonical follow-up intent and lifecycle, distinct from any provider task ID
+- `RelationshipState` — evidence-linked relationship status and authority metadata
+
+CRM-0 adds none of these to Prisma. Each requires a separately approved problem statement, schema design, tenant-isolation analysis, migration plan, tests, and claims review.
+
+### 6. Future CRM infrastructure models — `TARGET / NOT YET IMPLEMENTED`
+
+| Conceptual model | Target responsibility |
+|---|---|
+| `CrmConnection` | Tenant-owned provider connection identity, state, mode, capabilities, and external secret reference |
+| `CrmEntityMapping` | Durable canonical-entity ↔ provider-entity identity mapping |
+| `CrmFieldMapping` | Versioned direction, transform, authority, null, conflict, and sensitivity rules |
+| `CrmMutationIntent` | Auditable proposed canonical mutation before provider translation or execution |
+| `CrmConflict` | Competing values, authority evidence, resolution state, and disposition |
+| `CrmSyncCursor` | Provider/account-scoped incremental change position and reconciliation evidence |
+
+These names define conceptual contracts only. They are not Prisma models, migrations, API resources, or runtime services in CRM-0.
+
+### 7. `CrmConnection` — `TARGET / NOT YET IMPLEMENTED`
+
+A future `CrmConnection` is responsible for:
+
+- provider identifier
+- owning ResponseOS `accountId`
+- provider account or portal identity
+- connection state
+- permitted sync mode
+- advertised and verified capabilities
+- external secret reference, never a portable credential value
+- created, verified, and last-health-check timestamps
+
+One ResponseOS account may eventually support multiple CRM connections. That possibility does not authorize multi-connection behavior now. Credentials remain outside the canonical model, audit evidence, exported client packages, and repository.
+
+### 8. Provider capabilities — `TARGET / NOT YET IMPLEMENTED`
+
+Future adapters SHALL advertise capabilities and orchestration SHALL check them before planning or executing an operation. Capability names may include:
+
+```text
+contacts.read
+contacts.write
+accounts.read
+accounts.write
+opportunities.read
+opportunities.write
+activities.append
+tasks.write
+appointments.read
+appointments.write
+webhooks.receive
+incremental_sync
+custom_fields.read
+custom_fields.write
+```
+
+Capabilities are connection-specific evidence, not assumptions derived only from a provider name. An unsupported, unverified, or revoked capability SHALL fail explicitly. It SHALL NOT silently no-op, downgrade to a different mutation, or be inferred from an available credential.
+
+### 9. Entity mapping — `TARGET / NOT YET IMPLEMENTED`
+
+Entity mapping relates a canonical entity to a provider entity:
+
+```text
+canonical entity ↔ provider entity
+```
+
+Provider-native IDs SHALL NOT become ResponseOS canonical IDs. Identity mappings must be explicit, durable, account-scoped, connection-scoped, and auditable. Mapping evidence should support provider merges, replacements, deleted objects, and historical reconciliation without changing the canonical identity.
+
+If identity resolution produces more than one plausible match, the result is `REVIEW_REQUIRED`. The existing ambiguous-contact behavior in `runCrmSyncForCall` is the current narrow precedent.
+
+### 10. Field mapping — `TARGET / NOT YET IMPLEMENTED`
+
+A versioned future field mapping supports:
+
+- canonical field
+- provider field
+- direction
+- transform
+- authority
+- null behavior
+- conflict behavior
+- sensitivity
+
+Allowed directions are:
+
+```text
+OUTBOUND
+INBOUND
+BIDIRECTIONAL
+NONE
+```
+
+Transforms must be deterministic and version-addressable. Sensitivity rules govern what may be transmitted or retained. Null behavior must distinguish “unknown,” “not applicable,” “explicitly cleared,” and “provider omitted” where the canonical domain requires that distinction.
+
+### 11. Mutation intent — `TARGET / NOT YET IMPLEMENTED`
+
+Agents SHALL NOT directly issue arbitrary provider mutations. Humans and workflows should also use the same governed path for consequential writes.
+
+```text
+Agent / Human / Workflow
+    ↓
+CrmMutationIntent
+    ↓
+Canonical validation
+    ↓
+Authority validation
+    ↓
+Policy validation
+    ↓
+Conflict detection
+    ↓
+Approval
+    ↓
+Adapter translation
+    ↓
+Execution
+    ↓
+Readback
+    ↓
+Audit
+```
+
+A mutation intent describes the canonical entity, proposed change, reason, evidence, actor, execution class, expected current state, idempotency key, required capability, approval state, and correlation identity. It is a proposal until the applicable authority, policy, and approval gates clear.
+
+### 12. Agentic execution classes — `TARGET / NOT YET IMPLEMENTED`
+
+| Class | Meaning | Conceptual control posture |
+|---|---|---|
+| `A0 OBSERVE_ONLY` | Read, compare, explain, or propose without external mutation | Read authorization, tenant scope, and audit of consequential access |
+| `A1 LOW_RISK_APPEND` | Append bounded, non-authoritative activity or follow-up evidence | Allowlisted fields, idempotency, policy check, readback, audit |
+| `A2 CONTROLLED_RECORD_UPDATE` | Update a reversible relationship or operational field | Field authority, expected version, conflict check, stronger approval policy |
+| `A3 COMMERCIAL_STATE_MUTATION` | Change opportunity, stage, appointment, ownership, or another commercial workflow state | Verified evidence, explicit authority, human approval by default, reconciliation |
+| `A4 SENSITIVE_OR_IRREVERSIBLE` | Delete, merge, bulk-rewrite, transmit sensitive data, or perform a difficult-to-reverse action | Explicit human authorization, dry-run or preview where possible, rollback plan, enhanced audit |
+
+Higher-risk classes require progressively stronger identity, authority, evidence, approval, and verification. Agent inference alone cannot silently establish authoritative commercial facts. Classification does not grant permission; it determines the minimum controls an independently authorized implementation must enforce.
+
+### 13. Conflict resolution — `TARGET / NOT YET IMPLEMENTED`
+
+Global last-write-wins is prohibited. Conflict evaluation considers, at minimum:
+
+- field/domain authority
+- verification state
+- source provenance
+- event time and receive time
+- provider version, revision, or ETag where available
+- explicit field ownership
+- expected prior value
+- human approval or correction history
+
+Potential outcomes are:
+
+```text
+AUTO_ACCEPT_CANONICAL
+AUTO_ACCEPT_EXTERNAL
+MERGE
+KEEP_BOTH
+REVIEW_REQUIRED
+REJECT_EXTERNAL
+```
+
+Automatic outcomes are allowed only when deterministic policy and sufficient evidence establish them. Missing policy or ambiguous authority returns `REVIEW_REQUIRED`.
+
+### 14. Outbound synchronization — `TARGET / NOT YET IMPLEMENTED`
+
+```text
+Canonical Event/Entity
+    ↓
+Mutation Intent
+    ↓
+Entity Mapping
+    ↓
+Field Mapping
+    ↓
+Provider Adapter
+    ↓
+External Write
+    ↓
+Provider Readback
+    ↓
+Verified Success
+    ↓
+Audit
+```
+
+An HTTP success response proves only that the provider accepted or processed a request according to its API contract. It does not necessarily prove the intended final state, durable synchronization, or authoritative business truth. The orchestration policy decides what readback or later reconciliation is required before marking synchronization verified.
+
+### 15. Inbound synchronization — `TARGET / NOT YET IMPLEMENTED`
+
+External CRM webhooks SHALL NOT directly mutate canonical entities.
+
+```text
+Webhook / Incremental Change
+    ↓
+Integration Event
+    ↓
+Normalization
+    ↓
+Entity Resolution
+    ↓
+Authority / Conflict Evaluation
+    ↓
+Canonical Mutation Proposal
+    ↓
+Apply or Review
+    ↓
+Audit
+```
+
+ADR-0009 remains mandatory: signature validation occurs before parsing and before any business mutation. Valid signature evidence establishes message authenticity under the provider's mechanism; it does not establish entity identity, field authority, or permission to overwrite canonical state.
+
+### 16. Idempotency
+
+Duplicate webhook delivery, provider retry, workflow rerun, operator retry, or agent rerun SHALL NOT silently duplicate provider activities or canonical effects.
+
+The implemented unique `CrmSyncOperation.operation_key` and separately persisted provider object identifiers are current precedent. Future mutation intents and generic sync operations extend that doctrine with account, connection, canonical entity, operation kind, target version, and correlation context as required. Idempotency prevents duplicate effect; it does not convert an unauthorized or conflicted mutation into an authorized one.
+
+### 17. Adapter contract — conceptual target, not the current interface
+
+Future adapter operations may include:
+
+```text
+capabilities()
+health()
+findEntities()
+getEntity()
+createEntity()
+updateEntity()
+appendActivity()
+createTask()
+associateEntities()
+listChanges()
+verifyMutation()
+```
+
+The adapter owns:
+
+- provider HTTP/API semantics
+- authentication mechanics and secret resolution
+- provider identifiers
+- pagination and incremental-provider mechanics
+- rate limiting and retry signals
+- provider-specific transforms
+- provider-specific errors and redaction
+
+The adapter SHALL NOT own:
+
+- canonical business meaning
+- field or domain authority policy
+- approval policy
+- agent permissions
+- tenant identity derived from client input
+- whether provider success becomes authoritative truth
+
+The current `CrmProvider` interface remains a narrow implemented seam and is not evidence that this target contract exists.
+
+### 18. Provider registry — `TARGET / NOT YET IMPLEMENTED`
+
+```text
+Provider Registry
+    ├── mock         CURRENT: deterministic implemented adapter
+    ├── hubspot      CURRENT: bounded, call-centric, explicitly gated adapter seam
+    ├── salesforce   FUTURE: not implemented
+    ├── ghl          FUTURE: not implemented
+    ├── zoho         FUTURE: not implemented
+    └── twenty       FUTURE: not implemented
+```
+
+The registry itself is future. The tree records the intended provider slots and the source-proven status of the two current provider IDs; it does not advertise support for the future providers.
+
+Second-provider support is an architectural test:
+
+> If adding another CRM requires rewriting ResponseOS business logic, the abstraction has failed.
+
+ADR-0043 still governs portability claims. One mock plus one bounded adapter does not establish generalized or production-proven provider independence.
+
+### 19. Standalone mode
+
+ResponseOS SHALL remain functional with zero connected external CRMs. Standalone operation supports:
+
+- demonstrations
+- bootstrap clients
+- CRM-less clients
+- degraded-provider operation
+- migration periods
+
+External CRM integration enhances ResponseOS; it does not define whether ResponseOS can boot, preserve its canonical evidence, or run authorized provider-free workflows. This extends ADR-0001's zero-credential/mock-first rule.
+
+### 20. Multi-CRM mode — `TARGET / NOT YET IMPLEMENTED`
+
+Future design may support:
+
+```text
+ResponseOS
+    ├── HubSpot
+    ├── ServiceTitan
+    ├── Salesforce
+    └── other systems
+```
+
+Authority must be field- or domain-specific. Multiple connections do not imply that every system may author every field. CRM-0 authorizes no multi-CRM runtime, schema, connection, routing, or provider behavior.
+
+### 21. Audit and provenance — `TARGET / NOT YET IMPLEMENTED` for the generalized mutation chain
+
+Every future external mutation must be attributable to:
+
+- ResponseOS account
+- canonical entity
+- external connection
+- mutation intent
+- human, agent, or workflow actor
+- agent/workflow identity and version where applicable
+- supporting evidence
+- required and received approval
+- synchronization operation
+- provider result
+- readback or reconciliation evidence
+- conflict result
+- correlation ID
+
+Provider credentials, authorization headers, refresh tokens, private keys, and other secrets are never persisted in audit evidence. Existing `CrmSyncOperation`, `AuditLog`, and `WebhookEvent` records are precedents, not the complete target provenance model.
+
+### 22. Agent tool doctrine — `TARGET / NOT YET IMPLEMENTED`
+
+Future agent tools should express canonical intent:
+
+```text
+crm.lookup_contact
+crm.propose_contact_update
+crm.append_interaction
+crm.propose_opportunity
+crm.propose_stage_change
+crm.create_followup
+```
+
+Core agents should not be exposed directly to concrete provider mutations such as:
+
+```text
+hubspot.patch_contact
+salesforce.update_lead
+ghl.create_opportunity
+```
+
+Concrete provider calls belong behind orchestration, capability checks, mapping, policy, approval, and audit. A canonical tool name does not itself authorize a mutation.
+
+### 23. Failure doctrine
+
+If ResponseOS cannot establish:
+
+- entity identity
+- field mapping
+- sufficient authority
+- provider capability
+- safe mutation policy
+- idempotency
+- conflict resolution
+
+then it SHALL:
+
+```text
+DO NOT WRITE
+REVIEW_REQUIRED
+```
+
+Failure to prove safety is not permission to guess, skip a layer, or write directly through a provider SDK.
+
+### 24. Gated implementation roadmap
+
+| Phase | Status | Locked scope and gate |
+|---|---|---|
+| **CRM-0 — Doctrine** | **NOW — documentation only** | This ADR, roadmap alignment, and changelog only. No runtime or external mutation. |
+| **CRM-1 — Connection + Registry** | **FUTURE / GATED** | Introduce generalized `CrmConnection` and Provider Registry; wrap existing provider seams. Requires a separate approved PRD/ADR and implementation authorization. |
+| **CRM-2 — Entity Mapping + Generic Operations** | **FUTURE / GATED** | Introduce `CrmEntityMapping`; generalize `CrmSyncOperation` beyond its existing call-centric shape. |
+| **CRM-3 — Field Mapping + Inbound Sync** | **FUTURE / GATED** | Introduce `CrmFieldMapping`, `CrmSyncCursor`, and `CrmConflict`; define signed inbound reconciliation. |
+| **CRM-4 — Agentic Mutation Governance** | **FUTURE / GATED** | Introduce `CrmMutationIntent`, authority evaluation, execution classes, and approval gates. |
+| **CRM-5 — Second Real CRM Adapter** | **FUTURE / GATED** | Prove provider independence with a separately selected second provider. Twenty and GoHighLevel are candidates only; selection requires a separate decision. |
+| **CRM-6 — Broader Adapter Ecosystem** | **FUTURE / GATED** | Add Salesforce, Zoho, Pipedrive, or vertical CRMs only when justified by validated market need. |
+
+Phases are dependency-ordered. Acceptance of CRM-0 does not start, authorize, schedule, or pre-approve CRM-1. Each phase requires current-state verification, its own minimum PRD/task spec, doctrine §21 review, security and tenant-isolation analysis, explicit operator authorization, and the repository's validation/PR gates.
+
+### 25. Live-demo non-interference rule
+
+CRM-0 does **not** expand the current live-demo scope.
+
+CRM-1 or later MUST NOT begin merely because this ADR merges. Current staging and live-demo gates remain higher-priority. This ADR authorizes no external CRM activation, live HubSpot write, provider credential configuration, HubSpot configuration change, workflow dispatch, staging mutation, Vercel/Neon/Clerk/Telnyx/Vapi/Twilio action, deployment, or production action.
+
+ADR-0047's bounded post-call code path and separate operator gates remain exactly as they are. CRM-0 neither invokes that path nor expands it.
+
+### 26. Acceptance invariants
+
+1. Core ResponseOS functionality must work without HubSpot.
+2. Provider-native IDs never become canonical IDs.
+3. Core business workflows do not import concrete CRM SDKs.
+4. Agents do not bypass the mutation-intent and policy layer once that layer is implemented; before then, no autonomous provider writes are authorized.
+5. External webhooks do not directly mutate canonical entities.
+6. Ambiguous identity resolution fails to `REVIEW_REQUIRED`.
+7. External provider success does not automatically establish authoritative business truth.
+8. Higher-authority canonical evidence cannot be silently overwritten by lower-authority data.
+9. Provider capability gaps fail explicitly.
+10. Every external mutation is auditable.
+11. Secrets remain outside portable client packages and audit evidence.
+12. Adding a second CRM adapter must not require rewriting canonical ResponseOS business logic.
+13. ResponseOS remains usable with zero CRM connections.
+14. This ADR itself authorizes no runtime or provider mutation.
+
+### 27. Architecture review against platform doctrine §21
+
+1. **Layer:** canonical CRM interoperability spans Communications Capture, Business Memory, Operational Models, and Trust Infrastructure; CRM-0 changes documentation only.
+2. **Build, integrate, or defer:** build canonical identity, evidence, policy, mapping, and orchestration; integrate commodity CRMs through adapters; defer runtime to CRM-1+.
+3. **Live pilot path:** the doctrine prevents a future CRM seam from corrupting the pilot path; it does not expand or activate that path.
+4. **Evidence:** ledger-first ingest, mutation intents, readback, reconciliation, and audit preserve evidence.
+5. **Verified outcomes:** provider acceptance is explicitly separated from verified and authoritative outcomes.
+6. **Proprietary learning:** canonical operational history can support learning after verified outcomes exist; no moat is claimed now.
+7. **Commodity purchase:** external CRM storage and APIs are bought/integrated, not rebuilt.
+8. **Duplication risk:** ResponseOS remains not-a-general-CRM and implements only the canonical operating layer required by its workflows.
+9. **Lock-in:** provider IDs stay outside canonical identity; mappings and adapters contain provider semantics.
+10. **Tenant isolation:** every future connection, mapping, intent, cursor, conflict, and operation is account-scoped from server-derived authority.
+11. **Attribution ambiguity:** authority, conflict, and readback rules reduce ambiguity; unresolved cases require review.
+12. **Claims:** every future contract and provider is labeled `TARGET / NOT YET IMPLEMENTED`; portability remains unproven under ADR-0043.
+13. **Human approval:** A3 and A4 require progressively stronger approval, with human approval the default for commercial, sensitive, or irreversible effects.
+14. **Compliance exposure:** sensitivity metadata, secret exclusion, audit, and do-not-write failure behavior constrain exposure; no compliance claim is created.
+15. **Required now or interesting:** CRM-0 is required now to prevent planned adapters and entities from being mistaken for implementation. CRM-1+ is strategically relevant but separately gated.
+
+### 28. Canonical language
+
+**Internal architecture doctrine only — not a current-capability or market-facing claim.** The exact statement below must retain the adjacent status caveat until ADR-0043's portability evidence standard is satisfied.
+
+> ResponseOS is not a HubSpot integration.
+>
+> ResponseOS is the provider-independent relationship, operational, memory, and intelligence layer from which external CRM systems can be synchronized through governed adapters.
+
+This language states accepted architecture intent. Generalized provider interoperability is not currently implemented or proven, and the sentence remains prohibited in public copy, demos, comments, or commit messages as a present capability claim.

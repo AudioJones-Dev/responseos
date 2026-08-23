@@ -3,7 +3,7 @@
 **Owner:** AJ Digital LLC / Audio Jones
 **Status:** **Proposed — awaiting operator ratification.** Documentation only. No runtime code, dependency, schema, environment variable, provider configuration, or deployment behavior is changed by this document.
 **Scope:** Architecture, product boundaries, provider strategy, intelligence flywheel, moat development, claims policy.
-**Current-state basis:** Verified against the working tree on branch `claude/responseos-platform-doctrine-5a2675` (base `1510139`). Every current-state claim in §3 was checked against code, schema, or tests — not against strategy documents.
+**Current-state basis:** The initial §3 inventory was verified against the working tree on branch `claude/responseos-platform-doctrine-5a2675` (base `1510139`). CRM-specific status was refreshed against `master` at `22f5b6a` on 2026-08-23 for ADR-0050. Current-state claims must still be rechecked against code, schema, migrations, and tests before use; strategy prose is not implementation evidence.
 
 ---
 
@@ -114,13 +114,13 @@ These are the entries most likely to be misread as complete. Each has real subst
 | **Event ledger (ADR-0002)** | `WebhookEvent` ingest ledger with dedupe hash and idempotency test coverage; substrate models for calls, conversations, transcripts, workflow runs | No generic canonical `Event` model. Only the Clerk path writes to the ledger. No provider event has ever transited it. |
 | **Estimated-vs-verified revenue separation** | `RevenueMetrics` carries **both** `estimated_recovered_revenue` and `verified_recovered_revenue` columns, plus `roi_multiple` | No verification workflow, no evidence linkage, no correction or dispute path, no reconciliation. The distinction exists as two integers, not as a process. |
 | **Diagnostic-first commercial motion** | `AssessmentReport` model with readiness score, leak estimate, `FitDiagnosis` (`ai_fit` / `borderline` / `no_fit`), workflow maps, projected ROI, proposed terms; `Engagement` model with tiers, outcome-fee kinds, usage model; public `/audit` route and validated capture endpoint | The capture endpoint acknowledges only — no CRM write, no scoring pipeline, no delivery workflow. The diagnostic is executed manually. |
-| **Provider abstraction** | One typed interface plus mock adapter (`voice/`), an encryption module, and webhook helpers | Every other provider directory (`twilio/`, `telnyx`-absent, `vapi/`, `retell/`, `hubspot/`, `ghl/`, `stripe/`, `resend/`, `n8n/`, `bland/`) is a `.gitkeep` placeholder. The voice interface has no consumer anywhere in the app. |
+| **CRM provider abstraction and bounded finalized-call sync** | The exact provider union is `"mock" | "hubspot"`; deterministic mock remains the default. A call-centric `CrmProvider`, explicitly flag-and-token-gated HTTP-capable `HubSpotCrmProvider`, durable `CrmSyncOperation`, finalized-call orchestration, ambiguity review, partial-write recovery, and mock-backed tests exist. | No production activation evidence, generalized `CrmConnection`, generic entity/field mapping, inbound HubSpot reconciliation, mutation-intent/authority engine, multi-CRM behavior, second real adapter, or autonomous agent writes. This is `PARTIALLY_SHIPPED`, not generalized CRM interoperability. See ADR-0047 and ADR-0050. |
 | **Compliance lanes (ADR-0004)** | Lane definitions, transcript retention-lane enum, credential encryption, PII-hiding read projections | No lane-specific infrastructure, no BAA chain, no HIPAA lane. |
 | **Business Memory** | The capture substrate (conversations, transcripts, segments, QA logs) that Phase-1 memory is defined to write into (ADR-0034) | No memory assembly, retrieval, timeline reconstruction, or narrative layer. |
 
 ### 3.3 What is `DOCUMENTED_ONLY`
 
-The entire ratified v0.3 communications stack. Telnyx, Vapi, Retell, HubSpot sync, Calendly scheduling, the Communications Abstraction Layer, the Node voice gateway, Redis session state, R2 evidence storage, Resend, Stripe billing, and the outcome-fee ledger are all decided and unbuilt. See §12 for the per-provider status table.
+Most of the ratified v0.3 communications stack remains documentation-only: Vapi, Retell, Calendly scheduling, the generalized Communications Abstraction Layer, the Node voice gateway, Redis session state, R2 evidence storage, Resend, Stripe billing, and the outcome-fee ledger are decided and not implemented as complete operational paths. The bounded, explicitly gated HubSpot call-sync seam is the CRM exception and is `PARTIALLY_SHIPPED`; it does not prove production activation or generalized interoperability. See §12 for the per-provider status table and ADR-0050 for the current/target boundary.
 
 ### 3.4 Current limitations — stated plainly
 
@@ -518,7 +518,7 @@ The stack below is decided. The right-hand column is what exists.
 | AI voice orchestration | **Vapi** primary; **Retell** secondary | ADR-0032, confirmed ADR-0036 §1 | `DOCUMENTED_ONLY` — enum values exist, adapters do not |
 | LLM / transcription brain | **OpenAI inside Vapi** where configurable; Vapi-owned selection as fallback | ADR-0036 §2 | `DOCUMENTED_ONLY` |
 | Premium / branded voice | **ElevenLabs**, consent-gated add-on | ADR-0024 | `DOCUMENTED_ONLY` |
-| External commercial CRM SoR | **HubSpot** default, client-overridable | ADR-0033 (re-amends ADR-0027, ADR-0015) | `DOCUMENTED_ONLY` |
+| External commercial CRM SoR | **HubSpot** default, client-overridable | ADR-0033 (re-amends ADR-0027, ADR-0015); bounded seam governed by ADR-0047/0050 | `PARTIALLY_SHIPPED` — call-centric HTTP adapter and durable mock-tested orchestration exist behind an explicit flag plus token; no production activation, generalized mappings, inbound reconciliation, or provider-independence proof |
 | Scheduling | **Calendly** MVP baseline; **Cal.com** deferred; **Google Calendar** compatibility required | ADR-0037 (amends ADR-0036 §6) | `DOCUMENTED_ONLY` — `calendly` absent from the calendar-provider enum |
 | Async orchestration | **n8n**, strictly outside the realtime loop | ADR-0017 | `PARTIALLY_SHIPPED` — `WorkflowRun` model shipped, no n8n integration |
 | Structured-memory database | **Neon Postgres**; Prisma ORM | ADR-0026 (supersedes ADR-0003) | `SHIPPED` — host-agnostic Postgres; hosting is a connection-string decision |
@@ -814,6 +814,8 @@ The following are `PROHIBITED_CLAIM` in any market-facing copy, sales asset, com
 
 Language that reflects actual status: **designed to · being validated · pilot architecture · planned · estimated · prototype · documentation-stage · under development.**
 
+ADR-0050 records the internal architecture statement that ResponseOS is the provider-independent relationship, operational, memory, and intelligence layer from which external CRMs can be synchronized through governed adapters. That sentence is permitted only as a decision/doctrine statement when its adjacent status language makes clear that generalized provider independence is not implemented or proven. It remains a prohibited market-facing, demo, comment, commit-message, or current-capability claim until ADR-0043's evidence standard is satisfied.
+
 The shipped demo surface already models this correctly — it states plainly that it uses clearly-labeled mock data, that it is a simulated walkthrough, that live provider integrations are gated, and that advanced AI memory is not active. **That is the standard.** Every future asset matches it.
 
 ### 20.3 How a claim graduates
@@ -916,4 +918,5 @@ Recorded so they are visibly open rather than silently assumed.
 
 | Version | Date | Change |
 |---|---|---|
+| v1.0.1 | 2026-08-23 | CRM-0 status reconciliation. Refreshes the CRM-specific current-state rows for the bounded, gated HubSpot call-sync seam and clarifies that ADR-0050's canonical provider-independent wording is internal architecture intent, not a current-capability or market-facing claim. Generalized CRM interoperability remains unimplemented and CRM-1+ remains gated. **Proposed — not yet operator-ratified.** |
 | v1.0 | 2026-07-31 | Initial doctrine. Consolidates positioning (ADR-0022/0028/0035), provider stack (ADR-0031/0032/0033/0036/0037), memory gating (ADR-0016/0029/0034), and trust posture into a single strategic source of truth. Adds the nine-layer architecture, the intelligence flywheel, the moat doctrine, the evidence-state vocabulary, the claims policy, and the review checklist. Ratifies ADR-0040 through ADR-0044. **Proposed — not yet operator-ratified.** |

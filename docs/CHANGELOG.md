@@ -4,6 +4,15 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: define CRM interoperability and agentic mutation doctrine
+
+- Added ADR-0050 to the canonical decision log, separating the current source-proven relationship/operational substrate and bounded call-centric CRM sync seam from the generalized target architecture.
+- Recorded the implemented `Account` / `Contact` / `Call` / `LeadEvent` / `LeadQualification` / `Appointment` / `QuoteRequest` models, `CrmSyncOperation` governance primitives, exact `"mock" | "hubspot"` provider union, deterministic mock default, and the explicitly gated HTTP-capable HubSpot seam without claiming production activation or generalized CRM support.
+- Reconciled the CRM-specific current-state and provider table in the platform doctrine with the source-proven bounded HubSpot seam, and constrained the required provider-independent canonical sentence to internal architecture intent with an adjacent not-implemented/not-proven caveat.
+- Defined future-only connection, capability, entity/field mapping, mutation-intent, conflict, cursor, adapter, reconciliation, audit, agent-tool, and multi-CRM contracts. Salesforce, GHL, Zoho, Twenty, generic inbound sync, and autonomous agent writes are marked `TARGET / NOT YET IMPLEMENTED`.
+- Locked CRM-0 through CRM-6 sequencing in the roadmap. CRM-0 is documentation only; CRM-1 and every later phase remain separately gated and are not started or authorized by this change.
+- Preserved ADR-0001, ADR-0002, ADR-0009, ADR-0027, ADR-0033, ADR-0043, and ADR-0047. No schema, migration, runtime, provider adapter, API route, environment variable, credential, HubSpot configuration, workflow, infrastructure, deployment, or production behavior changed, and no external CRM mutation was performed.
+
 ## Unreleased — ci: certify hosted staging auth without redeployment
 
 - Recorded Deploy Staging run `32659300496`: deployment `dpl_SC8XuZJFXFec15ECfCmGtNtdChs4` reached READY as a non-Production deployment in the governed `staging` Custom Environment, exact source/SHA and Alias API routing passed, immutable and managed-alias health passed, and `/demo` returned 200. The retained quarantined first deployment was unchanged.

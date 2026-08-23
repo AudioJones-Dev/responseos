@@ -139,6 +139,23 @@
       "due": "2026-07-31"
     },
     {
+      "id": "D-02",
+      "phase": "Tech Debt & Hardening",
+      "title": "CRM-0 interoperability doctrine (documentation only)",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-08-23",
+      "due": "2026-08-23",
+      "blocked": true,
+      "blockedReason": "PR #139 is documentation only and awaits exact-head human review; CRM-1 and all runtime, provider, credential, deployment, and production work remain separately gated",
+      "ref": 139,
+      "refType": "pull",
+      "refState": "open",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/139"
+    },
+    {
       "id": "27",
       "phase": "v0.3 · Demo Scope",
       "title": "Define authorized v0.3 demo scope",
