@@ -143,17 +143,28 @@
       "phase": "Tech Debt & Hardening",
       "title": "CRM-0 interoperability doctrine (documentation only)",
       "owner": "Codex",
+      "status": "Done",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-08-23",
+      "due": "2026-08-23",
+      "ref": 139,
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/139"
+    },
+    {
+      "id": "D-03",
+      "phase": "Tech Debt & Hardening",
+      "title": "CRM-1 connection and provider registry PRD (planning only)",
+      "owner": "Codex",
       "status": "Review",
       "progress": 100,
       "priority": "High",
       "start": "2026-08-23",
       "due": "2026-08-23",
       "blocked": true,
-      "blockedReason": "PR #139 is documentation only and awaits exact-head human review; CRM-1 and all runtime, provider, credential, deployment, and production work remain separately gated",
-      "ref": 139,
-      "refType": "pull",
-      "refState": "open",
-      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/139"
+      "blockedReason": "Planning review only; CRM-1 runtime requires a separately approved exact-scope implementation task and must not begin automatically"
     },
     {
       "id": "27",

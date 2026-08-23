@@ -883,7 +883,7 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 
 ## ADR-0050 — CRM interoperability uses canonical models, governed mutation intents, and provider adapters
 
-**Status:** Proposed (2026-08-23), pending exact-head operator review and squash-merge authorization. If accepted, this ADR is architecture doctrine only. **CRM-0 authorizes no runtime implementation, schema or migration change, provider activation, credential configuration, external API call, deployment, or production mutation. CRM-1 and every later phase remain separately gated.**
+**Status:** Accepted (2026-08-23) via PR #139 as architecture doctrine only. **CRM-0 authorized no runtime implementation, schema or migration change, provider activation, credential configuration, external API call, deployment, or production mutation. CRM-1 and every later phase remain separately gated.**
 
 **Relationship to existing decisions.** This ADR extends ADR-0001 (mock-first provider boundaries), ADR-0002 (event-ledger-first internal truth), ADR-0009 (signature validation before business mutation), ADR-0027 (client-owned and pluggable external CRM), ADR-0033 (HubSpot as the client-overridable default external commercial system of record), ADR-0043 (portability requires evidence), and ADR-0047 (the bounded supervised post-call evidence chain). It does not supersede their deployment, provider, claims, or evidence gates. In particular, HubSpot may remain the default external commercial CRM for an authorized deployment without becoming the schema or business-logic center of ResponseOS.
 
