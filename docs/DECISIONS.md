@@ -1410,8 +1410,10 @@ ADR-0047's bounded post-call code path and separate operator gates remain exactl
 
 ### 28. Canonical language
 
+**Internal architecture doctrine only — not a current-capability or market-facing claim.** The exact statement below must retain the adjacent status caveat until ADR-0043's portability evidence standard is satisfied.
+
 > ResponseOS is not a HubSpot integration.
 >
 > ResponseOS is the provider-independent relationship, operational, memory, and intelligence layer from which external CRM systems can be synchronized through governed adapters.
 
-This language states accepted architecture intent, not a claim that generalized provider interoperability is currently implemented or proven.
+This language states accepted architecture intent. Generalized provider interoperability is not currently implemented or proven, and the sentence remains prohibited in public copy, demos, comments, or commit messages as a present capability claim.
