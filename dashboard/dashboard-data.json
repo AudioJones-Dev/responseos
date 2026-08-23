@@ -769,13 +769,17 @@
       "phase": "Launch / Demo Deploy",
       "title": "Certify hosted anonymous browser auth without redeployment",
       "owner": "Codex",
-      "status": "In Progress",
-      "progress": 80,
+      "status": "Review",
+      "progress": 90,
       "priority": "High",
       "start": "2026-08-23",
       "due": "2026-08-23",
       "blocked": true,
-      "blockedReason": "Repository remediation is in progress. Deployment #2 remains retained and unchanged; read-only hosted certification requires a separate exact-SHA authorization after review/merge."
+      "blockedReason": "PR #137 is under review. Deployment #2 remains retained and unchanged; read-only hosted certification requires a separate exact-SHA authorization after review/merge.",
+      "ref": 137,
+      "refType": "pull",
+      "refState": "open",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/137"
     },
     {
       "id": "L-03",
