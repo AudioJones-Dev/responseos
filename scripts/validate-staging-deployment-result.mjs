@@ -17,8 +17,49 @@ const PROGRESS_STATES = new Set([
   "CANCELLED",
 ]);
 
-function arrayIsEmpty(value) {
-  return value == null || (Array.isArray(value) && value.length === 0);
+function optionalStringArray(value) {
+  if (value == null) return [];
+  if (!Array.isArray(value) || value.some((entry) => typeof entry !== "string")) {
+    return null;
+  }
+  return value;
+}
+
+function hasOnlyCanonicalManagedAlias(metadata, expected) {
+  const aliases = optionalStringArray(metadata?.alias);
+  const automaticAliases = optionalStringArray(metadata?.automaticAliases);
+  const userAliases = optionalStringArray(metadata?.userAliases);
+
+  if (!aliases || !automaticAliases || !userAliases || userAliases.length !== 0) {
+    return false;
+  }
+
+  for (const providerAliases of [aliases, automaticAliases]) {
+    if (
+      providerAliases.length > 1 ||
+      (providerAliases.length === 1 &&
+        providerAliases[0] !== expected.managedEnvironmentAlias)
+    ) {
+      return false;
+    }
+  }
+
+  const assignedAliases = [...new Set([...aliases, ...automaticAliases])];
+  const hasNoAlias = assignedAliases.length === 0;
+  const hasCanonicalManagedAlias =
+    assignedAliases.length === 1 &&
+    assignedAliases[0] === expected.managedEnvironmentAlias;
+
+  if (!hasNoAlias && !hasCanonicalManagedAlias) return false;
+  if (metadata?.aliasAssigned === true && !hasCanonicalManagedAlias) return false;
+  if (
+    metadata?.aliasAssigned != null &&
+    typeof metadata.aliasAssigned !== "boolean"
+  ) {
+    return false;
+  }
+
+  return true;
 }
 
 export function validateDeploymentUrl(value) {
@@ -29,6 +70,7 @@ export function validateDeploymentUrl(value) {
     if (
       url.protocol !== "https:" ||
       !HOST_PATTERN.test(url.hostname) ||
+      url.hostname === CANONICAL_STAGING_VERCEL.managedEnvironmentAlias ||
       url.pathname !== "/" ||
       url.search ||
       url.hash
@@ -57,7 +99,9 @@ export function validateStagingDeployment(metadata, applicationSha, deploymentHo
   if (metadata?.customEnvironment?.id !== expected.customEnvironmentId) {
     errors.push("Deployment is not bound to the exact governed custom environment");
   }
-  if (metadata?.target === "production") {
+  if (!Object.hasOwn(metadata ?? {}, "target")) {
+    errors.push("Deployment target evidence is missing");
+  } else if (metadata?.target === "production") {
     errors.push("Deployment must not target Production");
   }
   if (metadata?.meta?.responseosApplicationSha !== applicationSha) {
@@ -69,17 +113,15 @@ export function validateStagingDeployment(metadata, applicationSha, deploymentHo
   ) {
     errors.push("Deployment Git source SHA conflicts with the requested application SHA");
   }
-  if (
-    !arrayIsEmpty(metadata?.alias) ||
-    !arrayIsEmpty(metadata?.automaticAliases) ||
-    !arrayIsEmpty(metadata?.userAliases) ||
-    metadata?.aliasAssigned === true
-  ) {
-    errors.push("Governed staging deployment must not have aliases");
+  if (!hasOnlyCanonicalManagedAlias(metadata, expected)) {
+    errors.push(
+      "Governed staging deployment aliases must match only the canonical managed environment alias",
+    );
   }
   if (
     typeof deploymentHost !== "string" ||
     !HOST_PATTERN.test(deploymentHost) ||
+    deploymentHost === expected.managedEnvironmentAlias ||
     metadata?.url !== deploymentHost
   ) {
     errors.push("Deployment readback URL does not match the validated deployment host");
@@ -125,7 +167,7 @@ if (invokedPath === import.meta.url) {
       }
       console.log(
         mode === "ready"
-          ? "Governed staging deployment is READY with exact project, environment, source, and no aliases."
+          ? "Governed staging deployment is READY with exact project, environment, source, and permitted alias metadata; managed-alias routing certification remains separate."
           : "Governed staging deployment identity remains canonical while readiness is pending.",
       );
     }

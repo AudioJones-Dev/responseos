@@ -1,6 +1,9 @@
 import { describe, expect, test } from "vitest";
 
-import { validateStagingCustomEnvironment } from "@/scripts/staging-vercel-custom-environment.mjs";
+import {
+  CANONICAL_STAGING_VERCEL,
+  validateStagingCustomEnvironment,
+} from "@/scripts/staging-vercel-custom-environment.mjs";
 
 const valid = {
   id: "env_uX6Qp8F6w9aBgx2ikH3BiREB8aHH",
@@ -16,6 +19,34 @@ describe("canonical staging custom environment", () => {
     expect(validateStagingCustomEnvironment(valid)).toEqual([]);
   });
 
+  test("accepts only the canonical Vercel-managed environment alias", () => {
+    expect(
+      validateStagingCustomEnvironment({
+        ...valid,
+        currentDeploymentAliases: [
+          CANONICAL_STAGING_VERCEL.managedEnvironmentAlias,
+        ],
+      }),
+    ).toEqual([]);
+  });
+
+  test("requires the canonical managed alias for post-READY certification", () => {
+    expect(validateStagingCustomEnvironment(valid, "post-ready")).toContain(
+      "Vercel staging custom environment must contain the canonical managed environment alias after READY",
+    );
+    expect(
+      validateStagingCustomEnvironment(
+        {
+          ...valid,
+          currentDeploymentAliases: [
+            CANONICAL_STAGING_VERCEL.managedEnvironmentAlias,
+          ],
+        },
+        "post-ready",
+      ),
+    ).toEqual([]);
+  });
+
   test("requires the canonical staging slug during pre-deployment REST certification", () => {
     expect(
       validateStagingCustomEnvironment({ ...valid, slug: undefined }).join(" "),
@@ -28,7 +59,24 @@ describe("canonical staging custom environment", () => {
     [{ type: "production" }, "type"],
     [{ branchMatcher: { type: "equals", pattern: "master" } }, "track a branch"],
     [{ domains: ["staging.example.com"] }, "must not have domains"],
-    [{ currentDeploymentAliases: ["alias.example.com"] }, "must not have deployment aliases"],
+    [{ domains: "staging.example.com" }, "must not have domains"],
+    [
+      { currentDeploymentAliases: ["arbitrary.vercel.app"] },
+      "canonical managed environment alias",
+    ],
+    [
+      {
+        currentDeploymentAliases: [
+          CANONICAL_STAGING_VERCEL.managedEnvironmentAlias,
+          "arbitrary.vercel.app",
+        ],
+      },
+      "canonical managed environment alias",
+    ],
+    [
+      { currentDeploymentAliases: "arbitrary.vercel.app" },
+      "canonical managed environment alias",
+    ],
   ])("rejects unsafe custom-environment metadata %#", (change, message) => {
     expect(validateStagingCustomEnvironment({ ...valid, ...change }).join(" ")).toContain(message);
   });

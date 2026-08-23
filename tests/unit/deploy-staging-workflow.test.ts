@@ -19,6 +19,10 @@ const deploymentResultValidator = fs.readFileSync(
   path.join(process.cwd(), "scripts", "validate-staging-deployment-result.mjs"),
   "utf8",
 );
+const managedAliasValidator = fs.readFileSync(
+  path.join(process.cwd(), "scripts", "validate-staging-managed-alias.mjs"),
+  "utf8",
+);
 const migrationStatusValidator = fs.readFileSync(
   path.join(process.cwd(), "scripts", "validate-prisma-migration-status.mjs"),
   "utf8",
@@ -142,13 +146,23 @@ describe("Deploy Staging workflow contract", () => {
     expect(commands).toContain('"$actual_sha" != "$APPLICATION_SHA"');
   });
 
-  test("preserves zero-domain and zero-alias certification around deployment", () => {
+  test("preserves zero-domain and phase-specific managed-alias certification", () => {
     expect(commands).toContain("staging-vercel-custom-environment.mjs");
     expect(customEnvironmentValidator).toContain(
-      "arrayOrEmpty(environment?.domains).length !== 0",
+      "environment.domains.length !== 0",
     );
     expect(customEnvironmentValidator).toContain(
-      "arrayOrEmpty(environment?.currentDeploymentAliases).length !== 0",
+      "managedEnvironmentAlias",
+    );
+    const aliasBinding = commands.indexOf(
+      "validate-staging-managed-alias.mjs poll",
+    );
+    const postReadyEnvironmentReadback = commands.indexOf(
+      "vercel-custom-environment-post-ready.json",
+    );
+    expect(postReadyEnvironmentReadback).toBeGreaterThan(aliasBinding);
+    expect(commands).toContain(
+      'staging-vercel-custom-environment.mjs "$RUNNER_TEMP/vercel-custom-environment-post-ready.json" post-ready',
     );
     expect(commands).toContain("validate-staging-deployment-result.mjs ready");
     for (const aliasEvidence of [
@@ -159,6 +173,73 @@ describe("Deploy Staging workflow contract", () => {
     ]) {
       expect(deploymentResultValidator).toContain(aliasEvidence);
     }
+  });
+
+  test("binds the managed alias to the exact READY deployment before smoke", () => {
+    const readyValidation = commands.indexOf(
+      "validate-staging-deployment-result.mjs ready",
+    );
+    const aliasLookup = commands.indexOf(
+      "/v4/aliases/$EXPECTED_VERCEL_MANAGED_ALIAS",
+    );
+    const aliasBinding = workflow.indexOf(
+      "Bind managed alias to exact READY deployment",
+    );
+    const finalEnvironment = workflow.indexOf(
+      "Reverify final custom-environment routing",
+    );
+    const smoke = workflow.indexOf("Verify protected health and hosted smoke");
+
+    expect(workflow).toContain(
+      "EXPECTED_VERCEL_MANAGED_ALIAS: responseos-staging-mock-env-staging-audiojones.vercel.app",
+    );
+    expect(aliasLookup).toBeGreaterThan(readyValidation);
+    expect(commands).toContain(
+      '/v4/aliases/$EXPECTED_VERCEL_MANAGED_ALIAS?teamId=$VERCEL_ORG_ID&projectId=$EXPECTED_VERCEL_PROJECT_ID',
+    );
+    expect(commands).toContain(
+      'jq -er \'.id | select(type == "string" and test("^dpl_[A-Za-z0-9]+$"))\'',
+    );
+    expect(workflow).toContain(
+      "DEPLOYMENT_ID: ${{ steps.ready.outputs.deployment_id }}",
+    );
+    expect(commands).toContain(
+      'validate-staging-managed-alias.mjs poll "$RUNNER_TEMP/vercel-managed-alias.json" "$DEPLOYMENT_ID" "$DEPLOYMENT_HOST"',
+    );
+    expect(managedAliasValidator).toContain(
+      "metadata.deploymentId !== expectedDeploymentId",
+    );
+    expect(finalEnvironment).toBeGreaterThan(aliasBinding);
+    expect(smoke).toBeGreaterThan(finalEnvironment);
+  });
+
+  test("uses a bounded read-only alias propagation loop", () => {
+    const aliasLookup = commands.indexOf(
+      "/v4/aliases/$EXPECTED_VERCEL_MANAGED_ALIAS",
+    );
+    const aliasStep = commands.slice(
+      commands.lastIndexOf("for attempt in $(seq 1 60)", aliasLookup),
+      commands.indexOf("vercel-custom-environment-post-ready.json"),
+    );
+    expect(aliasStep).toContain("for attempt in $(seq 1 60)");
+    expect(aliasStep).toContain('200)');
+    expect(aliasStep).toContain('404)');
+    expect(aliasStep).toContain('alias_status');
+    expect(aliasStep).toContain('Timed out waiting for the canonical managed alias');
+    expect(aliasStep).not.toContain("--request");
+    expect(aliasStep).not.toContain("--data");
+  });
+
+  test("supplements REST routing identity with managed-alias health smoke", () => {
+    const smoke = commands.slice(
+      commands.indexOf("alias_health="),
+      commands.indexOf("for path in /admin"),
+    );
+    expect(workflow).toContain(
+      "MANAGED_ALIAS_URL: https://responseos-staging-mock-env-staging-audiojones.vercel.app",
+    );
+    expect(smoke).toContain('"$MANAGED_ALIAS_URL/api/health"');
+    expect(smoke).toContain('"$alias_sha" != "$APPLICATION_SHA"');
   });
 
   test("certifies project, environment, providers, Neon, and v2 attestation before migration", () => {
@@ -177,15 +258,19 @@ describe("Deploy Staging workflow contract", () => {
     }
   });
 
-  test("orders migration, exact custom deployment, readiness, and smoke", () => {
+  test("orders migration, readiness, routing identity, final posture, and smoke", () => {
     const migrate = workflow.indexOf("Migrate canonical staging database");
     const deploy = workflow.indexOf("Deploy exact source to governed custom environment");
     const ready = workflow.indexOf("Wait for exact governed deployment to become READY");
+    const aliasBinding = workflow.indexOf("Bind managed alias to exact READY deployment");
+    const finalEnvironment = workflow.indexOf("Reverify final custom-environment routing");
     const smoke = workflow.indexOf("Verify protected health and hosted smoke");
     expect(migrate).toBeGreaterThan(-1);
     expect(deploy).toBeGreaterThan(migrate);
     expect(ready).toBeGreaterThan(deploy);
-    expect(smoke).toBeGreaterThan(ready);
+    expect(aliasBinding).toBeGreaterThan(ready);
+    expect(finalEnvironment).toBeGreaterThan(aliasBinding);
+    expect(smoke).toBeGreaterThan(finalEnvironment);
   });
 
   test("permits only the expected pending-migration status before migrate deploy", () => {
@@ -226,6 +311,10 @@ describe("Deploy Staging workflow contract", () => {
       "vercel alias",
       "vercel promote",
       "vercel domains",
+      "vercel remove",
+      "vercel rm",
+      "vercel project remove",
+      "--method delete",
       "prisma db seed",
       "prisma migrate reset",
       "prisma migrate rollback",

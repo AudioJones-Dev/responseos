@@ -1,0 +1,27 @@
+{
+  "id": "dpl_expected_second",
+  "name": "responseos-staging-mock",
+  "projectId": "prj_pbzqdkzp322jcHWIsi19GhsnWXRm",
+  "url": "responseos-staging-mock-second-audiojones.vercel.app",
+  "target": "preview",
+  "readyState": "READY",
+  "alias": [
+    "responseos-staging-mock-env-staging-audiojones.vercel.app"
+  ],
+  "automaticAliases": [
+    "responseos-staging-mock-env-staging-audiojones.vercel.app"
+  ],
+  "userAliases": [],
+  "aliasAssigned": true,
+  "customEnvironment": {
+    "id": "env_uX6Qp8F6w9aBgx2ikH3BiREB8aHH",
+    "slug": "staging"
+  },
+  "meta": {
+    "responseosApplicationSha": "4a5b29b83cb3f18137b0151ae6242b2ac484ef08"
+  },
+  "gitSource": {
+    "ref": "HEAD",
+    "sha": "4a5b29b83cb3f18137b0151ae6242b2ac484ef08"
+  }
+}
