@@ -62,6 +62,22 @@ Carried forward from the v0.2 planning spec ([archived here](./archive/v0.2-plan
 - OpenClaw sandboxed workflow gateway experiment — exploratory, isolated from the live phone path.
 - HIPAA-ready deployment lane — only after independent compliance review and full vendor BAA chain verification per tenant.
 
+## CRM interoperability architecture phases
+
+These phases are governed by [ADR-0050](./DECISIONS.md#adr-0050--crm-interoperability-uses-canonical-models-governed-mutation-intents-and-provider-adapters). They describe architecture sequencing, not current product completion. Only CRM-0 documentation is in scope; CRM-1 and every later phase require separate current-state review, PRD/ADR work, operator authorization, implementation, and validation.
+
+| Phase | Status | Scope |
+|---|---|---|
+| **CRM-0 — Doctrine** | **Documentation in review** | Canonical/current/target-state separation, interoperability doctrine, agentic mutation governance, and phase gates. No runtime, schema, provider, credential, workflow, deployment, or production change. |
+| **CRM-1 — Connection + Registry** | **Future / gated** | Generalized `CrmConnection` and Provider Registry wrapping the current narrow seams. |
+| **CRM-2 — Entity Mapping + Generic Operations** | **Future / gated** | `CrmEntityMapping` and generalization of the current call-centric `CrmSyncOperation`. |
+| **CRM-3 — Field Mapping + Inbound Sync** | **Future / gated** | `CrmFieldMapping`, `CrmSyncCursor`, `CrmConflict`, and governed inbound reconciliation. |
+| **CRM-4 — Agentic Mutation Governance** | **Future / gated** | `CrmMutationIntent`, field/domain authority, execution classes, and approval controls. |
+| **CRM-5 — Second Real CRM Adapter** | **Future / gated** | Separately select and implement a second provider to test the abstraction. No provider is selected by CRM-0. |
+| **CRM-6 — Broader Adapter Ecosystem** | **Future / gated** | Additional general or vertical CRM adapters only when validated market need justifies them. |
+
+CRM-0 does not expand the live-demo slice, authorize live HubSpot writes, activate a CRM, configure credentials, or advance v0.3 gates. CRM-1 MUST NOT start automatically when CRM-0 merges.
+
 ## Future Knowledge Layer (v0.4+)
 
 ResponseOS may later include a client-specific knowledge layer that grounds AI voice, SMS, booking, quote, and support workflows in approved business knowledge. This is a roadmap target for **v0.4 or later**. It is **not** part of v0.2, not part of v0.3, and not part of the current database / auth foundation.

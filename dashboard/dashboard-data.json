@@ -139,6 +139,19 @@
       "due": "2026-07-31"
     },
     {
+      "id": "D-02",
+      "phase": "Tech Debt & Hardening",
+      "title": "CRM-0 interoperability doctrine (documentation only)",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-08-23",
+      "due": "2026-08-23",
+      "blocked": true,
+      "blockedReason": "CRM-0 is documentation only and awaits exact-head review; CRM-1 and all runtime, provider, credential, deployment, and production work remain separately gated"
+    },
+    {
       "id": "27",
       "phase": "v0.3 · Demo Scope",
       "title": "Define authorized v0.3 demo scope",
