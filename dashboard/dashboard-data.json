@@ -609,7 +609,7 @@
       "start": "2026-08-03",
       "due": "2026-08-12",
       "blocked": true,
-      "blockedReason": "Run 32606945362 created a READY first-deployment artifact but SAFE STOPPED because Vercel classified it as Production and assigned a managed Custom Environment alias; containment remediation, a separately authorized second deployment, hosted auth smoke, recovery evidence, and every Production action remain open"
+      "blockedReason": "Run 32654354652 SAFE STOPPED before database access or deployment because optional Custom Environment alias telemetry was treated as mandatory. Canonical Neon remains migrated/current; the governed project still has one quarantined Production-target artifact, while deployment #2, exact Alias API routing, hosted auth smoke, recovery evidence, and every Production action remain open"
     },
     {
       "id": "L-02a",
@@ -735,17 +735,34 @@
       "phase": "Launch / Demo Deploy",
       "title": "Classify managed staging alias and quarantine first deployment",
       "owner": "Codex",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "High",
       "start": "2026-08-22",
       "due": "2026-08-22",
-      "blocked": true,
-      "blockedReason": "Run 32606945362 deployment dpl_Htoemv2DjREXACEZTKMuwVQRrwAj is REJECTED as a first-deployment Production anomaly; PR #135 must bind the managed alias to the exact new READY deployment ID before deployment #2 can receive separate authorization",
+      "blocked": false,
+      "blockedReason": "PR #135 merged; deployment dpl_Htoemv2DjREXACEZTKMuwVQRrwAj remains quarantined, Production targets fail unconditionally, and future staging certification requires Alias API routing to the exact new READY deployment ID",
       "ref": 135,
       "refType": "pull",
-      "refState": "open",
+      "refState": "merged",
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/135"
+    },
+    {
+      "id": "L-02i",
+      "phase": "Launch / Demo Deploy",
+      "title": "Treat Custom Environment alias telemetry as optional",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 95,
+      "priority": "High",
+      "start": "2026-08-23",
+      "due": "2026-08-23",
+      "blocked": true,
+      "blockedReason": "Run 32654354652 exposed optional Custom Environment alias telemetry before database access. Repository remediation preserves Alias API deployment-ID authority; deployment #2 remains separately gated.",
+      "ref": 136,
+      "refType": "pull",
+      "refState": "open",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/136"
     },
     {
       "id": "L-03",

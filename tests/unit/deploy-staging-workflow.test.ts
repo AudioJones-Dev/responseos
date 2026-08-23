@@ -146,13 +146,19 @@ describe("Deploy Staging workflow contract", () => {
     expect(commands).toContain('"$actual_sha" != "$APPLICATION_SHA"');
   });
 
-  test("preserves zero-domain and phase-specific managed-alias certification", () => {
+  test("preserves zero-domain posture and independent managed-alias certification", () => {
     expect(commands).toContain("staging-vercel-custom-environment.mjs");
     expect(customEnvironmentValidator).toContain(
       "environment.domains.length !== 0",
     );
     expect(customEnvironmentValidator).toContain(
       "managedEnvironmentAlias",
+    );
+    expect(customEnvironmentValidator).toContain(
+      "classifyStagingCustomEnvironmentAliasTelemetry",
+    );
+    expect(customEnvironmentValidator).not.toContain(
+      "must contain the canonical managed environment alias after READY",
     );
     const aliasBinding = commands.indexOf(
       "validate-staging-managed-alias.mjs poll",
@@ -208,6 +214,9 @@ describe("Deploy Staging workflow contract", () => {
     );
     expect(managedAliasValidator).toContain(
       "metadata.deploymentId !== expectedDeploymentId",
+    );
+    expect(deploymentResultValidator).toContain(
+      'metadata?.target === "production"',
     );
     expect(finalEnvironment).toBeGreaterThan(aliasBinding);
     expect(smoke).toBeGreaterThan(finalEnvironment);

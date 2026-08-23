@@ -4,6 +4,13 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — ci: treat Custom Environment alias telemetry as optional
+
+- Classified `currentDeploymentAliases` as optional Custom Environment alias telemetry: omitted, `null`, empty, or the one canonical managed staging alias are accepted, while malformed, arbitrary, custom-domain, or multiple-alias evidence still fails closed.
+- Kept `GET /v4/aliases/{idOrAlias}` as the mandatory routing proof that the canonical managed alias resolves to the exact new READY deployment ID; Custom Environment telemetry cannot substitute for that evidence.
+- Preserved the unconditional Production-target failure, exact project/environment/application/deployment identity, zero-domain posture, post-READY Custom Environment readback, and hosted-smoke ordering.
+- Recorded Deploy Staging run `32654354652`: it SAFE STOPPED during preflight before database access or deployment because the live Custom Environment response omitted usable alias telemetry. Deployment #2 was not created; the governed project retained only the quarantined first deployment, and canonical Neon was untouched.
+
 ## Unreleased — feat: add Environment Promotion Contract v1
 
 - Added versioned JSON Schemas for environment contracts, secret metadata, configuration certification, and staging-to-Production promotion policy, with one classification per governed field.
@@ -25,7 +32,7 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - Recorded run `32606945362` and READY deployment `dpl_Htoemv2DjREXACEZTKMuwVQRrwAj` as a rejected `FIRST_DEPLOYMENT_BOOTSTRAP_ANOMALY`: Vercel classified the isolated project's first deployment as Production and assigned its canonical managed Custom Environment alias, so hosted smoke did not run and the artifact is not certification evidence.
 - Added an exact allowlist for Vercel-managed Custom Environment routing alias `responseos-staging-mock-env-staging-audiojones.vercel.app` while preserving hard failure for Production targets, user/custom/unknown aliases, custom domains, missing target evidence, and managed-alias URLs presented as immutable deployment URLs.
 - Added a bounded read-only `GET /v4/aliases/{idOrAlias}` gate after READY that binds the canonical managed alias to the exact deployment ID created by the current run; source SHA, deployment identity, and routing identity remain independent evidence dimensions.
-- Added final post-binding Custom Environment recertification and managed-alias health smoke so the workflow cannot certify an empty or stale final alias route, without changing the deployment command or mutating Vercel state.
+- Added final post-binding Custom Environment identity/domain-posture recertification and managed-alias health smoke. Exact routing remains certified independently by the Alias API deployment ID, without changing the deployment command or manually mutating Vercel state.
 - Required migration status plus a final certification refresh before `prisma migrate deploy`, followed by readiness, protected build-SHA, public demo, and non-404 protected-route smoke. Post-migration failures SAFE STOP without destructive schema rollback, alias, or promotion.
 
 ## Unreleased — ci: bind staging configuration to its governed custom environment

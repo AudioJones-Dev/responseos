@@ -6,7 +6,10 @@ import {
   classifyStagingManagedAlias,
   validateStagingManagedAlias,
 } from "@/scripts/validate-staging-managed-alias.mjs";
-import { CANONICAL_STAGING_VERCEL } from "@/scripts/staging-vercel-custom-environment.mjs";
+import {
+  CANONICAL_STAGING_VERCEL,
+  validateStagingCustomEnvironment,
+} from "@/scripts/staging-vercel-custom-environment.mjs";
 
 const expectedDeploymentId = "dpl_expected_second";
 const expectedDeploymentHost =
@@ -79,6 +82,21 @@ describe("managed staging alias binding", () => {
         expectedDeploymentHost,
       ),
     ).toContain("Managed alias does not target the exact READY deployment ID");
+  });
+
+  test("treats empty Custom Environment telemetry and authoritative stale alias routing as independent evidence", () => {
+    expect(
+      validateStagingCustomEnvironment(
+        fixture("custom-environment-empty-alias-telemetry.json"),
+      ),
+    ).toEqual([]);
+    expect(
+      classifyStagingManagedAlias(
+        fixture("managed-alias-bound-to-first.json"),
+        expectedDeploymentId,
+        expectedDeploymentHost,
+      ).status,
+    ).toBe("pending");
   });
 
   test.each([
