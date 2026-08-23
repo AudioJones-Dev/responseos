@@ -149,7 +149,7 @@
       "start": "2026-08-23",
       "due": "2026-08-23",
       "blocked": true,
-      "blockedReason": "Draft PR #139 is documentation only and awaits exact-head review; CRM-1 and all runtime, provider, credential, deployment, and production work remain separately gated",
+      "blockedReason": "PR #139 is documentation only and awaits exact-head human review; CRM-1 and all runtime, provider, credential, deployment, and production work remain separately gated",
       "ref": 139,
       "refType": "pull",
       "refState": "open",
