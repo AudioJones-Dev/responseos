@@ -758,7 +758,11 @@
       "start": "2026-08-23",
       "due": "2026-08-23",
       "blocked": true,
-      "blockedReason": "Run 32654354652 exposed optional Custom Environment alias telemetry before database access. Repository remediation preserves Alias API deployment-ID authority; deployment #2 remains separately gated."
+      "blockedReason": "Run 32654354652 exposed optional Custom Environment alias telemetry before database access. Repository remediation preserves Alias API deployment-ID authority; deployment #2 remains separately gated.",
+      "ref": 136,
+      "refType": "pull",
+      "refState": "open",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/136"
     },
     {
       "id": "L-03",
