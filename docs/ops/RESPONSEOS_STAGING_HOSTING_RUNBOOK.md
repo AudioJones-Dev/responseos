@@ -1,6 +1,6 @@
 # ResponseOS — Staging Hosting Runbook (Path A)
 
-**Owner:** Audio (AJ Digital LLC) · **Status:** Operator runbook (configuration certified; canonical database migrated; deployment retry separately gated)
+**Owner:** Audio (AJ Digital LLC) · **Status:** Operator runbook (configuration/database/deployment identity proven; anonymous browser auth pending read-only recertification)
 **Scope:** Hosted **staging only** — Neon + Clerk + Vercel client access while providers remain **mock**.  
 **Does not authorize:** live Telnyx/Vapi/Twilio/HubSpot/Calendly, production deploy, or pilot go-live.  
 **Canon:** [`../product/responseos-v0.3-founding-pilot-scope.md`](../product/responseos-v0.3-founding-pilot-scope.md) Stage **C**, [`../env-spec.md`](../env-spec.md), [`../DEPLOYMENT.md`](../DEPLOYMENT.md), ADR-0001 / ADR-0019.
@@ -11,7 +11,7 @@
 
 | Gate | Done when |
 |---|---|
-| Staging environment | Governed Vercel custom environment `staging` (`env_uX6Qp8F6w9aBgx2ikH3BiREB8aHH`), type `preview`; no branch matcher, domain, alias, or deployment |
+| Staging environment | Governed Vercel custom environment `staging` (`env_uX6Qp8F6w9aBgx2ikH3BiREB8aHH`), type `preview`; no branch matcher or configured domain; exact deployment and managed routing certified independently |
 | Auth | Real Clerk login (no `RESPONSEOS_DEV_SESSION`) |
 | Tenant | Clerk org → `Account.clerk_org_id` → membership → portal session with `accountId` |
 | Data | Canonical Neon identity proven before migration; staging DB migrated; seed optional for demo fixtures |
@@ -25,15 +25,15 @@ Until the staging URL is live with Clerk login, dashboard **L-02** stays partial
 
 ## 1. Credential / platform audit (names only — no secrets)
 
-Verified snapshot through the 2026-08-23 pre-database SAFE STOP (operator must re-check before retry):
+Verified snapshot through Deploy Staging run `32659300496` (operator must re-check before certification or retry):
 
 | Surface | Observed | Gap for Path A staging |
 |---|---|---|
 | **GitHub Environment** | `staging` exists with required reviewer `AudioJones-Dev` and a `master`-only deployment branch policy | Keep all deploy credentials Environment-scoped; deployment retry still requires a separate approval. |
 | **GitHub staging secrets** | Database URLs, verified Vercel team/project ids, Vercel token, automation-bypass secret, and a secret named `NEON_API_KEY` are present; protected runs proved the key can read the canonical Neon resources | Values remain unreadable by design. Reverify identity and the current version 2 attestation before every deployment retry. |
-| **Vercel** | Dedicated `audiojones/responseos-staging-mock`; Node **24.x**; `live=false`; exactly one quarantined READY deployment (`dpl_Htoemv2DjREXACEZTKMuwVQRrwAj`) with rejected `target=production`; canonical managed alias still resolves to it; no custom domains or automatic Git deployments | Keep Vercel Authentication enabled (`all_except_custom_domains`). Preserve the quarantined artifact, remediate optional alias telemetry, and require a separate exact-SHA authorization for deployment #2. |
+| **Vercel** | Dedicated `audiojones/responseos-staging-mock`; Node **24.x**; `live=false`; two retained deployments: quarantined Production-target `dpl_Htoemv2DjREXACEZTKMuwVQRrwAj` and non-Production READY staging candidate `dpl_SC8XuZJFXFec15ECfCmGtNtdChs4`; the canonical managed alias resolves to deployment #2; no custom domains or automatic Git deployments | Keep Vercel Authentication enabled (`all_except_custom_domains`). Do not create deployment #3 for the auth-smoke remediation; certify deployment #2 through the separately authorized read-only workflow. |
 | **Neon** | Canonical project `responseos-staging-mock` (`patient-snow-16014934`), branch `main` (`br-mute-boat-a6ylen11`), endpoint `ep-young-morning-a6oeu9vv`, and database `neondb` were reverified; run `32587779315` applied all 13 Prisma migrations | Never substitute the separate `responseos` project. The retry must reverify identity and should observe a current migration status plus a no-op `prisma migrate deploy`. |
-| **Clerk** | All eight required Preview names and same-development-instance provenance are verified | Do not change Clerk configuration during the database preflight. |
+| **Clerk** | All required Custom Environment variables and same-development-instance provenance are verified | Do not change Clerk configuration for read-only hosted certification. Resolved application dependency evidence is `@clerk/nextjs` 7.6.1 / `@clerk/backend` 3.13.1. |
 | **Sentry / PostHog** | Env placeholders in `.env.example`; **no SDK packages wired** | Optional for Path A: create projects, set DSNs later; tagging contract documented in §6. |
 | **Live providers** | Forbidden until Stage D+ | Leave Telnyx/Vapi/etc. unset. The staging preflight rejects live-provider credentials before migration or build. |
 
@@ -231,6 +231,14 @@ Deployment gate:
 - Behavior: control/source dual checkout → REST-only exact project/custom-environment/protection/bypass/posture checks → canonical Neon and GitHub pooled/direct identity → current version 2 DB-variable revision attestation → dependency/Prisma setup → migration status → immediate REST recertification → `prisma migrate deploy` → pinned CLI deployment to REST-verified slug `staging` with exact-checked `VERCEL_ORG_ID`/`VERCEL_PROJECT_ID` and no link/pull → exact environment/source/deployment readback → READY → capture exact deployment ID → bounded read-only managed-alias lookup → prove alias project and deployment ID → final Custom Environment recertification → immutable-origin and managed-alias health/auth smoke. The Production-only `--skip-domain` flag is forbidden. `aliasPolicy=none` means no user-configured alias, custom domain, Production alias, or promotion alias; Vercel's provider-generated Custom Environment routing alias is permitted only when it exactly equals `responseos-staging-mock-env-staging-audiojones.vercel.app` and maps to the exact READY deployment created by the current run.
 - Explicit non-goals: no `on: push`; no generic Preview or Production target; no seed; no alias/promotion; no live provider cutover
 
+Read-only hosted certification gate:
+
+- Workflow file: [`.github/workflows/verify-staging-hosted.yml`](../../.github/workflows/verify-staging-hosted.yml)
+- Trigger: **manual** `workflow_dispatch` from `master` only, with `hosted-certification`, exact current `control_sha`, exact reviewed `application_sha`, and exact existing `deployment_id`
+- Permissions/credentials: GitHub `contents: read`; protected `staging` Environment supplies only the Vercel REST token and automation-bypass secret. No Neon/database credential is loaded.
+- Behavior: exact control guard → project/Custom Environment/readable mock posture → existing READY non-Production deployment identity → Alias API exact deployment-ID binding → final Custom Environment posture → immutable and managed-alias health → `/demo` → anonymous browser-document auth redirect for both `/admin` and `/client/dashboard`
+- Explicit non-goals: no Prisma command, seed, Vercel deployment, alias/domain/promotion mutation, provider activation, credential rotation, or Production action
+
 The Vercel-hosted build is deliberate: custom-environment database and Clerk server values are marked Sensitive and cannot be downloaded for a local prebuilt build. Vercel consumes them inside its protected build/runtime boundary while GitHub retains only the migration database URLs and deploy credentials. `vercel link` and `vercel pull` are not used. The workflow first proves the exact environment ID maps to slug `staging`, then targets that slug explicitly while injecting the non-secret application SHA into build/runtime health evidence.
 
 If migration succeeds but deployment, readiness, or smoke fails, the workflow SAFE STOPs. It records non-secret migration/deployment outcome evidence, performs no automatic schema rollback, issues no alias/domain/promotion mutation command, and requires separate remediation authorization.
@@ -245,9 +253,15 @@ Source SHA proves reviewed application source, the new `dpl_...` identifier prov
 
 `currentDeploymentAliases` in the Custom Environment response is optional alias telemetry, not authoritative routing state. Omitted, `null`, empty, or the single canonical managed alias are acceptable environment-posture evidence; arbitrary, custom-domain, malformed, or multiple aliases still fail closed. The Custom Environment API remains authoritative for environment ID, slug, type, branch matching, and configured domains. The Alias API remains authoritative for the canonical managed alias → exact deployment ID binding, and the Deployment API remains authoritative for deployment identity, immutable URL, target, readiness, project, Custom Environment, and application SHA.
 
-Deploy Staging run [`32654354652`](https://github.com/AudioJones-Dev/responseos/actions/runs/32654354652) SAFE STOPPED at the initial Custom Environment gate because optional alias telemetry was treated as mandatory. The stop occurred before Neon/database verification, migration status, `prisma migrate deploy`, or deployment creation. Deployment #2 does not exist; the governed project still contains only quarantined deployment `dpl_Htoemv2DjREXACEZTKMuwVQRrwAj`, and the Alias API may legitimately show the canonical managed alias still routed to that artifact before a new READY deployment exists. This is pending routing state, not contradictory Custom Environment evidence.
+Deploy Staging run [`32654354652`](https://github.com/AudioJones-Dev/responseos/actions/runs/32654354652) SAFE STOPPED at the initial Custom Environment gate because optional alias telemetry was treated as mandatory. The stop occurred before Neon/database verification, migration status, `prisma migrate deploy`, or deployment creation. At that checkpoint, deployment #2 did not exist; the governed project contained only quarantined deployment `dpl_Htoemv2DjREXACEZTKMuwVQRrwAj`, and the Alias API legitimately showed the canonical managed alias still routed to that artifact before a new READY deployment existed. That was pending routing state, not contradictory Custom Environment evidence.
 
-Recovery remains outstanding because no certifiable staging deployment exists. The governed project contains one quarantined evidence deployment. A second deployment requires separate exact-SHA authorization after this optional-telemetry remediation merges and must prove `responseos-staging-mock-env-staging-audiojones.vercel.app` maps to the exact second deployment ID before final Custom Environment posture readback or smoke. No workflow retry is authorized by this documentation. The app continues to boot with mock providers because the staging preflight rejects live-provider credentials.
+Deploy Staging run [`32659300496`](https://github.com/AudioJones-Dev/responseos/actions/runs/32659300496) reverified canonical controls, Custom Environment, Neon identity, current migration status, and the version 2 database attestation. `prisma migrate deploy` completed as a no-op with zero new migrations. It created non-Production READY deployment `dpl_SC8XuZJFXFec15ECfCmGtNtdChs4` at immutable host `responseos-staging-mock-fwzvl66pv-audiojones.vercel.app`; application SHA metadata, Alias API binding to the exact deployment ID, final Custom Environment posture, immutable health, managed-alias health, and `/demo` all passed. Deployment #1 remained quarantined and unchanged.
+
+The same run SAFE STOPPED only when the old plain-curl `/admin` probe returned 404; `/client/dashboard` was not reached. The built route was present, and resolved Clerk 7.6.1 treats a request as a page when `sec-fetch-dest` is `document`/`iframe`, `Accept` includes `text/html`, or a Next internal navigation marker is present. Its `auth.protect()` returns 404 for an anonymous non-page request but redirects an anonymous page request through `NextResponse.redirect`, which is HTTP 307 in this resolved stack. Therefore 404 remains a failure for the required document probe and is never blanket-accepted.
+
+Deployment #2 is retained as the canonical staging candidate. The next gate is the separately authorized read-only hosted certification workflow, which must send `Accept: text/html,application/xhtml+xml` plus `Sec-Fetch-Dest: document`, disable redirect following, and require both protected routes to return HTTP 307 with `Location` on the test-instance Clerk Account Portal `/sign-in` path derived from the readable `pk_test_` key. The Alias API remains authoritative for routing; the Custom Environment API remains authoritative for environment/domain posture. No deployment #3 is required or authorized by this remediation.
+
+Current classification: infrastructure containment **PASS**; deployment identity **PASS**; routing identity **PASS**; public health **PASS**; public demo **PASS**; anonymous browser auth redirect **PENDING RE-CERTIFICATION**; authenticated operator access **NOT YET TESTED**; prospect bootstrap and live providers **NOT AUTHORIZED**.
 
 ---
 
@@ -267,7 +281,7 @@ Until SDKs land: rely on Vercel runtime logs + Clerk webhook logs + Neon metrics
 
 ## 7. Authorization reminder
 
-Repository-side Stage C hardening was authorized on 2026-08-18. Configuration certification and the canonical staging database migration have since completed; creating the first application deployment, proving hosted authentication/smoke, exercising recovery, and every Production action remain separately authorized operator/platform steps.
+Repository-side Stage C hardening was authorized on 2026-08-18. Configuration certification, canonical staging database migration, and deployment #2 identity/routing/public smoke have completed. Anonymous browser auth recertification, authenticated operator access, recovery evidence, prospect exercises, and every Production action remain separately authorized operator/platform steps.
 
 The [Environment Promotion Runbook](./RESPONSEOS_ENVIRONMENT_PROMOTION_RUNBOOK.md) governs any future staging-to-Production planning. It does not alter this first-staging-deployment path and does not authorize a Production resource, secret, alias, provider, or deploy action.
 

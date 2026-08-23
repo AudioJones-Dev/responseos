@@ -23,6 +23,14 @@ const managedAliasValidator = fs.readFileSync(
   path.join(process.cwd(), "scripts", "validate-staging-managed-alias.mjs"),
   "utf8",
 );
+const protectedRouteValidator = fs.readFileSync(
+  path.join(
+    process.cwd(),
+    "scripts",
+    "validate-staging-protected-route-smoke.mjs",
+  ),
+  "utf8",
+);
 const migrationStatusValidator = fs.readFileSync(
   path.join(process.cwd(), "scripts", "validate-prisma-migration-status.mjs"),
   "utf8",
@@ -333,9 +341,18 @@ describe("Deploy Staging workflow contract", () => {
     expect(workflow).toContain("SAFE STOP after staging migration");
   });
 
-  test("does not accept 404 as protected-route authentication evidence", () => {
-    const smoke = commands.slice(commands.indexOf("for path in /admin"));
-    expect(smoke).not.toContain("404)");
-    expect(smoke).toContain("401|403");
+  test("uses the shared browser-document auth smoke without accepting 404", () => {
+    const smoke = commands.slice(
+      commands.indexOf("validate-staging-protected-route-smoke.mjs"),
+    );
+    expect(smoke).toContain(
+      'validate-staging-protected-route-smoke.mjs "$DEPLOYMENT_URL" "$RUNNER_TEMP/vercel-custom-readable.json"',
+    );
+    expect(protectedRouteValidator).toContain('"sec-fetch-dest": "document"');
+    expect(protectedRouteValidator).toContain('redirect: "manual"');
+    expect(protectedRouteValidator).toContain('"/admin"');
+    expect(protectedRouteValidator).toContain('"/client/dashboard"');
+    expect(protectedRouteValidator).toContain("EXPECTED_REDIRECT_STATUS = 307");
+    expect(protectedRouteValidator).not.toContain("EXPECTED_REDIRECT_STATUS = 404");
   });
 });

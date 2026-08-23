@@ -590,13 +590,13 @@
       "phase": "Testing & QA",
       "title": "Hosted authenticated end-to-end demo smoke",
       "owner": "Audio",
-      "status": "To Do",
-      "progress": 0,
+      "status": "In Progress",
+      "progress": 70,
       "priority": "High",
       "start": "2026-08-21",
       "due": "2026-08-28",
       "blocked": true,
-      "blockedReason": "Canonical Neon is migrated, but the exact-SHA Vercel deployment, hosted Clerk and tenant smoke, recovery evidence, and operator authorization remain uncleared"
+      "blockedReason": "Deployment #2 identity, exact Alias API routing, health, and public demo passed in run 32659300496. Anonymous browser-document auth redirect awaits read-only recertification; authenticated AJ Digital operator access, recovery evidence, and prospect authorization remain open"
     },
     {
       "id": "L-02",
@@ -604,12 +604,12 @@
       "title": "Staging/prod env + secrets (Path A first)",
       "owner": "Audio",
       "status": "In Progress",
-      "progress": 85,
+      "progress": 92,
       "priority": "High",
       "start": "2026-08-03",
       "due": "2026-08-12",
       "blocked": true,
-      "blockedReason": "Run 32654354652 SAFE STOPPED before database access or deployment because optional Custom Environment alias telemetry was treated as mandatory. Canonical Neon remains migrated/current; the governed project still has one quarantined Production-target artifact, while deployment #2, exact Alias API routing, hosted auth smoke, recovery evidence, and every Production action remain open"
+      "blockedReason": "Run 32659300496 created non-Production READY deployment #2 and proved exact deployment/Alias API routing plus health and public demo. Plain-curl /admin returned a non-conclusive Clerk 404; anonymous browser-document auth redirect, authenticated operator access, recovery evidence, and every Production action remain open"
     },
     {
       "id": "L-02a",
@@ -752,17 +752,30 @@
       "phase": "Launch / Demo Deploy",
       "title": "Treat Custom Environment alias telemetry as optional",
       "owner": "Codex",
-      "status": "Review",
-      "progress": 95,
+      "status": "Done",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-08-23",
+      "due": "2026-08-23",
+      "blocked": false,
+      "blockedReason": "PR #136 merged; optional telemetry no longer blocks Custom Environment posture while exact Alias API deployment-ID routing remains mandatory.",
+      "ref": 136,
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/136"
+    },
+    {
+      "id": "L-02j",
+      "phase": "Launch / Demo Deploy",
+      "title": "Certify hosted anonymous browser auth without redeployment",
+      "owner": "Codex",
+      "status": "In Progress",
+      "progress": 80,
       "priority": "High",
       "start": "2026-08-23",
       "due": "2026-08-23",
       "blocked": true,
-      "blockedReason": "Run 32654354652 exposed optional Custom Environment alias telemetry before database access. Repository remediation preserves Alias API deployment-ID authority; deployment #2 remains separately gated.",
-      "ref": 136,
-      "refType": "pull",
-      "refState": "open",
-      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/136"
+      "blockedReason": "Repository remediation is in progress. Deployment #2 remains retained and unchanged; read-only hosted certification requires a separate exact-SHA authorization after review/merge."
     },
     {
       "id": "L-03",

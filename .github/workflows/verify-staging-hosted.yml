@@ -1,0 +1,198 @@
+# Read-only certification for an existing governed staging deployment.
+# It never migrates, deploys, aliases, promotes, or changes provider state.
+
+name: Verify Hosted Staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "hosted-certification" to confirm read-only verification'
+        required: true
+        type: string
+      control_sha:
+        description: "Exact 40-character current master workflow-control SHA"
+        required: true
+        type: string
+      application_sha:
+        description: "Exact reviewed 40-character application SHA"
+        required: true
+        type: string
+      deployment_id:
+        description: "Exact existing governed Vercel deployment ID"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: responseos-staging-exclusive
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    name: Bind certification controls to current master
+    runs-on: ubuntu-latest
+    env:
+      DISPATCH_CONFIRM: ${{ inputs.confirm }}
+      CONTROL_SHA: ${{ inputs.control_sha }}
+      APPLICATION_SHA: ${{ inputs.application_sha }}
+      DEPLOYMENT_ID: ${{ inputs.deployment_id }}
+      DISPATCH_REF: ${{ github.ref }}
+      DISPATCHED_WORKFLOW_SHA: ${{ github.sha }}
+    steps:
+      - name: Validate dispatch contract
+        run: |
+          if [ "$DISPATCH_CONFIRM" != "hosted-certification" ]; then
+            echo "::error::Confirmation must be exactly hosted-certification."
+            exit 1
+          fi
+          if [ "$DISPATCH_REF" != "refs/heads/master" ]; then
+            echo "::error::Verify Hosted Staging must be dispatched from master."
+            exit 1
+          fi
+          if [[ ! "$CONTROL_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::control_sha must be a full lowercase commit SHA."
+            exit 1
+          fi
+          if [[ ! "$APPLICATION_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::application_sha must be a full lowercase commit SHA."
+            exit 1
+          fi
+          if [[ ! "$DEPLOYMENT_ID" =~ ^dpl_[A-Za-z0-9]+$ ]]; then
+            echo "::error::deployment_id must be an exact Vercel deployment ID."
+            exit 1
+          fi
+          if [ "$CONTROL_SHA" != "$DISPATCHED_WORKFLOW_SHA" ]; then
+            echo "::error::control_sha must equal the workflow SHA dispatched from master."
+            exit 1
+          fi
+
+      - name: Check out exact workflow controls
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.control_sha }}
+
+      - name: Verify controls are still current master
+        run: |
+          if [ "$(git rev-parse HEAD)" != "$CONTROL_SHA" ]; then
+            echo "::error::Checked-out controls do not match control_sha."
+            exit 1
+          fi
+          remote_master=$(git ls-remote origin refs/heads/master | awk '{print $1}')
+          if [ "$remote_master" != "$CONTROL_SHA" ]; then
+            echo "::error::control_sha is no longer current master."
+            exit 1
+          fi
+
+  verify-hosted:
+    name: Certify existing governed staging deployment
+    needs: guard
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+    env:
+      EXPECTED_VERCEL_PROJECT_NAME: responseos-staging-mock
+      EXPECTED_VERCEL_PROJECT_ID: prj_pbzqdkzp322jcHWIsi19GhsnWXRm
+      EXPECTED_VERCEL_ORG_ID: team_BHxIkAGPW6qEKKQBAt9c0NGz
+      EXPECTED_VERCEL_CUSTOM_ENV_ID: env_uX6Qp8F6w9aBgx2ikH3BiREB8aHH
+      EXPECTED_VERCEL_CUSTOM_ENV_SLUG: staging
+      EXPECTED_VERCEL_MANAGED_ALIAS: responseos-staging-mock-env-staging-audiojones.vercel.app
+      CONTROL_SHA: ${{ inputs.control_sha }}
+      APPLICATION_SHA: ${{ inputs.application_sha }}
+      DEPLOYMENT_ID: ${{ inputs.deployment_id }}
+      VERCEL_ORG_ID: team_BHxIkAGPW6qEKKQBAt9c0NGz
+      VERCEL_PROJECT_ID: prj_pbzqdkzp322jcHWIsi19GhsnWXRm
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+    steps:
+      - name: Check out exact workflow controls
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.control_sha }}
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.18.0
+
+      - name: Verify exact checkout, current master, and required credentials
+        run: |
+          if [ "$(git rev-parse HEAD)" != "$CONTROL_SHA" ]; then
+            echo "::error::Workflow-control checkout does not match control_sha."
+            exit 1
+          fi
+          remote_master=$(git ls-remote origin refs/heads/master | awk '{print $1}')
+          if [ "$remote_master" != "$CONTROL_SHA" ]; then
+            echo "::error::Workflow controls changed while this protected job was waiting."
+            exit 1
+          fi
+          missing=0
+          for name in VERCEL_TOKEN VERCEL_AUTOMATION_BYPASS_SECRET; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing staging Environment secret: $name"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then exit 1; fi
+
+      - name: Verify protected non-production Vercel project
+        run: |
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-project.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects/$EXPECTED_VERCEL_PROJECT_ID?teamId=$VERCEL_ORG_ID"
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-project-domains.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects/$EXPECTED_VERCEL_PROJECT_ID/domains?teamId=$VERCEL_ORG_ID"
+          node scripts/validate-staging-vercel-project.mjs "$RUNNER_TEMP/vercel-project.json" "$RUNNER_TEMP/vercel-project-domains.json"
+
+      - name: Verify governed custom-environment posture
+        run: |
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-custom-environment.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects/$EXPECTED_VERCEL_PROJECT_ID/custom-environments/$EXPECTED_VERCEL_CUSTOM_ENV_ID?teamId=$VERCEL_ORG_ID"
+          node scripts/staging-vercel-custom-environment.mjs "$RUNNER_TEMP/vercel-custom-environment.json" post-ready
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-env-unfiltered.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v10/projects/$EXPECTED_VERCEL_PROJECT_ID/env?teamId=$VERCEL_ORG_ID"
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-custom-env.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v10/projects/$EXPECTED_VERCEL_PROJECT_ID/env?teamId=$VERCEL_ORG_ID&customEnvironmentId=$EXPECTED_VERCEL_CUSTOM_ENV_ID"
+          node scripts/fetch-staging-vercel-readable-env.mjs final custom-environment "$RUNNER_TEMP/vercel-custom-env.json" "$RUNNER_TEMP/vercel-custom-readable.json"
+          node scripts/validate-staging-vercel-posture.mjs custom-environment "$RUNNER_TEMP/vercel-custom-readable.json" "$RUNNER_TEMP/vercel-env-unfiltered.json"
+
+      - name: Certify exact existing deployment identity
+        id: identity
+        run: |
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-deployment.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v13/deployments/$DEPLOYMENT_ID?teamId=$VERCEL_ORG_ID&withGitRepoInfo=true"
+          node scripts/validate-staging-deployment-result.mjs existing "$RUNNER_TEMP/vercel-deployment.json" "$DEPLOYMENT_ID" "$APPLICATION_SHA"
+          deployment_host=$(jq -er '.url | select(type == "string" and test("^[a-z0-9][a-z0-9-]*[a-z0-9]\\.vercel\\.app$"))' "$RUNNER_TEMP/vercel-deployment.json")
+          echo "deployment_host=$deployment_host" >> "$GITHUB_OUTPUT"
+
+      - name: Reverify authoritative managed-alias routing
+        env:
+          DEPLOYMENT_HOST: ${{ steps.identity.outputs.deployment_host }}
+        run: |
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-managed-alias.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v4/aliases/$EXPECTED_VERCEL_MANAGED_ALIAS?teamId=$VERCEL_ORG_ID&projectId=$EXPECTED_VERCEL_PROJECT_ID"
+          node scripts/validate-staging-managed-alias.mjs poll "$RUNNER_TEMP/vercel-managed-alias.json" "$DEPLOYMENT_ID" "$DEPLOYMENT_HOST"
+
+      - name: Reverify final custom-environment posture
+        run: |
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-custom-environment-final.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects/$EXPECTED_VERCEL_PROJECT_ID/custom-environments/$EXPECTED_VERCEL_CUSTOM_ENV_ID?teamId=$VERCEL_ORG_ID"
+          node scripts/staging-vercel-custom-environment.mjs "$RUNNER_TEMP/vercel-custom-environment-final.json" post-ready
+
+      - name: Verify public runtime and anonymous browser auth boundary
+        env:
+          DEPLOYMENT_HOST: ${{ steps.identity.outputs.deployment_host }}
+          MANAGED_ALIAS_URL: https://responseos-staging-mock-env-staging-audiojones.vercel.app
+        run: |
+          deployment_url="https://$DEPLOYMENT_HOST"
+          bypass_header="x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET"
+          health=$(curl --fail --silent --show-error --max-time 30 --header "$bypass_header" "$deployment_url/api/health")
+          actual_sha=$(printf '%s' "$health" | jq -r '.build_sha')
+          if [ "$actual_sha" != "$APPLICATION_SHA" ]; then
+            echo "::error::Immutable health build SHA does not match application_sha."
+            exit 1
+          fi
+          alias_health=$(curl --fail --silent --show-error --max-time 30 --header "$bypass_header" "$MANAGED_ALIAS_URL/api/health")
+          alias_sha=$(printf '%s' "$alias_health" | jq -r '.build_sha')
+          if [ "$alias_sha" != "$APPLICATION_SHA" ]; then
+            echo "::error::Managed-alias health build SHA does not match application_sha."
+            exit 1
+          fi
+          public_code=$(curl --silent --show-error --max-time 30 --header "$bypass_header" --output /dev/null --write-out '%{http_code}' "$deployment_url/demo")
+          if [ "$public_code" != "200" ]; then
+            echo "::error::Public demo smoke failed with HTTP $public_code."
+            exit 1
+          fi
+          node scripts/validate-staging-protected-route-smoke.mjs "$deployment_url" "$RUNNER_TEMP/vercel-custom-readable.json"
