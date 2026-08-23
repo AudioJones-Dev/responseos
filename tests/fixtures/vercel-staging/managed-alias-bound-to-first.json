@@ -1,0 +1,13 @@
+{
+  "alias": "responseos-staging-mock-env-staging-audiojones.vercel.app",
+  "deploymentId": "dpl_Htoemv2DjREXACEZTKMuwVQRrwAj",
+  "projectId": "prj_pbzqdkzp322jcHWIsi19GhsnWXRm",
+  "redirect": null,
+  "deployment": {
+    "id": "dpl_Htoemv2DjREXACEZTKMuwVQRrwAj",
+    "url": "responseos-staging-mock-orc2fr3of-audiojones.vercel.app",
+    "meta": {
+      "responseosApplicationSha": "4a5b29b83cb3f18137b0151ae6242b2ac484ef08"
+    }
+  }
+}

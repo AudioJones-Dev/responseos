@@ -96,6 +96,7 @@ jobs:
       EXPECTED_VERCEL_ORG_ID: team_BHxIkAGPW6qEKKQBAt9c0NGz
       EXPECTED_VERCEL_CUSTOM_ENV_ID: env_uX6Qp8F6w9aBgx2ikH3BiREB8aHH
       EXPECTED_VERCEL_CUSTOM_ENV_SLUG: staging
+      EXPECTED_VERCEL_MANAGED_ALIAS: responseos-staging-mock-env-staging-audiojones.vercel.app
       EXPECTED_NEON_PROJECT_NAME: responseos-staging-mock
       EXPECTED_NEON_PROJECT_ID: patient-snow-16014934
       EXPECTED_NEON_BRANCH_NAME: main
@@ -258,8 +259,6 @@ jobs:
         env:
           DEPLOYMENT_HOST: ${{ steps.deploy.outputs.host }}
         run: |
-          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-custom-environment-post-deploy.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects/$EXPECTED_VERCEL_PROJECT_ID/custom-environments/$EXPECTED_VERCEL_CUSTOM_ENV_ID?teamId=$VERCEL_ORG_ID"
-          node ../workflow-control/scripts/staging-vercel-custom-environment.mjs "$RUNNER_TEMP/vercel-custom-environment-post-deploy.json"
           for attempt in $(seq 1 60); do
             curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-deployment.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v13/deployments/$DEPLOYMENT_HOST?teamId=$VERCEL_ORG_ID&withGitRepoInfo=true"
             node ../workflow-control/scripts/validate-staging-deployment-result.mjs progress "$RUNNER_TEMP/vercel-deployment.json" "$APPLICATION_SHA" "$DEPLOYMENT_HOST"
@@ -267,7 +266,7 @@ jobs:
             case "$state" in
               READY)
                 node ../workflow-control/scripts/validate-staging-deployment-result.mjs ready "$RUNNER_TEMP/vercel-deployment.json" "$APPLICATION_SHA" "$DEPLOYMENT_HOST"
-                deployment_id=$(jq -r '.id' "$RUNNER_TEMP/vercel-deployment.json")
+                deployment_id=$(jq -er '.id | select(type == "string" and test("^dpl_[A-Za-z0-9]+$"))' "$RUNNER_TEMP/vercel-deployment.json")
                 echo "deployment_id=$deployment_id" >> "$GITHUB_OUTPUT"
                 exit 0
                 ;;
@@ -281,15 +280,60 @@ jobs:
           echo "::error::Timed out waiting for governed staging deployment readiness."
           exit 1
 
+      - name: Bind managed alias to exact READY deployment
+        env:
+          DEPLOYMENT_HOST: ${{ steps.deploy.outputs.host }}
+          DEPLOYMENT_ID: ${{ steps.ready.outputs.deployment_id }}
+        run: |
+          for attempt in $(seq 1 60); do
+            http_code=$(curl --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-managed-alias.json" --write-out '%{http_code}' --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v4/aliases/$EXPECTED_VERCEL_MANAGED_ALIAS?teamId=$VERCEL_ORG_ID&projectId=$EXPECTED_VERCEL_PROJECT_ID")
+            case "$http_code" in
+              200)
+                set +e
+                node ../workflow-control/scripts/validate-staging-managed-alias.mjs poll "$RUNNER_TEMP/vercel-managed-alias.json" "$DEPLOYMENT_ID" "$DEPLOYMENT_HOST"
+                alias_status=$?
+                set -e
+                case "$alias_status" in
+                  0)
+                    echo "Canonical managed staging alias is bound to the exact READY deployment."
+                    exit 0
+                    ;;
+                  2) ;;
+                  *) exit 1 ;;
+                esac
+                ;;
+              404) ;;
+              *)
+                echo "::error::Managed staging alias lookup failed with HTTP $http_code."
+                exit 1
+                ;;
+            esac
+            sleep 10
+          done
+          echo "::error::Timed out waiting for the canonical managed alias to bind to the exact READY deployment."
+          exit 1
+
+      - name: Reverify final custom-environment routing
+        run: |
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-custom-environment-post-ready.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects/$EXPECTED_VERCEL_PROJECT_ID/custom-environments/$EXPECTED_VERCEL_CUSTOM_ENV_ID?teamId=$VERCEL_ORG_ID"
+          node ../workflow-control/scripts/staging-vercel-custom-environment.mjs "$RUNNER_TEMP/vercel-custom-environment-post-ready.json" post-ready
+
       - name: Verify protected health and hosted smoke
         env:
           DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
+          MANAGED_ALIAS_URL: https://responseos-staging-mock-env-staging-audiojones.vercel.app
         run: |
           bypass_header="x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET"
           health=$(curl --fail --silent --show-error --max-time 30 --header "$bypass_header" "$DEPLOYMENT_URL/api/health")
           actual_sha=$(printf '%s' "$health" | jq -r '.build_sha')
           if [ "$actual_sha" != "$APPLICATION_SHA" ]; then
             echo "::error::Health build SHA does not match application_sha."
+            exit 1
+          fi
+          alias_health=$(curl --fail --silent --show-error --max-time 30 --header "$bypass_header" "$MANAGED_ALIAS_URL/api/health")
+          alias_sha=$(printf '%s' "$alias_health" | jq -r '.build_sha')
+          if [ "$alias_sha" != "$APPLICATION_SHA" ]; then
+            echo "::error::Managed-alias health build SHA does not match application_sha."
             exit 1
           fi
           public_code=$(curl --silent --show-error --max-time 30 --header "$bypass_header" --output /dev/null --write-out '%{http_code}' "$DEPLOYMENT_URL/demo")

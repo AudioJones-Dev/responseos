@@ -741,7 +741,7 @@
       "start": "2026-08-22",
       "due": "2026-08-22",
       "blocked": true,
-      "blockedReason": "Run 32606945362 deployment dpl_Htoemv2DjREXACEZTKMuwVQRrwAj is REJECTED as a first-deployment Production anomaly; PR #135 containment remediation is under review and deployment #2 remains separately gated",
+      "blockedReason": "Run 32606945362 deployment dpl_Htoemv2DjREXACEZTKMuwVQRrwAj is REJECTED as a first-deployment Production anomaly; PR #135 must bind the managed alias to the exact new READY deployment ID before deployment #2 can receive separate authorization",
       "ref": 135,
       "refType": "pull",
       "refState": "open",

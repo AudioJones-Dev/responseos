@@ -167,7 +167,7 @@ if (invokedPath === import.meta.url) {
       }
       console.log(
         mode === "ready"
-          ? "Governed staging deployment is READY with exact project, environment, source, and managed-alias containment."
+          ? "Governed staging deployment is READY with exact project, environment, source, and permitted alias metadata; managed-alias routing certification remains separate."
           : "Governed staging deployment identity remains canonical while readiness is pending.",
       );
     }

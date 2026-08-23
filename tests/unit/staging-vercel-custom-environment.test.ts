@@ -30,6 +30,23 @@ describe("canonical staging custom environment", () => {
     ).toEqual([]);
   });
 
+  test("requires the canonical managed alias for post-READY certification", () => {
+    expect(validateStagingCustomEnvironment(valid, "post-ready")).toContain(
+      "Vercel staging custom environment must contain the canonical managed environment alias after READY",
+    );
+    expect(
+      validateStagingCustomEnvironment(
+        {
+          ...valid,
+          currentDeploymentAliases: [
+            CANONICAL_STAGING_VERCEL.managedEnvironmentAlias,
+          ],
+        },
+        "post-ready",
+      ),
+    ).toEqual([]);
+  });
+
   test("requires the canonical staging slug during pre-deployment REST certification", () => {
     expect(
       validateStagingCustomEnvironment({ ...valid, slug: undefined }).join(" "),
