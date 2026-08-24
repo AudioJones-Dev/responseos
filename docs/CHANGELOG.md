@@ -4,6 +4,14 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: specify the gated CRM-1 connection and registry plan
+
+- Added a Git Spec-ready CRM-1 PRD that verifies the existing `ProviderConnection`, narrow `CrmProvider`, deterministic mock, explicitly gated HubSpot seam, and their current disconnect before proposing runtime work.
+- Recommended preserving `ProviderConnection` as the single credential substrate and introducing `CrmConnection` first as a safe, tenant-scoped domain projection rather than a duplicate secret-bearing table.
+- Specified a static registry limited to the source-proven `mock` and `hubspot` entries, separate advertised from verified capabilities, preserved current one-connection-per-account/provider cardinality, and kept zero-CRM operation valid.
+- Split future CRM-1 work into separately authorized mock-safe registry, read-only connection projection, and optional metadata-persistence slices. CRM-2+ work and every schema, provider, credential, workflow, deployment, or external mutation remain excluded.
+- Recorded PR #139's accepted CRM-0 status without changing product completion percentages or implying CRM runtime implementation.
+
 ## Unreleased — docs: define CRM interoperability and agentic mutation doctrine
 
 - Added ADR-0050 to the canonical decision log, separating the current source-proven relationship/operational substrate and bounded call-centric CRM sync seam from the generalized target architecture.
