@@ -171,7 +171,7 @@ jobs:
           curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-custom-environment-final.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects/$EXPECTED_VERCEL_PROJECT_ID/custom-environments/$EXPECTED_VERCEL_CUSTOM_ENV_ID?teamId=$VERCEL_ORG_ID"
           node scripts/staging-vercel-custom-environment.mjs "$RUNNER_TEMP/vercel-custom-environment-final.json" post-ready
 
-      - name: Verify public runtime and anonymous browser auth boundary
+      - name: Verify public runtime and Clerk auth-boundary smoke
         env:
           DEPLOYMENT_HOST: ${{ steps.identity.outputs.deployment_host }}
           MANAGED_ALIAS_URL: https://responseos-staging-mock-env-staging-audiojones.vercel.app
@@ -195,4 +195,6 @@ jobs:
             echo "::error::Public demo smoke failed with HTTP $public_code."
             exit 1
           fi
+          # The shared validator reads Clerk environment metadata with GET, then classifies
+          # direct Account Portal or exact FAPI handshake redirects without following them.
           node scripts/validate-staging-protected-route-smoke.mjs "$deployment_url" "$RUNNER_TEMP/vercel-custom-readable.json"

@@ -202,7 +202,9 @@ describe("Deploy Staging workflow contract", () => {
     const finalEnvironment = workflow.indexOf(
       "Reverify final custom-environment routing",
     );
-    const smoke = workflow.indexOf("Verify protected health and hosted smoke");
+    const smoke = workflow.indexOf(
+      "Verify protected health and Clerk auth-boundary smoke",
+    );
 
     expect(workflow).toContain(
       "EXPECTED_VERCEL_MANAGED_ALIAS: responseos-staging-mock-env-staging-audiojones.vercel.app",
@@ -281,7 +283,9 @@ describe("Deploy Staging workflow contract", () => {
     const ready = workflow.indexOf("Wait for exact governed deployment to become READY");
     const aliasBinding = workflow.indexOf("Bind managed alias to exact READY deployment");
     const finalEnvironment = workflow.indexOf("Reverify final custom-environment routing");
-    const smoke = workflow.indexOf("Verify protected health and hosted smoke");
+    const smoke = workflow.indexOf(
+      "Verify protected health and Clerk auth-boundary smoke",
+    );
     expect(migrate).toBeGreaterThan(-1);
     expect(deploy).toBeGreaterThan(migrate);
     expect(ready).toBeGreaterThan(deploy);
