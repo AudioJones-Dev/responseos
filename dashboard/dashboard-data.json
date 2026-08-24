@@ -631,6 +631,17 @@
       "blockedReason": "Read-only run 32663419658 reconfirmed deployment #2 identity, exact Alias API routing, health, and public demo; both protected document routes returned 307. Auth-boundary certification awaits a corrected Clerk handshake/Account Portal classifier and a separately authorized read-only rerun; authenticated operator access, recovery evidence, and prospect authorization remain open"
     },
     {
+      "id": "Q-04",
+      "phase": "Testing & QA",
+      "title": "Prospect Demos input labels and placeholder contrast",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 100,
+      "priority": "Med",
+      "start": "2026-08-24",
+      "due": "2026-08-24"
+    },
+    {
       "id": "L-02",
       "phase": "Launch / Demo Deploy",
       "title": "Staging/prod env + secrets (Path A first)",

@@ -23,7 +23,7 @@ export function CreateProspectBootstrapForm() {
   const [error, setError] = useState<string>();
   return (
     <form
-      className="grid gap-3 md:grid-cols-[1fr_1.5fr_auto]"
+      className="grid items-end gap-3 md:grid-cols-[1fr_1.5fr_auto]"
       onSubmit={async (event) => {
         event.preventDefault();
         setBusy(true);
@@ -40,8 +40,29 @@ export function CreateProspectBootstrapForm() {
         }
       }}
     >
-      <input className="rounded-md border border-line bg-white px-3 py-2 text-sm" aria-label="Business name" placeholder="Business name" value={businessName} onChange={(event) => setBusinessName(event.target.value)} required />
-      <input className="rounded-md border border-line bg-white px-3 py-2 text-sm" aria-label="Public HTTPS website" placeholder="https://business.example" type="url" value={canonicalWebsite} onChange={(event) => setCanonicalWebsite(event.target.value)} required />
+      <label className="grid gap-2" htmlFor="prospect-business-name">
+        <span className="text-xs font-semibold uppercase tracking-widest text-ink-muted">Business name</span>
+        <input
+          id="prospect-business-name"
+          className="rounded-md border border-line bg-white px-3 py-2 text-sm text-black placeholder:text-neutral"
+          placeholder="e.g. Acme Home Services"
+          value={businessName}
+          onChange={(event) => setBusinessName(event.target.value)}
+          required
+        />
+      </label>
+      <label className="grid gap-2" htmlFor="prospect-canonical-website">
+        <span className="text-xs font-semibold uppercase tracking-widest text-ink-muted">Public HTTPS website</span>
+        <input
+          id="prospect-canonical-website"
+          className="rounded-md border border-line bg-white px-3 py-2 text-sm text-black placeholder:text-neutral"
+          placeholder="https://www.acmehomeservices.com"
+          type="url"
+          value={canonicalWebsite}
+          onChange={(event) => setCanonicalWebsite(event.target.value)}
+          required
+        />
+      </label>
       <Button disabled={busy} type="submit">{busy ? "Creating…" : "Create prospect"}</Button>
       {error ? <p className="text-sm text-danger md:col-span-3">{error}</p> : null}
     </form>
