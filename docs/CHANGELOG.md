@@ -4,6 +4,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — fix: keep the Clerk control organization outside tenant provisioning
+
+- Excluded the configured AJ Digital Clerk control organization from webhook-driven `Account` provisioning.
+- Kept control-organization membership events replay-safe while clearing tenant binding without deriving or replacing the authoritative ResponseOS DB role.
+- Preserved existing customer-organization provisioning, membership binding, conservative role defaults, webhook evidence, and mock/provider boundaries.
+
 ## Unreleased — fix: label the Prospect Demos creation inputs
 
 - Added persistent eyebrow labels and realistic example placeholders to the business-name and public-website inputs on the Prospect Demos page.
