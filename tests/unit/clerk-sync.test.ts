@@ -31,6 +31,7 @@ function call(type: string, data: Record<string, unknown>) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  delete process.env.AJ_DIGITAL_CLERK_ORG_ID;
   m.recordWebhookEvent.mockResolvedValue({
     ok: true,
     data: { id: "wh_1", process_status: "received" },
@@ -115,6 +116,18 @@ describe("handleClerkEvent — provisioning is conservative and fail-closed", ()
     });
   });
 
+  test("control organization events never create a tenant Account", async () => {
+    process.env.AJ_DIGITAL_CLERK_ORG_ID = "org_control";
+    await call("organization.created", {
+      id: "org_control",
+      name: "AJ Digital",
+      slug: "aj-digital",
+    });
+    expect(m.db.account.findUnique).not.toHaveBeenCalled();
+    expect(m.db.account.create).not.toHaveBeenCalled();
+    expect(m.db.account.update).not.toHaveBeenCalled();
+  });
+
   const membership = {
     organization: { id: "org_clerk_1" },
     public_user_data: { user_id: "clerk_u1" },
@@ -129,6 +142,20 @@ describe("handleClerkEvent — provisioning is conservative and fail-closed", ()
       data: { account_id: "acct_1" },
     });
     // No `role` in the update — Clerk's "org:admin" must not become client_admin.
+    expect(m.db.user.updateMany.mock.calls[0][0].data).not.toHaveProperty("role");
+  });
+
+  test("control membership clears tenant binding without changing DB role", async () => {
+    process.env.AJ_DIGITAL_CLERK_ORG_ID = "org_control";
+    await call("organizationMembership.created", {
+      ...membership,
+      organization: { id: "org_control" },
+    });
+    expect(m.db.account.findUnique).not.toHaveBeenCalled();
+    expect(m.db.user.updateMany).toHaveBeenCalledWith({
+      where: { clerk_user_id: "clerk_u1" },
+      data: { account_id: null },
+    });
     expect(m.db.user.updateMany.mock.calls[0][0].data).not.toHaveProperty("role");
   });
 
@@ -158,6 +185,19 @@ describe("handleClerkEvent — provisioning is conservative and fail-closed", ()
       where: { clerk_user_id: "clerk_u1" },
       data: { account_id: null, role: "client_viewer" },
     });
+  });
+
+  test("control membership deletion preserves the authoritative DB role", async () => {
+    process.env.AJ_DIGITAL_CLERK_ORG_ID = "org_control";
+    await call("organizationMembership.deleted", {
+      ...membership,
+      organization: { id: "org_control" },
+    });
+    expect(m.db.user.updateMany).toHaveBeenCalledWith({
+      where: { clerk_user_id: "clerk_u1" },
+      data: { account_id: null },
+    });
+    expect(m.db.user.updateMany.mock.calls[0][0].data).not.toHaveProperty("role");
   });
 });
 

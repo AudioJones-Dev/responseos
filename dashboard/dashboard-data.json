@@ -827,6 +827,19 @@
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/137"
     },
     {
+      "id": "L-02k",
+      "phase": "Launch / Demo Deploy",
+      "title": "Keep Clerk control organization outside tenant provisioning",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-08-25",
+      "due": "2026-08-25",
+      "blocked": true,
+      "blockedReason": "The narrow control-organization webhook exclusion is locally validated and awaits PR review, exact-head CI, merge, guarded staging identity reconciliation, and governed redeployment."
+    },
+    {
       "id": "L-03",
       "phase": "Launch / Demo Deploy",
       "title": "Go-live demo 🚀",
