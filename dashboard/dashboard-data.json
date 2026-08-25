@@ -837,7 +837,11 @@
       "start": "2026-08-25",
       "due": "2026-08-25",
       "blocked": true,
-      "blockedReason": "The narrow control-organization webhook exclusion is locally validated and awaits PR review, exact-head CI, merge, guarded staging identity reconciliation, and governed redeployment."
+      "blockedReason": "The narrow control-organization webhook exclusion is locally validated and awaits PR review, exact-head CI, merge, guarded staging identity reconciliation, and governed redeployment.",
+      "ref": 142,
+      "refType": "pull",
+      "refState": "open",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/142"
     },
     {
       "id": "L-03",
