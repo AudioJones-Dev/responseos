@@ -4,6 +4,14 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — chore: add repo-pruner detection config
+
+- Added `.pruner.yml` pinning the aj-prune repo-pruner to `base_ref: origin/master`; the tool default (`origin/main`) does not resolve here, which blocked component-scope runs before detector execution.
+- Disabled the madge detector because its adapter hardcodes `src` as the scan root while this repo uses the App Router layout (`app/`, `lib/`, `components/`). Recorded as a coverage gap for import-cycle and orphan-module detection rather than a silent omission.
+- Ignored `.pruner/`, whose run evidence is regenerated per run and never committed.
+- Logged G-08 on the progress board for the tooling setup and the first component-scope Measure evidence run.
+- Detection-only: the pruner performs no remediation, and its output is DMAIC Measure evidence, not authorized change.
+
 ## Unreleased — fix: keep the Clerk control organization outside tenant provisioning
 
 - Excluded the configured AJ Digital Clerk control organization from webhook-driven `Account` provisioning.
