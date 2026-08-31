@@ -16,13 +16,16 @@ detectors:
     min_tokens: 70
   knip:
     enabled: true
-  # Disabled: the madge adapter hardcodes "src" as its scan root
-  # (scripts/lib/adapters/madge.mjs). This repo uses the Next.js App Router
-  # layout (app/, lib/, components/) with no src/, so madge exits 1 and blocks
-  # the whole run. COVERAGE GAP: no import-cycle or orphan-module detection
-  # until the adapter accepts a configurable source root upstream.
+  # Re-enabled: the adapter now takes source_roots instead of hardcoding "src"
+  # (upstream AJ-DIGITAL-OS-V1#125). This repo uses the Next.js App Router
+  # layout, so the graph is rooted at app/, lib/, and components/. Files under
+  # types/ still enter the graph wherever they are imported; listing a root
+  # only adds its unreferenced files as orphan candidates.
+  # The previous COVERAGE GAP (no import-cycle or orphan-module detection) is
+  # closed.
   madge:
-    enabled: false
+    enabled: true
+    source_roots: [app, lib, components]
   eslint:
     enabled: true
     complexity: 15
