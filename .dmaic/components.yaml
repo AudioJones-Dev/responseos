@@ -36,11 +36,22 @@ components:
     protection_reason: "Never-touch domain (ADR-0009). Doctrine §3.2: only the Clerk route validates signatures; Telnyx, Twilio, Vapi, Retell, Stripe, GHL and n8n are acknowledgement stubs carrying TODO markers."
 
   - id: persistence
-    paths: ["prisma/schema.prisma", "prisma/migrations/**", "lib/db/**"]
+    paths: ["prisma/schema.prisma", "prisma/migrations/**"]
     status: Canonical
     owner: Audio
     protected: true
     protection_reason: "Never-touch domain. references/protected.md scopes this to schemas/migrations (**/migrations/**, **/schema.*); doctrine §3.1 records 22 Prisma models across 8 migrations."
+
+  # lib/db/client.ts is a Prisma singleton with a no-DB fallback -- runtime
+  # logic with its own unit test, not schema or migrations. Keeping it inside
+  # the protected persistence component suppressed findings outside the stated
+  # never-touch boundary.
+  - id: db-runtime
+    paths: ["lib/db/**"]
+    test_paths: ["tests/unit/db-client.test.ts"]
+    status: Canonical
+    owner: Audio
+    protected: false
 
   # Split out of persistence deliberately. The never-touch domain is worded
   # "schemas/migrations" and seed.ts matches neither protected glob, so leaving
@@ -80,7 +91,7 @@ components:
       - "app/api/notifications/**"
       - "app/api/quotes/**"
       - "app/api/reports/**"
-    test_paths: ["tests/integration/inbound-audit.integration.test.ts"]
+    test_paths: ["tests/unit/health-route.test.ts"]
     status: Needs Refactor
     owner: Audio
     protected: false
@@ -93,7 +104,7 @@ components:
 
   - id: validation
     paths: ["lib/validation/**"]
-    test_paths: ["tests/unit/inbound-audit.test.ts"]
+    test_paths: ["tests/unit/audit-request.test.ts", "tests/unit/validation.test.ts"]
     status: Canonical
     owner: Audio
     protected: false
@@ -111,7 +122,13 @@ components:
     protected: false
 
   - id: ui
-    paths: ["components/**", "app/(marketing)/**", "app/layout.tsx"]
+    paths:
+      - "components/**"
+      - "app/(marketing)/**"
+      - "app/(admin)/**"
+      - "app/(client)/**"
+      - "app/(demo)/**"
+      - "app/layout.tsx"
     test_paths: ["tests/unit/demo-walkthrough.smoke.test.ts"]
     status: Canonical
     owner: Audio
@@ -138,6 +155,11 @@ components:
   # Empty scaffolds: these directories contain only .gitkeep. Recorded so the
   # registry does not silently omit them, and Blocked because the work behind
   # them is gated on v0.3 authorization (AGENTS.md hard rule).
+  #
+  # These globs intentionally match zero tracked files today: "**" does not
+  # match dotfiles, and .gitkeep is the only content. That is expected, not a
+  # stale entry -- the component exists to document the gate, and it starts
+  # attributing findings the moment real files land in these directories.
   - id: scaffolds-v03-gated
     paths: ["lib/config/**", "lib/automations/**", "lib/notifications/**"]
     status: Blocked
