@@ -431,6 +431,19 @@
       "refType": "pull"
     },
     {
+      "id": "G-10",
+      "phase": "Tech Debt & Hardening",
+      "title": "Prune redundant .gitkeep placeholders (PRUNE-VCS-01)",
+      "owner": "Claude Code",
+      "status": "In Progress",
+      "progress": 90,
+      "priority": "Low",
+      "start": "2026-08-31",
+      "due": "2026-08-31",
+      "blocked": true,
+      "blockedReason": "Branch is committed locally but unpushed; prisma/migrations/.gitkeep was withheld as a protected path and needs a separate approval decision"
+    },
+    {
       "id": "14",
       "phase": "Launch / Demo Deploy",
       "title": "v0.3 demo deploy",
