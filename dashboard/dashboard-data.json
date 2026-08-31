@@ -441,9 +441,7 @@
       "start": "2026-08-31",
       "due": "2026-08-31",
       "ref": 146,
-      "refType": "pull",
-      "blocked": true,
-      "blockedReason": "prisma/migrations/.gitkeep was withheld as a protected path per .dmaic/components.yaml and needs a separate approval decision on whether it is pruned at all"
+      "refType": "pull"
     },
     {
       "id": "14",
