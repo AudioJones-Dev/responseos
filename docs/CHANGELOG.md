@@ -4,6 +4,13 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — chore: remove stock create-next-app scaffold SVGs (PRUNE-ASSET-01)
+
+- Removed `public/file.svg`, `public/globe.svg`, `public/next.svg`, `public/vercel.svg`, and `public/window.svg` (3,314 bytes total) — unmodified `create-next-app` scaffold artwork that the product never adopted. All five arrived in the initial scaffold commit `6987c59` and were never touched again.
+- Verified disjoint from the real icon set before removal: [`app/layout.tsx`](../app/layout.tsx) declares `/favicon.svg`, `/favicon.ico`, `/apple-touch-icon.png` and OG `/og/responseos-og.png`, and `public/site.webmanifest` declares `/icon-192.png` and `/icon-512.png`. No CSS in the repo contains a `url()` reference of any kind, and neither `vercel.json` nor `next.config.ts` performs asset routing.
+- Second batch applied through the `aj-prune` pipeline. Its reachability evidence was re-verified against the current base before deletion, because the original analysis predated roughly 29 commits and the source tree had since grown from 259 to 379 files.
+- **Residual risk, deliberately carried:** external hotlinking of these five URLs cannot be disproven from inside the repository. Five paths that nothing links to now return 404. Watch edge logs for 404s on them for one traffic cycle after the next staging deploy; restore an individual file from `6987c59` if any shows real traffic.
+
 ## Unreleased — chore: add ratified DMAIC component registry
 
 - Added `.dmaic/components.yaml` mapping 16 components for the aj-prune repo-pruner, so pruner findings carry component attribution instead of terminating at `registry-missing`.
