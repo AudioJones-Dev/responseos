@@ -4,6 +4,14 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — chore: add ratified DMAIC component registry
+
+- Added `.dmaic/components.yaml` mapping 16 components for the aj-prune repo-pruner, so pruner findings carry component attribution instead of terminating at `registry-missing`.
+- Derived every status from [`responseos-platform-doctrine-v1.md`](./strategy/responseos-platform-doctrine-v1.md) §3.1–3.3 and §12 rather than assigning them: `SHIPPED` maps to Canonical, `PARTIALLY_SHIPPED` to Needs Refactor, and v0.3-gated empty scaffolds to Blocked. Each protected component records the doctrine line it came from.
+- Marked only auth, webhooks, schema/migrations, and provider adapters `protected`, because protection forces a finding to `excluded` and would otherwise suppress detection across code that is merely important.
+- Scoped the persistence component to `prisma/schema.prisma` and `prisma/migrations/**` and gave `prisma/seed.ts` its own unprotected component; the pruner never-touch domain covers schemas and migrations, and protecting seed suppressed the largest finding in the measured surface.
+- Registry governs classification only. It grants no deletion or remediation authority, and the pruner remains detection-only.
+
 ## Unreleased — chore: add repo-pruner detection config
 
 - Added `.pruner.yml` pinning the aj-prune repo-pruner to `base_ref: origin/master`; the tool default (`origin/main`) does not resolve here, which blocked component-scope runs before detector execution.
