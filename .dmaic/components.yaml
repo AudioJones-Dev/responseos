@@ -1,0 +1,301 @@
+# ResponseOS component registry for the aj-prune repo-pruner.
+#
+# STATUS: RATIFIED 2026-08-31 by Audio (founder); re-derived against master the
+# same day. All four derivation rules below are ratified -- the original three
+# with the initial registry, and rule four separately after the re-derivation
+# surfaced directories that doctrine section 3 does not record.
+#
+# What is ratified is the DERIVATION MAPPING, not each component status
+# independently. A status is only as current as the doctrine line it derives
+# from; see the caveat under rule four. Amend individual components by normal
+# review; re-derive when doctrine section 3 changes or when substantial new
+# directories land.
+#
+# PROVENANCE -- every status is DERIVED, not invented:
+#   doctrine SHIPPED               -> Canonical
+#   doctrine PARTIALLY_SHIPPED     -> Needs Refactor  (substrate, no workflow)
+#   v0.3-gated empty scaffold      -> Blocked         (AGENTS.md hard rule)
+#   implemented but absent from S3 -> Experimental    (rule four, see NOTE)
+# Source: docs/strategy/responseos-platform-doctrine-v1.md sections 3.1-3.3, 12.
+#
+# NOTE ON THE FOURTH RULE (RATIFIED 2026-08-31 by Audio): doctrine section 3's
+# current-state basis was verified against an older commit, and section 2.3
+# requires verifying current state against the repository rather than the
+# strategy prose. Directories that are implemented and tested but that section 3
+# does not record are mapped to Experimental per section 2.1 ("implemented or
+# proposed for validation but not approved as durable architecture").
+#
+# This rule was added during the re-derivation against master, put to the founder
+# as an extension of the original three-rule mapping, and ratified separately.
+# It currently affects all three Experimental components:
+# professional-receptionist, prospect-pipeline, notify.
+#
+# Experimental here means "not yet recorded as durable architecture", NOT
+# "low quality". When doctrine section 3 is next refreshed against the
+# repository, components carrying this status should be re-derived: any that
+# section 3 then records as SHIPPED become Canonical under rule one.
+#
+# owner is Audio throughout: single-founder repo, no delegated ownership exists.
+#
+# NOTE ON protected: protection forces the WHOLE finding to "excluded" -- a
+# protected component emits nothing at all. It is applied only to the never-touch
+# domains named in the pruner reference doc references/protected.md (auth,
+# webhooks, schemas/migrations, provider adapters, environment contracts,
+# deployment), never to code that is merely important.
+version: 1
+components:
+
+  # ---------------- Protected: never-touch domains ----------------
+
+  - id: auth
+    paths: ["lib/auth/**", "app/api/auth/**", "proxy.ts"]
+    test_paths:
+      - "tests/unit/route-protection.test.ts"
+      - "tests/unit/proxy.test.ts"
+      - "tests/unit/session.test.ts"
+      - "tests/unit/auth-required.test.ts"
+      - "tests/unit/clerk-sync.test.ts"
+    status: Canonical
+    owner: Audio
+    protected: true
+    protection_reason: "Auth domain. Doctrine 3.1 records Clerk identity, session derivation, webhook sync and route protection as SHIPPED, and tenant isolation derives from the session."
+
+  - id: webhooks
+    paths: ["app/api/webhooks/**"]
+    test_paths: ["tests/unit/clerk-webhook.test.ts", "tests/unit/telnyx-webhook.test.ts"]
+    status: Needs Refactor
+    owner: Audio
+    protected: true
+    protection_reason: "Never-touch domain per ADR-0009. Doctrine 3.2: only the Clerk route validates signatures; Telnyx, Twilio, Vapi, Retell, Stripe, GHL and n8n remain acknowledgement stubs carrying TODO markers."
+
+  - id: persistence-schema
+    paths: ["prisma/schema.prisma", "prisma/migrations/**"]
+    status: Canonical
+    owner: Audio
+    protected: true
+    protection_reason: "Never-touch domain. references/protected.md scopes this to schemas and migrations via **/migrations/** and **/schema.*; doctrine 3.1 records 22 models across 8 migrations."
+
+  - id: providers
+    paths: ["lib/providers/**"]
+    test_paths:
+      - "tests/unit/providers-*.test.ts"
+      - "tests/unit/encryption.test.ts"
+      - "tests/unit/telnyx-assistant-initialization.test.ts"
+      - "tests/unit/telnyx-prospect-call-routing.test.ts"
+      - "tests/unit/voice-provider-mock.test.ts"
+      - "tests/integration/provider-enum-alignment.integration.test.ts"
+      - "tests/integration/telnyx-normalization.integration.test.ts"
+    status: Needs Refactor
+    owner: Audio
+    protected: true
+    protection_reason: "Never-touch domain. Adapters must fall back to mock when env vars are missing (AGENTS.md). Doctrine 3.1, 3.2 and 12: encryption and voice mock SHIPPED, HubSpot CRM seam PARTIALLY_SHIPPED, most provider directories DOCUMENTED_ONLY."
+
+  - id: environment-contracts
+    paths: ["infra/**"]
+    test_paths:
+      - "tests/unit/environment-contract.test.ts"
+      - "tests/unit/validate-*.test.ts"
+      - "tests/unit/verify-staging-*.test.ts"
+      - "tests/unit/staging-*.test.ts"
+      - "tests/unit/deploy-staging-workflow.test.ts"
+      - "tests/unit/fetch-staging-vercel-readable-env.test.ts"
+      - "tests/unit/vercel-git-deployment-isolation.test.ts"
+    status: Canonical
+    owner: Audio
+    protected: true
+    protection_reason: "Never-touch domain covering environment contracts and deployment. Holds production and staging environment templates, secret contracts, promotion rules and certification schemas; no live-provider or Gate Set B deploy is authorized (AGENTS.md)."
+
+  # ---------------- Unprotected: where the pruning signal lives ----------------
+
+  # lib/db/client.ts is a Prisma singleton with a no-DB fallback -- runtime logic
+  # with its own unit test, not schema. Protecting it suppressed findings outside
+  # the stated never-touch boundary.
+  - id: db-runtime
+    paths: ["lib/db/**", "lib/serverOnlyGuard.ts"]
+    test_paths: ["tests/unit/db-client.test.ts"]
+    status: Canonical
+    owner: Audio
+    protected: false
+
+  # Split from persistence deliberately: the never-touch domain is worded
+  # "schemas/migrations" and seed.ts matches neither protected glob. Protecting it
+  # suppressed the largest finding in the measured surface.
+  - id: seed
+    paths: ["prisma/seed.ts", "prisma/demo-sandbox.ts"]
+    test_paths: ["tests/integration/seed-determinism.integration.test.ts"]
+    status: Canonical
+    owner: Audio
+    protected: false
+
+  - id: data-access
+    paths: ["lib/data/**"]
+    test_paths:
+      - "tests/unit/data-tenant-matrix.test.ts"
+      - "tests/integration/data-accessors.integration.test.ts"
+      - "tests/integration/data-tenant-matrix.integration.test.ts"
+      - "tests/integration/audit-log.integration.test.ts"
+    status: Canonical
+    owner: Audio
+    protected: false
+
+  - id: public-api
+    paths:
+      - "app/api/accounts/**"
+      - "app/api/admin/**"
+      - "app/api/appointments/**"
+      - "app/api/audit-requests/**"
+      - "app/api/automations/**"
+      - "app/api/calls/**"
+      - "app/api/contacts/**"
+      - "app/api/health/**"
+      - "app/api/leads/**"
+      - "app/api/notifications/**"
+      - "app/api/quotes/**"
+      - "app/api/reports/**"
+    test_paths: ["tests/unit/health-route.test.ts"]
+    status: Needs Refactor
+    owner: Audio
+    protected: false
+
+  - id: revenue-scoring
+    paths: ["lib/revenue/**", "lib/scoring/**"]
+    status: Canonical
+    owner: Audio
+    protected: false
+
+  - id: validation
+    paths: ["lib/validation/**"]
+    test_paths: ["tests/unit/audit-request.test.ts", "tests/unit/validation.test.ts"]
+    status: Canonical
+    owner: Audio
+    protected: false
+
+  - id: crm
+    paths: ["lib/crm/**"]
+    test_paths:
+      - "tests/unit/crm-sanitization.test.ts"
+      - "tests/integration/crm-sync.integration.test.ts"
+    status: Needs Refactor
+    owner: Audio
+    protected: false
+
+  - id: professional-receptionist
+    paths: ["lib/professional/**"]
+    test_paths:
+      - "tests/unit/professional-receptionist.test.ts"
+      - "tests/integration/professional-receptionist.integration.test.ts"
+    status: Experimental
+    owner: Audio
+    protected: false
+
+  - id: prospect-pipeline
+    paths: ["lib/prospectBootstrap/**", "lib/prospects/**"]
+    test_paths:
+      - "tests/unit/prospect-bootstrap.test.ts"
+      - "tests/unit/prospect-intake-contract.test.ts"
+      - "tests/unit/prospect-purge-policy.test.ts"
+      - "tests/integration/prospect-bootstrap.integration.test.ts"
+      - "tests/integration/prospect-intake.integration.test.ts"
+    status: Experimental
+    owner: Audio
+    protected: false
+
+  - id: notify
+    paths: ["lib/notify/**"]
+    status: Experimental
+    owner: Audio
+    protected: false
+
+  - id: mocks
+    paths: ["lib/mock/**"]
+    test_paths:
+      - "tests/integration/mock-parity.integration.test.ts"
+      - "tests/unit/consumer-swap.test.ts"
+    status: Canonical
+    owner: Audio
+    protected: false
+
+  # ---------------- Surfaces: doctrine 3.1 records four shipped route groups ----
+
+  - id: marketing-site
+    paths: ["app/(marketing)/**", "app/layout.tsx", "app/globals.css"]
+    status: Canonical
+    owner: Audio
+    protected: false
+
+  - id: operator-console
+    paths: ["app/(admin)/**"]
+    status: Canonical
+    owner: Audio
+    protected: false
+
+  - id: client-portal
+    paths: ["app/(client)/**"]
+    status: Canonical
+    owner: Audio
+    protected: false
+
+  - id: demo-surface
+    paths: ["app/(demo)/**", "lib/demo/**"]
+    test_paths:
+      - "tests/unit/demo-walkthrough.smoke.test.ts"
+      - "tests/unit/demo-reset-policy.test.ts"
+    status: Canonical
+    owner: Audio
+    protected: false
+
+  - id: ui-components
+    paths: ["components/**"]
+    status: Canonical
+    owner: Audio
+    protected: false
+
+  # ---------------- Supporting ----------------
+
+  - id: types
+    paths: ["types/**"]
+    status: Canonical
+    owner: Audio
+    protected: false
+
+  - id: tooling
+    paths: ["scripts/**", "dashboard/**"]
+    test_paths:
+      - "tests/unit/dashboard-sync.test.ts"
+      - "tests/unit/eslint-minimatch-compat.test.ts"
+    status: Canonical
+    owner: Audio
+    protected: false
+
+  - id: test-infrastructure
+    paths: ["tests/factories/**", "tests/fixtures/**", "tests/integration/setup.ts", "tests/e2e/**"]
+    status: Canonical
+    owner: Audio
+    protected: false
+
+  - id: project-manifest
+    paths: ["package.json", "package-lock.json"]
+    status: Canonical
+    owner: Audio
+    protected: false
+
+  # Static assets. Mapped so they receive attribution: the pruner classifies
+  # public/ files as "code" because classifyPath falls through to that default,
+  # which would otherwise leave 91 files unattributed. Excluding public/** via
+  # path_classes.excluded_globs in .pruner.yml is the cleaner long-term fix.
+  - id: static-assets
+    paths: ["public/**"]
+    status: Canonical
+    owner: Audio
+    protected: false
+
+  # Empty scaffolds: these hold only .gitkeep, so the globs intentionally match
+  # zero tracked files ("**" does not match dotfiles). Recorded so the registry
+  # does not silently omit them, and Blocked because the work behind them is
+  # gated on v0.3 authorization. They begin attributing findings the moment real
+  # files land in these directories.
+  - id: scaffolds-v03-gated
+    paths: ["lib/config/**", "lib/automations/**", "lib/notifications/**"]
+    status: Blocked
+    owner: Audio
+    protected: false
