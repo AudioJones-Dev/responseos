@@ -47,3 +47,6 @@ doppler.fallback.json
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# repo-pruner generated evidence (regenerated per run, never committed)
+.pruner/

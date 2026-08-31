@@ -1,0 +1,42 @@
+# repo-pruner (aj-prune) configuration.
+# Detection-only: this tool never remediates. Findings land in .pruner/ and are
+# handed to DMAIC Analyze as evidence, never actioned automatically.
+#
+# base_ref is origin/master because this repo's default branch is master; the
+# tool's built-in default (origin/main) does not resolve here.
+version: 1
+scope: component
+base_ref: origin/master
+registry: .dmaic/components.yaml
+output_dir: .pruner
+detectors:
+  jscpd:
+    enabled: true
+    min_lines: 15
+    min_tokens: 70
+  knip:
+    enabled: true
+  # Disabled: the madge adapter hardcodes "src" as its scan root
+  # (scripts/lib/adapters/madge.mjs). This repo uses the Next.js App Router
+  # layout (app/, lib/, components/) with no src/, so madge exits 1 and blocks
+  # the whole run. COVERAGE GAP: no import-cycle or orphan-module detection
+  # until the adapter accepts a configurable source root upstream.
+  madge:
+    enabled: false
+  eslint:
+    enabled: true
+    complexity: 15
+    max_lines: 400
+  tsc:
+    enabled: true
+  tests:
+    enabled: false
+    command: null
+thresholds:
+  min_confidence_to_emit: 0.6
+  blast_radius_decision_threshold: 5
+path_classes:
+  # Left empty deliberately: classifyPath() already maps .next/**,
+  # node_modules/**, dist/**, and coverage/** to "generated", which the
+  # protection invariant forces to "excluded".
+  excluded_globs: []
