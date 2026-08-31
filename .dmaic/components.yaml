@@ -1,24 +1,39 @@
 # ResponseOS component registry for the aj-prune repo-pruner.
 #
 # STATUS: RATIFIED 2026-08-31 by Audio (founder); re-derived against master the
-# same day. The derivation mapping was reviewed and approved as a whole. Amend
-# individual components by normal review; re-derive when doctrine section 3
-# changes or when substantial new directories land.
+# same day. All four derivation rules below are ratified -- the original three
+# with the initial registry, and rule four separately after the re-derivation
+# surfaced directories that doctrine section 3 does not record.
+#
+# What is ratified is the DERIVATION MAPPING, not each component status
+# independently. A status is only as current as the doctrine line it derives
+# from; see the caveat under rule four. Amend individual components by normal
+# review; re-derive when doctrine section 3 changes or when substantial new
+# directories land.
 #
 # PROVENANCE -- every status is DERIVED, not invented:
 #   doctrine SHIPPED               -> Canonical
 #   doctrine PARTIALLY_SHIPPED     -> Needs Refactor  (substrate, no workflow)
 #   v0.3-gated empty scaffold      -> Blocked         (AGENTS.md hard rule)
-#   implemented but absent from S3 -> Experimental    (see NOTE below)
+#   implemented but absent from S3 -> Experimental    (rule four, see NOTE)
 # Source: docs/strategy/responseos-platform-doctrine-v1.md sections 3.1-3.3, 12.
 #
-# NOTE ON THE FOURTH RULE: doctrine section 3's current-state basis was verified
-# against an older commit, and section 2.3 requires verifying current state
-# against the repository rather than the strategy prose. Directories that are
-# implemented and tested but that section 3 does not record are mapped to
-# Experimental per section 2.1 ("implemented or proposed for validation but not
-# approved as durable architecture"). This rule EXTENDS the ratified mapping and
-# needs confirmation. It affects: professional-receptionist, prospect-pipeline.
+# NOTE ON THE FOURTH RULE (RATIFIED 2026-08-31 by Audio): doctrine section 3's
+# current-state basis was verified against an older commit, and section 2.3
+# requires verifying current state against the repository rather than the
+# strategy prose. Directories that are implemented and tested but that section 3
+# does not record are mapped to Experimental per section 2.1 ("implemented or
+# proposed for validation but not approved as durable architecture").
+#
+# This rule was added during the re-derivation against master, put to the founder
+# as an extension of the original three-rule mapping, and ratified separately.
+# It currently affects all three Experimental components:
+# professional-receptionist, prospect-pipeline, notify.
+#
+# Experimental here means "not yet recorded as durable architecture", NOT
+# "low quality". When doctrine section 3 is next refreshed against the
+# repository, components carrying this status should be re-derived: any that
+# section 3 then records as SHIPPED become Canonical under rule one.
 #
 # owner is Audio throughout: single-founder repo, no delegated ownership exists.
 #
