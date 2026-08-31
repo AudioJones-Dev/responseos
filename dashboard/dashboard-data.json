@@ -405,6 +405,17 @@
       "blocked": false
     },
     {
+      "id": "G-08",
+      "phase": "Tech Debt & Hardening",
+      "title": "Repo-pruner detection tooling and first Measure evidence run",
+      "owner": "Claude Code",
+      "status": "Done",
+      "progress": 100,
+      "priority": "Medium",
+      "start": "2026-08-31",
+      "due": "2026-08-31"
+    },
+    {
       "id": "14",
       "phase": "Launch / Demo Deploy",
       "title": "v0.3 demo deploy",
