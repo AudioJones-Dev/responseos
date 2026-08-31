@@ -1,0 +1,145 @@
+# ResponseOS component registry for the aj-prune repo-pruner.
+#
+# STATUS: RATIFIED 2026-08-31 by Audio (founder). The derivation mapping below
+# was reviewed and approved as a whole. Amend individual components by normal
+# review; re-derive from doctrine when doctrine §3 changes.
+#
+# PROVENANCE — every status below is DERIVED, not invented. The mapping is:
+#   doctrine SHIPPED            -> Canonical
+#   doctrine PARTIALLY_SHIPPED  -> Needs Refactor   (substrate exists, workflow does not)
+#   v0.3-gated empty scaffold   -> Blocked          (AGENTS.md: no live providers until v0.3)
+# Source: docs/strategy/responseos-platform-doctrine-v1.md §3.1-3.3 and §12.
+# Each component records the doctrine line it was derived from.
+#
+# owner is set to Audio throughout: single-founder repo, no delegated component
+# ownership exists to record. Change if that stops being true.
+#
+# NOTE ON `protected`: protection forces the WHOLE finding to "excluded" — a
+# protected component emits nothing at all. It is applied only to the never-touch
+# domains named in the pruner SKILL.md (auth, webhooks, schema/migrations,
+# provider adapters), not to everything that is merely important.
+version: 1
+components:
+  - id: auth
+    paths: ["lib/auth/**", "app/api/auth/**", "proxy.ts"]
+    test_paths: ["tests/unit/route-protection.test.ts", "tests/unit/proxy.test.ts"]
+    status: Canonical
+    owner: Audio
+    protected: true
+    protection_reason: "Never-touch domain. Doctrine §3.1: Clerk identity, session derivation, webhook sync, route protection are SHIPPED and tenant isolation derives from session."
+
+  - id: webhooks
+    paths: ["app/api/webhooks/**"]
+    status: Needs Refactor
+    owner: Audio
+    protected: true
+    protection_reason: "Never-touch domain (ADR-0009). Doctrine §3.2: only the Clerk route validates signatures; Telnyx, Twilio, Vapi, Retell, Stripe, GHL and n8n are acknowledgement stubs carrying TODO markers."
+
+  - id: persistence
+    paths: ["prisma/schema.prisma", "prisma/migrations/**", "lib/db/**"]
+    status: Canonical
+    owner: Audio
+    protected: true
+    protection_reason: "Never-touch domain. references/protected.md scopes this to schemas/migrations (**/migrations/**, **/schema.*); doctrine §3.1 records 22 Prisma models across 8 migrations."
+
+  # Split out of persistence deliberately. The never-touch domain is worded
+  # "schemas/migrations" and seed.ts matches neither protected glob, so leaving
+  # it protected blinded the detector to the largest finding in the surface
+  # (1143 lines vs a 400 threshold) and to real mock/seed duplication.
+  # Seed is data tooling, not schema.
+  - id: seed
+    paths: ["prisma/seed.ts"]
+    status: Canonical
+    owner: Audio
+    protected: false
+
+  - id: providers
+    paths: ["lib/providers/**"]
+    status: Needs Refactor
+    owner: Audio
+    protected: true
+    protection_reason: "Never-touch domain. Adapters must fall back to mock when env vars are missing (AGENTS.md). Doctrine §3.1/§3.2/§12: encryption and voice mock are SHIPPED, the HubSpot CRM seam is PARTIALLY_SHIPPED, and most provider directories remain DOCUMENTED_ONLY."
+
+  - id: data-access
+    paths: ["lib/data/**"]
+    test_paths: ["tests/integration/mock-parity.integration.test.ts"]
+    status: Canonical
+    owner: Audio
+    protected: false
+
+  - id: public-api
+    paths:
+      - "app/api/accounts/**"
+      - "app/api/appointments/**"
+      - "app/api/audit-requests/**"
+      - "app/api/automations/**"
+      - "app/api/calls/**"
+      - "app/api/contacts/**"
+      - "app/api/health/**"
+      - "app/api/leads/**"
+      - "app/api/notifications/**"
+      - "app/api/quotes/**"
+      - "app/api/reports/**"
+    test_paths: ["tests/integration/inbound-audit.integration.test.ts"]
+    status: Needs Refactor
+    owner: Audio
+    protected: false
+
+  - id: revenue-scoring
+    paths: ["lib/revenue/**", "lib/scoring/**"]
+    status: Canonical
+    owner: Audio
+    protected: false
+
+  - id: validation
+    paths: ["lib/validation/**"]
+    test_paths: ["tests/unit/inbound-audit.test.ts"]
+    status: Canonical
+    owner: Audio
+    protected: false
+
+  - id: notify
+    paths: ["lib/notify/**"]
+    status: Experimental
+    owner: Audio
+    protected: false
+
+  - id: mocks
+    paths: ["lib/mock/**"]
+    status: Canonical
+    owner: Audio
+    protected: false
+
+  - id: ui
+    paths: ["components/**", "app/(marketing)/**", "app/layout.tsx"]
+    test_paths: ["tests/unit/demo-walkthrough.smoke.test.ts"]
+    status: Canonical
+    owner: Audio
+    protected: false
+
+  - id: types
+    paths: ["types/**"]
+    status: Canonical
+    owner: Audio
+    protected: false
+
+  - id: tooling
+    paths: ["scripts/**", "dashboard/**"]
+    status: Canonical
+    owner: Audio
+    protected: false
+
+  - id: project-manifest
+    paths: ["package.json", "package-lock.json"]
+    status: Canonical
+    owner: Audio
+    protected: false
+
+  # Empty scaffolds: these directories contain only .gitkeep. Recorded so the
+  # registry does not silently omit them, and Blocked because the work behind
+  # them is gated on v0.3 authorization (AGENTS.md hard rule).
+  - id: scaffolds-v03-gated
+    paths: ["lib/config/**", "lib/automations/**", "lib/notifications/**"]
+    status: Blocked
+    owner: Audio
+    protected: false
