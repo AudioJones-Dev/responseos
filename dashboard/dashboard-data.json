@@ -409,11 +409,13 @@
       "phase": "Tech Debt & Hardening",
       "title": "Repo-pruner detection tooling and first Measure evidence run",
       "owner": "Claude Code",
-      "status": "Done",
-      "progress": 100,
+      "status": "Review",
+      "progress": 90,
       "priority": "Medium",
       "start": "2026-08-31",
-      "due": "2026-08-31"
+      "due": "2026-08-31",
+      "ref": 143,
+      "refType": "pull"
     },
     {
       "id": "14",
