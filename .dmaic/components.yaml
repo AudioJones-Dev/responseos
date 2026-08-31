@@ -32,11 +32,22 @@ components:
     protection_reason: "Never-touch domain (ADR-0009). Doctrine §3.2: only the Clerk route validates signatures; Telnyx, Twilio, Vapi, Retell, Stripe, GHL and n8n are acknowledgement stubs carrying TODO markers."
 
   - id: persistence
-    paths: ["prisma/**", "lib/db/**"]
+    paths: ["prisma/schema.prisma", "prisma/migrations/**", "lib/db/**"]
     status: Canonical
     owner: Audio
     protected: true
-    protection_reason: "Never-touch domain (schema/migrations). Doctrine §3.1: 22 Prisma models across 8 migrations plus a deterministic seed keyed to mock fixtures."
+    protection_reason: "Never-touch domain. references/protected.md scopes this to schemas/migrations (**/migrations/**, **/schema.*); doctrine §3.1 records 22 Prisma models across 8 migrations."
+
+  # Split out of persistence deliberately. The never-touch domain is worded
+  # "schemas/migrations" and seed.ts matches neither protected glob, so leaving
+  # it protected blinded the detector to the largest finding in the surface
+  # (1143 lines vs a 400 threshold) and to real mock/seed duplication.
+  # Seed is data tooling, not schema.
+  - id: seed
+    paths: ["prisma/seed.ts"]
+    status: Canonical
+    owner: Audio
+    protected: false
 
   - id: providers
     paths: ["lib/providers/**"]
