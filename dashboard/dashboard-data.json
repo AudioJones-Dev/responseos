@@ -418,6 +418,19 @@
       "refType": "pull"
     },
     {
+      "id": "G-09",
+      "phase": "Tech Debt & Hardening",
+      "title": "DMAIC component registry for pruner classification",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "Medium",
+      "start": "2026-08-31",
+      "due": "2026-08-31",
+      "ref": 144,
+      "refType": "pull"
+    },
+    {
       "id": "14",
       "phase": "Launch / Demo Deploy",
       "title": "v0.3 demo deploy",
