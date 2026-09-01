@@ -894,6 +894,19 @@
       "refType": "pull",
       "refState": "merged",
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/94"
+    },
+    {
+      "id": "G-11",
+      "phase": "Tech Debt & Hardening",
+      "title": "Prune stock create-next-app scaffold SVGs (PRUNE-ASSET-01)",
+      "owner": "Claude Code",
+      "status": "In Progress",
+      "progress": 90,
+      "priority": "Low",
+      "start": "2026-08-31",
+      "due": "2026-08-31",
+      "blocked": true,
+      "blockedReason": "External hotlinking of the five public URLs cannot be disproven from inside the repository; watch edge logs for 404s on /file.svg, /globe.svg, /next.svg, /vercel.svg and /window.svg for one traffic cycle after the next staging deploy"
     }
   ],
   "liveIssues": [
