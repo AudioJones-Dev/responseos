@@ -431,6 +431,19 @@
       "refType": "pull"
     },
     {
+      "id": "G-10",
+      "phase": "Tech Debt & Hardening",
+      "title": "Prune redundant .gitkeep placeholders (PRUNE-VCS-01)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 95,
+      "priority": "Low",
+      "start": "2026-08-31",
+      "due": "2026-08-31",
+      "ref": 146,
+      "refType": "pull"
+    },
+    {
       "id": "14",
       "phase": "Launch / Demo Deploy",
       "title": "v0.3 demo deploy",

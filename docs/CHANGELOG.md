@@ -4,6 +4,13 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — chore: remove redundant .gitkeep placeholders (PRUNE-VCS-01)
+
+- Removed four `.gitkeep` placeholders from `components/layout/`, `components/ui/`, `tests/unit/`, and `tests/integration/`. Each of those directories holds tracked siblings (8, 10, 48, and 12 files respectively), so the keepfile no longer served its only purpose — preserving an otherwise-empty directory in git. All four came from the initial scaffold commit `6987c59` and had never been touched since.
+- Left the 17 load-bearing `.gitkeep` files in place. Those have no tracked siblings and are the only thing keeping their directories in version control; several are also cited as evidence of unbuilt capability in [`readiness/PILOT_READINESS.md`](./readiness/PILOT_READINESS.md) and [`readiness/CURRENT_STATE_AUDIT.md`](./readiness/CURRENT_STATE_AUDIT.md).
+- **Withheld `prisma/migrations/.gitkeep`**, which the approved batch had listed. [`.dmaic/components.yaml`](../.dmaic/components.yaml) marks `prisma/migrations/**` as a `protected: true` never-touch domain, and migrations require separate explicit approval. **Decided: it will not be pruned.** The pruner's `protected.md` scopes the never-touch domain with a directory-level `**/migrations/**` glob, alongside `**/schema.*` and `**/*.sql`; that breadth is deliberate, so no agent has to adjudicate which file inside a migrations tree is load-bearing. Deleting a 0-byte placeholder is not worth establishing that a never-touch domain yields to case-by-case judgement, and narrowing the glob to permit it would edit a governance rule in order to enable a cleanup.
+- First batch applied through the `aj-prune` pipeline (inventory → reachability → coverage → plan → apply → verify). The staged review rejected `lib/serverOnlyGuard.ts` (30 importers, missed by a first-pass scan that could not see bare side-effect imports), 49 background SVGs referenced only through a runtime-built URL in `AtmosphereBackground.tsx`, and `lib/revenue/*` (unwired today, but claimed by backlog task I-03) before any of them reached a deletion plan.
+
 ## Unreleased — chore: remove stock create-next-app scaffold SVGs (PRUNE-ASSET-01)
 
 - Removed `public/file.svg`, `public/globe.svg`, `public/next.svg`, `public/vercel.svg`, and `public/window.svg` (3,314 bytes total) — unmodified `create-next-app` scaffold artwork that the product never adopted. All five arrived in the initial scaffold commit `6987c59` and were never touched again.
