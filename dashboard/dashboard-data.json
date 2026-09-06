@@ -158,7 +158,7 @@
       "phase": "Tech Debt & Hardening",
       "title": "CRM-1 connection and provider registry PRD (planning only)",
       "owner": "Codex",
-      "status": "Review",
+      "status": "Done",
       "progress": 100,
       "priority": "High",
       "start": "2026-08-23",
@@ -167,7 +167,7 @@
       "blockedReason": "PR #140 is planning review only; CRM-1 runtime requires a separately approved exact-scope implementation task and must not begin automatically",
       "ref": 140,
       "refType": "pull",
-      "refState": "draft",
+      "refState": "merged",
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/140"
     },
     {
@@ -409,26 +409,30 @@
       "phase": "Tech Debt & Hardening",
       "title": "Repo-pruner detection tooling and first Measure evidence run",
       "owner": "Claude Code",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "Med",
       "start": "2026-08-31",
       "due": "2026-08-31",
       "ref": 143,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/143"
     },
     {
       "id": "G-09",
       "phase": "Tech Debt & Hardening",
       "title": "DMAIC component registry for pruner classification",
       "owner": "Claude Code",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "Med",
       "start": "2026-08-31",
       "due": "2026-08-31",
       "ref": 144,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/144"
     },
     {
       "id": "14",
@@ -661,13 +665,15 @@
       "phase": "Testing & QA",
       "title": "Prospect Demos input labels and placeholder contrast",
       "owner": "Codex",
-      "status": "Review",
+      "status": "Done",
       "progress": 100,
       "priority": "Med",
       "start": "2026-08-24",
       "due": "2026-08-24",
       "ref": 141,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/141"
     },
     {
       "id": "L-02",
@@ -840,8 +846,8 @@
       "phase": "Launch / Demo Deploy",
       "title": "Certify hosted anonymous browser auth without redeployment",
       "owner": "Codex",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "High",
       "start": "2026-08-23",
       "due": "2026-08-23",
@@ -849,7 +855,7 @@
       "blockedReason": "PR #137 is under review. Deployment #2 remains retained and unchanged; read-only hosted certification requires a separate exact-SHA authorization after review/merge.",
       "ref": 137,
       "refType": "pull",
-      "refState": "open",
+      "refState": "merged",
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/137"
     },
     {
@@ -857,7 +863,7 @@
       "phase": "Launch / Demo Deploy",
       "title": "Keep Clerk control organization outside tenant provisioning",
       "owner": "Codex",
-      "status": "Review",
+      "status": "Done",
       "progress": 100,
       "priority": "High",
       "start": "2026-08-25",
@@ -866,7 +872,7 @@
       "blockedReason": "The narrow control-organization webhook exclusion is locally validated and awaits PR review, exact-head CI, merge, guarded staging identity reconciliation, and governed redeployment.",
       "ref": 142,
       "refType": "pull",
-      "refState": "open",
+      "refState": "merged",
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/142"
     },
     {
@@ -911,6 +917,15 @@
   ],
   "liveIssues": [
     {
+      "number": 145,
+      "title": "Extract shared dashboard presentation from client and demo routes",
+      "url": "https://github.com/AudioJones-Dev/responseos/issues/145",
+      "state": "open",
+      "labels": [
+        "tech-debt"
+      ]
+    },
+    {
       "number": 26,
       "title": "Make prisma/seed.ts genuinely idempotent (or document create-only)",
       "url": "https://github.com/AudioJones-Dev/responseos/issues/26",
@@ -920,5 +935,5 @@
       ]
     }
   ],
-  "generatedAt": "2026-08-21T00:51:44.624Z"
+  "generatedAt": "2026-09-06T15:56:25.900Z"
 }
