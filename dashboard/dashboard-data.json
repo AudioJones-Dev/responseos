@@ -920,6 +920,17 @@
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/94"
     },
     {
+      "id": "G-12",
+      "phase": "Tech Debt & Hardening",
+      "title": "Clear npm audit failures blocking all CI",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-09-10",
+      "due": "2026-09-10"
+    },
+    {
       "id": "G-11",
       "phase": "Tech Debt & Hardening",
       "title": "Prune stock create-next-app scaffold SVGs (PRUNE-ASSET-01)",
