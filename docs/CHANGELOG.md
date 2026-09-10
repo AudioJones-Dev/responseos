@@ -4,6 +4,19 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: add client-activation current-state reconciliation
+
+- Added [`RESPONSEOS_CLIENT_ACTIVATION_RECONCILIATION.md`](./ops/client-delivery/RESPONSEOS_CLIENT_ACTIVATION_RECONCILIATION.md), reconciling a proposed reusable client-activation substrate against `master` @ `271353e`. Documentation only; no runtime code, schema, environment, provider configuration, or deployment behaviour changes.
+- **Principal finding: the substrate is largely present but unconsolidated.** Ten subsystem readers raised 25 candidate gaps; independent verifiers instructed to refute each one returned **0 `REAL_GAP` and 25 `PARTIAL`**. Every item is a missing write accessor, runtime call site, nullable column, or enum member on an existing model — not a missing subsystem.
+- Recorded that `docs/ops/client-delivery/` is already the client-activation documentation home (R0–R3 gates plus twelve templates), so a separate `docs/client-activation/` tree would duplicate it.
+- Recorded three ratified decisions that constrain any per-tenant supervision model: ADR-0046 §2 forbids gating runtime behaviour on `account_type`; ADR-0046 §9 already declined a generic settings blob on `Account`; and under ADR-0047 supervision is a process-wide deploy-lane property, so two tenants in one deployment cannot currently sit at different supervision levels.
+- Recorded that `BootstrapPromotion` creates a **new** `Account` rather than transitioning one, which diverges from a single-profile sandbox → pilot → production model and needs an explicit operator decision.
+- Flagged blocking defects in two open pull requests: #132 adds an `ADR-0049` that collides with the ratified ADR-0049 **and files it as a standalone document under `docs/architecture/` where every ratified ADR lives as a section of `DECISIONS.md`**; #115 adds a migration `0009` that collides with `0009_internal_demo_professional_receptionist`.
+- Verified PR #132 against the branch rather than its description: its `client-environment.v1` manifest is a **discovery-preview artifact that structurally cannot express a supervised pilot** — `lifecycleStage` has two values, `executionMode` and `liveActivationAuthorized` are literals, all four `integrations` are literals, and `businessIdentity` carries no hours, service area, escalation contacts, or consent posture. Its `lib/prospectBootstrap/memory.ts` authority ranking is separately reusable and does implement the source-of-truth hierarchy.
+- Confirmed all four parts of the operator's Obsidian scoping correction are already ratified by ADR-0016 — operator-side authoring, not a RAG runtime, no tenant PII or transcripts, and no free-form runtime retrieval. Only the versioned-artifact mechanism for the operator-vault → agent-runtime lane remains unbuilt.
+- Flagged seven documentation drifts, including doctrine §3.1 (states 22 models / 8 migrations / 13 unit files; actual 34 / 13 / 48), doctrine §3.5 item 2 (states `ProviderConnectionProvider` lacks `telnyx`/`calendly`; both landed in migration `0010`), and `PILOT_READINESS.md` blockers 1 and 6, which have since closed.
+- Confirmed `codex/prospect-bootstrap` is fully superseded by PR #125, and that `codex/h0-telnyx-hubspot-contract` still carries an unlanded 367-line ingestion brief plus `crm/policy.ts` and `crm/fixtures.ts`.
+
 ## Unreleased — chore: remove stock create-next-app scaffold SVGs (PRUNE-ASSET-01)
 
 - Removed `public/file.svg`, `public/globe.svg`, `public/next.svg`, `public/vercel.svg`, and `public/window.svg` (3,314 bytes total) — unmodified `create-next-app` scaffold artwork that the product never adopted. All five arrived in the initial scaffold commit `6987c59` and were never touched again.
