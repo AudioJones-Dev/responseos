@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { PROSPECT_DEMO_POLICY } from "@/lib/prospectBootstrap/policy";
 
 /**
@@ -139,28 +138,27 @@ export function isExecutionMode(value: unknown): value is ExecutionMode {
 /**
  * Resolve the policy for a mode, failing closed.
  *
- * An unrecognised mode, or a gated mode without explicit authorisation,
+ * Authorisation is bound to the *specific* gate the mode requires, named in
+ * `EXECUTION_MODE_ACTIVATION_GATES`. A single "authorized" boolean would let an
+ * approval issued for one gate unlock a mode behind a different one — opening
+ * `v0.3-live-communications` would also grant `MANAGED_AUTONOMY`, whose gate is
+ * `post-pilot-operator-authorization`. The caller must therefore say *which*
+ * gates are open, and only modes behind those gates resolve.
+ *
+ * An unrecognised mode, or a gated mode whose gate is not in `authorizedGates`,
  * resolves to the most restrictive policy rather than throwing — a caller that
  * forgets to pass authorisation degrades to the demo lane instead of silently
  * granting a capability.
  */
 export function resolveExecutionPolicy(
   mode: unknown,
-  options: { activationAuthorized?: boolean } = {},
+  options: { authorizedGates?: readonly string[] } = {},
 ): ExecutionPolicy {
   if (!isExecutionMode(mode)) return PROSPECT_DEMO_POLICY;
-  if (EXECUTION_MODE_ACTIVATION_GATES[mode] !== null && options.activationAuthorized !== true) {
-    return PROSPECT_DEMO_POLICY;
-  }
+  const requiredGate = EXECUTION_MODE_ACTIVATION_GATES[mode];
+  if (requiredGate === null) return EXECUTION_MODE_POLICIES[mode];
+  const authorizedGates = options.authorizedGates;
+  if (!Array.isArray(authorizedGates)) return PROSPECT_DEMO_POLICY;
+  if (!authorizedGates.some((gate) => gate === requiredGate)) return PROSPECT_DEMO_POLICY;
   return EXECUTION_MODE_POLICIES[mode];
-}
-
-export function executionPolicyChecksum(policy: ExecutionPolicy): string {
-  return createHash("sha256").update(stablePolicyJson(policy)).digest("hex");
-}
-
-function stablePolicyJson(policy: ExecutionPolicy): string {
-  return JSON.stringify(
-    Object.fromEntries(Object.entries(policy).sort(([left], [right]) => left.localeCompare(right))),
-  );
 }

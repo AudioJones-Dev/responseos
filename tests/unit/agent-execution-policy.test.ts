@@ -6,7 +6,6 @@ import {
   MANAGED_AUTONOMY_POLICY,
   PRODUCTION_SUPERVISED_POLICY,
   SUPERVISED_PILOT_POLICY,
-  executionPolicyChecksum,
   isExecutionMode,
   resolveExecutionPolicy,
 } from "@/lib/agentExecution/policy";
@@ -58,30 +57,70 @@ describe("resolveExecutionPolicy fails closed", () => {
     }
   });
 
-  it("refuses a gated mode when authorization is absent", () => {
+  it("refuses a gated mode when no gates are authorized", () => {
     for (const mode of GATED_MODES) {
       expect(resolveExecutionPolicy(mode)).toBe(PROSPECT_DEMO_POLICY);
       expect(resolveExecutionPolicy(mode, {})).toBe(PROSPECT_DEMO_POLICY);
-      expect(resolveExecutionPolicy(mode, { activationAuthorized: false })).toBe(PROSPECT_DEMO_POLICY);
+      expect(resolveExecutionPolicy(mode, { authorizedGates: [] })).toBe(PROSPECT_DEMO_POLICY);
     }
   });
 
-  it("requires the authorization flag to be exactly true, not merely truthy", () => {
+  it("ignores a non-array authorization value rather than treating it as truthy", () => {
     for (const mode of GATED_MODES) {
-      const policy = resolveExecutionPolicy(mode, { activationAuthorized: "yes" as unknown as boolean });
-      expect(policy).toBe(PROSPECT_DEMO_POLICY);
+      for (const bogus of [true, "yes", 1, {}]) {
+        const policy = resolveExecutionPolicy(mode, {
+          authorizedGates: bogus as unknown as readonly string[],
+        });
+        expect(policy).toBe(PROSPECT_DEMO_POLICY);
+      }
     }
   });
 
-  it("returns the gated policy once authorization is explicit", () => {
+  it("refuses a gated mode when only some OTHER gate is authorized", () => {
     for (const mode of GATED_MODES) {
-      expect(resolveExecutionPolicy(mode, { activationAuthorized: true })).toBe(EXECUTION_MODE_POLICIES[mode]);
+      expect(resolveExecutionPolicy(mode, { authorizedGates: ["some-unrelated-gate"] })).toBe(PROSPECT_DEMO_POLICY);
+    }
+  });
+
+  it("returns the gated policy once its own gate is authorized", () => {
+    for (const mode of GATED_MODES) {
+      const gate = EXECUTION_MODE_ACTIVATION_GATES[mode] as string;
+      expect(resolveExecutionPolicy(mode, { authorizedGates: [gate] })).toBe(EXECUTION_MODE_POLICIES[mode]);
     }
   });
 
   it("returns the demo policy for the demo mode regardless of authorization", () => {
     expect(resolveExecutionPolicy("PROSPECT_DEMO")).toBe(PROSPECT_DEMO_POLICY);
-    expect(resolveExecutionPolicy("PROSPECT_DEMO", { activationAuthorized: true })).toBe(PROSPECT_DEMO_POLICY);
+    expect(resolveExecutionPolicy("PROSPECT_DEMO", { authorizedGates: ["anything"] })).toBe(PROSPECT_DEMO_POLICY);
+  });
+});
+
+describe("authorization does not escalate across gates", () => {
+  // Regression: a single boolean would let an approval issued for the v0.3
+  // communications gate also unlock MANAGED_AUTONOMY, whose gate is distinct.
+  const V03_GATE = "v0.3-live-communications";
+
+  it("v0.3 authorization does NOT unlock managed autonomy", () => {
+    expect(EXECUTION_MODE_ACTIVATION_GATES.MANAGED_AUTONOMY).not.toBe(V03_GATE);
+    const policy = resolveExecutionPolicy("MANAGED_AUTONOMY", { authorizedGates: [V03_GATE] });
+    expect(policy).toBe(PROSPECT_DEMO_POLICY);
+    expect(policy.outboundEnabled).toBe(false);
+  });
+
+  it("v0.3 authorization does unlock the two modes actually behind that gate", () => {
+    expect(resolveExecutionPolicy("SUPERVISED_PILOT", { authorizedGates: [V03_GATE] })).toBe(SUPERVISED_PILOT_POLICY);
+    expect(resolveExecutionPolicy("PRODUCTION_SUPERVISED", { authorizedGates: [V03_GATE] })).toBe(
+      PRODUCTION_SUPERVISED_POLICY,
+    );
+  });
+
+  it("authorizing every gate resolves every mode to its own policy", () => {
+    const allGates = EXECUTION_MODES.map((mode) => EXECUTION_MODE_ACTIVATION_GATES[mode]).filter(
+      (gate): gate is string => gate !== null,
+    );
+    for (const mode of EXECUTION_MODES) {
+      expect(resolveExecutionPolicy(mode, { authorizedGates: allGates })).toBe(EXECUTION_MODE_POLICIES[mode]);
+    }
   });
 });
 
@@ -129,22 +168,19 @@ describe("capability boundaries that no tier may cross", () => {
   });
 });
 
-describe("policy checksums", () => {
-  it("is stable across calls and independent of key order", () => {
-    const first = executionPolicyChecksum(SUPERVISED_PILOT_POLICY);
-    const second = executionPolicyChecksum({ ...SUPERVISED_PILOT_POLICY });
-    expect(first).toBe(second);
-    expect(first).toMatch(/^[0-9a-f]{64}$/);
+describe("policy identity", () => {
+  // No checksum/digest mechanism exists yet — the prospect lane compares
+  // canonical JSON directly (lib/prospectBootstrap/service.ts:776). This
+  // asserts the property that comparison depends on: distinct modes must not
+  // serialise identically.
+  it("gives every mode a distinct canonical serialisation", () => {
+    const serialised = EXECUTION_MODES.map((mode) => stableJson(EXECUTION_MODE_POLICIES[mode]));
+    expect(new Set(serialised).size).toBe(EXECUTION_MODES.length);
   });
 
-  it("distinguishes every mode", () => {
-    const sums = EXECUTION_MODES.map((mode) => executionPolicyChecksum(EXECUTION_MODE_POLICIES[mode]));
-    expect(new Set(sums).size).toBe(EXECUTION_MODES.length);
-  });
-
-  it("changes when a capability changes", () => {
+  it("detects a tampered capability by canonical comparison", () => {
     const tampered = { ...SUPERVISED_PILOT_POLICY, paymentEnabled: true };
-    expect(executionPolicyChecksum(tampered)).not.toBe(executionPolicyChecksum(SUPERVISED_PILOT_POLICY));
+    expect(stableJson(tampered)).not.toBe(stableJson(SUPERVISED_PILOT_POLICY));
   });
 });
 
