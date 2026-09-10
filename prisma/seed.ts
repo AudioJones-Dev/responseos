@@ -56,13 +56,13 @@ const DEMO_SMS_REPLY_AT = new Date("2026-08-03T14:31:00.000Z");
 // superseded story in place.
 const DEMO_SITE_URL = "https://tyronenelms.com";
 const DEMO_CALL_TRANSCRIPT =
-  "Recruiter asked about business systems experience, AI implementation experience and stakeholder management. The experience question was answered from the verified resume record; the two without a verified source were captured for follow-up, and a recruiter screen was scheduled.";
+  "Recruiter asked about business systems experience, AI implementation experience and example project work. The first two were answered from the verified resume record; the project question has no verified source, so it was captured for follow-up, and a recruiter screen was scheduled.";
 const DEMO_CALL_SUMMARY =
-  "Recruiter screen requested for a Business Systems Analyst role; work history answered from the verified record, two unsourced questions captured for follow-up.";
+  "Recruiter screen requested for a Business Systems Analyst role; two questions answered from the verified record, the project question captured for follow-up.";
 const DEMO_QA_NOTES =
-  "Receptionist answered the work-history question from the verified record, declined the two unsourced questions and captured them instead; recruiter screen scheduled.";
+  "Receptionist answered both skill questions from the verified record, declined the unsourced project question and captured it instead; recruiter screen scheduled.";
 const DEMO_OPPORTUNITY_SUMMARY =
-  "Recruiter screen requested for a Business Systems Analyst role. Work history was answered from the verified resume record; the questions with no verified source were captured for follow-up rather than answered from memory.";
+  "Recruiter screen requested for a Business Systems Analyst role. The business systems and AI implementation questions were answered from the verified resume record; the project question has no verified source and was captured for follow-up rather than answered from memory.";
 
 async function seedAccounts() {
   await prisma.account.upsert({
@@ -1214,7 +1214,7 @@ async function seedCallSegments() {
       id: "seg_tyrone_2",
       sequence: 2,
       speaker: "agent" as const,
-      text: "Tyrone is Operations & Marketing Consultant at Florida Ramp & Lift since July 2023 and founder and operations / business systems consultant at AJ Digital since April 2020. On AI implementation specifics I don't have a verified record, so I'll capture that for Tyrone.",
+      text: "Business systems is on his verified skill list, and he is Operations & Marketing Consultant at Florida Ramp & Lift since July 2023 and founder and operations / business systems consultant at AJ Digital since April 2020.",
       confidence: 0.97,
       offsetSeconds: 12,
     },
@@ -1222,9 +1222,17 @@ async function seedCallSegments() {
       id: "seg_tyrone_3",
       sequence: 3,
       speaker: "caller" as const,
-      text: "Let's schedule a recruiter screen for the Business Systems Analyst role.",
+      text: "Can you point me at a project he has shipped? And let's get a recruiter screen booked.",
       confidence: 0.95,
       offsetSeconds: 24,
+    },
+    {
+      id: "seg_tyrone_4",
+      sequence: 4,
+      speaker: "agent" as const,
+      text: "I don't have a verified project record to point to, so I've captured that for Tyrone. I can book the recruiter screen now.",
+      confidence: 0.96,
+      offsetSeconds: 36,
     },
   ];
 
@@ -1520,7 +1528,7 @@ async function seedProfessionalOpportunities() {
       questions_asked: [
         "business systems experience",
         "AI implementation experience",
-        "stakeholder management",
+        "example project work",
       ],
       summary: DEMO_OPPORTUNITY_SUMMARY,
       recommended_preparation: [

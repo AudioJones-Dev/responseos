@@ -56,10 +56,27 @@ const INTENT_RULES: Array<{ intent: ProfessionalIntent; keywords: string[] }> = 
   { intent: "demo", keywords: ["demo", "responseos", "walkthrough", "how does this work"] },
 ];
 
+/**
+ * Whole-word keyword match.
+ *
+ * Plain substring matching silently mis-routes: "age" is inside
+ * "management", so "how is he with stakeholder management?" classified
+ * as a private question and got refused. A refusal is the most
+ * expensive wrong answer the receptionist can give, so matching is
+ * anchored to word boundaries. Multi-word keywords still match as
+ * phrases.
+ */
+export function matchesKeyword(text: string, keyword: string): boolean {
+  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // A trailing plural still counts — callers ask about "certifications"
+  // and "projects" — but a keyword buried mid-word does not.
+  return new RegExp(`(^|[^a-z0-9])${escaped}s?([^a-z0-9]|$)`, "i").test(text);
+}
+
 export function detectProfessionalIntent(text: string): ProfessionalIntent {
   const normalized = text.toLowerCase();
   for (const rule of INTENT_RULES) {
-    if (rule.keywords.some((keyword) => normalized.includes(keyword))) {
+    if (rule.keywords.some((keyword) => matchesKeyword(normalized, keyword))) {
       return rule.intent;
     }
   }
@@ -135,7 +152,7 @@ export function classifyProfessionalQuestion(
 ): ProfessionalKnowledgeCategory {
   const normalized = question.toLowerCase();
   for (const rule of CATEGORY_RULES) {
-    if (rule.keywords.some((keyword) => normalized.includes(keyword))) {
+    if (rule.keywords.some((keyword) => matchesKeyword(normalized, keyword))) {
       return rule.category;
     }
   }

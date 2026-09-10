@@ -106,6 +106,19 @@ describe("answerProfessionalQuestion", () => {
     }
   });
 
+  test("a keyword buried inside a longer word never triggers a refusal", async () => {
+    // "age" is a substring of "management": plain substring matching
+    // classified this as a private question and refused it.
+    const answer = await answerProfessionalQuestion({
+      accountId: DEMO_ACCOUNT,
+      question: "How is he with stakeholder management?",
+      policy: recruiterPolicy,
+    });
+    expect(answer.category).toBe("skills");
+    expect(answer.authority).not.toBe("refuse");
+    expect(answer.answered).toBe(true);
+  });
+
   test("a named skill never re-routes a gated question", async () => {
     const gated: Array<[string, string]> = [
       ["What salary does he want for Salesforce work?", "compensation"],
@@ -317,7 +330,7 @@ describe("opportunity summary", () => {
       questions_asked: [
         "business systems experience",
         "AI implementation experience",
-        "stakeholder management",
+        "example project work",
       ],
       appointment: { status: "none", datetime: undefined },
       recommended_preparation: [
@@ -351,6 +364,7 @@ describe("provider mocks work without credentials", () => {
     const skills = await provider.getSkills(DEMO_ACCOUNT);
 
     expect(experience.length).toBeGreaterThan(0);
+    expect(skills.length).toBeGreaterThan(0);
     expect(experience.every((record) => record.verified)).toBe(true);
     expect(skills.every((record) => record.verified)).toBe(true);
 

@@ -8,7 +8,7 @@ const at = (offsetMinutes: number): string =>
 export const DEMO_CALL_STARTED = "2026-08-03T14:15:00.000Z";
 export const DEMO_CALL_ENDED = "2026-08-03T14:21:00.000Z";
 export const DEMO_CALL_SUMMARY_TEXT =
-  "Recruiter asked about business systems experience, AI implementation experience and stakeholder management. The experience question was answered from the verified resume record; the two without a verified source were captured for follow-up, and a recruiter screen was scheduled.";
+  "Recruiter asked about business systems experience, AI implementation experience and example project work. The first two were answered from the verified resume record; the project question has no verified source, so it was captured for follow-up, and a recruiter screen was scheduled.";
 
 export const mockCalls: Call[] = [
   MockCall({
@@ -94,7 +94,7 @@ export const mockCalls: Call[] = [
     duration_seconds: 360,
     transcript: DEMO_CALL_SUMMARY_TEXT,
     summary:
-      "Recruiter screen requested for a Business Systems Analyst role; work history answered from the verified record, two unsourced questions captured for follow-up.",
+      "Recruiter screen requested for a Business Systems Analyst role; two questions answered from the verified record, the project question captured for follow-up.",
     sentiment: "positive",
     spam_score: 0,
     lead_score: 88,

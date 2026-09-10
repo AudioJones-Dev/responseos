@@ -12,7 +12,7 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - **The salary floor was deliberately excluded.** Compensation escalates to a human by policy, so holding the number in a recruiter-facing knowledge store would add exposure without ever being spoken.
 - `AvailabilityPolicy` gained `willingToRelocate` and `preferredTitles`; the approved-asset list now points at the real personal site, and the seeded account's `website_url` matches it.
 - Updated the seeded demo narrative — call transcript, agent turn, QA note, and opportunity summary — which asserted "no verified career record is loaded". That statement is no longer true, and a fixture that contradicts itself is worse than one that admits what it lacks.
-- No interface, policy, or authority rule changed: this is the "data change, not a code change" ADR-0046 anticipated, recorded there as a dated follow-up.
+- **No policy or authority rule changed** — the claim-authority matrix, disclosure policy, and escalation behaviour are untouched. The professional-knowledge TypeScript contracts did change, and only to preserve source fidelity: `ExperienceRecord.startDate`/`summary` and `SkillRecord.category` became optional so undated roles and uncategorized skills are stored as the source has them, and `AvailabilityPolicy` gained `willingToRelocate` and `preferredTitles`. Recorded in ADR-0046 as a dated follow-up.
 
 ## Unreleased — feat: add mode-indexed execution policy for per-tenant supervision
 

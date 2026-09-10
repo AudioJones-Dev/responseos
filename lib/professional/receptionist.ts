@@ -6,7 +6,7 @@ import {
   unverifiedFallback,
   type ClaimAuthority,
 } from "./authority";
-import { classifyProfessionalQuestion } from "./intent";
+import { classifyProfessionalQuestion, matchesKeyword } from "./intent";
 import {
   DEFAULT_AGENT_PROFILE_POLICY,
   type AgentProfilePolicy,
@@ -78,7 +78,7 @@ async function resolveCategory(
   const normalized = question.toLowerCase();
   const skills = await getProfessionalKnowledgeProvider().getSkills(accountId);
   const named = skills.some(
-    (skill) => skill.verified && normalized.includes(skill.name.toLowerCase()),
+    (skill) => skill.verified && matchesKeyword(normalized, skill.name.toLowerCase()),
   );
   return named ? "skills" : category;
 }
