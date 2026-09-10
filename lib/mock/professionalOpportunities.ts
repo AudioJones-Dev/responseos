@@ -26,7 +26,7 @@ export const mockProfessionalOpportunities: ProfessionalOpportunity[] = [
       "stakeholder management",
     ],
     summary:
-      "Recruiter screen requested for a Business Systems Analyst role. Career questions were not answered from memory — no verified Career OS record is loaded, so each one was captured for follow-up.",
+      "Recruiter screen requested for a Business Systems Analyst role. Work history was answered from the verified resume record; the questions with no verified source were captured for follow-up rather than answered from memory.",
     recommended_preparation: [
       "review the company platform",
       "prepare an operations case study",

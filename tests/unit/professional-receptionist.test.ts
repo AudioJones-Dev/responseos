@@ -71,10 +71,30 @@ describe("answerProfessionalQuestion", () => {
     expect(answer.sources.length).toBeGreaterThan(0);
   });
 
+  test("answers work history, skills, education and certifications from the imported resume", async () => {
+    const cases: Array<[string, string]> = [
+      ["Tell me about his work history.", "Florida Ramp & Lift"],
+      ["What skills does he have?", "Workflow Automation"],
+      ["What degree does he hold?", "American Academy"],
+      ["Which certifications does he hold?", "coursera.org"],
+    ];
+    for (const [question, expected] of cases) {
+      const answer = await answerProfessionalQuestion({
+        accountId: DEMO_ACCOUNT,
+        question,
+        policy: recruiterPolicy,
+      });
+      expect(answer.answered).toBe(true);
+      expect(answer.sources.length).toBeGreaterThan(0);
+      expect(answer.message).toContain(expected);
+    }
+  });
+
   test("never fabricates a career claim when no verified record exists", async () => {
+    // Projects are the one category with no canonical source.
     const answer = await answerProfessionalQuestion({
       accountId: DEMO_ACCOUNT,
-      question: "Tell me about his work history.",
+      question: "What projects has he built?",
       policy: recruiterPolicy,
     });
     expect(answer.answered).toBe(false);
@@ -161,9 +181,17 @@ describe("asset sharing", () => {
       policy: recruiterPolicy,
     });
     expect(assets.every((asset) => asset.public)).toBe(true);
-    expect(assets.map((asset) => asset.id)).not.toContain(
-      "asset_private_case_study_1",
-    );
+    expect(assets.map((asset) => asset.url)).toEqual([
+      "https://tyronenelms.com",
+    ]);
+  });
+
+  test("an asset whose type the profile disallows is withheld", async () => {
+    const assets = await listShareableAssets({
+      accountId: DEMO_ACCOUNT,
+      policy: { ...recruiterPolicy, allowedAssetTypes: ["github"] },
+    });
+    expect(assets).toEqual([]);
   });
 
   test("the default policy shares nothing", async () => {
@@ -274,14 +302,29 @@ describe("provider mocks work without credentials", () => {
     ).toEqual([]);
   });
 
-  test("every placeholder career record is marked unverified", async () => {
+  test("imported resume records are verified and carry no invented dates", async () => {
     const provider = getProfessionalKnowledgeProvider();
     const experience = await provider.getExperience(DEMO_ACCOUNT);
-    const projects = await provider.getProjects(DEMO_ACCOUNT);
     const skills = await provider.getSkills(DEMO_ACCOUNT);
-    expect(experience.every((record) => !record.verified)).toBe(true);
+
+    expect(experience.length).toBeGreaterThan(0);
+    expect(experience.every((record) => record.verified)).toBe(true);
+    expect(skills.every((record) => record.verified)).toBe(true);
+
+    // The resume dates only two roles; the rest must stay undated rather
+    // than carry a guess.
+    const dated = experience.filter((record) => record.startDate);
+    expect(dated.map((record) => record.company).sort()).toEqual([
+      "AJ Digital / Freelance Consulting",
+      "Florida Ramp & Lift",
+    ]);
+  });
+
+  test("records with no canonical source stay unverified", async () => {
+    const projects = await getProfessionalKnowledgeProvider().getProjects(
+      DEMO_ACCOUNT,
+    );
     expect(projects.every((record) => !record.verified)).toBe(true);
-    expect(skills.every((record) => !record.verified)).toBe(true);
   });
 
   test("handoff provider is a no-op that reports non-delivery", async () => {

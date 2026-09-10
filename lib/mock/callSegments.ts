@@ -55,7 +55,7 @@ export const mockCallSegments: CallSegment[] = [
     call_id: "call_tyrone_1",
     sequence: 2,
     speaker: "agent",
-    text: "I don't have verified information available for that, but I can note the question for Tyrone or help schedule a conversation with Tyrone.",
+    text: "Tyrone is Operations & Marketing Consultant at Florida Ramp & Lift since July 2023 and founder and operations / business systems consultant at AJ Digital since April 2020. On AI implementation specifics I don't have a verified record, so I'll capture that for Tyrone.",
     confidence: 0.97,
     started_at: demoSegmentAt(12),
     ended_at: demoSegmentAt(22),

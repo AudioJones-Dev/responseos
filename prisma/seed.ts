@@ -93,7 +93,7 @@ async function seedAccounts() {
       name: "Tyrone Nelms",
       slug: "tyrone-nelms",
       industry: "professional-services",
-      website_url: "https://tyronenelms.example",
+      website_url: "https://tyronenelms.com",
       primary_phone: "+15555550700",
       timezone: "America/New_York",
       status: "active",
@@ -323,7 +323,8 @@ async function seedCalls() {
 
   // Internal demo tenant — recruiter call answered by the professional
   // receptionist. The transcript deliberately shows the receptionist
-  // declining to answer unverified career questions.
+  // answering from the verified resume record and capturing the
+  // questions it has no verified source for.
   await prisma.call.upsert({
     where: { id: "call_tyrone_1" },
     update: {},
@@ -340,7 +341,7 @@ async function seedCalls() {
       ended_at: DEMO_CALL_ENDED,
       duration_seconds: 360,
       transcript:
-        "Recruiter asked about business systems experience, AI implementation experience and stakeholder management. No verified career record is loaded, so each question was captured rather than answered, and a recruiter screen was scheduled.",
+        "Recruiter asked about business systems experience, AI implementation experience and stakeholder management. The experience question was answered from the verified resume record; the two without a verified source were captured for follow-up, and a recruiter screen was scheduled.",
       summary:
         "Recruiter screen requested for a Business Systems Analyst role; three career questions captured for follow-up.",
       sentiment: "positive",
@@ -1198,7 +1199,7 @@ async function seedCallSegments() {
       id: "seg_tyrone_2",
       sequence: 2,
       speaker: "agent" as const,
-      text: "I don't have verified information available for that, but I can note the question for Tyrone or help schedule a conversation with Tyrone.",
+      text: "Tyrone is Operations & Marketing Consultant at Florida Ramp & Lift since July 2023 and founder and operations / business systems consultant at AJ Digital since April 2020. On AI implementation specifics I don't have a verified record, so I'll capture that for Tyrone.",
       confidence: 0.97,
       offsetSeconds: 12,
     },
@@ -1260,7 +1261,7 @@ async function seedCallTranscripts() {
       account_id: "org_tyrone_1",
       call_id: "call_tyrone_1",
       inline_text:
-        "Recruiter asked about business systems experience, AI implementation experience and stakeholder management. No verified career record is loaded, so each question was captured rather than answered, and a recruiter screen was scheduled.",
+        "Recruiter asked about business systems experience, AI implementation experience and stakeholder management. The experience question was answered from the verified resume record; the two without a verified source were captured for follow-up, and a recruiter screen was scheduled.",
       language: "en",
       retention_lane: "full",
       created_at: DEMO_CALL_ENDED,
@@ -1307,7 +1308,7 @@ async function seedQaLogs() {
         next_step: "pass",
       },
       notes:
-        "Receptionist declined all three unverified career questions and captured them instead; recruiter screen scheduled.",
+        "Receptionist answered the work-history question from the verified record, declined the two unsourced questions and captured them instead; recruiter screen scheduled.",
       reviewed_at: DEMO_OPPORTUNITY_AT,
       created_at: DEMO_OPPORTUNITY_AT,
     },
@@ -1509,7 +1510,7 @@ async function seedProfessionalOpportunities() {
         "stakeholder management",
       ],
       summary:
-        "Recruiter screen requested for a Business Systems Analyst role. Career questions were not answered from memory — no verified Career OS record is loaded, so each one was captured for follow-up.",
+        "Recruiter screen requested for a Business Systems Analyst role. Work history was answered from the verified resume record; the questions with no verified source were captured for follow-up rather than answered from memory.",
       recommended_preparation: [
         "review the company platform",
         "prepare an operations case study",

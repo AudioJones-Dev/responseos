@@ -4,6 +4,16 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: import the canonical resume into the internal demo tenant's knowledge fixture
+
+- Replaced the placeholder career records in `lib/providers/professionalKnowledge/fixture.ts` with the account owner's canonical resume (imported 2026-09-10, recorded in `RESUME_IMPORTED_AT`). Work history, skills, education, certifications, and targeted roles are now `verified: true` and answerable; the receptionist cites them like any other grounded claim.
+- **Transcribed, never inferred.** The five roles the source carries without dates are stored without dates — `ExperienceRecord.startDate` and `summary` became optional rather than accept a guess — skills arrive as the flat list the source supplies (`SkillRecord.category` is now optional), and no achievement or metric was written that the source does not state.
+- **Projects stay unsourced** and therefore unanswerable, so the fallback, escalation, and refusal paths remain exercised and tested.
+- **The salary floor was deliberately excluded.** Compensation escalates to a human by policy, so holding the number in a recruiter-facing knowledge store would add exposure without ever being spoken.
+- `AvailabilityPolicy` gained `willingToRelocate` and `preferredTitles`; the approved-asset list now points at the real personal site, and the seeded account's `website_url` matches it.
+- Updated the seeded demo narrative — call transcript, agent turn, QA note, and opportunity summary — which asserted "no verified career record is loaded". That statement is no longer true, and a fixture that contradicts itself is worse than one that admits what it lacks.
+- No interface, policy, or authority rule changed: this is the "data change, not a code change" ADR-0046 anticipated, recorded there as a dated follow-up.
+
 ## Unreleased — feat: add mode-indexed execution policy for per-tenant supervision
 
 - Added [`ADR-0051`](./DECISIONS.md#adr-0051--per-tenant-supervision-is-a-mode-indexed-execution-policy-promotion-preserves-tenant-identity-and-tenant-operating-configuration-lives-on-the-memory-snapshot), recording the three operator decisions that were blocking client-activation work: supervision is a mode-indexed execution policy, promotion preserves tenant identity, and per-tenant operating configuration lives on `BusinessMemorySnapshotSchema`. Extends ADR-0047 and ADR-0048; does **not** supersede ADR-0046 — `account_type` remains administrative-only.

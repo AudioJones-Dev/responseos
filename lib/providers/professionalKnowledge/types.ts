@@ -74,9 +74,10 @@ export interface ExperienceRecord {
   id: string
   company: string
   title: string
-  startDate: string
+  /** Omitted when the canonical record carries no date. Never inferred. */
+  startDate?: string
   endDate?: string
-  summary: string
+  summary?: string
   verified: boolean
 }
 
@@ -93,7 +94,8 @@ export interface ProjectRecord {
 export interface SkillRecord {
   id: string
   name: string
-  category: string
+  /** Omitted when the canonical record supplies a flat, uncategorized list. */
+  category?: string
   verified: boolean
 }
 
@@ -103,6 +105,9 @@ export interface AvailabilityPolicy {
   openToConsulting: boolean
   employmentTypes: string[]
   remotePreference: string
+  willingToRelocate: boolean
+  /** Role titles the owner is targeting, in the owner's own words. */
+  preferredTitles: string[]
   meetingDurationsMinutes: number[]
 }
 

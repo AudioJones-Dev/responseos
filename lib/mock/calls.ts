@@ -8,7 +8,7 @@ const at = (offsetMinutes: number): string =>
 export const DEMO_CALL_STARTED = "2026-08-03T14:15:00.000Z";
 export const DEMO_CALL_ENDED = "2026-08-03T14:21:00.000Z";
 export const DEMO_CALL_SUMMARY_TEXT =
-  "Recruiter asked about business systems experience, AI implementation experience and stakeholder management. No verified career record is loaded, so each question was captured rather than answered, and a recruiter screen was scheduled.";
+  "Recruiter asked about business systems experience, AI implementation experience and stakeholder management. The experience question was answered from the verified resume record; the two without a verified source were captured for follow-up, and a recruiter screen was scheduled.";
 
 export const mockCalls: Call[] = [
   MockCall({

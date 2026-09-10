@@ -34,7 +34,7 @@ export const mockQaLogs: QaLog[] = [
       next_step: "pass",
     },
     notes:
-      "Receptionist declined all three unverified career questions and captured them instead; recruiter screen scheduled.",
+      "Receptionist answered the work-history question from the verified record, declined the two unsourced questions and captured them instead; recruiter screen scheduled.",
     reviewed_at: DEMO_REVIEWED_AT,
     created_at: DEMO_REVIEWED_AT,
   },
