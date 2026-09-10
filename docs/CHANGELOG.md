@@ -4,6 +4,17 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — fix: clear npm audit failures blocking all CI
+
+- **CI was red on every pull request.** `npm audit --audit-level=high` is the **first** step of both the `validate` and `integration` jobs, so both died before reaching lint, typecheck, test, or build. Reproduced on `master` at `271353e`; not introduced by any feature branch.
+- Bumped **`next` 16.2.12 → 16.3.4**, clearing a **critical unauthenticated RCE** on Windows-hosted servers ([GHSA-p293-qw3h-jr36](https://github.com/advisories/GHSA-p293-qw3h-jr36)) and an unauthenticated RCE in the Image Optimization API via AVIF ([GHSA-2xp9-vwfh-vxw4](https://github.com/advisories/GHSA-2xp9-vwfh-vxw4)). Both affect `>=16.0.0 <16.3.3`. Not a major upgrade; the declared range is unchanged.
+- Bumped **`eslint-config-next` 16.2.12 → 16.3.4** to keep it in lockstep with `next`, as it was already pinned to the same exact version.
+- Raised the existing `overrides` pins rather than adding a parallel mechanism: **`sharp` 0.35.3 → 0.35.4** (GHSA-rgj7-g3m4-5g8c, libheif, affects `<0.35.4`) and **`js-yaml` 4.3.1 → 4.3.2** (GHSA-2883-xcg3-v3hh, affects `>=4.0.0 <4.3.2`). Note the previous `js-yaml` pin at 4.3.1 was itself added to clear an *earlier* advisory and had since fallen inside a new vulnerable range.
+- Added a **`fast-uri` 3.1.7** override, clearing four SSRF and host-confusion advisories that affect `<3.1.6`. Supersedes the dependabot lockfile-only bump in PR #148.
+- Bumped **`vitest` and `@vitest/coverage-v8` to `^4.1.11`**, clearing the three remaining moderate path-traversal advisories in `@vitest/mocker` (`>=2.1.0 <4.1.11`). These would not have failed `--audit-level=high`, but they are fixed here so the audit is fully clean rather than merely under the threshold.
+- `npm audit` now reports **0 vulnerabilities** at every severity, down from 8 (1 critical, 4 high, 3 moderate).
+- **Verified the Next.js bump is behaviourally neutral for this app**, per the `AGENTS.md` warning that this Next.js version differs from common training data. Built before and after against a clean install: the route set is byte-identical at **93 routes**, and both builds generate **68/68 static pages**. No application code changed.
+
 ## Unreleased — chore: remove stock create-next-app scaffold SVGs (PRUNE-ASSET-01)
 
 - Removed `public/file.svg`, `public/globe.svg`, `public/next.svg`, `public/vercel.svg`, and `public/window.svg` (3,314 bytes total) — unmodified `create-next-app` scaffold artwork that the product never adopted. All five arrived in the initial scaffold commit `6987c59` and were never touched again.
