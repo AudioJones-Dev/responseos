@@ -90,6 +90,49 @@ describe("answerProfessionalQuestion", () => {
     }
   });
 
+  test("routes a question naming a skill directly, without the word 'skill'", async () => {
+    for (const question of [
+      "Does he know Salesforce?",
+      "Any experience with ClickUp?",
+      "How much SharePoint has he done?",
+    ]) {
+      const answer = await answerProfessionalQuestion({
+        accountId: DEMO_ACCOUNT,
+        question,
+        policy: recruiterPolicy,
+      });
+      expect(answer.category).toBe("skills");
+      expect(answer.answered).toBe(true);
+    }
+  });
+
+  test("a named skill never re-routes a gated question", async () => {
+    const gated: Array<[string, string]> = [
+      ["What salary does he want for Salesforce work?", "compensation"],
+      ["What's his hourly rate for ClickUp implementation?", "consulting_rates"],
+      ["Can I get a reference for his Salesforce work?", "references"],
+      ["What's his personal phone number for Notion questions?", "personal"],
+    ];
+    for (const [question, expected] of gated) {
+      const answer = await answerProfessionalQuestion({
+        accountId: DEMO_ACCOUNT,
+        question,
+        policy: recruiterPolicy,
+      });
+      expect(answer.category).toBe(expected);
+      expect(answer.answered).toBe(false);
+    }
+  });
+
+  test("a skill named by another tenant's caller is not answered from this tenant's list", async () => {
+    const answer = await answerProfessionalQuestion({
+      accountId: "org_mock_1",
+      question: "Does he know Salesforce?",
+      policy: recruiterPolicy,
+    });
+    expect(answer.answered).toBe(false);
+  });
+
   test("never fabricates a career claim when no verified record exists", async () => {
     // Projects are the one category with no canonical source.
     const answer = await answerProfessionalQuestion({

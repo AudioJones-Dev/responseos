@@ -50,6 +50,20 @@ const DEMO_APPOINTMENT_END = new Date("2026-08-13T18:30:00.000Z");
 const DEMO_SMS_AT = new Date("2026-08-03T14:25:00.000Z");
 const DEMO_SMS_REPLY_AT = new Date("2026-08-03T14:31:00.000Z");
 
+// Narrative content for the internal demo tenant. Held in constants so
+// each upsert's `create` and `update` branches cannot drift: re-seeding
+// an existing demo database refreshes these rows instead of leaving the
+// superseded story in place.
+const DEMO_SITE_URL = "https://tyronenelms.com";
+const DEMO_CALL_TRANSCRIPT =
+  "Recruiter asked about business systems experience, AI implementation experience and stakeholder management. The experience question was answered from the verified resume record; the two without a verified source were captured for follow-up, and a recruiter screen was scheduled.";
+const DEMO_CALL_SUMMARY =
+  "Recruiter screen requested for a Business Systems Analyst role; work history answered from the verified record, two unsourced questions captured for follow-up.";
+const DEMO_QA_NOTES =
+  "Receptionist answered the work-history question from the verified record, declined the two unsourced questions and captured them instead; recruiter screen scheduled.";
+const DEMO_OPPORTUNITY_SUMMARY =
+  "Recruiter screen requested for a Business Systems Analyst role. Work history was answered from the verified resume record; the questions with no verified source were captured for follow-up rather than answered from memory.";
+
 async function seedAccounts() {
   await prisma.account.upsert({
     where: { id: "org_mock_1" },
@@ -87,13 +101,13 @@ async function seedAccounts() {
   // revenue.
   await prisma.account.upsert({
     where: { id: "org_tyrone_1" },
-    update: {},
+    update: { website_url: DEMO_SITE_URL },
     create: {
       id: "org_tyrone_1",
       name: "Tyrone Nelms",
       slug: "tyrone-nelms",
       industry: "professional-services",
-      website_url: "https://tyronenelms.com",
+      website_url: DEMO_SITE_URL,
       primary_phone: "+15555550700",
       timezone: "America/New_York",
       status: "active",
@@ -327,7 +341,10 @@ async function seedCalls() {
   // questions it has no verified source for.
   await prisma.call.upsert({
     where: { id: "call_tyrone_1" },
-    update: {},
+    update: {
+      transcript: DEMO_CALL_TRANSCRIPT,
+      summary: DEMO_CALL_SUMMARY,
+    },
     create: {
       id: "call_tyrone_1",
       account_id: "org_tyrone_1",
@@ -340,10 +357,8 @@ async function seedCalls() {
       started_at: DEMO_CALL_STARTED,
       ended_at: DEMO_CALL_ENDED,
       duration_seconds: 360,
-      transcript:
-        "Recruiter asked about business systems experience, AI implementation experience and stakeholder management. The experience question was answered from the verified resume record; the two without a verified source were captured for follow-up, and a recruiter screen was scheduled.",
-      summary:
-        "Recruiter screen requested for a Business Systems Analyst role; three career questions captured for follow-up.",
+      transcript: DEMO_CALL_TRANSCRIPT,
+      summary: DEMO_CALL_SUMMARY,
       sentiment: "positive",
       spam_score: 0,
       lead_score: 88,
@@ -1220,7 +1235,7 @@ async function seedCallSegments() {
     const endedAt = new Date(startedAt.getTime() + 10_000);
     await prisma.callSegment.upsert({
       where: { id: turn.id },
-      update: {},
+      update: { text: turn.text },
       create: {
         id: turn.id,
         account_id: "org_tyrone_1",
@@ -1255,13 +1270,12 @@ async function seedCallTranscripts() {
 
   await prisma.callTranscript.upsert({
     where: { id: "xcr_tyrone_1" },
-    update: {},
+    update: { inline_text: DEMO_CALL_TRANSCRIPT },
     create: {
       id: "xcr_tyrone_1",
       account_id: "org_tyrone_1",
       call_id: "call_tyrone_1",
-      inline_text:
-        "Recruiter asked about business systems experience, AI implementation experience and stakeholder management. The experience question was answered from the verified resume record; the two without a verified source were captured for follow-up, and a recruiter screen was scheduled.",
+      inline_text: DEMO_CALL_TRANSCRIPT,
       language: "en",
       retention_lane: "full",
       created_at: DEMO_CALL_ENDED,
@@ -1293,7 +1307,7 @@ async function seedQaLogs() {
 
   await prisma.qaLog.upsert({
     where: { id: "qa_tyrone_1" },
-    update: {},
+    update: { notes: DEMO_QA_NOTES },
     create: {
       id: "qa_tyrone_1",
       account_id: "org_tyrone_1",
@@ -1307,8 +1321,7 @@ async function seedQaLogs() {
         unverified_claim_avoided: "pass",
         next_step: "pass",
       },
-      notes:
-        "Receptionist answered the work-history question from the verified record, declined the two unsourced questions and captured them instead; recruiter screen scheduled.",
+      notes: DEMO_QA_NOTES,
       reviewed_at: DEMO_OPPORTUNITY_AT,
       created_at: DEMO_OPPORTUNITY_AT,
     },
@@ -1487,7 +1500,7 @@ async function seedAgentProfiles() {
 async function seedProfessionalOpportunities() {
   await prisma.professionalOpportunity.upsert({
     where: { id: "popp_tyrone_1" },
-    update: {},
+    update: { summary: DEMO_OPPORTUNITY_SUMMARY },
     create: {
       id: "popp_tyrone_1",
       account_id: "org_tyrone_1",
@@ -1509,8 +1522,7 @@ async function seedProfessionalOpportunities() {
         "AI implementation experience",
         "stakeholder management",
       ],
-      summary:
-        "Recruiter screen requested for a Business Systems Analyst role. Work history was answered from the verified resume record; the questions with no verified source were captured for follow-up rather than answered from memory.",
+      summary: DEMO_OPPORTUNITY_SUMMARY,
       recommended_preparation: [
         "review the company platform",
         "prepare an operations case study",

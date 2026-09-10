@@ -94,7 +94,7 @@ export const mockCalls: Call[] = [
     duration_seconds: 360,
     transcript: DEMO_CALL_SUMMARY_TEXT,
     summary:
-      "Recruiter screen requested for a Business Systems Analyst role; three career questions captured for follow-up.",
+      "Recruiter screen requested for a Business Systems Analyst role; work history answered from the verified record, two unsourced questions captured for follow-up.",
     sentiment: "positive",
     spam_score: 0,
     lead_score: 88,

@@ -46,6 +46,44 @@ function applyPolicy(
 }
 
 /**
+ * Categories a directly-named skill may re-route. "Any experience with
+ * ClickUp?" classifies as work history, but the skills record is the
+ * better answer.
+ *
+ * The gated categories are absent on purpose: a skill name appearing in
+ * "what salary does he want for Salesforce work?" must never turn a
+ * compensation, rates, reference, private, or calendar question into an
+ * answerable one.
+ */
+const SKILL_NAME_MAY_OVERRIDE: ReadonlySet<ProfessionalKnowledgeCategory> =
+  new Set(["unknown", "work_history", "projects", "profile"]);
+
+/**
+ * Resolves the claim category, consulting the account's own verified
+ * skill names when the generic classifier has no better answer.
+ *
+ * Recruiters ask "does he know Salesforce?" far more often than they
+ * say the word "skill", and the generic rules cannot know one tenant's
+ * vocabulary. The lookup stays here rather than in
+ * `classifyProfessionalQuestion` so the shared classifier remains
+ * tenant-agnostic — no account's data is compiled into it.
+ */
+async function resolveCategory(
+  accountId: string,
+  question: string,
+): Promise<ProfessionalKnowledgeCategory> {
+  const category = classifyProfessionalQuestion(question);
+  if (!SKILL_NAME_MAY_OVERRIDE.has(category)) return category;
+
+  const normalized = question.toLowerCase();
+  const skills = await getProfessionalKnowledgeProvider().getSkills(accountId);
+  const named = skills.some(
+    (skill) => skill.verified && normalized.includes(skill.name.toLowerCase()),
+  );
+  return named ? "skills" : category;
+}
+
+/**
  * Answers a professional question from verified knowledge only.
  *
  * Every path that is not backed by a verified record ends in the
@@ -65,7 +103,7 @@ export async function answerProfessionalQuestion(input: {
   const profile = await provider.getProfile(input.accountId);
   const ownerName = profile?.ownerName ?? UNKNOWN_OWNER;
 
-  const category = classifyProfessionalQuestion(input.question);
+  const category = await resolveCategory(input.accountId, input.question);
   const authority = applyPolicy(category, policy);
 
   if (authority === "refuse") {

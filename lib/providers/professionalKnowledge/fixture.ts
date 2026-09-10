@@ -264,6 +264,8 @@ export const demoKnowledgeRecords: ProfessionalKnowledgeResult[] = [
     body: `Operations and business-systems focused: ${RESUME_SKILLS.join(", ")}.`,
     sourceId: RESUME_SOURCE,
     verified: true,
+    // Every skill name is indexed as well: a recruiter asking "does he
+    // know Salesforce?" never says the word "skill".
     keywords: [
       "skill",
       "skills",
@@ -271,7 +273,7 @@ export const demoKnowledgeRecords: ProfessionalKnowledgeResult[] = [
       "technology",
       "technical",
       "tools",
-      "automation",
+      ...RESUME_SKILLS.map((name) => name.toLowerCase()),
     ],
   },
   {
