@@ -208,6 +208,30 @@
       "due": "2026-06-23"
     },
     {
+      "id": "V-06",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Per-tenant supervision execution policy (ADR-0051)",
+      "owner": "Claude Code",
+      "status": "In Progress",
+      "progress": 60,
+      "priority": "High",
+      "start": "2026-09-10",
+      "due": "2026-09-12"
+    },
+    {
+      "id": "R-02",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Client-activation current-state reconciliation",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-09-10",
+      "due": "2026-09-10",
+      "ref": 149,
+      "refType": "pull"
+    },
+    {
       "id": "R-01",
       "phase": "v0.3 · Demo Scope",
       "title": "Readiness audit + critical-path amendment",

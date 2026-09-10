@@ -1417,3 +1417,28 @@ ADR-0047's bounded post-call code path and separate operator gates remain exactl
 > ResponseOS is the provider-independent relationship, operational, memory, and intelligence layer from which external CRM systems can be synchronized through governed adapters.
 
 This language states accepted architecture intent. Generalized provider interoperability is not currently implemented or proven, and the sentence remains prohibited in public copy, demos, comments, or commit messages as a present capability claim.
+
+---
+
+## ADR-0051 — Per-tenant supervision is a mode-indexed execution policy; promotion preserves tenant identity; tenant operating configuration lives on the memory snapshot
+
+**Status:** Accepted (2026-09-10) for the *contract*; live activation of any non-demo mode remains **v0.3-gated**. **Extends ADR-0047** (which scoped supervision to the deploy lane) and **ADR-0048**. Does **not** supersede ADR-0046 — `account_type` remains administrative-only and gates no runtime behaviour.
+
+**Context.** [`RESPONSEOS_CLIENT_ACTIVATION_RECONCILIATION.md`](./ops/client-delivery/RESPONSEOS_CLIENT_ACTIVATION_RECONCILIATION.md) established that a reusable client-activation substrate is largely present but unconsolidated: ten subsystem surveys raised 25 candidate gaps and independent verification returned **0 `REAL_GAP` / 25 `PARTIAL`**. Three questions blocked further work because each had more than one defensible answer and each is doctrine-level rather than an engineering choice.
+
+1. Supervision is presently a **deploy-lane** property. Every live capability is gated by a process-wide environment flag (ADR-0047), so two tenants in one deployment cannot sit at different supervision levels. ADR-0046 §2 forbids expressing the tier on `account_type`.
+2. `BootstrapPromotion` **creates a new `Account`** from a signed manifest and disposes of the sandbox one, whereas a client-activation lifecycle implies a single profile advancing.
+3. ADR-0046 §9 already declined a generic settings blob on `Account`, leaving per-tenant operating configuration — business hours, holidays, service area, escalation contacts, consent posture — without a home.
+
+**Decision.**
+
+1. **Supervision is a mode-indexed execution policy, not a tenant column and not only a deploy lane.** `lib/agentExecution/policy.ts` declares `ExecutionMode` (`PROSPECT_DEMO`, `SUPERVISED_PILOT`, `PRODUCTION_SUPERVISED`, `MANAGED_AUTONOMY`) and a policy table of identical shape per mode, reusing the shipped **canonical-JSON equality** mechanism.
+   - **Status note — there is no checksum or digest pinning of policies today.** `activateProspectBootstrap()` compares two `stableJson(...)` strings directly (`lib/prospectBootstrap/service.ts:776`); nothing computes, stores, or verifies a policy digest. Digest-based pinning is `NOT_PLANNED` by this ADR. Any later activation work that wants it must add the storage and verification path explicitly rather than assuming one exists.
+   - `PROSPECT_DEMO` is re-exported **byte-identically** from `lib/prospectBootstrap/policy.ts`, because `lib/prospectBootstrap/service.ts` compares a stored `AgentProfile.system_policy_json` against that frozen object.
+   - `resolveExecutionPolicy()` **fails closed**, and authorisation is **bound to the specific gate** the mode requires. A caller passes the set of open gates, not a single boolean, so an approval issued for `v0.3-live-communications` cannot unlock `MANAGED_AUTONOMY`, whose gate is `post-pilot-operator-authorization`. An unrecognised mode, or a gated mode whose gate is not authorised, resolves to the most restrictive policy rather than throwing.
+   - A mode is **policy intent, never activation.** Activation gates remain the existing environment flags and the v0.3/v0.4 roadmap gates. `EXECUTION_MODE_ACTIVATION_GATES` records the gate each mode still requires and is held *outside* the policy objects so that adding it cannot break the stored-policy comparison.
+   - Payment, provider memory, and recording stay `false` at **every** tier; no ratified decision authorises any of them.
+2. **Promotion preserves tenant identity.** A client profile advances in place through its lifecycle; the originating `Account.id` is retained across the sandbox → pilot → production boundary so that calls, transcripts, and evidence remain attached to one tenant. The current dispose-and-recreate behaviour of `BootstrapPromotion` is superseded as the *target*; the change is not implemented by this ADR.
+3. **Per-tenant operating configuration lives on the memory snapshot.** `BusinessMemorySnapshotSchema` is the tenant operating-configuration document. This respects ADR-0046 §9, inherits the existing versioning, content-hash, approval, and provenance machinery, and keeps a single artifact for the agent to read at runtime. No parallel `ClientConfig` or `TenantSettings` model is introduced.
+
+**Consequences.** Per-tenant supervision becomes expressible without touching `account_type` and without superseding ADR-0046, so two tenants can differ within one deployment once their gates open. The prospect-demo lane is unchanged and its stored-policy comparison still holds. Decisions 2 and 3 set targets that later changes implement: preserving tenant identity requires reworking `exportBootstrapPromotion`/`importBootstrapPromotion`, and carrying operator-asserted configuration requires relaxing `ApprovedKnowledgeFactSchema`, which currently demands an `https` source URL and content hash for every fact and therefore cannot yet hold operator-asserted configuration. Neither is authorised as a live capability by this ADR, and no provider, deployment, or environment behaviour changes.
