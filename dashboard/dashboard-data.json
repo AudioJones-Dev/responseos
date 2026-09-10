@@ -225,11 +225,13 @@
       "phase": "v0.3 · Demo Scope",
       "title": "Operating-configuration contract + fact authority ranking (FRL pilot PR 1)",
       "owner": "Claude Code",
-      "status": "In Progress",
-      "progress": 70,
+      "status": "Review",
+      "progress": 90,
       "priority": "High",
       "start": "2026-09-10",
-      "due": "2026-09-12"
+      "due": "2026-09-12",
+      "ref": 152,
+      "refType": "pull"
     },
     {
       "id": "V-08",
