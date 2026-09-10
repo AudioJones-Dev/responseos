@@ -4,6 +4,16 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: add mode-indexed execution policy for per-tenant supervision
+
+- Added [`ADR-0051`](./DECISIONS.md#adr-0051--per-tenant-supervision-is-a-mode-indexed-execution-policy-promotion-preserves-tenant-identity-and-tenant-operating-configuration-lives-on-the-memory-snapshot), recording the three operator decisions that were blocking client-activation work: supervision is a mode-indexed execution policy, promotion preserves tenant identity, and per-tenant operating configuration lives on `BusinessMemorySnapshotSchema`. Extends ADR-0047 and ADR-0048; does **not** supersede ADR-0046 — `account_type` remains administrative-only.
+- Added `lib/agentExecution/policy.ts` declaring `ExecutionMode` (`PROSPECT_DEMO`, `SUPERVISED_PILOT`, `PRODUCTION_SUPERVISED`, `MANAGED_AUTONOMY`) and a policy table of identical shape per mode, so per-tenant supervision becomes expressible without a tenant column and without superseding ADR-0046. Two tenants can differ within one deployment once their gates open; previously supervision was a process-wide environment flag per deploy lane.
+- `PROSPECT_DEMO` is re-exported **byte-identically** from `lib/prospectBootstrap/policy.ts`. `lib/prospectBootstrap/service.ts:776` compares a stored `AgentProfile.system_policy_json` against that frozen object, so the shipped demo lane is unchanged and its stored-policy comparison still holds. A test asserts the object identity and the `stableJson` equality directly.
+- `resolveExecutionPolicy()` **fails closed**: an unrecognised mode, or a gated mode without explicit authorisation, resolves to the most restrictive policy rather than throwing, so a caller that omits authorisation degrades to the demo lane instead of silently gaining a capability. Authorisation must be exactly `true`, not merely truthy.
+- A mode is policy intent, never activation. Activation gates remain the existing environment flags and the v0.3/v0.4 roadmap gates; `EXECUTION_MODE_ACTIVATION_GATES` records the gate each mode still requires and is deliberately held *outside* the policy objects, because adding a key to `PROSPECT_DEMO_POLICY` would break the stored-policy comparison.
+- Payment, provider memory, and recording are `false` at **every** tier, and outbound is permitted only at `MANAGED_AUTONOMY`; no ratified decision authorises the others. Tests assert these boundaries across all modes and assert that capability grows monotonically from demo through autonomy.
+- No provider, deployment, schema, migration, or environment behaviour changes. 20 new unit tests; suite is 49 files / 551 tests.
+
 ## Unreleased — docs: add client-activation current-state reconciliation
 
 - Added [`RESPONSEOS_CLIENT_ACTIVATION_RECONCILIATION.md`](./ops/client-delivery/RESPONSEOS_CLIENT_ACTIVATION_RECONCILIATION.md), reconciling a proposed reusable client-activation substrate against `master` @ `271353e`. Documentation only; no runtime code, schema, environment, provider configuration, or deployment behaviour changes.

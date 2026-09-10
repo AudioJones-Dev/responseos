@@ -1,0 +1,166 @@
+import { createHash } from "node:crypto";
+import { PROSPECT_DEMO_POLICY } from "@/lib/prospectBootstrap/policy";
+
+/**
+ * Per-tenant supervision tiers (ADR-0051).
+ *
+ * These are *policy* declarations, not activation. A mode describes what a
+ * tenant's agent is permitted to do once its gate is open; it never opens the
+ * gate. Live provider behaviour stays governed by the existing environment
+ * flags and the v0.3/v0.4 roadmap gates, exactly as before.
+ *
+ * `PROSPECT_DEMO` is the shipped prospect-demo lane and is re-exported here
+ * byte-identically — `lib/prospectBootstrap/service.ts` compares a stored
+ * `AgentProfile.system_policy_json` against that frozen object, so its shape
+ * and values must not drift.
+ */
+export const EXECUTION_MODES = [
+  "PROSPECT_DEMO",
+  "SUPERVISED_PILOT",
+  "PRODUCTION_SUPERVISED",
+  "MANAGED_AUTONOMY",
+] as const;
+
+export type ExecutionMode = (typeof EXECUTION_MODES)[number];
+
+export interface ExecutionPolicy {
+  readonly executionMode: string;
+  readonly templateVersion: string;
+  readonly inboundOnly: boolean;
+  readonly recordingEnabled: boolean;
+  readonly crmSyncEnabled: boolean;
+  readonly schedulingEnabled: boolean;
+  readonly paymentEnabled: boolean;
+  readonly outboundEnabled: boolean;
+  readonly transferEnabled: boolean;
+  readonly providerMemoryEnabled: boolean;
+  readonly allowedTools: readonly string[];
+  readonly requiredDisclosure: string;
+  readonly uncertaintyFallback: string;
+  readonly prohibitedAdvice: readonly string[];
+}
+
+const SHARED_UNCERTAINTY_FALLBACK = PROSPECT_DEMO_POLICY.uncertaintyFallback;
+const SHARED_PROHIBITED_ADVICE = PROSPECT_DEMO_POLICY.prohibitedAdvice;
+
+/**
+ * Supervised pilot: a real client answering real inbound calls with a human
+ * owner watching. Adds CRM write intent and human transfer over the demo lane.
+ * Still inbound-only, still no payment, scheduling, outbound, or provider
+ * memory.
+ */
+export const SUPERVISED_PILOT_POLICY: ExecutionPolicy = Object.freeze({
+  executionMode: "SUPERVISED_PILOT",
+  templateVersion: PROSPECT_DEMO_POLICY.templateVersion,
+  inboundOnly: true,
+  recordingEnabled: false,
+  crmSyncEnabled: true,
+  schedulingEnabled: false,
+  paymentEnabled: false,
+  outboundEnabled: false,
+  transferEnabled: true,
+  providerMemoryEnabled: false,
+  allowedTools: Object.freeze(["hangup", "transfer"]),
+  requiredDisclosure:
+    "This call is being handled by an automated assistant. This call may be transcribed. I can connect you with a person at any time.",
+  uncertaintyFallback: SHARED_UNCERTAINTY_FALLBACK,
+  prohibitedAdvice: SHARED_PROHIBITED_ADVICE,
+});
+
+/**
+ * Production-supervised: normal traffic handled by the agent, exceptions
+ * routed to humans, QA sampled. Adds scheduling. Payment and outbound remain
+ * closed at every tier.
+ */
+export const PRODUCTION_SUPERVISED_POLICY: ExecutionPolicy = Object.freeze({
+  executionMode: "PRODUCTION_SUPERVISED",
+  templateVersion: PROSPECT_DEMO_POLICY.templateVersion,
+  inboundOnly: true,
+  recordingEnabled: false,
+  crmSyncEnabled: true,
+  schedulingEnabled: true,
+  paymentEnabled: false,
+  outboundEnabled: false,
+  transferEnabled: true,
+  providerMemoryEnabled: false,
+  allowedTools: Object.freeze(["hangup", "transfer", "schedule"]),
+  requiredDisclosure: SUPERVISED_PILOT_POLICY.requiredDisclosure,
+  uncertaintyFallback: SHARED_UNCERTAINTY_FALLBACK,
+  prohibitedAdvice: SHARED_PROHIBITED_ADVICE,
+});
+
+/**
+ * Managed autonomy: the most permissive tier the roadmap contemplates. It adds
+ * outbound recovery only. Payment and provider memory stay closed because no
+ * ratified decision authorises either.
+ */
+export const MANAGED_AUTONOMY_POLICY: ExecutionPolicy = Object.freeze({
+  executionMode: "MANAGED_AUTONOMY",
+  templateVersion: PROSPECT_DEMO_POLICY.templateVersion,
+  inboundOnly: false,
+  recordingEnabled: false,
+  crmSyncEnabled: true,
+  schedulingEnabled: true,
+  paymentEnabled: false,
+  outboundEnabled: true,
+  transferEnabled: true,
+  providerMemoryEnabled: false,
+  allowedTools: Object.freeze(["hangup", "transfer", "schedule"]),
+  requiredDisclosure: SUPERVISED_PILOT_POLICY.requiredDisclosure,
+  uncertaintyFallback: SHARED_UNCERTAINTY_FALLBACK,
+  prohibitedAdvice: SHARED_PROHIBITED_ADVICE,
+});
+
+export const EXECUTION_MODE_POLICIES: Readonly<Record<ExecutionMode, ExecutionPolicy>> = Object.freeze({
+  PROSPECT_DEMO: PROSPECT_DEMO_POLICY,
+  SUPERVISED_PILOT: SUPERVISED_PILOT_POLICY,
+  PRODUCTION_SUPERVISED: PRODUCTION_SUPERVISED_POLICY,
+  MANAGED_AUTONOMY: MANAGED_AUTONOMY_POLICY,
+});
+
+/**
+ * The separate gate each mode still requires before it may be resolved.
+ * `null` means the mode carries no additional gate — true only for the shipped
+ * prospect-demo lane. Kept outside the policy objects deliberately: adding a
+ * key to `PROSPECT_DEMO_POLICY` would break the stored-policy comparison in
+ * `lib/prospectBootstrap/service.ts`.
+ */
+export const EXECUTION_MODE_ACTIVATION_GATES: Readonly<Record<ExecutionMode, string | null>> = Object.freeze({
+  PROSPECT_DEMO: null,
+  SUPERVISED_PILOT: "v0.3-live-communications",
+  PRODUCTION_SUPERVISED: "v0.3-live-communications",
+  MANAGED_AUTONOMY: "post-pilot-operator-authorization",
+});
+
+export function isExecutionMode(value: unknown): value is ExecutionMode {
+  return typeof value === "string" && (EXECUTION_MODES as readonly string[]).includes(value);
+}
+
+/**
+ * Resolve the policy for a mode, failing closed.
+ *
+ * An unrecognised mode, or a gated mode without explicit authorisation,
+ * resolves to the most restrictive policy rather than throwing — a caller that
+ * forgets to pass authorisation degrades to the demo lane instead of silently
+ * granting a capability.
+ */
+export function resolveExecutionPolicy(
+  mode: unknown,
+  options: { activationAuthorized?: boolean } = {},
+): ExecutionPolicy {
+  if (!isExecutionMode(mode)) return PROSPECT_DEMO_POLICY;
+  if (EXECUTION_MODE_ACTIVATION_GATES[mode] !== null && options.activationAuthorized !== true) {
+    return PROSPECT_DEMO_POLICY;
+  }
+  return EXECUTION_MODE_POLICIES[mode];
+}
+
+export function executionPolicyChecksum(policy: ExecutionPolicy): string {
+  return createHash("sha256").update(stablePolicyJson(policy)).digest("hex");
+}
+
+function stablePolicyJson(policy: ExecutionPolicy): string {
+  return JSON.stringify(
+    Object.fromEntries(Object.entries(policy).sort(([left], [right]) => left.localeCompare(right))),
+  );
+}
