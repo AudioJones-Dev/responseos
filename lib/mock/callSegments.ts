@@ -79,7 +79,7 @@ export const mockCallSegments: CallSegment[] = [
     call_id: "call_tyrone_1",
     sequence: 4,
     speaker: "agent",
-    text: "Florida Ramp & Lift FieldOps is an active engagement — a contractor portal covering jobs, safety steps, field evidence and approvals; it's on his site at tyronenelms.com/work. Compensation is Tyrone's to answer directly, so I've noted it for him. Your recruiter screen is booked for Aug 13 at 2:00pm ET.",
+    text: "Florida Ramp & Lift FieldOps is an active engagement — a contractor portal covering jobs, safety steps, field evidence and approvals; it's on his site, which I can share with you. Compensation is Tyrone's to answer directly, so I've noted it for him. Your recruiter screen is booked for Aug 13 at 2:00pm ET.",
     confidence: 0.96,
     started_at: demoSegmentAt(36),
     ended_at: demoSegmentAt(46),

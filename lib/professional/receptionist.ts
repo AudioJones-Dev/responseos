@@ -46,44 +46,72 @@ function applyPolicy(
 }
 
 /**
- * Categories a directly-named skill may re-route. "Any experience with
- * ClickUp?" classifies as work history, but the skills record is the
- * better answer.
+ * Categories a directly-named skill or project may re-route. "Any
+ * experience with ClickUp?" classifies as work history, and "tell me
+ * about Career OS" classifies as work history too — on the word
+ * "career" — but in both cases the tenant's own record is the better
+ * answer.
  *
- * Two kinds of category are absent on purpose. The gated ones, so a
- * skill name in "what salary does he want for Salesforce work?" cannot
- * turn a compensation, rates, reference, private, or calendar question
- * into an answerable one. And `projects`, so "what projects has he
- * built with Salesforce?" is answered from the project records rather
- * than from the skill list — naming a skill inside a project question
- * does not make it a question about the skill.
+ * The gated categories are absent on purpose, so a skill or project
+ * name in "what salary does he want for Salesforce work?" cannot turn a
+ * compensation, rates, reference, private, or calendar question into an
+ * answerable one. `projects` is absent too: "what projects has he built
+ * with Salesforce?" is already a project question, and naming a skill
+ * inside it does not make it a question about the skill.
  */
-const SKILL_NAME_MAY_OVERRIDE: ReadonlySet<ProfessionalKnowledgeCategory> =
+const TENANT_VOCABULARY_MAY_OVERRIDE: ReadonlySet<ProfessionalKnowledgeCategory> =
   new Set(["unknown", "work_history", "profile"]);
 
 /**
+ * A project is asked about by its short name, not its full record name:
+ * "what is ARO?" should reach "ARO — agent execution & handoff runtime".
+ */
+function projectMatchTerms(name: string): string[] {
+  const lead = name.split("—")[0].trim().toLowerCase();
+  const full = name.toLowerCase();
+  return lead === full ? [full] : [full, lead];
+}
+
+/**
  * Resolves the claim category, consulting the account's own verified
- * skill names when the generic classifier has no better answer.
+ * project and skill names when the generic classifier has no better
+ * answer.
  *
- * Recruiters ask "does he know Salesforce?" far more often than they
- * say the word "skill", and the generic rules cannot know one tenant's
- * vocabulary. The lookup stays here rather than in
- * `classifyProfessionalQuestion` so the shared classifier remains
- * tenant-agnostic — no account's data is compiled into it.
+ * Recruiters ask "does he know Salesforce?" or "what is ARO?" far more
+ * often than they say the words "skill" or "project", and the generic
+ * rules cannot know one tenant's vocabulary. The lookup stays here
+ * rather than in `classifyProfessionalQuestion` so the shared classifier
+ * remains tenant-agnostic — no account's data is compiled into it.
+ *
+ * Projects are checked first: a project name is the more specific
+ * claim, and without this "tell me about Career OS" answers out of the
+ * work-history record, which is a wrong answer rather than a fallback.
  */
 async function resolveCategory(
   accountId: string,
   question: string,
 ): Promise<ProfessionalKnowledgeCategory> {
   const category = classifyProfessionalQuestion(question);
-  if (!SKILL_NAME_MAY_OVERRIDE.has(category)) return category;
+  if (!TENANT_VOCABULARY_MAY_OVERRIDE.has(category)) return category;
 
   const normalized = question.toLowerCase();
-  const skills = await getProfessionalKnowledgeProvider().getSkills(accountId);
-  const named = skills.some(
+  const provider = getProfessionalKnowledgeProvider();
+
+  const projects = await provider.getProjects(accountId);
+  const namedProject = projects.some(
+    (project) =>
+      project.verified &&
+      projectMatchTerms(project.name).some((term) =>
+        matchesKeyword(normalized, term),
+      ),
+  );
+  if (namedProject) return "projects";
+
+  const skills = await provider.getSkills(accountId);
+  const namedSkill = skills.some(
     (skill) => skill.verified && matchesKeyword(normalized, skill.name.toLowerCase()),
   );
-  return named ? "skills" : category;
+  return namedSkill ? "skills" : category;
 }
 
 /**

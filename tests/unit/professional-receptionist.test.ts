@@ -135,6 +135,60 @@ describe("answerProfessionalQuestion", () => {
     expect(answer.sources).not.toContain("know_skills_1");
   });
 
+  test("a question naming a project reaches the project record", async () => {
+    // Callers ask by project name, not by the word "project". Without
+    // this, "what is ARO?" classifies as unknown and falls back, and
+    // "tell me about Career OS" classifies as work_history on the word
+    // "career" and answers out of the employment record — a wrong
+    // answer, which is worse than no answer.
+    for (const question of [
+      "What is ARO?",
+      "Tell me about Career OS",
+      "Can you tell me about Florida Ramp & Lift FieldOps?",
+    ]) {
+      const answer = await answerProfessionalQuestion({
+        accountId: DEMO_ACCOUNT,
+        question,
+        policy: recruiterPolicy,
+      });
+      expect(answer.category).toBe("projects");
+      expect(answer.answered).toBe(true);
+      expect(answer.sources).toEqual(["know_projects_1"]);
+    }
+  });
+
+  test("a named project never unlocks a gated category", async () => {
+    const answer = await answerProfessionalQuestion({
+      accountId: DEMO_ACCOUNT,
+      question: "What rate does he charge for ARO work?",
+      policy: recruiterPolicy,
+    });
+    expect(answer.category).toBe("consulting_rates");
+    expect(answer.authority).toBe("escalate");
+    expect(answer.answered).toBe(false);
+  });
+
+  test("a grounded answer never carries a link the asset policy withholds", async () => {
+    // Answer bodies are spoken whatever the profile allows, so a URL
+    // embedded in one would bypass listShareableAssets. The strict
+    // default forbids every asset type.
+    expect(
+      await listShareableAssets({ accountId: DEMO_ACCOUNT }),
+    ).toEqual([]);
+
+    for (const question of [
+      "What projects has he built?",
+      "Can I see his portfolio?",
+      "Do you have a link to his site?",
+    ]) {
+      const answer = await answerProfessionalQuestion({
+        accountId: DEMO_ACCOUNT,
+        question,
+      });
+      expect(answer.message).not.toMatch(/https?:\/\/|tyronenelms\.com/);
+    }
+  });
+
   test("a word that merely ends in 's' is matched exactly, never truncated", async () => {
     // "address" must not be stemmed to "addres": a truncated match on a
     // keyword that governs a refusal is a worse answer, not a safer one.

@@ -265,7 +265,10 @@ export const demoKnowledgeRecords: ProfessionalKnowledgeResult[] = [
     id: "know_assets_1",
     category: "projects",
     title: "Approved public assets",
-    body: "The personal site at tyronenelms.com can be shared on request. Private repositories and unpublished case studies are not shared.",
+    // Same reason know_projects_1 carries no URLs: this body is spoken
+    // whatever the profile allows, so naming the site here would hand it
+    // to a caller whose policy shares no assets at all.
+    body: "Approved public assets can be shared when the answering profile allows them. Private repositories and unpublished case studies are never shared.",
     sourceId: ACCOUNT_CONFIG_SOURCE,
     verified: true,
     keywords: ["resume", "cv", "portfolio", "site", "website", "link"],
@@ -311,8 +314,14 @@ export const demoKnowledgeRecords: ProfessionalKnowledgeResult[] = [
     id: "know_projects_1",
     category: "projects",
     title: "Projects",
+    // Deliberately no URLs. An answer body is spoken whatever the
+    // profile allows, so a link embedded here would reach callers whose
+    // policy forbids portfolio assets — `allowedAssetTypes: []` is both
+    // the strict default and a seeded profile. Links are handed out
+    // through listShareableAssets, which enforces that policy; each
+    // record still carries its `url` for that path.
     body: demoProjects
-      .map((project) => `${project.name}: ${project.summary} (${project.url})`)
+      .map((project) => `${project.name}: ${project.summary}`)
       .join(" "),
     sourceId: PORTFOLIO_SOURCE,
     verified: true,
