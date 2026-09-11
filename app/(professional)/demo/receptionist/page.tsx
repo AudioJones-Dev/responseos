@@ -36,12 +36,16 @@ import { EXAMPLE_QUESTIONS } from "./_data/examples";
  * emitted.
  */
 
+// Each label names the decision the receptionist reached, never an
+// action taken on it: this page emits no escalation and performs no
+// calendar lookup, so a past-tense "escalated to the account owner"
+// would describe something that did not happen (doctrine §20).
 const AUTHORITY_LABEL: Record<ClaimAuthority, string> = {
   answer: "Answered from a verified record",
-  escalate: "Escalated to the account owner",
+  escalate: "Owner follow-up required",
   refuse: "Refused",
   unavailable: "No verified source",
-  tool_lookup: "Deferred to a calendar lookup",
+  tool_lookup: "Calendar lookup required",
 };
 
 const AUTHORITY_TONE: Record<ClaimAuthority, Tone> = {
