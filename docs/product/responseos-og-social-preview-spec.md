@@ -78,15 +78,15 @@ asset task.
 
 **Brand 2.0 visual treatment (ADR-0021)**
 - **Background:** true-black `#000000` → soft-black `#080808` (subtle vertical depth), glass texture optional. **No blue.**
-- **Logo:** the **`RO` mark** (`/public/brand/responseos-mark.svg`) and/or the **ResponseOS wordmark** (Syne), top-left.
+- **Logo:** the supplied **ResponseOS wordmark** (`/public/brand/responseos-wordmark.png`), top-left. The supplied logo pack replaced the reconstructed `RO` SVG lockup on 2026-09-11 (ADR-0025 follow-up); provenance is in [`../brand/RESPONSEOS_ASSET_MANIFEST.md`](../brand/RESPONSEOS_ASSET_MANIFEST.md).
 - **Headline:** Syne, off-white `#FCFDFF`, large; one emphasis word in **Signal-Yellow `#E8FF5A`**.
-- **Accent:** one Signal-Yellow element (underline, dot, or the `RO` `O`); **action-orange `#FF4500`** only if a "leak/urgency" motif is used — sparingly.
+- **Accent:** one Signal-Yellow element (underline, dot, or the wordmark's `OS`); **action-orange `#FF4500`** only if a "leak/urgency" motif is used — sparingly.
 - **No** stock photos, chatbot/robot imagery, neon gradients, or vendor logos. "Signal emerging from black."
 
 **Layout (1200 × 630)**
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│  [RO mark]  ResponseOS                                        │  ← top-left brand lockup
+│  [ResponseOS wordmark]                                        │  ← top-left brand lockup
 │                                                              │
 │  STOP LOSING REVENUE TO                                      │  ← headline (Syne, off-white)
 │  MISSED CALLS.                ← "REVENUE" or key word yellow  │
