@@ -341,6 +341,40 @@ describe("fact review compiler and promotion boundary", () => {
     ]);
     expect(memory.businessProfile.map((fact) => fact.id)).toEqual(["sourced"]);
   });
+
+  test("demo agent context omits operator-configured facts even when a snapshot carries them", () => {
+    const compiled = compileFacts([
+      { id: "approved", fact_key: "contact.phone", value_json: "+13055550110", status: "operator_approved_for_demo", source_id: source.id, evidence_excerpt: "Call 305-555-0110", confidence: 0.9, reviewed_by: "operator-1", reviewed_at: now },
+    ]);
+    const memory = {
+      ...compiled,
+      operatingHours: [{
+        id: "operator-hours",
+        key: "operating_hours.weekly",
+        value: "Mon-Fri 08:00-17:00",
+        status: "operator_configured" as const,
+        sourceIds: ["operator-record-1"],
+        sourceEvidence: [{
+          kind: "operator_assertion" as const,
+          sourceId: "operator-record-1",
+          recordRef: "approval-record:operator-session-1",
+          contentHash: "c".repeat(64),
+          assertedBy: "operator-1",
+          assertedAt: now.toISOString(),
+        }],
+        confidence: null,
+        reviewedBy: "operator-1",
+        reviewedAt: now.toISOString(),
+      }],
+    };
+    const context = compileProspectAgentContext({
+      businessName: "Sunrise Roofing",
+      businessWebsite: source.normalized_url,
+      memory,
+    }).approved_business_context;
+    expect(context).toContain("contact.phone");
+    expect(context).not.toContain("operating_hours.weekly");
+  });
 });
 
 describe("prospect bootstrap tenant matrix without a database", () => {

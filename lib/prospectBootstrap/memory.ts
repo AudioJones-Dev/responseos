@@ -241,6 +241,8 @@ export function compileBusinessMemorySnapshot(params: {
 }
 
 function values(memory: BusinessMemorySnapshot): string[] {
+  // The prospect demo is bounded to publicly sourced facts (ADR-0048). The snapshot
+  // schema is shared with tenant operating configuration, so filter here too.
   return [
     ...memory.businessProfile,
     ...memory.services,
@@ -251,7 +253,9 @@ function values(memory: BusinessMemorySnapshot): string[] {
     ...memory.policies,
     ...memory.contactPaths,
     ...memory.brandVoice,
-  ].map((fact) => `${fact.key}: ${typeof fact.value === "string" ? fact.value : stableJson(fact.value)}`);
+  ]
+    .filter((fact) => fact.status !== "operator_configured")
+    .map((fact) => `${fact.key}: ${typeof fact.value === "string" ? fact.value : stableJson(fact.value)}`);
 }
 
 export function compileProspectAgentContext(params: {

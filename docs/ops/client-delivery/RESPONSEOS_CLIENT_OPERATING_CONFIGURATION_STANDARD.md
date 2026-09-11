@@ -59,8 +59,13 @@ Operating configuration is stored as approved facts. A fact's key prefix decides
 | `operator_configured` | An operator entered the fact as structured configuration | Operator assertion — approval-record reference, content hash, who asserted it, when |
 
 The schema enforces the pairing in both directions: operator-assertion evidence is rejected on any status
-other than `operator_configured`, and an `operator_configured` fact that cites a web source is rejected. The
-prospect demo therefore cannot carry a fact backed only by an operator's say-so.
+other than `operator_configured`, and an `operator_configured` fact that cites a web source is rejected.
+
+The pairing is checked fact by fact. It does not keep `operator_configured` facts out of any particular
+snapshot, because the prospect demo and tenant operating configuration share `BusinessMemorySnapshotSchema`
+(ADR-0051 decision 3). The prospect demo is kept to publicly sourced facts (ADR-0048) in two places:
+`compileBusinessMemorySnapshot()` compiles only `operator_approved_for_demo` and `owner_confirmed` facts, and
+`compileProspectAgentContext()` leaves every `operator_configured` fact out of the demo agent's context.
 
 Web evidence carries no `kind` field. Adding one would change the content hash of every snapshot already
 stored, and promotion re-verifies that hash.
