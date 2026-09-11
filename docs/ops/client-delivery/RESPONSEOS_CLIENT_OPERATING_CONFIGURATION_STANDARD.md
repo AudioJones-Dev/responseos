@@ -137,7 +137,8 @@ unsupported values start as `unknown`.
 | A write path that creates `operator_configured` facts — service function, route, or operator UI | `ROADMAP` |
 | `evaluateOperatingConfiguration()` called by any activation path | `ROADMAP` |
 | Value shapes for the five required keys, and a write-path check that keeps placeholder values out (§6). Still open: what shape weekly-hours, holiday, coverage, escalation, and consent values take | `ROADMAP` — decided with the write path or the first activation caller, whichever lands first |
-| Operating configuration for any real tenant | `PARTIALLY_SHIPPED` — Florida Ramp & Lift has a skeleton at `lib/config/clients/florida-ramp-lift.ts`: business name only, zero facts, and every supervised-pilot requirement in `unknowns`. The operator approved its location and data-handling boundary on 2026-09-11, one of the two conditions [`README.md`](./README.md) sets for a client directory; registration of the FRL opportunity is not recorded here. No FRL `Account` exists, no fact has been approved, and nothing reads the skeleton yet |
+| Operating configuration for any real tenant | Not started — no tenant `Account` exists, and no operating-configuration fact has been approved for any tenant |
+| Florida Ramp & Lift configuration skeleton | Supporting scaffolding only, not tenant configuration. `lib/config/clients/florida-ramp-lift.ts` builds a zero-fact snapshot with every supervised-pilot requirement in `unknowns`, within the location and data-handling boundary the operator approved on 2026-09-11. That approval is one of the two conditions [`README.md`](./README.md) sets for a client directory; registration of the FRL opportunity is not recorded here. Nothing reads the skeleton yet |
 | Promotion that preserves tenant identity (ADR-0051 decision 2) | `ROADMAP` — `BootstrapPromotion` still creates a new `Account` |
 
 ---
@@ -147,4 +148,4 @@ unsupported values start as `unknown`.
 | Date | Change | Author |
 |---|---|---|
 | 2026-09-10 | Initial standard | Claude Opus 5, for Audio |
-| 2026-09-11 | Section 7: record the Florida Ramp & Lift skeleton at `lib/config/clients/florida-ramp-lift.ts` | Claude Opus 5, for Audio |
+| 2026-09-11 | Section 7: add the Florida Ramp & Lift skeleton as supporting scaffolding; real-tenant operating configuration stays not started | Claude Opus 5, for Audio |
