@@ -54,6 +54,15 @@ export const PORTFOLIO_IMPORTED_AT = "2026-09-11"
 
 const RESUME_SOURCE = `canonical_resume:${RESUME_IMPORTED_AT}`
 const PORTFOLIO_SOURCE = `portfolio_site:${PORTFOLIO_IMPORTED_AT}`
+
+/**
+ * For a record whose claims genuinely draw on both imports. The work
+ * history is the case: the resume supplies every employer and title,
+ * and the portfolio résumé supplies the dates for the five roles the
+ * resume leaves undated. Attributing that record to either source alone
+ * would name a system that does not own half the claim.
+ */
+const RESUME_AND_PORTFOLIO_SOURCE = `${RESUME_SOURCE}+${PORTFOLIO_SOURCE}`
 const ACCOUNT_CONFIG_SOURCE = "responseos:account_config"
 
 export const demoProfile: ProfessionalProfile = {
@@ -339,7 +348,7 @@ export const demoKnowledgeRecords: ProfessionalKnowledgeResult[] = [
     category: "work_history",
     title: "Work history",
     body: "Tyrone Nelms is Operations & Marketing Consultant for ADA and mobile lift services at Florida Ramp & Lift since July 2023, and founder and operations / business systems consultant at AJ Digital since April 2020. Earlier roles: independent contractor for operations and service support at AHLO Inc. from 2019 to 2023, provider services representative at UnitedHealthcare from 2016 to 2018, senior commercial account specialist at Alorica in 2015, customer service representative at TigerDirect.com (Systemax) from February 2008 to April 2011, and office and warehouse operations at AHLO Inc. from 2006 to 2007.",
-    sourceId: RESUME_SOURCE,
+    sourceId: RESUME_AND_PORTFOLIO_SOURCE,
     verified: true,
     keywords: [
       "experience",
