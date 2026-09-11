@@ -7,9 +7,9 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 ## Unreleased — fix: attribute the work-history record to both of its sources
 
 - The work-history record kept `sourceId: canonical_resume:…` after the previous change added five date ranges taken from the **portfolio résumé**, so it named a system that did not own half its claims. `ProfessionalKnowledgeResult.sourceId` exists so an answer can cite its evidence, and a body mixing two sources under one source id misattributes the half it does not own — the same failure as citing nothing. Raised in review on #158, after that PR merged.
-- The record now names both, joined by `+`. The contract in `types.ts` states the multi-source rule explicitly rather than leaving it to be inferred from one example.
+- The record now names both, joined by `+`. That makes `+`-joined identifiers a provider-wide convention rather than one fixture's private habit, so it is recorded in ADR-0046 as a fifth dated follow-up and stated in the `sourceId` contract in `types.ts` — a later Career OS adapter that treated `sourceId` as one opaque identifier would otherwise be incompatible with fixture-backed results.
 - A test pins the invariant across records: work history names both sources, projects never pick up the resume's, and skills never pick up the portfolio's. Caught by a reviewer rather than by the suite, which is what the test now closes.
-- No behaviour changed. `sourceId` is provenance metadata and is not surfaced in an answer today — `ProfessionalAnswer.sources` carries record ids — which is why this was cheap to correct now rather than once something consumes it.
+- **No receptionist answer behaviour changed.** The provider's observable output did change — a work-history search now returns a different `sourceId`, and the new test requires exactly that. What is unchanged is what a caller hears: `sourceId` is provenance metadata, and `ProfessionalAnswer.sources` carries record ids rather than source ids. Nothing consumes `sourceId` programmatically yet, which is why this was cheap to correct now.
 
 ## Unreleased — feat: date the five undated work-history roles from the portfolio résumé
 

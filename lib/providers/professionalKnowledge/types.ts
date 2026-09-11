@@ -37,6 +37,12 @@ export interface ProfessionalKnowledgeResult {
    * all of them, joined by "+". Naming one source for a body that mixes
    * two would misattribute the half it does not own, which is the same
    * failure as citing no source at all.
+   *
+   * This binds every adapter, not just the fixture (ADR-0046, fifth
+   * follow-up): an adapter that cannot name every system behind a claim
+   * must split the claim into records it can attribute. A consumer that
+   * needs the individual sources splits on "+"; one that only displays
+   * or logs provenance may treat the field as opaque.
    */
   sourceId: string
   /**
