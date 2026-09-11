@@ -125,10 +125,17 @@ code change**: supply canonical records (or wire the Career OS adapter)
 and set `verified`. Re-import bumps `RESUME_IMPORTED_AT` or
 `PORTFOLIO_IMPORTED_AT`, which is how staleness stays visible.
 
-**Stored, but only ever travelling toward the owner.** The owner's
-salary floor rides the **compensation escalation**, so the handoff
-reaches the owner with the figure already attached rather than sending
-them back to look it up. It is still never spoken to a caller.
+**Stored, and carried only on the compensation escalation payload.**
+The owner's salary floor is attached to the `compensation` escalation
+event so that a consumer, when one exists, receives the figure rather
+than having to look it up. It is never spoken to a caller.
+
+**No consumer exists.** `ProfessionalHandoffProvider` resolves to the
+no-op adapter — `delivered: false`, no network, no queue — and no
+shipped path calls `requestProfessionalEscalation` yet, so the payload
+is built and discarded. This is `DOCUMENTED_ONLY` on the delivery side:
+the event contract carries the floor; nothing hands it to the owner
+today.
 
 That is structural rather than a matter of care. The floor lives on
 `AvailabilityPolicy`, which the answer path never reads — answers come

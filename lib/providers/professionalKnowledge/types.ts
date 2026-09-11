@@ -123,8 +123,10 @@ export interface AvailabilityPolicy {
   meetingDurationsMinutes: number[]
   /**
    * The owner's minimum acceptable salary. **Owner-only.** It exists so
-   * the compensation escalation reaches the owner with the figure
-   * already attached, and it is never spoken to a caller.
+   * the compensation escalation payload carries the figure, and it is
+   * never spoken to a caller. Nothing delivers that payload today — the
+   * handoff adapter is a no-op (ADR-0046 decision 10) — so this governs
+   * what the event would carry, not what any owner receives.
    *
    * That is a structural property, not a convention: compensation
    * escalates under every profile (ADR-0046 decision 6), and the answer
