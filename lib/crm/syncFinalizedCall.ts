@@ -70,6 +70,14 @@ export async function runCrmSyncForCall(params: {
   callId: string;
   sourceWebhookId?: string;
   providerOverride?: CrmProvider;
+  /**
+   * A live tenant must never be told a mock write succeeded. Recording the
+   * operation against `hubspot` makes the existing stickiness check fail the
+   * attempt as `live_provider_disabled` when the live adapter is not active.
+   */
+  requireLiveProvider?: boolean;
+  /** Write the structured call-summary block instead of the legacy body. */
+  structuredActivity?: boolean;
 }): Promise<Result<CrmSyncOperationView>> {
   if (db === null) return err("no_database", "CRM synchronization requires a database connection.");
 
@@ -82,7 +90,7 @@ export async function runCrmSyncForCall(params: {
       create: {
         account_id: params.accountId,
         operation_key: operationKey,
-        provider: provider.providerId,
+        provider: params.requireLiveProvider ? "hubspot" : provider.providerId,
         call_id: params.callId,
         source_webhook_id: params.sourceWebhookId,
       },
@@ -133,9 +141,26 @@ export async function runCrmSyncForCall(params: {
     const qualification = lead
       ? await db.leadQualification.findUnique({ where: { lead_event_id: lead.id } })
       : null;
+    const quote = lead
+      ? await db.quoteRequest.findUnique({ where: { lead_event_id: lead.id } })
+      : null;
     const qualificationLabel = qualification?.qualification_status ?? "not_scored";
     const sanitizedSummary = sanitizeCrmText(call.summary);
+    // The next action is agent-generated text and can repeat a caller's phone
+    // or email, so it is sanitized before it reaches the CRM.
+    const nextAction = lead?.notes ? sanitizeCrmText(lead.notes) : undefined;
     const evidenceReference = `ResponseOS call ${call.id}`;
+    const detail = params.structuredActivity
+      ? {
+          caller: [contact?.first_name, contact?.last_name].filter(Boolean).join(" ") || undefined,
+          relationship: call.caller_relationship ?? undefined,
+          eventType: call.interaction_class ?? undefined,
+          service: quote?.service_type ?? qualification?.service_needed ?? undefined,
+          location: [contact?.city, contact?.state, contact?.zip].filter(Boolean).join(", ") || undefined,
+          quoteRequested: Boolean(quote),
+          photosRequested: quote?.photos_requested === true,
+        }
+      : undefined;
 
     let providerContactId = operation.provider_contact_id;
     if (!providerContactId) {
@@ -180,8 +205,9 @@ export async function runCrmSyncForCall(params: {
           durationSeconds: call.duration_seconds ?? undefined,
           sanitizedSummary,
           qualification: qualificationLabel,
-          nextAction: lead?.notes ?? undefined,
+          nextAction,
           evidenceReference,
+          detail,
         }));
       operation = await db.crmSyncOperation.update({
         where: { id: operation.id },
@@ -194,8 +220,10 @@ export async function runCrmSyncForCall(params: {
       providerContactId,
     );
 
+    // A quote request is a commitment to call back, so it earns a follow-up
+    // task even when the qualification score did not reach "qualified".
     if (
-      qualification?.qualification_status === "qualified" &&
+      (qualification?.qualification_status === "qualified" || quote) &&
       !operation.provider_task_id
     ) {
       const task =
@@ -204,7 +232,7 @@ export async function runCrmSyncForCall(params: {
           contactId: providerContactId,
           dueAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
           sanitizedSummary,
-          nextAction: lead?.notes ?? "Review and contact the qualified caller.",
+          nextAction: nextAction ?? "Review and contact the caller.",
           evidenceReference,
         }));
       operation = await db.crmSyncOperation.update({

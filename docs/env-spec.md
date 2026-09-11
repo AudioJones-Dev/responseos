@@ -74,7 +74,7 @@ The GitHub `staging` Environment also requires a least-privilege `NEON_API_KEY` 
 ### Telephony / AI Voice / Email / Billing / Workflows / CRM / Scheduling / Observability
 - **Telnyx post-call ingest:** `TELNYX_PUBLIC_KEY` verifies Ed25519 webhooks; `RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED=true`, `RESPONSEOS_DEMO_ACCOUNT_ID`, and `RESPONSEOS_DEMO_PHONE_E164` are all required before ingestion accepts traffic. `TELNYX_API_KEY` alone activates nothing, and `CarrierProvider` remains mock-only because ResponseOS does not control realtime audio in this slice.
 - **AI Voice:** `RETELL_API_KEY`, `VAPI_API_KEY`, `BLAND_API_KEY`.
-- **Email (Resend):** `RESEND_API_KEY`, `EMAIL_FROM`.
+- **Email (Resend):** `RESPONSEOS_LIVE_EMAIL_ENABLED=true` plus `RESEND_API_KEY` and `EMAIL_FROM` are all three required before any mail is sent; any one missing resolves to the mock adapter, and a supervised tenant records that as a visible `live_provider_disabled` failure rather than a delivery. `EMAIL_FROM` must be on a domain verified with the provider — the shared sandbox sender only reaches the provider account's own owner.
 - **Billing (Stripe):** `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`.
 - **Workflows (n8n):** `N8N_WEBHOOK_SECRET`, `N8N_BASE_URL`.
 - **CRM:** `GHL_API_KEY` (HighLevel); HubSpot execution requires both `HUBSPOT_ACCESS_TOKEN` and `RESPONSEOS_LIVE_HUBSPOT_ENABLED=true`. Missing configuration or a disabled flag resolves to the deterministic mock adapter.
@@ -98,6 +98,7 @@ The GitHub `staging` Environment also requires a least-privilege `NEON_API_KEY` 
 - `RESPONSEOS_PROSPECT_BOOTSTRAP_ENABLED` — exact activation gate for an already-reviewed, number-assigned personalized bootstrap. It does not acquire or purchase a number and is insufficient without signed Telnyx ingest, a current approved snapshot, and valid provider attestation.
 - `RESPONSEOS_PROVIDER_ATTESTATION_PUBLIC_KEY` — Ed25519 public key used only to verify short-lived provider-workflow readback attestations. The signing key and Telnyx API credential never enter the app runtime.
 - `RESPONSEOS_PROMOTION_IMPORT_ENABLED` — separate default-deny gate for importing an allowlisted promotion manifest into a new disabled customer tenant. It does not activate the imported tenant and is never required for demo operation.
+- `RESPONSEOS_AUTHORIZED_EXECUTION_GATES` — comma-separated activation gates this deployment lane authorizes, read by `lib/agentExecution/tenantPolicy.ts` (ADR-0052). Absent means none, which is the safe reading: every supervised tenant then degrades to the demo policy, with no CRM write and no notification. Naming a gate authorizes only the modes behind that exact gate. The live-demo lane preflight requires this variable unconditionally, precisely because forgetting it degrades a real client's calls silently.
 
 ## Required / optional matrix
 
@@ -122,7 +123,8 @@ The GitHub `staging` Environment also requires a least-privilege `NEON_API_KEY` 
 | `RESPONSEOS_PROVIDER_ATTESTATION_PUBLIC_KEY` | opt | opt | **never (Path A)** | req (personalized live-demo only) | opt/default-deny | verification-only public key; signing key stays outside runtime |
 | `RESPONSEOS_PROMOTION_IMPORT_ENABLED` | opt | opt | **never (Path A)** | req (authorized import only) | opt/default-deny | creates a disabled customer draft; never enables it |
 | R2 / Telnyx / Twilio / Retell / Vapi / Bland / Stripe / GHL / HubSpot / Calendly | mock | mock | **never (Path A)** | req (when live) | mock-first | staging preflight rejects live-provider/storage credentials; keys alone do not activate a live factory |
-| Resend / n8n | mock | mock | mock (Path A) | req (when live) | mock-first | no live behavior in the mock staging slice |
+| Resend / n8n | mock | mock | mock (Path A) | req (when live) | mock-first | Resend sends only with `RESPONSEOS_LIVE_EMAIL_ENABLED=true` and a verified sending domain; no live behavior in the mock staging slice |
+| `RESPONSEOS_AUTHORIZED_EXECUTION_GATES` | opt | opt | **never (Path A)** | req (live-demo lane) | opt/default-deny | absent → every supervised tenant degrades to the demo policy |
 | `SENTRY_DSN` / `POSTHOG_KEY` / `NEXT_PUBLIC_POSTHOG_KEY` | opt | opt | opt | opt | opt | observability; see staging runbook §6 |
 
 Path A staging checklist (operator): [`ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md`](./ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md).

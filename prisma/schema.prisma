@@ -83,6 +83,34 @@ enum CallSentiment {
   negative
 }
 
+enum CallerRelationship {
+  new_prospect
+  returning_customer
+  contractor
+  vendor
+  other_or_unknown
+}
+
+enum InteractionClass {
+  new_sales
+  existing_customer_new_sale
+  new_service_request
+  existing_service_request
+  general_admin
+  contractor_vendor
+  human_escalation
+  unknown
+}
+
+// Caller's posture after the recording disclosure (ADR-0051 amendment).
+// `continued` means the caller stayed on the line after hearing it; it is
+// not a legal-consent determination.
+enum RecordingConsent {
+  continued
+  refused
+  unknown
+}
+
 enum LeadEventSource {
   phone
   sms
@@ -273,6 +301,11 @@ model Call {
   sentiment        CallSentiment?
   spam_score       Float?
   lead_score       Int?
+  // Supervised-pilot classification from the provider's structured insight
+  // (ADR-0052). Null until a finalized insight carries a valid value.
+  caller_relationship CallerRelationship?
+  interaction_class   InteractionClass?
+  recording_consent   RecordingConsent?
   created_at       DateTime       @default(now())
 
   @@unique([account_id, provider, provider_call_id])
@@ -343,10 +376,11 @@ model QuoteRequest {
   id               String      @id @default(cuid())
   account_id       String
   contact_id       String
-  lead_event_id    String?
+  lead_event_id    String?     @unique
   service_type     String
   description      String?
   photos           String[]
+  photos_requested Boolean     @default(false)
   property_address String?
   estimated_value  Int?
   status           QuoteStatus @default(requested)
@@ -383,10 +417,23 @@ model Notification {
   message       String
   status        NotificationStatus  @default(queued)
   sent_at       DateTime?
+  // Dispatch ledger for provider-sent notifications (ADR-0052). Subject
+  // and message are frozen at first dispatch; retries resend them verbatim
+  // under the same provider idempotency key.
+  call_id             String?
+  event               String?
+  dedupe_key          String?   @unique
+  provider            String?
+  provider_message_id String?
+  attempt_count       Int       @default(0)
+  last_error_code     String?
+  next_attempt_at     DateTime?
   created_at    DateTime            @default(now())
 
   @@index([account_id])
   @@index([lead_event_id])
+  @@index([call_id])
+  @@index([status])
 }
 
 model RevenueMetrics {
@@ -688,8 +735,13 @@ model WebhookEvent {
   process_error      String?
   payload_expires_at DateTime?
   payload_purged_at  DateTime?
+  // Correlation keys for provider events that omit the called number
+  // (Telnyx insights events carry only call-control identifiers).
+  provider_call_id   String?
+  agent_target       String?
 
   @@unique([provider, provider_event_id])
+  @@index([provider, provider_call_id])
   @@index([account_id])
   @@index([provider])
   @@index([received_at])
@@ -894,7 +946,9 @@ model TelephonyNumber {
 model TelephonyNumberAssignment {
   id                        String                          @id @default(cuid())
   account_id                String
-  bootstrap_id              String
+  // Null for a supervised customer tenant's number (ADR-0052); set for a
+  // prospect-bootstrap demo assignment (ADR-0048).
+  bootstrap_id              String?
   telephony_number_id       String
   provider_assistant_id     String
   status                    TelephonyNumberAssignmentStatus @default(assigned)
@@ -1183,6 +1237,7 @@ enum AgentProfileType {
   consulting_receptionist
   professional_assistant
   demo_mode
+  supervised_receptionist
 }
 
 enum ProfessionalOpportunityType {

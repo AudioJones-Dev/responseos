@@ -772,6 +772,17 @@
       "refType": "pull"
     },
     {
+      "id": "V-17",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Supervised tenant runtime: number-to-tenant routing, consent-gated recording, CRM and email evidence",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-09-11",
+      "due": "2026-09-12"
+    },
+    {
       "id": "Q-01",
       "phase": "Testing & QA",
       "title": "Unit coverage expansion",

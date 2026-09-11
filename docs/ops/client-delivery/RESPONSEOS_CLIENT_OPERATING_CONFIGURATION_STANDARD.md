@@ -107,11 +107,24 @@ compiler accepts operator-entered facts.
 | `PRODUCTION_SUPERVISED` | same as `SUPERVISED_PILOT` |
 | `MANAGED_AUTONOMY` | same as `SUPERVISED_PILOT` |
 
-A requirement is met by a fact whose key equals it or begins with it followed by `.` — so
-`contact.escalation.primary` satisfies `contact.escalation`, and `contact.escalation_backup` does not — and
-whose value is not empty. `null`, a blank string, and `{}` count as missing. An empty list is a value:
-`operating_hours.holidays: []` records that no holiday closures apply. The shape of a value is not checked, so
-the evaluator cannot tell a usable schedule or contact from a malformed one (§7).
+A requirement is met only by its **typed key**, carrying a value that parses against that key's schema in
+`lib/agentExecution/operatingConfiguration.ts`. Free text no longer counts: before ADR-0052 any non-empty
+value satisfied a requirement, so a note reading "open 24/7" stood in for a machine-readable schedule.
+
+| Requirement | Typed key | Value |
+|---|---|---|
+| `operating_hours.weekly` | same | `{ type: "always_open" }` or `{ type: "schedule", timezone, days[] }` with `HH:MM` times |
+| `operating_hours.holidays` | same | `{ type: "always_open" }` or `{ type: "closures", timezone, closures[] }` |
+| `service_area.coverage` | same | `{ regions[], precision: "broad_region", countyInferenceAllowed: false, locationConfirmationRequired: true, collectFromCaller[] }` |
+| `contact.escalation` | `contact.escalation.primary` | `{ name, phone }` in E.164, optional `role` |
+| `policy.consent` | same | `{ aiDisclosure, transcription, recording, refusal }`; recording is `{ enabled: false }` or `{ enabled: true, disclosure, continuationStatement, retentionDays }` |
+
+Two further keys are typed but required by no mode: `quote.photo_submission.email` and
+`notification.completed_interaction.recipient`.
+
+A value that reads as a fill-in-later marker — `TBD`, `TODO`, `N/A`, `unknown`, `placeholder`, `<name>`,
+`{{token}}` and similar — is rejected wherever a string is expected, so it can never be spoken as though it
+were approved configuration.
 
 `evaluateOperatingConfiguration()` in `lib/agentExecution/operatingConfiguration.ts` returns `ready`,
 `missing`, and `conflicts`. A snapshot is ready only when nothing is missing **and** no conflict is recorded.
@@ -134,9 +147,9 @@ unsupported values start as `unknown`.
 
 | Gap | State |
 |---|---|
-| A write path that creates `operator_configured` facts — service function, route, or operator UI | `ROADMAP` |
-| `evaluateOperatingConfiguration()` called by any activation path | `ROADMAP` |
-| Value shapes for the five required keys, and a write-path check that keeps placeholder values out (§6). Still open: what shape weekly-hours, holiday, coverage, escalation, and consent values take | `ROADMAP` — decided with the write path or the first activation caller, whichever lands first |
+| A write path that creates `operator_configured` facts | `SHIPPED` — `POST /api/admin/supervised-tenants`, operator-only, with a dry run. No operator UI exists (`ROADMAP`) |
+| `evaluateOperatingConfiguration()` called by an activation path | `SHIPPED` — activation refuses an unready snapshot, and the assistant-initialization webhook serves an unavailable context instead of a partly configured agent |
+| Value shapes for the five required keys, and a write-path check that keeps placeholder values out (§6) | `SHIPPED` — see §5 |
 | Operating configuration for any real tenant | Not started — no tenant `Account` exists, and no operating-configuration fact has been approved for any tenant |
 | Florida Ramp & Lift configuration skeleton | Supporting scaffolding only, not tenant configuration. `lib/config/clients/florida-ramp-lift.ts` builds a zero-fact snapshot with every supervised-pilot requirement in `unknowns`, within the location and data-handling boundary the operator approved on 2026-09-11. That approval is one of the two conditions [`README.md`](./README.md) sets for a client directory; registration of the FRL opportunity is not recorded here. Nothing reads the skeleton yet |
 | Promotion that preserves tenant identity (ADR-0051 decision 2) | `ROADMAP` — `BootstrapPromotion` still creates a new `Account` |
@@ -149,3 +162,4 @@ unsupported values start as `unknown`.
 |---|---|---|
 | 2026-09-10 | Initial standard | Claude Opus 5, for Audio |
 | 2026-09-11 | Section 7: add the Florida Ramp & Lift skeleton as supporting scaffolding; real-tenant operating configuration stays not started | Claude Opus 5, for Audio |
+| 2026-09-11 | Section 5: typed value schemas per key and placeholder rejection; section 7: the operator write path and the activation caller now exist (ADR-0052) | Claude Opus 5, for Audio |

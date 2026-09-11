@@ -928,6 +928,10 @@ export async function resolveTelnyxEventAssignment(params: { target: string; occ
     }
     return null;
   }
+  // An assignment with no bootstrap belongs to a supervised customer tenant
+  // (ADR-0052). It is resolved by the supervised lane and never by this one,
+  // whose expiry and quarantine rules are specific to prospect demos.
+  if (!assignment.bootstrap_id) return null;
   const bootstrap = await db.prospectBootstrap.findFirst({
     where: { id: assignment.bootstrap_id, account_id: assignment.account_id },
     select: { status: true, expires_at: true },

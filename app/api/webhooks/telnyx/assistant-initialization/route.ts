@@ -3,6 +3,7 @@ import { recordWebhookEvent, setWebhookProcessStatus } from "@/lib/data/webhookE
 import { errorResponse } from "@/lib/providers/webhook-helpers";
 import {
   getTelnyxAgentTarget,
+  getTelnyxCallId,
   parseTelnyxWebhook,
   verifyTelnyxWebhook,
 } from "@/lib/providers/telnyx/webhook";
@@ -11,6 +12,11 @@ import {
   PROSPECT_CONTENT_RETENTION_DAYS,
 } from "@/lib/prospectBootstrap/contracts";
 import { resolveActiveProspectAgentContext } from "@/lib/prospectBootstrap/service";
+import { resolveSupervisedTenantForNumber } from "@/lib/agentExecution/supervisedRuntime";
+import {
+  buildSupervisedAgentContext,
+  SUPERVISED_UNAVAILABLE_CONTEXT,
+} from "@/lib/agentExecution/supervisedContext";
 
 const unavailable = UnavailableAgentContextSchema.parse({
   demo_available: "false",
@@ -20,13 +26,17 @@ const unavailable = UnavailableAgentContextSchema.parse({
   uncertainty_fallback: "This personalized demonstration is unavailable. Please contact AJ Digital for a supervised demonstration.",
 });
 
+/**
+ * Answers Telnyx's dynamic-variables webhook at the start of a conversation.
+ *
+ * A supervised tenant resolves first, then the prospect-demo lane. A caller to
+ * a real client's number must never hear demonstration wording, so the two
+ * unavailable contexts are separate. The provider's default timeout for this
+ * request is short, so it stays a small number of indexed reads.
+ */
 export async function POST(req: Request) {
   const publicKey = process.env.TELNYX_PUBLIC_KEY;
-  if (
-    process.env.RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED !== "true" ||
-    process.env.RESPONSEOS_PROSPECT_BOOTSTRAP_ENABLED !== "true" ||
-    !publicKey
-  ) {
+  if (process.env.RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED !== "true" || !publicKey) {
     return errorResponse(503, {
       code: "telnyx_initialization_disabled",
       message: "Telnyx assistant initialization is disabled or unavailable.",
@@ -51,17 +61,35 @@ export async function POST(req: Request) {
       message: "Telnyx assistant initialization payload is invalid.",
     });
   }
+
   const target = getTelnyxAgentTarget(event.data.payload);
-  const resolved = target ? await resolveActiveProspectAgentContext(target) : null;
+  const supervised = target ? await resolveSupervisedTenantForNumber(target) : null;
+  const supervisedReady =
+    supervised !== null &&
+    supervised.readiness.ready &&
+    supervised.resolved.degraded === null &&
+    supervised.resolved.mode !== "PROSPECT_DEMO";
+
+  const prospect =
+    !supervised && target && process.env.RESPONSEOS_PROSPECT_BOOTSTRAP_ENABLED === "true"
+      ? await resolveActiveProspectAgentContext(target)
+      : null;
+
   const ledger = await recordWebhookEvent({
-    account_id: resolved?.accountId,
+    account_id: supervised?.accountId ?? prospect?.accountId,
     provider: "telnyx",
     provider_event_id: event.data.id,
     event_type: event.data.event_type,
     raw_body: rawBody,
     signature_header: signature ?? undefined,
     signature_valid: true,
-    payload_expires_at: new Date(Date.now() + PROSPECT_CONTENT_RETENTION_DAYS * 24 * 60 * 60 * 1000),
+    provider_call_id: getTelnyxCallId(event.data.payload) ?? undefined,
+    // This is the event that binds a call id to the number it reached; later
+    // insight events carry no number and correlate back through this row.
+    agent_target: target ?? undefined,
+    ...(supervised
+      ? {}
+      : { payload_expires_at: new Date(Date.now() + PROSPECT_CONTENT_RETENTION_DAYS * 24 * 60 * 60 * 1000) }),
   });
   if (!ledger.ok) {
     return errorResponse(503, {
@@ -71,18 +99,51 @@ export async function POST(req: Request) {
   }
   await setWebhookProcessStatus({
     id: ledger.data.id,
-    process_status: resolved ? "processed" : "rejected",
-    process_error: resolved ? undefined : target ? "inactive_destination" : "missing_destination",
+    process_status: supervisedReady || prospect ? "processed" : "rejected",
+    process_error: supervisedReady || prospect
+      ? undefined
+      : supervised
+        ? supervised.readiness.ready
+          ? "supervised_tenant_not_authorized"
+          : "supervised_configuration_incomplete"
+        : target
+          ? "inactive_destination"
+          : "missing_destination",
   });
 
+  if (supervisedReady && supervised) {
+    return NextResponse.json({
+      dynamic_variables: buildSupervisedAgentContext({
+        businessName: supervised.accountName,
+        agentName: supervised.agentName,
+        memory: supervised.memory,
+        policy: supervised.resolved.policy,
+      }),
+      conversation: {
+        metadata: {
+          responseos_account_id: supervised.accountId,
+          responseos_assignment_id: supervised.assignmentId,
+          execution_mode: supervised.resolved.mode,
+        },
+      },
+    });
+  }
+
+  if (supervised) {
+    return NextResponse.json({
+      dynamic_variables: SUPERVISED_UNAVAILABLE_CONTEXT,
+      conversation: { metadata: { execution_mode: "SUPERVISED_UNAVAILABLE" } },
+    });
+  }
+
   return NextResponse.json({
-    dynamic_variables: resolved?.context ?? unavailable,
+    dynamic_variables: prospect?.context ?? unavailable,
     conversation: {
-      metadata: resolved
+      metadata: prospect
         ? {
-            responseos_account_id: resolved.accountId,
-            responseos_bootstrap_id: resolved.bootstrapId,
-            responseos_assignment_id: resolved.assignmentId,
+            responseos_account_id: prospect.accountId,
+            responseos_bootstrap_id: prospect.bootstrapId,
+            responseos_assignment_id: prospect.assignmentId,
             execution_mode: "PROSPECT_DEMO",
           }
         : { execution_mode: "PROSPECT_DEMO_UNAVAILABLE" },
