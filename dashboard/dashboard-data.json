@@ -761,7 +761,7 @@
       "refType": "pull"
     },
     {
-      "id": "V-16",
+      "id": "V-17",
       "phase": "v0.3 · Demo Scope",
       "title": "Demo route for the receptionist (read-only question surface)",
       "owner": "Claude Code",
@@ -769,7 +769,22 @@
       "progress": 100,
       "priority": "High",
       "start": "2026-09-11",
-      "due": "2026-09-11"
+      "due": "2026-09-11",
+      "ref": 161,
+      "refType": "pull"
+    },
+    {
+      "id": "V-16",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Consolidate normalizeE164 into one shared helper (caller-resolution prerequisite)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "Med",
+      "start": "2026-09-11",
+      "due": "2026-09-12",
+      "ref": 155,
+      "refType": "pull"
     },
     {
       "id": "Q-01",

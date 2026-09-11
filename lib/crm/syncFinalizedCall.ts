@@ -5,6 +5,7 @@ import { getCrmProvider } from "@/lib/providers/crm";
 import type { CrmProvider } from "@/lib/providers/crm";
 import { err, errFromThrown, ok, type Result } from "@/lib/data/result";
 import { sanitizeCrmText } from "@/lib/crm/sanitization";
+import { normalizeE164 } from "@/lib/validation/common";
 
 export type CrmSyncStatus =
   | "pending"
@@ -56,13 +57,6 @@ function toView(row: NonNullable<OperationRow>): CrmSyncOperationView {
     created_at: row.created_at.toISOString(),
     updated_at: row.updated_at.toISOString(),
   };
-}
-
-function normalizeE164(value: string): string | null {
-  const digits = value.replace(/\D/g, "");
-  if (digits.length === 10) return `+1${digits}`;
-  if (digits.length >= 11 && digits.length <= 15) return `+${digits}`;
-  return null;
 }
 
 function redactedError(error: unknown): { code: string; message: string } {
