@@ -64,9 +64,19 @@ export default async function DemoReceptionistPage({
     INTERNAL_DEMO_ACCOUNT_ID,
   );
 
-  // The account's own default profile decides what may be disclosed —
-  // resolved the way the runtime resolves it rather than hardcoded here,
-  // so this page cannot drift from the policy the tenant actually has.
+  // The default profile decides what may be disclosed. It is read from
+  // the fixtures, NOT through `lib/data/agentProfiles` — that accessor
+  // scopes by session, and this page has no session by design.
+  //
+  // So the policy enforced here is the one compiled in, and in a
+  // DB-backed deployment an operator who disables the profile or drops
+  // an asset type from its stored policy would not change what this page
+  // discloses. The fixtures and the seeded rows are identical today
+  // (asserted by the mock-parity integration test), so nothing is
+  // currently misreported — but this page is not the place to learn that
+  // disclosure was revoked. Closing that gap needs a sessionless read of
+  // a tenant-owned table, which is a SECURITY.md decision, not a detail
+  // of this route.
   const agentProfile = resolveAgentProfile(getMockAgentProfiles());
   const policy = parseAgentProfilePolicy(agentProfile?.system_policy_json);
 
@@ -96,9 +106,11 @@ export default async function DemoReceptionistPage({
       />
 
       <AlertBanner className="mb-6">
-        Read-only. Nothing you type is stored, no opportunity is captured, no
-        appointment is booked, and no handoff is emitted — this page reaches
-        only the answering path. Knowledge and scheduling both resolve to mock
+        Read-only. This page reaches only the answering path: no opportunity is
+        captured, no appointment is booked, no handoff is emitted, and your
+        question is written to no record in the product. It is submitted in the
+        URL, so — like any web request — it does reach your browser history and
+        ordinary server logs. Knowledge and scheduling both resolve to mock
         adapters; no live provider is wired.
       </AlertBanner>
 

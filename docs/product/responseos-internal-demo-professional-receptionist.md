@@ -196,7 +196,18 @@ no network call. **The test suite is what executes all of it.**
 `answerProfessionalQuestion` and `listShareableAssets`, so a visitor can
 ask a question and see the grounded answer, the claim category, the
 authority that governed it, and the records it cited. That page is the
-receptionist's only entry point.
+receptionist's only entry point. It lives in `app/(professional)` rather
+than `app/(demo)` so that verified records about a real person are not
+rendered under the walkthrough layout's "fictional scenario" footer; the
+URL is unchanged, since route groups do not affect the path.
+
+**The policy it enforces is the compiled-in one.** The page reads the
+default `AgentProfile` from the fixtures, not through
+`lib/data/agentProfiles` — that accessor scopes by session and this page
+has none. Fixtures and seeded rows match today, so the page discloses
+what the tenant's stored policy permits; but it would not notice an
+operator revoking disclosure in a DB-backed deployment. Tracked in
+ADR-0046's seventh follow-up.
 
 **The write path still has no caller.** `captureProfessionalOpportunity`,
 `requestProfessionalEscalation`, and `bookProfessionalAppointment` each

@@ -90,6 +90,54 @@ describe("question classification", () => {
       "interview_availability",
     );
   });
+
+  test("no availability wording unlocks a gated category", () => {
+    // Both availability rules carry words that appear inside gated
+    // questions ("contract" in "contract rate", "full-time" in a salary
+    // question). They sit below the gated rules for that reason. An
+    // earlier attempt at the fix below hoisted contract_availability to
+    // the top and turned every one of these into an answerable category
+    // — which is how a rate question stops escalating.
+    const gated: Array<[string, string]> = [
+      ["What is his contract rate?", "consulting_rates"],
+      ["What's his hourly rate for contract work?", "consulting_rates"],
+      ["What salary does he want for a full-time role?", "compensation"],
+      ["What compensation is he looking for full-time?", "compensation"],
+      ["Can you share a reference for his contract work?", "references"],
+    ];
+    for (const [question, expected] of gated) {
+      expect(classifyProfessionalQuestion(question), question).toBe(expected);
+    }
+  });
+
+  test("availability about employment terms is not a calendar lookup", () => {
+    // "Available for full-time work" asks what he'll take, not when he's
+    // free. Both rules match the wording, so order decides: the specific
+    // one sits above. The "available" spelling failed before the reorder
+    // too — the generic keyword predates the third-person phrases.
+    for (const question of [
+      "Is he free for full-time work?",
+      "Is he available for full-time work?",
+      "Is he free for contract work?",
+      "Is he available for contract work?",
+      "What is his notice period?",
+    ]) {
+      expect(classifyProfessionalQuestion(question), question).toBe(
+        "contract_availability",
+      );
+    }
+
+    // The reorder must not cost the calendar its own questions.
+    for (const question of [
+      "When is he free for a call?",
+      "Is he free for a chat next week?",
+      "What does his calendar look like?",
+    ]) {
+      expect(classifyProfessionalQuestion(question), question).toBe(
+        "interview_availability",
+      );
+    }
+  });
 });
 
 describe("answerProfessionalQuestion", () => {

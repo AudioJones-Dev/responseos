@@ -111,6 +111,25 @@ const CATEGORY_RULES: Array<{
   category: ProfessionalKnowledgeCategory;
   keywords: string[];
 }> = [
+  // The gated categories come first. Both availability rules below carry
+  // broad words ("available", "free for", "contract") that appear inside
+  // compensation, rate, and reference questions, and a gated question
+  // that matches an answerable rule first stops being gated at all —
+  // "what is his contract rate?" must escalate, not answer.
+  {
+    category: "compensation",
+    keywords: ["salary", "compensation", "pay range", "base", "equity", "comp"],
+  },
+  { category: "consulting_rates", keywords: ["rate", "rates", "hourly", "day rate", "pricing"] },
+  { category: "references", keywords: ["reference", "referral from", "vouch", "background check"] },
+  // Then the specific availability rule before the general one:
+  // "available for full-time work" asks about employment terms, not a
+  // calendar, but every word of it that names a time sense also appears
+  // in the rule below.
+  {
+    category: "contract_availability",
+    keywords: ["contract", "full-time", "full time", "start date", "notice period"],
+  },
   {
     category: "interview_availability",
     keywords: [
@@ -119,12 +138,11 @@ const CATEGORY_RULES: Array<{
       // for a call?" entirely, which is how a recruiter actually phrases
       // it — found by asking the demo route the obvious question.
       //
-      // Each phrase pins "free" to a time sense. This rule is matched
-      // before the gated categories, so anything looser turns a
-      // compensation escalation into a calendar lookup: "is he free"
-      // alone captures "is he free *to negotiate salary?*", and the bare
-      // word is worse still. "free for" is safe because the colliding
-      // phrasings take "free to".
+      // Each phrase still pins "free" to a time sense. The gated rules
+      // now sit above, so a loose keyword here no longer unlocks one —
+      // but "is he free" alone would still swallow "is he free to
+      // discuss the role?", and the bare word is worse. Keep it tight;
+      // the ordering above is a second line, not a licence.
       "when are you free",
       "when is he free",
       "when is she free",
@@ -137,12 +155,6 @@ const CATEGORY_RULES: Array<{
       "book",
     ],
   },
-  {
-    category: "compensation",
-    keywords: ["salary", "compensation", "pay range", "base", "equity", "comp"],
-  },
-  { category: "consulting_rates", keywords: ["rate", "rates", "hourly", "day rate", "pricing"] },
-  { category: "references", keywords: ["reference", "referral from", "vouch", "background check"] },
   {
     category: "education",
     keywords: ["education", "degree", "school", "university", "college", "graduated"],
@@ -164,10 +176,6 @@ const CATEGORY_RULES: Array<{
   {
     category: "employment_preferences",
     keywords: ["prefer", "looking for", "interested in", "open to"],
-  },
-  {
-    category: "contract_availability",
-    keywords: ["contract", "full-time", "full time", "start date", "notice period"],
   },
   {
     category: "personal",

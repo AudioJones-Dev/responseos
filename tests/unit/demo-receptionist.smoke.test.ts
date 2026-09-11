@@ -1,7 +1,7 @@
 import { describe, test, expect } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { EXAMPLE_QUESTIONS } from "@/app/(demo)/demo/receptionist/_data/examples";
+import { EXAMPLE_QUESTIONS } from "@/app/(professional)/demo/receptionist/_data/examples";
 import { getMockAgentProfiles } from "@/lib/mock/agentProfiles";
 import {
   answerProfessionalQuestion,
@@ -24,16 +24,35 @@ import { isPublicPath } from "@/lib/auth/route-protection";
 const PAGE = path.join(
   process.cwd(),
   "app",
-  "(demo)",
+  "(professional)",
   "demo",
   "receptionist",
   "page.tsx",
 );
 
+// The route deliberately sits outside `app/(demo)`: that group's layout
+// closes with "fictional scenario, no real customer information", which
+// is the opposite of what this page speaks.
+const WALKTHROUGH_LAYOUT = path.join(process.cwd(), "app", "(demo)", "layout.tsx");
+
 describe("demo receptionist page — smoke", () => {
   test("the page exists and is reachable without auth", () => {
     expect(existsSync(PAGE)).toBe(true);
     expect(isPublicPath("/demo/receptionist")).toBe(true);
+  });
+
+  test("verified records never render under the fictional-scenario chrome", () => {
+    // Route groups don't change the URL, so this page keeps
+    // /demo/receptionist while opting out of the walkthrough's layout.
+    // If it ever moves back under (demo), a visitor is told the records
+    // are fictional and real in the same viewport.
+    expect(existsSync(path.join(process.cwd(), "app", "(demo)", "demo", "receptionist"))).toBe(
+      false,
+    );
+    expect(readFileSync(WALKTHROUGH_LAYOUT, "utf8")).toContain("fictional scenario");
+    expect(
+      existsSync(path.join(process.cwd(), "app", "(professional)", "layout.tsx")),
+    ).toBe(true);
   });
 
   test("every advertised example still lands on the authority it advertises", async () => {
