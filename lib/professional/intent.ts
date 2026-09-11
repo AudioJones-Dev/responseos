@@ -56,10 +56,46 @@ const INTENT_RULES: Array<{ intent: ProfessionalIntent; keywords: string[] }> = 
   { intent: "demo", keywords: ["demo", "responseos", "walkthrough", "how does this work"] },
 ];
 
+/**
+ * Whole-word keyword match.
+ *
+ * Plain substring matching silently mis-routes: "age" is inside
+ * "management", so "how is he with stakeholder management?" classified
+ * as a private question and got refused. A refusal is the most
+ * expensive wrong answer the receptionist can give, so matching is
+ * anchored to word boundaries. Multi-word keywords still match as
+ * phrases.
+ */
+export function matchesKeyword(text: string, keyword: string): boolean {
+  return keywordVariants(keyword).some((variant) => {
+    const escaped = variant.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`, "i").test(text);
+  });
+}
+
+/** Endings where a trailing "s" is part of the word, not a plural. */
+const NON_PLURAL_S = /(ss|is|us|as)$/i;
+
+/**
+ * The keyword itself, plus its regular plural counterpart.
+ *
+ * Only a regular plural is derived. Truncating every word that ends in
+ * "s" would turn "address" into "addres" and match caller text that was
+ * never written — and on a keyword that governs a refusal, a sloppier
+ * match is a worse answer, not a safer one. Irregular forms
+ * ("analysis" / "analyses") are not derived at all; author both spellings
+ * when a keyword needs them.
+ */
+function keywordVariants(keyword: string): string[] {
+  if (!keyword.endsWith("s")) return [keyword, `${keyword}s`];
+  if (NON_PLURAL_S.test(keyword) || keyword.length <= 4) return [keyword];
+  return [keyword, keyword.slice(0, -1)];
+}
+
 export function detectProfessionalIntent(text: string): ProfessionalIntent {
   const normalized = text.toLowerCase();
   for (const rule of INTENT_RULES) {
-    if (rule.keywords.some((keyword) => normalized.includes(keyword))) {
+    if (rule.keywords.some((keyword) => matchesKeyword(normalized, keyword))) {
       return rule.intent;
     }
   }
@@ -135,7 +171,7 @@ export function classifyProfessionalQuestion(
 ): ProfessionalKnowledgeCategory {
   const normalized = question.toLowerCase();
   for (const rule of CATEGORY_RULES) {
-    if (rule.keywords.some((keyword) => normalized.includes(keyword))) {
+    if (rule.keywords.some((keyword) => matchesKeyword(normalized, keyword))) {
       return rule.category;
     }
   }
