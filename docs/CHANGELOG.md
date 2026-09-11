@@ -4,6 +4,13 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: register the owner's email as an approved asset, shared under the recruiter profile
+
+- `ProfessionalAssetType` gains **`email`**, and the address the owner publishes on his own site is registered in `demoApprovedAssets`. The previous change left it out pending the owner's decision; the owner made it.
+- **Registration and disclosure remain separate.** The address is in the approved list for every profile and is handed out only where `allowedAssetTypes` names `email` — currently the `recruiter-receptionist` profile alone, which is also the account default. `consulting-receptionist` and `professional-assistant` do not share it, and `demo-mode` continues to share nothing. A test asserts both halves, so a profile silently gaining or losing the address cannot pass.
+- The seeded recruiter profile and its `lib/mock` counterpart were updated together, so mock-fixture parity holds.
+- One additive union member and its validator entry are the whole contract change. No authority entry, disclosure policy, or escalation rule moved, and the strict default still shares nothing. Recorded in ADR-0046 as a third dated follow-up.
+
 ## Unreleased — feat: register the remaining approved assets and stop the docstring check contradicting AGENTS.md
 
 - Registered the **résumé page, LinkedIn, and GitHub** in `demoApprovedAssets`, each linked from the same public portfolio the project records came from. This became load-bearing rather than cosmetic in the previous change: answer bodies now carry no links, so `listShareableAssets` is the only route a URL takes to a caller, and an unregistered asset cannot be offered however the profile is configured.

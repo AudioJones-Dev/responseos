@@ -105,7 +105,13 @@ approved-asset list by the answering profile's `allowedAssetTypes` — so
 an asset that is not registered cannot be offered however the profile is
 configured, and a profile that allows no types shares nothing even when
 the question is answered in full. The registered assets are the personal
-site, the résumé page, LinkedIn, and GitHub.
+site, the résumé page, LinkedIn, GitHub, and the owner's email address.
+
+Registration is not disclosure. The email is registered for every
+profile but handed out only where `allowedAssetTypes` names `email` —
+today the recruiter profile alone, which is also the account default.
+Widening that to the consulting or general-assistant profile is a
+per-profile line, not a code change.
 
 Adding or retiring an answerable category stays a **data change, not a
 code change**: supply canonical records (or wire the Career OS adapter)

@@ -828,6 +828,12 @@ One of the three projects is named Career OS, which does **not** touch decision 
 
 That made the list's contents load-bearing rather than illustrative, so the résumé, LinkedIn, and GitHub links carried on the same public portfolio are now registered alongside the site. The owner's email address is linked there too and is deliberately unregistered: handing a personal address to an unscreened caller is the owner's call, and no `ProfessionalAssetType` covers it. Nothing here changes a type, an authority entry, or a disclosure policy.
 
+**Follow-up (2026-09-11, third) — the owner took that call: the email is registered and shared under the recruiter profile.** `ProfessionalAssetType` gains `email`, so the address the owner publishes on his own site is an approved asset like any other rather than a value with nowhere to live.
+
+Registration and disclosure stay separate, which is the point. The address sits in `demoApprovedAssets` for every profile and is handed out only where `allowedAssetTypes` names `email` — today the recruiter profile alone. The consulting and general-assistant profiles do not share it, and `demo-mode` continues to share nothing at all; widening that is a per-profile line, not a code change. A test asserts both halves, so a profile silently gaining or losing the address cannot pass.
+
+This is the only contract change in the three follow-ups: one additive union member and its validator entry. No authority entry, disclosure policy, or escalation rule moved, and the strict default still shares nothing.
+
 ---
 
 ## ADR-0047 — The first prospect proof is an isolated, supervised post-call evidence chain
