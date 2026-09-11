@@ -67,14 +67,29 @@ const INTENT_RULES: Array<{ intent: ProfessionalIntent; keywords: string[] }> = 
  * phrases.
  */
 export function matchesKeyword(text: string, keyword: string): boolean {
-  // Plurals match in both directions — "certification" finds
-  // "certifications", and the skill "CRM Systems" finds "CRM system" —
-  // by comparing on the singular stem. A keyword buried mid-word still
-  // does not match.
-  const stem =
-    keyword.length > 3 && keyword.endsWith("s") ? keyword.slice(0, -1) : keyword;
-  const escaped = stem.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return new RegExp(`(^|[^a-z0-9])${escaped}s?([^a-z0-9]|$)`, "i").test(text);
+  return keywordVariants(keyword).some((variant) => {
+    const escaped = variant.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`, "i").test(text);
+  });
+}
+
+/** Endings where a trailing "s" is part of the word, not a plural. */
+const NON_PLURAL_S = /(ss|is|us|as)$/i;
+
+/**
+ * The keyword itself, plus its regular plural counterpart.
+ *
+ * Only a regular plural is derived. Truncating every word that ends in
+ * "s" would turn "address" into "addres" and match caller text that was
+ * never written — and on a keyword that governs a refusal, a sloppier
+ * match is a worse answer, not a safer one. Irregular forms
+ * ("analysis" / "analyses") are not derived at all; author both spellings
+ * when a keyword needs them.
+ */
+function keywordVariants(keyword: string): string[] {
+  if (!keyword.endsWith("s")) return [keyword, `${keyword}s`];
+  if (NON_PLURAL_S.test(keyword) || keyword.length <= 4) return [keyword];
+  return [keyword, keyword.slice(0, -1)];
 }
 
 export function detectProfessionalIntent(text: string): ProfessionalIntent {

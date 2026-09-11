@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import {
   classifyProfessionalQuestion,
   detectProfessionalIntent,
+  matchesKeyword,
   unverifiedFallback,
   answerProfessionalQuestion,
   listProfessionalMeetingWindows,
@@ -130,6 +131,22 @@ describe("answerProfessionalQuestion", () => {
     expect(answer.category).toBe("projects");
     expect(answer.answered).toBe(false);
     expect(answer.message).toBe(unverifiedFallback(OWNER));
+  });
+
+  test("a word that merely ends in 's' is matched exactly, never truncated", async () => {
+    // "address" must not be stemmed to "addres": a truncated match on a
+    // keyword that governs a refusal is a worse answer, not a safer one.
+    expect(matchesKeyword("what is his home address?", "home address")).toBe(
+      true,
+    );
+    expect(matchesKeyword("what is his home addres?", "home address")).toBe(
+      false,
+    );
+    expect(matchesKeyword("tell me about the busines", "business")).toBe(false);
+    expect(matchesKeyword("tell me about the business", "business")).toBe(true);
+    // Irregular plurals are not derived — "analysi" must never match.
+    expect(matchesKeyword("his analysi work", "analysis")).toBe(false);
+    expect(matchesKeyword("his analysis work", "analysis")).toBe(true);
   });
 
   test("plurals match in both directions", async () => {
