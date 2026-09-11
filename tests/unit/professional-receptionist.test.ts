@@ -548,9 +548,15 @@ describe("provider mocks work without credentials", () => {
     // Work history draws employers and titles from the resume and the
     // five previously-undated ranges from the portfolio résumé, so it
     // must name both. Citing one would misattribute the other half.
+    //
+    // The encoding is asserted, not just the presence of both prefixes:
+    // ADR-0046 makes "+" the separator a consumer splits on, so a value
+    // joining them some other way would satisfy "contains both" while
+    // breaking every consumer the ADR licenses.
     const workHistory = records.find((r) => r.id === "know_experience_1");
-    expect(workHistory?.sourceId).toContain("canonical_resume:");
-    expect(workHistory?.sourceId).toContain("portfolio_site:");
+    expect(workHistory?.sourceId).toMatch(
+      /^canonical_resume:[^+]+\+portfolio_site:[^+]+$/,
+    );
 
     // Projects come from the portfolio alone, skills from the resume
     // alone; neither should have picked up the other's source.
