@@ -1065,11 +1065,13 @@
       "phase": "Tech Debt & Hardening",
       "title": "Adopt supplied logo pack, rebuild favicons, UI and label cleanup",
       "owner": "Claude Code",
-      "status": "In Progress",
-      "progress": 80,
+      "status": "Review",
+      "progress": 90,
       "priority": "Medium",
       "start": "2026-09-11",
-      "due": "2026-09-11"
+      "due": "2026-09-11",
+      "ref": 162,
+      "refType": "pull"
     }
   ],
   "liveIssues": [
