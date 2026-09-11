@@ -203,12 +203,44 @@ export const demoAvailabilityPolicy: AvailabilityPolicy = {
   meetingDurationsMinutes: [15, 30, 45],
 }
 
+/**
+ * Every entry is linked from the public portfolio, read with the
+ * project records on the date in `PORTFOLIO_IMPORTED_AT`. This list is
+ * the only way a link reaches a caller — answer bodies carry none — so
+ * a missing entry is a link the receptionist cannot offer, whatever the
+ * profile allows.
+ *
+ * The owner's email address is linked there too and is deliberately not
+ * registered: handing a personal address to an unscreened caller is the
+ * owner's decision, and no `ProfessionalAssetType` covers it.
+ */
 export const demoApprovedAssets: ApprovedProfessionalAsset[] = [
   {
     id: "asset_site_1",
     label: "Personal site",
     type: "portfolio",
     url: "https://tyronenelms.com",
+    public: true,
+  },
+  {
+    id: "asset_resume_1",
+    label: "Résumé",
+    type: "resume",
+    url: "https://tyronenelms.com/resume",
+    public: true,
+  },
+  {
+    id: "asset_linkedin_1",
+    label: "LinkedIn",
+    type: "linkedin",
+    url: "https://www.linkedin.com/in/audiojones/",
+    public: true,
+  },
+  {
+    id: "asset_github_1",
+    label: "GitHub",
+    type: "github",
+    url: "https://github.com/AudioJones-Dev",
     public: true,
   },
 ]

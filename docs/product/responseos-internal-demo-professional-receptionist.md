@@ -99,6 +99,14 @@ So the receptionist today:
 - **looks up** interview availability against the calendar rather than
   quoting a time from memory.
 
+**Links travel one route only.** No answer body carries a URL. A link
+reaches a caller only through `listShareableAssets`, which filters the
+approved-asset list by the answering profile's `allowedAssetTypes` — so
+an asset that is not registered cannot be offered however the profile is
+configured, and a profile that allows no types shares nothing even when
+the question is answered in full. The registered assets are the personal
+site, the résumé page, LinkedIn, and GitHub.
+
 Adding or retiring an answerable category stays a **data change, not a
 code change**: supply canonical records (or wire the Career OS adapter)
 and set `verified`. Re-import bumps `RESUME_IMPORTED_AT` or

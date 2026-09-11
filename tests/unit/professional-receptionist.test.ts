@@ -345,15 +345,28 @@ describe("asset sharing", () => {
     expect(assets.every((asset) => asset.public)).toBe(true);
     expect(assets.map((asset) => asset.url)).toEqual([
       "https://tyronenelms.com",
+      "https://tyronenelms.com/resume",
+      "https://www.linkedin.com/in/audiojones/",
+      "https://github.com/AudioJones-Dev",
     ]);
   });
 
   test("an asset whose type the profile disallows is withheld", async () => {
+    // Every registered type has an asset behind it, so this narrows a
+    // real list rather than passing on an empty one.
     const assets = await listShareableAssets({
       accountId: DEMO_ACCOUNT,
       policy: { ...recruiterPolicy, allowedAssetTypes: ["github"] },
     });
-    expect(assets).toEqual([]);
+    expect(assets.map((asset) => asset.url)).toEqual([
+      "https://github.com/AudioJones-Dev",
+    ]);
+
+    const withoutGithub = await listShareableAssets({
+      accountId: DEMO_ACCOUNT,
+      policy: { ...recruiterPolicy, allowedAssetTypes: ["linkedin"] },
+    });
+    expect(withoutGithub.map((asset) => asset.type)).toEqual(["linkedin"]);
   });
 
   test("the default policy shares nothing", async () => {

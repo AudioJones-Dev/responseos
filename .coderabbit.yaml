@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+#
+# Repository-level CodeRabbit settings. Organization UI settings apply to
+# anything not set here.
+reviews:
+  pre_merge_checks:
+    # AGENTS.md: "Default to writing no comments. Only add one when the WHY
+    # is non-obvious." A coverage threshold measures the opposite property —
+    # it counts functions carrying a docstring, not whether the ones that
+    # needed an explanation got one — so it failed every PR in this repo and
+    # its only remedy was to write the comments the contract tells us not to
+    # write. CodeRabbit has already recorded the conflict as a learning
+    # (PR #151); this makes the check agree with the contract rather than
+    # leaving a permanently red signal reviewers learn to ignore.
+    docstrings:
+      mode: off
