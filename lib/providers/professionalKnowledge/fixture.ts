@@ -210,9 +210,9 @@ export const demoAvailabilityPolicy: AvailabilityPolicy = {
  * a missing entry is a link the receptionist cannot offer, whatever the
  * profile allows.
  *
- * The owner's email address is linked there too and is deliberately not
- * registered: handing a personal address to an unscreened caller is the
- * owner's decision, and no `ProfessionalAssetType` covers it.
+ * Registration and disclosure stay separate for the email: it is listed
+ * here, but only a profile whose `allowedAssetTypes` names `email` ever
+ * hands it out. Today that is the recruiter profile alone.
  */
 export const demoApprovedAssets: ApprovedProfessionalAsset[] = [
   {
@@ -241,6 +241,13 @@ export const demoApprovedAssets: ApprovedProfessionalAsset[] = [
     label: "GitHub",
     type: "github",
     url: "https://github.com/AudioJones-Dev",
+    public: true,
+  },
+  {
+    id: "asset_email_1",
+    label: "Email",
+    type: "email",
+    url: "mailto:tyrone@tyronenelms.com",
     public: true,
   },
 ]

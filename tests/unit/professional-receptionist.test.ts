@@ -348,7 +348,31 @@ describe("asset sharing", () => {
       "https://tyronenelms.com/resume",
       "https://www.linkedin.com/in/audiojones/",
       "https://github.com/AudioJones-Dev",
+      "mailto:tyrone@tyronenelms.com",
     ]);
+  });
+
+  test("the email is registered but reaches a caller only by policy", async () => {
+    // Registration and disclosure are separate: the address sits in the
+    // approved list for every profile, and only one profile hands it out.
+    const shared = await listShareableAssets({
+      accountId: DEMO_ACCOUNT,
+      policy: recruiterPolicy,
+    });
+    expect(shared.map((asset) => asset.type)).toContain("email");
+
+    const consulting = parseAgentProfilePolicy(
+      getMockAgentProfiles().find((p) => p.slug === "consulting-receptionist")
+        ?.system_policy_json,
+    );
+    const withheld = await listShareableAssets({
+      accountId: DEMO_ACCOUNT,
+      policy: consulting,
+    });
+    expect(withheld.map((asset) => asset.type)).not.toContain("email");
+    expect(withheld.some((asset) => asset.url.startsWith("mailto:"))).toBe(
+      false,
+    );
   });
 
   test("an asset whose type the profile disallows is withheld", async () => {
