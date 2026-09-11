@@ -38,23 +38,49 @@ export const KnowledgeFactStatusSchema = z.enum([
 
 export type KnowledgeFactStatus = z.infer<typeof KnowledgeFactStatusSchema>;
 
+const WebSourceEvidenceSchema = z.object({
+  sourceId: z.string().min(1),
+  sourceUrl: z.url({ protocol: /^https$/ }),
+  contentHash: z.string().length(64),
+  evidenceExcerptHash: z.string().length(64),
+  fetchedAt: z.iso.datetime(),
+});
+
+// Operator-entered configuration (ADR-0051) has no public page to cite, so it
+// cites the approval record. Web evidence deliberately carries no `kind`: adding
+// one would change the content hash of every snapshot already stored.
+const OperatorAssertionEvidenceSchema = z.object({
+  kind: z.literal("operator_assertion"),
+  sourceId: z.string().min(1),
+  recordRef: z.string().min(1),
+  contentHash: z.string().length(64),
+  assertedBy: z.string().min(1),
+  assertedAt: z.iso.datetime(),
+});
+
 export const ApprovedKnowledgeFactSchema = z.object({
   id: z.string().min(1),
   key: z.string().min(1),
   value: z.unknown(),
-  status: z.enum(["operator_approved_for_demo", "owner_confirmed"]),
+  status: z.enum(["operator_approved_for_demo", "owner_confirmed", "operator_configured"]),
   sourceIds: z.array(z.string().min(1)).min(1),
-  sourceEvidence: z.array(z.object({
-    sourceId: z.string().min(1),
-    sourceUrl: z.url({ protocol: /^https$/ }),
-    contentHash: z.string().length(64),
-    evidenceExcerptHash: z.string().length(64),
-    fetchedAt: z.iso.datetime(),
-  })).min(1),
+  sourceEvidence: z.array(z.union([OperatorAssertionEvidenceSchema, WebSourceEvidenceSchema])).min(1),
   confidence: z.number().min(0).max(1).nullable(),
   reviewedBy: z.string().min(1),
   reviewedAt: z.iso.datetime(),
   validAsOf: z.iso.datetime().optional(),
+}).superRefine((fact, ctx) => {
+  const operatorConfigured = fact.status === "operator_configured";
+  fact.sourceEvidence.forEach((evidence, index) => {
+    if (("kind" in evidence) === operatorConfigured) return;
+    ctx.addIssue({
+      code: "custom",
+      path: ["sourceEvidence", index],
+      message: operatorConfigured
+        ? "operator_configured_fact_requires_operator_assertion"
+        : "operator_assertion_requires_operator_configured_status",
+    });
+  });
 });
 
 export const PROSPECT_MEMORY_UNKNOWNS = Object.freeze([
@@ -63,12 +89,21 @@ export const PROSPECT_MEMORY_UNKNOWNS = Object.freeze([
   "Unlisted services, policies, and operating details are unknown.",
 ]);
 
-const SourceManifestItemSchema = z.object({
-  id: z.string().min(1),
-  url: z.url({ protocol: /^https$/ }),
-  contentHash: z.string().min(32),
-  fetchedAt: z.iso.datetime(),
-});
+const SourceManifestItemSchema = z.union([
+  z.object({
+    kind: z.literal("operator_assertion"),
+    id: z.string().min(1),
+    recordRef: z.string().min(1),
+    contentHash: z.string().length(64),
+    assertedAt: z.iso.datetime(),
+  }),
+  z.object({
+    id: z.string().min(1),
+    url: z.url({ protocol: /^https$/ }),
+    contentHash: z.string().min(32),
+    fetchedAt: z.iso.datetime(),
+  }),
+]);
 
 export const BusinessMemorySnapshotSchema = z.object({
   schemaVersion: z.literal(PROSPECT_BOOTSTRAP_SCHEMA_VERSION),

@@ -292,6 +292,89 @@ describe("fact review compiler and promotion boundary", () => {
     expect(() => buildPromotionManifest({ ...params, policy: { apiToken: "must-not-export" } }))
       .toThrow("promotion_forbidden_field");
   });
+
+  const reviewedEarlier = new Date("2026-08-19T16:00:00.000Z");
+
+  function compileFacts(facts: Parameters<typeof compileBusinessMemorySnapshot>[0]["facts"]) {
+    return compileBusinessMemorySnapshot({
+      bootstrapId: "bootstrap-1",
+      accountId: "account-1",
+      generatedAt: now,
+      sources: [source],
+      unknowns: [],
+      facts,
+    }).memory;
+  }
+
+  test("an owner-confirmed fact supersedes a more recently reviewed demo approval for a single-value key", () => {
+    const memory = compileFacts([
+      { id: "demo-approved", fact_key: "business.profile_statement", value_json: "Sunrise Roofing", status: "operator_approved_for_demo", source_id: source.id, evidence_excerpt: "Sunrise Roofing", confidence: 0.9, reviewed_by: "operator-1", reviewed_at: now },
+      { id: "owner-confirmed", fact_key: "business.profile_statement", value_json: "Sunrise Roofing & Solar", status: "owner_confirmed", source_id: source.id, evidence_excerpt: "Sunrise Roofing & Solar", confidence: 1, reviewed_by: "operator-1", reviewed_at: reviewedEarlier },
+    ]);
+    expect(memory.businessProfile.map((fact) => fact.id)).toEqual(["owner-confirmed"]);
+  });
+
+  test("between equal authorities the most recently reviewed fact wins", () => {
+    const memory = compileFacts([
+      { id: "older", fact_key: "business.profile_statement", value_json: "Sunrise Roofing", status: "operator_approved_for_demo", source_id: source.id, evidence_excerpt: "Sunrise Roofing", confidence: 0.9, reviewed_by: "operator-1", reviewed_at: reviewedEarlier },
+      { id: "newer", fact_key: "business.profile_statement", value_json: "Sunrise Roofing Co.", status: "operator_approved_for_demo", source_id: source.id, evidence_excerpt: "Sunrise Roofing Co.", confidence: 0.9, reviewed_by: "operator-1", reviewed_at: now },
+    ]);
+    expect(memory.businessProfile.map((fact) => fact.id)).toEqual(["newer"]);
+  });
+
+  test("multi-value keys keep distinct values and deduplicate the same value by authority", () => {
+    const memory = compileFacts([
+      { id: "service-demo", fact_key: "service.statement", value_json: "Roof repair", status: "operator_approved_for_demo", source_id: source.id, evidence_excerpt: "Roof repair", confidence: 0.9, reviewed_by: "operator-1", reviewed_at: now },
+      { id: "service-confirmed", fact_key: "service.statement", value_json: "Roof repair", status: "owner_confirmed", source_id: source.id, evidence_excerpt: "Roof repair", confidence: 1, reviewed_by: "operator-1", reviewed_at: reviewedEarlier },
+      { id: "service-two", fact_key: "service.statement", value_json: "Emergency tarp service", status: "owner_confirmed", source_id: source.id, evidence_excerpt: "Emergency tarp service", confidence: 1, reviewed_by: "operator-1", reviewed_at: reviewedEarlier },
+    ]);
+    expect(memory.services.map((fact) => [fact.id, fact.value])).toEqual([
+      ["service-confirmed", "Roof repair"],
+      ["service-two", "Emergency tarp service"],
+    ]);
+  });
+
+  test("a higher-authority fact whose source was not acquired does not erase the sourced fact for its key", () => {
+    const memory = compileFacts([
+      { id: "unsourced", fact_key: "business.profile_statement", value_json: "Sunrise Roofing & Solar", status: "owner_confirmed", source_id: "source-not-acquired", evidence_excerpt: "Sunrise Roofing & Solar", confidence: 1, reviewed_by: "operator-1", reviewed_at: now },
+      { id: "sourced", fact_key: "business.profile_statement", value_json: "Sunrise Roofing", status: "operator_approved_for_demo", source_id: source.id, evidence_excerpt: "Sunrise Roofing", confidence: 0.9, reviewed_by: "operator-1", reviewed_at: reviewedEarlier },
+    ]);
+    expect(memory.businessProfile.map((fact) => fact.id)).toEqual(["sourced"]);
+  });
+
+  test("demo agent context omits operator-configured facts even when a snapshot carries them", () => {
+    const compiled = compileFacts([
+      { id: "approved", fact_key: "contact.phone", value_json: "+13055550110", status: "operator_approved_for_demo", source_id: source.id, evidence_excerpt: "Call 305-555-0110", confidence: 0.9, reviewed_by: "operator-1", reviewed_at: now },
+    ]);
+    const memory = {
+      ...compiled,
+      operatingHours: [{
+        id: "operator-hours",
+        key: "operating_hours.weekly",
+        value: "Mon-Fri 08:00-17:00",
+        status: "operator_configured" as const,
+        sourceIds: ["operator-record-1"],
+        sourceEvidence: [{
+          kind: "operator_assertion" as const,
+          sourceId: "operator-record-1",
+          recordRef: "approval-record:operator-session-1",
+          contentHash: "c".repeat(64),
+          assertedBy: "operator-1",
+          assertedAt: now.toISOString(),
+        }],
+        confidence: null,
+        reviewedBy: "operator-1",
+        reviewedAt: now.toISOString(),
+      }],
+    };
+    const context = compileProspectAgentContext({
+      businessName: "Sunrise Roofing",
+      businessWebsite: source.normalized_url,
+      memory,
+    }).approved_business_context;
+    expect(context).toContain("contact.phone");
+    expect(context).not.toContain("operating_hours.weekly");
+  });
 });
 
 describe("prospect bootstrap tenant matrix without a database", () => {

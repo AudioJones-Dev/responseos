@@ -212,11 +212,39 @@
       "phase": "v0.3 · Demo Scope",
       "title": "Per-tenant supervision execution policy (ADR-0051)",
       "owner": "Claude Code",
-      "status": "In Progress",
-      "progress": 60,
+      "status": "Done",
+      "progress": 100,
       "priority": "High",
       "start": "2026-09-10",
-      "due": "2026-09-12"
+      "due": "2026-09-12",
+      "ref": 149,
+      "refType": "pull"
+    },
+    {
+      "id": "V-07",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Operating-configuration contract + fact authority ranking (FRL pilot PR 1)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-09-10",
+      "due": "2026-09-12",
+      "ref": 152,
+      "refType": "pull"
+    },
+    {
+      "id": "V-08",
+      "phase": "v0.3 · Demo Scope",
+      "title": "FRL operating-configuration skeleton (unknowns only, no invented facts)",
+      "owner": "Claude Code",
+      "status": "To Do",
+      "progress": 0,
+      "priority": "High",
+      "start": "2026-09-12",
+      "due": "2026-09-16",
+      "blocked": true,
+      "blockedReason": "Follows V-07 merge; location and data-handling boundary need operator approval per docs/ops/client-delivery/README.md"
     },
     {
       "id": "R-02",
@@ -642,7 +670,7 @@
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/116"
     },
     {
-      "id": "V-07",
+      "id": "V-09",
       "phase": "v0.3 · Demo Scope",
       "title": "Import canonical resume into receptionist knowledge fixture",
       "owner": "Claude Code",
@@ -655,7 +683,7 @@
       "refType": "pull"
     },
     {
-      "id": "V-08",
+      "id": "V-10",
       "phase": "v0.3 · Demo Scope",
       "title": "Import portfolio project records into receptionist knowledge fixture",
       "owner": "Claude Code",
@@ -663,7 +691,9 @@
       "progress": 100,
       "priority": "Med",
       "start": "2026-09-11",
-      "due": "2026-09-11"
+      "due": "2026-09-11",
+      "ref": 153,
+      "refType": "pull"
     },
     {
       "id": "Q-01",
