@@ -4,6 +4,13 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — fix: attribute the work-history record to both of its sources
+
+- The work-history record kept `sourceId: canonical_resume:…` after the previous change added five date ranges taken from the **portfolio résumé**, so it named a system that did not own half its claims. `ProfessionalKnowledgeResult.sourceId` exists so an answer can cite its evidence, and a body mixing two sources under one source id misattributes the half it does not own — the same failure as citing nothing. Raised in review on #158, after that PR merged.
+- The record now names both, joined by `+`. The contract in `types.ts` states the multi-source rule explicitly rather than leaving it to be inferred from one example.
+- A test pins the invariant across records: work history names both sources, projects never pick up the resume's, and skills never pick up the portfolio's. Caught by a reviewer rather than by the suite, which is what the test now closes.
+- No behaviour changed. `sourceId` is provenance metadata and is not surfaced in an answer today — `ProfessionalAnswer.sources` carries record ids — which is why this was cheap to correct now rather than once something consumes it.
+
 ## Unreleased — feat: date the five undated work-history roles from the portfolio résumé
 
 - The five roles that shipped undated now carry ranges, transcribed from the account owner's public **portfolio résumé page** — the resume the fixture was built from carries no dates for them, which is why they were undated. Every role is now dated; no type, policy, or authority rule changed.

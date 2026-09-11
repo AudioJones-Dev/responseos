@@ -534,6 +534,34 @@ describe("provider mocks work without credentials", () => {
     ]);
   });
 
+  test("every record attributes its claims to the source that owns them", async () => {
+    const provider = getProfessionalKnowledgeProvider();
+    const records = await provider.search({
+      accountId: DEMO_ACCOUNT,
+      query:
+        "experience skills projects education certification portfolio availability who",
+      profileType: "recruiter_receptionist",
+    });
+    expect(records.length).toBeGreaterThan(0);
+    expect(records.every((record) => record.sourceId.length > 0)).toBe(true);
+
+    // Work history draws employers and titles from the resume and the
+    // five previously-undated ranges from the portfolio résumé, so it
+    // must name both. Citing one would misattribute the other half.
+    const workHistory = records.find((r) => r.id === "know_experience_1");
+    expect(workHistory?.sourceId).toContain("canonical_resume:");
+    expect(workHistory?.sourceId).toContain("portfolio_site:");
+
+    // Projects come from the portfolio alone, skills from the resume
+    // alone; neither should have picked up the other's source.
+    expect(records.find((r) => r.id === "know_projects_1")?.sourceId).not.toContain(
+      "canonical_resume:",
+    );
+    expect(records.find((r) => r.id === "know_skills_1")?.sourceId).not.toContain(
+      "portfolio_site:",
+    );
+  });
+
   test("imported project records are verified, public and carry their source URL", async () => {
     const projects = await getProfessionalKnowledgeProvider().getProjects(
       DEMO_ACCOUNT,
