@@ -1078,11 +1078,13 @@
       "phase": "Tech Debt & Hardening",
       "title": "Apply owner-approved copy redlines (claims, naming, CTA)",
       "owner": "Claude Code",
-      "status": "In Progress",
-      "progress": 80,
+      "status": "Review",
+      "progress": 90,
       "priority": "High",
       "start": "2026-09-11",
-      "due": "2026-09-11"
+      "due": "2026-09-11",
+      "ref": 163,
+      "refType": "pull"
     }
   ],
   "liveIssues": [
