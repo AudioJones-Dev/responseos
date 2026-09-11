@@ -752,11 +752,26 @@
       "phase": "v0.3 · Demo Scope",
       "title": "Carry the owner's salary floor on the compensation escalation",
       "owner": "Claude Code",
-      "status": "Review",
+      "status": "Done",
       "progress": 100,
       "priority": "Med",
       "start": "2026-09-11",
-      "due": "2026-09-11"
+      "due": "2026-09-11",
+      "ref": 160,
+      "refType": "pull"
+    },
+    {
+      "id": "V-17",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Demo route for the receptionist (read-only question surface)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-09-11",
+      "due": "2026-09-11",
+      "ref": 161,
+      "refType": "pull"
     },
     {
       "id": "V-16",

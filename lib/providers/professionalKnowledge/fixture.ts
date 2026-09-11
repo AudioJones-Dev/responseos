@@ -315,6 +315,11 @@ export const demoKnowledgeRecords: ProfessionalKnowledgeResult[] = [
       "open to",
       "contract",
       "full time",
+      // Both spellings, per keywordVariants: hyphens are not normalized,
+      // so "full-time" misses the spaced keyword. Without it "is he free
+      // for full-time work?" classifies correctly and then retrieves
+      // nothing, declining a question this record answers.
+      "full-time",
       "remote",
       "relocate",
     ],
