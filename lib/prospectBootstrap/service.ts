@@ -4,6 +4,7 @@ import { db } from "@/lib/db/client";
 import { getCurrentSession } from "@/lib/auth/session";
 import { isCrossTenantRole, withTenantScope } from "@/lib/data/session-helpers";
 import { err, errFromThrown, ok, type Result } from "@/lib/data/result";
+import { normalizeE164 } from "@/lib/validation/common";
 import { acquireProspectWebsite } from "./websiteAcquisition";
 import { extractObservedFacts } from "./factExtraction";
 import {
@@ -56,13 +57,6 @@ function addDays(date: Date, days: number): Date {
 function slugify(value: string): string {
   const base = value.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 48);
   return `${base || "prospect"}-${randomUUID().slice(0, 8)}`;
-}
-
-export function normalizeE164(value: string): string {
-  const digits = value.replace(/\D/g, "");
-  if (digits.length === 10) return `+1${digits}`;
-  if (digits.length >= 11 && digits.length <= 15) return `+${digits}`;
-  throw new Error("invalid_e164");
 }
 
 async function requireOperator() {
@@ -633,6 +627,7 @@ export async function registerTelephonyNumber(params: {
   if (!db) return err("no_database", "Number inventory requires DATABASE_URL.");
   try {
     const e164 = normalizeE164(params.e164);
+    if (!e164) throw new Error("invalid_e164");
     const providerAttestation = verifyProspectProviderAttestation({
       value: params.providerAttestation,
       providerNumberId: params.providerNumberId,
@@ -848,8 +843,8 @@ export async function completeProspectBootstrap(bootstrapId: string, now = new D
 
 export async function resolveActiveProspectAgentContext(target: string, now = new Date()) {
   if (!db) return null;
-  let e164: string;
-  try { e164 = normalizeE164(target); } catch { return null; }
+  const e164 = normalizeE164(target);
+  if (!e164) return null;
   const rows = await db.$queryRaw<Array<{
     account_id: string;
     account_name: string;
@@ -900,8 +895,8 @@ export async function resolveTelnyxEventAssignment(params: { target: string; occ
   if (!db) return null;
   const receivedAt = params.receivedAt ?? new Date();
   if (addDays(params.occurredAt, PROSPECT_CONTENT_RETENTION_DAYS) <= receivedAt) return null;
-  let e164: string;
-  try { e164 = normalizeE164(params.target); } catch { return null; }
+  const e164 = normalizeE164(params.target);
+  if (!e164) return null;
   const number = await db.telephonyNumber.findUnique({ where: { provider_e164: { provider: "telnyx", e164 } } });
   if (!number) return null;
   const assignment = await db.telephonyNumberAssignment.findFirst({

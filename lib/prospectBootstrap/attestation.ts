@@ -1,5 +1,6 @@
 import { createPublicKey, verify } from "node:crypto";
 import { z } from "zod";
+import { normalizeE164 } from "@/lib/validation/common";
 import { validateProspectAssistantPreflight } from "./template";
 
 const ED25519_SPKI_PREFIX = Buffer.from("302a300506032b6570032100", "hex");
@@ -56,10 +57,9 @@ function publicKeyFromConfig(value: string) {
 }
 
 function canonicalE164(value: string): string {
-  const digits = value.replace(/\D/g, "");
-  if (digits.length === 10) return `+1${digits}`;
-  if (digits.length >= 11 && digits.length <= 15) return `+${digits}`;
-  throw new Error("provider_attestation_e164_invalid");
+  const e164 = normalizeE164(value);
+  if (!e164) throw new Error("provider_attestation_e164_invalid");
+  return e164;
 }
 
 export function verifyProspectProviderAttestation(params: {
