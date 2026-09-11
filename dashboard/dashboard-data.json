@@ -700,11 +700,13 @@
       "phase": "v0.3 · Demo Scope",
       "title": "Consolidate normalizeE164 into one shared helper (caller-resolution prerequisite)",
       "owner": "Claude Code",
-      "status": "In Progress",
-      "progress": 70,
+      "status": "Review",
+      "progress": 90,
       "priority": "Med",
       "start": "2026-09-11",
-      "due": "2026-09-12"
+      "due": "2026-09-12",
+      "ref": 155,
+      "refType": "pull"
     },
     {
       "id": "Q-01",
