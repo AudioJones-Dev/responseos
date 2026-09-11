@@ -1511,7 +1511,19 @@ async function seedAgentProfiles() {
   for (const data of profiles) {
     await prisma.agentProfile.upsert({
       where: { id: data.id! },
-      update: {},
+      // A profile's policy is what the receptionist actually enforces, so
+      // an empty update leaves an already-seeded database enforcing the
+      // previous one while the fixture and docs describe the new. Identity
+      // (id, account, slug, type) and created_at stay put; everything that
+      // defines behaviour is refreshed.
+      update: {
+        name: data.name,
+        enabled: data.enabled,
+        is_default: data.is_default,
+        system_policy_json: data.system_policy_json,
+        metadata_json: data.metadata_json,
+        updated_at: data.updated_at,
+      },
       create: data,
     });
   }
