@@ -111,10 +111,43 @@ const CATEGORY_RULES: Array<{
   category: ProfessionalKnowledgeCategory;
   keywords: string[];
 }> = [
+  // The gated categories come first. Both availability rules below carry
+  // broad words ("available", "free for", "contract") that appear inside
+  // compensation, rate, and reference questions, and a gated question
+  // that matches an answerable rule first stops being gated at all —
+  // "what is his contract rate?" must escalate, not answer.
+  {
+    category: "compensation",
+    keywords: ["salary", "compensation", "pay range", "base", "equity", "comp"],
+  },
+  { category: "consulting_rates", keywords: ["rate", "rates", "hourly", "day rate", "pricing"] },
+  { category: "references", keywords: ["reference", "referral from", "vouch", "background check"] },
+  // Then the specific availability rule before the general one:
+  // "available for full-time work" asks about employment terms, not a
+  // calendar, but every word of it that names a time sense also appears
+  // in the rule below.
+  {
+    category: "contract_availability",
+    keywords: ["contract", "full-time", "full time", "start date", "notice period"],
+  },
   {
     category: "interview_availability",
     keywords: [
+      // The receptionist answers *about* its owner, so callers ask in the
+      // third person. "when are you free" alone missed "when is he free
+      // for a call?" entirely, which is how a recruiter actually phrases
+      // it — found by asking the demo route the obvious question.
+      //
+      // Each phrase still pins "free" to a time sense. The gated rules
+      // now sit above, so a loose keyword here no longer unlocks one —
+      // but "is he free" alone would still swallow "is he free to
+      // discuss the role?", and the bare word is worse. Keep it tight;
+      // the ordering above is a second line, not a licence.
       "when are you free",
+      "when is he free",
+      "when is she free",
+      "when are they free",
+      "free for",
       "availability",
       "available",
       "schedule",
@@ -122,12 +155,6 @@ const CATEGORY_RULES: Array<{
       "book",
     ],
   },
-  {
-    category: "compensation",
-    keywords: ["salary", "compensation", "pay range", "base", "equity", "comp"],
-  },
-  { category: "consulting_rates", keywords: ["rate", "rates", "hourly", "day rate", "pricing"] },
-  { category: "references", keywords: ["reference", "referral from", "vouch", "background check"] },
   {
     category: "education",
     keywords: ["education", "degree", "school", "university", "college", "graduated"],
@@ -149,10 +176,6 @@ const CATEGORY_RULES: Array<{
   {
     category: "employment_preferences",
     keywords: ["prefer", "looking for", "interested in", "open to"],
-  },
-  {
-    category: "contract_availability",
-    keywords: ["contract", "full-time", "full time", "start date", "notice period"],
   },
   {
     category: "personal",
