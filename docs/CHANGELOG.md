@@ -4,6 +4,15 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: adopt the supplied ResponseOS logo pack across the web surface
+
+- The marketing header and footer, the console sidebar, and the demo header now use the **supplied logo pack** (`Response OS Logo Pack.zip`, first carried in draft #118) instead of the reconstructed RO SVGs. Only the asset layer was taken from #118 — none of its homepage copy, estimator, or discovery work — and the source PNGs, derived marks, and large app icons match #118 byte for byte.
+- **The small favicons were rebuilt, not copied.** #118's 16px and 32px frames drew the mark in 8×4 and 16×8 pixels and did not read at tab size. The 16/32/48 frames and `favicon.ico` are re-derived from the compact-mark source with a tight crop (14×8, 28×15, 42×23). `favicon.svg` is no longer referenced but stays in `public/`, because removing a public URL can break external hotlinks — the same constraint that holds G-11.
+- The OG card's brand lockup is now the supplied wordmark; its headline and the social metadata copy are unchanged.
+- The client portal and demo client dashboard labelled an estimated figure "Recovered Revenue". Both now read "Estimated Recovered Revenue", matching the operator console, since estimated revenue is never presented as recovered revenue.
+- UI fixes: the collapsed-sidebar mark fits its 44px rail, the five OFFER cards no longer leave an empty grid cell, and the demo fallback banner no longer prints `.).`.
+- The pack is raster-only, so the wordmark stays crisp to about 170 CSS px on a 2x display; vector masters are an open follow-up. Proposed marketing-copy changes are with the owner for approval and are not part of this entry.
+
 ## Unreleased — feat: carry the owner's salary floor on the compensation escalation
 
 - The owner's salary floor is now stored, and the **compensation escalation payload carries it**. The first ADR-0046 follow-up left it out because a recruiter-facing knowledge store would add exposure without the number ever being spoken; the escalation is the one direction that objection does not apply to, and the owner asked for it.
