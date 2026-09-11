@@ -34,7 +34,7 @@ export const mockQaLogs: QaLog[] = [
       next_step: "pass",
     },
     notes:
-      "Receptionist answered both skill questions from the verified record, declined the unsourced project question and captured it instead; recruiter screen scheduled.",
+      "Receptionist answered the skill and project questions from verified records, escalated compensation instead of quoting a number, and scheduled a recruiter screen.",
     reviewed_at: DEMO_REVIEWED_AT,
     created_at: DEMO_REVIEWED_AT,
   },

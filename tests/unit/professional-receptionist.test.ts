@@ -120,17 +120,73 @@ describe("answerProfessionalQuestion", () => {
     expect(answer.answered).toBe(true);
   });
 
-  test("a named skill never re-routes a project question away from its fallback", async () => {
-    // Projects have no canonical source. A skill name in the question
-    // must not let the skills record stand in for the missing one.
+  test("a named skill never re-routes a project question to the skills record", async () => {
+    // Naming a skill inside a project question does not make it a
+    // question about the skill: it must be answered from the project
+    // records, never from the skill list.
     const answer = await answerProfessionalQuestion({
       accountId: DEMO_ACCOUNT,
       question: "What projects has he built with Salesforce?",
       policy: recruiterPolicy,
     });
     expect(answer.category).toBe("projects");
+    expect(answer.answered).toBe(true);
+    expect(answer.sources).toContain("know_projects_1");
+    expect(answer.sources).not.toContain("know_skills_1");
+  });
+
+  test("a question naming a project reaches the project record", async () => {
+    // Callers ask by project name, not by the word "project". Without
+    // this, "what is ARO?" classifies as unknown and falls back, and
+    // "tell me about Career OS" classifies as work_history on the word
+    // "career" and answers out of the employment record — a wrong
+    // answer, which is worse than no answer.
+    for (const question of [
+      "What is ARO?",
+      "Tell me about Career OS",
+      "Can you tell me about Florida Ramp & Lift FieldOps?",
+    ]) {
+      const answer = await answerProfessionalQuestion({
+        accountId: DEMO_ACCOUNT,
+        question,
+        policy: recruiterPolicy,
+      });
+      expect(answer.category).toBe("projects");
+      expect(answer.answered).toBe(true);
+      expect(answer.sources).toEqual(["know_projects_1"]);
+    }
+  });
+
+  test("a named project never unlocks a gated category", async () => {
+    const answer = await answerProfessionalQuestion({
+      accountId: DEMO_ACCOUNT,
+      question: "What rate does he charge for ARO work?",
+      policy: recruiterPolicy,
+    });
+    expect(answer.category).toBe("consulting_rates");
+    expect(answer.authority).toBe("escalate");
     expect(answer.answered).toBe(false);
-    expect(answer.message).toBe(unverifiedFallback(OWNER));
+  });
+
+  test("a grounded answer never carries a link the asset policy withholds", async () => {
+    // Answer bodies are spoken whatever the profile allows, so a URL
+    // embedded in one would bypass listShareableAssets. The strict
+    // default forbids every asset type.
+    expect(
+      await listShareableAssets({ accountId: DEMO_ACCOUNT }),
+    ).toEqual([]);
+
+    for (const question of [
+      "What projects has he built?",
+      "Can I see his portfolio?",
+      "Do you have a link to his site?",
+    ]) {
+      const answer = await answerProfessionalQuestion({
+        accountId: DEMO_ACCOUNT,
+        question,
+      });
+      expect(answer.message).not.toMatch(/https?:\/\/|tyronenelms\.com/);
+    }
   });
 
   test("a word that merely ends in 's' is matched exactly, never truncated", async () => {
@@ -194,12 +250,15 @@ describe("answerProfessionalQuestion", () => {
   });
 
   test("never fabricates a career claim when no verified record exists", async () => {
-    // Projects are the one category with no canonical source.
+    // Case studies have no canonical source. The project record shares
+    // the "case study" keyword, so this also pins the category filter:
+    // a keyword hit alone must never satisfy a different category.
     const answer = await answerProfessionalQuestion({
       accountId: DEMO_ACCOUNT,
-      question: "What projects has he built?",
+      question: "Do you have a case study I can read?",
       policy: recruiterPolicy,
     });
+    expect(answer.category).toBe("case_studies");
     expect(answer.answered).toBe(false);
     expect(answer.authority).toBe("unavailable");
     expect(answer.sources).toEqual([]);
@@ -378,6 +437,7 @@ describe("opportunity summary", () => {
         "business systems experience",
         "AI implementation experience",
         "example project work",
+        "target compensation",
       ],
       appointment: { status: "none", datetime: undefined },
       recommended_preparation: [
@@ -424,11 +484,39 @@ describe("provider mocks work without credentials", () => {
     ]);
   });
 
-  test("records with no canonical source stay unverified", async () => {
+  test("imported project records are verified, public and carry their source URL", async () => {
     const projects = await getProfessionalKnowledgeProvider().getProjects(
       DEMO_ACCOUNT,
     );
-    expect(projects.every((record) => !record.verified)).toBe(true);
+    expect(projects.length).toBeGreaterThan(0);
+    expect(projects.every((record) => record.verified)).toBe(true);
+    // Only publicly-listed work is loaded, and each record points back
+    // at the portfolio page it was transcribed from.
+    expect(projects.every((record) => record.public)).toBe(true);
+    expect(
+      projects.every((record) =>
+        record.url?.startsWith("https://tyronenelms.com/work/"),
+      ),
+    ).toBe(true);
+  });
+
+  test("a project with no production deployment is never described as shipped", async () => {
+    // Two of the three are internal systems. A recruiter hearing about
+    // a project assumes a shipped product unless the record says
+    // otherwise, so the status the source states rides in the summary.
+    const projects = await getProfessionalKnowledgeProvider().getProjects(
+      DEMO_ACCOUNT,
+    );
+    const aro = projects.find((record) => record.id === "proj_aro");
+    expect(aro?.summary).toContain("no production deployment");
+
+    const answer = await answerProfessionalQuestion({
+      accountId: DEMO_ACCOUNT,
+      question: "What projects has he built?",
+      policy: recruiterPolicy,
+    });
+    expect(answer.answered).toBe(true);
+    expect(answer.message).toContain("no production deployment");
   });
 
   test("handoff provider is a no-op that reports non-delivery", async () => {

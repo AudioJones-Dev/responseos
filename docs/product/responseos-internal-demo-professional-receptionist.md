@@ -13,8 +13,9 @@
 > surface.
 > `PROHIBITED_CLAIM` — that this tenant proves provider portability
 > (ADR-0043), that the receptionist can speak to categories with no
-> canonical source (projects; see §4), or that any live provider is
-> wired.
+> canonical source (case studies; see §4), that the two internal
+> projects it can describe are shipped or deployed products, or that any
+> live provider is wired.
 
 ## 1. What this is
 
@@ -68,21 +69,31 @@ Fabricating an employer, a date, a degree, or a certification is
 prohibited (`AGENTS.md`; doctrine §2.2, §20), so a category with no
 canonical source produces the fallback line rather than a guess.
 
-The fixture now carries the account owner's canonical resume, imported
-on the date in `RESUME_IMPORTED_AT`. Nothing in it is inferred: roles
-the resume carries without dates are stored without dates, skills arrive
-as the flat list the source supplies, and no achievement or metric is
-written that the source does not state.
+The fixture now carries two canonical imports: the account owner's
+resume, imported on the date in `RESUME_IMPORTED_AT`, and the three
+project records on the public portfolio at `tyronenelms.com/work`, read
+on the date in `PORTFOLIO_IMPORTED_AT`. Nothing in either is inferred:
+roles the resume carries without dates are stored without dates, skills
+arrive as the flat list it supplies, and no achievement or metric is
+written that neither source states.
+
+**Project status is part of the claim.** Two of the three projects are
+internal systems with no external customers and no production
+deployment. A recruiter hearing a project named assumes a shipped
+product unless told otherwise, so each record's summary carries the
+status its own source page states — "active engagement", "internal
+system" — and the receptionist speaks that status with the project
+(doctrine §20).
 
 So the receptionist today:
 
-- **answers** who it represents, work history, skills, education,
-  certifications (with their Coursera verification links), the roles
-  being targeted, engagement availability, and which public assets can
-  be shared;
+- **answers** who it represents, work history, skills, projects,
+  education, certifications (with their Coursera verification links),
+  the roles being targeted, engagement availability, and which public
+  assets can be shared;
 - **falls back** — "I don't have verified information available for
-  that…" — on **projects**, the one category with no canonical source
-  yet;
+  that…" — on **case studies**, the one category with no canonical
+  source yet;
 - **escalates** compensation, consulting rates, and references;
 - **refuses** private questions;
 - **looks up** interview availability against the calendar rather than
@@ -90,8 +101,8 @@ So the receptionist today:
 
 Adding or retiring an answerable category stays a **data change, not a
 code change**: supply canonical records (or wire the Career OS adapter)
-and set `verified`. Re-import bumps `RESUME_IMPORTED_AT`, which is how
-staleness stays visible.
+and set `verified`. Re-import bumps `RESUME_IMPORTED_AT` or
+`PORTFOLIO_IMPORTED_AT`, which is how staleness stays visible.
 
 **Not stored on purpose.** The owner's salary floor is a compensation
 claim, and compensation escalates to a human by policy — holding the

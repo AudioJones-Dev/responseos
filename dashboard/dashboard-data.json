@@ -670,15 +670,30 @@
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/116"
     },
     {
-      "id": "V-07",
+      "id": "V-09",
       "phase": "v0.3 · Demo Scope",
       "title": "Import canonical resume into receptionist knowledge fixture",
+      "owner": "Claude Code",
+      "status": "Done",
+      "progress": 100,
+      "priority": "Med",
+      "start": "2026-09-10",
+      "due": "2026-09-10",
+      "ref": 151,
+      "refType": "pull"
+    },
+    {
+      "id": "V-10",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Import portfolio project records into receptionist knowledge fixture",
       "owner": "Claude Code",
       "status": "Review",
       "progress": 100,
       "priority": "Med",
-      "start": "2026-09-10",
-      "due": "2026-09-10"
+      "start": "2026-09-11",
+      "due": "2026-09-11",
+      "ref": 153,
+      "refType": "pull"
     },
     {
       "id": "Q-01",

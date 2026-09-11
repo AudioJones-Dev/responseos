@@ -2,17 +2,18 @@
  * Deterministic professional-knowledge fixture for the ResponseOS
  * internal demo tenant (ADR-0046).
  *
- * Every record below is transcribed from the account owner's canonical
- * resume, imported 2026-09-10. Nothing here is inferred: roles the
- * source carries without dates are stored without dates, skills arrive
- * as the flat list the source supplies, and no achievement, metric, or
- * responsibility is written that the source does not state.
+ * Every record below is transcribed from one of two canonical sources:
+ * the account owner's resume, imported 2026-09-10, and the public
+ * portfolio at tyronenelms.com/work, read 2026-09-11. Nothing here is
+ * inferred: roles the resume carries without dates are stored without
+ * dates, skills arrive as the flat list it supplies, projects carry the
+ * status their own page states, and no achievement, metric, or
+ * responsibility is written that neither source states.
  *
- * `verified: false` still means "not answerable". Projects remain
- * unsourced, so the receptionist declines project questions and offers
+ * `verified: false` means "not answerable" — the receptionist offers
  * the fallback instead (lib/professional/authority.ts). Flip a record
  * to `verified: true` only when its content comes from a canonical
- * source — fabricating an employer, a date, a degree, or a
+ * source — fabricating an employer, a date, a degree, a project, or a
  * certification is prohibited (AGENTS.md status rules; doctrine §20).
  *
  * When the Career OS adapter lands it replaces this file wholesale;
@@ -36,8 +37,11 @@ export const INTERNAL_DEMO_ACCOUNT_ID = "org_tyrone_1"
 /** Date the resume below was imported. Bump it on every re-import. */
 export const RESUME_IMPORTED_AT = "2026-09-10"
 
+/** Date the project records were read off the public portfolio. */
+export const PORTFOLIO_IMPORTED_AT = "2026-09-11"
+
 const RESUME_SOURCE = `canonical_resume:${RESUME_IMPORTED_AT}`
-const CAREER_OS_SOURCE = "career_os:placeholder"
+const PORTFOLIO_SOURCE = `portfolio_site:${PORTFOLIO_IMPORTED_AT}`
 const ACCOUNT_CONFIG_SOURCE = "responseos:account_config"
 
 export const demoProfile: ProfessionalProfile = {
@@ -98,19 +102,46 @@ export const demoExperience: ExperienceRecord[] = [
 ]
 
 /**
- * No project record has a canonical source yet, so project questions
- * still resolve to the fallback line. This is the one category the
- * receptionist cannot speak to.
+ * Transcribed from the public portfolio at tyronenelms.com/work, which
+ * is already this tenant's one approved asset.
+ *
+ * Each summary carries the status the source states — "active
+ * engagement", "internal system" — because a recruiter hearing about a
+ * project assumes a shipped product unless told otherwise, and two of
+ * these three have no external customers and no production deployment
+ * (doctrine §20). The status rides in the summary rather than in a new
+ * field: nothing in the runtime branches on it.
  */
 export const demoProjects: ProjectRecord[] = [
   {
-    id: "proj_placeholder_1",
-    name: "PLACEHOLDER — pending verified project record",
+    id: "proj_frl_fieldops",
+    name: "Florida Ramp & Lift FieldOps",
     summary:
-      "Placeholder project slot. Nothing here is presented to a caller until it is verified.",
-    skills: [],
-    public: false,
-    verified: false,
+      "Active engagement. A contractor portal that replaced scattered calls, texts and paper with one shared record of jobs, contractors, billing drafts, field images, safety steps and approval gates for an ADA accessibility and mobile lift service business.",
+    skills: ["React", "TypeScript", "Node", "Supabase", "Systems Implementation"],
+    url: "https://tyronenelms.com/work/florida-ramp-lift-fieldops",
+    public: true,
+    verified: true,
+  },
+  {
+    id: "proj_career_os",
+    name: "Career OS",
+    summary:
+      "Internal system. Opportunity sourcing, scoring, application tracking and evidence governance — a scored schema, ATS adapters and a test suite behind a hard boundary between private tracking data and public portfolio claims.",
+    skills: ["Schema Design", "Python", "ATS Adapters", "Test Suite Development"],
+    url: "https://tyronenelms.com/work/career-os",
+    public: true,
+    verified: true,
+  },
+  {
+    id: "proj_aro",
+    name: "ARO — agent execution & handoff runtime",
+    summary:
+      "Internal system, with no external customers and no production deployment. A runtime for long-running work that has to survive restarts, pause for a human and hand off cleanly: restart recovery, structured handoffs, pause/resume, human approval gates and provider adapters.",
+    skills: ["Architecture", "Runtime Systems", "AI-Enabled Workflows"],
+    url: "https://tyronenelms.com/work/aro",
+    public: true,
+    verified: true,
   },
 ]
 
@@ -234,7 +265,10 @@ export const demoKnowledgeRecords: ProfessionalKnowledgeResult[] = [
     id: "know_assets_1",
     category: "projects",
     title: "Approved public assets",
-    body: "The personal site at tyronenelms.com can be shared on request. Private repositories and unpublished case studies are not shared.",
+    // Same reason know_projects_1 carries no URLs: this body is spoken
+    // whatever the profile allows, so naming the site here would hand it
+    // to a caller whose policy shares no assets at all.
+    body: "Approved public assets can be shared when the answering profile allows them. Private repositories and unpublished case studies are never shared.",
     sourceId: ACCOUNT_CONFIG_SOURCE,
     verified: true,
     keywords: ["resume", "cv", "portfolio", "site", "website", "link"],
@@ -280,10 +314,28 @@ export const demoKnowledgeRecords: ProfessionalKnowledgeResult[] = [
     id: "know_projects_1",
     category: "projects",
     title: "Projects",
-    body: "PLACEHOLDER — no verified project record is loaded for this tenant.",
-    sourceId: CAREER_OS_SOURCE,
-    verified: false,
-    keywords: ["project", "projects", "built", "shipped", "case study"],
+    // Deliberately no URLs. An answer body is spoken whatever the
+    // profile allows, so a link embedded here would reach callers whose
+    // policy forbids portfolio assets — `allowedAssetTypes: []` is both
+    // the strict default and a seeded profile. Links are handed out
+    // through listShareableAssets, which enforces that policy; each
+    // record still carries its `url` for that path.
+    body: demoProjects
+      .map((project) => `${project.name}: ${project.summary}`)
+      .join(" "),
+    sourceId: PORTFOLIO_SOURCE,
+    verified: true,
+    keywords: [
+      "project",
+      "projects",
+      "built",
+      "shipped",
+      "case study",
+      "portfolio",
+      "fieldops",
+      "career os",
+      "aro",
+    ],
   },
   {
     id: "know_education_1",
