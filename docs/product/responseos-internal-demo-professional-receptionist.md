@@ -14,8 +14,9 @@
 > `PROHIBITED_CLAIM` — that this tenant proves provider portability
 > (ADR-0043), that the receptionist can speak to categories with no
 > canonical source (case studies; see §4), that the two internal
-> projects it can describe are shipped or deployed products, or that any
-> live provider is wired.
+> projects it can describe are shipped or deployed products, that the
+> receptionist is reachable by any caller (no route or component calls
+> it; see §7), or that any live provider is wired.
 
 ## 1. What this is
 
@@ -125,10 +126,30 @@ code change**: supply canonical records (or wire the Career OS adapter)
 and set `verified`. Re-import bumps `RESUME_IMPORTED_AT` or
 `PORTFOLIO_IMPORTED_AT`, which is how staleness stays visible.
 
-**Not stored on purpose.** The owner's salary floor is a compensation
-claim, and compensation escalates to a human by policy — holding the
-number in a recruiter-facing knowledge store would add exposure without
-ever being spoken.
+**Stored, and carried only on the compensation escalation payload.**
+The owner's salary floor is attached to the `compensation` escalation
+event so that a consumer, when one exists, receives the figure rather
+than having to look it up. It is never spoken to a caller.
+
+**No consumer exists.** `ProfessionalHandoffProvider` resolves to the
+no-op adapter — `delivered: false`, no network, no queue — and no
+shipped path calls `requestProfessionalEscalation` yet, so the payload
+is built and discarded. This is `DOCUMENTED_ONLY` on the delivery side:
+the event contract carries the floor; nothing hands it to the owner
+today.
+
+That is structural rather than a matter of care. The floor lives on
+`AvailabilityPolicy`, which the answer path never reads — answers come
+from knowledge records alone — and compensation escalates under every
+profile, including the strictest. No knowledge record carries the
+number. A test asserts both halves: every profile, asked the
+compensation question every way, never says it; and no record contains
+it, so a future answer path cannot surface it by accident.
+
+Only a `compensation` escalation carries it. Rates and references
+escalate too, and an annual salary minimum answers neither — a payload
+carrying a figure it has no use for is that figure in one more place
+than it needs to be.
 
 ## 5. Agent profiles
 
@@ -163,9 +184,20 @@ Only the unscoped operator rollup drops non-`customer` accounts.
 Neither new adapter passes `createLive`, so both resolve to
 fixture/no-op even when `CAREER_OS_API_KEY` or `CAREER_OS_WEBHOOK_URL`
 is set. Scheduling runs through the existing mock `SchedulingProvider`.
-The full flow — question → grounded answer or fallback → opportunity
+
+The full chain — question → grounded answer or fallback → opportunity
 capture → audit row → handoff event → booked appointment linked back to
-the opportunity — runs with zero credentials and makes no network call.
+the opportunity — executes end to end with zero credentials and makes
+no network call. **The test suite is what executes it.** No route,
+page, or component calls `answerProfessionalQuestion`,
+`captureProfessionalOpportunity`, `requestProfessionalEscalation`, or
+`bookProfessionalAppointment`; each has only its own definition. The
+handoff event in that chain reaches a no-op that returns
+`delivered: false` and emits nowhere.
+
+So the receptionist is a working library with an exercised contract, not
+a surface anyone can reach. Nothing above is a caller-facing capability
+until something calls it.
 
 Live telephony for this tenant remains gated behind v0.3 authorization
 (ADR-0019, ADR-0045). Nothing here authorizes a live provider.

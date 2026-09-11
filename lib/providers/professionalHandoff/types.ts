@@ -30,6 +30,24 @@ export interface ProfessionalEscalationRequestedPayload {
   contactId?: string
   opportunityId?: string
   question?: string
+  /**
+   * The owner's salary floor, carried only on a `compensation`
+   * escalation so that a consumer, when one exists, receives the figure
+   * rather than having to look it up. Nothing consumes this event today
+   * — the handoff adapter is a no-op that returns `delivered: false`
+   * (ADR-0046 decision 10) — so this describes what the contract
+   * carries, not a figure anyone currently receives.
+   *
+   * The field is **absent**, not `undefined`, on every other category:
+   * a references or consulting-rates escalation has no use for an
+   * annual salary minimum, and a payload carrying a figure it does not
+   * need is a figure in one more place than it has to be.
+   */
+  compensationFloor?: {
+    amount: number
+    currency: string
+    period: "year" | "hour"
+  }
 }
 
 export type ProfessionalHandoffEvent =

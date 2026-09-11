@@ -294,6 +294,51 @@ describe("answerProfessionalQuestion", () => {
     expect(answer.answered).toBe(false);
   });
 
+  test("the salary floor is never speakable, under any profile", async () => {
+    // The floor now rides the compensation escalation, which means the
+    // figure exists in the fixture. It must still never reach a caller:
+    // compensation escalates under every profile, and the answer path
+    // reads knowledge records only — it never touches AvailabilityPolicy.
+    const policy = await getProfessionalKnowledgeProvider().getAvailabilityPolicy(
+      DEMO_ACCOUNT,
+    );
+    expect(policy?.compensationFloor?.amount).toBe(95000);
+
+    const profiles = getMockAgentProfiles().map((profile) =>
+      parseAgentProfilePolicy(profile.system_policy_json),
+    );
+    const questions = [
+      "What salary is he looking for?",
+      "What's his minimum?",
+      "What is his target compensation?",
+      "Would he accept 90k?",
+      "What are his rates?",
+      "Tell me about his employment preferences.",
+      "What roles is he targeting?",
+    ];
+
+    for (const profilePolicy of profiles) {
+      for (const question of questions) {
+        const answer = await answerProfessionalQuestion({
+          accountId: DEMO_ACCOUNT,
+          question,
+          policy: profilePolicy,
+        });
+        expect(answer.message).not.toMatch(/95[,.]?000|95k/i);
+      }
+    }
+
+    // And no knowledge record carries it either, so a future answer path
+    // cannot surface it by accident.
+    const records = await getProfessionalKnowledgeProvider().search({
+      accountId: DEMO_ACCOUNT,
+      query:
+        "salary compensation minimum rate pay prefer looking for experience skills projects",
+      profileType: "recruiter_receptionist",
+    });
+    expect(JSON.stringify(records)).not.toMatch(/95[,.]?000|95k/i);
+  });
+
   test("a stricter profile policy can refuse what the matrix would escalate", async () => {
     const answer = await answerProfessionalQuestion({
       accountId: DEMO_ACCOUNT,

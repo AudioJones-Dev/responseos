@@ -232,6 +232,10 @@ export const demoAvailabilityPolicy: AvailabilityPolicy = {
     "Implementation Manager",
   ],
   meetingDurationsMinutes: [15, 30, 45],
+  // From the resume's stated minimum. Deliberately not a knowledge
+  // record: see the field's contract in types.ts — it rides the
+  // compensation escalation and is never spoken.
+  compensationFloor: { amount: 95000, currency: "USD", period: "year" },
 }
 
 /**

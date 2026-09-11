@@ -10,6 +10,7 @@ import { err, ok, type Result } from "@/lib/data/result";
 import { withTenantScope } from "@/lib/data/session-helpers";
 import { getProfessionalHandoffProvider } from "@/lib/providers/professionalHandoff";
 import type { ProfessionalHandoffReceipt } from "@/lib/providers/professionalHandoff";
+import { getProfessionalKnowledgeProvider } from "@/lib/providers/professionalKnowledge";
 import { getSchedulingProvider } from "@/lib/providers/scheduling";
 import type { Appointment } from "@/types/appointment";
 import type {
@@ -126,6 +127,17 @@ export async function requestProfessionalEscalation(input: {
     reason: input.reason,
   });
 
+  // Only a compensation escalation carries the floor. Rates and
+  // references escalate too, and an annual salary minimum answers
+  // neither — attaching it there would put the figure in a payload that
+  // has no use for it.
+  const compensationFloor =
+    input.category === "compensation"
+      ? (await getProfessionalKnowledgeProvider().getAvailabilityPolicy(
+          accountId,
+        ))?.compensationFloor
+      : undefined;
+
   const receipt = await getProfessionalHandoffProvider().emit({
     name: "professional.escalation.requested",
     payload: {
@@ -135,6 +147,11 @@ export async function requestProfessionalEscalation(input: {
       contactId: input.contactId,
       opportunityId: input.opportunityId,
       question: input.question,
+      // Spread rather than assign: `compensationFloor: undefined` still
+      // creates the key, which `Object.hasOwn` and anything serialising
+      // the payload would see. The contract says absent, so make it
+      // absent.
+      ...(compensationFloor ? { compensationFloor } : {}),
     },
   });
   return ok(receipt);
