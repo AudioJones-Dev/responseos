@@ -852,6 +852,16 @@ Splitting by source was the alternative and does not work for this record: each 
 
 No answer behaviour changed: `sourceId` is provenance metadata, and `ProfessionalAnswer.sources` carries record ids.
 
+**Follow-up (2026-09-11, sixth) — the salary floor is stored, and travels only toward the owner.** The first follow-up left it out because storing it in a recruiter-facing knowledge store would add exposure without ever being spoken. The owner has since asked for it on the escalation, which is the one direction that objection does not apply to: it reaches the owner, not the caller, and it spares them looking the figure up at the moment the handoff lands.
+
+**Where it lives is the whole design.** `AvailabilityPolicy` gains an optional `compensationFloor`, and `ProfessionalEscalationRequestedPayload` gains the same shape. `AvailabilityPolicy` is the right home because **the answer path never reads it** — `answerProfessionalQuestion` resolves a category and answers from knowledge records, and no knowledge record carries the number. Combined with decision 6, under which compensation escalates on every profile including the strictest default, the figure being unspeakable is a property of the wiring rather than of anyone remembering.
+
+That property is asserted, not assumed. One test asks every seeded profile the compensation question several ways and requires the figure in none of the answers, then searches the knowledge records and requires it in none of them either — so a future answer path cannot surface it by accident. `preferredTitles` on the same object *is* interpolated into a spoken record, which is exactly why the field's contract says not to do that here.
+
+**Only `compensation` carries it.** Consulting rates and references escalate under decision 6 as well, and an annual salary minimum answers neither. A payload carrying a figure it has no use for is that figure in one more place than it needs to be.
+
+Two additive optional fields are the whole contract change. No authority entry, disclosure policy, or escalation rule moved, and no adapter is obliged to populate the field.
+
 ---
 
 ## ADR-0047 — The first prospect proof is an isolated, supervised post-call evidence chain

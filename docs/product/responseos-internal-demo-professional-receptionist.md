@@ -125,10 +125,23 @@ code change**: supply canonical records (or wire the Career OS adapter)
 and set `verified`. Re-import bumps `RESUME_IMPORTED_AT` or
 `PORTFOLIO_IMPORTED_AT`, which is how staleness stays visible.
 
-**Not stored on purpose.** The owner's salary floor is a compensation
-claim, and compensation escalates to a human by policy — holding the
-number in a recruiter-facing knowledge store would add exposure without
-ever being spoken.
+**Stored, but only ever travelling toward the owner.** The owner's
+salary floor rides the **compensation escalation**, so the handoff
+reaches the owner with the figure already attached rather than sending
+them back to look it up. It is still never spoken to a caller.
+
+That is structural rather than a matter of care. The floor lives on
+`AvailabilityPolicy`, which the answer path never reads — answers come
+from knowledge records alone — and compensation escalates under every
+profile, including the strictest. No knowledge record carries the
+number. A test asserts both halves: every profile, asked the
+compensation question every way, never says it; and no record contains
+it, so a future answer path cannot surface it by accident.
+
+Only a `compensation` escalation carries it. Rates and references
+escalate too, and an annual salary minimum answers neither — a payload
+carrying a figure it has no use for is that figure in one more place
+than it needs to be.
 
 ## 5. Agent profiles
 

@@ -1,9 +1,13 @@
-import { afterAll, beforeEach, describe, expect, test } from "vitest";
+import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
 import {
   AgentProfiles,
   ProfessionalOpportunities,
   RevenueMetrics,
 } from "@/lib/data";
+import {
+  NoopProfessionalHandoffProvider,
+  type ProfessionalHandoffEvent,
+} from "@/lib/providers/professionalHandoff";
 import {
   bookProfessionalAppointment,
   captureProfessionalOpportunity,
@@ -271,6 +275,46 @@ describe("professional opportunities", () => {
     });
     expect(audits).toHaveLength(1);
     expect(audits[0].reason).toBe("compensation question");
+  });
+
+  test("a compensation escalation carries the owner's floor, and nothing else does", async () => {
+    // The receipt deliberately does not echo the payload, so capture the
+    // emitted event itself — the payload is the whole contract.
+    const emitted: ProfessionalHandoffEvent[] = [];
+    const spy = vi
+      .spyOn(NoopProfessionalHandoffProvider.prototype, "emit")
+      .mockImplementation(async (event) => {
+        emitted.push(event);
+        return { providerId: "noop" as const, event: event.name, delivered: false };
+      });
+
+    try {
+      for (const category of ["compensation", "consulting_rates", "references"]) {
+        const result = await requestProfessionalEscalation({
+          accountId: DEMO_ACCOUNT,
+          reason: `${category} question`,
+          category,
+        });
+        expect(result.ok).toBe(true);
+      }
+    } finally {
+      spy.mockRestore();
+    }
+
+    const payloads = emitted.map((event) => event.payload);
+    expect(payloads).toHaveLength(3);
+
+    // Compensation gets the figure; the owner is the only direction it
+    // travels.
+    expect(payloads[0]).toMatchObject({
+      category: "compensation",
+      compensationFloor: { amount: 95000, currency: "USD", period: "year" },
+    });
+
+    // Rates and references escalate too, and an annual salary minimum
+    // answers neither.
+    expect(payloads[1]).not.toHaveProperty("compensationFloor.amount");
+    expect(payloads[2]).not.toHaveProperty("compensationFloor.amount");
   });
 
   test("a tenant user cannot escalate against another tenant", async () => {

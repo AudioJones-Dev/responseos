@@ -4,6 +4,13 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: carry the owner's salary floor on the compensation escalation
+
+- The owner's salary floor is now stored and attached to the **compensation escalation**, so the handoff reaches the owner with the figure already on it. The first ADR-0046 follow-up left it out because a recruiter-facing knowledge store would add exposure without the number ever being spoken; the escalation is the one direction that objection does not apply to, and the owner asked for it.
+- **It is still never speakable, structurally.** The floor lives on `AvailabilityPolicy`, which the answer path never reads — answers come from knowledge records, and no record carries the number — and compensation escalates under every profile including the strictest default (ADR-0046 decision 6). A test asks every seeded profile the compensation question several ways and requires the figure in none of the answers, then requires it in none of the knowledge records either, so a future answer path cannot surface it by accident.
+- **Only `compensation` carries it.** Rates and references escalate too, and an annual salary minimum answers neither; a payload carrying a figure it has no use for is that figure in one more place than it needs to be. An integration test captures the emitted events and asserts the split — verified failing without the change.
+- Two additive optional fields (`AvailabilityPolicy.compensationFloor`, `ProfessionalEscalationRequestedPayload.compensationFloor`) are the whole contract change. No authority entry, disclosure policy, or escalation rule moved, and no adapter is obliged to populate the field. Recorded in ADR-0046 as a sixth dated follow-up.
+
 ## Unreleased — fix: attribute the work-history record to both of its sources
 
 - The work-history record kept `sourceId: canonical_resume:…` after the previous change added five date ranges taken from the **portfolio résumé**, so it named a system that did not own half its claims. `ProfessionalKnowledgeResult.sourceId` exists so an answer can cite its evidence, and a body mixing two sources under one source id misattributes the half it does not own — the same failure as citing nothing. Raised in review on #158, after that PR merged.

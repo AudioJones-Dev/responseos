@@ -30,6 +30,22 @@ export interface ProfessionalEscalationRequestedPayload {
   contactId?: string
   opportunityId?: string
   question?: string
+  /**
+   * The owner's salary floor, attached only to a `compensation`
+   * escalation so the owner has the figure when the handoff reaches
+   * them. This is the one direction the number travels: toward the
+   * owner, never toward the caller.
+   *
+   * Absent on every other category. A references or consulting-rates
+   * escalation has no use for an annual salary minimum, and a payload
+   * that carries a figure it does not need is a figure in one more
+   * place than it has to be.
+   */
+  compensationFloor?: {
+    amount: number
+    currency: string
+    period: "year" | "hour"
+  }
 }
 
 export type ProfessionalHandoffEvent =
