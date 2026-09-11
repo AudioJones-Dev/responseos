@@ -45,7 +45,7 @@ describe("internal demo account classification", () => {
 
 describe("re-seeding an existing demo database", () => {
   test("refreshes the demo tenant's narrative instead of leaving a superseded story", async () => {
-    const [call, transcript, segment, qa, opportunity, account] =
+    const [call, transcript, segment, qa, opportunity, account, profile] =
       await Promise.all([
         prisma.call.findUnique({ where: { id: "call_tyrone_1" } }),
         prisma.callTranscript.findUnique({ where: { id: "xcr_tyrone_1" } }),
@@ -55,6 +55,9 @@ describe("re-seeding an existing demo database", () => {
           where: { id: "popp_tyrone_1" },
         }),
         prisma.account.findUnique({ where: { id: "org_tyrone_1" } }),
+        prisma.agentProfile.findUnique({
+          where: { id: "agent_tyrone_recruiter" },
+        }),
       ]);
 
     // Simulate a database seeded before the narrative was revised.
@@ -81,6 +84,20 @@ describe("re-seeding an existing demo database", () => {
         where: { id: "org_tyrone_1" },
         data: { website_url: "https://stale.example" },
       }),
+      // A policy is enforced, not just displayed: a database seeded
+      // before a disclosure changed must not keep enforcing the old one.
+      prisma.agentProfile.update({
+        where: { id: "agent_tyrone_recruiter" },
+        data: {
+          system_policy_json: {
+            allowedAppointmentTypes: ["recruiter_screen"],
+            allowedAssetTypes: [],
+            compensationDisclosure: "escalate",
+            referencesDisclosure: "escalate",
+            knowledgeFallback: "verified_only",
+          },
+        },
+      }),
     ]);
 
     seedTestDb();
@@ -94,6 +111,9 @@ describe("re-seeding an existing demo database", () => {
         where: { id: "popp_tyrone_1" },
       }),
       prisma.account.findUnique({ where: { id: "org_tyrone_1" } }),
+      prisma.agentProfile.findUnique({
+        where: { id: "agent_tyrone_recruiter" },
+      }),
     ]);
     expect(after.every((row) => row !== null)).toBe(true);
     expect(JSON.stringify(after)).not.toContain(STALE);
@@ -106,6 +126,12 @@ describe("re-seeding an existing demo database", () => {
     expect(after[4]?.summary).toBe(opportunity?.summary);
     expect(after[4]?.questions_asked).toEqual(opportunity?.questions_asked);
     expect(after[5]?.website_url).toBe(account?.website_url);
+    expect(after[6]?.system_policy_json).toEqual(profile?.system_policy_json);
+
+    // The policy is what gets enforced, so assert the restored value by
+    // its effect rather than trusting the blob comparison alone.
+    const restored = parseAgentProfilePolicy(after[6]?.system_policy_json);
+    expect(restored.allowedAssetTypes).toContain("email");
   });
 });
 

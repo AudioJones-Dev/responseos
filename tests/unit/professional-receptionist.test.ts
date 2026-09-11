@@ -345,15 +345,52 @@ describe("asset sharing", () => {
     expect(assets.every((asset) => asset.public)).toBe(true);
     expect(assets.map((asset) => asset.url)).toEqual([
       "https://tyronenelms.com",
+      "https://tyronenelms.com/resume",
+      "https://www.linkedin.com/in/audiojones/",
+      "https://github.com/AudioJones-Dev",
+      "mailto:tyrone@tyronenelms.com",
     ]);
   });
 
+  test("the email is registered but reaches a caller only by policy", async () => {
+    // Registration and disclosure are separate: the address sits in the
+    // approved list for every profile, and only one profile hands it out.
+    const shared = await listShareableAssets({
+      accountId: DEMO_ACCOUNT,
+      policy: recruiterPolicy,
+    });
+    expect(shared.map((asset) => asset.type)).toContain("email");
+
+    const consulting = parseAgentProfilePolicy(
+      getMockAgentProfiles().find((p) => p.slug === "consulting-receptionist")
+        ?.system_policy_json,
+    );
+    const withheld = await listShareableAssets({
+      accountId: DEMO_ACCOUNT,
+      policy: consulting,
+    });
+    expect(withheld.map((asset) => asset.type)).not.toContain("email");
+    expect(withheld.some((asset) => asset.url.startsWith("mailto:"))).toBe(
+      false,
+    );
+  });
+
   test("an asset whose type the profile disallows is withheld", async () => {
+    // Every registered type has an asset behind it, so this narrows a
+    // real list rather than passing on an empty one.
     const assets = await listShareableAssets({
       accountId: DEMO_ACCOUNT,
       policy: { ...recruiterPolicy, allowedAssetTypes: ["github"] },
     });
-    expect(assets).toEqual([]);
+    expect(assets.map((asset) => asset.url)).toEqual([
+      "https://github.com/AudioJones-Dev",
+    ]);
+
+    const withoutGithub = await listShareableAssets({
+      accountId: DEMO_ACCOUNT,
+      policy: { ...recruiterPolicy, allowedAssetTypes: ["linkedin"] },
+    });
+    expect(withoutGithub.map((asset) => asset.type)).toEqual(["linkedin"]);
   });
 
   test("the default policy shares nothing", async () => {

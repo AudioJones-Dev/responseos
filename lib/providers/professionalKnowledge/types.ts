@@ -50,6 +50,7 @@ export type ProfessionalAssetType =
   | "linkedin"
   | "github"
   | "case_study"
+  | "email"
 
 export interface ApprovedProfessionalAsset {
   id: string
