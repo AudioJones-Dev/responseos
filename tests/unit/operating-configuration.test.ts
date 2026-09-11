@@ -156,6 +156,20 @@ describe("operating configuration readiness", () => {
     expect(readiness.missing).toEqual(["contact.escalation"]);
   });
 
+  test("treats a required fact that carries no value as missing, but accepts an empty holiday list", () => {
+    const readiness = evaluateOperatingConfiguration(snapshot({
+      ...COMPLETE_SUPERVISED_CONFIGURATION,
+      operatingHours: [
+        operatorFact("operating_hours.weekly", null),
+        operatorFact("operating_hours.holidays", []),
+      ],
+      contactPaths: [operatorFact("contact.escalation.primary", {})],
+      policies: [operatorFact("policy.consent.disclosure", "   ")],
+    }), "SUPERVISED_PILOT");
+    expect(readiness.ready).toBe(false);
+    expect(readiness.missing).toEqual(["operating_hours.weekly", "contact.escalation", "policy.consent"]);
+  });
+
   test("blocks readiness while the snapshot records a conflict", () => {
     const readiness = evaluateOperatingConfiguration(snapshot({
       ...COMPLETE_SUPERVISED_CONFIGURATION,

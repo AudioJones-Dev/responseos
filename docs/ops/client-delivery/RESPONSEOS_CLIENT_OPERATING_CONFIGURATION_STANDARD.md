@@ -108,7 +108,10 @@ compiler accepts operator-entered facts.
 | `MANAGED_AUTONOMY` | same as `SUPERVISED_PILOT` |
 
 A requirement is met by a fact whose key equals it or begins with it followed by `.` — so
-`contact.escalation.primary` satisfies `contact.escalation`, and `contact.escalation_backup` does not.
+`contact.escalation.primary` satisfies `contact.escalation`, and `contact.escalation_backup` does not — and
+whose value is not empty. `null`, a blank string, and `{}` count as missing. An empty list is a value:
+`operating_hours.holidays: []` records that no holiday closures apply. The shape of a value is not checked, so
+the evaluator cannot tell a usable schedule or contact from a malformed one (§7).
 
 `evaluateOperatingConfiguration()` in `lib/agentExecution/operatingConfiguration.ts` returns `ready`,
 `missing`, and `conflicts`. A snapshot is ready only when nothing is missing **and** no conflict is recorded.
@@ -133,6 +136,7 @@ unsupported values start as `unknown`.
 |---|---|
 | A write path that creates `operator_configured` facts — service function, route, or operator UI | `ROADMAP` |
 | `evaluateOperatingConfiguration()` called by any activation path | `ROADMAP` |
+| Value shapes for the five required keys, and a write-path check that keeps placeholder values out (§6). Still open: what shape weekly-hours, holiday, coverage, escalation, and consent values take | `ROADMAP` — decided with the write path or the first activation caller, whichever lands first |
 | Operating configuration for any real tenant | Not started. The first — Florida Ramp & Lift — follows as a separate change once the operator approves its location and data-handling boundary ([`README.md`](./README.md)) |
 | Promotion that preserves tenant identity (ADR-0051 decision 2) | `ROADMAP` — `BootstrapPromotion` still creates a new `Account` |
 

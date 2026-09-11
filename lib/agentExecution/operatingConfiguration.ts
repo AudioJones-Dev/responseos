@@ -5,7 +5,8 @@ import { isExecutionMode, type ExecutionMode } from "./policy";
  * Operating configuration a tenant's memory snapshot must carry before a mode
  * may be activated (ADR-0051 decision 3). Each entry is a fact key, matched
  * exactly or as a whole leading segment, using the key prefixes the snapshot
- * compiler already routes into sections.
+ * compiler already routes into sections. A matching fact counts only if it
+ * carries a value; the value's shape is not checked.
  *
  * This reports readiness only. It never opens an activation gate; those stay
  * in `EXECUTION_MODE_ACTIVATION_GATES` and the roadmap.
@@ -31,6 +32,15 @@ export interface OperatingConfigurationReadiness {
   conflicts: string[];
 }
 
+// An empty list is a value: `operating_hours.holidays: []` records that no holiday closures apply.
+function hasValue(value: unknown): boolean {
+  if (value === null || value === undefined) return false;
+  if (typeof value === "string") return value.trim().length > 0;
+  if (Array.isArray(value)) return true;
+  if (typeof value === "object") return Object.keys(value).length > 0;
+  return true;
+}
+
 /**
  * An unrecognised mode is evaluated against the supervised requirements rather
  * than the demo lane's empty list, so a typo cannot report a tenant as ready.
@@ -52,7 +62,9 @@ export function evaluateOperatingConfiguration(
     ...memory.policies,
     ...memory.contactPaths,
     ...memory.brandVoice,
-  ].map((fact) => fact.key);
+  ]
+    .filter((fact) => hasValue(fact.value))
+    .map((fact) => fact.key);
   const missing = required.filter((requirement) => (
     !keys.some((key) => key === requirement || key.startsWith(`${requirement}.`))
   ));
