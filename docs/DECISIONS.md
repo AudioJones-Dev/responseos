@@ -834,6 +834,14 @@ Registration and disclosure stay separate, which is the point. The address sits 
 
 This is the only contract change in the three follow-ups: one additive union member and its validator entry. No authority entry, disclosure policy, or escalation rule moved, and the strict default still shares nothing.
 
+**Follow-up (2026-09-11, fourth) — the five undated roles are dated, and decision 5 is what shaped how.** The resume carries no dates for them, which is why they shipped undated. The owner's public portfolio résumé page does, so the ranges are transcribed from it. No type, policy, or authority rule changed.
+
+Two details are the decision doing its work rather than incidental:
+
+**Precision is not widened.** The portfolio gives some ranges as bare years and one as months. They are stored exactly that way — `2015`, not `2015-01`. A guessed month is an invented date, and an invented date is the specific thing decision 5 forbids; a plausible-looking one is worse than a coarse one because it cannot be spotted. A test pins the stored format to `YYYY` or `YYYY-MM` and asserts the year-only entries stay year-only.
+
+**One mapping is owner-confirmed, not transcribed.** The portfolio carries AHLO Inc. as a single consolidated entry spanning `2019 — 2023 · 2006 — 2007`, while the resume splits AHLO into two roles. Both sources order roles reverse-chronologically, which implies contractor → 2019–2023 and warehouse operations → 2006–2007, but neither source states the mapping. Under decision 5 a well-supported inference about an employment date is still an inference, so the owner confirmed it rather than the ranges being assigned by reasoning. The fixture records that this one mapping is owner-confirmed, so a later reader does not mistake it for transcription.
+
 ---
 
 ## ADR-0047 — The first prospect proof is an isolated, supervised post-call evidence chain

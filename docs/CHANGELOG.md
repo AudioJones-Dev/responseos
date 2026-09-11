@@ -4,6 +4,14 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: date the five undated work-history roles from the portfolio résumé
+
+- The five roles that shipped undated now carry ranges, transcribed from the account owner's public **portfolio résumé page** — the resume the fixture was built from carries no dates for them, which is why they were undated. Every role is now dated; no type, policy, or authority rule changed.
+- **Precision is not widened.** The source gives some ranges as bare years and one as months, and they are stored exactly that way — `2015`, not `2015-01`. A guessed month is an invented date, and a plausible-looking invented date is worse than a coarse real one because nobody can spot it. A test pins the stored format to `YYYY` or `YYYY-MM` and asserts the year-only entries stay year-only.
+- **One mapping is owner-confirmed rather than transcribed.** The portfolio carries AHLO Inc. as a single consolidated entry spanning two periods while the resume splits it into two roles, and neither source states which range belongs to which. Reverse-chronological ordering in both sources implies the split, but under ADR-0046 decision 5 a well-supported inference about an employment date is still an inference — so the owner confirmed it. The fixture records that this one mapping is owner-confirmed so a later reader does not mistake it for transcription.
+- The spoken work-history record now carries the dates too, and the test that formerly asserted "exactly two roles are dated" now asserts the invariants that still hold: source precision, and that only the two current roles lack an end date.
+- Recorded in ADR-0046 as a fourth dated follow-up.
+
 ## Unreleased — feat: register the owner's email as an approved asset, shared under the recruiter profile
 
 - `ProfessionalAssetType` gains **`email`**, and the address the owner publishes on his own site is registered in `demoApprovedAssets`. The previous change left it out pending the owner's decision; the owner made it.
