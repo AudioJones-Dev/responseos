@@ -61,6 +61,11 @@ const DEMO_CALL_SUMMARY =
   "Recruiter screen requested for a Business Systems Analyst role; two questions answered from the verified record, the project question captured for follow-up.";
 const DEMO_QA_NOTES =
   "Receptionist answered both skill questions from the verified record, declined the unsourced project question and captured it instead; recruiter screen scheduled.";
+const DEMO_OPPORTUNITY_QUESTIONS = [
+  "business systems experience",
+  "AI implementation experience",
+  "example project work",
+];
 const DEMO_OPPORTUNITY_SUMMARY =
   "Recruiter screen requested for a Business Systems Analyst role. The business systems and AI implementation questions were answered from the verified resume record; the project question has no verified source and was captured for follow-up rather than answered from memory.";
 
@@ -1230,7 +1235,7 @@ async function seedCallSegments() {
       id: "seg_tyrone_4",
       sequence: 4,
       speaker: "agent" as const,
-      text: "I don't have a verified project record to point to, so I've captured that for Tyrone. I can book the recruiter screen now.",
+      text: "I don't have a verified project record to point to, so I've captured that for Tyrone. Your recruiter screen is booked for Aug 13 at 2:00pm ET.",
       confidence: 0.96,
       offsetSeconds: 36,
     },
@@ -1508,7 +1513,10 @@ async function seedAgentProfiles() {
 async function seedProfessionalOpportunities() {
   await prisma.professionalOpportunity.upsert({
     where: { id: "popp_tyrone_1" },
-    update: { summary: DEMO_OPPORTUNITY_SUMMARY },
+    update: {
+      summary: DEMO_OPPORTUNITY_SUMMARY,
+      questions_asked: DEMO_OPPORTUNITY_QUESTIONS,
+    },
     create: {
       id: "popp_tyrone_1",
       account_id: "org_tyrone_1",
@@ -1525,11 +1533,7 @@ async function seedProfessionalOpportunities() {
       source_call_id: "call_tyrone_1",
       source_conversation_id: "conv_tyrone_1",
       appointment_id: "booking_tyrone_1",
-      questions_asked: [
-        "business systems experience",
-        "AI implementation experience",
-        "example project work",
-      ],
+      questions_asked: DEMO_OPPORTUNITY_QUESTIONS,
       summary: DEMO_OPPORTUNITY_SUMMARY,
       recommended_preparation: [
         "review the company platform",

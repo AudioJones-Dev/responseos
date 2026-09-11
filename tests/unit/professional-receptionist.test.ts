@@ -119,6 +119,36 @@ describe("answerProfessionalQuestion", () => {
     expect(answer.answered).toBe(true);
   });
 
+  test("a named skill never re-routes a project question away from its fallback", async () => {
+    // Projects have no canonical source. A skill name in the question
+    // must not let the skills record stand in for the missing one.
+    const answer = await answerProfessionalQuestion({
+      accountId: DEMO_ACCOUNT,
+      question: "What projects has he built with Salesforce?",
+      policy: recruiterPolicy,
+    });
+    expect(answer.category).toBe("projects");
+    expect(answer.answered).toBe(false);
+    expect(answer.message).toBe(unverifiedFallback(OWNER));
+  });
+
+  test("plurals match in both directions", async () => {
+    // The verified skill is "CRM Systems"; a caller saying "CRM system"
+    // must still reach it, and vice versa.
+    for (const question of [
+      "Has he worked with CRM system?",
+      "Has he worked with CRM systems?",
+    ]) {
+      const answer = await answerProfessionalQuestion({
+        accountId: DEMO_ACCOUNT,
+        question,
+        policy: recruiterPolicy,
+      });
+      expect(answer.category).toBe("skills");
+      expect(answer.answered).toBe(true);
+    }
+  });
+
   test("a named skill never re-routes a gated question", async () => {
     const gated: Array<[string, string]> = [
       ["What salary does he want for Salesforce work?", "compensation"],

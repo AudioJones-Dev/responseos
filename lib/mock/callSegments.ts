@@ -79,7 +79,7 @@ export const mockCallSegments: CallSegment[] = [
     call_id: "call_tyrone_1",
     sequence: 4,
     speaker: "agent",
-    text: "I don't have a verified project record to point to, so I've captured that for Tyrone. I can book the recruiter screen now.",
+    text: "I don't have a verified project record to point to, so I've captured that for Tyrone. Your recruiter screen is booked for Aug 13 at 2:00pm ET.",
     confidence: 0.96,
     started_at: demoSegmentAt(36),
     ended_at: demoSegmentAt(46),

@@ -67,9 +67,13 @@ const INTENT_RULES: Array<{ intent: ProfessionalIntent; keywords: string[] }> = 
  * phrases.
  */
 export function matchesKeyword(text: string, keyword: string): boolean {
-  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  // A trailing plural still counts — callers ask about "certifications"
-  // and "projects" — but a keyword buried mid-word does not.
+  // Plurals match in both directions — "certification" finds
+  // "certifications", and the skill "CRM Systems" finds "CRM system" —
+  // by comparing on the singular stem. A keyword buried mid-word still
+  // does not match.
+  const stem =
+    keyword.length > 3 && keyword.endsWith("s") ? keyword.slice(0, -1) : keyword;
+  const escaped = stem.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   return new RegExp(`(^|[^a-z0-9])${escaped}s?([^a-z0-9]|$)`, "i").test(text);
 }
 

@@ -50,13 +50,15 @@ function applyPolicy(
  * ClickUp?" classifies as work history, but the skills record is the
  * better answer.
  *
- * The gated categories are absent on purpose: a skill name appearing in
- * "what salary does he want for Salesforce work?" must never turn a
- * compensation, rates, reference, private, or calendar question into an
- * answerable one.
+ * Two kinds of category are absent on purpose. The gated ones, so a
+ * skill name in "what salary does he want for Salesforce work?" cannot
+ * turn a compensation, rates, reference, private, or calendar question
+ * into an answerable one. And `projects`, so "what projects has he
+ * built with Salesforce?" still gets the honest "no verified project
+ * record" fallback instead of being answered from the skills list.
  */
 const SKILL_NAME_MAY_OVERRIDE: ReadonlySet<ProfessionalKnowledgeCategory> =
-  new Set(["unknown", "work_history", "projects", "profile"]);
+  new Set(["unknown", "work_history", "profile"]);
 
 /**
  * Resolves the claim category, consulting the account's own verified
