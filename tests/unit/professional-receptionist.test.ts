@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import {
   classifyProfessionalQuestion,
   detectProfessionalIntent,
+  matchesKeyword,
   unverifiedFallback,
   answerProfessionalQuestion,
   listProfessionalMeetingWindows,
@@ -71,10 +72,132 @@ describe("answerProfessionalQuestion", () => {
     expect(answer.sources.length).toBeGreaterThan(0);
   });
 
-  test("never fabricates a career claim when no verified record exists", async () => {
+  test("answers work history, skills, education and certifications from the imported resume", async () => {
+    const cases: Array<[string, string]> = [
+      ["Tell me about his work history.", "Florida Ramp & Lift"],
+      ["What skills does he have?", "Workflow Automation"],
+      ["What degree does he hold?", "American Academy"],
+      ["Which certifications does he hold?", "coursera.org"],
+    ];
+    for (const [question, expected] of cases) {
+      const answer = await answerProfessionalQuestion({
+        accountId: DEMO_ACCOUNT,
+        question,
+        policy: recruiterPolicy,
+      });
+      expect(answer.answered).toBe(true);
+      expect(answer.sources.length).toBeGreaterThan(0);
+      expect(answer.message).toContain(expected);
+    }
+  });
+
+  test("routes a question naming a skill directly, without the word 'skill'", async () => {
+    for (const question of [
+      "Does he know Salesforce?",
+      "Any experience with ClickUp?",
+      "How much SharePoint has he done?",
+    ]) {
+      const answer = await answerProfessionalQuestion({
+        accountId: DEMO_ACCOUNT,
+        question,
+        policy: recruiterPolicy,
+      });
+      expect(answer.category).toBe("skills");
+      expect(answer.answered).toBe(true);
+    }
+  });
+
+  test("a keyword buried inside a longer word never triggers a refusal", async () => {
+    // "age" is a substring of "management": plain substring matching
+    // classified this as a private question and refused it.
     const answer = await answerProfessionalQuestion({
       accountId: DEMO_ACCOUNT,
-      question: "Tell me about his work history.",
+      question: "How is he with stakeholder management?",
+      policy: recruiterPolicy,
+    });
+    expect(answer.category).toBe("skills");
+    expect(answer.authority).not.toBe("refuse");
+    expect(answer.answered).toBe(true);
+  });
+
+  test("a named skill never re-routes a project question away from its fallback", async () => {
+    // Projects have no canonical source. A skill name in the question
+    // must not let the skills record stand in for the missing one.
+    const answer = await answerProfessionalQuestion({
+      accountId: DEMO_ACCOUNT,
+      question: "What projects has he built with Salesforce?",
+      policy: recruiterPolicy,
+    });
+    expect(answer.category).toBe("projects");
+    expect(answer.answered).toBe(false);
+    expect(answer.message).toBe(unverifiedFallback(OWNER));
+  });
+
+  test("a word that merely ends in 's' is matched exactly, never truncated", async () => {
+    // "address" must not be stemmed to "addres": a truncated match on a
+    // keyword that governs a refusal is a worse answer, not a safer one.
+    expect(matchesKeyword("what is his home address?", "home address")).toBe(
+      true,
+    );
+    expect(matchesKeyword("what is his home addres?", "home address")).toBe(
+      false,
+    );
+    expect(matchesKeyword("tell me about the busines", "business")).toBe(false);
+    expect(matchesKeyword("tell me about the business", "business")).toBe(true);
+    // Irregular plurals are not derived — "analysi" must never match.
+    expect(matchesKeyword("his analysi work", "analysis")).toBe(false);
+    expect(matchesKeyword("his analysis work", "analysis")).toBe(true);
+  });
+
+  test("plurals match in both directions", async () => {
+    // The verified skill is "CRM Systems"; a caller saying "CRM system"
+    // must still reach it, and vice versa.
+    for (const question of [
+      "Has he worked with CRM system?",
+      "Has he worked with CRM systems?",
+    ]) {
+      const answer = await answerProfessionalQuestion({
+        accountId: DEMO_ACCOUNT,
+        question,
+        policy: recruiterPolicy,
+      });
+      expect(answer.category).toBe("skills");
+      expect(answer.answered).toBe(true);
+    }
+  });
+
+  test("a named skill never re-routes a gated question", async () => {
+    const gated: Array<[string, string]> = [
+      ["What salary does he want for Salesforce work?", "compensation"],
+      ["What's his hourly rate for ClickUp implementation?", "consulting_rates"],
+      ["Can I get a reference for his Salesforce work?", "references"],
+      ["What's his personal phone number for Notion questions?", "personal"],
+    ];
+    for (const [question, expected] of gated) {
+      const answer = await answerProfessionalQuestion({
+        accountId: DEMO_ACCOUNT,
+        question,
+        policy: recruiterPolicy,
+      });
+      expect(answer.category).toBe(expected);
+      expect(answer.answered).toBe(false);
+    }
+  });
+
+  test("a skill named by another tenant's caller is not answered from this tenant's list", async () => {
+    const answer = await answerProfessionalQuestion({
+      accountId: "org_mock_1",
+      question: "Does he know Salesforce?",
+      policy: recruiterPolicy,
+    });
+    expect(answer.answered).toBe(false);
+  });
+
+  test("never fabricates a career claim when no verified record exists", async () => {
+    // Projects are the one category with no canonical source.
+    const answer = await answerProfessionalQuestion({
+      accountId: DEMO_ACCOUNT,
+      question: "What projects has he built?",
       policy: recruiterPolicy,
     });
     expect(answer.answered).toBe(false);
@@ -161,9 +284,17 @@ describe("asset sharing", () => {
       policy: recruiterPolicy,
     });
     expect(assets.every((asset) => asset.public)).toBe(true);
-    expect(assets.map((asset) => asset.id)).not.toContain(
-      "asset_private_case_study_1",
-    );
+    expect(assets.map((asset) => asset.url)).toEqual([
+      "https://tyronenelms.com",
+    ]);
+  });
+
+  test("an asset whose type the profile disallows is withheld", async () => {
+    const assets = await listShareableAssets({
+      accountId: DEMO_ACCOUNT,
+      policy: { ...recruiterPolicy, allowedAssetTypes: ["github"] },
+    });
+    expect(assets).toEqual([]);
   });
 
   test("the default policy shares nothing", async () => {
@@ -246,7 +377,7 @@ describe("opportunity summary", () => {
       questions_asked: [
         "business systems experience",
         "AI implementation experience",
-        "stakeholder management",
+        "example project work",
       ],
       appointment: { status: "none", datetime: undefined },
       recommended_preparation: [
@@ -274,14 +405,30 @@ describe("provider mocks work without credentials", () => {
     ).toEqual([]);
   });
 
-  test("every placeholder career record is marked unverified", async () => {
+  test("imported resume records are verified and carry no invented dates", async () => {
     const provider = getProfessionalKnowledgeProvider();
     const experience = await provider.getExperience(DEMO_ACCOUNT);
-    const projects = await provider.getProjects(DEMO_ACCOUNT);
     const skills = await provider.getSkills(DEMO_ACCOUNT);
-    expect(experience.every((record) => !record.verified)).toBe(true);
+
+    expect(experience.length).toBeGreaterThan(0);
+    expect(skills.length).toBeGreaterThan(0);
+    expect(experience.every((record) => record.verified)).toBe(true);
+    expect(skills.every((record) => record.verified)).toBe(true);
+
+    // The resume dates only two roles; the rest must stay undated rather
+    // than carry a guess.
+    const dated = experience.filter((record) => record.startDate);
+    expect(dated.map((record) => record.company).sort()).toEqual([
+      "AJ Digital / Freelance Consulting",
+      "Florida Ramp & Lift",
+    ]);
+  });
+
+  test("records with no canonical source stay unverified", async () => {
+    const projects = await getProfessionalKnowledgeProvider().getProjects(
+      DEMO_ACCOUNT,
+    );
     expect(projects.every((record) => !record.verified)).toBe(true);
-    expect(skills.every((record) => !record.verified)).toBe(true);
   });
 
   test("handoff provider is a no-op that reports non-delivery", async () => {

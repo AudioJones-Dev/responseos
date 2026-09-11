@@ -10,7 +10,13 @@ import {
   requestProfessionalEscalation,
 } from "@/lib/professional/intake";
 import { parseAgentProfilePolicy } from "@/lib/professional";
-import { disconnectTestDb, prisma, resetAndSeedTestDb, setDevSession } from "./setup";
+import {
+  disconnectTestDb,
+  prisma,
+  resetAndSeedTestDb,
+  seedTestDb,
+  setDevSession,
+} from "./setup";
 
 const DEMO_ACCOUNT = "org_tyrone_1";
 
@@ -34,6 +40,72 @@ describe("internal demo account classification", () => {
       ["org_responseos_demo", "sandbox"],
       ["org_tyrone_1", "internal_demo"],
     ]);
+  });
+});
+
+describe("re-seeding an existing demo database", () => {
+  test("refreshes the demo tenant's narrative instead of leaving a superseded story", async () => {
+    const [call, transcript, segment, qa, opportunity, account] =
+      await Promise.all([
+        prisma.call.findUnique({ where: { id: "call_tyrone_1" } }),
+        prisma.callTranscript.findUnique({ where: { id: "xcr_tyrone_1" } }),
+        prisma.callSegment.findUnique({ where: { id: "seg_tyrone_2" } }),
+        prisma.qaLog.findUnique({ where: { id: "qa_tyrone_1" } }),
+        prisma.professionalOpportunity.findUnique({
+          where: { id: "popp_tyrone_1" },
+        }),
+        prisma.account.findUnique({ where: { id: "org_tyrone_1" } }),
+      ]);
+
+    // Simulate a database seeded before the narrative was revised.
+    const STALE = "STALE — superseded narrative";
+    await Promise.all([
+      prisma.call.update({
+        where: { id: "call_tyrone_1" },
+        data: { transcript: STALE, summary: STALE },
+      }),
+      prisma.callTranscript.update({
+        where: { id: "xcr_tyrone_1" },
+        data: { inline_text: STALE },
+      }),
+      prisma.callSegment.update({
+        where: { id: "seg_tyrone_2" },
+        data: { text: STALE },
+      }),
+      prisma.qaLog.update({ where: { id: "qa_tyrone_1" }, data: { notes: STALE } }),
+      prisma.professionalOpportunity.update({
+        where: { id: "popp_tyrone_1" },
+        data: { summary: STALE, questions_asked: [STALE] },
+      }),
+      prisma.account.update({
+        where: { id: "org_tyrone_1" },
+        data: { website_url: "https://stale.example" },
+      }),
+    ]);
+
+    seedTestDb();
+
+    const after = await Promise.all([
+      prisma.call.findUnique({ where: { id: "call_tyrone_1" } }),
+      prisma.callTranscript.findUnique({ where: { id: "xcr_tyrone_1" } }),
+      prisma.callSegment.findUnique({ where: { id: "seg_tyrone_2" } }),
+      prisma.qaLog.findUnique({ where: { id: "qa_tyrone_1" } }),
+      prisma.professionalOpportunity.findUnique({
+        where: { id: "popp_tyrone_1" },
+      }),
+      prisma.account.findUnique({ where: { id: "org_tyrone_1" } }),
+    ]);
+    expect(after.every((row) => row !== null)).toBe(true);
+    expect(JSON.stringify(after)).not.toContain(STALE);
+
+    expect(after[0]?.transcript).toBe(call?.transcript);
+    expect(after[0]?.summary).toBe(call?.summary);
+    expect(after[1]?.inline_text).toBe(transcript?.inline_text);
+    expect(after[2]?.text).toBe(segment?.text);
+    expect(after[3]?.notes).toBe(qa?.notes);
+    expect(after[4]?.summary).toBe(opportunity?.summary);
+    expect(after[4]?.questions_asked).toEqual(opportunity?.questions_asked);
+    expect(after[5]?.website_url).toBe(account?.website_url);
   });
 });
 

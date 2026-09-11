@@ -12,8 +12,9 @@
 > telephony for this tenant, any public "talk to my AI assistant"
 > surface.
 > `PROHIBITED_CLAIM` — that this tenant proves provider portability
-> (ADR-0043), that the receptionist answers verified career questions
-> today (it does not; see §4), or that any live provider is wired.
+> (ADR-0043), that the receptionist can speak to categories with no
+> canonical source (projects; see §4), or that any live provider is
+> wired.
 
 ## 1. What this is
 
@@ -59,28 +60,43 @@ Recruiter / prospect
 Career truth never enters this schema. Career workflows never read this
 schema. The two interfaces above are the entire contract.
 
-## 4. Why the receptionist declines most career questions today
+## 4. What the receptionist can and cannot say
 
 Every knowledge record carries a `verified` flag, and an answer requires
 a record that is **both verified and in the category asked about**.
-The shipped fixture marks work history, projects, skills, education, and
-certifications as **unverified placeholders**, because fabricating an
-employer, a date, a degree, or a certification is prohibited
-(`AGENTS.md`; doctrine §2.2, §20).
+Fabricating an employer, a date, a degree, or a certification is
+prohibited (`AGENTS.md`; doctrine §2.2, §20), so a category with no
+canonical source produces the fallback line rather than a guess.
+
+The fixture now carries the account owner's canonical resume, imported
+on the date in `RESUME_IMPORTED_AT`. Nothing in it is inferred: roles
+the resume carries without dates are stored without dates, skills arrive
+as the flat list the source supplies, and no achievement or metric is
+written that the source does not state.
 
 So the receptionist today:
 
-- **answers** who it represents, engagement availability, and which
-  public assets can be shared;
+- **answers** who it represents, work history, skills, education,
+  certifications (with their Coursera verification links), the roles
+  being targeted, engagement availability, and which public assets can
+  be shared;
 - **falls back** — "I don't have verified information available for
-  that…" — on every unsourced career claim;
+  that…" — on **projects**, the one category with no canonical source
+  yet;
 - **escalates** compensation, consulting rates, and references;
 - **refuses** private questions;
 - **looks up** interview availability against the calendar rather than
   quoting a time from memory.
 
-Turning career answers on is a **data change, not a code change**: supply
-canonical records (or wire the Career OS adapter) and flip `verified`.
+Adding or retiring an answerable category stays a **data change, not a
+code change**: supply canonical records (or wire the Career OS adapter)
+and set `verified`. Re-import bumps `RESUME_IMPORTED_AT`, which is how
+staleness stays visible.
+
+**Not stored on purpose.** The owner's salary floor is a compensation
+claim, and compensation escalates to a human by policy — holding the
+number in a recruiter-facing knowledge store would add exposure without
+ever being spoken.
 
 ## 5. Agent profiles
 
