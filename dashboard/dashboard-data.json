@@ -746,7 +746,7 @@
       "due": "2026-09-11"
     },
     {
-      "id": "V-14",
+      "id": "V-16",
       "phase": "v0.3 · Demo Scope",
       "title": "Consolidate normalizeE164 into one shared helper (caller-resolution prerequisite)",
       "owner": "Claude Code",
