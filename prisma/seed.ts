@@ -56,18 +56,19 @@ const DEMO_SMS_REPLY_AT = new Date("2026-08-03T14:31:00.000Z");
 // superseded story in place.
 const DEMO_SITE_URL = "https://tyronenelms.com";
 const DEMO_CALL_TRANSCRIPT =
-  "Recruiter asked about business systems experience, AI implementation experience and example project work. The first two were answered from the verified resume record; the project question has no verified source, so it was captured for follow-up, and a recruiter screen was scheduled.";
+  "Recruiter asked about business systems experience, AI implementation experience, example project work and target compensation. The first three were answered from verified records; compensation escalates to Tyrone by policy, so it was captured rather than answered, and a recruiter screen was scheduled.";
 const DEMO_CALL_SUMMARY =
-  "Recruiter screen requested for a Business Systems Analyst role; two questions answered from the verified record, the project question captured for follow-up.";
+  "Recruiter screen requested for a Business Systems Analyst role; three questions answered from verified records, the compensation question escalated to Tyrone.";
 const DEMO_QA_NOTES =
-  "Receptionist answered both skill questions from the verified record, declined the unsourced project question and captured it instead; recruiter screen scheduled.";
+  "Receptionist answered the skill and project questions from verified records, escalated compensation instead of quoting a number, and scheduled a recruiter screen.";
 const DEMO_OPPORTUNITY_QUESTIONS = [
   "business systems experience",
   "AI implementation experience",
   "example project work",
+  "target compensation",
 ];
 const DEMO_OPPORTUNITY_SUMMARY =
-  "Recruiter screen requested for a Business Systems Analyst role. The business systems and AI implementation questions were answered from the verified resume record; the project question has no verified source and was captured for follow-up rather than answered from memory.";
+  "Recruiter screen requested for a Business Systems Analyst role. The business systems, AI implementation and project questions were answered from verified records; compensation always reaches Tyrone directly, so it was captured for him rather than answered.";
 
 async function seedAccounts() {
   await prisma.account.upsert({
@@ -1227,7 +1228,7 @@ async function seedCallSegments() {
       id: "seg_tyrone_3",
       sequence: 3,
       speaker: "caller" as const,
-      text: "Can you point me at a project he has shipped? And let's get a recruiter screen booked.",
+      text: "Can you point me at a project he has built? What's his target compensation? And let's get a recruiter screen booked.",
       confidence: 0.95,
       offsetSeconds: 24,
     },
@@ -1235,7 +1236,7 @@ async function seedCallSegments() {
       id: "seg_tyrone_4",
       sequence: 4,
       speaker: "agent" as const,
-      text: "I don't have a verified project record to point to, so I've captured that for Tyrone. Your recruiter screen is booked for Aug 13 at 2:00pm ET.",
+      text: "Florida Ramp & Lift FieldOps is an active engagement — a contractor portal covering jobs, safety steps, field evidence and approvals; it's on his site at tyronenelms.com/work. Compensation is Tyrone's to answer directly, so I've noted it for him. Your recruiter screen is booked for Aug 13 at 2:00pm ET.",
       confidence: 0.96,
       offsetSeconds: 36,
     },

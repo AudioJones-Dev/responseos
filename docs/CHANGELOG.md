@@ -4,6 +4,14 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: import the portfolio project records into the internal demo tenant's knowledge fixture
+
+- Added three `verified: true` project records to `lib/providers/professionalKnowledge/fixture.ts`, transcribed from the account owner's public portfolio at `tyronenelms.com/work` — already this tenant's one approved asset. The resume carries no project data, which is why the category had stayed unanswerable. `PORTFOLIO_IMPORTED_AT` records when the page was read.
+- **Un-deployed work is not described as shipped.** Two of the three are internal systems with no external customers and no production deployment, so each record's summary carries the status its own source page states ("active engagement", "internal system"), and a test asserts the un-deployed one is never spoken as shipped (doctrine §20). The status rides in the summary rather than a new `ProjectRecord` field — nothing in the runtime branches on it.
+- **`case_studies` is now the unsourced category**, inheriting the role `projects` played: the fallback, escalation, and refusal paths stay exercised and tested. A regression test pins the category filter, since the project record shares the `case study` keyword but must never satisfy a case-study question.
+- Updated the seeded demo narrative — call transcript, both agent turns, QA note, and opportunity summary — which asserted the project question had been declined for want of a source. It is now answered, and the demo call shows compensation escalating instead, which is structural under ADR-0046 decision 6 and so cannot go stale as more data lands.
+- **No interface, policy, or authority rule changed** — no type, claim-authority entry, disclosure policy, or escalation behaviour moved. Recorded in ADR-0046 as a dated follow-up.
+
 ## Unreleased — feat: import the canonical resume into the internal demo tenant's knowledge fixture
 
 - Replaced the placeholder career records in `lib/providers/professionalKnowledge/fixture.ts` with the account owner's canonical resume (imported 2026-09-10, recorded in `RESUME_IMPORTED_AT`). Work history, skills, education, certifications, and targeted roles are now `verified: true` and answerable; the receptionist cites them like any other grounded claim.

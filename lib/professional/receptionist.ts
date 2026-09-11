@@ -54,8 +54,9 @@ function applyPolicy(
  * skill name in "what salary does he want for Salesforce work?" cannot
  * turn a compensation, rates, reference, private, or calendar question
  * into an answerable one. And `projects`, so "what projects has he
- * built with Salesforce?" still gets the honest "no verified project
- * record" fallback instead of being answered from the skills list.
+ * built with Salesforce?" is answered from the project records rather
+ * than from the skill list — naming a skill inside a project question
+ * does not make it a question about the skill.
  */
 const SKILL_NAME_MAY_OVERRIDE: ReadonlySet<ProfessionalKnowledgeCategory> =
   new Set(["unknown", "work_history", "profile"]);

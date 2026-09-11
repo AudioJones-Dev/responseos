@@ -24,9 +24,10 @@ export const mockProfessionalOpportunities: ProfessionalOpportunity[] = [
       "business systems experience",
       "AI implementation experience",
       "example project work",
+      "target compensation",
     ],
     summary:
-      "Recruiter screen requested for a Business Systems Analyst role. The business systems and AI implementation questions were answered from the verified resume record; the project question has no verified source and was captured for follow-up rather than answered from memory.",
+      "Recruiter screen requested for a Business Systems Analyst role. The business systems, AI implementation and project questions were answered from verified records; compensation always reaches Tyrone directly, so it was captured for him rather than answered.",
     recommended_preparation: [
       "review the company platform",
       "prepare an operations case study",
