@@ -147,7 +147,11 @@ export async function requestProfessionalEscalation(input: {
       contactId: input.contactId,
       opportunityId: input.opportunityId,
       question: input.question,
-      compensationFloor,
+      // Spread rather than assign: `compensationFloor: undefined` still
+      // creates the key, which `Object.hasOwn` and anything serialising
+      // the payload would see. The contract says absent, so make it
+      // absent.
+      ...(compensationFloor ? { compensationFloor } : {}),
     },
   });
   return ok(receipt);

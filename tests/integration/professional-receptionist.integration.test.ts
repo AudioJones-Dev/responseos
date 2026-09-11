@@ -312,9 +312,13 @@ describe("professional opportunities", () => {
     });
 
     // Rates and references escalate too, and an annual salary minimum
-    // answers neither.
-    expect(payloads[1]).not.toHaveProperty("compensationFloor.amount");
-    expect(payloads[2]).not.toHaveProperty("compensationFloor.amount");
+    // answers neither. The key must be absent rather than present-and-
+    // undefined: `Object.hasOwn` and anything serialising the payload
+    // would see it, and the contract says absent.
+    expect(payloads[1]).not.toHaveProperty("compensationFloor");
+    expect(payloads[2]).not.toHaveProperty("compensationFloor");
+    expect(Object.hasOwn(payloads[1], "compensationFloor")).toBe(false);
+    expect(Object.hasOwn(payloads[2], "compensationFloor")).toBe(false);
   });
 
   test("a tenant user cannot escalate against another tenant", async () => {
