@@ -687,13 +687,24 @@
       "phase": "v0.3 · Demo Scope",
       "title": "Import portfolio project records into receptionist knowledge fixture",
       "owner": "Claude Code",
-      "status": "Review",
+      "status": "Done",
       "progress": 100,
       "priority": "Med",
       "start": "2026-09-11",
       "due": "2026-09-11",
       "ref": 153,
       "refType": "pull"
+    },
+    {
+      "id": "V-11",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Register remaining approved assets; reconcile docstring check with AGENTS.md",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 100,
+      "priority": "Med",
+      "start": "2026-09-11",
+      "due": "2026-09-11"
     },
     {
       "id": "Q-01",

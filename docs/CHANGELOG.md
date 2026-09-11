@@ -4,6 +4,14 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: register the remaining approved assets and stop the docstring check contradicting AGENTS.md
+
+- Registered the **résumé page, LinkedIn, and GitHub** in `demoApprovedAssets`, each linked from the same public portfolio the project records came from. This became load-bearing rather than cosmetic in the previous change: answer bodies now carry no links, so `listShareableAssets` is the only route a URL takes to a caller, and an unregistered asset cannot be offered however the profile is configured.
+- The owner's **email address is deliberately not registered.** It is linked on the same page, but handing a personal address to an unscreened caller is the owner's decision, and no `ProfessionalAssetType` covers it.
+- Two asset tests previously passed only because no asset of the relevant type existed — `allowedAssetTypes: ["github"]` returned `[]` because there was no GitHub asset, not because the filter worked. Both now narrow a populated list, so they assert the filter rather than the absence.
+- Added a repository `.coderabbit.yaml` turning the **docstring-coverage pre-merge check off**. It failed on every PR in this repo and its only remedy was to write the comments `AGENTS.md` explicitly tells contributors not to write; the threshold counts functions carrying a docstring rather than whether the ones needing an explanation got one. CodeRabbit had already recorded the conflict as a learning. Organization UI settings continue to apply to everything the file does not set.
+- Recorded in ADR-0046 as a second dated follow-up. No type, claim-authority entry, disclosure policy, or escalation rule moved.
+
 ## Unreleased — feat: import the portfolio project records into the internal demo tenant's knowledge fixture
 
 - Added three `verified: true` project records to `lib/providers/professionalKnowledge/fixture.ts`, transcribed from the account owner's public portfolio at `tyronenelms.com/work` — already this tenant's one approved asset. The resume carries no project data, which is why the category had stayed unanswerable. `PORTFOLIO_IMPORTED_AT` records when the page was read.

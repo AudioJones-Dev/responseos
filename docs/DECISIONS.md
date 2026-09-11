@@ -824,6 +824,10 @@ One of the three projects is named Career OS, which does **not** touch decision 
 
 `case_studies` is now the category with no canonical source, and it inherits the role `projects` used to play: the fallback, escalation, and refusal paths stay exercised and tested. The seeded demo narrative moved with the behaviour — the recruiter's project question is now answered, and the call instead shows compensation escalating, which is structural under decision 6 and so cannot go stale as more data lands.
 
+**Follow-up (2026-09-11, second) — the approved-asset list is now the only route a link takes.** Review of the project import found that a URL written into a knowledge-record body is spoken whatever the answering profile permits, which bypassed the per-profile filter in `listShareableAssets` — `allowedAssetTypes: []` is both the strict default and a seeded profile. Answer bodies now carry no links at all, which sharpens decision 9: the agent profile does not merely *configure* asset sharing, it is the sole gate, and an asset absent from `demoApprovedAssets` is one the receptionist cannot offer however the profile is set.
+
+That made the list's contents load-bearing rather than illustrative, so the résumé, LinkedIn, and GitHub links carried on the same public portfolio are now registered alongside the site. The owner's email address is linked there too and is deliberately unregistered: handing a personal address to an unscreened caller is the owner's call, and no `ProfessionalAssetType` covers it. Nothing here changes a type, an authority entry, or a disclosure policy.
+
 ---
 
 ## ADR-0047 — The first prospect proof is an isolated, supervised post-call evidence chain
