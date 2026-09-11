@@ -5,37 +5,37 @@ import { AtmosphereBackground } from "@/components/layout/AtmosphereBackground";
 const PILLARS = [
   {
     title: "Capture",
-    body: "Every missed call, SMS reply, web form, and AI-answered call is logged as a lead event — nothing falls through.",
+    body: "Missed calls, text replies, and web forms land in one place, so demand doesn't sit unworked.",
   },
   {
     title: "Qualify",
-    body: "Service area, urgency, decision-maker, budget timeline. Each lead gets a 0–100 score before anyone lifts a finger.",
+    body: "Service area, urgency, decision-maker, and timeline are checked first, so your team calls the right leads first.",
   },
   {
     title: "Recover",
-    body: "Automated follow-up, booking, and quote flows turn missed demand into booked, revenue-attributed jobs.",
+    body: "Follow-up, booking, and quote flows are designed to turn missed demand into booked work.",
   },
   {
     title: "Report",
-    body: "Recovered revenue, ROI multiple, response time, and admin hours saved — reconciled every month.",
+    body: "A monthly report that keeps estimated revenue separate from verified outcomes, alongside ROI, response time, and hours saved.",
   },
 ];
 
 const PROOF = [
-  { value: "< 60s", label: "First response to missed demand" },
-  { value: "24/7", label: "Capture across calls, SMS, and forms" },
-  { value: "1 ledger", label: "Every event tied to recovered revenue" },
+  { value: "Under 60s", label: "Target first response to missed demand" },
+  { value: "24/7", label: "Designed coverage across calls, texts, and forms" },
+  { value: "9 KPIs", label: "What the monthly report is designed to track" },
 ];
 
 // OFFER — the commercial philosophy (docs/README.md). RECOVER is the delivery loop.
 const OFFER = [
   {
     title: "Outcomes First",
-    body: "We sell recovered revenue and booked jobs — not AI features or seat licenses.",
+    body: "We price around verified outcomes and booked work — not AI features or seat licenses.",
   },
   {
     title: "Front the Work",
-    body: "We do the setup and integration up front, so you see proof before you commit a dollar.",
+    body: "We do the setup work up front, so you see the leak estimate and workflow map before you commit to implementation.",
   },
   {
     title: "Framework Driven",
@@ -47,7 +47,7 @@ const OFFER = [
   },
   {
     title: "ROI-Aligned Partnerships",
-    body: "Pricing is anchored to the revenue we recover, so cost only matters next to what it returns.",
+    body: "Pricing is anchored to verified results, so cost is judged against what it returns.",
   },
 ];
 
@@ -58,21 +58,23 @@ export default function MarketingHome() {
         <AtmosphereBackground family="signal-field" size="1920x1080" intensity={1} />
         <p className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 text-xs font-medium text-ink-secondary">
           <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-          Revenue recovery operating system
+          Revenue Recovery Infrastructure
         </p>
         <h1 className="mt-6 max-w-3xl font-display text-4xl font-semibold leading-[1.1] text-ink sm:text-6xl">
-          The revenue your service business{" "}
-          <span className="text-accent">already earned</span> — recovered.
+          Stop losing <span className="text-accent">revenue</span> to missed
+          calls.
         </h1>
         <p className="mt-6 max-w-2xl text-lg text-ink-secondary">
-          ResponseOS captures missed calls, qualifies leads, automates
-          follow-up, books opportunities, and reports the revenue you recovered.
-          OFFER is the philosophy. RECOVER is how we ship it.
+          ResponseOS is designed to capture the missed call, qualify the lead,
+          book the work, and report estimated and verified revenue — across
+          phone, text, and web.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
-          <ButtonLink href="/audit" glow>Run a revenue audit</ButtonLink>
-          <ButtonLink href="/demo" variant="secondary">
-            Watch the demo
+          <ButtonLink href="/demo/walkthrough" glow>
+            Revenue Recovery Demo
+          </ButtonLink>
+          <ButtonLink href="/audit" variant="secondary">
+            Book the Readiness Assessment
           </ButtonLink>
         </div>
 
@@ -88,38 +90,6 @@ export default function MarketingHome() {
               </div>
             ))}
           </dl>
-        </div>
-      </section>
-
-      <section className="relative isolate mx-auto w-full max-w-6xl overflow-hidden px-4 py-16 sm:px-6">
-        <AtmosphereBackground family="noise-glass" size="1600x900" intensity={0.55} />
-        <p className="text-xs font-semibold uppercase tracking-widest text-ink-muted">
-          The OFFER philosophy
-        </p>
-        <h2 className="mt-2 font-display text-2xl font-semibold text-ink">
-          Why we win when you win
-        </h2>
-        <p className="mt-2 max-w-2xl text-sm text-ink-secondary">
-          OFFER is how we structure the relationship. Five principles keep the
-          incentives pointed at your recovered revenue, not our feature list.
-        </p>
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
-          {OFFER.map((o, i) => (
-            <Card
-              key={o.title}
-              interactive
-              className={
-                i < 3
-                  ? "lg:col-span-2"
-                  : i === 3
-                    ? "lg:col-span-3"
-                    : "sm:col-span-2 lg:col-span-3"
-              }
-            >
-              <h3 className="text-base font-semibold text-ink">{o.title}</h3>
-              <p className="mt-2 text-sm text-ink-secondary">{o.body}</p>
-            </Card>
-          ))}
         </div>
       </section>
 
@@ -146,16 +116,49 @@ export default function MarketingHome() {
         </div>
       </section>
 
+      <section className="relative isolate mx-auto w-full max-w-6xl overflow-hidden px-4 py-16 sm:px-6">
+        <AtmosphereBackground family="noise-glass" size="1600x900" intensity={0.55} />
+        <p className="text-xs font-semibold uppercase tracking-widest text-ink-muted">
+          How we work
+        </p>
+        <h2 className="mt-2 font-display text-2xl font-semibold text-ink">
+          Why we win when you win
+        </h2>
+        <p className="mt-2 max-w-2xl text-sm text-ink-secondary">
+          OFFER is how we structure the relationship. Five principles keep the
+          incentives pointed at your verified results, not our feature list.
+        </p>
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+          {OFFER.map((o, i) => (
+            <Card
+              key={o.title}
+              interactive
+              className={
+                i < 3
+                  ? "lg:col-span-2"
+                  : i === 3
+                    ? "lg:col-span-3"
+                    : "sm:col-span-2 lg:col-span-3"
+              }
+            >
+              <h3 className="text-base font-semibold text-ink">{o.title}</h3>
+              <p className="mt-2 text-sm text-ink-secondary">{o.body}</p>
+            </Card>
+          ))}
+        </div>
+      </section>
+
       <section className="mx-auto w-full max-w-6xl px-4 pb-24 sm:px-6">
         <Card className="relative isolate flex flex-col items-start gap-5 overflow-hidden p-8 sm:flex-row sm:items-center sm:justify-between">
           <AtmosphereBackground family="recovery-beam" size="1600x900" intensity={0.45} position="right center" />
           <div>
             <h2 className="font-display text-2xl font-semibold text-ink">
-              See it on real workflows
+              See the workflow on sample data
             </h2>
             <p className="mt-2 max-w-xl text-sm text-ink-secondary">
-              Walk the operator console and client portal on seeded data — calls,
-              leads, bookings, and recovered-revenue reporting end to end.
+              Walk the operator console and client portal on fictional sample
+              data: calls, leads, bookings, and the revenue report, each clearly
+              labeled.
             </p>
           </div>
           <div className="flex shrink-0 flex-wrap gap-3">

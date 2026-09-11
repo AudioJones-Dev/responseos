@@ -11,6 +11,14 @@
 
 This is the copy spec for every public marketing page. It defines goal, audience, hero, section blocks, CTAs, proof, SEO, and the primary conversion action per page — plus global components and copy guardrails. All copy must pass the [voice review checklist](./RESPONSEOS_BRAND_VOICE.md#9-voice-review-checklist). Headline options are provided where useful; pick one per surface and keep it consistent.
 
+> **Owner decisions (2026-09-11).** These supersede the matching options and guardrails below.
+> - **Home headline:** "Stop losing revenue to missed calls." — the same line as OG Variant A.
+> - **Assessment name:** **Readiness & Revenue Leak Assessment** on every surface; "the assessment" on later reference. "Revenue audit" is retired.
+> - **Primary CTA:** **Revenue Recovery Demo**, per ADR-0035; the assessment is the secondary CTA. This replaces the "primary conversion funnels to the assessment" guardrail and the §8 navigation button.
+> - **OFFER** principles sit below the RECOVER loop on `/`.
+> - **`/industries/med-spas` is unpublished** until the privacy-hardened pilot; the §5 copy stays here for that launch.
+> - **Doctrine §20 governs sample copy.** Where this spec states recovered revenue as delivered (for example the §1 meta description), the doctrine's status language wins.
+
 ### Routes in scope (already scaffolded)
 
 | Page | Route | Phase |
@@ -19,7 +27,7 @@ This is the copy spec for every public marketing page. It defines goal, audience
 | Pricing | `/pricing` | MVP |
 | Industries — Home services | `/industries/home-services` | MVP |
 | Industries — Contractors | `/industries/contractors` | MVP |
-| Industries — Med spas | `/industries/med-spas` | Phase 2+ (compliance-gated) |
+| Industries — Med spas | `/industries/med-spas` | Phase 2+ (compliance-gated) — route unpublished 2026-09-11 |
 | Audit / assessment | `/audit` | MVP |
 | Demo | `/demo` | MVP |
 

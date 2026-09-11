@@ -4,6 +4,14 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — fix: apply the owner-approved copy redlines across the site, demo, and consoles
+
+- **Owner decisions (2026-09-11).** The homepage headline is "Stop losing revenue to missed calls.", matching the OG card. The paid diagnostic is the **Readiness & Revenue Leak Assessment** everywhere, retiring "revenue audit" and "Revenue Leak Assessment". Following ADR-0035, **Revenue Recovery Demo** is the primary call to action and the assessment is secondary; the pricing page's tier buttons point at the assessment. The OFFER principles moved below the RECOVER loop. `/industries/med-spas` is unpublished until the privacy-hardened pilot (copy spec §5); nothing linked to it. The assessment credit terms, which differ between the pricing page and the copy spec, are unchanged and still open.
+- **Claims (doctrine §20).** Public copy no longer states recovered revenue as delivered: "— recovered", "the revenue we recover", "revenue-attributed jobs", and the promised 30-day recovered-revenue estimate are gone. Capabilities that run on mock adapters or sit behind the v0.3 gate are described as designed rather than live, across metadata, the hero, the pillars, pricing, and the industry pages.
+- **Accuracy.** Removed "no commitment" and "proof before you commit a dollar" from pages selling a paid assessment, replaced the "Most popular" badge with "Default offer", and corrected an "under 30 seconds" figure that contradicted the canonical under 60 seconds. The site footer now carries the not-HIPAA-certified line.
+- **Demo and consoles.** The walkthrough labels its trend and missed-call rate as illustrative, the ROI-multiple hints name the estimate, console titles use sentence case, and the client eyebrow reads "Client portal".
+- The assessment's first step now says it runs from exports the client shares. That describes an operating process and needs the owner's confirmation before any launch.
+
 ## Unreleased — feat: adopt the supplied ResponseOS logo pack across the web surface
 
 - The marketing header and footer, the console sidebar, and the demo header now use the **supplied logo pack** (`Response OS Logo Pack.zip`, first carried in draft #118) instead of the reconstructed RO SVGs. Only the asset layer was taken from #118 — none of its homepage copy, estimator, or discovery work — and the source PNGs, derived marks, and large app icons match #118 byte for byte.
