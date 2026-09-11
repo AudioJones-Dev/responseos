@@ -212,11 +212,39 @@
       "phase": "v0.3 · Demo Scope",
       "title": "Per-tenant supervision execution policy (ADR-0051)",
       "owner": "Claude Code",
-      "status": "In Progress",
-      "progress": 60,
+      "status": "Done",
+      "progress": 100,
       "priority": "High",
       "start": "2026-09-10",
-      "due": "2026-09-12"
+      "due": "2026-09-12",
+      "ref": 149,
+      "refType": "pull"
+    },
+    {
+      "id": "V-07",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Operating-configuration contract + fact authority ranking (FRL pilot PR 1)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-09-10",
+      "due": "2026-09-12",
+      "ref": 152,
+      "refType": "pull"
+    },
+    {
+      "id": "V-08",
+      "phase": "v0.3 · Demo Scope",
+      "title": "FRL operating-configuration skeleton (unknowns only, no invented facts)",
+      "owner": "Claude Code",
+      "status": "To Do",
+      "progress": 0,
+      "priority": "High",
+      "start": "2026-09-12",
+      "due": "2026-09-16",
+      "blocked": true,
+      "blockedReason": "Follows V-07 merge; location and data-handling boundary need operator approval per docs/ops/client-delivery/README.md"
     },
     {
       "id": "R-02",
