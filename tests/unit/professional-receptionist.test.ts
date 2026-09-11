@@ -512,10 +512,23 @@ describe("provider mocks work without credentials", () => {
     expect(experience.every((record) => record.verified)).toBe(true);
     expect(skills.every((record) => record.verified)).toBe(true);
 
-    // The resume dates only two roles; the rest must stay undated rather
-    // than carry a guess.
-    const dated = experience.filter((record) => record.startDate);
-    expect(dated.map((record) => record.company).sort()).toEqual([
+    // Every role is now dated, from the resume or the portfolio résumé.
+    expect(experience.every((record) => record.startDate)).toBe(true);
+
+    // Dates are stored at the precision the source gives them and no
+    // finer: widening a year-only source date into a guessed month would
+    // be inventing the month. YYYY or YYYY-MM, never a full day.
+    for (const record of experience) {
+      expect(record.startDate).toMatch(/^\d{4}(-\d{2})?$/);
+      if (record.endDate) expect(record.endDate).toMatch(/^\d{4}(-\d{2})?$/);
+    }
+    expect(
+      experience.find((r) => r.id === "exp_alorica")?.startDate,
+    ).toBe("2015");
+
+    // The two current roles carry no end date; every past role does.
+    const open = experience.filter((record) => !record.endDate);
+    expect(open.map((record) => record.company).sort()).toEqual([
       "AJ Digital / Freelance Consulting",
       "Florida Ramp & Lift",
     ]);
