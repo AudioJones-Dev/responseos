@@ -238,11 +238,13 @@
       "phase": "v0.3 · Demo Scope",
       "title": "FRL operating-configuration skeleton (unknowns only, no invented facts)",
       "owner": "Claude Code",
-      "status": "In Progress",
-      "progress": 70,
+      "status": "Review",
+      "progress": 90,
       "priority": "High",
       "start": "2026-09-11",
-      "due": "2026-09-16"
+      "due": "2026-09-16",
+      "ref": 154,
+      "refType": "pull"
     },
     {
       "id": "R-02",
