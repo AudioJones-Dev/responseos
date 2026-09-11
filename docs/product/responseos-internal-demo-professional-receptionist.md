@@ -14,8 +14,9 @@
 > `PROHIBITED_CLAIM` — that this tenant proves provider portability
 > (ADR-0043), that the receptionist can speak to categories with no
 > canonical source (case studies; see §4), that the two internal
-> projects it can describe are shipped or deployed products, or that any
-> live provider is wired.
+> projects it can describe are shipped or deployed products, that the
+> receptionist is reachable by any caller (no route or component calls
+> it; see §7), or that any live provider is wired.
 
 ## 1. What this is
 
@@ -183,9 +184,20 @@ Only the unscoped operator rollup drops non-`customer` accounts.
 Neither new adapter passes `createLive`, so both resolve to
 fixture/no-op even when `CAREER_OS_API_KEY` or `CAREER_OS_WEBHOOK_URL`
 is set. Scheduling runs through the existing mock `SchedulingProvider`.
-The full flow — question → grounded answer or fallback → opportunity
+
+The full chain — question → grounded answer or fallback → opportunity
 capture → audit row → handoff event → booked appointment linked back to
-the opportunity — runs with zero credentials and makes no network call.
+the opportunity — executes end to end with zero credentials and makes
+no network call. **The test suite is what executes it.** No route,
+page, or component calls `answerProfessionalQuestion`,
+`captureProfessionalOpportunity`, `requestProfessionalEscalation`, or
+`bookProfessionalAppointment`; each has only its own definition. The
+handoff event in that chain reaches a no-op that returns
+`delivered: false` and emits nowhere.
+
+So the receptionist is a working library with an exercised contract, not
+a surface anyone can reach. Nothing above is a caller-facing capability
+until something calls it.
 
 Live telephony for this tenant remains gated behind v0.3 authorization
 (ADR-0019, ADR-0045). Nothing here authorizes a live provider.
