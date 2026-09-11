@@ -4,6 +4,14 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: add Florida Ramp & Lift operating-configuration skeleton
+
+- Added `lib/config/clients/florida-ramp-lift.ts`, the first client operating-configuration skeleton, built through `BusinessMemorySnapshotSchema` as ADR-0051 decision 3 requires. It holds the business name only, zero facts, and every supervised-pilot requirement recorded in `unknowns`: `operating_hours.weekly`, `operating_hours.holidays`, `service_area.coverage`, `contact.escalation`, and `policy.consent`. On 2026-09-11 the operator approved this location and its data-handling boundary. That approval is one of the two conditions `docs/ops/client-delivery/README.md` sets before a client directory is created; registration of the FRL opportunity, the other, is not recorded in this repository.
+- No FRL tenant exists yet, so `floridaRampLiftOperatingConfiguration()` takes the account id from its caller instead of inventing one.
+- Tests pin the whole snapshot exactly: the caller's account id, empty fact sections, empty `conflicts`, `agentBoundaries`, and `sourceManifest`, and the five unknown strings. They also pin the business name and assert that `evaluateOperatingConfiguration()` reports the skeleton not ready, with all five requirements missing.
+- Updated section 7 of the operating-configuration standard, and the notes in `docs/architecture.md` and the platform doctrine that described `lib/config/` as empty.
+- **Not included:** no FRL `Account`, facts, provider identifiers, PII, or pricing, and nothing reads this configuration yet. No provider, deployment, database schema, migration, or environment behaviour changes. This PR changes `dashboard/dashboard-data.json`, so merging it republishes the public GitHub Pages dashboard.
+
 ## Unreleased — feat: date the five undated work-history roles from the portfolio résumé
 
 - The five roles that shipped undated now carry ranges, transcribed from the account owner's public **portfolio résumé page** — the resume the fixture was built from carries no dates for them, which is why they were undated. Every role is now dated; no type, policy, or authority rule changed.

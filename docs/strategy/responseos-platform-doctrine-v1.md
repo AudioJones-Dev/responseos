@@ -145,7 +145,7 @@ Recorded so it is not rediscovered as a surprise. These are not authorized to be
 
 1. **`architecture.md`** still describes Supabase hosting (superseded by ADR-0026), a Twilio + Retell/Vapi/Bland primary voice lane with Grok as experimental (superseded by ADR-0031/0032), Clerk and R2 as "planned" (Clerk shipped), and "no migrations yet" (eight exist). A supersession banner has been added; the body is left intact for provenance.
 2. **`prisma/schema.prisma` `ProviderConnectionProvider`** enumerates `twilio, grok, openai, retell, vapi, bland, hubspot, google_calendar, calcom, stripe` — it contains **neither `telnyx` nor `calendly`**, the two providers ADR-0031 and ADR-0037 ratified. The schema encodes a superseded provider stack. ADR-0036 §4 explicitly requires a separate approved PR to change it; this is expected, not a violation. It is recorded here because it is the clearest available example of *decision status ≠ implementation status*.
-3. **`lib/automations/`, `lib/config/`, `lib/notifications/`** are empty directories that `architecture.md` describes as populated modules.
+3. **`lib/automations/`, `lib/notifications/`** are empty directories that `architecture.md` describes as populated modules. **`lib/config/`** holds only per-client operating-configuration skeletons under `lib/config/clients/`; no typed env/runtime config loader exists there.
 
 ---
 
