@@ -4,6 +4,19 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — chore: consolidate normalizeE164 into one shared helper
+
+- Replaced three copies of the same E.164 normalization with one `normalizeE164()` in `lib/validation/common.ts`, beside `e164PhoneSchema`. The copies were the exported, throwing `normalizeE164` in `lib/prospectBootstrap/service.ts`, the private, null-returning copy in `lib/crm/syncFinalizedCall.ts`, and `canonicalE164` in `lib/prospectBootstrap/attestation.ts`. The shared helper returns `null` for input outside 10–15 digits.
+- Behaviour is unchanged at every caller:
+  - Number registration still fails with `invalid_e164`.
+  - The prospect-context and Telnyx-assignment resolvers still return `null` for an unusable target; their webhook callers only pass a non-empty string.
+  - Provider attestation still fails with `provider_attestation_e164_invalid`.
+  - CRM sync still marks the operation `retryable_failed`, with the redacted error code `crm_sync_failed`, when no caller phone normalizes.
+- This is a prerequisite for caller resolution (FRL pilot plan PR 3). The inbound Telnyx contact lookup in `lib/providers/telnyx/normalize.ts` still matches the raw caller number; normalizing it there would change behaviour and belongs to that work.
+- **Known limitation, carried over unchanged:** the helper strips every non-digit, including a leading `+`, and reads any 10-digit result as North American. A `+`-prefixed 10-digit international number such as `+65 6123 4567` therefore becomes `+16561234567`. Caller-resolution work needs to handle this before relying on the helper for international callers.
+- Tests cover formatted input, the `+1` reading of a bare 10-digit number, an international number, out-of-range input, and the attestation error code.
+- No provider, database schema, migration, or environment change. This PR changes `dashboard/dashboard-data.json`, so merging it republishes the public GitHub Pages dashboard.
+
 ## Unreleased — feat: carry the owner's salary floor on the compensation escalation
 
 - The owner's salary floor is now stored, and the **compensation escalation payload carries it**. The first ADR-0046 follow-up left it out because a recruiter-facing knowledge store would add exposure without the number ever being spoken; the escalation is the one direction that objection does not apply to, and the owner asked for it.
