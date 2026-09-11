@@ -238,13 +238,11 @@
       "phase": "v0.3 · Demo Scope",
       "title": "FRL operating-configuration skeleton (unknowns only, no invented facts)",
       "owner": "Claude Code",
-      "status": "To Do",
-      "progress": 0,
+      "status": "In Progress",
+      "progress": 70,
       "priority": "High",
-      "start": "2026-09-12",
-      "due": "2026-09-16",
-      "blocked": true,
-      "blockedReason": "Follows V-07 merge; location and data-handling boundary need operator approval per docs/ops/client-delivery/README.md"
+      "start": "2026-09-11",
+      "due": "2026-09-16"
     },
     {
       "id": "R-02",
