@@ -834,6 +834,24 @@ Registration and disclosure stay separate, which is the point. The address sits 
 
 This is the only contract change in the three follow-ups: one additive union member and its validator entry. No authority entry, disclosure policy, or escalation rule moved, and the strict default still shares nothing.
 
+**Follow-up (2026-09-11, fourth) — the five undated roles are dated, and decision 5 is what shaped how.** The resume carries no dates for them, which is why they shipped undated. The owner's public portfolio résumé page does, so the ranges are transcribed from it. No type, policy, or authority rule changed.
+
+Two details are the decision doing its work rather than incidental:
+
+**Precision is not widened.** The portfolio gives some ranges as bare years and one as months. They are stored exactly that way — `2015`, not `2015-01`. A guessed month is an invented date, and an invented date is the specific thing decision 5 forbids; a plausible-looking one is worse than a coarse one because it cannot be spotted. A test pins the stored format to `YYYY` or `YYYY-MM` and asserts the year-only entries stay year-only.
+
+**One mapping is owner-confirmed, not transcribed.** The portfolio carries AHLO Inc. as a single consolidated entry spanning `2019 — 2023 · 2006 — 2007`, while the resume splits AHLO into two roles. Both sources order roles reverse-chronologically, which implies contractor → 2019–2023 and warehouse operations → 2006–2007, but neither source states the mapping. Under decision 5 a well-supported inference about an employment date is still an inference, so the owner confirmed it rather than the ranges being assigned by reasoning. The fixture records that this one mapping is owner-confirmed, so a later reader does not mistake it for transcription.
+
+**Follow-up (2026-09-11, fifth) — a record whose claims span two sources names both, and that is a provider contract.** Dating the earlier roles left the work-history record citing only the resume while five of its date claims came from the portfolio résumé. Decision 5 requires a record to be attributable; a body mixing two sources under one source id misattributes the half it does not own, and does so invisibly, which is worse than citing nothing. Raised in review.
+
+**The encoding.** `ProfessionalKnowledgeResult.sourceId` stays a single string. A record drawing on more than one system names all of them joined by `+` — `canonical_resume:2026-09-10+portfolio_site:2026-09-11`. A consumer that needs the individual sources splits on `+`; one that only displays or logs provenance can continue treating the field as opaque.
+
+**Why this is recorded here rather than only in the type's docblock.** It binds every future adapter, not just the fixture. `ProfessionalKnowledgeProvider` has one implementation today, and a Career OS adapter written against a docblock alone could reasonably keep emitting one opaque identifier per record and silently produce results that are unattributable in the same way. The rule is therefore part of the provider contract: an adapter that cannot name every system behind a claim must split the claim into records it can attribute.
+
+Splitting by source was the alternative and does not work for this record: each of the five claims is itself composite, taking its employer and title from the resume and its date from the portfolio, so two records would each still mix. A test pins the invariant across records rather than on the one that failed — work history names both sources, projects never acquire the resume's, skills never acquire the portfolio's — because a reviewer caught this and the suite did not.
+
+No answer behaviour changed: `sourceId` is provenance metadata, and `ProfessionalAnswer.sources` carries record ids.
+
 ---
 
 ## ADR-0047 — The first prospect proof is an isolated, supervised post-call evidence chain

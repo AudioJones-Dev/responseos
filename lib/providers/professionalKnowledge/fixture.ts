@@ -4,11 +4,23 @@
  *
  * Every record below is transcribed from one of two canonical sources:
  * the account owner's resume, imported 2026-09-10, and the public
- * portfolio at tyronenelms.com/work, read 2026-09-11. Nothing here is
- * inferred: roles the resume carries without dates are stored without
- * dates, skills arrive as the flat list it supplies, projects carry the
- * status their own page states, and no achievement, metric, or
- * responsibility is written that neither source states.
+ * portfolio at tyronenelms.com (project pages and résumé page), read
+ * 2026-09-11. Nothing here is inferred: skills arrive as the flat list
+ * the resume supplies, projects carry the status their own page states,
+ * and no achievement, metric, or responsibility is written that neither
+ * source states.
+ *
+ * Dates are stored at the precision the source gives them and no
+ * finer — year-only where the portfolio states a year, month where it
+ * states a month. Widening "2015" into a guessed month would be
+ * inventing a date, which is the thing decision 5 forbids.
+ *
+ * One mapping is owner-confirmed rather than transcribed: the portfolio
+ * carries AHLO Inc. as a single consolidated entry spanning
+ * "2019 — 2023 · 2006 — 2007", while the resume splits it into two
+ * roles. Both sources order the roles reverse-chronologically, which
+ * implies the split below, but neither states it — so the owner
+ * confirmed it instead of the ranges being assigned by inference.
  *
  * `verified: false` means "not answerable" — the receptionist offers
  * the fallback instead (lib/professional/authority.ts). Flip a record
@@ -42,6 +54,15 @@ export const PORTFOLIO_IMPORTED_AT = "2026-09-11"
 
 const RESUME_SOURCE = `canonical_resume:${RESUME_IMPORTED_AT}`
 const PORTFOLIO_SOURCE = `portfolio_site:${PORTFOLIO_IMPORTED_AT}`
+
+/**
+ * For a record whose claims genuinely draw on both imports. The work
+ * history is the case: the resume supplies every employer and title,
+ * and the portfolio résumé supplies the dates for the five roles the
+ * resume leaves undated. Attributing that record to either source alone
+ * would name a system that does not own half the claim.
+ */
+const RESUME_AND_PORTFOLIO_SOURCE = `${RESUME_SOURCE}+${PORTFOLIO_SOURCE}`
 const ACCOUNT_CONFIG_SOURCE = "responseos:account_config"
 
 export const demoProfile: ProfessionalProfile = {
@@ -73,30 +94,40 @@ export const demoExperience: ExperienceRecord[] = [
     id: "exp_ahlo_contractor",
     company: "AHLO Inc.",
     title: "Independent Contractor — Operations & Service Support",
+    startDate: "2019",
+    endDate: "2023",
     verified: true,
   },
   {
     id: "exp_unitedhealthcare",
     company: "UnitedHealthcare",
     title: "Provider Services Representative",
+    startDate: "2016",
+    endDate: "2018",
     verified: true,
   },
   {
     id: "exp_alorica",
     company: "Alorica",
     title: "Senior Commercial Account Specialist",
+    startDate: "2015",
+    endDate: "2015",
     verified: true,
   },
   {
     id: "exp_tigerdirect",
     company: "TigerDirect.com (Systemax)",
     title: "Customer Service Representative",
+    startDate: "2008-02",
+    endDate: "2011-04",
     verified: true,
   },
   {
     id: "exp_ahlo_operations",
     company: "AHLO Inc.",
     title: "Office & Warehouse Operations",
+    startDate: "2006",
+    endDate: "2007",
     verified: true,
   },
 ]
@@ -316,8 +347,8 @@ export const demoKnowledgeRecords: ProfessionalKnowledgeResult[] = [
     id: "know_experience_1",
     category: "work_history",
     title: "Work history",
-    body: "Tyrone Nelms is Operations & Marketing Consultant for ADA and mobile lift services at Florida Ramp & Lift since July 2023, and founder and operations / business systems consultant at AJ Digital since April 2020. Earlier roles: independent contractor for operations and service support at AHLO Inc., provider services representative at UnitedHealthcare, senior commercial account specialist at Alorica, customer service representative at TigerDirect.com (Systemax), and office and warehouse operations at AHLO Inc.",
-    sourceId: RESUME_SOURCE,
+    body: "Tyrone Nelms is Operations & Marketing Consultant for ADA and mobile lift services at Florida Ramp & Lift since July 2023, and founder and operations / business systems consultant at AJ Digital since April 2020. Earlier roles: independent contractor for operations and service support at AHLO Inc. from 2019 to 2023, provider services representative at UnitedHealthcare from 2016 to 2018, senior commercial account specialist at Alorica in 2015, customer service representative at TigerDirect.com (Systemax) from February 2008 to April 2011, and office and warehouse operations at AHLO Inc. from 2006 to 2007.",
+    sourceId: RESUME_AND_PORTFOLIO_SOURCE,
     verified: true,
     keywords: [
       "experience",

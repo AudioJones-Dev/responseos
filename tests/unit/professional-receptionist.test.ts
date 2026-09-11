@@ -512,13 +512,60 @@ describe("provider mocks work without credentials", () => {
     expect(experience.every((record) => record.verified)).toBe(true);
     expect(skills.every((record) => record.verified)).toBe(true);
 
-    // The resume dates only two roles; the rest must stay undated rather
-    // than carry a guess.
-    const dated = experience.filter((record) => record.startDate);
-    expect(dated.map((record) => record.company).sort()).toEqual([
+    // Every role is now dated, from the resume or the portfolio résumé.
+    expect(experience.every((record) => record.startDate)).toBe(true);
+
+    // Dates are stored at the precision the source gives them and no
+    // finer: widening a year-only source date into a guessed month would
+    // be inventing the month. YYYY or YYYY-MM, never a full day.
+    for (const record of experience) {
+      expect(record.startDate).toMatch(/^\d{4}(-\d{2})?$/);
+      if (record.endDate) expect(record.endDate).toMatch(/^\d{4}(-\d{2})?$/);
+    }
+    expect(
+      experience.find((r) => r.id === "exp_alorica")?.startDate,
+    ).toBe("2015");
+
+    // The two current roles carry no end date; every past role does.
+    const open = experience.filter((record) => !record.endDate);
+    expect(open.map((record) => record.company).sort()).toEqual([
       "AJ Digital / Freelance Consulting",
       "Florida Ramp & Lift",
     ]);
+  });
+
+  test("every record attributes its claims to the source that owns them", async () => {
+    const provider = getProfessionalKnowledgeProvider();
+    const records = await provider.search({
+      accountId: DEMO_ACCOUNT,
+      query:
+        "experience skills projects education certification portfolio availability who",
+      profileType: "recruiter_receptionist",
+    });
+    expect(records.length).toBeGreaterThan(0);
+    expect(records.every((record) => record.sourceId.length > 0)).toBe(true);
+
+    // Work history draws employers and titles from the resume and the
+    // five previously-undated ranges from the portfolio résumé, so it
+    // must name both. Citing one would misattribute the other half.
+    //
+    // The encoding is asserted, not just the presence of both prefixes:
+    // ADR-0046 makes "+" the separator a consumer splits on, so a value
+    // joining them some other way would satisfy "contains both" while
+    // breaking every consumer the ADR licenses.
+    const workHistory = records.find((r) => r.id === "know_experience_1");
+    expect(workHistory?.sourceId).toMatch(
+      /^canonical_resume:[^+]+\+portfolio_site:[^+]+$/,
+    );
+
+    // Projects come from the portfolio alone, skills from the resume
+    // alone; neither should have picked up the other's source.
+    expect(records.find((r) => r.id === "know_projects_1")?.sourceId).not.toContain(
+      "canonical_resume:",
+    );
+    expect(records.find((r) => r.id === "know_skills_1")?.sourceId).not.toContain(
+      "portfolio_site:",
+    );
   });
 
   test("imported project records are verified, public and carry their source URL", async () => {
