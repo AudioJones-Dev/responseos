@@ -90,6 +90,13 @@ describe("versioned receptionist template preflight", () => {
       publicKey,
       now,
     })).toThrow("provider_attestation_signature_invalid");
+    expect(() => verifyProspectProviderAttestation({
+      value: { payload: { ...payload, e164: "555-0101" }, signature },
+      providerNumberId: payload.providerNumberId,
+      e164: payload.e164,
+      publicKey,
+      now,
+    })).toThrow("provider_attestation_e164_invalid");
   });
 });
 

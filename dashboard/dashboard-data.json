@@ -696,6 +696,17 @@
       "refType": "pull"
     },
     {
+      "id": "V-11",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Consolidate normalizeE164 into one shared helper (caller-resolution prerequisite)",
+      "owner": "Claude Code",
+      "status": "In Progress",
+      "progress": 70,
+      "priority": "Med",
+      "start": "2026-09-11",
+      "due": "2026-09-12"
+    },
+    {
       "id": "Q-01",
       "phase": "Testing & QA",
       "title": "Unit coverage expansion",
