@@ -7,7 +7,7 @@
 > - **Deployment-lane provider names** — the Standard/Privacy-hardened/HIPAA lane *structure* stands (ADR-0004); the provider names inside each lane are superseded by the above.
 > - **"Auth via Clerk (planned)"** — Clerk auth **shipped** in v0.2 closeout (ADR-0005).
 > - **"no migrations yet"** — eight migrations (`0001`–`0008`) exist.
-> - **`lib/automations/`, `lib/config/`, `lib/notifications/`** — currently empty directories, not populated modules.
+> - **`lib/automations/`, `lib/notifications/`** — currently empty directories, not populated modules. **`lib/config/`** holds only per-client operating-configuration skeletons under `lib/config/clients/` (see [`ops/client-delivery/RESPONSEOS_CLIENT_OPERATING_CONFIGURATION_STANDARD.md`](./ops/client-delivery/RESPONSEOS_CLIENT_OPERATING_CONFIGURATION_STANDARD.md)).
 >
 > For the go-forward architecture see the `RESPONSEOS_*` set indexed by [`product/RESPONSEOS_BUILD_SOURCE.md`](./product/RESPONSEOS_BUILD_SOURCE.md); for the layered platform model (Communications → Business Memory → … → Trust Infrastructure) and per-layer implementation status see [`strategy/responseos-platform-doctrine-v1.md`](./strategy/responseos-platform-doctrine-v1.md) §8.
 

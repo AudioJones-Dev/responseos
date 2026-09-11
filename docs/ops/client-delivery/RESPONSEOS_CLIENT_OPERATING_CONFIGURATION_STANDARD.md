@@ -1,6 +1,6 @@
 # ResponseOS Client Operating-Configuration Standard
 
-**Status:** Canonical contract. States below describe the repository once the change introducing this document merges.
+**Status:** Canonical contract. States below describe the repository as of the latest entry in the change log at the end of this document.
 **Owner:** AJ Digital LLC / Audio Jones
 **Governing decisions:** ADR-0051 decision 3 and its 2026-09-10 amendment; ADR-0046 §9; ADR-0048.
 
@@ -137,7 +137,8 @@ unsupported values start as `unknown`.
 | A write path that creates `operator_configured` facts — service function, route, or operator UI | `ROADMAP` |
 | `evaluateOperatingConfiguration()` called by any activation path | `ROADMAP` |
 | Value shapes for the five required keys, and a write-path check that keeps placeholder values out (§6). Still open: what shape weekly-hours, holiday, coverage, escalation, and consent values take | `ROADMAP` — decided with the write path or the first activation caller, whichever lands first |
-| Operating configuration for any real tenant | Not started. The first — Florida Ramp & Lift — follows as a separate change once the operator approves its location and data-handling boundary ([`README.md`](./README.md)) |
+| Operating configuration for any real tenant | Not started — no tenant `Account` exists, and no operating-configuration fact has been approved for any tenant |
+| Florida Ramp & Lift configuration skeleton | Supporting scaffolding only, not tenant configuration. `lib/config/clients/florida-ramp-lift.ts` builds a zero-fact snapshot with every supervised-pilot requirement in `unknowns`, within the location and data-handling boundary the operator approved on 2026-09-11. That approval is one of the two conditions [`README.md`](./README.md) sets for a client directory; registration of the FRL opportunity is not recorded here. Nothing reads the skeleton yet |
 | Promotion that preserves tenant identity (ADR-0051 decision 2) | `ROADMAP` — `BootstrapPromotion` still creates a new `Account` |
 
 ---
@@ -147,3 +148,4 @@ unsupported values start as `unknown`.
 | Date | Change | Author |
 |---|---|---|
 | 2026-09-10 | Initial standard | Claude Opus 5, for Audio |
+| 2026-09-11 | Section 7: add the Florida Ramp & Lift skeleton as supporting scaffolding; real-tenant operating configuration stays not started | Claude Opus 5, for Audio |
