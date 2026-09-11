@@ -4,6 +4,16 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: give the receptionist an entry point at /demo/receptionist
+
+- Added `app/(demo)/demo/receptionist/page.tsx`, a read-only page that calls `answerProfessionalQuestion` and `listShareableAssets`. A visitor asks a question and sees the answer, the claim category, the authority that governed it (answered / escalated / refused / no verified source / calendar lookup), and the record ids cited. The previous change established that **nothing called the receptionist at all**; this is its first caller.
+- **The write path stays unreachable on purpose.** `captureProfessionalOpportunity`, `requestProfessionalEscalation`, and `bookProfessionalAppointment` write rows, and an anonymous visitor must not create them — `lib/professional/index.ts` already declines to export `intake.ts` for that reason. The page can show that a question *escalates* without emitting an escalation, because the answering path is pure: it resolves authority and returns.
+- **Tenant isolation by construction.** The account id is a module constant; the request supplies only the question. Verified by passing `accountId=org_mock_1` and variants in the query string and confirming the answer is unchanged.
+- A GET form rather than a Server Action, because nothing mutates — the query is shareable and no mutation primitive is introduced for a read. First use of `searchParams` in the repo; Next 16 resolves it as a promise.
+- **Fixed a classifier gap the page surfaced on the most obvious question.** "When is he free for a call?" fell through to the fallback: `interview_availability` matched only the second-person `"when are you free"`, but the receptionist answers *about* its owner, so callers ask in the third person. Third-person phrasings now match. Each addition is a time-sense phrase rather than the bare word "free": availability is matched before the gated categories, so `"is he free"` alone captured "is he free **to** negotiate salary?" and turned a compensation escalation into a calendar lookup — caught by its own test, which now pins the collision.
+- Known remaining gap: "When can he talk?" still falls back. Adding `"talk"` would let "Can we talk about salary?" swallow a compensation escalation, which is the trade the phrasing above avoids.
+- Recorded in ADR-0046 as a seventh dated follow-up. The brief's status banner moves a public question surface from `DOCUMENTED_ONLY` to `SHIPPED`, narrowed to reading; a surface that captures, books, or hands off stays `DOCUMENTED_ONLY`, and live telephony stays v0.3-gated.
+
 ## Unreleased — feat: carry the owner's salary floor on the compensation escalation
 
 - The owner's salary floor is now stored, and the **compensation escalation payload carries it**. The first ADR-0046 follow-up left it out because a recruiter-facing knowledge store would add exposure without the number ever being spoken; the escalation is the one direction that objection does not apply to, and the owner asked for it.

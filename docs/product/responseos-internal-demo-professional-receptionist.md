@@ -7,16 +7,18 @@
 > `SHIPPED` — account classification, agent profiles, professional
 > opportunities, claim-authority policy, verified-only answering,
 > mock scheduling → appointment → opportunity link, audit trail,
-> reporting exclusion, operator console surface.
+> reporting exclusion, operator console surface, and a **read-only
+> question surface** at `/demo/receptionist` (§7).
 > `DOCUMENTED_ONLY` — Career OS as a live knowledge source, live
-> telephony for this tenant, any public "talk to my AI assistant"
-> surface.
+> telephony for this tenant, and any surface that lets a caller do more
+> than ask: capture an opportunity, book a slot, or trigger a handoff.
 > `PROHIBITED_CLAIM` — that this tenant proves provider portability
 > (ADR-0043), that the receptionist can speak to categories with no
 > canonical source (case studies; see §4), that the two internal
-> projects it can describe are shipped or deployed products, that the
-> receptionist is reachable by any caller (no route or component calls
-> it; see §7), or that any live provider is wired.
+> projects it can describe are shipped or deployed products, that
+> anything a visitor does on the demo page is captured, booked, or
+> handed off (nothing calls the write path; see §7), or that any live
+> provider is wired.
 
 ## 1. What this is
 
@@ -188,16 +190,24 @@ is set. Scheduling runs through the existing mock `SchedulingProvider`.
 The full chain — question → grounded answer or fallback → opportunity
 capture → audit row → handoff event → booked appointment linked back to
 the opportunity — executes end to end with zero credentials and makes
-no network call. **The test suite is what executes it.** No route,
-page, or component calls `answerProfessionalQuestion`,
-`captureProfessionalOpportunity`, `requestProfessionalEscalation`, or
-`bookProfessionalAppointment`; each has only its own definition. The
-handoff event in that chain reaches a no-op that returns
-`delivered: false` and emits nowhere.
+no network call. **The test suite is what executes all of it.**
 
-So the receptionist is a working library with an exercised contract, not
-a surface anyone can reach. Nothing above is a caller-facing capability
-until something calls it.
+**One part of it is now reachable.** `/demo/receptionist` calls
+`answerProfessionalQuestion` and `listShareableAssets`, so a visitor can
+ask a question and see the grounded answer, the claim category, the
+authority that governed it, and the records it cited. That page is the
+receptionist's only entry point.
+
+**The write path still has no caller.** `captureProfessionalOpportunity`,
+`requestProfessionalEscalation`, and `bookProfessionalAppointment` each
+have only their own definition. That is deliberate: they write rows, and
+an anonymous visitor must not be able to create them. The demo page shows
+that a question *escalates* without emitting an escalation, which is
+possible because the answering path is pure — it decides authority and
+returns, and only `intake.ts` emits or writes.
+
+So the receptionist answers, and does nothing else. The handoff event in
+the chain above still reaches a no-op that returns `delivered: false`.
 
 Live telephony for this tenant remains gated behind v0.3 authorization
 (ADR-0019, ADR-0045). Nothing here authorizes a live provider.

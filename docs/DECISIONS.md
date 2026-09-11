@@ -864,6 +864,14 @@ That property is asserted, not assumed. One test asks every seeded profile the c
 
 Two additive optional fields are the whole contract change. No authority entry, disclosure policy, or escalation rule moved, and no adapter is obliged to populate the field.
 
+**Follow-up (2026-09-11, seventh) — the receptionist has an entry point, and it is the read path only.** The previous follow-up established that nothing called the receptionist at all. `/demo/receptionist` now calls `answerProfessionalQuestion` and `listShareableAssets`, so a visitor can ask a question and see the answer, the claim category, the governing authority, and the cited records.
+
+**The write path is deliberately still unreachable.** `captureProfessionalOpportunity`, `requestProfessionalEscalation`, and `bookProfessionalAppointment` write rows, and an anonymous visitor must not create them; `lib/professional/index.ts` already declines to export `intake.ts` for the same reason. The page can honestly show that a question *escalates* without emitting an escalation, because decision 5's answering path is pure: it resolves authority and returns, and only `intake.ts` emits or writes. That purity is what makes a public read surface safe at all.
+
+**Tenant isolation holds by construction, not by validation.** The account id is a module constant in the page; the request supplies the question and nothing else. There is no code path by which a query parameter could name an account, which is the form SECURITY.md asks for — derived, never accepted.
+
+This moves a public question surface from `DOCUMENTED_ONLY` to `SHIPPED` in the brief's status vocabulary, narrowed to reading. A surface that lets a caller capture, book, or hand off remains `DOCUMENTED_ONLY`, and live telephony stays v0.3-gated (ADR-0019, ADR-0045). No adapter, policy, or authority entry changed.
+
 ---
 
 ## ADR-0047 — The first prospect proof is an isolated, supervised post-call evidence chain

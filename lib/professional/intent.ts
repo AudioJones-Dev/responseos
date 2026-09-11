@@ -114,7 +114,22 @@ const CATEGORY_RULES: Array<{
   {
     category: "interview_availability",
     keywords: [
+      // The receptionist answers *about* its owner, so callers ask in the
+      // third person. "when are you free" alone missed "when is he free
+      // for a call?" entirely, which is how a recruiter actually phrases
+      // it — found by asking the demo route the obvious question.
+      //
+      // Each phrase pins "free" to a time sense. This rule is matched
+      // before the gated categories, so anything looser turns a
+      // compensation escalation into a calendar lookup: "is he free"
+      // alone captures "is he free *to negotiate salary?*", and the bare
+      // word is worse still. "free for" is safe because the colliding
+      // phrasings take "free to".
       "when are you free",
+      "when is he free",
+      "when is she free",
+      "when are they free",
+      "free for",
       "availability",
       "available",
       "schedule",
