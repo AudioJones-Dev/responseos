@@ -824,6 +824,24 @@ One of the three projects is named Career OS, which does **not** touch decision 
 
 `case_studies` is now the category with no canonical source, and it inherits the role `projects` used to play: the fallback, escalation, and refusal paths stay exercised and tested. The seeded demo narrative moved with the behaviour — the recruiter's project question is now answered, and the call instead shows compensation escalating, which is structural under decision 6 and so cannot go stale as more data lands.
 
+**Follow-up (2026-09-11, second) — the approved-asset list is now the only route a link takes.** Review of the project import found that a URL written into a knowledge-record body is spoken whatever the answering profile permits, which bypassed the per-profile filter in `listShareableAssets` — `allowedAssetTypes: []` is both the strict default and a seeded profile. Answer bodies now carry no links at all, which sharpens decision 9: the agent profile does not merely *configure* asset sharing, it is the sole gate, and an asset absent from `demoApprovedAssets` is one the receptionist cannot offer however the profile is set.
+
+That made the list's contents load-bearing rather than illustrative, so the résumé, LinkedIn, and GitHub links carried on the same public portfolio are now registered alongside the site. The owner's email address is linked there too and is deliberately unregistered: handing a personal address to an unscreened caller is the owner's call, and no `ProfessionalAssetType` covers it. Nothing here changes a type, an authority entry, or a disclosure policy.
+
+**Follow-up (2026-09-11, third) — the owner took that call: the email is registered and shared under the recruiter profile.** `ProfessionalAssetType` gains `email`, so the address the owner publishes on his own site is an approved asset like any other rather than a value with nowhere to live.
+
+Registration and disclosure stay separate, which is the point. The address sits in `demoApprovedAssets` for every profile and is handed out only where `allowedAssetTypes` names `email` — today the recruiter profile alone. The consulting and general-assistant profiles do not share it, and `demo-mode` continues to share nothing at all; widening that is a per-profile line, not a code change. A test asserts both halves, so a profile silently gaining or losing the address cannot pass.
+
+This is the only contract change in the three follow-ups: one additive union member and its validator entry. No authority entry, disclosure policy, or escalation rule moved, and the strict default still shares nothing.
+
+**Follow-up (2026-09-11, fourth) — the five undated roles are dated, and decision 5 is what shaped how.** The resume carries no dates for them, which is why they shipped undated. The owner's public portfolio résumé page does, so the ranges are transcribed from it. No type, policy, or authority rule changed.
+
+Two details are the decision doing its work rather than incidental:
+
+**Precision is not widened.** The portfolio gives some ranges as bare years and one as months. They are stored exactly that way — `2015`, not `2015-01`. A guessed month is an invented date, and an invented date is the specific thing decision 5 forbids; a plausible-looking one is worse than a coarse one because it cannot be spotted. A test pins the stored format to `YYYY` or `YYYY-MM` and asserts the year-only entries stay year-only.
+
+**One mapping is owner-confirmed, not transcribed.** The portfolio carries AHLO Inc. as a single consolidated entry spanning `2019 — 2023 · 2006 — 2007`, while the resume splits AHLO into two roles. Both sources order roles reverse-chronologically, which implies contractor → 2019–2023 and warehouse operations → 2006–2007, but neither source states the mapping. Under decision 5 a well-supported inference about an employment date is still an inference, so the owner confirmed it rather than the ranges being assigned by reasoning. The fixture records that this one mapping is owner-confirmed, so a later reader does not mistake it for transcription.
+
 ---
 
 ## ADR-0047 — The first prospect proof is an isolated, supervised post-call evidence chain

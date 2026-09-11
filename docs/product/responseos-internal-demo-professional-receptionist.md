@@ -70,12 +70,19 @@ prohibited (`AGENTS.md`; doctrine §2.2, §20), so a category with no
 canonical source produces the fallback line rather than a guess.
 
 The fixture now carries two canonical imports: the account owner's
-resume, imported on the date in `RESUME_IMPORTED_AT`, and the three
-project records on the public portfolio at `tyronenelms.com/work`, read
-on the date in `PORTFOLIO_IMPORTED_AT`. Nothing in either is inferred:
-roles the resume carries without dates are stored without dates, skills
-arrive as the flat list it supplies, and no achievement or metric is
-written that neither source states.
+resume, imported on the date in `RESUME_IMPORTED_AT`, and the public
+portfolio at `tyronenelms.com` — its project pages and its résumé page
+— read on the date in `PORTFOLIO_IMPORTED_AT`. Nothing in either is
+inferred: skills arrive as the flat list the resume supplies, and no
+achievement or metric is written that neither source states.
+
+**Dates are stored at source precision.** Every role now carries a
+range, but only to the precision its source gives: year-only where the
+portfolio states a year, month where it states a month. Widening `2015`
+into a guessed month would be inventing a date, so a test pins the
+format to `YYYY` or `YYYY-MM` and asserts the year-only entries stay
+year-only. The two current roles carry no end date; every past role
+does.
 
 **Project status is part of the claim.** Two of the three projects are
 internal systems with no external customers and no production
@@ -98,6 +105,20 @@ So the receptionist today:
 - **refuses** private questions;
 - **looks up** interview availability against the calendar rather than
   quoting a time from memory.
+
+**Links travel one route only.** No answer body carries a URL. A link
+reaches a caller only through `listShareableAssets`, which filters the
+approved-asset list by the answering profile's `allowedAssetTypes` — so
+an asset that is not registered cannot be offered however the profile is
+configured, and a profile that allows no types shares nothing even when
+the question is answered in full. The registered assets are the personal
+site, the résumé page, LinkedIn, GitHub, and the owner's email address.
+
+Registration is not disclosure. The email is registered for every
+profile but handed out only where `allowedAssetTypes` names `email` —
+today the recruiter profile alone, which is also the account default.
+Widening that to the consulting or general-assistant profile is a
+per-profile line, not a code change.
 
 Adding or retiring an answerable category stays a **data change, not a
 code change**: supply canonical records (or wire the Career OS adapter)

@@ -345,15 +345,52 @@ describe("asset sharing", () => {
     expect(assets.every((asset) => asset.public)).toBe(true);
     expect(assets.map((asset) => asset.url)).toEqual([
       "https://tyronenelms.com",
+      "https://tyronenelms.com/resume",
+      "https://www.linkedin.com/in/audiojones/",
+      "https://github.com/AudioJones-Dev",
+      "mailto:tyrone@tyronenelms.com",
     ]);
   });
 
+  test("the email is registered but reaches a caller only by policy", async () => {
+    // Registration and disclosure are separate: the address sits in the
+    // approved list for every profile, and only one profile hands it out.
+    const shared = await listShareableAssets({
+      accountId: DEMO_ACCOUNT,
+      policy: recruiterPolicy,
+    });
+    expect(shared.map((asset) => asset.type)).toContain("email");
+
+    const consulting = parseAgentProfilePolicy(
+      getMockAgentProfiles().find((p) => p.slug === "consulting-receptionist")
+        ?.system_policy_json,
+    );
+    const withheld = await listShareableAssets({
+      accountId: DEMO_ACCOUNT,
+      policy: consulting,
+    });
+    expect(withheld.map((asset) => asset.type)).not.toContain("email");
+    expect(withheld.some((asset) => asset.url.startsWith("mailto:"))).toBe(
+      false,
+    );
+  });
+
   test("an asset whose type the profile disallows is withheld", async () => {
+    // Every registered type has an asset behind it, so this narrows a
+    // real list rather than passing on an empty one.
     const assets = await listShareableAssets({
       accountId: DEMO_ACCOUNT,
       policy: { ...recruiterPolicy, allowedAssetTypes: ["github"] },
     });
-    expect(assets).toEqual([]);
+    expect(assets.map((asset) => asset.url)).toEqual([
+      "https://github.com/AudioJones-Dev",
+    ]);
+
+    const withoutGithub = await listShareableAssets({
+      accountId: DEMO_ACCOUNT,
+      policy: { ...recruiterPolicy, allowedAssetTypes: ["linkedin"] },
+    });
+    expect(withoutGithub.map((asset) => asset.type)).toEqual(["linkedin"]);
   });
 
   test("the default policy shares nothing", async () => {
@@ -475,10 +512,23 @@ describe("provider mocks work without credentials", () => {
     expect(experience.every((record) => record.verified)).toBe(true);
     expect(skills.every((record) => record.verified)).toBe(true);
 
-    // The resume dates only two roles; the rest must stay undated rather
-    // than carry a guess.
-    const dated = experience.filter((record) => record.startDate);
-    expect(dated.map((record) => record.company).sort()).toEqual([
+    // Every role is now dated, from the resume or the portfolio résumé.
+    expect(experience.every((record) => record.startDate)).toBe(true);
+
+    // Dates are stored at the precision the source gives them and no
+    // finer: widening a year-only source date into a guessed month would
+    // be inventing the month. YYYY or YYYY-MM, never a full day.
+    for (const record of experience) {
+      expect(record.startDate).toMatch(/^\d{4}(-\d{2})?$/);
+      if (record.endDate) expect(record.endDate).toMatch(/^\d{4}(-\d{2})?$/);
+    }
+    expect(
+      experience.find((r) => r.id === "exp_alorica")?.startDate,
+    ).toBe("2015");
+
+    // The two current roles carry no end date; every past role does.
+    const open = experience.filter((record) => !record.endDate);
+    expect(open.map((record) => record.company).sort()).toEqual([
       "AJ Digital / Freelance Consulting",
       "Florida Ramp & Lift",
     ]);

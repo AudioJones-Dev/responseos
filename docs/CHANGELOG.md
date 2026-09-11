@@ -12,6 +12,29 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - Updated section 7 of the operating-configuration standard, and the notes in `docs/architecture.md` and the platform doctrine that described `lib/config/` as empty.
 - **Not included:** no FRL `Account`, facts, provider identifiers, PII, or pricing, and nothing reads this configuration yet. No provider, deployment, database schema, migration, or environment behaviour changes. This PR changes `dashboard/dashboard-data.json`, so merging it republishes the public GitHub Pages dashboard.
 
+## Unreleased — feat: date the five undated work-history roles from the portfolio résumé
+
+- The five roles that shipped undated now carry ranges, transcribed from the account owner's public **portfolio résumé page** — the resume the fixture was built from carries no dates for them, which is why they were undated. Every role is now dated; no type, policy, or authority rule changed.
+- **Precision is not widened.** The source gives some ranges as bare years and one as months, and they are stored exactly that way — `2015`, not `2015-01`. A guessed month is an invented date, and a plausible-looking invented date is worse than a coarse real one because nobody can spot it. A test pins the stored format to `YYYY` or `YYYY-MM` and asserts the year-only entries stay year-only.
+- **One mapping is owner-confirmed rather than transcribed.** The portfolio carries AHLO Inc. as a single consolidated entry spanning two periods while the resume splits it into two roles, and neither source states which range belongs to which. Reverse-chronological ordering in both sources implies the split, but under ADR-0046 decision 5 a well-supported inference about an employment date is still an inference — so the owner confirmed it. The fixture records that this one mapping is owner-confirmed so a later reader does not mistake it for transcription.
+- The spoken work-history record now carries the dates too, and the test that formerly asserted "exactly two roles are dated" now asserts the invariants that still hold: source precision, and that only the two current roles lack an end date.
+- Recorded in ADR-0046 as a fourth dated follow-up.
+
+## Unreleased — feat: register the owner's email as an approved asset, shared under the recruiter profile
+
+- `ProfessionalAssetType` gains **`email`**, and the address the owner publishes on his own site is registered in `demoApprovedAssets`. The previous change left it out pending the owner's decision; the owner made it.
+- **Registration and disclosure remain separate.** The address is in the approved list for every profile and is handed out only where `allowedAssetTypes` names `email` — currently the `recruiter-receptionist` profile alone, which is also the account default. `consulting-receptionist` and `professional-assistant` do not share it, and `demo-mode` continues to share nothing. A test asserts both halves, so a profile silently gaining or losing the address cannot pass.
+- The seeded recruiter profile and its `lib/mock` counterpart were updated together, so mock-fixture parity holds.
+- One additive union member and its validator entry are the whole contract change. No authority entry, disclosure policy, or escalation rule moved, and the strict default still shares nothing. Recorded in ADR-0046 as a third dated follow-up.
+
+## Unreleased — feat: register the remaining approved assets and stop the docstring check contradicting AGENTS.md
+
+- Registered the **résumé page, LinkedIn, and GitHub** in `demoApprovedAssets`, each linked from the same public portfolio the project records came from. This became load-bearing rather than cosmetic in the previous change: answer bodies now carry no links, so `listShareableAssets` is the only route a URL takes to a caller, and an unregistered asset cannot be offered however the profile is configured.
+- The owner's **email address is deliberately not registered.** It is linked on the same page, but handing a personal address to an unscreened caller is the owner's decision, and no `ProfessionalAssetType` covers it.
+- Two asset tests previously passed only because no asset of the relevant type existed — `allowedAssetTypes: ["github"]` returned `[]` because there was no GitHub asset, not because the filter worked. Both now narrow a populated list, so they assert the filter rather than the absence.
+- Added a repository `.coderabbit.yaml` turning the **docstring-coverage pre-merge check off**. It failed on every PR in this repo and its only remedy was to write the comments `AGENTS.md` explicitly tells contributors not to write; the threshold counts functions carrying a docstring rather than whether the ones needing an explanation got one. CodeRabbit had already recorded the conflict as a learning. Organization UI settings continue to apply to everything the file does not set.
+- Recorded in ADR-0046 as a second dated follow-up. No type, claim-authority entry, disclosure policy, or escalation rule moved.
+
 ## Unreleased — feat: import the portfolio project records into the internal demo tenant's knowledge fixture
 
 - Added three `verified: true` project records to `lib/providers/professionalKnowledge/fixture.ts`, transcribed from the account owner's public portfolio at `tyronenelms.com/work` — already this tenant's one approved asset. The resume carries no project data, which is why the category had stayed unanswerable. `PORTFOLIO_IMPORTED_AT` records when the page was read.
