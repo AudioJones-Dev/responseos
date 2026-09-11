@@ -1,17 +1,21 @@
 # ResponseOS OG / Social Preview Copy + Image Spec
 
 **Owner:** AJ Digital LLC / Audio Jones · **Product Family:** ResponseOS / Founder Intelligence Systems™
-**Status:** OG / Social Preview Specification · **Scope:** Documentation and copy planning only
+**Status:** OG / Social Preview Specification · **Scope:** originally documentation and copy planning; the card and its metadata have since shipped (see the implementation note below)
 
 **Related Docs:**
 - [`responseos-demo-landing-page-copy.md`](./responseos-demo-landing-page-copy.md)
 - [`responseos-demo-narrative-and-asset-plan.md`](./responseos-demo-narrative-and-asset-plan.md)
 - [`../DESIGN.md`](../DESIGN.md) · [`responseos-gtm-product-roadmap.md`](./responseos-gtm-product-roadmap.md) (§14–§15 brand assets)
 
-> Documentation / spec only. **No image is generated and no code is wired in this task** — this
-> *specifies* the social-preview copy and the OG image so a later, explicitly-authorized asset task can
-> produce the PNG and attach the metadata. Brand 2.0 (ADR-0021); Business Memory stays Phase-1
-> event-ledger (ADR-0034); vendors invisible in public copy.
+> **Implementation status (2026-09-11).** This began as a documentation-only brief, and the
+> "no image, no wiring" framing kept below describes that original task. Both have since shipped:
+> `public/og/responseos-og.png` is rasterized from `public/og/responseos-og.svg` by
+> `scripts/generate-og.mjs`, and `app/layout.tsx` wires `metadata.openGraph` / `metadata.twitter`
+> to it. The brand lockup is the supplied ResponseOS wordmark raster
+> ([`../brand/RESPONSEOS_ASSET_MANIFEST.md`](../brand/RESPONSEOS_ASSET_MANIFEST.md)), which retires
+> the outlined-Syne prerequisite this spec used to carry. Brand 2.0 (ADR-0021); Business Memory stays
+> Phase-1 event-ledger (ADR-0034); vendors invisible in public copy.
 
 ---
 
@@ -22,7 +26,7 @@
 3. [Social preview copy](#3-social-preview-copy)
 4. [OG image spec](#4-og-image-spec)
 5. [Image content variants](#5-image-content-variants)
-6. [Metadata wiring plan (documented, not implemented)](#6-metadata-wiring-plan-documented-not-implemented)
+6. [Metadata wiring plan (shipped)](#6-metadata-wiring-plan-shipped)
 7. [Asset inventory](#7-asset-inventory)
 8. [Non-goals](#8-non-goals)
 9. [Open decisions](#9-open-decisions)
@@ -36,8 +40,8 @@
 This document specifies the **Open Graph / social preview copy and image** for ResponseOS — the link
 unfurl a prospect sees when the demo/landing page is shared on LinkedIn, X/Twitter, iMessage, Slack,
 etc. It mirrors the landing-page positioning: **revenue recovery / founder intelligence, not a commodity
-AI receptionist.** It produces no binary asset and changes no runtime — it is the brief for a later
-asset task.
+AI receptionist.** It was written as the brief for a later asset task; that task has since run, and the
+card and metadata are live.
 
 ## 2. What this covers
 
@@ -105,15 +109,17 @@ asset task.
 | B — Founder Intelligence | "Know which calls became revenue." | **revenue** | founder/operator audiences |
 | C — Business Memory | "Turn every call into business memory." | **business memory** | system/ops-led audiences |
 
-Render text **as part of the PNG** (outlined), so it doesn't depend on Syne being installed on the
-viewer's platform — consistent with the outlined-wordmark gap noted in the ADR-0025 asset phase.
+Render text **as part of the PNG**, so it doesn't depend on a font being installed on the viewer's
+platform. As shipped, the lockup is the supplied wordmark raster and the headline uses a
+metric-compatible sans (Liberation Sans, falling back to Arial) rather than outlined Syne.
 
-## 6. Metadata wiring plan (documented, not implemented)
+## 6. Metadata wiring plan (shipped)
 
-When a later, authorized task wires this, it attaches via Next.js App Router metadata (no new deps):
+This attaches via Next.js App Router metadata (no new deps). The live values in `app/layout.tsx`
+differ in wording from the sketch below; the shape is the same:
 
 ```ts
-// app/layout.tsx (or per-route) — DOCUMENTED ONLY, not changed in this task
+// app/layout.tsx (or per-route) — shape as shipped; wording lives in the file
 export const metadata = {
   // ...existing title/description/icons/manifest...
   openGraph: {
@@ -128,25 +134,26 @@ export const metadata = {
 };
 ```
 
-The PNG can be produced from an SVG via the already-present `sharp` (same approach as the favicons) —
-**that generation is a follow-up, not part of this spec.**
+The PNG is produced from the SVG via the already-present `sharp` (same approach as the favicons),
+by `scripts/generate-og.mjs`.
 
 ## 7. Asset inventory
 
 | Asset | Spec | Status |
 |---|---|---|
-| `/public/og/responseos-og.png` (1200×630) | §4 / §5 Variant A | **Needed** (gen follow-up) |
+| `/public/og/responseos-og.png` (1200×630) | §4 / §5 Variant A | **Shipped** — `scripts/generate-og.mjs` |
 | `/public/og/responseos-og-square.png` (1080×1080) | §4 optional | Optional |
-| Source `responseos-og.svg` (outlined text) | §4 / §5 | Needed for generation |
-| `metadata.openGraph` / `metadata.twitter` wiring | §6 | Needed (implementation follow-up) |
+| Source `responseos-og.svg` (embedded wordmark raster + text) | §4 / §5 | **Shipped** |
+| `metadata.openGraph` / `metadata.twitter` wiring | §6 | **Shipped** in `app/layout.tsx` |
 
-> The **outlined-Syne wordmark** (tracked gap from the ADR-0025 asset phase) is a prerequisite for
-> baking crisp Syne headlines into the OG PNG.
+> The outlined-Syne wordmark is **retired** as a prerequisite (ADR-0025 follow-up, 2026-09-11): the
+> supplied wordmark raster is the lockup, and headlines render in a metric-compatible sans. Vector
+> masters remain an open follow-up for large-format use.
 
 ## 8. Non-goals
 
-- Do **not** generate the OG PNG or any image in this task.
-- Do **not** modify `app/layout.tsx` or any route metadata.
+- ~~Do **not** generate the OG PNG or any image in this task.~~ Superseded — the card was generated under a later authorized task.
+- ~~Do **not** modify `app/layout.tsx` or any route metadata.~~ Superseded — the metadata is wired there now.
 - Do **not** add components, routes, runtime code, deps, or provider integrations.
 - Do **not** expose Telnyx, Vapi, or HubSpot in social copy.
 - Do **not** imply RAG / vector / per-tenant knowledge is active.
@@ -157,7 +164,7 @@ The PNG can be produced from an SVG via the already-present `sharp` (same approa
 - **Which headline variant (A/B/C)** is the default OG card — tied to the final CTA/positioning decision.
 - **Anchor vertical** reflected in copy/image (accessibility/mobility · home services · HVAC · multi-vertical).
 - Whether to ship **per-route OG cards** (demo vs pricing vs industries) or a single site-level card.
-- Image generation path (SVG → `sharp`, design tool export, or both) — and timing relative to the outlined-Syne wordmark.
+- Whether to add the optional 1080×1080 square card. The 1200×630 path is settled: SVG → `sharp`.
 - **(Architecture — preserved)** OpenAI-as-LLM-brain-inside-Vapi; Node.js gateway + Redis (ADR-0013/0014) behind/alongside Vapi (ADR-0032).
 
 ## 10. Success criteria
@@ -168,18 +175,18 @@ The PNG can be produced from an SVG via the already-present `sharp` (same approa
 - A documented (not implemented) metadata wiring plan is included.
 - Asset inventory lists what a later task must produce.
 - Open decisions are preserved.
-- No image generated; no UI / runtime / metadata changed.
+- (Original task) No image generated; no UI / runtime / metadata changed — superseded once the card and wiring shipped.
 
 ## 11. Suggested follow-up tasks
 
 1. Decide the default OG headline variant (with the final CTA/positioning).
-2. Produce the **outlined-Syne wordmark** (ADR-0025 gap) then the `responseos-og.svg` source.
-3. Generate `responseos-og.png` (+ optional square) via `sharp`.
-4. Wire `metadata.openGraph` / `metadata.twitter` in `app/layout.tsx` (or per route).
+2. ~~Produce the outlined-Syne wordmark (ADR-0025 gap)~~ — retired; the supplied wordmark raster is the lockup, and `responseos-og.svg` exists.
+3. ~~Generate `responseos-og.png` via `sharp`.~~ Done (`scripts/generate-og.mjs`). The optional 1080×1080 square is still open.
+4. ~~Wire `metadata.openGraph` / `metadata.twitter` in `app/layout.tsx`.~~ Done.
 5. Validate the unfurl on LinkedIn / X / iMessage / Slack.
 
 ---
 
-*ResponseOS OG / Social Preview Spec — documentation / copy planning only. No image generated, no
-metadata or runtime changed. Brand 2.0 (ADR-0021); Business Memory Phase-1 event-ledger (ADR-0034);
+*ResponseOS OG / Social Preview Spec — originally documentation / copy planning only; the card and
+metadata have since shipped (see the implementation note at the top). Brand 2.0 (ADR-0021); Business Memory Phase-1 event-ledger (ADR-0034);
 open decisions preserved.*

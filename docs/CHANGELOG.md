@@ -12,6 +12,7 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - The client portal and demo client dashboard labelled an estimated figure "Recovered Revenue". Both now read "Estimated Recovered Revenue", matching the operator console, since estimated revenue is never presented as recovered revenue.
 - UI fixes: the collapsed-sidebar mark fits its 44px rail, the five OFFER cards no longer leave an empty grid cell, and the demo fallback banner no longer prints `.).`.
 - The pack is raster-only, so the wordmark stays crisp to about 170 CSS px on a 2x display; vector masters are an open follow-up. Proposed marketing-copy changes are with the owner for approval and are not part of this entry.
+- **Review follow-ups.** The header renders the compact mark below `sm`: at 375px the 176px wordmark left the CTA wrapping onto three lines inside its 64px bar, and at 320px the button was 60px tall. The CTA no longer wraps, and `Operator console` appears from `lg`, because at 768px the nav arrives and the row overflowed once the button stopped wrapping. Dashboard task `G-13` uses the contract priority `Med` rather than `Medium`, which the board maps for colour and sort order. The OG spec now records that the card and its metadata shipped, and retires the outlined-Syne prerequisite.
 
 ## Unreleased — chore: consolidate normalizeE164 into one shared helper
 

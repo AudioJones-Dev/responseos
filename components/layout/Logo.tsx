@@ -19,7 +19,11 @@ export function LogoMark({ className }: { className?: string }) {
   );
 }
 
-/** Primary lockup: the supplied ResponseOS wordmark. */
+/**
+ * Primary lockup: the supplied ResponseOS wordmark, with the compact mark
+ * standing in below `sm`. At 375px the 176px-wide wordmark left the header CTA
+ * wrapping onto three lines inside its 64px bar.
+ */
 export function Logo({ href = "/", className }: { href?: string; className?: string }) {
   return (
     <Link
@@ -28,12 +32,20 @@ export function Logo({ href = "/", className }: { href?: string; className?: str
       className={cn("inline-flex shrink-0 items-center", className)}
     >
       <Image
+        src="/brand/responseos-mark.png"
+        alt=""
+        width={237}
+        height={130}
+        loading="eager"
+        className="h-6 w-auto sm:hidden"
+      />
+      <Image
         src="/brand/responseos-wordmark.png"
         alt=""
         width={344}
         height={47}
         loading="eager"
-        className="h-6 w-auto"
+        className="hidden h-6 w-auto sm:block"
       />
     </Link>
   );
