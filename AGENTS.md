@@ -121,7 +121,8 @@ New commits invalidate recorded review coverage; confirm renewed coverage of
 the current SHA. A dispatch is only `review_requested`, never completion.
 Record `review_running`, `review_completed`, `review_valid_for_head`,
 `review_blocked`, or `review_unavailable` from actual evidence. Cancelled,
-timed-out, skipped, unavailable, pending, failed and rate-limited runs cannot
+timed-out, skipped, unavailable, pending, failed, rate-limited, summary-only and
+walkthrough-only runs cannot
 satisfy review. Record reviewer system, exact SHA, event URL/time, findings and
 thread resolution. Generic green checks and editable PR metadata cannot prove
 reviewer independence. No agent may merge or enable automatic merge.
