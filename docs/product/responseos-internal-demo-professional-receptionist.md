@@ -201,13 +201,23 @@ than `app/(demo)` so that verified records about a real person are not
 rendered under the walkthrough layout's "fictional scenario" footer; the
 URL is unchanged, since route groups do not affect the path.
 
-**The policy it enforces is the compiled-in one.** The page reads the
-default `AgentProfile` from the fixtures, not through
-`lib/data/agentProfiles` — that accessor scopes by session and this page
-has none. Fixtures and seeded rows match today, so the page discloses
-what the tenant's stored policy permits; but it would not notice an
-operator revoking disclosure in a DB-backed deployment. Tracked in
-ADR-0046's seventh follow-up.
+**The policy it enforces is the tenant's stored one.** The page reads the
+default `AgentProfile` through `listInternalDemoAgentProfiles()`
+(ADR-0052), so an operator who disables the profile, or drops an asset
+type such as the owner's email address from its stored policy, changes
+what this page discloses on the next request — no deployment. The
+accessor takes no parameters, which is why it can skip `withTenantScope`
+without weakening it: the account is fixed at compile time, so nothing a
+request carries can name a tenant. With no governing profile — the read
+failed, or every profile is disabled — the page **does not answer at
+all**: it reaches neither the answering path nor the asset list, and says
+so. The strict default is deliberately *not* the fallback, because
+`applyPolicy` consults the policy only for compensation, references and
+consulting rates; work history, projects, skills and certifications keep
+their base `answer` authority, so falling back to it would keep reciting
+verified records after the agent was switched off. The fixtures are never
+the fallback either. With no `DATABASE_URL` they remain the
+configuration, per the mock-first rule.
 
 **The write path still has no caller.** `captureProfessionalOpportunity`,
 `requestProfessionalEscalation`, and `bookProfessionalAppointment` each
