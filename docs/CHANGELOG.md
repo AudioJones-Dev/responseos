@@ -12,6 +12,10 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - **Three conflicts with already-recorded decisions are registered rather than silently resolved.** The specification spells the notification mailbox differently from the address recorded twice on 2026-09-11 — a wrong address loses every notification, so the recorded value is the default and the operator confirms before any live send. The specification also creates HubSpot Notes, Tickets, Deals and Companies, where the binding closure scope is contact + call activity with an enriched `hs_call_body` and a HIGH follow-up task and **explicitly no Note**; the broader projection is `ROADMAP` and must not enter the in-flight closure change. And it lists hours and geography as unresolved when both are already decided.
 - Ten open items are recorded as explicit activation gates, each naming the behaviour it blocks. None of them blocks schema or state-machine design, which is the point of separating them.
 - Greeting and disclosure wording is carried as **draft**, not approved copy, with the source's own "review for legal sufficiency" caveat intact — caller-facing copy is the owner's to set.
+## Unreleased — test: disconnect application client before seed schema resets
+
+- Disconnect both integration and application Prisma clients before the seed-determinism test recreates the local database schema. This prevents a reused application connection from retaining removed PostgreSQL enum identifiers.
+- Exercise enum-bearing audit writes before and after each reset so cached-client failures are covered, while retaining the seeded-payload determinism assertion.
 
 ## Unreleased — docs: authorize a bounded production carve-out for the public demo surface
 
