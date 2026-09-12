@@ -249,7 +249,7 @@ A mock-safe hosted demo. Per **ADR-0019** this is a *v0.3-gated, production-faci
 - ✅ **Fail-closed auth gate exists** — #96 merged (`8fffd57`)
 - ⬜ **Set `RESPONSEOS_REQUIRE_AUTH` on the hosted deploy** — the gate is opt-in; unset, `master` is still fail-open by default
 - ⬜ **Confirm `/api/audit-requests` reachability** before enabling the flag — it is not on the public path list (§3e)
-- ⬜ **Founder authorization + an explicit carve-out** from the "no production deploys" hard rule (`AGENTS.md:24`)
+- ✅ **Founder authorization + an explicit carve-out** from the "no production deploys" hard rule — granted 2026-09-12 and ratified as ADR-0053, **scoped to the public read-only demo surface only** (marketing pages + `/demo/receptionist`, mock adapters, no provider credentials). It is not v0.3 authorization and unlocks no other lane.
 - ⬜ **Real Clerk login replacing the basic-auth shim** — ADR-0019 makes this a precondition
 - ⬜ No hosted-deploy artifact exists on `master` (`vercel.json` is a *blocker*, not a pipeline)
 
@@ -271,7 +271,7 @@ Knowledge layer / RAG is v0.4-gated. Out of scope, correctly.
 
 ### 🔴 "v0.3 readiness gates" are cited but never defined
 
-The phrase appears as a **binding constraint in 7 files** — `AGENTS.md:24`, `docs/ROADMAP.md:100`, `README.md:102`, `docs/PRD.md:73`, `docs/ops/RESPONSEOS_DEPLOYMENT_PLAN.md:7`, `docs/ops/RESPONSEOS_OBSERVABILITY_AND_GOVERNANCE.md:126`, `docs/product/RESPONSEOS_BUILD_SOURCE.md:211` — always as *"no production deploys until they clear."*
+The phrase appears as a **binding constraint in 7 files** — `AGENTS.md`, `docs/ROADMAP.md`, `README.md`, `docs/PRD.md`, `docs/ops/RESPONSEOS_DEPLOYMENT_PLAN.md`, `docs/ops/RESPONSEOS_OBSERVABILITY_AND_GOVERNANCE.md`, `docs/product/RESPONSEOS_BUILD_SOURCE.md` — as *"no production deploys until they clear,"* each now carrying the single ADR-0053 exception for the public read-only demo surface. The gates themselves are still undefined; the carve-out deliberately does not define them, it bypasses them for one surface that needs no credentials.
 
 **No document defines what they are.** The nearest artifacts are a provider-readiness gate (`docs/architecture/RESPONSEOS_BACKEND_SPEC.md:205`) and two pre-deploy checklists — and **all of them still name the superseded ADR-0012 stack** (Grok Voice, OpenAI Realtime, Twilio Media Streams, the deferred Node voice gateway) rather than the current Telnyx/Vapi canon from ADR-0031/0032/0036.
 

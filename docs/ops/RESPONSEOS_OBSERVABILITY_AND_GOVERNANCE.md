@@ -145,7 +145,7 @@ flowchart LR
 - **Internal milestone versioning** (v0.1, v0.2 A–D, v0.3, …), not semver, per [`../CHANGELOG.md`](../CHANGELOG.md).
 - Public REST is path-versioned (`/v1`) when breaking changes land.
 - The gateway↔core internal contract versions in lockstep with the gateway deploy.
-- No production deploys until v0.3 readiness gates clear (ADR-0001/roadmap).
+- No production deploys until v0.3 readiness gates clear (ADR-0001/roadmap), except the public read-only demo surface (ADR-0053).
 
 ### B6. Change management
 
