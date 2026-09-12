@@ -32,6 +32,17 @@
   ],
   "tasks": [
     {
+      "id": "G-15",
+      "phase": "Tech Debt & Hardening",
+      "title": "Designate Langfuse as the AI observability layer (ADR-0054)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 100,
+      "priority": "Med",
+      "start": "2026-09-12",
+      "due": "2026-09-12"
+    },
+    {
       "id": "F-01",
       "phase": "v0.1 · Foundation",
       "title": "Next.js app scaffold",
