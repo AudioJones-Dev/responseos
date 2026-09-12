@@ -32,6 +32,18 @@
   ],
   "tasks": [
     {
+      "id": "CONVERGE-CRM-CLAIM",
+      "phase": "Tech Debt & Hardening",
+      "title": "Preserve atomic CRM retry ownership remediation",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-09-12",
+      "blocked": true,
+      "blockedReason": "Local Postgres concurrency regression awaits Docker Linux engine."
+    },
+    {
       "id": "F-01",
       "phase": "v0.1 · Foundation",
       "title": "Next.js app scaffold",
