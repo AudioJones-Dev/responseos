@@ -6,7 +6,9 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 ## Unreleased — docs: clarify agent authority to mark PRs ready for review
 
-- Explicitly permit agents to mark validated draft PRs ready for review without separate operator approval, after checking the current head and required checks. Preserve human merge approval and all validation, deployment and provider gates.
+- Explicitly permit agents to mark validated draft PRs ready for review without separate operator approval, after checking the current head and required checks.
+- Require CodeRabbit or Claude review for Codex-authored changes, and CodeRabbit or Codex review for Claude-authored changes. Mixed Codex/Claude authorship requires independent CodeRabbit review. Self-checks and skipped reviews do not satisfy this requirement; changes after review require independent review of the changes.
+- Reserve merge and squash merge execution to the human after independent review, blocking-finding resolution and required checks. Preserve validation, deployment and provider gates.
 
 ## Unreleased — test: disconnect application client before seed schema resets
 

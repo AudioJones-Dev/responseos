@@ -38,7 +38,9 @@ Before proposing a feature, refactor, or architectural change, answer the fiftee
 
 - Develop on a feature branch off the latest commit on the default branch.
 - Open PRs as **draft** until CI is green. Agents may mark a validated draft **ready for review** without separate operator approval; verify the current PR head and required checks first. PR pattern follows PRs #5 / #6 / #7 / #12.
-- **Ready for review is not approval to merge.** Human merge approval and all local/CI validation gates below remain required. Marking ready does not authorize deployment, provider activation, or any other separately gated action.
+- **Independent review is required.** Codex-authored changes must be reviewed by CodeRabbit or Claude; Claude-authored changes must be reviewed by CodeRabbit or Codex. An author may run tests and self-check, but cannot provide the independent review for their own changes. If both Codex and Claude authored changes in a PR, CodeRabbit must review it independently.
+- Review must cover the current PR head. Address blocking findings and resolve the corresponding conversations before merge; changes made after review require review of those changes by an eligible independent reviewer. A skipped, pending, failed, or rate-limited review is not a completed review.
+- **The human performs the merge or squash merge** after independent review is complete, blocking findings are resolved, and required local/CI checks pass. Agents may prepare the PR and mark it ready for review; they must not merge it. Marking ready does not authorize deployment, provider activation, or any other separately gated action.
 - Commit messages are imperative and scoped: `feat:`, `fix:`, `docs:`, `test:`, `ci:`, `chore:`. Match the existing log style.
 - Never push to `master` directly. Never force-push to a shared branch without explicit approval.
 

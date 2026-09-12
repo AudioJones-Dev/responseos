@@ -36,7 +36,7 @@
       "ref": 172,
       "refType": "pull",
       "phase": "Tech Debt & Hardening",
-      "title": "Clarify agent authority to mark PRs ready for review",
+      "title": "Require independent agent review and human merge",
       "owner": "Codex",
       "status": "Review",
       "progress": 90,
