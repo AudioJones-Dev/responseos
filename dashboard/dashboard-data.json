@@ -774,6 +774,19 @@
       "refType": "pull"
     },
     {
+      "id": "V-18",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Public demo surface honours the tenant's stored disclosure policy",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-09-12",
+      "due": "2026-09-12",
+      "ref": 164,
+      "refType": "issue"
+    },
+    {
       "id": "V-16",
       "phase": "v0.3 · Demo Scope",
       "title": "Consolidate normalizeE164 into one shared helper (caller-resolution prerequisite)",

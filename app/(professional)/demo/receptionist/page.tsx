@@ -7,7 +7,7 @@ import {
   StatusBadge,
   type Tone,
 } from "@/components/ui";
-import { getMockAgentProfiles } from "@/lib/mock/agentProfiles";
+import { listInternalDemoAgentProfiles } from "@/lib/data/agentProfiles";
 import {
   answerProfessionalQuestion,
   listShareableAssets,
@@ -27,6 +27,10 @@ import { EXAMPLE_QUESTIONS } from "./_data/examples";
  * The account id is a server-side constant and is never read from the
  * request: a caller supplies the question and nothing else, so no input
  * can steer the answer at another tenant (SECURITY.md).
+ *
+ * The disclosure policy is the tenant's stored one, read through
+ * `lib/data/agentProfiles` (ADR-0052), so an operator can revoke what
+ * this page shares without a deployment.
  *
  * Only the read path is wired. `lib/professional/intake.ts` — opportunity
  * capture, escalation emission, booking — writes rows and is deliberately
@@ -68,34 +72,64 @@ export default async function DemoReceptionistPage({
     INTERNAL_DEMO_ACCOUNT_ID,
   );
 
-  // The default profile decides what may be disclosed. It is read from
-  // the fixtures, NOT through `lib/data/agentProfiles` — that accessor
-  // scopes by session, and this page has no session by design.
+  // The tenant's stored default profile decides what may be disclosed,
+  // so disabling it or narrowing its policy takes effect here without a
+  // deployment (ADR-0052).
   //
-  // So the policy enforced here is the one compiled in, and in a
-  // DB-backed deployment an operator who disables the profile or drops
-  // an asset type from its stored policy would not change what this page
-  // discloses. The fixtures and the seeded rows are identical today
-  // (asserted by the mock-parity integration test), so nothing is
-  // currently misreported — but this page is not the place to learn that
-  // disclosure was revoked. Closing that gap needs a sessionless read of
-  // a tenant-owned table, which is a SECURITY.md decision, not a detail
-  // of this route.
-  const agentProfile = resolveAgentProfile(getMockAgentProfiles());
-  const policy = parseAgentProfilePolicy(agentProfile?.system_policy_json);
-
-  const answer = question
-    ? await answerProfessionalQuestion({
-        accountId: INTERNAL_DEMO_ACCOUNT_ID,
-        question,
-        policy,
-      })
+  // No profile means the receptionist does not answer — at all. The
+  // strict default is not enough on its own: it withholds assets and
+  // escalates compensation and references, but `applyPolicy` consults
+  // the policy for *only* those categories, so work history, projects,
+  // skills and certifications keep `answer` authority and the page would
+  // go on reciting verified records after the operator switched the
+  // agent off. Falling back to that default is what a revocation must
+  // not look like, so the answering path is not reached at all.
+  //
+  // Both routes here are closed: an error envelope means the stored
+  // policy is unknown, and `resolveAgentProfile` returns null when every
+  // profile is disabled. The fixtures are never the fallback — reading
+  // them when the database had something else to say is the bug this
+  // replaced.
+  const profiles = await listInternalDemoAgentProfiles();
+  const agentProfile = profiles.ok ? resolveAgentProfile(profiles.data) : null;
+  const policy = agentProfile
+    ? parseAgentProfilePolicy(agentProfile.system_policy_json)
     : null;
 
-  const assets = await listShareableAssets({
-    accountId: INTERNAL_DEMO_ACCOUNT_ID,
-    policy,
-  });
+  const answer =
+    policy && question
+      ? await answerProfessionalQuestion({
+          accountId: INTERNAL_DEMO_ACCOUNT_ID,
+          question,
+          policy,
+        })
+      : null;
+
+  const assets = policy
+    ? await listShareableAssets({
+        accountId: INTERNAL_DEMO_ACCOUNT_ID,
+        policy,
+      })
+    : [];
+
+  if (!policy) {
+    return (
+      <>
+        <PageHeader
+          eyebrow="Internal demo tenant"
+          title="Professional receptionist"
+          description="This receptionist is not answering right now."
+        />
+        <AlertBanner variant="warning">
+          No enabled agent profile governs this account, so nothing is
+          disclosed — no question is answered and no asset is listed. Either
+          the account&rsquo;s profiles are switched off, or their disclosure
+          policy could not be read; in both cases the safe reading is that the
+          receptionist is off, not that it may fall back to a default.
+        </AlertBanner>
+      </>
+    );
+  }
 
   return (
     <>
