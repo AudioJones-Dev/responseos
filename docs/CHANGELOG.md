@@ -7,7 +7,7 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 ## Unreleased — fix: bound prospect website transport
 
 - Preserves the reviewed local remediation: honor Node DNS lookup modes, keep deadlines active through body reads, and cancel redirect bodies. Validated-address pinning remains intact.
-- Regression coverage exercises lookup modes, stalled bodies, and redirect cancellation. No provider activation or deployment.
+- Regression coverage exercises lookup modes, stalled bodies, redirect cancellation, and oversized/stalled robots 404 bodies. Error responses are cancelled without consuming their bodies, preserving status-based handling. No provider activation or deployment.
 
 ## Unreleased — docs: authorize a bounded production carve-out for the public demo surface
 

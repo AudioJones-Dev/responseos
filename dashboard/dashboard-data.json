@@ -42,8 +42,7 @@
       "progress": 90,
       "priority": "High",
       "start": "2026-09-12",
-      "blocked": true,
-      "blockedReason": "Local Postgres integration unavailable; merge validation remains required."
+      "blocked": false
     },
     {
       "id": "F-01",

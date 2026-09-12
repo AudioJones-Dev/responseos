@@ -239,7 +239,7 @@ async function fetchWithSafeRedirects(params: {
         ? await params.fetchFn(current, init)
         : await pinnedHttpsFetch(current, init, resolved.address);
       if (![301, 302, 303, 307, 308].includes(response.status)) {
-        const body = await readBoundedBody(response);
+        const body = response.ok ? await readBoundedBody(response) : "";
         return { response, finalUrl: current, body };
       }
       const location = response.headers.get("location");

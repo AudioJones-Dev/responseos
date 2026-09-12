@@ -3,7 +3,7 @@ import { Readable } from "node:stream";
 import { request } from "node:https";
 import type { RequestOptions } from "node:https";
 import { afterEach, expect, test, vi } from "vitest";
-import { acquireProspectWebsite, PROSPECT_FETCH_TIMEOUT_MS } from "@/lib/prospectBootstrap/websiteAcquisition";
+import { acquireProspectWebsite, MAX_PROSPECT_PAGE_BYTES, PROSPECT_FETCH_TIMEOUT_MS } from "@/lib/prospectBootstrap/websiteAcquisition";
 
 vi.mock("node:https", () => ({ request: vi.fn() }));
 
@@ -66,4 +66,27 @@ test("cancels a redirect body before requesting the next URL", async () => {
   });
   const result = await acquireProspectWebsite({ canonicalUrl: "https://example.com", lookupFn, fetchFn });
   expect(result.pages[0].url).toBe("https://example.com/about");
+});
+
+test.each(["oversized", "stalled"])("ignores and cancels an %s robots 404 body", async (bodyKind) => {
+  vi.useFakeTimers();
+  const cancel = vi.fn();
+  const fetchFn = vi.fn<typeof fetch>(async (url, init) => {
+    if (!String(url).endsWith("/robots.txt")) {
+      return new Response("Business information", { headers: { "content-type": "text/plain" } });
+    }
+    return new Response(new ReadableStream({
+      start(controller) {
+        if (bodyKind === "oversized") controller.enqueue(new Uint8Array(MAX_PROSPECT_PAGE_BYTES + 1));
+        init!.signal!.addEventListener("abort", () => controller.error(new Error("body_deadline")), { once: true });
+      },
+      cancel,
+    }), { status: 404 });
+  });
+  const outcome = acquireProspectWebsite({ canonicalUrl: "https://example.com", lookupFn, fetchFn })
+    .then((result) => result, (error: Error) => error.message);
+  await vi.advanceTimersByTimeAsync(PROSPECT_FETCH_TIMEOUT_MS);
+  expect(await outcome).toMatchObject({ pages: [{ extractedText: "Business information" }], blockedUrls: [] });
+  expect(cancel).toHaveBeenCalledOnce();
+  expect(vi.getTimerCount()).toBe(0);
 });
