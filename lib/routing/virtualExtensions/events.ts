@@ -45,13 +45,7 @@ function event(
     destinationRef: requested || unresolved ? null : decision.destinationRef,
     destinationType: requested || unresolved ? null : decision.destinationType,
     availabilityState: decision.availabilityState,
-    outcome: requested
-      ? null
-      : unresolved
-        ? decision.outcome === "rejected"
-          ? "rejected"
-          : "clarify"
-        : decision.outcome,
+    outcome: requested ? null : decision.outcome,
     reasonCode: requested ? null : decision.reasonCode,
     evidenceRef: `mock-route-request:${request.routeRequestId}`,
   }
@@ -61,6 +55,13 @@ export function toVirtualExtensionRoutingEvents(
   request: VirtualExtensionRouteRequest,
   decision: VirtualExtensionRouteDecision,
 ): readonly VirtualExtensionRoutingEvent[] {
+  if (
+    request.accountId !== decision.accountId ||
+    request.callId !== decision.callId ||
+    request.routeRequestId !== decision.routeRequestId
+  ) {
+    throw new Error("Routing request and decision scopes must match")
+  }
   const eventTypes: VirtualExtensionRoutingEventType[] = ["call.route.requested"]
 
   if (decision.outcome === "resolved") {

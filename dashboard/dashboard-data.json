@@ -652,7 +652,7 @@
       "ref": 123,
       "refType": "pull",
       "blocked": true,
-      "blockedReason": "Draft PR #123 awaits CI and human review; merge and every persistence/live-provider stage remain separately gated"
+      "blockedReason": "PR #123 routing-ownership ADR review remains open; event-scope and fallback fixes await exact-head validation. Human merge and later persistence/live-provider stages remain gated."
     },
     {
       "id": "L-05",

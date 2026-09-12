@@ -9,6 +9,7 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - Added provider-neutral virtual-extension request, decision, destination, availability, reason-code, and mock-event contracts.
 - Added a pure account-scoped resolver with deterministic two-account fixtures, exact DTMF precedence, exact spoken-alias matching, one clarification, message-taking fallback, and stable decision/event identities.
 - Added unit coverage for route resolution, normalization, tenant isolation, idempotency, fallback behavior, evidence-state honesty, and the absence of live phone/SIP destinations.
+- Reject mismatched request/decision account, call, or request identifiers before creating routing events; preserve an exhausted clarification's fallback outcome in both audit events.
 - **Mock-only policy seam:** no Prisma model, API route, provider adapter, prompt, SDK, env var, secret, number, network call, deployment, or activation behavior is added.
 ## Unreleased — docs: authorize a bounded production carve-out for the public demo surface
 

@@ -209,6 +209,21 @@ describe("virtual extension routing", () => {
     expect(differentDecision.decisionId).not.toBe(firstDecision.decisionId)
   })
 
+  it.each(["accountId", "callId", "routeRequestId"] as const)(
+    "rejects a decision whose %s belongs to a different request scope",
+    (scope) => {
+      const routeRequest = request({ source: "speech", intent: "sales" })
+      const decision = resolveVirtualExtensionRoute({
+        ...routeRequest,
+        [scope]: "different-scope",
+      })
+
+      expect(() => toVirtualExtensionRoutingEvents(routeRequest, decision)).toThrow(
+        "Routing request and decision scopes must match",
+      )
+    },
+  )
+
   it("maps resolved, unresolved, and fallback decisions without transfer claims", () => {
     const resolvedRequest = request({ source: "speech", intent: "sales" })
     const clarifyRequest = request({
@@ -268,7 +283,7 @@ describe("virtual extension routing", () => {
     })
     expect(fallbackEvents[1]).toMatchObject({
       destinationRef: null,
-      outcome: "clarify",
+      outcome: "fallback",
       reasonCode: "clarification_exhausted",
     })
     expect(fallbackEvents[2]).toMatchObject({
