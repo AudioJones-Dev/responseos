@@ -75,6 +75,7 @@ export async function runCrmSyncForCall(params: {
 
   const provider = params.providerOverride ?? getCrmProvider();
   const operationKey = `crm-call:${params.accountId}:${params.callId}`;
+  let claimed = false;
 
   try {
     let operation = await db.crmSyncOperation.upsert({
@@ -88,9 +89,25 @@ export async function runCrmSyncForCall(params: {
       },
       update: {},
     });
-    if (operation.status === "succeeded" || operation.status === "review_required") {
+    if (operation.status !== "pending" && operation.status !== "retryable_failed") {
       return ok(toView(operation));
     }
+    const claim = await db.crmSyncOperation.updateMany({
+      where: { id: operation.id, status: { in: ["pending", "retryable_failed"] } },
+      data: {
+        status: "processing",
+        attempt_count: { increment: 1 },
+        last_error_code: null,
+        last_error_redacted: null,
+        next_attempt_at: null,
+      },
+    });
+    if (claim.count === 0) {
+      const current = await db.crmSyncOperation.findUniqueOrThrow({ where: { id: operation.id } });
+      return ok(toView(current));
+    }
+    claimed = true;
+    operation = await db.crmSyncOperation.findUniqueOrThrow({ where: { id: operation.id } });
     if (operation.provider === "hubspot" && provider.providerId !== "hubspot") {
       operation = await db.crmSyncOperation.update({
         where: { id: operation.id },
@@ -103,17 +120,6 @@ export async function runCrmSyncForCall(params: {
       });
       return ok(toView(operation));
     }
-
-    operation = await db.crmSyncOperation.update({
-      where: { id: operation.id },
-      data: {
-        status: "processing",
-        attempt_count: { increment: 1 },
-        last_error_code: null,
-        last_error_redacted: null,
-        next_attempt_at: null,
-      },
-    });
 
     const call = await db.call.findFirst({
       where: { id: params.callId, account_id: params.accountId },
@@ -227,6 +233,7 @@ export async function runCrmSyncForCall(params: {
     return ok(toView(operation));
   } catch (error) {
     const safe = redactedError(error);
+    if (!claimed) return err(safe.code, safe.message);
     const updated = await db.crmSyncOperation.update({
       where: { operation_key: operationKey },
       data: {

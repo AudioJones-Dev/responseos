@@ -32,6 +32,18 @@
   ],
   "tasks": [
     {
+      "id": "REVIEW-2026-09-11",
+      "phase": "Tech Debt & Hardening",
+      "title": "Fix prospect HTTPS transport and concurrent CRM retry ownership",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-09-11",
+      "blocked": true,
+      "blockedReason": "Local lint, typecheck, build and 594 unit tests passed. Postgres integration validation remains pending because Docker Desktop's Linux engine is unavailable."
+    },
+    {
       "id": "F-01",
       "phase": "v0.1 · Foundation",
       "title": "Next.js app scaffold",
