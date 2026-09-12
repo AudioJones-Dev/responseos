@@ -4,6 +4,14 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — fix: claim CRM sync operations atomically and bound website fetch deadlines
+
+- **Concurrent CRM retries could duplicate provider writes.** `runCrmSyncForCall` flipped the operation to `processing` unconditionally, so two concurrent runners both proceeded past the guard. The operation row is now claimed with a conditional `updateMany` gated on `status IN ('pending','retryable_failed')`; a runner that loses the claim returns the current view instead of re-sending to the provider. A `claimed` flag keeps a failure raised *before* the claim from writing failure state onto an operation that runner never owned.
+- **The pinned HTTPS lookup used the wrong callback shape** — it was cast `as never`. It now honours both Node `lookup` modes: the array form when `options.all` is set, otherwise `(address, family)`.
+- **Request deadlines ended at headers.** `fetchWithSafeRedirects` returns the body alongside the response and reads it inside the try, so the abort deadline covers body consumption; the stream is cancelled in `finally`.
+- Adds unit regressions for the claim path and the website transport, plus a Postgres concurrency regression in `tests/integration/crm-sync.integration.test.ts`. **The integration regression was never executed locally** — Docker Desktop's Linux engine was unavailable — so CI's `integration` job is the first run of it.
+- Recovered during a branch closeout: these changes existed only in the working tree of the retired `feat/frl-supervised-pilot` branch, in no branch and on no remote. That branch's committed work had already landed via PR #152. Ported onto master's #155 `normalizeE164` consolidation rather than re-applied verbatim.
+
 ## Unreleased — test: disconnect application client before seed schema resets
 
 - Disconnect both integration and application Prisma clients before the seed-determinism test recreates the local database schema. This prevents a reused application connection from retaining removed PostgreSQL enum identifiers.

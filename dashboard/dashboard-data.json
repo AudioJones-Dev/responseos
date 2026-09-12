@@ -32,6 +32,20 @@
   ],
   "tasks": [
     {
+      "id": "REVIEW-2026-09-11",
+      "phase": "Tech Debt & Hardening",
+      "title": "Fix prospect HTTPS transport and concurrent CRM retry ownership",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-09-11",
+      "ref": 173,
+      "refType": "pull",
+      "blocked": false,
+      "blockedReason": "Validation complete on PR #173: CI validate and integration jobs both green, so the new Postgres concurrency regression has now actually executed (it could not run locally — no Docker Linux engine). Awaiting independent review by CodeRabbit, required because authorship is mixed Codex/Claude, then owner merge."
+    },
+    {
       "id": "F-01",
       "phase": "v0.1 · Foundation",
       "title": "Next.js app scaffold",
