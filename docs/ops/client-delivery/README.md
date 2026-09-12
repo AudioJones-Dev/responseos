@@ -47,6 +47,15 @@ a winner, or convert an assumption into an actual.
   are evidenced and ranked, and what each supervision mode requires before
   activation.
 
+## Client policies
+
+- [`clients/FRL_INBOUND_INTAKE_ROUTING_POLICY.md`](./clients/FRL_INBOUND_INTAKE_ROUTING_POLICY.md)
+  — Florida Ramp & Lift inbound intake and routing: the identity-resolution and
+  disclosure gate, the four product qualification trees, the canonical
+  qualification outcomes, escalation and notification behaviour, and the
+  conflicts and activation gates still awaiting an operator decision.
+  `DOCUMENTED_ONLY`.
+
 ## Templates
 
 - [`RESPONSEOS_PROSPECT_QUALIFICATION_INTAKE_TEMPLATE.md`](./templates/RESPONSEOS_PROSPECT_QUALIFICATION_INTAKE_TEMPLATE.md)

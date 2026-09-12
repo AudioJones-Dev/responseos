@@ -798,6 +798,17 @@
       "due": "2026-09-12"
     },
     {
+      "id": "V-20",
+      "phase": "v0.3 · Demo Scope",
+      "title": "FRL inbound intake & routing policy (canonical source for the supervised pilot)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-09-12",
+      "due": "2026-09-12"
+    },
+    {
       "id": "V-16",
       "phase": "v0.3 · Demo Scope",
       "title": "Consolidate normalizeE164 into one shared helper (caller-resolution prerequisite)",
