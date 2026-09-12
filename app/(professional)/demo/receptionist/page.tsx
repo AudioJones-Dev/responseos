@@ -7,7 +7,7 @@ import {
   StatusBadge,
   type Tone,
 } from "@/components/ui";
-import { getMockAgentProfiles } from "@/lib/mock/agentProfiles";
+import { listInternalDemoAgentProfiles } from "@/lib/data/agentProfiles";
 import {
   answerProfessionalQuestion,
   listShareableAssets,
@@ -27,6 +27,10 @@ import { EXAMPLE_QUESTIONS } from "./_data/examples";
  * The account id is a server-side constant and is never read from the
  * request: a caller supplies the question and nothing else, so no input
  * can steer the answer at another tenant (SECURITY.md).
+ *
+ * The disclosure policy is the tenant's stored one, read through
+ * `lib/data/agentProfiles` (ADR-0052), so an operator can revoke what
+ * this page shares without a deployment.
  *
  * Only the read path is wired. `lib/professional/intake.ts` — opportunity
  * capture, escalation emission, booking — writes rows and is deliberately
@@ -68,20 +72,18 @@ export default async function DemoReceptionistPage({
     INTERNAL_DEMO_ACCOUNT_ID,
   );
 
-  // The default profile decides what may be disclosed. It is read from
-  // the fixtures, NOT through `lib/data/agentProfiles` — that accessor
-  // scopes by session, and this page has no session by design.
+  // The tenant's stored default profile decides what may be disclosed,
+  // so disabling it or narrowing its policy takes effect here without a
+  // deployment (ADR-0052).
   //
-  // So the policy enforced here is the one compiled in, and in a
-  // DB-backed deployment an operator who disables the profile or drops
-  // an asset type from its stored policy would not change what this page
-  // discloses. The fixtures and the seeded rows are identical today
-  // (asserted by the mock-parity integration test), so nothing is
-  // currently misreported — but this page is not the place to learn that
-  // disclosure was revoked. Closing that gap needs a sessionless read of
-  // a tenant-owned table, which is a SECURITY.md decision, not a detail
-  // of this route.
-  const agentProfile = resolveAgentProfile(getMockAgentProfiles());
+  // Fails closed on purpose. An error envelope means the stored policy
+  // is unknown, and `resolveAgentProfile` returns null for a tenant whose
+  // profiles are all disabled; both land on the strict default, which
+  // permits no assets and escalates compensation and references. The
+  // fixtures are never the fallback — reading them when the database had
+  // something else to say is the bug this replaced.
+  const profiles = await listInternalDemoAgentProfiles();
+  const agentProfile = profiles.ok ? resolveAgentProfile(profiles.data) : null;
   const policy = parseAgentProfilePolicy(agentProfile?.system_policy_json);
 
   const answer = question
