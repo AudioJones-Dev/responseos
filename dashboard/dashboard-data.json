@@ -33,6 +33,8 @@
   "tasks": [
     {
       "id": "CONVERGE-CRM-CLAIM",
+      "ref": 168,
+      "refType": "pull",
       "phase": "Tech Debt & Hardening",
       "title": "Preserve atomic CRM retry ownership remediation",
       "owner": "Codex",
