@@ -36,7 +36,7 @@
       "ref": 167,
       "refType": "pull",
       "phase": "Tech Debt & Hardening",
-      "title": "Preserve prospect HTTPS lookup and deadline remediation",
+      "title": "Preserve bounded prospect HTTPS transport and metadata validation",
       "owner": "Codex",
       "status": "Review",
       "progress": 90,

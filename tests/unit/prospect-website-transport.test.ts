@@ -68,7 +68,7 @@ test("cancels a redirect body before requesting the next URL", async () => {
   expect(result.pages[0].url).toBe("https://example.com/about");
 });
 
-test.each(["oversized", "stalled"])("ignores and cancels an %s robots 404 body", async (bodyKind) => {
+test.each(["oversized", "stalled", "errored"])("ignores and cancels an %s robots 404 body", async (bodyKind) => {
   vi.useFakeTimers();
   const cancel = vi.fn();
   const fetchFn = vi.fn<typeof fetch>(async (url, init) => {
@@ -77,6 +77,7 @@ test.each(["oversized", "stalled"])("ignores and cancels an %s robots 404 body",
     }
     return new Response(new ReadableStream({
       start(controller) {
+        if (bodyKind === "errored") controller.error(new Error("connection_reset"));
         if (bodyKind === "oversized") controller.enqueue(new Uint8Array(MAX_PROSPECT_PAGE_BYTES + 1));
         init!.signal!.addEventListener("abort", () => controller.error(new Error("body_deadline")), { once: true });
       },
@@ -87,6 +88,25 @@ test.each(["oversized", "stalled"])("ignores and cancels an %s robots 404 body",
     .then((result) => result, (error: Error) => error.message);
   await vi.advanceTimersByTimeAsync(PROSPECT_FETCH_TIMEOUT_MS);
   expect(await outcome).toMatchObject({ pages: [{ extractedText: "Business information" }], blockedUrls: [] });
+  expect(cancel).toHaveBeenCalledTimes(bodyKind === "errored" ? 0 : 1);
+  expect(vi.getTimerCount()).toBe(0);
+});
+
+test("rejects forbidden content headers without reading a stalled body", async () => {
+  vi.useFakeTimers();
+  const cancel = vi.fn();
+  const fetchFn = vi.fn<typeof fetch>(async (url, init) => {
+    if (String(url).endsWith("/robots.txt")) return new Response("");
+    return new Response(new ReadableStream({
+      start(controller) {
+        init!.signal!.addEventListener("abort", () => controller.error(new Error("body_deadline")), { once: true });
+      },
+      cancel,
+    }), { headers: { "content-type": "application/octet-stream" } });
+  });
+  const outcome = acquireProspectWebsite({ canonicalUrl: "https://example.com", lookupFn, fetchFn });
+  await vi.advanceTimersByTimeAsync(0);
   expect(cancel).toHaveBeenCalledOnce();
+  expect(await outcome).toMatchObject({ pages: [], blockedUrls: [{ reason: "website_content_type_forbidden" }] });
   expect(vi.getTimerCount()).toBe(0);
 });

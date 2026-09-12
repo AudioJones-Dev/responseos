@@ -221,6 +221,7 @@ async function fetchWithSafeRedirects(params: {
   url: URL;
   fetchFn?: FetchFn;
   lookupFn: LookupFn;
+  validateMetadata?: (response: Response, finalUrl: URL) => void;
 }): Promise<{ response: Response; finalUrl: URL; body: string }> {
   let current = params.url;
   for (let redirect = 0; redirect <= MAX_REDIRECTS; redirect += 1) {
@@ -239,6 +240,7 @@ async function fetchWithSafeRedirects(params: {
         ? await params.fetchFn(current, init)
         : await pinnedHttpsFetch(current, init, resolved.address);
       if (![301, 302, 303, 307, 308].includes(response.status)) {
+        params.validateMetadata?.(response, current);
         const body = response.ok ? await readBoundedBody(response) : "";
         return { response, finalUrl: current, body };
       }
@@ -248,7 +250,7 @@ async function fetchWithSafeRedirects(params: {
     } finally {
       clearTimeout(timeout);
       try {
-        if (response?.body && !response.body.locked) await response.body.cancel();
+        if (response?.body && !response.body.locked) await response.body.cancel().catch(() => undefined);
       } finally {
         controller.abort();
       }
@@ -340,13 +342,16 @@ export async function acquireProspectWebsite(params: {
           url: requestedUrl,
           fetchFn: params.fetchFn,
           lookupFn,
+          validateMetadata(response, finalUrl) {
+            if (!response.ok) throw new Error(`website_http_${response.status}`);
+            if (finalUrl.origin !== canonical.origin) throw new Error("website_cross_origin_redirect");
+            const contentType = response.headers.get("content-type")?.split(";")[0].trim() ?? "";
+            if (contentType !== "text/html" && contentType !== "text/plain") {
+              throw new Error("website_content_type_forbidden");
+            }
+          },
         });
-        if (!response.ok) throw new Error(`website_http_${response.status}`);
-        if (finalUrl.origin !== canonical.origin) throw new Error("website_cross_origin_redirect");
         const contentType = response.headers.get("content-type")?.split(";")[0].trim() ?? "";
-        if (contentType !== "text/html" && contentType !== "text/plain") {
-          throw new Error("website_content_type_forbidden");
-        }
         const normalizedUrl = normalizeProspectUrl(finalUrl.toString());
         const links = contentType === "text/html"
           ? extractSameOriginLinks(body, finalUrl, canonical.origin)
