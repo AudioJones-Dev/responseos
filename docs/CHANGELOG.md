@@ -4,6 +4,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: clarify agent authority to mark PRs ready for review
+
+- Explicitly permit agents to mark validated draft PRs ready for review without separate operator approval, after checking the current head and required checks.
+- Require CodeRabbit or Claude review for Codex-authored changes, and CodeRabbit or Codex review for Claude-authored changes. Mixed Codex/Claude authorship requires independent CodeRabbit review. Self-checks and skipped reviews do not satisfy this requirement; changes after review require independent review of the changes.
+- Reserve merge and squash merge execution to the human after independent review, blocking-finding resolution and required checks. Preserve validation, deployment and provider gates.
+
 ## Unreleased — test: disconnect application client before seed schema resets
 
 - Disconnect both integration and application Prisma clients before the seed-determinism test recreates the local database schema. This prevents a reused application connection from retaining removed PostgreSQL enum identifiers.

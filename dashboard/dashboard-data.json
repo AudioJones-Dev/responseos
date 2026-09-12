@@ -32,6 +32,17 @@
   ],
   "tasks": [
     {
+      "id": "GOV-AGENT-READY-REVIEW",
+      "ref": 172,
+      "refType": "pull",
+      "phase": "Tech Debt & Hardening",
+      "title": "Require independent agent review and human merge",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "Med"
+    },
+    {
       "id": "F-01",
       "phase": "v0.1 · Foundation",
       "title": "Next.js app scaffold",
