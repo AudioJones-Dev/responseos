@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { afterAll, describe, expect, test } from "vitest";
 import { db } from "@/lib/db/client";
+import { recordAuditLog } from "@/lib/data/auditLogs";
 import { disconnectTestDb, normalize, prisma } from "./setup";
 
 function assertLocalDatabase(): void {
@@ -88,15 +89,15 @@ describe("seed determinism", () => {
 
   test("seeded business payloads are identical across consecutive migrate reset + seed runs", async () => {
     expect(db).not.toBeNull();
-    const audit = { actor_type: "system" as const, action: "seed.reset.client-lifecycle", category: "security" as const };
-    await db!.auditLog.create({ data: audit });
+    const audit = { actor_type: "system" as const, action: "seed.reset.client-lifecycle" };
+    await expect(recordAuditLog(audit)).resolves.toEqual({ ok: true, data: { recorded: true } });
     await prisma.$disconnect();
     await db!.$disconnect();
     migrateResetAndSeed();
     await prisma.$connect();
     const first = await snapshotSeededTables();
 
-    await db!.auditLog.create({ data: audit });
+    await expect(recordAuditLog(audit)).resolves.toEqual({ ok: true, data: { recorded: true } });
     await prisma.$disconnect();
     await db!.$disconnect();
     migrateResetAndSeed();
@@ -104,6 +105,6 @@ describe("seed determinism", () => {
     const second = await snapshotSeededTables();
 
     expect(second).toEqual(first);
-    await expect(db!.auditLog.create({ data: audit })).resolves.toMatchObject(audit);
+    await expect(recordAuditLog(audit)).resolves.toEqual({ ok: true, data: { recorded: true } });
   });
 });
