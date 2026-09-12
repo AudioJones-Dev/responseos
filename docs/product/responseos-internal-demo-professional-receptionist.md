@@ -208,11 +208,16 @@ type such as the owner's email address from its stored policy, changes
 what this page discloses on the next request — no deployment. The
 accessor takes no parameters, which is why it can skip `withTenantScope`
 without weakening it: the account is fixed at compile time, so nothing a
-request carries can name a tenant. Reads fail closed — an unreadable or
-fully-disabled policy falls to the strict default, which shares no assets
-and escalates compensation and references, never back to the fixtures.
-With no `DATABASE_URL` the fixtures remain the configuration, per the
-mock-first rule.
+request carries can name a tenant. With no governing profile — the read
+failed, or every profile is disabled — the page **does not answer at
+all**: it reaches neither the answering path nor the asset list, and says
+so. The strict default is deliberately *not* the fallback, because
+`applyPolicy` consults the policy only for compensation, references and
+consulting rates; work history, projects, skills and certifications keep
+their base `answer` authority, so falling back to it would keep reciting
+verified records after the agent was switched off. The fixtures are never
+the fallback either. With no `DATABASE_URL` they remain the
+configuration, per the mock-first rule.
 
 **The write path still has no caller.** `captureProfessionalOpportunity`,
 `requestProfessionalEscalation`, and `bookProfessionalAppointment` each

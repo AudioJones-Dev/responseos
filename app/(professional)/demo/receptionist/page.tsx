@@ -76,28 +76,60 @@ export default async function DemoReceptionistPage({
   // so disabling it or narrowing its policy takes effect here without a
   // deployment (ADR-0052).
   //
-  // Fails closed on purpose. An error envelope means the stored policy
-  // is unknown, and `resolveAgentProfile` returns null for a tenant whose
-  // profiles are all disabled; both land on the strict default, which
-  // permits no assets and escalates compensation and references. The
-  // fixtures are never the fallback — reading them when the database had
-  // something else to say is the bug this replaced.
+  // No profile means the receptionist does not answer — at all. The
+  // strict default is not enough on its own: it withholds assets and
+  // escalates compensation and references, but `applyPolicy` consults
+  // the policy for *only* those categories, so work history, projects,
+  // skills and certifications keep `answer` authority and the page would
+  // go on reciting verified records after the operator switched the
+  // agent off. Falling back to that default is what a revocation must
+  // not look like, so the answering path is not reached at all.
+  //
+  // Both routes here are closed: an error envelope means the stored
+  // policy is unknown, and `resolveAgentProfile` returns null when every
+  // profile is disabled. The fixtures are never the fallback — reading
+  // them when the database had something else to say is the bug this
+  // replaced.
   const profiles = await listInternalDemoAgentProfiles();
   const agentProfile = profiles.ok ? resolveAgentProfile(profiles.data) : null;
-  const policy = parseAgentProfilePolicy(agentProfile?.system_policy_json);
-
-  const answer = question
-    ? await answerProfessionalQuestion({
-        accountId: INTERNAL_DEMO_ACCOUNT_ID,
-        question,
-        policy,
-      })
+  const policy = agentProfile
+    ? parseAgentProfilePolicy(agentProfile.system_policy_json)
     : null;
 
-  const assets = await listShareableAssets({
-    accountId: INTERNAL_DEMO_ACCOUNT_ID,
-    policy,
-  });
+  const answer =
+    policy && question
+      ? await answerProfessionalQuestion({
+          accountId: INTERNAL_DEMO_ACCOUNT_ID,
+          question,
+          policy,
+        })
+      : null;
+
+  const assets = policy
+    ? await listShareableAssets({
+        accountId: INTERNAL_DEMO_ACCOUNT_ID,
+        policy,
+      })
+    : [];
+
+  if (!policy) {
+    return (
+      <>
+        <PageHeader
+          eyebrow="Internal demo tenant"
+          title="Professional receptionist"
+          description="This receptionist is not answering right now."
+        />
+        <AlertBanner variant="warning">
+          No enabled agent profile governs this account, so nothing is
+          disclosed — no question is answered and no asset is listed. Either
+          the account&rsquo;s profiles are switched off, or their disclosure
+          policy could not be read; in both cases the safe reading is that the
+          receptionist is off, not that it may fall back to a default.
+        </AlertBanner>
+      </>
+    );
+  }
 
   return (
     <>

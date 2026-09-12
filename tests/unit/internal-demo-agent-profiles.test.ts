@@ -4,6 +4,7 @@ import path from "node:path";
 import { listInternalDemoAgentProfiles } from "@/lib/data/agentProfiles";
 import { getMockAgentProfiles } from "@/lib/mock/agentProfiles";
 import {
+  answerProfessionalQuestion,
   DEFAULT_AGENT_PROFILE_POLICY,
   parseAgentProfilePolicy,
   resolveAgentProfile,
@@ -20,6 +21,14 @@ import { INTERNAL_DEMO_ACCOUNT_ID } from "@/lib/tenancy/internalDemo";
  */
 
 const ACCESSOR = path.join(process.cwd(), "lib", "data", "agentProfiles.ts");
+const PAGE = path.join(
+  process.cwd(),
+  "app",
+  "(professional)",
+  "demo",
+  "receptionist",
+  "page.tsx",
+);
 
 describe("listInternalDemoAgentProfiles", () => {
   test("takes no arguments, so no request value can name the tenant", () => {
@@ -71,41 +80,47 @@ describe("listInternalDemoAgentProfiles", () => {
     }
   });
 
-  test("a tenant with every profile disabled discloses nothing", () => {
-    // Fail-closed: resolveAgentProfile returns null, and the strict
-    // default permits no assets and escalates the gated categories.
-    // This is what an operator revoking disclosure looks like.
+  test("the strict default is not by itself a revocation", async () => {
+    // Worth pinning because it is the trap this page fell into. With
+    // every profile disabled, resolveAgentProfile returns null — but
+    // parsing that null yields the strict default, and the strict
+    // default still ANSWERS. `applyPolicy` consults the policy for
+    // compensation, references and consulting rates only; every other
+    // category keeps its base authority.
     const allDisabled = getMockAgentProfiles().map((profile) => ({
       ...profile,
       enabled: false,
     }));
-    const resolved = resolveAgentProfile(allDisabled);
-    expect(resolved).toBeNull();
+    expect(resolveAgentProfile(allDisabled)).toBeNull();
+    expect(parseAgentProfilePolicy(undefined)).toEqual(
+      DEFAULT_AGENT_PROFILE_POLICY,
+    );
 
-    const policy = parseAgentProfilePolicy(resolved?.system_policy_json);
-    expect(policy.allowedAssetTypes).toEqual([]);
-    expect(policy).toEqual(DEFAULT_AGENT_PROFILE_POLICY);
+    const answered = await answerProfessionalQuestion({
+      accountId: INTERNAL_DEMO_ACCOUNT_ID,
+      question: "What projects has he built?",
+      policy: DEFAULT_AGENT_PROFILE_POLICY,
+    });
+    expect(answered.answered).toBe(true);
+    expect(answered.sources.length).toBeGreaterThan(0);
+
+    // So the page must not reach the answering path at all when there is
+    // no governing profile — it holds a nullable policy and short-circuits.
+    const page = readFileSync(PAGE, "utf8");
+    expect(page).toContain("policy && question");
+    expect(page).toContain("if (!policy)");
   });
 
   test("an unreadable policy is never backfilled from the fixtures", () => {
     // The page must treat an error envelope as "unknown", not as
     // "use what is compiled in". Asserted on the page because that is
     // where the decision lives.
-    const page = readFileSync(
-      path.join(
-        process.cwd(),
-        "app",
-        "(professional)",
-        "demo",
-        "receptionist",
-        "page.tsx",
-      ),
-      "utf8",
-    );
+    const page = readFileSync(PAGE, "utf8");
     const modules = [...page.matchAll(/from\s+"([^"]+)"/g)].map((m) => m[1]);
     expect(modules).not.toContain("@/lib/mock/agentProfiles");
     expect(modules).toContain("@/lib/data/agentProfiles");
-    // null on a failed read, so the strict default governs.
+    // null on a failed read, which leaves no governing policy — and the
+    // page answers nothing rather than falling back to any default.
     expect(page).toContain("profiles.ok ? resolveAgentProfile(profiles.data) : null");
   });
 });
