@@ -787,6 +787,17 @@
       "refType": "issue"
     },
     {
+      "id": "V-19",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Production carve-out for the public demo surface (ADR-0053)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-09-12",
+      "due": "2026-09-12"
+    },
+    {
       "id": "V-16",
       "phase": "v0.3 · Demo Scope",
       "title": "Consolidate normalizeE164 into one shared helper (caller-resolution prerequisite)",

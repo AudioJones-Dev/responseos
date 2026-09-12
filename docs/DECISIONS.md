@@ -1542,3 +1542,50 @@ The professional knowledge provider is not the seam either. It is sessionless an
 **§21 checklist.** Layer: data access (§8), no new capability. Built, not integrated or deferred; no vendor involved, so no lock-in. It does not improve the live pilot path and creates no proprietary learning — it is a correctness and control fix, not a feature. It preserves evidence (the policy governing an answer is now the stored one, so what the page disclosed is reconstructable from the tenant's own rows) and does not touch attribution. It duplicates no CRM, FSM, telecom, or workflow-platform functionality. **Tenant isolation: strengthened** — see decision 2, plus an integration test that a foreign tenant's enabled, default, more permissive profile cannot govern this page. It supports no new public claim; on the contrary it retires a `PROHIBITED_CLAIM` risk, since the page previously could not honour a revocation while appearing to enforce a policy. It requires no new human-approval control and reduces compliance exposure by making disclosure revocable without a deployment. Required now: the surface is public and already shares the owner's email address under a policy no operator could change.
 
 **Consequences.** An operator revoking disclosure takes effect on the next request, with no deployment. `SECURITY.md` gains an explicit, bounded exception to the "derived from session" rule — bounded to a parameterless accessor for a server-owned account — so the rule is no longer silently contradicted by a public route that cannot follow it. The mock-first boot path is unchanged: with no `DATABASE_URL` the app still runs, now reading tenant-filtered fixtures. No provider, schema, migration, or environment change; no v0.3 gate moves. Issue #164 closes.
+
+---
+
+## ADR-0053 — A bounded production carve-out for the public read-only demo surface
+
+**Status.** Accepted · 2026-09-12 · Operator-authorized. Narrows the "no production deploys" hard rule for one surface, and narrows **ADR-0019**'s Clerk precondition for that same surface (decision 2). **Does not authorize v0.3** (doctrine D-1 stays open).
+
+**Context.** "No production deploys from this repo until v0.3 readiness gates clear" is stated in **eleven** places and has been binding since ADR-0001/ADR-0019. (The first draft of this ADR said eight and its changelog claimed every occurrence was amended; three more were found on review — `docs/product/RESPONSEOS_ROADMAP.md`, `docs/governance/PROJECT_CONSTITUTION.md`, and the demo-deploy checkpoint — along with three stale gate rows still listing this authorization as outstanding.) `vercel.json` carries `git.deploymentEnabled: false`, and the only deploy lane is a manual, environment-approved staging workflow whose URL sits behind Vercel deployment protection and therefore cannot be shared.
+
+The operator asked to deploy `/demo/receptionist` so the link can be shared, and authorized a carve-out from the rule. A blanket lift would unlock live telephony, Stripe, CRM sync, and the rest of §22 — none of which was asked for and all of which D-1 governs. So the carve-out is written to the surface actually requested and no further.
+
+**What makes this surface cheap to deploy — and the trap in saying so.** The *page* needs no secrets: with `DATABASE_URL` and `DIRECT_URL` unset, `/demo/receptionist` returns 200, answers "What is ARO?" from a verified record, and lists the permitted assets. Every provider resolves to a mock (ADR-0001), the write path has no caller (ADR-0046 seventh follow-up), and the account id is a compile-time constant (ADR-0052).
+
+But a *deployment* is not a page. Vercel serves the whole app, and with `RESPONSEOS_REQUIRE_AUTH` unset the auth gate is opt-in: `proxy.ts` passes every path through and `getCurrentSession()` grants a placeholder `aj_admin`. Measured on this branch with no secrets at all:
+
+| Path | no flag | `RESPONSEOS_REQUIRE_AUTH=1` |
+|---|---|---|
+| `/demo/receptionist` | 200 | 200 (still answers) |
+| `/admin` | **200** | 307 → sign-in |
+| `/admin/receptionist` | **200** | 307 → sign-in |
+| `/client/dashboard` | **200** | 307 → sign-in |
+
+"Needs no secrets" was true of the page and false of the deploy. The first draft of this ADR and its runbook said the former and meant the latter, which would have published the admin console. Raised by Codex on PR #166.
+
+**Decision.**
+
+1. **Production deployment is authorized for the public read-only surfaces only** — the marketing pages and `/demo/receptionist` — running on mock adapters with no provider credentials.
+
+2. **`RESPONSEOS_REQUIRE_AUTH` must be set on the deployment.** It is a precondition of this carve-out, not a recommendation: without it every authenticated surface in the app is anonymously reachable with a privileged placeholder session, and the deploy publishes far more than the page it authorizes. The operator verifies `/admin` and `/client/dashboard` redirect before sharing the URL.
+
+   Real Clerk credentials are **not** required, and the reason is worth stating rather than assuming. With the flag set and Clerk absent, the gate fails closed — nobody can sign in, so nothing behind it is reachable by anyone. That is the safest configuration for a demo-only deploy where no one is meant to log in.
+
+   **This narrows ADR-0019, deliberately and on the record.** ADR-0019 decision 3 requires that "the basic-auth shim is replaced with real Clerk-authenticated login before that deploy goes live." It was written against PR #14's shape: a password-gated deploy of the whole `master` surface that granted every visitor behind the gate a uniform `aj_admin` session. Its objection was to shipping a *privileged shim* as the first public face of ResponseOS.
+
+   That objection does not reach this deploy, which grants **no session to anyone**. Requiring Clerk here would fit a lock to a door already welded shut — and would make the deployment less safe, not more, by making the admin surfaces reachable to whoever holds credentials. So for this surface, and only this surface, ADR-0019's Clerk precondition is satisfied by the fail-closed gate instead. ADR-0019 continues to govern unchanged for any deploy where someone is meant to sign in, which remains every other deploy.
+
+3. **This is not v0.3 authorization.** D-1 remains open. No live provider account, no real Stripe, no CRM sync, no telephony, no recording, no outbound. Deploying this surface moves no gate in §22 and grants no precedent for deploying anything else; a second surface needs its own decision.
+
+4. **Automatic git deploys stay disabled.** `vercel.json` keeps `deploymentEnabled: false`. A production deploy remains a deliberate, operator-run act, matching the containment decision that disabled them; nothing merges its way to production.
+
+5. **The write path must remain unreachable for as long as this is deployed.** `lib/professional/intake.ts` has no caller by design and a smoke test asserts the page imports none of its three writers. That test is now load-bearing in a way it was not before: it is the thing standing between an anonymous internet visitor and a row in the database.
+
+6. **Deploying without a database is permitted, and its consequence is recorded.** With no `DATABASE_URL` the disclosure policy comes from the fixtures, so revoking an asset — the owner's email address, say — again requires a deployment, which is precisely the gap ADR-0052 closed for the DB-backed case. An operator who wants revocation-without-deploy must point the deployment at a seeded database. Neither choice is wrong; the difference has to be known rather than discovered.
+
+**§21 checklist.** Layer: delivery, no new capability. Deferred-to-bought infrastructure (Vercel), already the planned target, so no new lock-in. It does not improve the live pilot path and creates no proprietary learning — it publishes an existing read-only surface. Evidence and attribution are untouched. Tenant isolation is unchanged and structural. It duplicates no CRM, FSM, telecom, or workflow-platform functionality. **Public claims:** the surface states its own status — mock adapters, records real, delivery simulated — and doctrine §20's prohibitions continue to bind its copy. It requires no new human-approval control beyond the operator running the deploy. Compliance exposure: the page discloses the owner's own professional records and email address, which the owner controls and has approved (ADR-0046, #157); no customer data of any kind is present. Required now: the operator asked for a shareable link and the surface is finished.
+
+**Consequences.** Every statement of the hard rule is amended to name this exception rather than be contradicted by it, and the gate rows that tracked this authorization (D3, Q1) are marked granted rather than left open; the rule still governs everything else, and "no production deploys" remains true of every surface except the one named here. The deploy itself is the operator's to run — the Vercel credentials are theirs and must not enter this repo or an agent session (`AGENTS.md`). If the deployment is later pointed at a database, decision 6's consequence reverses and ADR-0052's revocation path becomes live.
