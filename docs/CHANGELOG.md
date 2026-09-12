@@ -4,6 +4,13 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: add deterministic virtual-extension routing contracts
+
+- Added provider-neutral virtual-extension request, decision, destination, availability, reason-code, and mock-event contracts.
+- Added a pure account-scoped resolver with deterministic two-account fixtures, exact DTMF precedence, exact spoken-alias matching, one clarification, message-taking fallback, and stable decision/event identities.
+- Added unit coverage for route resolution, normalization, tenant isolation, idempotency, fallback behavior, evidence-state honesty, and the absence of live phone/SIP destinations.
+- Reject mismatched request/decision account, call, or request identifiers before creating routing events; preserve an exhausted clarification's fallback outcome in both audit events.
+- **Mock-only policy seam:** no Prisma model, API route, provider adapter, prompt, SDK, env var, secret, number, network call, deployment, or activation behavior is added.
 ## Unreleased — docs: authorize a bounded production carve-out for the public demo surface
 
 - The operator authorized deploying `/demo/receptionist` so the link can be shared. "No production deploys from this repo until v0.3 readiness gates clear" was stated in **eleven** places and binding since ADR-0001/ADR-0019, so the authorization is **recorded rather than assumed** — ratified as ADR-0053 and written into each of them, plus the three stale gate rows (D3, Q1) that still listed this very authorization as outstanding.

@@ -30,7 +30,7 @@ Prove an inbound, supervised demonstration in which Telnyx AI Assistant owns the
 
 ## Out of scope
 
-Realtime audio control, outbound dialing, scheduling, recording, deal creation, Vapi, Sent.dm, Twilio failover, Calendly, Stripe, production deployment, real client data, unattended public availability, and prospect release.
+Realtime audio control, [virtual-extension routing](./responseos-virtual-extension-routing-prd.md), outbound dialing, scheduling, recording, deal creation, Vapi, Sent.dm, Twilio failover, Calendly, Stripe, production deployment, real client data, unattended public availability, and prospect release.
 
 ## Constraints and risks
 
