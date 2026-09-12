@@ -1111,6 +1111,19 @@
       "due": "2026-08-31",
       "blocked": true,
       "blockedReason": "External hotlinking of the five public URLs cannot be disproven from inside the repository; watch edge logs for 404s on /file.svg, /globe.svg, /next.svg, /vercel.svg and /window.svg for one traffic cycle after the next staging deploy"
+    },
+    {
+      "id": "G-13",
+      "phase": "Tech Debt & Hardening",
+      "title": "Adopt supplied logo pack, rebuild favicons, UI and label cleanup",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "Med",
+      "start": "2026-09-11",
+      "due": "2026-09-11",
+      "ref": 162,
+      "refType": "pull"
     }
   ],
   "liveIssues": [
