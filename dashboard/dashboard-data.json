@@ -36,7 +36,7 @@
       "ref": 168,
       "refType": "pull",
       "phase": "Tech Debt & Hardening",
-      "title": "Preserve atomic CRM retry ownership remediation",
+      "title": "Preserve tenant-scoped atomic CRM retry ownership",
       "owner": "Codex",
       "status": "Review",
       "progress": 90,

@@ -22,11 +22,14 @@ beforeEach(() => {
   };
   database.crmSyncOperation.upsert.mockImplementation(async () => ({ ...row }));
   database.crmSyncOperation.updateMany.mockImplementation(async ({ where, data }) => {
-    if (!where.status.in.includes(row.status)) return { count: 0 };
+    if ((where.account_id && where.account_id !== row.account_id) || !where.status.in.includes(row.status)) return { count: 0 };
     row = { ...row, ...data, attempt_count: Number(row.attempt_count) + 1 };
     return { count: 1 };
   });
-  database.crmSyncOperation.findUniqueOrThrow.mockImplementation(async () => ({ ...row }));
+  database.crmSyncOperation.findUniqueOrThrow.mockImplementation(async ({ where }) => {
+    if (where.account_id && where.account_id !== row.account_id) throw new Error("not found");
+    return { ...row };
+  });
   database.crmSyncOperation.update.mockImplementation(async ({ data }) => {
     row = { ...row, ...data };
     return { ...row };
@@ -65,6 +68,22 @@ test("a failed contender cannot overwrite the current worker's state", async () 
   const result = await runCrmSyncForCall({ accountId: "account", callId: "call", providerOverride: new MockCrmProvider() });
   expect(result.ok).toBe(false);
   expect(database.crmSyncOperation.update).not.toHaveBeenCalled();
+});
+
+test("a tenant mismatch cannot claim or disclose another tenant's operation", async () => {
+  database.crmSyncOperation.upsert.mockImplementationOnce(async () => {
+    const snapshot = { ...row };
+    row.account_id = "other-account";
+    return snapshot;
+  });
+  const provider = new MockCrmProvider();
+  const lookup = vi.spyOn(provider, "findContacts");
+  const result = await runCrmSyncForCall({ accountId: "account", callId: "call", providerOverride: provider });
+  expect(result.ok).toBe(false);
+  expect(row.status).toBe("retryable_failed");
+  expect(row.attempt_count).toBe(0);
+  expect(database.crmSyncOperation.update).not.toHaveBeenCalled();
+  expect(lookup).not.toHaveBeenCalled();
 });
 
 test("a failed owner can retry without repeating persisted provider objects", async () => {
