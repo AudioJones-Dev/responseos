@@ -8,6 +8,10 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 - Preserves the reviewed local remediation: honor Node DNS lookup modes, keep deadlines active through body reads, and cancel redirect bodies. Validated-address pinning remains intact.
 - Regression coverage exercises lookup modes, stalled bodies, redirect cancellation, and oversized/stalled robots 404 bodies. Error responses are cancelled without consuming their bodies, preserving status-based handling. No provider activation or deployment.
+## Unreleased — test: disconnect application client before seed schema resets
+
+- Disconnect both integration and application Prisma clients before the seed-determinism test recreates the local database schema. This prevents a reused application connection from retaining removed PostgreSQL enum identifiers.
+- Exercise enum-bearing audit writes before and after each reset so cached-client failures are covered, while retaining the seeded-payload determinism assertion.
 
 ## Unreleased — docs: authorize a bounded production carve-out for the public demo surface
 
