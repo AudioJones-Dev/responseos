@@ -14,12 +14,24 @@ The one production lane currently authorized. It covers the marketing pages and 
 
 ### What this surface needs
 
-**No secrets.** Verified on `8f87743` with `DATABASE_URL` and `DIRECT_URL` unset: the route returns 200, answers from a verified record, and lists the permitted assets. Every provider resolves to a mock, so there is no key to configure and none to leak.
+**`RESPONSEOS_REQUIRE_AUTH` must be set. This is the one required setting, and it is not optional.**
+
+The *page* needs no secrets — with `DATABASE_URL` unset it answers from fixtures. But a deployment serves the **whole app**, not the one route, and the auth gate is opt-in. With the flag unset, `proxy.ts` passes every path through and `getCurrentSession()` grants a placeholder `aj_admin`, so the admin console ships to the public internet. Measured with no secrets at all:
+
+| Path | flag unset | `RESPONSEOS_REQUIRE_AUTH=1` |
+|---|---|---|
+| `/demo/receptionist` | 200 | 200 (still answers) |
+| `/admin` | **200 — anonymous, privileged** | 307 → sign-in |
+| `/admin/receptionist` | **200** | 307 → sign-in |
+| `/client/dashboard` | **200** | 307 → sign-in |
+
+Real Clerk credentials are **not** required for this deploy. With the flag set and Clerk absent the gate fails closed: nobody can sign in, so nothing behind it is reachable by anyone — which is what you want for a demo nobody logs into. Clerk becomes necessary when someone needs to *use* the admin surfaces (ADR-0019), not to keep them shut.
 
 ### Steps
 
 1. Confirm you are deploying a reviewed commit on `master`, and that CI is green on it.
-2. From a clean checkout of that commit:
+2. **Set `RESPONSEOS_REQUIRE_AUTH` on the Vercel project, production environment, before the first deploy.** Any non-empty value enables it (`lib/auth/auth-required.ts`).
+3. From a clean checkout of that commit:
    ```bash
    npm ci
    npx vercel pull --yes --environment=production   # links the project, writes .vercel/ (gitignored)
@@ -27,7 +39,14 @@ The one production lane currently authorized. It covers the marketing pages and 
    npx vercel deploy --prebuilt --prod
    ```
    `vercel.json` keeps `git.deploymentEnabled: false`, so this is the only way production moves — pushing to `master` deploys nothing.
-3. Open the printed URL and check `/demo/receptionist` before sharing it: ask one answerable question, one gated question, and confirm the assets list renders.
+4. **Verify the gate on the deployed URL before sharing it**, from a logged-out browser or with `curl -o /dev/null -w '%{http_code}'`:
+   ```
+   /admin             expect 307    (NOT 200)
+   /client/dashboard  expect 307    (NOT 200)
+   /demo/receptionist expect 200
+   ```
+   A `200` on `/admin` means the flag did not take effect. Do not share the link; fix it and redeploy.
+5. Then check `/demo/receptionist` itself: ask one answerable question, one gated question, and confirm the assets list renders.
 
 ### Before sharing the link
 

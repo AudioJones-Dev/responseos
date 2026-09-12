@@ -90,7 +90,7 @@ flowchart LR
 ## 5. Hard constraints across all versions (unchanged)
 
 - No Firebase. No real secrets in the repo. Adapters fall back to mock when env vars missing.
-- No live provider integrations until v0.3 authorized; no production deploys until v0.3 gates clear.
+- No live provider integrations until v0.3 authorized; no production deploys until v0.3 gates clear, except the public read-only demo surface (ADR-0053) — which requires `RESPONSEOS_REQUIRE_AUTH` on the deployment and authorizes no live provider.
 - Tenant isolation, signature validation, event-ledger discipline at every version.
 - ResponseOS is **not** HIPAA-certified; HIPAA-readiness is a per-deployment lane.
 
