@@ -33,6 +33,8 @@
   "tasks": [
     {
       "id": "GOV-AGENT-READY-REVIEW",
+      "ref": 172,
+      "refType": "pull",
       "phase": "Tech Debt & Hardening",
       "title": "Clarify agent authority to mark PRs ready for review",
       "owner": "Codex",
