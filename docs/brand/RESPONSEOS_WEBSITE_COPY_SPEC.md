@@ -11,6 +11,15 @@
 
 This is the copy spec for every public marketing page. It defines goal, audience, hero, section blocks, CTAs, proof, SEO, and the primary conversion action per page — plus global components and copy guardrails. All copy must pass the [voice review checklist](./RESPONSEOS_BRAND_VOICE.md#9-voice-review-checklist). Headline options are provided where useful; pick one per surface and keep it consistent.
 
+> **Owner decisions (2026-09-11).** These supersede the matching options and guardrails below.
+> - **Home headline:** "Stop losing revenue to missed calls." — the same line as OG Variant A.
+> - **Assessment name:** **Readiness & Revenue Leak Assessment** on every surface; "the assessment" on later reference. "Revenue audit" is retired.
+> - **Primary CTA:** **Revenue Recovery Demo**, per ADR-0035; the assessment is the secondary CTA. This replaces the "primary conversion funnels to the assessment" guardrail and the §8 navigation button.
+> - **OFFER** principles sit below the RECOVER loop on `/`.
+> - **Assessment credit:** the **full fee** applies toward implementation when the client signs **within 30 days**. This replaces the "optional credit within 14–30 days" wording in §2 and §6.
+> - **`/industries/med-spas` is unpublished** until the privacy-hardened pilot; the §5 copy stays here for that launch.
+> - **Doctrine §20 governs sample copy.** Where this spec states recovered revenue as delivered (for example the §1 meta description), the doctrine's status language wins.
+
 ### Routes in scope (already scaffolded)
 
 | Page | Route | Phase |
@@ -19,7 +28,7 @@ This is the copy spec for every public marketing page. It defines goal, audience
 | Pricing | `/pricing` | MVP |
 | Industries — Home services | `/industries/home-services` | MVP |
 | Industries — Contractors | `/industries/contractors` | MVP |
-| Industries — Med spas | `/industries/med-spas` | Phase 2+ (compliance-gated) |
+| Industries — Med spas | `/industries/med-spas` | Phase 2+ (compliance-gated) — route unpublished 2026-09-11 |
 | Audit / assessment | `/audit` | MVP |
 | Demo | `/demo` | MVP |
 
@@ -83,7 +92,7 @@ This is the copy spec for every public marketing page. It defines goal, audience
 
 **Section blocks**
 
-1. **Phase 1 — Readiness & Revenue Leak Assessment** — $1,000 flat ($750–$1,500 by size/complexity). Deliverables list: Readiness Score, Revenue Leak Estimate, AI Fit/No-Fit Diagnosis, current + recommended workflow maps, implementation scope, projected ROI, Pricing Proposal. Note the optional credit toward implementation if signed within 14–30 days.
+1. **Phase 1 — Readiness & Revenue Leak Assessment** — $1,000 flat ($750–$1,500 by size/complexity). Deliverables list: Readiness Score, Revenue Leak Estimate, AI Fit/No-Fit Diagnosis, current + recommended workflow maps, implementation scope, projected ROI, Pricing Proposal. Note that the full fee applies toward implementation when the client signs within 30 days.
 2. **Phase 2 — Implementation + Monthly Recovery Retainer** — the three-tier table:
 
    | Tier | Setup | Monthly | Best for |
@@ -208,7 +217,7 @@ This is the copy spec for every public marketing page. It defines goal, audience
 
 **Section blocks**
 
-1. **What it is** — a paid diagnostic; $1,000 flat ($750–$1,500 by complexity). Optional credit toward implementation if you sign within 14–30 days.
+1. **What it is** — a paid diagnostic; $1,000 flat ($750–$1,500 by complexity). The full fee applies toward implementation if you sign within 30 days.
 2. **What we evaluate** — missed-call volume, after-hours demand, average job value, close rate, current response time, lead sources, CRM/booking/quote/follow-up workflows, compliance risk, AI fit/no-fit.
 3. **What you walk away with** — Readiness Score, Revenue Leak Estimate, AI Fit/No-Fit Diagnosis, current + recommended workflow maps, implementation scope, projected ROI, Pricing Proposal.
 4. **The honest part** — "If the numbers don't justify implementation, we tell you. You keep the workflow map and the leak estimate either way."

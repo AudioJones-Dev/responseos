@@ -82,7 +82,7 @@ export default async function AdminHome() {
     <>
       <PageHeader
         eyebrow="AJ Digital Operator Console"
-        title="Admin Overview"
+        title="Admin overview"
         description="Portfolio health across all workspaces."
       />
 
@@ -132,7 +132,7 @@ export default async function AdminHome() {
           value={
             revenue?.roi_multiple ? `${revenue.roi_multiple.toFixed(1)}x` : "—"
           }
-          hint="Recovered revenue / monthly cost"
+          hint="Estimated recovered revenue / monthly cost"
         />
       </section>
 

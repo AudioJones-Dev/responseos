@@ -17,7 +17,7 @@ const POINTS = [
   },
   {
     title: "Track quote-to-job, not spreadsheets",
-    body: "Every quote is attributed back to the lead that triggered it, so you see win rate and recovered revenue without the sprawl.",
+    body: "Every quote is designed to trace back to the lead that started it, so you see win rate and verified revenue in one place.",
   },
 ];
 
@@ -35,8 +35,13 @@ export default function ContractorsPage() {
         right estimator, captures the scope, and tracks the quote-to-job funnel
         without the spreadsheet sprawl.
       </p>
-      <div className="mt-8">
-        <ButtonLink href="/audit">Run a revenue audit</ButtonLink>
+      <div className="mt-8 flex flex-wrap gap-3">
+        <ButtonLink href="/demo/walkthrough" glow>
+          Revenue Recovery Demo
+        </ButtonLink>
+        <ButtonLink href="/audit" variant="secondary">
+          Book the Readiness Assessment
+        </ButtonLink>
       </div>
 
       <div className="mt-14 grid gap-4 sm:grid-cols-3">

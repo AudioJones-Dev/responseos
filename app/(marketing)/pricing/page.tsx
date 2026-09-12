@@ -4,17 +4,17 @@ import { AtmosphereBackground } from "@/components/layout/AtmosphereBackground";
 export const metadata = {
   title: "Pricing",
   description:
-    "ResponseOS is priced against the revenue we recover. Compare the Recovery tiers and what each one includes.",
+    "ResponseOS starts with a paid assessment, then setup and a monthly retainer. Compare the Recovery tiers and what each one includes.",
 };
 
 const tiers = [
   {
     name: "Recovery Core",
     price: "Setup + monthly",
-    summary: "Stop the bleeding. Recover the calls you're already missing.",
+    summary: "Missed-call response and monthly reporting for simpler operations.",
     bullets: [
       "Missed-call recovery",
-      "AI inbound answering (mock)",
+      "AI inbound answering (in development)",
       "Lead qualification scoring",
       "Monthly ROI report",
     ],
@@ -22,7 +22,7 @@ const tiers = [
   {
     name: "Recovery Pro",
     price: "Setup + monthly",
-    summary: "Turn recovered demand into booked, attributed jobs.",
+    summary: "Intake, booking, quoting, CRM sync, and ROI reporting.",
     bullets: [
       "Everything in Core",
       "Quote + booking flows",
@@ -34,7 +34,7 @@ const tiers = [
   {
     name: "Recovery Performance",
     price: "Setup + monthly + outcome",
-    summary: "We front the work and earn on the revenue we recover.",
+    summary: "For higher-volume operations, with optional fees tied to verified results.",
     bullets: [
       "Everything in Pro",
       "Earn-on-outcomes structure",
@@ -51,12 +51,12 @@ export default function PricingPage() {
         Pricing
       </p>
       <h1 className="mt-2 max-w-3xl font-display text-3xl font-semibold leading-[1.1] text-ink sm:text-4xl">
-        Priced against the revenue we recover
+        Priced against the leak, not the hype.
       </h1>
       <p className="mt-4 max-w-2xl text-lg text-ink-secondary">
-        ROI-aligned partnerships, not seat licenses. We front the work and tie
-        every tier to recovered revenue — so the cost only matters next to the
-        dollars it returns.
+        Every engagement starts with a paid assessment that sizes the leak.
+        Then setup plus a monthly retainer, with optional fees tied to verified
+        results. No performance-only pricing.
       </p>
 
       <section className="mt-10 grid gap-4 lg:grid-cols-[1.15fr_1fr]">
@@ -71,7 +71,7 @@ export default function PricingPage() {
               Step 1 · Proof before you commit
             </p>
             <h2 className="mt-2 font-display text-2xl font-semibold text-ink">
-              Revenue Leak Assessment
+              Readiness & Revenue Leak Assessment
             </h2>
             <p className="mt-3 font-display text-4xl font-semibold text-accent">
               $1,000
@@ -161,7 +161,7 @@ export default function PricingPage() {
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-ink">{tier.name}</h2>
                 {tier.featured ? (
-                  <StatusBadge label="Most popular" tone="accent" />
+                  <StatusBadge label="Default offer" tone="accent" />
                 ) : null}
               </div>
               <p
@@ -188,7 +188,7 @@ export default function PricingPage() {
                   glow={tier.featured}
                   className="w-full"
                 >
-                  Run a revenue audit
+                  Book the assessment
                 </ButtonLink>
               </div>
             </div>
@@ -199,15 +199,14 @@ export default function PricingPage() {
       <Card className="mt-10 flex flex-col items-start gap-4 p-8 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="font-display text-xl font-semibold text-ink">
-            Not sure which tier fits?
+            Not sure it&apos;s worth it?
           </h2>
           <p className="mt-1 max-w-xl text-sm text-ink-secondary">
-            Start with an audit. We size your missed-demand surface and quote
-            against the revenue it represents — no commitment.
+            That&apos;s what the assessment is for.
           </p>
         </div>
-        <ButtonLink href="/demo" variant="secondary" className="shrink-0">
-          Watch the demo
+        <ButtonLink href="/audit" variant="secondary" className="shrink-0">
+          Book the assessment
         </ButtonLink>
       </Card>
     </main>

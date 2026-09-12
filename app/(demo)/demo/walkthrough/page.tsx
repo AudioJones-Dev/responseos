@@ -10,7 +10,7 @@ export default async function RevenueRecoveryOverview() {
       <PageHeader
         eyebrow="Revenue Recovery Demo"
         title="Revenue Recovery Overview"
-        description={`${overview.period} · what revenue we protected and what needs action`}
+        description={`${overview.period} · illustrative revenue at stake and what needs action`}
       />
 
       <DemoDataBanner source={source} error={error} />
@@ -29,7 +29,7 @@ export default async function RevenueRecoveryOverview() {
           </p>
           <p className="mt-2 text-sm text-ink-secondary">
             {overview.revenueProtectedDelta} · {Math.round(overview.missedCallRecoveryRate * 100)}%
-            missed-call recovery rate
+            missed-call recovery rate (illustrative)
           </p>
         </div>
       </section>

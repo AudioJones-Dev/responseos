@@ -19,18 +19,18 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 const SITE_NAME = "ResponseOS";
-const SITE_TAGLINE = "ResponseOS — AI Revenue Recovery Platform";
+const SITE_TAGLINE = "ResponseOS — Revenue Recovery Infrastructure for Service Businesses";
 const SITE_DESCRIPTION =
-  "ResponseOS helps service businesses recover missed revenue by capturing demand, qualifying leads, booking opportunities, and reporting ROI.";
+  "ResponseOS is designed to capture missed calls, qualify leads, book appointments, and report verified outcomes for founder-led service businesses. Start with a Readiness Assessment.";
 
 // Social-card copy — Variant A (Revenue Recovery), per
 // docs/product/responseos-og-social-preview-spec.md §3/§5.
 const OG_TITLE = "Stop losing revenue to missed calls and weak follow-up.";
 const OG_DESCRIPTION =
-  "ResponseOS answers the calls you miss, qualifies the lead, updates your CRM, and shows you the revenue you'd have lost — automatically.";
+  "ResponseOS is designed to answer the calls you miss, qualify the lead, and estimate the revenue at stake.";
 const TWITTER_TITLE = "Stop losing revenue to missed calls.";
 const TWITTER_DESCRIPTION =
-  "ResponseOS catches the calls you miss, qualifies the lead, and shows you what to do next.";
+  "ResponseOS is designed to catch the calls you miss, qualify the lead, and show you what to do next.";
 const OG_IMAGE = {
   url: "/og/responseos-og.png",
   width: 1200,
