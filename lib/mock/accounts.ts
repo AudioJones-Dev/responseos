@@ -26,7 +26,7 @@ export const mockAccounts: Account[] = [
     name: "Tyrone Nelms",
     slug: "tyrone-nelms",
     industry: "professional-services",
-    website_url: "https://tyronenelms.example",
+    website_url: "https://tyronenelms.com",
     primary_phone: "+15555550700",
     timezone: "America/New_York",
     status: "active",

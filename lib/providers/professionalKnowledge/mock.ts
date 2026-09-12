@@ -1,3 +1,4 @@
+import { matchesKeyword } from "@/lib/professional/intent"
 import {
   demoApprovedAssets,
   demoAvailabilityPolicy,
@@ -37,7 +38,7 @@ export class MockProfessionalKnowledgeProvider
     if (input.accountId !== INTERNAL_DEMO_ACCOUNT_ID) return []
     const query = input.query.toLowerCase()
     return demoKnowledgeRecords.filter((record) =>
-      record.keywords.some((keyword) => query.includes(keyword)),
+      record.keywords.some((keyword) => matchesKeyword(query, keyword)),
     )
   }
 

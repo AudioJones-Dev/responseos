@@ -2,7 +2,61 @@
 
 > **Hard rule:** do NOT deploy production from this repo yet. No Vercel production deploy, no AWS deploy — production deploys are gated to explicit v0.3 readiness approval. This document captures the **target** deployment posture so we can move fast when v0.3 unlocks.
 >
+> **One exception (ADR-0053, operator-authorized 2026-09-12).** The public read-only surfaces — the marketing pages and `/demo/receptionist` — may be deployed to production on mock adapters with no provider credentials. That is **not** v0.3 authorization: doctrine D-1 stays open, no live provider, Stripe, CRM, telephony, recording, or outbound path is unlocked, and no other surface inherits this. Automatic git deploys stay disabled. Steps: [**Deploying the public demo surface**](#deploying-the-public-demo-surface-adr-0053) below.
+>
 > **Current state.** GitHub remote is live (`audiojones-dev/responseos`) and CI runs on every push and PR — `validate` (lint + typecheck + unit test + build) and `integration` (Postgres 16 service container, `prisma migrate diff`, `prisma migrate deploy`, `prisma db seed`, integration tests, DB-backed build). **Staging-only** deploy scaffolding exists as a manual `workflow_dispatch` job (GitHub Environment `staging` + human approval). Automatic production deploy from `master` remains disabled (`vercel.json`). Operator steps: [`ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md`](./ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md); evidence gates: [`ops/RESPONSEOS_V0_3_READINESS_GATES.md`](./ops/RESPONSEOS_V0_3_READINESS_GATES.md).
+
+## Deploying the public demo surface (ADR-0053)
+
+The one production lane currently authorized. It covers the marketing pages and `/demo/receptionist` and nothing else.
+
+**Run by the operator.** The Vercel credentials are yours; they must not enter this repo or an agent session (`AGENTS.md` — no real secrets, ask the human). Nothing below is automated from CI.
+
+### What this surface needs
+
+**`RESPONSEOS_REQUIRE_AUTH` must be set. This is the one required setting, and it is not optional.**
+
+The *page* needs no secrets — with `DATABASE_URL` unset it answers from fixtures. But a deployment serves the **whole app**, not the one route, and the auth gate is opt-in. With the flag unset, `proxy.ts` passes every path through and `getCurrentSession()` grants a placeholder `aj_admin`, so the admin console ships to the public internet. Measured with no secrets at all:
+
+| Path | flag unset | `RESPONSEOS_REQUIRE_AUTH=1` |
+|---|---|---|
+| `/demo/receptionist` | 200 | 200 (still answers) |
+| `/admin` | **200 — anonymous, privileged** | 307 → sign-in |
+| `/admin/receptionist` | **200** | 307 → sign-in |
+| `/client/dashboard` | **200** | 307 → sign-in |
+
+Real Clerk credentials are **not** required for this deploy. With the flag set and Clerk absent the gate fails closed: nobody can sign in, so nothing behind it is reachable by anyone — which is what you want for a demo nobody logs into. Clerk becomes necessary when someone needs to *use* the admin surfaces (ADR-0019), not to keep them shut.
+
+### Steps
+
+1. Confirm you are deploying a reviewed commit on `master`, and that CI is green on it.
+2. **Set `RESPONSEOS_REQUIRE_AUTH` on the Vercel project, production environment, before the first deploy.** Any non-empty value enables it (`lib/auth/auth-required.ts`).
+3. From a clean checkout of that commit:
+   ```bash
+   npm ci
+   npx vercel pull --yes --environment=production   # links the project, writes .vercel/ (gitignored)
+   npx vercel build --prod
+   npx vercel deploy --prebuilt --prod
+   ```
+   `vercel.json` keeps `git.deploymentEnabled: false`, so this is the only way production moves — pushing to `master` deploys nothing.
+4. **Verify the gate on the deployed URL before sharing it**, from a logged-out browser or with `curl -o /dev/null -w '%{http_code}'`:
+   ```
+   /admin             expect 307    (NOT 200)
+   /client/dashboard  expect 307    (NOT 200)
+   /demo/receptionist expect 200
+   ```
+   A `200` on `/admin` means the flag did not take effect. Do not share the link; fix it and redeploy.
+5. Then check `/demo/receptionist` itself: ask one answerable question, one gated question, and confirm the assets list renders.
+
+### Before sharing the link
+
+- **The page discloses the owner's own records**, including the email address registered as an approved asset (#157). That is by design and owner-approved, but the link is public once shared — treat it as publishing, not as a preview.
+- **Deployed without a database, disclosure is fixed at deploy time.** The policy comes from the fixtures, so revoking an asset means deploying again. If you want revocation to take effect without a deploy — the behaviour ADR-0052 built — point the deployment at a seeded database by setting `DATABASE_URL`/`DIRECT_URL` and running `prisma migrate deploy` and `prisma db seed` against it first.
+- **The write path must stay unreachable.** `lib/professional/intake.ts` has no caller and `tests/unit/demo-receptionist.smoke.test.ts` asserts the page imports none of its three writers. With the page public, that test is what stands between an anonymous visitor and a row in the database — do not weaken it.
+
+### What is still forbidden
+
+Everything else. No live provider account, no real Stripe, no CRM sync, no telephony, no recording, no outbound. Deploying this surface moves no v0.3 gate and sets no precedent for a second surface, which needs its own decision.
 
 ## Three deployment lanes
 
@@ -69,7 +123,7 @@ State lives in S3 with state locking + versioning per AWS prescriptive guidance.
 |---|---|---|
 | `.github/workflows/ci.yml` | push + PR | `validate` + `integration` (required) |
 | `.github/workflows/deploy-staging.yml` | **manual** `workflow_dispatch` only | confirmation input `staging` + GitHub Environment **`staging`** (required reviewers) |
-| Production deploy | **none** | Forbidden until founding-pilot readiness + human prod approval |
+| Production deploy | **none automated** | Forbidden until founding-pilot readiness + human prod approval, except the public read-only demo surface (ADR-0053), which the operator deploys by hand — see [above](#deploying-the-public-demo-surface-adr-0053). No CI path exists or is intended for it. |
 
 `vercel.json` sets `git.deploymentEnabled: false` so Vercel does not automatically create deployments for Git pushes or pull requests. Separately authorized explicit deployment workflows remain available.
 

@@ -814,6 +814,68 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 
 **Consequences.** ResponseOS gains a reference tenant that proves the platform on itself, and a claim-authority boundary that makes the honest answer the default one. The cost is real: until Career OS (or the owner) supplies verified records, the receptionist answers most career questions with the fallback line. That is the correct behaviour for an unsourced claim, and flipping it on is a data change, not a code change. `ProfessionalKnowledgeProvider` and `ProfessionalHandoffProvider` each have exactly one adapter, so per ADR-0043 they are **architecture preparation, not proven provider portability** — nothing here licenses a provider-independence claim.
 
+**Follow-up (2026-09-10) — the data landed, the decision did not change.** The account owner's canonical resume was imported into the fixture, so work history, skills, education, certifications, and targeted roles are now `verified: true` and answerable. This is the "data change, not a code change" the consequences above anticipated in the sense that matters: no policy or authority rule moved. The professional-knowledge TypeScript contracts did change, and only in service of decision 5 — `ExperienceRecord.startDate`/`summary` and `SkillRecord.category` became optional so the source can be transcribed rather than padded out, and `AvailabilityPolicy` gained `willingToRelocate` and `preferredTitles`. Decision 5 still governs — records are transcribed, never inferred, so roles the source carries without dates stay undated, and **projects** remain unsourced and therefore unanswerable. `RESUME_IMPORTED_AT` in the fixture records the import date so staleness stays visible. The owner's salary floor was deliberately left out: compensation escalates to a human by policy, so storing the number in a recruiter-facing knowledge store would add exposure without ever being spoken.
+
+**Follow-up (2026-09-11) — projects are now sourced; no interface, policy, or authority rule moved.** The resume carries no project data, which is why that category stayed unanswerable. The account owner's public portfolio at `tyronenelms.com/work` — already this tenant's one approved asset — does carry it, so three project records were transcribed from it and are now `verified: true`. `PORTFOLIO_IMPORTED_AT` records when the page was read, alongside `RESUME_IMPORTED_AT`.
+
+Decision 5 governs this the same way it governed the resume import, with one addition that is load-bearing for doctrine §20: **two of the three projects are internal systems with no external customers and no production deployment, and their records say so.** A recruiter hearing a project named assumes a shipped product unless told otherwise, so each summary carries the status its own source page states — "active engagement", "internal system" — and a test asserts the un-deployed one is never described as shipped. The status rides in the record summary rather than in a new `ProjectRecord` field because nothing in the runtime branches on it; adding a field would have been an abstraction in search of a caller.
+
+One of the three projects is named Career OS, which does **not** touch decision 4. The record is a portfolio claim *about* a system — the same sentence its public page carries — not an import of that system's data model. Career OS remains un-vendored, un-mirrored, and unmodelled in this schema, and it is still not wired as a knowledge source.
+
+`case_studies` is now the category with no canonical source, and it inherits the role `projects` used to play: the fallback, escalation, and refusal paths stay exercised and tested. The seeded demo narrative moved with the behaviour — the recruiter's project question is now answered, and the call instead shows compensation escalating, which is structural under decision 6 and so cannot go stale as more data lands.
+
+**Follow-up (2026-09-11, second) — the approved-asset list is now the only route a link takes.** Review of the project import found that a URL written into a knowledge-record body is spoken whatever the answering profile permits, which bypassed the per-profile filter in `listShareableAssets` — `allowedAssetTypes: []` is both the strict default and a seeded profile. Answer bodies now carry no links at all, which sharpens decision 9: the agent profile does not merely *configure* asset sharing, it is the sole gate, and an asset absent from `demoApprovedAssets` is one the receptionist cannot offer however the profile is set.
+
+That made the list's contents load-bearing rather than illustrative, so the résumé, LinkedIn, and GitHub links carried on the same public portfolio are now registered alongside the site. The owner's email address is linked there too and is deliberately unregistered: handing a personal address to an unscreened caller is the owner's call, and no `ProfessionalAssetType` covers it. Nothing here changes a type, an authority entry, or a disclosure policy.
+
+**Follow-up (2026-09-11, third) — the owner took that call: the email is registered and shared under the recruiter profile.** `ProfessionalAssetType` gains `email`, so the address the owner publishes on his own site is an approved asset like any other rather than a value with nowhere to live.
+
+Registration and disclosure stay separate, which is the point. The address sits in `demoApprovedAssets` for every profile and is handed out only where `allowedAssetTypes` names `email` — today the recruiter profile alone. The consulting and general-assistant profiles do not share it, and `demo-mode` continues to share nothing at all; widening that is a per-profile line, not a code change. A test asserts both halves, so a profile silently gaining or losing the address cannot pass.
+
+This is the only contract change in the three follow-ups: one additive union member and its validator entry. No authority entry, disclosure policy, or escalation rule moved, and the strict default still shares nothing.
+
+**Follow-up (2026-09-11, fourth) — the five undated roles are dated, and decision 5 is what shaped how.** The resume carries no dates for them, which is why they shipped undated. The owner's public portfolio résumé page does, so the ranges are transcribed from it. No type, policy, or authority rule changed.
+
+Two details are the decision doing its work rather than incidental:
+
+**Precision is not widened.** The portfolio gives some ranges as bare years and one as months. They are stored exactly that way — `2015`, not `2015-01`. A guessed month is an invented date, and an invented date is the specific thing decision 5 forbids; a plausible-looking one is worse than a coarse one because it cannot be spotted. A test pins the stored format to `YYYY` or `YYYY-MM` and asserts the year-only entries stay year-only.
+
+**One mapping is owner-confirmed, not transcribed.** The portfolio carries AHLO Inc. as a single consolidated entry spanning `2019 — 2023 · 2006 — 2007`, while the resume splits AHLO into two roles. Both sources order roles reverse-chronologically, which implies contractor → 2019–2023 and warehouse operations → 2006–2007, but neither source states the mapping. Under decision 5 a well-supported inference about an employment date is still an inference, so the owner confirmed it rather than the ranges being assigned by reasoning. The fixture records that this one mapping is owner-confirmed, so a later reader does not mistake it for transcription.
+
+**Follow-up (2026-09-11, fifth) — a record whose claims span two sources names both, and that is a provider contract.** Dating the earlier roles left the work-history record citing only the resume while five of its date claims came from the portfolio résumé. Decision 5 requires a record to be attributable; a body mixing two sources under one source id misattributes the half it does not own, and does so invisibly, which is worse than citing nothing. Raised in review.
+
+**The encoding.** `ProfessionalKnowledgeResult.sourceId` stays a single string. A record drawing on more than one system names all of them joined by `+` — `canonical_resume:2026-09-10+portfolio_site:2026-09-11`. A consumer that needs the individual sources splits on `+`; one that only displays or logs provenance can continue treating the field as opaque.
+
+**Why this is recorded here rather than only in the type's docblock.** It binds every future adapter, not just the fixture. `ProfessionalKnowledgeProvider` has one implementation today, and a Career OS adapter written against a docblock alone could reasonably keep emitting one opaque identifier per record and silently produce results that are unattributable in the same way. The rule is therefore part of the provider contract: an adapter that cannot name every system behind a claim must split the claim into records it can attribute.
+
+Splitting by source was the alternative and does not work for this record: each of the five claims is itself composite, taking its employer and title from the resume and its date from the portfolio, so two records would each still mix. A test pins the invariant across records rather than on the one that failed — work history names both sources, projects never acquire the resume's, skills never acquire the portfolio's — because a reviewer caught this and the suite did not.
+
+No answer behaviour changed: `sourceId` is provenance metadata, and `ProfessionalAnswer.sources` carries record ids.
+
+**Follow-up (2026-09-11, sixth) — the salary floor is stored, and only the escalation payload carries it.** The first follow-up left it out because storing it in a recruiter-facing knowledge store would add exposure without ever being spoken. The owner has since asked for it on the escalation, which is the one direction that objection does not apply to: the escalation travels toward the owner, not the caller.
+
+**The delivery half is contract-only, and saying otherwise would be a prohibited claim.** Decision 10 still holds: `ProfessionalHandoffProvider` omits `createLive`, so it resolves to the no-op adapter, which returns `delivered: false` and emits nowhere. No shipped path calls `requestProfessionalEscalation` either — the payload is constructed and discarded. This follow-up therefore changes **what the event would carry when a consumer exists**, not what any owner receives. Raised in review, where the original wording described the figure as reaching the owner.
+
+**Where it lives is the whole design.** `AvailabilityPolicy` gains an optional `compensationFloor`, and `ProfessionalEscalationRequestedPayload` gains the same shape. `AvailabilityPolicy` is the right home because **the answer path never reads it** — `answerProfessionalQuestion` resolves a category and answers from knowledge records, and no knowledge record carries the number. Combined with decision 6, under which compensation escalates on every profile including the strictest default, the figure being unspeakable is a property of the wiring rather than of anyone remembering.
+
+That property is asserted, not assumed. One test asks every seeded profile the compensation question several ways and requires the figure in none of the answers, then searches the knowledge records and requires it in none of them either — so a future answer path cannot surface it by accident. `preferredTitles` on the same object *is* interpolated into a spoken record, which is exactly why the field's contract says not to do that here.
+
+**Only `compensation` carries it.** Consulting rates and references escalate under decision 6 as well, and an annual salary minimum answers neither. A payload carrying a figure it has no use for is that figure in one more place than it needs to be.
+
+Two additive optional fields are the whole contract change. No authority entry, disclosure policy, or escalation rule moved, and no adapter is obliged to populate the field.
+
+**Follow-up (2026-09-11, seventh) — the receptionist has an entry point, and it is the read path only.** The previous follow-up established that nothing called the receptionist at all. `/demo/receptionist` now calls `answerProfessionalQuestion` and `listShareableAssets`, so a visitor can ask a question and see the answer, the claim category, the governing authority, and the cited records.
+
+**The write path is deliberately still unreachable.** `captureProfessionalOpportunity`, `requestProfessionalEscalation`, and `bookProfessionalAppointment` write rows, and an anonymous visitor must not create them; `lib/professional/index.ts` already declines to export `intake.ts` for the same reason. The page can honestly show that a question *escalates* without emitting an escalation, because decision 5's answering path is pure: it resolves authority and returns, and only `intake.ts` emits or writes. That purity is what makes a public read surface safe at all.
+
+**Tenant isolation holds by construction, not by validation.** The account id is a module constant in the page; the request supplies the question and nothing else. There is no code path by which a query parameter could name an account, which is the form SECURITY.md asks for — derived, never accepted.
+
+**The route does not share the walkthrough's layout.** `app/(demo)/layout.tsx` frames its children as Coastal Comfort, a fictional business, and closes with "fictional scenario, no real customer information". Every record this receptionist speaks is verified and about a real person, so rendering one inside the other asserts both at once, and §20's status vocabulary is load-bearing precisely here. The page therefore lives in `app/(professional)`, which keeps the URL — route groups do not affect the path — and carries a footer that separates the two claims: the records are real, the *delivery* is mocked.
+
+**One gap is recorded rather than closed.** The disclosure policy is read from the fixtures, not from the tenant's stored `AgentProfile`, because `lib/data/agentProfiles` resolves scope from the session and this page has none by design. The fixtures and the seeded rows are identical today (mock-parity), so nothing is misreported; but in a DB-backed deployment an operator who disabled the profile or dropped an asset type would not change what this page discloses. Closing it requires a sessionless read of a tenant-owned table, which is a SECURITY.md decision about the "derived, never accepted" invariant — not a detail of this route — and is deliberately left to its own ADR rather than settled in passing here.
+
+This moves a public question surface from `DOCUMENTED_ONLY` to `SHIPPED` in the brief's status vocabulary, narrowed to reading. A surface that lets a caller capture, book, or hand off remains `DOCUMENTED_ONLY`, and live telephony stays v0.3-gated (ADR-0019, ADR-0045). No adapter, policy, or authority entry changed.
+
 ---
 
 ## ADR-0047 — The first prospect proof is an isolated, supervised post-call evidence chain
@@ -1417,3 +1479,113 @@ ADR-0047's bounded post-call code path and separate operator gates remain exactl
 > ResponseOS is the provider-independent relationship, operational, memory, and intelligence layer from which external CRM systems can be synchronized through governed adapters.
 
 This language states accepted architecture intent. Generalized provider interoperability is not currently implemented or proven, and the sentence remains prohibited in public copy, demos, comments, or commit messages as a present capability claim.
+
+---
+
+## ADR-0051 — Per-tenant supervision is a mode-indexed execution policy; promotion preserves tenant identity; tenant operating configuration lives on the memory snapshot
+
+**Status:** Accepted (2026-09-10) for the *contract*; live activation of any non-demo mode remains **v0.3-gated**. **Extends ADR-0047** (which scoped supervision to the deploy lane) and **ADR-0048**. Does **not** supersede ADR-0046 — `account_type` remains administrative-only and gates no runtime behaviour.
+
+**Context.** [`RESPONSEOS_CLIENT_ACTIVATION_RECONCILIATION.md`](./ops/client-delivery/RESPONSEOS_CLIENT_ACTIVATION_RECONCILIATION.md) established that a reusable client-activation substrate is largely present but unconsolidated: ten subsystem surveys raised 25 candidate gaps and independent verification returned **0 `REAL_GAP` / 25 `PARTIAL`**. Three questions blocked further work because each had more than one defensible answer and each is doctrine-level rather than an engineering choice.
+
+1. Supervision is presently a **deploy-lane** property. Every live capability is gated by a process-wide environment flag (ADR-0047), so two tenants in one deployment cannot sit at different supervision levels. ADR-0046 §2 forbids expressing the tier on `account_type`.
+2. `BootstrapPromotion` **creates a new `Account`** from a signed manifest and disposes of the sandbox one, whereas a client-activation lifecycle implies a single profile advancing.
+3. ADR-0046 §9 already declined a generic settings blob on `Account`, leaving per-tenant operating configuration — business hours, holidays, service area, escalation contacts, consent posture — without a home.
+
+**Decision.**
+
+1. **Supervision is a mode-indexed execution policy, not a tenant column and not only a deploy lane.** `lib/agentExecution/policy.ts` declares `ExecutionMode` (`PROSPECT_DEMO`, `SUPERVISED_PILOT`, `PRODUCTION_SUPERVISED`, `MANAGED_AUTONOMY`) and a policy table of identical shape per mode, reusing the shipped **canonical-JSON equality** mechanism.
+   - **Status note — there is no checksum or digest pinning of policies today.** `activateProspectBootstrap()` compares two `stableJson(...)` strings directly (`lib/prospectBootstrap/service.ts:776`); nothing computes, stores, or verifies a policy digest. Digest-based pinning is `NOT_PLANNED` by this ADR. Any later activation work that wants it must add the storage and verification path explicitly rather than assuming one exists.
+   - `PROSPECT_DEMO` is re-exported **byte-identically** from `lib/prospectBootstrap/policy.ts`, because `lib/prospectBootstrap/service.ts` compares a stored `AgentProfile.system_policy_json` against that frozen object.
+   - `resolveExecutionPolicy()` **fails closed**, and authorisation is **bound to the specific gate** the mode requires. A caller passes the set of open gates, not a single boolean, so an approval issued for `v0.3-live-communications` cannot unlock `MANAGED_AUTONOMY`, whose gate is `post-pilot-operator-authorization`. An unrecognised mode, or a gated mode whose gate is not authorised, resolves to the most restrictive policy rather than throwing.
+   - A mode is **policy intent, never activation.** Activation gates remain the existing environment flags and the v0.3/v0.4 roadmap gates. `EXECUTION_MODE_ACTIVATION_GATES` records the gate each mode still requires and is held *outside* the policy objects so that adding it cannot break the stored-policy comparison.
+   - Payment, provider memory, and recording stay `false` at **every** tier; no ratified decision authorises any of them.
+2. **Promotion preserves tenant identity.** A client profile advances in place through its lifecycle; the originating `Account.id` is retained across the sandbox → pilot → production boundary so that calls, transcripts, and evidence remain attached to one tenant. The current dispose-and-recreate behaviour of `BootstrapPromotion` is superseded as the *target*; the change is not implemented by this ADR.
+3. **Per-tenant operating configuration lives on the memory snapshot.** `BusinessMemorySnapshotSchema` is the tenant operating-configuration document. This respects ADR-0046 §9, inherits the existing versioning, content-hash, approval, and provenance machinery, and keeps a single artifact for the agent to read at runtime. No parallel `ClientConfig` or `TenantSettings` model is introduced.
+
+**Consequences.** Per-tenant supervision becomes expressible without touching `account_type` and without superseding ADR-0046, so two tenants can differ within one deployment once their gates open. The prospect-demo lane is unchanged and its stored-policy comparison still holds. Decisions 2 and 3 set targets that later changes implement: preserving tenant identity requires reworking `exportBootstrapPromotion`/`importBootstrapPromotion`, and carrying operator-asserted configuration requires relaxing `ApprovedKnowledgeFactSchema`, which currently demands an `https` source URL and content hash for every fact and therefore cannot yet hold operator-asserted configuration. Neither is authorised as a live capability by this ADR, and no provider, deployment, or environment behaviour changes.
+
+**Amendment (2026-09-10) — authority of operator-entered configuration.** Operator decision. When an operator-entered fact (`operator_configured`) and an owner-confirmed fact disagree on the same key, the owner-confirmed fact wins: `operator_configured` ranks equal to `operator_approved_for_demo` and below `owner_confirmed`, and ties resolve to the most recent `reviewedAt`, then `validAsOf`, then `id`. The schema relaxation decision 3 required is made: `ApprovedKnowledgeFactSchema` accepts an `operator_configured` fact whose evidence cites an approval record instead of a URL, and rejects that evidence on any other status. The rank takes effect in code when the snapshot compiler first accepts operator-entered facts; that write path is not implemented. Governing detail: [`RESPONSEOS_CLIENT_OPERATING_CONFIGURATION_STANDARD.md`](./ops/client-delivery/RESPONSEOS_CLIENT_OPERATING_CONFIGURATION_STANDARD.md).
+
+---
+
+## ADR-0052 — A public, server-owned surface reads its tenant's stored policy through a parameterless accessor
+
+**Status.** Accepted · 2026-09-12 · Supersedes nothing. Narrows the reading of the tenant-isolation rule in [`SECURITY.md`](./SECURITY.md) rather than relaxing it.
+
+**Context.** ADR-0046's seventh follow-up shipped `/demo/receptionist`, the receptionist's only entry point, and recorded a gap it declined to close: the page read the answering profile from `lib/mock/agentProfiles` rather than from the tenant's stored `AgentProfile`. Raised as a P1 on PR #161 and tracked as issue #164.
+
+The consequence was operator-facing, not visitor-facing. Fixtures and seeded rows are identical — the mock-parity integration test asserts it — so nothing was ever misreported. But in a DB-backed deployment an operator who disabled the profile, or dropped an asset type such as the owner's email address from its stored `system_policy_json`, would not have changed what the page disclosed. Revoking disclosure would have required a code deployment.
+
+The obvious fix does not work. `lib/data/agentProfiles.listAgentProfiles` routes through `withTenantScope`, which resolves the account from the session and returns `no_session` when there is none. `/demo` is a public prefix and the page is anonymous by design, so the scoped accessor returns an error envelope for every visitor and the asset list renders empty. That refusal is correct behaviour: `SECURITY.md` requires `account_id` **derived from the session, never trusted from client input**, and a sessionless caller has nothing to derive from.
+
+The professional knowledge provider is not the seam either. It is sessionless and keyed by the same constant, but it fronts Career OS — external professional truth. `AgentProfile` is a ResponseOS tenant table, and putting tenant configuration behind that boundary inverts the separation `lib/professional/index.ts` exists to state.
+
+**Decision.**
+
+1. **`lib/data/agentProfiles.listInternalDemoAgentProfiles()` reads the internal demo tenant's profiles without a session.** It is the only accessor in `lib/data` that does not call `withTenantScope`.
+
+2. **It takes no parameters, and that is the whole safety argument.** `withTenantScope` exists to stop a caller *naming* a tenant it has no claim to, and it does that by deriving the account from the session. Where there is no session, the equivalent guarantee is that the account is not derivable from the request at all: the account id is a module constant, the function has an empty parameter list, and nothing a request carries can reach the `where` clause. This is a **stronger** guarantee than the scoped path, not a weaker one — the scoped path accepts a caller-supplied id and then checks it, while this one has no argument to check. A unit test asserts the arity stays zero, because a later signature that accepted an account id would silently convert a compile-time constant into request-supplied input on a public route.
+
+3. **No governing profile means the surface does not answer at all.** An error envelope means the stored policy is unknown; `resolveAgentProfile` returns null when every profile is disabled. In both cases the page holds a **null policy** and reaches neither the answering path nor the asset list.
+
+   Falling back to `DEFAULT_AGENT_PROFILE_POLICY` here is not fail-closed, and the first draft of this ADR wrongly said it was. That default withholds assets and escalates compensation and references — but `applyPolicy` consults the policy for *those three categories only*. Work history, projects, skills and certifications keep their base `answer` authority, so a page falling back to it would go on reciting verified records after the operator switched the agent off. Revocation has to stop the answering, not just the sharing. Raised by Codex on PR #165.
+
+   Falling back to the *fixtures* is worse still and separately forbidden: it reintroduces exactly the drift this ADR removes.
+
+4. **The `db === null` branch still reads fixtures, and that is the mock-first rule, not the bug.** With no database configured there is no stored policy to honour and the fixtures *are* the configuration (ADR-0001). The branch now filters by tenant, which the page it replaced did not.
+
+5. **The accessor is narrow, not general.** It serves one server-owned account. No `withServerOwnedScope(accountId)` helper is introduced: a general accessor taking an account id would restore the injection surface decision 2 exists to remove, and a second public surface can add a second named accessor when one actually exists.
+
+6. **`INTERNAL_DEMO_ACCOUNT_ID` moves to `lib/tenancy/internalDemo.ts`.** `lib/data` must not import a provider fixture, and duplicating the id would let the two layers drift — a page answering from one tenant's records under another tenant's policy, failing silently. The knowledge fixture re-exports it, so every existing import site is unchanged.
+
+**§21 checklist.** Layer: data access (§8), no new capability. Built, not integrated or deferred; no vendor involved, so no lock-in. It does not improve the live pilot path and creates no proprietary learning — it is a correctness and control fix, not a feature. It preserves evidence (the policy governing an answer is now the stored one, so what the page disclosed is reconstructable from the tenant's own rows) and does not touch attribution. It duplicates no CRM, FSM, telecom, or workflow-platform functionality. **Tenant isolation: strengthened** — see decision 2, plus an integration test that a foreign tenant's enabled, default, more permissive profile cannot govern this page. It supports no new public claim; on the contrary it retires a `PROHIBITED_CLAIM` risk, since the page previously could not honour a revocation while appearing to enforce a policy. It requires no new human-approval control and reduces compliance exposure by making disclosure revocable without a deployment. Required now: the surface is public and already shares the owner's email address under a policy no operator could change.
+
+**Consequences.** An operator revoking disclosure takes effect on the next request, with no deployment. `SECURITY.md` gains an explicit, bounded exception to the "derived from session" rule — bounded to a parameterless accessor for a server-owned account — so the rule is no longer silently contradicted by a public route that cannot follow it. The mock-first boot path is unchanged: with no `DATABASE_URL` the app still runs, now reading tenant-filtered fixtures. No provider, schema, migration, or environment change; no v0.3 gate moves. Issue #164 closes.
+
+---
+
+## ADR-0053 — A bounded production carve-out for the public read-only demo surface
+
+**Status.** Accepted · 2026-09-12 · Operator-authorized. Narrows the "no production deploys" hard rule for one surface, and narrows **ADR-0019**'s Clerk precondition for that same surface (decision 2). **Does not authorize v0.3** (doctrine D-1 stays open).
+
+**Context.** "No production deploys from this repo until v0.3 readiness gates clear" is stated in **eleven** places and has been binding since ADR-0001/ADR-0019. (The first draft of this ADR said eight and its changelog claimed every occurrence was amended; three more were found on review — `docs/product/RESPONSEOS_ROADMAP.md`, `docs/governance/PROJECT_CONSTITUTION.md`, and the demo-deploy checkpoint — along with three stale gate rows still listing this authorization as outstanding.) `vercel.json` carries `git.deploymentEnabled: false`, and the only deploy lane is a manual, environment-approved staging workflow whose URL sits behind Vercel deployment protection and therefore cannot be shared.
+
+The operator asked to deploy `/demo/receptionist` so the link can be shared, and authorized a carve-out from the rule. A blanket lift would unlock live telephony, Stripe, CRM sync, and the rest of §22 — none of which was asked for and all of which D-1 governs. So the carve-out is written to the surface actually requested and no further.
+
+**What makes this surface cheap to deploy — and the trap in saying so.** The *page* needs no secrets: with `DATABASE_URL` and `DIRECT_URL` unset, `/demo/receptionist` returns 200, answers "What is ARO?" from a verified record, and lists the permitted assets. Every provider resolves to a mock (ADR-0001), the write path has no caller (ADR-0046 seventh follow-up), and the account id is a compile-time constant (ADR-0052).
+
+But a *deployment* is not a page. Vercel serves the whole app, and with `RESPONSEOS_REQUIRE_AUTH` unset the auth gate is opt-in: `proxy.ts` passes every path through and `getCurrentSession()` grants a placeholder `aj_admin`. Measured on this branch with no secrets at all:
+
+| Path | no flag | `RESPONSEOS_REQUIRE_AUTH=1` |
+|---|---|---|
+| `/demo/receptionist` | 200 | 200 (still answers) |
+| `/admin` | **200** | 307 → sign-in |
+| `/admin/receptionist` | **200** | 307 → sign-in |
+| `/client/dashboard` | **200** | 307 → sign-in |
+
+"Needs no secrets" was true of the page and false of the deploy. The first draft of this ADR and its runbook said the former and meant the latter, which would have published the admin console. Raised by Codex on PR #166.
+
+**Decision.**
+
+1. **Production deployment is authorized for the public read-only surfaces only** — the marketing pages and `/demo/receptionist` — running on mock adapters with no provider credentials.
+
+2. **`RESPONSEOS_REQUIRE_AUTH` must be set on the deployment.** It is a precondition of this carve-out, not a recommendation: without it every authenticated surface in the app is anonymously reachable with a privileged placeholder session, and the deploy publishes far more than the page it authorizes. The operator verifies `/admin` and `/client/dashboard` redirect before sharing the URL.
+
+   Real Clerk credentials are **not** required, and the reason is worth stating rather than assuming. With the flag set and Clerk absent, the gate fails closed — nobody can sign in, so nothing behind it is reachable by anyone. That is the safest configuration for a demo-only deploy where no one is meant to log in.
+
+   **This narrows ADR-0019, deliberately and on the record.** ADR-0019 decision 3 requires that "the basic-auth shim is replaced with real Clerk-authenticated login before that deploy goes live." It was written against PR #14's shape: a password-gated deploy of the whole `master` surface that granted every visitor behind the gate a uniform `aj_admin` session. Its objection was to shipping a *privileged shim* as the first public face of ResponseOS.
+
+   That objection does not reach this deploy, which grants **no session to anyone**. Requiring Clerk here would fit a lock to a door already welded shut — and would make the deployment less safe, not more, by making the admin surfaces reachable to whoever holds credentials. So for this surface, and only this surface, ADR-0019's Clerk precondition is satisfied by the fail-closed gate instead. ADR-0019 continues to govern unchanged for any deploy where someone is meant to sign in, which remains every other deploy.
+
+3. **This is not v0.3 authorization.** D-1 remains open. No live provider account, no real Stripe, no CRM sync, no telephony, no recording, no outbound. Deploying this surface moves no gate in §22 and grants no precedent for deploying anything else; a second surface needs its own decision.
+
+4. **Automatic git deploys stay disabled.** `vercel.json` keeps `deploymentEnabled: false`. A production deploy remains a deliberate, operator-run act, matching the containment decision that disabled them; nothing merges its way to production.
+
+5. **The write path must remain unreachable for as long as this is deployed.** `lib/professional/intake.ts` has no caller by design and a smoke test asserts the page imports none of its three writers. That test is now load-bearing in a way it was not before: it is the thing standing between an anonymous internet visitor and a row in the database.
+
+6. **Deploying without a database is permitted, and its consequence is recorded.** With no `DATABASE_URL` the disclosure policy comes from the fixtures, so revoking an asset — the owner's email address, say — again requires a deployment, which is precisely the gap ADR-0052 closed for the DB-backed case. An operator who wants revocation-without-deploy must point the deployment at a seeded database. Neither choice is wrong; the difference has to be known rather than discovered.
+
+**§21 checklist.** Layer: delivery, no new capability. Deferred-to-bought infrastructure (Vercel), already the planned target, so no new lock-in. It does not improve the live pilot path and creates no proprietary learning — it publishes an existing read-only surface. Evidence and attribution are untouched. Tenant isolation is unchanged and structural. It duplicates no CRM, FSM, telecom, or workflow-platform functionality. **Public claims:** the surface states its own status — mock adapters, records real, delivery simulated — and doctrine §20's prohibitions continue to bind its copy. It requires no new human-approval control beyond the operator running the deploy. Compliance exposure: the page discloses the owner's own professional records and email address, which the owner controls and has approved (ADR-0046, #157); no customer data of any kind is present. Required now: the operator asked for a shareable link and the surface is finished.
+
+**Consequences.** Every statement of the hard rule is amended to name this exception rather than be contradicted by it, and the gate rows that tracked this authorization (D3, Q1) are marked granted rather than left open; the rule still governs everything else, and "no production deploys" remains true of every surface except the one named here. The deploy itself is the operator's to run — the Vercel credentials are theirs and must not enter this repo or an agent session (`AGENTS.md`). If the deployment is later pointed at a database, decision 6's consequence reverses and ADR-0052's revocation path becomes live.

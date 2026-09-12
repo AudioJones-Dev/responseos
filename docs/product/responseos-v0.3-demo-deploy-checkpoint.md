@@ -74,7 +74,7 @@ In scope:
 
 - No Firebase.
 - No real secrets in the repo.
-- No production deploy from this repo until v0.3 readiness gates clear.
+- No production deploy from this repo until v0.3 readiness gates clear, except the public read-only demo surface (ADR-0053) — which requires `RESPONSEOS_REQUIRE_AUTH` on the deployment.
 - Provider adapters must keep mock fallback.
 - Tenant isolation remains non-negotiable.
 - Webhook signature validation must precede any business mutation.
