@@ -37,7 +37,8 @@ Before proposing a feature, refactor, or architectural change, answer the fiftee
 ## Branch + PR policy
 
 - Develop on a feature branch off the latest commit on the default branch.
-- Open PRs as **draft** until CI is green; then mark ready for human merge. PR pattern follows PRs #5 / #6 / #7 / #12.
+- Open PRs as **draft** until CI is green. Agents may mark a validated draft **ready for review** without separate operator approval; verify the current PR head and required checks first. PR pattern follows PRs #5 / #6 / #7 / #12.
+- **Ready for review is not approval to merge.** Human merge approval and all local/CI validation gates below remain required. Marking ready does not authorize deployment, provider activation, or any other separately gated action.
 - Commit messages are imperative and scoped: `feat:`, `fix:`, `docs:`, `test:`, `ci:`, `chore:`. Match the existing log style.
 - Never push to `master` directly. Never force-push to a shared branch without explicit approval.
 

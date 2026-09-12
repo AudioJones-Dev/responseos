@@ -32,6 +32,15 @@
   ],
   "tasks": [
     {
+      "id": "GOV-AGENT-READY-REVIEW",
+      "phase": "Tech Debt & Hardening",
+      "title": "Clarify agent authority to mark PRs ready for review",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "Med"
+    },
+    {
       "id": "F-01",
       "phase": "v0.1 · Foundation",
       "title": "Next.js app scaffold",
