@@ -6,7 +6,7 @@ test fixtures can be designed against one source instead of placeholders.
 **Owner:** AJ Digital LLC / Audio Jones
 **Applies to:** the Florida Ramp & Lift tenant only, in `SUPERVISED_PILOT`.
 **Governing decisions:** ADR-0051 and its 2026-09-10 / 2026-09-11 amendments; ADR-0048;
-[`RESPONSEOS_CLIENT_OPERATING_CONFIGURATION_STANDARD.md`](../RESPONSEOS_CLIENT_OPERATING_CONFIGURATION_STANDARD.md)
+[`RESPONSEOS_CLIENT_OPERATING_CONFIGURATION_STANDARD.md`](./RESPONSEOS_CLIENT_OPERATING_CONFIGURATION_STANDARD.md)
 (the "configuration standard" below).
 
 Status tokens are the doctrine §2.1 vocabulary.
@@ -315,9 +315,16 @@ and no transcript inline where a reference will do.
 
 ## 13. Recording and consent — `DOCUMENTED_ONLY`, draft copy
 
-Recording is tenant-configurable and defaults to `false`; FRL is `true` only by explicit
-configuration and authorisation (ADR-0051 amendment). The disclosure must match the resolved posture
-for the tenant.
+**Recording is off, and this document does not turn it on.** ADR-0051 keeps recording `false` at
+every supervision tier and states that no ratified decision authorises it. No amendment changing
+that is present in [`../../DECISIONS.md`](../../DECISIONS.md); the only ADR-0051 amendment on record
+is dated 2026-09-10 and concerns fact authority.
+
+The operator decided on 2026-09-11 that recording should become tenant-configurable, defaulting to
+`false`, with FRL `true` by explicit configuration and authorisation. **That decision is not yet
+ratified.** Ratifying it as an ADR amendment is a prerequisite (G-11), not a description of current
+state. Until it lands, an FRL call is not recorded, and the disclosure must match the posture the
+tenant actually resolves to — not the posture this section anticipates.
 
 The following greeting is a **draft for the owner**, not approved copy. Caller-facing wording is the
 owner's to set, and it must be reviewed for legal sufficiency before any real call is recorded.
@@ -329,8 +336,11 @@ owner's to set, and it must be reviewed for legal sufficiency before any real ca
 **On refusal**, the agent disables recording and transcription where technically supported, or
 routes to an approved human/manual path. It does not proceed to record silently.
 
-Two known gaps, already recorded against the supervised runtime: recording begins at answer, before
-the disclosure; and stopping an in-progress recording on refusal is not implemented.
+Two gaps are recorded in the in-flight closure change: recording begins at answer, before the
+disclosure; and stopping an in-progress recording on refusal is not implemented. **Together these
+make the refusal path above unenforceable.** Approving the wording (G-4) does not make it safe —
+a call recorded under that wording would still violate the refusal rule, because the runtime cannot
+honour a refusal it has already recorded past. G-12 tracks that separately for exactly this reason.
 
 ---
 
@@ -357,6 +367,8 @@ depends on it.
 | G-2 | Escalation-target live-transfer availability windows | §11 transfer attempt |
 | G-3 | Callback SLA | §11 task due date |
 | G-4 | Final recording and AI-disclosure wording | §13, any live call |
+| G-11 | A ratified ADR amendment making recording tenant-configurable. ADR-0051 currently keeps it `false` at every tier | Any FRL recording at all — this gate precedes G-4 and G-12 |
+| G-12 | Disclosure before audio capture begins, **or** verified stop-on-refusal in the runtime | Recording on a call where the caller may refuse. Independent of G-4: approved wording does not make an unenforceable refusal path safe |
 | G-5 | CRM pipeline names and stages | §16 projection |
 | G-6 | Qualification confidence thresholds | `HUMAN_REVIEW_REQUIRED` |
 | G-7 | Whether evaluation is phone, video, or on-site, per product | `QUALIFIED_FREE_EVALUATION` |
