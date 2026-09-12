@@ -42,8 +42,8 @@
       "start": "2026-09-11",
       "ref": 173,
       "refType": "pull",
-      "blocked": true,
-      "blockedReason": "Local lint, typecheck, build and 621 unit tests passed on PR #173. Postgres integration validation remains pending because Docker Desktop's Linux engine is unavailable; CI's integration job is the first run of the new concurrency regression."
+      "blocked": false,
+      "blockedReason": "Validation complete on PR #173: CI validate and integration jobs both green, so the new Postgres concurrency regression has now actually executed (it could not run locally — no Docker Linux engine). Awaiting independent review by CodeRabbit, required because authorship is mixed Codex/Claude, then owner merge."
     },
     {
       "id": "F-01",
