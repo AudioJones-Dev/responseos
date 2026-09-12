@@ -32,6 +32,18 @@
   ],
   "tasks": [
     {
+      "id": "CONVERGE-TRANSPORT",
+      "phase": "Tech Debt & Hardening",
+      "title": "Preserve prospect HTTPS lookup and deadline remediation",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-09-12",
+      "blocked": true,
+      "blockedReason": "Local Postgres integration unavailable; merge validation remains required."
+    },
+    {
       "id": "F-01",
       "phase": "v0.1 · Foundation",
       "title": "Next.js app scaffold",
