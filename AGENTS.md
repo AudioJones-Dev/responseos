@@ -82,3 +82,46 @@ Don't add features, refactor, or introduce abstractions beyond what the task req
 Don't add error handling, fallbacks, or validation for scenarios that can't happen. Trust internal code and framework guarantees. Only validate at system boundaries (user input, external APIs).
 
 Default to writing no comments. Only add one when the WHY is non-obvious.
+
+## Cross-repository policy authority
+
+Authority: the owner-approved AJ Digital policy (2026-09-12), maintained in
+`G:/AJ-INTERNAL/AJ-DIGITAL-VAULT/00-CONTROL/GOVERNANCE/GLOBAL_MERGE_CRITERIA.md`
+under `HUMAN_APPROVAL_MATRIX.md`. This entry point implements that policy; it
+does not establish a competing authority. Preserve stricter local controls.
+
+Record authoring agents separately from GitHub account names, the reviewed head
+SHA, reviewer system, review outcome and evidence link. A green bot check or an
+account name alone proves neither authorship nor independent review. Unknown
+authorship or ambiguous review evidence blocks a merge recommendation. For other
+authoring harnesses, obtain owner clarification of reviewer eligibility; do not
+invent a self-review exemption. This is an instruction contract, not verified
+technical enforcement. If canonical context is unavailable, retain these
+restrictions and report the verification gap.
+
+
+### Authorship declaration and review routing
+
+Record one explicit PR-body declaration: `authoring-agent:codex`,
+`authoring-agent:claude`, `authoring-agent:codex+claude`,
+`authoring-agent:human`, or `authoring-agent:unknown`, with provenance linking
+the authoring session and contributed changes. These declarations are claims
+to verify, not authenticated attestations. Preserve earlier agent contributions
+when humans edit; another contributing agent must update the declaration to the
+union of contributors. Conflicting or missing provenance blocks completion.
+
+CodeRabbit is the default reviewer. For Codex-only authorship Claude is a
+permitted fallback; for Claude-only authorship Codex is permitted. Mixed
+Codex/Claude authorship requires CodeRabbit. Human-only and other harness
+authorship retain applicable local review rules; do not invent an exemption.
+Unknown authorship blocks review completion until established.
+
+After current-head validation, request review by marking the draft ready.
+New commits invalidate recorded review coverage; confirm renewed coverage of
+the current SHA. A dispatch is only `review_requested`, never completion.
+Record `review_running`, `review_completed`, `review_valid_for_head`,
+`review_blocked`, or `review_unavailable` from actual evidence. Cancelled,
+timed-out, skipped, unavailable, pending, failed and rate-limited runs cannot
+satisfy review. Record reviewer system, exact SHA, event URL/time, findings and
+thread resolution. Generic green checks and editable PR metadata cannot prove
+reviewer independence. No agent may merge or enable automatic merge.
