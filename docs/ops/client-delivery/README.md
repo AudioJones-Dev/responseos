@@ -47,6 +47,18 @@ a winner, or convert an assumption into an actual.
   are evidenced and ranked, and what each supervision mode requires before
   activation.
 
+## Client policies
+
+- [`FRL_INBOUND_INTAKE_ROUTING_POLICY.md`](./FRL_INBOUND_INTAKE_ROUTING_POLICY.md)
+  — Florida Ramp & Lift inbound intake and routing: the identity-resolution and
+  disclosure gate, the four product qualification trees, the canonical
+  qualification outcomes, escalation and notification behaviour, and the
+  conflicts and activation gates still awaiting an operator decision.
+  `DOCUMENTED_ONLY`. It sits here, beside the standards, rather than in a client
+  directory: only one of the two conditions below is met — the operator approved
+  the location and data-handling boundary on 2026-09-11, but registration of the
+  FRL opportunity is still not recorded.
+
 ## Templates
 
 - [`RESPONSEOS_PROSPECT_QUALIFICATION_INTAKE_TEMPLATE.md`](./templates/RESPONSEOS_PROSPECT_QUALIFICATION_INTAKE_TEMPLATE.md)
