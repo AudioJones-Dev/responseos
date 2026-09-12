@@ -6,7 +6,7 @@ import {
   unverifiedFallback,
   type ClaimAuthority,
 } from "./authority";
-import { classifyProfessionalQuestion } from "./intent";
+import { classifyProfessionalQuestion, matchesKeyword } from "./intent";
 import {
   DEFAULT_AGENT_PROFILE_POLICY,
   type AgentProfilePolicy,
@@ -46,6 +46,75 @@ function applyPolicy(
 }
 
 /**
+ * Categories a directly-named skill or project may re-route. "Any
+ * experience with ClickUp?" classifies as work history, and "tell me
+ * about Career OS" classifies as work history too — on the word
+ * "career" — but in both cases the tenant's own record is the better
+ * answer.
+ *
+ * The gated categories are absent on purpose, so a skill or project
+ * name in "what salary does he want for Salesforce work?" cannot turn a
+ * compensation, rates, reference, private, or calendar question into an
+ * answerable one. `projects` is absent too: "what projects has he built
+ * with Salesforce?" is already a project question, and naming a skill
+ * inside it does not make it a question about the skill.
+ */
+const TENANT_VOCABULARY_MAY_OVERRIDE: ReadonlySet<ProfessionalKnowledgeCategory> =
+  new Set(["unknown", "work_history", "profile"]);
+
+/**
+ * A project is asked about by its short name, not its full record name:
+ * "what is ARO?" should reach "ARO — agent execution & handoff runtime".
+ */
+function projectMatchTerms(name: string): string[] {
+  const lead = name.split("—")[0].trim().toLowerCase();
+  const full = name.toLowerCase();
+  return lead === full ? [full] : [full, lead];
+}
+
+/**
+ * Resolves the claim category, consulting the account's own verified
+ * project and skill names when the generic classifier has no better
+ * answer.
+ *
+ * Recruiters ask "does he know Salesforce?" or "what is ARO?" far more
+ * often than they say the words "skill" or "project", and the generic
+ * rules cannot know one tenant's vocabulary. The lookup stays here
+ * rather than in `classifyProfessionalQuestion` so the shared classifier
+ * remains tenant-agnostic — no account's data is compiled into it.
+ *
+ * Projects are checked first: a project name is the more specific
+ * claim, and without this "tell me about Career OS" answers out of the
+ * work-history record, which is a wrong answer rather than a fallback.
+ */
+async function resolveCategory(
+  accountId: string,
+  question: string,
+): Promise<ProfessionalKnowledgeCategory> {
+  const category = classifyProfessionalQuestion(question);
+  if (!TENANT_VOCABULARY_MAY_OVERRIDE.has(category)) return category;
+
+  const normalized = question.toLowerCase();
+  const provider = getProfessionalKnowledgeProvider();
+
+  const projects = await provider.getProjects(accountId);
+  const namedProject = projects.some(
+    (project) =>
+      project.verified &&
+      projectMatchTerms(project.name).some((term) =>
+        matchesKeyword(normalized, term),
+      ),
+  );
+  if (namedProject) return "projects";
+
+  const skills = await provider.getSkills(accountId);
+  const namedSkill = skills.some(
+    (skill) => skill.verified && matchesKeyword(normalized, skill.name.toLowerCase()),
+  );
+  return namedSkill ? "skills" : category;
+}
+
+/**
  * Answers a professional question from verified knowledge only.
  *
  * Every path that is not backed by a verified record ends in the
@@ -65,7 +134,7 @@ export async function answerProfessionalQuestion(input: {
   const profile = await provider.getProfile(input.accountId);
   const ownerName = profile?.ownerName ?? UNKNOWN_OWNER;
 
-  const category = classifyProfessionalQuestion(input.question);
+  const category = await resolveCategory(input.accountId, input.question);
   const authority = applyPolicy(category, policy);
 
   if (authority === "refuse") {

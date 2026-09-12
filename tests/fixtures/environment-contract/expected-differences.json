@@ -1,0 +1,4 @@
+{
+  "base": "tests/fixtures/environment-contract/valid-production.json",
+  "overrides": {}
+}

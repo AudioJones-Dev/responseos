@@ -8,19 +8,21 @@ import {
 import { errorResponse } from "@/lib/providers/webhook-helpers";
 import { normalizeTelnyxEvent } from "@/lib/providers/telnyx/normalize";
 import {
+  resolveTelnyxEventAssignment,
+} from "@/lib/prospectBootstrap/service";
+import { PROSPECT_CONTENT_RETENTION_DAYS } from "@/lib/prospectBootstrap/contracts";
+import {
+  getTelnyxAgentTarget,
+  getTelnyxOccurredAt,
   parseTelnyxWebhook,
   verifyTelnyxWebhook,
 } from "@/lib/providers/telnyx/webhook";
 
 export async function POST(req: Request) {
   const publicKey = process.env.TELNYX_PUBLIC_KEY;
-  const accountId = process.env.RESPONSEOS_DEMO_ACCOUNT_ID;
-  const demoNumber = process.env.RESPONSEOS_DEMO_PHONE_E164;
   if (
     process.env.RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED !== "true" ||
-    !publicKey ||
-    !accountId ||
-    !demoNumber
+    !publicKey
   ) {
     return errorResponse(503, {
       code: "telnyx_ingest_disabled",
@@ -47,14 +49,42 @@ export async function POST(req: Request) {
     });
   }
 
+  const target = getTelnyxAgentTarget(event.data.payload);
+  const occurredAt = getTelnyxOccurredAt(event);
+  const receivedAt = new Date();
+  let resolved = process.env.RESPONSEOS_PROSPECT_BOOTSTRAP_ENABLED === "true" && target && occurredAt
+    ? await resolveTelnyxEventAssignment({ target, occurredAt, receivedAt })
+    : null;
+  let personalized = true;
+  const legacyAccountId = process.env.RESPONSEOS_DEMO_ACCOUNT_ID;
+  const legacyNumber = process.env.RESPONSEOS_DEMO_PHONE_E164;
+  if (
+    !resolved &&
+    target &&
+    legacyAccountId &&
+    legacyNumber &&
+    target.replace(/\D/g, "") === legacyNumber.replace(/\D/g, "")
+  ) {
+    resolved = {
+      accountId: legacyAccountId,
+      bootstrapId: "legacy-evergreen-demo",
+      assignmentId: "legacy-evergreen-demo",
+      demoNumber: legacyNumber,
+    };
+    personalized = false;
+  }
+
   const ledger = await recordWebhookEvent({
-    account_id: accountId,
+    account_id: resolved?.accountId,
     provider: "telnyx",
     provider_event_id: event.data.id,
     event_type: event.data.event_type,
     raw_body: rawBody,
     signature_header: signature ?? undefined,
     signature_valid: true,
+    ...(personalized || !resolved
+      ? { payload_expires_at: new Date((occurredAt ?? receivedAt).getTime() + PROSPECT_CONTENT_RETENTION_DAYS * 24 * 60 * 60 * 1000) }
+      : {}),
   });
   if (!ledger.ok) {
     return errorResponse(503, {
@@ -62,17 +92,36 @@ export async function POST(req: Request) {
       message: "Telnyx webhook ledger is unavailable.",
     });
   }
+  if (!target || !occurredAt || !resolved) {
+    await setWebhookProcessStatus({
+      id: ledger.data.id,
+      process_status: "rejected",
+      process_error: !target
+        ? "missing_destination"
+        : !occurredAt
+          ? "missing_occurred_at"
+          : "unassigned_destination",
+    });
+    return NextResponse.json(
+      { ok: true, data: { accepted: true, duplicate: ledger.data.process_status === "duplicate", normalized: false } },
+      { status: 202 },
+    );
+  }
+  const assignment = resolved;
   const normalizeAfterAck = () => after(async () => {
     try {
       const normalized = await normalizeTelnyxEvent({
-        accountId,
-        demoNumber,
+        accountId: assignment.accountId,
+        demoNumber: assignment.demoNumber,
         webhookEventId: ledger.data.id,
         event,
+        ...(personalized
+          ? { transcriptExpiresAt: new Date(occurredAt.getTime() + PROSPECT_CONTENT_RETENTION_DAYS * 24 * 60 * 60 * 1000) }
+          : {}),
       });
-      if (normalized.finalized && normalized.callId) {
+      if (!personalized && normalized.finalized && normalized.callId) {
         await runCrmSyncForCall({
-          accountId,
+          accountId: assignment.accountId,
           callId: normalized.callId,
           sourceWebhookId: ledger.data.id,
         });

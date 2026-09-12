@@ -26,6 +26,8 @@ export interface WebhookEvent {
   processed_at?: string;
   process_status: WebhookProcessStatus;
   process_error?: string;
+  payload_expires_at?: string;
+  payload_purged_at?: string;
 }
 
 interface WebhookRow {
@@ -42,6 +44,8 @@ interface WebhookRow {
   processed_at: Date | null;
   process_status: string;
   process_error: string | null;
+  payload_expires_at: Date | null;
+  payload_purged_at: Date | null;
 }
 
 function rowToWebhook(row: WebhookRow): WebhookEvent {
@@ -61,6 +65,8 @@ function rowToWebhook(row: WebhookRow): WebhookEvent {
       : undefined,
     process_status: row.process_status as WebhookProcessStatus,
     process_error: row.process_error ?? undefined,
+    payload_expires_at: row.payload_expires_at?.toISOString(),
+    payload_purged_at: row.payload_purged_at?.toISOString(),
   };
 }
 
@@ -89,6 +95,7 @@ export async function recordWebhookEvent(entry: {
   raw_body: string;
   signature_header?: string;
   signature_valid?: boolean;
+  payload_expires_at?: Date;
 }): Promise<Result<{ id: string; process_status: WebhookProcessStatus }>> {
   if (db === null) {
     return err(
@@ -119,6 +126,7 @@ export async function recordWebhookEvent(entry: {
         signature_valid: entry.signature_valid ?? false,
         dedupe_hash,
         process_status: "received",
+        payload_expires_at: entry.payload_expires_at ?? null,
       },
       select: { id: true, process_status: true },
     });
@@ -140,6 +148,27 @@ export async function recordWebhookEvent(entry: {
     return errFromThrown<{ id: string; process_status: WebhookProcessStatus }>(
       e,
     );
+  }
+}
+
+export async function purgeExpiredWebhookPayloads(now = new Date()): Promise<Result<{ purged: number }>> {
+  if (db === null) return err("no_database", "Webhook payload purge requires DATABASE_URL.");
+  try {
+    const result = await db.webhookEvent.updateMany({
+      where: {
+        payload_expires_at: { lte: now },
+        payload_purged_at: null,
+      },
+      data: {
+        raw_body: "<PURGED_WEBHOOK_PAYLOAD>",
+        signature_header: null,
+        process_error: null,
+        payload_purged_at: now,
+      },
+    });
+    return ok({ purged: result.count });
+  } catch (error) {
+    return errFromThrown(error);
   }
 }
 

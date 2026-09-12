@@ -7,11 +7,25 @@ import {
   internalLeadStatusToLabel,
   TwilioVoiceWebhookSchema,
 } from "@/lib/validation/api";
+import { normalizeE164 } from "@/lib/validation/common";
 
 describe("validation/common", () => {
   test("e164PhoneSchema accepts +1555… and rejects junk", () => {
     expect(() => e164PhoneSchema.parse("+15555550100")).not.toThrow();
     expect(() => e164PhoneSchema.parse("555-555-0100")).toThrow();
+  });
+
+  test("normalizeE164 removes non-digits and reads a 10-digit result as +1", () => {
+    expect(normalizeE164("(305) 555-0110")).toBe("+13055550110");
+    expect(normalizeE164("305.555.0110")).toBe("+13055550110");
+    expect(normalizeE164("+1 305 555 0110")).toBe("+13055550110");
+    expect(normalizeE164("+44 20 7946 0958")).toBe("+442079460958");
+  });
+
+  test("normalizeE164 returns null outside 10 to 15 digits", () => {
+    expect(normalizeE164("555-0110")).toBeNull();
+    expect(normalizeE164("")).toBeNull();
+    expect(normalizeE164("1234567890123456")).toBeNull();
   });
 });
 

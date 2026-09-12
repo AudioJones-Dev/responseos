@@ -80,7 +80,13 @@ export const mockAgentProfiles: AgentProfile[] = [
     is_default: true,
     system_policy_json: {
       allowedAppointmentTypes: ["recruiter_screen", "hiring_manager_interview"],
-      allowedAssetTypes: ["resume", "portfolio", "linkedin", "github"],
+      allowedAssetTypes: [
+        "resume",
+        "portfolio",
+        "linkedin",
+        "github",
+        "email",
+      ],
       compensationDisclosure: "escalate",
       referencesDisclosure: "escalate",
       knowledgeFallback: "verified_only",

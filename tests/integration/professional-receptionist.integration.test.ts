@@ -1,16 +1,26 @@
-import { afterAll, beforeEach, describe, expect, test } from "vitest";
+import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
 import {
   AgentProfiles,
   ProfessionalOpportunities,
   RevenueMetrics,
 } from "@/lib/data";
 import {
+  NoopProfessionalHandoffProvider,
+  type ProfessionalHandoffEvent,
+} from "@/lib/providers/professionalHandoff";
+import {
   bookProfessionalAppointment,
   captureProfessionalOpportunity,
   requestProfessionalEscalation,
 } from "@/lib/professional/intake";
 import { parseAgentProfilePolicy } from "@/lib/professional";
-import { disconnectTestDb, prisma, resetAndSeedTestDb, setDevSession } from "./setup";
+import {
+  disconnectTestDb,
+  prisma,
+  resetAndSeedTestDb,
+  seedTestDb,
+  setDevSession,
+} from "./setup";
 
 const DEMO_ACCOUNT = "org_tyrone_1";
 
@@ -34,6 +44,98 @@ describe("internal demo account classification", () => {
       ["org_responseos_demo", "sandbox"],
       ["org_tyrone_1", "internal_demo"],
     ]);
+  });
+});
+
+describe("re-seeding an existing demo database", () => {
+  test("refreshes the demo tenant's narrative instead of leaving a superseded story", async () => {
+    const [call, transcript, segment, qa, opportunity, account, profile] =
+      await Promise.all([
+        prisma.call.findUnique({ where: { id: "call_tyrone_1" } }),
+        prisma.callTranscript.findUnique({ where: { id: "xcr_tyrone_1" } }),
+        prisma.callSegment.findUnique({ where: { id: "seg_tyrone_2" } }),
+        prisma.qaLog.findUnique({ where: { id: "qa_tyrone_1" } }),
+        prisma.professionalOpportunity.findUnique({
+          where: { id: "popp_tyrone_1" },
+        }),
+        prisma.account.findUnique({ where: { id: "org_tyrone_1" } }),
+        prisma.agentProfile.findUnique({
+          where: { id: "agent_tyrone_recruiter" },
+        }),
+      ]);
+
+    // Simulate a database seeded before the narrative was revised.
+    const STALE = "STALE — superseded narrative";
+    await Promise.all([
+      prisma.call.update({
+        where: { id: "call_tyrone_1" },
+        data: { transcript: STALE, summary: STALE },
+      }),
+      prisma.callTranscript.update({
+        where: { id: "xcr_tyrone_1" },
+        data: { inline_text: STALE },
+      }),
+      prisma.callSegment.update({
+        where: { id: "seg_tyrone_2" },
+        data: { text: STALE },
+      }),
+      prisma.qaLog.update({ where: { id: "qa_tyrone_1" }, data: { notes: STALE } }),
+      prisma.professionalOpportunity.update({
+        where: { id: "popp_tyrone_1" },
+        data: { summary: STALE, questions_asked: [STALE] },
+      }),
+      prisma.account.update({
+        where: { id: "org_tyrone_1" },
+        data: { website_url: "https://stale.example" },
+      }),
+      // A policy is enforced, not just displayed: a database seeded
+      // before a disclosure changed must not keep enforcing the old one.
+      prisma.agentProfile.update({
+        where: { id: "agent_tyrone_recruiter" },
+        data: {
+          system_policy_json: {
+            allowedAppointmentTypes: ["recruiter_screen"],
+            allowedAssetTypes: [],
+            compensationDisclosure: "escalate",
+            referencesDisclosure: "escalate",
+            knowledgeFallback: "verified_only",
+          },
+        },
+      }),
+    ]);
+
+    seedTestDb();
+
+    const after = await Promise.all([
+      prisma.call.findUnique({ where: { id: "call_tyrone_1" } }),
+      prisma.callTranscript.findUnique({ where: { id: "xcr_tyrone_1" } }),
+      prisma.callSegment.findUnique({ where: { id: "seg_tyrone_2" } }),
+      prisma.qaLog.findUnique({ where: { id: "qa_tyrone_1" } }),
+      prisma.professionalOpportunity.findUnique({
+        where: { id: "popp_tyrone_1" },
+      }),
+      prisma.account.findUnique({ where: { id: "org_tyrone_1" } }),
+      prisma.agentProfile.findUnique({
+        where: { id: "agent_tyrone_recruiter" },
+      }),
+    ]);
+    expect(after.every((row) => row !== null)).toBe(true);
+    expect(JSON.stringify(after)).not.toContain(STALE);
+
+    expect(after[0]?.transcript).toBe(call?.transcript);
+    expect(after[0]?.summary).toBe(call?.summary);
+    expect(after[1]?.inline_text).toBe(transcript?.inline_text);
+    expect(after[2]?.text).toBe(segment?.text);
+    expect(after[3]?.notes).toBe(qa?.notes);
+    expect(after[4]?.summary).toBe(opportunity?.summary);
+    expect(after[4]?.questions_asked).toEqual(opportunity?.questions_asked);
+    expect(after[5]?.website_url).toBe(account?.website_url);
+    expect(after[6]?.system_policy_json).toEqual(profile?.system_policy_json);
+
+    // The policy is what gets enforced, so assert the restored value by
+    // its effect rather than trusting the blob comparison alone.
+    const restored = parseAgentProfilePolicy(after[6]?.system_policy_json);
+    expect(restored.allowedAssetTypes).toContain("email");
   });
 });
 
@@ -173,6 +275,50 @@ describe("professional opportunities", () => {
     });
     expect(audits).toHaveLength(1);
     expect(audits[0].reason).toBe("compensation question");
+  });
+
+  test("a compensation escalation carries the owner's floor, and nothing else does", async () => {
+    // The receipt deliberately does not echo the payload, so capture the
+    // emitted event itself — the payload is the whole contract.
+    const emitted: ProfessionalHandoffEvent[] = [];
+    const spy = vi
+      .spyOn(NoopProfessionalHandoffProvider.prototype, "emit")
+      .mockImplementation(async (event) => {
+        emitted.push(event);
+        return { providerId: "noop" as const, event: event.name, delivered: false };
+      });
+
+    try {
+      for (const category of ["compensation", "consulting_rates", "references"]) {
+        const result = await requestProfessionalEscalation({
+          accountId: DEMO_ACCOUNT,
+          reason: `${category} question`,
+          category,
+        });
+        expect(result.ok).toBe(true);
+      }
+    } finally {
+      spy.mockRestore();
+    }
+
+    const payloads = emitted.map((event) => event.payload);
+    expect(payloads).toHaveLength(3);
+
+    // Compensation gets the figure; the owner is the only direction it
+    // travels.
+    expect(payloads[0]).toMatchObject({
+      category: "compensation",
+      compensationFloor: { amount: 95000, currency: "USD", period: "year" },
+    });
+
+    // Rates and references escalate too, and an annual salary minimum
+    // answers neither. The key must be absent rather than present-and-
+    // undefined: `Object.hasOwn` and anything serialising the payload
+    // would see it, and the contract says absent.
+    expect(payloads[1]).not.toHaveProperty("compensationFloor");
+    expect(payloads[2]).not.toHaveProperty("compensationFloor");
+    expect(Object.hasOwn(payloads[1], "compensationFloor")).toBe(false);
+    expect(Object.hasOwn(payloads[2], "compensationFloor")).toBe(false);
   });
 
   test("a tenant user cannot escalate against another tenant", async () => {

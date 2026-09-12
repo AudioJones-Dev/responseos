@@ -1,0 +1,102 @@
+{
+  "schemaVersion": "responseos.environment.v1",
+  "contractVersion": "1.0.0",
+  "identity": {
+    "name": "production",
+    "environmentClass": "template",
+    "lifecycle": "planned",
+    "application": {
+      "framework": "nextjs",
+      "nodeVersion": "24.x",
+      "packageManager": "npm@11.16.0",
+      "schemaLineage": "prisma/migrations"
+    }
+  },
+  "vercel": {
+    "teamId": "team_BHxIkAGPW6qEKKQBAt9c0NGz",
+    "projectId": null,
+    "projectName": null,
+    "nodeVersion": "24.x",
+    "customEnvironment": {
+      "id": null,
+      "slug": null,
+      "type": null
+    },
+    "deploymentMode": "manual",
+    "automaticGitDeployments": false,
+    "manualOnly": true,
+    "deploymentProtection": "required",
+    "aliasPolicy": "human-approved-production-only",
+    "domainPolicy": "human-approved-production-only"
+  },
+  "database": {
+    "provider": "neon-postgres",
+    "projectId": null,
+    "projectName": null,
+    "branchId": null,
+    "branchName": null,
+    "endpointId": null,
+    "databaseName": "neondb",
+    "runtimeConnectionMode": "pooled",
+    "migrationConnectionMode": "direct",
+    "pooledDirectSeparationRequired": true,
+    "migrationPolicy": "prisma-migrate-deploy-before-application"
+  },
+  "authentication": {
+    "provider": "clerk",
+    "authRequired": true,
+    "providerClass": "unresolved",
+    "credentialClass": "unresolved",
+    "requiredVariables": [
+      "AJ_DIGITAL_CLERK_ORG_ID",
+      "CLERK_SECRET_KEY",
+      "CLERK_WEBHOOK_SECRET",
+      "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+      "RESPONSEOS_REQUIRE_AUTH"
+    ],
+    "failClosed": true
+  },
+  "deploymentControls": {
+    "exactShaRequired": true,
+    "separateControlAndApplicationSha": true,
+    "workflowControlSha": null,
+    "intendedApplicationSha": null,
+    "concurrency": {
+      "group": null,
+      "cancelInProgress": false
+    },
+    "promotionPolicy": "certify-plan-provision-readback-diff-approve-deploy",
+    "healthCheck": {
+      "required": true,
+      "path": "/api/health"
+    },
+    "postDeploymentIdentityValidation": {
+      "required": true,
+      "fields": ["project", "environment", "applicationSha", "readyState", "aliases"]
+    },
+    "rollbackPolicy": "redeploy-known-good-exact-sha-no-schema-auto-rollback",
+    "configurationCertificationRequired": true
+  },
+  "providerPosture": {
+    "mode": "live-gated",
+    "activationGateRequired": true,
+    "credentialsAllowed": "environment-specific-after-approval",
+    "enabledProviders": [],
+    "liveExecutionApprovalState": "pending",
+    "secretValuesForbiddenInGit": true
+  },
+  "humanApprovals": {
+    "productionDomainActivation": "pending",
+    "providerEnablement": "pending",
+    "telnyxActivation": "pending",
+    "hubspotLiveWrites": "pending",
+    "productionPhoneAssignment": "pending",
+    "recordingEnablement": "pending",
+    "publicDemoExposure": "pending",
+    "prospectExposure": "pending",
+    "customerTenantActivation": "pending",
+    "retentionPolicyChange": "pending",
+    "productionPromotion": "pending",
+    "liveProviderExecution": "pending"
+  }
+}

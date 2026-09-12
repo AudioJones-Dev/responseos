@@ -1,0 +1,13 @@
+{
+  "base": "tests/fixtures/environment-contract/valid-production.json",
+  "overrides": {
+    "identity": {
+      "application": {
+        "nodeVersion": "22.x"
+      }
+    },
+    "vercel": {
+      "projectId": "prj_pbzqdkzp322jcHWIsi19GhsnWXRm"
+    }
+  }
+}

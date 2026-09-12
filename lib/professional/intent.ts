@@ -56,10 +56,46 @@ const INTENT_RULES: Array<{ intent: ProfessionalIntent; keywords: string[] }> = 
   { intent: "demo", keywords: ["demo", "responseos", "walkthrough", "how does this work"] },
 ];
 
+/**
+ * Whole-word keyword match.
+ *
+ * Plain substring matching silently mis-routes: "age" is inside
+ * "management", so "how is he with stakeholder management?" classified
+ * as a private question and got refused. A refusal is the most
+ * expensive wrong answer the receptionist can give, so matching is
+ * anchored to word boundaries. Multi-word keywords still match as
+ * phrases.
+ */
+export function matchesKeyword(text: string, keyword: string): boolean {
+  return keywordVariants(keyword).some((variant) => {
+    const escaped = variant.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`, "i").test(text);
+  });
+}
+
+/** Endings where a trailing "s" is part of the word, not a plural. */
+const NON_PLURAL_S = /(ss|is|us|as)$/i;
+
+/**
+ * The keyword itself, plus its regular plural counterpart.
+ *
+ * Only a regular plural is derived. Truncating every word that ends in
+ * "s" would turn "address" into "addres" and match caller text that was
+ * never written — and on a keyword that governs a refusal, a sloppier
+ * match is a worse answer, not a safer one. Irregular forms
+ * ("analysis" / "analyses") are not derived at all; author both spellings
+ * when a keyword needs them.
+ */
+function keywordVariants(keyword: string): string[] {
+  if (!keyword.endsWith("s")) return [keyword, `${keyword}s`];
+  if (NON_PLURAL_S.test(keyword) || keyword.length <= 4) return [keyword];
+  return [keyword, keyword.slice(0, -1)];
+}
+
 export function detectProfessionalIntent(text: string): ProfessionalIntent {
   const normalized = text.toLowerCase();
   for (const rule of INTENT_RULES) {
-    if (rule.keywords.some((keyword) => normalized.includes(keyword))) {
+    if (rule.keywords.some((keyword) => matchesKeyword(normalized, keyword))) {
       return rule.intent;
     }
   }
@@ -75,10 +111,43 @@ const CATEGORY_RULES: Array<{
   category: ProfessionalKnowledgeCategory;
   keywords: string[];
 }> = [
+  // The gated categories come first. Both availability rules below carry
+  // broad words ("available", "free for", "contract") that appear inside
+  // compensation, rate, and reference questions, and a gated question
+  // that matches an answerable rule first stops being gated at all —
+  // "what is his contract rate?" must escalate, not answer.
+  {
+    category: "compensation",
+    keywords: ["salary", "compensation", "pay range", "base", "equity", "comp"],
+  },
+  { category: "consulting_rates", keywords: ["rate", "rates", "hourly", "day rate", "pricing"] },
+  { category: "references", keywords: ["reference", "referral from", "vouch", "background check"] },
+  // Then the specific availability rule before the general one:
+  // "available for full-time work" asks about employment terms, not a
+  // calendar, but every word of it that names a time sense also appears
+  // in the rule below.
+  {
+    category: "contract_availability",
+    keywords: ["contract", "full-time", "full time", "start date", "notice period"],
+  },
   {
     category: "interview_availability",
     keywords: [
+      // The receptionist answers *about* its owner, so callers ask in the
+      // third person. "when are you free" alone missed "when is he free
+      // for a call?" entirely, which is how a recruiter actually phrases
+      // it — found by asking the demo route the obvious question.
+      //
+      // Each phrase still pins "free" to a time sense. The gated rules
+      // now sit above, so a loose keyword here no longer unlocks one —
+      // but "is he free" alone would still swallow "is he free to
+      // discuss the role?", and the bare word is worse. Keep it tight;
+      // the ordering above is a second line, not a licence.
       "when are you free",
+      "when is he free",
+      "when is she free",
+      "when are they free",
+      "free for",
       "availability",
       "available",
       "schedule",
@@ -86,12 +155,6 @@ const CATEGORY_RULES: Array<{
       "book",
     ],
   },
-  {
-    category: "compensation",
-    keywords: ["salary", "compensation", "pay range", "base", "equity", "comp"],
-  },
-  { category: "consulting_rates", keywords: ["rate", "rates", "hourly", "day rate", "pricing"] },
-  { category: "references", keywords: ["reference", "referral from", "vouch", "background check"] },
   {
     category: "education",
     keywords: ["education", "degree", "school", "university", "college", "graduated"],
@@ -115,10 +178,6 @@ const CATEGORY_RULES: Array<{
     keywords: ["prefer", "looking for", "interested in", "open to"],
   },
   {
-    category: "contract_availability",
-    keywords: ["contract", "full-time", "full time", "start date", "notice period"],
-  },
-  {
     category: "personal",
     keywords: ["home address", "personal", "family", "married", "age", "phone number"],
   },
@@ -135,7 +194,7 @@ export function classifyProfessionalQuestion(
 ): ProfessionalKnowledgeCategory {
   const normalized = question.toLowerCase();
   for (const rule of CATEGORY_RULES) {
-    if (rule.keywords.some((keyword) => normalized.includes(keyword))) {
+    if (rule.keywords.some((keyword) => matchesKeyword(normalized, keyword))) {
       return rule.category;
     }
   }

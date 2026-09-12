@@ -20,6 +20,15 @@ export const e164PhoneSchema = z
   .string()
   .regex(/^\+[1-9]\d{1,14}$/, "must be a valid E.164 phone number");
 
+// Removes every non-digit, including a leading +. Any 10-digit result is read as
+// North American (+1), so a +-prefixed 10-digit international number is misread.
+export function normalizeE164(value: string): string | null {
+  const digits = value.replace(/\D/g, "");
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.length >= 11 && digits.length <= 15) return `+${digits}`;
+  return null;
+}
+
 export const centsSchema = z
   .number()
   .int("cents must be an integer")

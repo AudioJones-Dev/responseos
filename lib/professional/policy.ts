@@ -22,6 +22,7 @@ const ASSET_TYPES: ProfessionalAssetType[] = [
   "linkedin",
   "github",
   "case_study",
+  "email",
 ];
 
 /**

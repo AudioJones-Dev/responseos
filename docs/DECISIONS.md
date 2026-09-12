@@ -814,6 +814,68 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 
 **Consequences.** ResponseOS gains a reference tenant that proves the platform on itself, and a claim-authority boundary that makes the honest answer the default one. The cost is real: until Career OS (or the owner) supplies verified records, the receptionist answers most career questions with the fallback line. That is the correct behaviour for an unsourced claim, and flipping it on is a data change, not a code change. `ProfessionalKnowledgeProvider` and `ProfessionalHandoffProvider` each have exactly one adapter, so per ADR-0043 they are **architecture preparation, not proven provider portability** — nothing here licenses a provider-independence claim.
 
+**Follow-up (2026-09-10) — the data landed, the decision did not change.** The account owner's canonical resume was imported into the fixture, so work history, skills, education, certifications, and targeted roles are now `verified: true` and answerable. This is the "data change, not a code change" the consequences above anticipated in the sense that matters: no policy or authority rule moved. The professional-knowledge TypeScript contracts did change, and only in service of decision 5 — `ExperienceRecord.startDate`/`summary` and `SkillRecord.category` became optional so the source can be transcribed rather than padded out, and `AvailabilityPolicy` gained `willingToRelocate` and `preferredTitles`. Decision 5 still governs — records are transcribed, never inferred, so roles the source carries without dates stay undated, and **projects** remain unsourced and therefore unanswerable. `RESUME_IMPORTED_AT` in the fixture records the import date so staleness stays visible. The owner's salary floor was deliberately left out: compensation escalates to a human by policy, so storing the number in a recruiter-facing knowledge store would add exposure without ever being spoken.
+
+**Follow-up (2026-09-11) — projects are now sourced; no interface, policy, or authority rule moved.** The resume carries no project data, which is why that category stayed unanswerable. The account owner's public portfolio at `tyronenelms.com/work` — already this tenant's one approved asset — does carry it, so three project records were transcribed from it and are now `verified: true`. `PORTFOLIO_IMPORTED_AT` records when the page was read, alongside `RESUME_IMPORTED_AT`.
+
+Decision 5 governs this the same way it governed the resume import, with one addition that is load-bearing for doctrine §20: **two of the three projects are internal systems with no external customers and no production deployment, and their records say so.** A recruiter hearing a project named assumes a shipped product unless told otherwise, so each summary carries the status its own source page states — "active engagement", "internal system" — and a test asserts the un-deployed one is never described as shipped. The status rides in the record summary rather than in a new `ProjectRecord` field because nothing in the runtime branches on it; adding a field would have been an abstraction in search of a caller.
+
+One of the three projects is named Career OS, which does **not** touch decision 4. The record is a portfolio claim *about* a system — the same sentence its public page carries — not an import of that system's data model. Career OS remains un-vendored, un-mirrored, and unmodelled in this schema, and it is still not wired as a knowledge source.
+
+`case_studies` is now the category with no canonical source, and it inherits the role `projects` used to play: the fallback, escalation, and refusal paths stay exercised and tested. The seeded demo narrative moved with the behaviour — the recruiter's project question is now answered, and the call instead shows compensation escalating, which is structural under decision 6 and so cannot go stale as more data lands.
+
+**Follow-up (2026-09-11, second) — the approved-asset list is now the only route a link takes.** Review of the project import found that a URL written into a knowledge-record body is spoken whatever the answering profile permits, which bypassed the per-profile filter in `listShareableAssets` — `allowedAssetTypes: []` is both the strict default and a seeded profile. Answer bodies now carry no links at all, which sharpens decision 9: the agent profile does not merely *configure* asset sharing, it is the sole gate, and an asset absent from `demoApprovedAssets` is one the receptionist cannot offer however the profile is set.
+
+That made the list's contents load-bearing rather than illustrative, so the résumé, LinkedIn, and GitHub links carried on the same public portfolio are now registered alongside the site. The owner's email address is linked there too and is deliberately unregistered: handing a personal address to an unscreened caller is the owner's call, and no `ProfessionalAssetType` covers it. Nothing here changes a type, an authority entry, or a disclosure policy.
+
+**Follow-up (2026-09-11, third) — the owner took that call: the email is registered and shared under the recruiter profile.** `ProfessionalAssetType` gains `email`, so the address the owner publishes on his own site is an approved asset like any other rather than a value with nowhere to live.
+
+Registration and disclosure stay separate, which is the point. The address sits in `demoApprovedAssets` for every profile and is handed out only where `allowedAssetTypes` names `email` — today the recruiter profile alone. The consulting and general-assistant profiles do not share it, and `demo-mode` continues to share nothing at all; widening that is a per-profile line, not a code change. A test asserts both halves, so a profile silently gaining or losing the address cannot pass.
+
+This is the only contract change in the three follow-ups: one additive union member and its validator entry. No authority entry, disclosure policy, or escalation rule moved, and the strict default still shares nothing.
+
+**Follow-up (2026-09-11, fourth) — the five undated roles are dated, and decision 5 is what shaped how.** The resume carries no dates for them, which is why they shipped undated. The owner's public portfolio résumé page does, so the ranges are transcribed from it. No type, policy, or authority rule changed.
+
+Two details are the decision doing its work rather than incidental:
+
+**Precision is not widened.** The portfolio gives some ranges as bare years and one as months. They are stored exactly that way — `2015`, not `2015-01`. A guessed month is an invented date, and an invented date is the specific thing decision 5 forbids; a plausible-looking one is worse than a coarse one because it cannot be spotted. A test pins the stored format to `YYYY` or `YYYY-MM` and asserts the year-only entries stay year-only.
+
+**One mapping is owner-confirmed, not transcribed.** The portfolio carries AHLO Inc. as a single consolidated entry spanning `2019 — 2023 · 2006 — 2007`, while the resume splits AHLO into two roles. Both sources order roles reverse-chronologically, which implies contractor → 2019–2023 and warehouse operations → 2006–2007, but neither source states the mapping. Under decision 5 a well-supported inference about an employment date is still an inference, so the owner confirmed it rather than the ranges being assigned by reasoning. The fixture records that this one mapping is owner-confirmed, so a later reader does not mistake it for transcription.
+
+**Follow-up (2026-09-11, fifth) — a record whose claims span two sources names both, and that is a provider contract.** Dating the earlier roles left the work-history record citing only the resume while five of its date claims came from the portfolio résumé. Decision 5 requires a record to be attributable; a body mixing two sources under one source id misattributes the half it does not own, and does so invisibly, which is worse than citing nothing. Raised in review.
+
+**The encoding.** `ProfessionalKnowledgeResult.sourceId` stays a single string. A record drawing on more than one system names all of them joined by `+` — `canonical_resume:2026-09-10+portfolio_site:2026-09-11`. A consumer that needs the individual sources splits on `+`; one that only displays or logs provenance can continue treating the field as opaque.
+
+**Why this is recorded here rather than only in the type's docblock.** It binds every future adapter, not just the fixture. `ProfessionalKnowledgeProvider` has one implementation today, and a Career OS adapter written against a docblock alone could reasonably keep emitting one opaque identifier per record and silently produce results that are unattributable in the same way. The rule is therefore part of the provider contract: an adapter that cannot name every system behind a claim must split the claim into records it can attribute.
+
+Splitting by source was the alternative and does not work for this record: each of the five claims is itself composite, taking its employer and title from the resume and its date from the portfolio, so two records would each still mix. A test pins the invariant across records rather than on the one that failed — work history names both sources, projects never acquire the resume's, skills never acquire the portfolio's — because a reviewer caught this and the suite did not.
+
+No answer behaviour changed: `sourceId` is provenance metadata, and `ProfessionalAnswer.sources` carries record ids.
+
+**Follow-up (2026-09-11, sixth) — the salary floor is stored, and only the escalation payload carries it.** The first follow-up left it out because storing it in a recruiter-facing knowledge store would add exposure without ever being spoken. The owner has since asked for it on the escalation, which is the one direction that objection does not apply to: the escalation travels toward the owner, not the caller.
+
+**The delivery half is contract-only, and saying otherwise would be a prohibited claim.** Decision 10 still holds: `ProfessionalHandoffProvider` omits `createLive`, so it resolves to the no-op adapter, which returns `delivered: false` and emits nowhere. No shipped path calls `requestProfessionalEscalation` either — the payload is constructed and discarded. This follow-up therefore changes **what the event would carry when a consumer exists**, not what any owner receives. Raised in review, where the original wording described the figure as reaching the owner.
+
+**Where it lives is the whole design.** `AvailabilityPolicy` gains an optional `compensationFloor`, and `ProfessionalEscalationRequestedPayload` gains the same shape. `AvailabilityPolicy` is the right home because **the answer path never reads it** — `answerProfessionalQuestion` resolves a category and answers from knowledge records, and no knowledge record carries the number. Combined with decision 6, under which compensation escalates on every profile including the strictest default, the figure being unspeakable is a property of the wiring rather than of anyone remembering.
+
+That property is asserted, not assumed. One test asks every seeded profile the compensation question several ways and requires the figure in none of the answers, then searches the knowledge records and requires it in none of them either — so a future answer path cannot surface it by accident. `preferredTitles` on the same object *is* interpolated into a spoken record, which is exactly why the field's contract says not to do that here.
+
+**Only `compensation` carries it.** Consulting rates and references escalate under decision 6 as well, and an annual salary minimum answers neither. A payload carrying a figure it has no use for is that figure in one more place than it needs to be.
+
+Two additive optional fields are the whole contract change. No authority entry, disclosure policy, or escalation rule moved, and no adapter is obliged to populate the field.
+
+**Follow-up (2026-09-11, seventh) — the receptionist has an entry point, and it is the read path only.** The previous follow-up established that nothing called the receptionist at all. `/demo/receptionist` now calls `answerProfessionalQuestion` and `listShareableAssets`, so a visitor can ask a question and see the answer, the claim category, the governing authority, and the cited records.
+
+**The write path is deliberately still unreachable.** `captureProfessionalOpportunity`, `requestProfessionalEscalation`, and `bookProfessionalAppointment` write rows, and an anonymous visitor must not create them; `lib/professional/index.ts` already declines to export `intake.ts` for the same reason. The page can honestly show that a question *escalates* without emitting an escalation, because decision 5's answering path is pure: it resolves authority and returns, and only `intake.ts` emits or writes. That purity is what makes a public read surface safe at all.
+
+**Tenant isolation holds by construction, not by validation.** The account id is a module constant in the page; the request supplies the question and nothing else. There is no code path by which a query parameter could name an account, which is the form SECURITY.md asks for — derived, never accepted.
+
+**The route does not share the walkthrough's layout.** `app/(demo)/layout.tsx` frames its children as Coastal Comfort, a fictional business, and closes with "fictional scenario, no real customer information". Every record this receptionist speaks is verified and about a real person, so rendering one inside the other asserts both at once, and §20's status vocabulary is load-bearing precisely here. The page therefore lives in `app/(professional)`, which keeps the URL — route groups do not affect the path — and carries a footer that separates the two claims: the records are real, the *delivery* is mocked.
+
+**One gap is recorded rather than closed.** The disclosure policy is read from the fixtures, not from the tenant's stored `AgentProfile`, because `lib/data/agentProfiles` resolves scope from the session and this page has none by design. The fixtures and the seeded rows are identical today (mock-parity), so nothing is misreported; but in a DB-backed deployment an operator who disabled the profile or dropped an asset type would not change what this page discloses. Closing it requires a sessionless read of a tenant-owned table, which is a SECURITY.md decision about the "derived, never accepted" invariant — not a detail of this route — and is deliberately left to its own ADR rather than settled in passing here.
+
+This moves a public question surface from `DOCUMENTED_ONLY` to `SHIPPED` in the brief's status vocabulary, narrowed to reading. A surface that lets a caller capture, book, or hand off remains `DOCUMENTED_ONLY`, and live telephony stays v0.3-gated (ADR-0019, ADR-0045). No adapter, policy, or authority entry changed.
+
 ---
 
 ## ADR-0047 — The first prospect proof is an isolated, supervised post-call evidence chain
@@ -834,3 +896,696 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 8. `CarrierProvider` remains mock-only because this slice does not control realtime audio. Outbound dialing, scheduling providers, recording, deal creation, production aliases, real client data, and unattended public availability remain excluded.
 
 **Consequences.** Repository code can prove the bounded chain without claiming production readiness. A passing local or fixture test does not authorize live provider use; Gate Set A, exact-SHA hosted smoke, private call drills, rollback, duplicate-effect checks, and one outside-number rehearsal remain required before a human go/no-go can expose the number to a prospect.
+
+---
+
+## ADR-0048 — Personalized prospect bootstrap is a bounded, operator-approved demo knowledge slice
+
+**Status:** Accepted (2026-08-20) for repository implementation. Extends ADR-0002, ADR-0029, ADR-0034, and ADR-0047. It authorizes only the website-derived, human-reviewed demo slice below; it does **not** generally advance v0.4 or authorize provider resources, credentials, deployment, phone-number purchase/routing, production import, or prospect exposure.
+
+**Context.** A supervised prospect demonstration is materially stronger when the receptionist can answer from the prospect's own public website. The existing deterministic internal-demo fixture cannot safely serve that purpose, and the accepted v0.4 boundary prohibits silently introducing general tenant knowledge ingestion. The narrowest defensible exception needs provenance, tenant isolation, human approval, immutable context, bounded retention, and a lifecycle that cannot turn a demo account into production by accident.
+
+**Decision.**
+
+1. A personalized demo is a first-class `ProspectBootstrap` attached to a new `sandbox` `Account` with no prospect Clerk organization or login. AJ operators use existing server-derived roles; no client-supplied account identifier authorizes access.
+2. Automatic acquisition is limited to the canonical public HTTPS page plus operator-approved same-origin URLs: at most 20 pages, two MiB per page, ten seconds per request, robots enforcement, redirect/DNS revalidation, validated-address connection pinning, private-range denial, and plain-text extraction. Discovered links are not followed automatically. Browser automation, authenticated/private pages, PDFs, uploads, social sources, scripts/forms, vector search, embeddings, RAG, and acquisition-time tools are excluded.
+3. Acquired text is untrusted evidence, never a prompt. Schema-bounded facts retain URL, content hash, retrieval time, evidence excerpt, confidence, verification state, and conflicts. Operators may add a correction only when its evidence excerpt exactly occurs in one acquired source; it then enters the same unapproved review queue. Only `OPERATOR_APPROVED_FOR_DEMO` or `OWNER_CONFIRMED` facts compile into an immutable, checksummed `BusinessMemorySnapshot`. Snapshot facts retain bounded source URL/content hashes, evidence-excerpt hashes, confidence, and reviewer identity/time; raw excerpts do not enter assistant context. Unknowns and conflicts compile to refusal/fallback behavior.
+4. One versioned receptionist policy serves all prospect demos. It is inbound-only, discloses automation and transcription, keeps recording off, and permits only verified-fact answers, qualification, callback capture, and hangup. It cannot schedule, collect payment, write CRM, transfer, dial outbound, give regulated advice, or make binding promises. Telnyx conversation memory is disabled.
+5. A server-owned `TelephonyNumber` inventory and temporal `TelephonyNumberAssignment` ledger replace environment-only tenant routing for personalized demos. A number and bootstrap can each have at most one current assignment. Signed initialization and post-call events resolve the called target plus event time against assignment history; unresolved events never inherit another tenant.
+6. Number registration and activation require a fresh Ed25519-signed provider-readback attestation bound to the number, assistant, template, initialization webhook, recording-off, memory-off, and hangup-only posture; the signing key remains in the protected provider workflow. Activation also requires a current approved snapshot, assigned number, enabled profile, policy checksum, explicit feature flag, and operator action. Draft through pre-activation failure states use a renewable seven-day review TTL; ready and active lifetimes are each bounded to 14 days. Expiry always starts the cleanup clock. Content and personalized transcripts expire after 30 days; raw webhook bodies are scrubbed on the same schedule. Number reuse requires a 14-day sliding quarantine, zero unresolved activity, and operator approval. Provider release remains a separate destructive gate.
+7. Promotion exports an immutable allowlisted manifest containing approved business configuration, provenance metadata, snapshot hash, and template/policy versions. It excludes credentials, raw webhook bodies, callers, transcripts, recordings, CRM operations, demo audit history, and every unapproved/conflicted/expired fact. A production import must create a new disabled customer tenant and remains behind its own production authorization; it never reuses the sandbox account ID or database. The sandbox is marked converted only after a separate operator acknowledgment matches the exported manifest hash and records the imported account reference.
+8. CRM synchronization is disabled for personalized prospect accounts. The existing bounded HubSpot test adapter remains available only to the generic ADR-0047 evidence chain and cannot be triggered by a personalized bootstrap call.
+
+**Consequences.** ResponseOS may implement and test a provenance-backed personalized demo without becoming a crawler, document platform, or generic knowledge product. The new schema and operator surfaces are real repository capability, but live usefulness remains gated on existing mock/live-demo readiness, exact-SHA deployment evidence, Telnyx configuration, controlled number inventory, private rehearsal, and human go/no-go. The general v0.4 gates continue to govern client uploads, production tenant grounding, retrieval infrastructure, and all broader knowledge sources.
+
+---
+
+## ADR-0049 — Environment promotion is contract-driven, identity-isolated, secret-free, and independently certified
+
+**Status:** Accepted (2026-08-22) for repository governance, schema, tooling, documentation, and tests. **No external resource mutation, secret installation, workflow dispatch, deployment, alias/domain change, provider activation, phone routing, prospect exposure, customer activation, or Production promotion is authorized by this ADR.**
+
+**Context.** ResponseOS has a configuration-certified governed staging environment, but a successful staging configuration is not a safe instruction to recreate Production manually. Configuration semantics, environment resource identity, secret metadata, secret values, and certification evidence have different lifecycles. Copying staging values would couple environments; recording values in Git would disclose credentials; relying on operator memory would make promotion unauditable and non-repeatable for future clients.
+
+**Decision.**
+
+1. **ResponseOS Environment Contract v1 is the canonical environment-governance format.** Its schema identifier is `responseos.environment.v1`; companion v1 schemas govern secret metadata, certification records, and promotion policy.
+2. **The promotion sequence is fixed:** certified configuration contract → Production promotion plan → provision new resources → install environment-specific secrets → readback → diff → certify → human approval → deploy. Every arrow is a separate gate.
+3. **Five concerns remain separate:** configuration semantics; environment-specific resource identity; secret metadata; secret values; certification evidence. Secret values never enter Git, canonical hashes, diffs, plans, logs, or certification records.
+4. **Every governed configuration leaf has exactly one promotion classification:** `MUST_MATCH`, `MUST_DIFFER`, or `HUMAN_APPROVAL_REQUIRED`. Duplicate path classifications or unclassified staging fields fail validation.
+5. **Production identities are independently provisioned.** At minimum Vercel project/custom-environment identity, Neon project/branch/endpoint identity, Clerk Production instance and keys, database credentials, webhook secrets, provider credentials, provider encryption keys, domain, phone numbers, and signing/private keys may not be copied from staging.
+6. **Canonical fingerprints use deterministic JSON plus SHA-256.** Object keys are recursively sorted; array order remains meaningful; formatting and whitespace are ignored. The environment-contract fingerprint hashes `environment.json`; the configuration fingerprint hashes the environment plus secret metadata only. This is configuration-governance hashing, not the event-ledger proof layer deferred by ADR-0044.
+7. **Certification is configuration-only unless a separate record explicitly and truthfully certifies another scope.** The current staging record binds `Verify Staging Configuration` run `32586167278`, workflow-control SHA `6202da68cb9b517b39814bab5b1542fd65adae22`, and intended application SHA `4a5b29b83cb3f18137b0151ae6242b2ac484ef08`; it does not claim a deployment occurred.
+8. **Tooling is read-only/planning-only in v1.** Capture accepts repository-controlled JSON/readback fixtures; validation, diff, hashing, and plan generation make no provider/API calls and mutate no external system. Live readback and scheduled drift polling require a separate reviewed change.
+9. **Production fails closed.** Missing required identities, reused staging resources, test/development authentication posture, unauthorized provider activation, unknown schema versions, malformed contracts, or likely credential material block certification. Human-approval results remain visible and never become implicit approvals.
+10. **Prospect promotion stays separate.** `prospect-promotion.v1` governs reviewed business/customer state. Environment promotion governs infrastructure/runtime configuration. A future client instance requires both a certified Production environment and an approved client promotion manifest, plus separate activation authority.
+
+**Consequences.** Production and future client environments can be planned, read back, diffed, fingerprinted, and certified without copying secret values or treating staging resource identity as portable. The cost is deliberate operational ceremony and additional metadata maintenance. Green schema/tooling tests prove repository contract behavior only; they do not prove Production readiness, provider readiness, deployment success, customer activation, or legal/commercial approval. The Production resource/secret/deploy gates in ADR-0019, ADR-0039, ADR-0047, readiness Gate Set B, and the operator governance contract remain intact.
+
+---
+
+## ADR-0050 — CRM interoperability uses canonical models, governed mutation intents, and provider adapters
+
+**Status:** Accepted (2026-08-23) via PR #139 as architecture doctrine only. **CRM-0 authorized no runtime implementation, schema or migration change, provider activation, credential configuration, external API call, deployment, or production mutation. CRM-1 and every later phase remain separately gated.**
+
+**Relationship to existing decisions.** This ADR extends ADR-0001 (mock-first provider boundaries), ADR-0002 (event-ledger-first internal truth), ADR-0009 (signature validation before business mutation), ADR-0027 (client-owned and pluggable external CRM), ADR-0033 (HubSpot as the client-overridable default external commercial system of record), ADR-0043 (portability requires evidence), and ADR-0047 (the bounded supervised post-call evidence chain). It does not supersede their deployment, provider, claims, or evidence gates. In particular, HubSpot may remain the default external commercial CRM for an authorized deployment without becoming the schema or business-logic center of ResponseOS.
+
+### 1. Decision
+
+ResponseOS SHALL use a provider-independent canonical relationship and operational model.
+
+External CRMs SHALL integrate through adapters and governed synchronization contracts.
+
+Core ResponseOS business logic SHALL NOT depend directly on one CRM's native schema.
+
+This decision preserves the platform boundary in ADR-0040 and platform doctrine §5: ResponseOS is not a general-purpose CRM. It owns the canonical events, operational evidence, business memory, policy, orchestration, attribution, and audit required for its revenue-recovery workflows; external CRMs continue to own the downstream commercial or service records their teams operate against.
+
+### 2. Current state
+
+The labels in this section are implementation claims verified against the repository at CRM-0 authoring time. The target sections that follow are doctrine, not descriptions of running behavior.
+
+#### Implemented today
+
+- `Account`, `Contact`, `Call`, `LeadEvent`, `LeadQualification`, `Appointment`, and `QuoteRequest` provide the beginning of an account-scoped, provider-independent relationship and operational substrate. They do **not** constitute a complete CRM.
+- `CrmSyncOperation` and `CrmSyncOperationStatus` provide a durable, call-centric synchronization record with `pending`, `processing`, `succeeded`, `retryable_failed`, `review_required`, and `cancelled` states.
+- The existing operation record carries retry, review, and idempotency-oriented primitives including unique `operation_key`, `attempt_count`, `next_attempt_at`, `last_error_code`, `last_error_redacted`, and separately persisted provider contact/activity/task identifiers.
+- `runCrmSyncForCall` implements a narrow finalized-call orchestration seam: account-scoped canonical record lookup, phone normalization, contact ambiguity review, sanitized call-activity creation, qualified follow-up task creation, partial-write recovery, operator retry, and a deterministic operation key.
+- `CrmProviderId` is exactly `"mock" | "hubspot"`. The current `CrmProvider` contract is narrow and call-centric; it is not the target generic adapter contract in §17.
+- `MockCrmProvider` is the deterministic default path.
+- `HubSpotCrmProvider` contains source-proven HTTP operations for contact search/create, call and task search/create, and contact associations. Selection requires both `RESPONSEOS_LIVE_HUBSPOT_ENABLED=true` and a token; otherwise the factory returns mock.
+- Integration tests prove durable operation idempotency and ambiguity-to-review behavior against a mock provider. Unit tests prove token presence alone does not activate HubSpot.
+
+The bounded HubSpot code is therefore `PARTIALLY_SHIPPED`: a real, explicitly gated adapter seam exists, but the repository does not establish production activation, generalized entity/field synchronization, inbound HubSpot reconciliation, multiple connections, autonomous mutation authority, or production-verified interoperability. ADR-0047's test-account, supervised-demo, and separate-operator-gate limitations remain in force.
+
+#### Not implemented today — `TARGET / NOT YET IMPLEMENTED`
+
+- generalized `CrmConnection`
+- generic `CrmEntityMapping`
+- generic `CrmFieldMapping`
+- `CrmMutationIntent`
+- field-level authority and conflict evaluation
+- `CrmConflict`
+- generic inbound `CrmSyncCursor`
+- provider capability negotiation or a generalized provider registry
+- generalized multi-entity or multi-CRM synchronization operations
+- Salesforce adapter
+- GoHighLevel adapter
+- Zoho adapter
+- Twenty adapter
+- Pipedrive or vertical-CRM adapters
+- autonomous agent CRM writes
+- generic inbound CRM webhook application to canonical entities
+- multi-connection or multi-CRM account behavior
+
+No planned entity, contract, adapter, or phase below may be cited as existing implementation merely because this ADR is present or accepted.
+
+### 3. Target architecture — `TARGET / NOT YET IMPLEMENTED`
+
+```text
+External Events
+    ↓
+ResponseOS Event Ledger
+    ↓
+Canonical Domain Model
+    ↓
+Mutation Intent
+    ↓
+Authority + Policy
+    ↓
+CRM Orchestration
+    ↓
+Provider Adapter
+    ↓
+External CRM
+    ↓
+Readback / Reconciliation
+    ↓
+Audit Evidence
+```
+
+The event ledger preserves what happened. Canonical domain records provide provider-independent working state. Mutation intents express proposed effects. Authority and policy decide whether those effects may proceed. Adapters translate approved canonical operations into provider semantics. Readback and reconciliation determine whether the requested effect exists and what authority it deserves.
+
+### 4. Systems of record
+
+#### Operational record — “What happened?”
+
+The ResponseOS event ledger is the internal operational source of truth under ADR-0002. External events land there before downstream business mutation, with stable dedupe identity, tenant context, signature evidence where applicable, timestamps, and provenance.
+
+#### Business Memory — “What does ResponseOS know, why, and with what authority?”
+
+Business Memory is the evidence-linked, tenant-isolated interpretation derived from operational events and approved sources. A fact must retain its source, verification state, authority, time, and correction history. The existence of a CRM value does not automatically make that value authoritative business truth.
+
+#### External CRM — “What commercial or service state should downstream teams operate against?”
+
+An external CRM is a client-owned downstream operating system. ADR-0033 currently selects HubSpot as the client-overridable default external commercial system of record for the authorized communications direction. That deployment default does not make HubSpot the ResponseOS internal ledger, canonical identifier authority, or business-logic schema.
+
+Authority SHALL be configurable by field or domain. ResponseOS explicitly prohibits global last-write-wins synchronization.
+
+### 5. Canonical model
+
+#### Current canonical substrate — implemented
+
+`Account`, `Contact`, `Call`, `LeadEvent`, `LeadQualification`, `Appointment`, and `QuoteRequest` are current source-proven models. Together they establish the beginning of the canonical relationship and operational substrate. Provider identifiers are attributes or mapping evidence at integration boundaries; they are not the identity of the canonical object.
+
+#### Potential future additions — `TARGET / NOT YET IMPLEMENTED`
+
+- `Opportunity` — provider-independent commercial opportunity state and evidence references
+- `Interaction` — normalized relationship interaction across channels
+- `Task` — canonical follow-up intent and lifecycle, distinct from any provider task ID
+- `RelationshipState` — evidence-linked relationship status and authority metadata
+
+CRM-0 adds none of these to Prisma. Each requires a separately approved problem statement, schema design, tenant-isolation analysis, migration plan, tests, and claims review.
+
+### 6. Future CRM infrastructure models — `TARGET / NOT YET IMPLEMENTED`
+
+| Conceptual model | Target responsibility |
+|---|---|
+| `CrmConnection` | Tenant-owned provider connection identity, state, mode, capabilities, and external secret reference |
+| `CrmEntityMapping` | Durable canonical-entity ↔ provider-entity identity mapping |
+| `CrmFieldMapping` | Versioned direction, transform, authority, null, conflict, and sensitivity rules |
+| `CrmMutationIntent` | Auditable proposed canonical mutation before provider translation or execution |
+| `CrmConflict` | Competing values, authority evidence, resolution state, and disposition |
+| `CrmSyncCursor` | Provider/account-scoped incremental change position and reconciliation evidence |
+
+These names define conceptual contracts only. They are not Prisma models, migrations, API resources, or runtime services in CRM-0.
+
+### 7. `CrmConnection` — `TARGET / NOT YET IMPLEMENTED`
+
+A future `CrmConnection` is responsible for:
+
+- provider identifier
+- owning ResponseOS `accountId`
+- provider account or portal identity
+- connection state
+- permitted sync mode
+- advertised and verified capabilities
+- external secret reference, never a portable credential value
+- created, verified, and last-health-check timestamps
+
+One ResponseOS account may eventually support multiple CRM connections. That possibility does not authorize multi-connection behavior now. Credentials remain outside the canonical model, audit evidence, exported client packages, and repository.
+
+### 8. Provider capabilities — `TARGET / NOT YET IMPLEMENTED`
+
+Future adapters SHALL advertise capabilities and orchestration SHALL check them before planning or executing an operation. Capability names may include:
+
+```text
+contacts.read
+contacts.write
+accounts.read
+accounts.write
+opportunities.read
+opportunities.write
+activities.append
+tasks.write
+appointments.read
+appointments.write
+webhooks.receive
+incremental_sync
+custom_fields.read
+custom_fields.write
+```
+
+Capabilities are connection-specific evidence, not assumptions derived only from a provider name. An unsupported, unverified, or revoked capability SHALL fail explicitly. It SHALL NOT silently no-op, downgrade to a different mutation, or be inferred from an available credential.
+
+### 9. Entity mapping — `TARGET / NOT YET IMPLEMENTED`
+
+Entity mapping relates a canonical entity to a provider entity:
+
+```text
+canonical entity ↔ provider entity
+```
+
+Provider-native IDs SHALL NOT become ResponseOS canonical IDs. Identity mappings must be explicit, durable, account-scoped, connection-scoped, and auditable. Mapping evidence should support provider merges, replacements, deleted objects, and historical reconciliation without changing the canonical identity.
+
+If identity resolution produces more than one plausible match, the result is `REVIEW_REQUIRED`. The existing ambiguous-contact behavior in `runCrmSyncForCall` is the current narrow precedent.
+
+### 10. Field mapping — `TARGET / NOT YET IMPLEMENTED`
+
+A versioned future field mapping supports:
+
+- canonical field
+- provider field
+- direction
+- transform
+- authority
+- null behavior
+- conflict behavior
+- sensitivity
+
+Allowed directions are:
+
+```text
+OUTBOUND
+INBOUND
+BIDIRECTIONAL
+NONE
+```
+
+Transforms must be deterministic and version-addressable. Sensitivity rules govern what may be transmitted or retained. Null behavior must distinguish “unknown,” “not applicable,” “explicitly cleared,” and “provider omitted” where the canonical domain requires that distinction.
+
+### 11. Mutation intent — `TARGET / NOT YET IMPLEMENTED`
+
+Agents SHALL NOT directly issue arbitrary provider mutations. Humans and workflows should also use the same governed path for consequential writes.
+
+```text
+Agent / Human / Workflow
+    ↓
+CrmMutationIntent
+    ↓
+Canonical validation
+    ↓
+Authority validation
+    ↓
+Policy validation
+    ↓
+Conflict detection
+    ↓
+Approval
+    ↓
+Adapter translation
+    ↓
+Execution
+    ↓
+Readback
+    ↓
+Audit
+```
+
+A mutation intent describes the canonical entity, proposed change, reason, evidence, actor, execution class, expected current state, idempotency key, required capability, approval state, and correlation identity. It is a proposal until the applicable authority, policy, and approval gates clear.
+
+### 12. Agentic execution classes — `TARGET / NOT YET IMPLEMENTED`
+
+| Class | Meaning | Conceptual control posture |
+|---|---|---|
+| `A0 OBSERVE_ONLY` | Read, compare, explain, or propose without external mutation | Read authorization, tenant scope, and audit of consequential access |
+| `A1 LOW_RISK_APPEND` | Append bounded, non-authoritative activity or follow-up evidence | Allowlisted fields, idempotency, policy check, readback, audit |
+| `A2 CONTROLLED_RECORD_UPDATE` | Update a reversible relationship or operational field | Field authority, expected version, conflict check, stronger approval policy |
+| `A3 COMMERCIAL_STATE_MUTATION` | Change opportunity, stage, appointment, ownership, or another commercial workflow state | Verified evidence, explicit authority, human approval by default, reconciliation |
+| `A4 SENSITIVE_OR_IRREVERSIBLE` | Delete, merge, bulk-rewrite, transmit sensitive data, or perform a difficult-to-reverse action | Explicit human authorization, dry-run or preview where possible, rollback plan, enhanced audit |
+
+Higher-risk classes require progressively stronger identity, authority, evidence, approval, and verification. Agent inference alone cannot silently establish authoritative commercial facts. Classification does not grant permission; it determines the minimum controls an independently authorized implementation must enforce.
+
+### 13. Conflict resolution — `TARGET / NOT YET IMPLEMENTED`
+
+Global last-write-wins is prohibited. Conflict evaluation considers, at minimum:
+
+- field/domain authority
+- verification state
+- source provenance
+- event time and receive time
+- provider version, revision, or ETag where available
+- explicit field ownership
+- expected prior value
+- human approval or correction history
+
+Potential outcomes are:
+
+```text
+AUTO_ACCEPT_CANONICAL
+AUTO_ACCEPT_EXTERNAL
+MERGE
+KEEP_BOTH
+REVIEW_REQUIRED
+REJECT_EXTERNAL
+```
+
+Automatic outcomes are allowed only when deterministic policy and sufficient evidence establish them. Missing policy or ambiguous authority returns `REVIEW_REQUIRED`.
+
+### 14. Outbound synchronization — `TARGET / NOT YET IMPLEMENTED`
+
+```text
+Canonical Event/Entity
+    ↓
+Mutation Intent
+    ↓
+Entity Mapping
+    ↓
+Field Mapping
+    ↓
+Provider Adapter
+    ↓
+External Write
+    ↓
+Provider Readback
+    ↓
+Verified Success
+    ↓
+Audit
+```
+
+An HTTP success response proves only that the provider accepted or processed a request according to its API contract. It does not necessarily prove the intended final state, durable synchronization, or authoritative business truth. The orchestration policy decides what readback or later reconciliation is required before marking synchronization verified.
+
+### 15. Inbound synchronization — `TARGET / NOT YET IMPLEMENTED`
+
+External CRM webhooks SHALL NOT directly mutate canonical entities.
+
+```text
+Webhook / Incremental Change
+    ↓
+Integration Event
+    ↓
+Normalization
+    ↓
+Entity Resolution
+    ↓
+Authority / Conflict Evaluation
+    ↓
+Canonical Mutation Proposal
+    ↓
+Apply or Review
+    ↓
+Audit
+```
+
+ADR-0009 remains mandatory: signature validation occurs before parsing and before any business mutation. Valid signature evidence establishes message authenticity under the provider's mechanism; it does not establish entity identity, field authority, or permission to overwrite canonical state.
+
+### 16. Idempotency
+
+Duplicate webhook delivery, provider retry, workflow rerun, operator retry, or agent rerun SHALL NOT silently duplicate provider activities or canonical effects.
+
+The implemented unique `CrmSyncOperation.operation_key` and separately persisted provider object identifiers are current precedent. Future mutation intents and generic sync operations extend that doctrine with account, connection, canonical entity, operation kind, target version, and correlation context as required. Idempotency prevents duplicate effect; it does not convert an unauthorized or conflicted mutation into an authorized one.
+
+### 17. Adapter contract — conceptual target, not the current interface
+
+Future adapter operations may include:
+
+```text
+capabilities()
+health()
+findEntities()
+getEntity()
+createEntity()
+updateEntity()
+appendActivity()
+createTask()
+associateEntities()
+listChanges()
+verifyMutation()
+```
+
+The adapter owns:
+
+- provider HTTP/API semantics
+- authentication mechanics and secret resolution
+- provider identifiers
+- pagination and incremental-provider mechanics
+- rate limiting and retry signals
+- provider-specific transforms
+- provider-specific errors and redaction
+
+The adapter SHALL NOT own:
+
+- canonical business meaning
+- field or domain authority policy
+- approval policy
+- agent permissions
+- tenant identity derived from client input
+- whether provider success becomes authoritative truth
+
+The current `CrmProvider` interface remains a narrow implemented seam and is not evidence that this target contract exists.
+
+### 18. Provider registry — `TARGET / NOT YET IMPLEMENTED`
+
+```text
+Provider Registry
+    ├── mock         CURRENT: deterministic implemented adapter
+    ├── hubspot      CURRENT: bounded, call-centric, explicitly gated adapter seam
+    ├── salesforce   FUTURE: not implemented
+    ├── ghl          FUTURE: not implemented
+    ├── zoho         FUTURE: not implemented
+    └── twenty       FUTURE: not implemented
+```
+
+The registry itself is future. The tree records the intended provider slots and the source-proven status of the two current provider IDs; it does not advertise support for the future providers.
+
+Second-provider support is an architectural test:
+
+> If adding another CRM requires rewriting ResponseOS business logic, the abstraction has failed.
+
+ADR-0043 still governs portability claims. One mock plus one bounded adapter does not establish generalized or production-proven provider independence.
+
+### 19. Standalone mode
+
+ResponseOS SHALL remain functional with zero connected external CRMs. Standalone operation supports:
+
+- demonstrations
+- bootstrap clients
+- CRM-less clients
+- degraded-provider operation
+- migration periods
+
+External CRM integration enhances ResponseOS; it does not define whether ResponseOS can boot, preserve its canonical evidence, or run authorized provider-free workflows. This extends ADR-0001's zero-credential/mock-first rule.
+
+### 20. Multi-CRM mode — `TARGET / NOT YET IMPLEMENTED`
+
+Future design may support:
+
+```text
+ResponseOS
+    ├── HubSpot
+    ├── ServiceTitan
+    ├── Salesforce
+    └── other systems
+```
+
+Authority must be field- or domain-specific. Multiple connections do not imply that every system may author every field. CRM-0 authorizes no multi-CRM runtime, schema, connection, routing, or provider behavior.
+
+### 21. Audit and provenance — `TARGET / NOT YET IMPLEMENTED` for the generalized mutation chain
+
+Every future external mutation must be attributable to:
+
+- ResponseOS account
+- canonical entity
+- external connection
+- mutation intent
+- human, agent, or workflow actor
+- agent/workflow identity and version where applicable
+- supporting evidence
+- required and received approval
+- synchronization operation
+- provider result
+- readback or reconciliation evidence
+- conflict result
+- correlation ID
+
+Provider credentials, authorization headers, refresh tokens, private keys, and other secrets are never persisted in audit evidence. Existing `CrmSyncOperation`, `AuditLog`, and `WebhookEvent` records are precedents, not the complete target provenance model.
+
+### 22. Agent tool doctrine — `TARGET / NOT YET IMPLEMENTED`
+
+Future agent tools should express canonical intent:
+
+```text
+crm.lookup_contact
+crm.propose_contact_update
+crm.append_interaction
+crm.propose_opportunity
+crm.propose_stage_change
+crm.create_followup
+```
+
+Core agents should not be exposed directly to concrete provider mutations such as:
+
+```text
+hubspot.patch_contact
+salesforce.update_lead
+ghl.create_opportunity
+```
+
+Concrete provider calls belong behind orchestration, capability checks, mapping, policy, approval, and audit. A canonical tool name does not itself authorize a mutation.
+
+### 23. Failure doctrine
+
+If ResponseOS cannot establish:
+
+- entity identity
+- field mapping
+- sufficient authority
+- provider capability
+- safe mutation policy
+- idempotency
+- conflict resolution
+
+then it SHALL:
+
+```text
+DO NOT WRITE
+REVIEW_REQUIRED
+```
+
+Failure to prove safety is not permission to guess, skip a layer, or write directly through a provider SDK.
+
+### 24. Gated implementation roadmap
+
+| Phase | Status | Locked scope and gate |
+|---|---|---|
+| **CRM-0 — Doctrine** | **NOW — documentation only** | This ADR, roadmap alignment, and changelog only. No runtime or external mutation. |
+| **CRM-1 — Connection + Registry** | **FUTURE / GATED** | Introduce generalized `CrmConnection` and Provider Registry; wrap existing provider seams. Requires a separate approved PRD/ADR and implementation authorization. |
+| **CRM-2 — Entity Mapping + Generic Operations** | **FUTURE / GATED** | Introduce `CrmEntityMapping`; generalize `CrmSyncOperation` beyond its existing call-centric shape. |
+| **CRM-3 — Field Mapping + Inbound Sync** | **FUTURE / GATED** | Introduce `CrmFieldMapping`, `CrmSyncCursor`, and `CrmConflict`; define signed inbound reconciliation. |
+| **CRM-4 — Agentic Mutation Governance** | **FUTURE / GATED** | Introduce `CrmMutationIntent`, authority evaluation, execution classes, and approval gates. |
+| **CRM-5 — Second Real CRM Adapter** | **FUTURE / GATED** | Prove provider independence with a separately selected second provider. Twenty and GoHighLevel are candidates only; selection requires a separate decision. |
+| **CRM-6 — Broader Adapter Ecosystem** | **FUTURE / GATED** | Add Salesforce, Zoho, Pipedrive, or vertical CRMs only when justified by validated market need. |
+
+Phases are dependency-ordered. Acceptance of CRM-0 does not start, authorize, schedule, or pre-approve CRM-1. Each phase requires current-state verification, its own minimum PRD/task spec, doctrine §21 review, security and tenant-isolation analysis, explicit operator authorization, and the repository's validation/PR gates.
+
+### 25. Live-demo non-interference rule
+
+CRM-0 does **not** expand the current live-demo scope.
+
+CRM-1 or later MUST NOT begin merely because this ADR merges. Current staging and live-demo gates remain higher-priority. This ADR authorizes no external CRM activation, live HubSpot write, provider credential configuration, HubSpot configuration change, workflow dispatch, staging mutation, Vercel/Neon/Clerk/Telnyx/Vapi/Twilio action, deployment, or production action.
+
+ADR-0047's bounded post-call code path and separate operator gates remain exactly as they are. CRM-0 neither invokes that path nor expands it.
+
+### 26. Acceptance invariants
+
+1. Core ResponseOS functionality must work without HubSpot.
+2. Provider-native IDs never become canonical IDs.
+3. Core business workflows do not import concrete CRM SDKs.
+4. Agents do not bypass the mutation-intent and policy layer once that layer is implemented; before then, no autonomous provider writes are authorized.
+5. External webhooks do not directly mutate canonical entities.
+6. Ambiguous identity resolution fails to `REVIEW_REQUIRED`.
+7. External provider success does not automatically establish authoritative business truth.
+8. Higher-authority canonical evidence cannot be silently overwritten by lower-authority data.
+9. Provider capability gaps fail explicitly.
+10. Every external mutation is auditable.
+11. Secrets remain outside portable client packages and audit evidence.
+12. Adding a second CRM adapter must not require rewriting canonical ResponseOS business logic.
+13. ResponseOS remains usable with zero CRM connections.
+14. This ADR itself authorizes no runtime or provider mutation.
+
+### 27. Architecture review against platform doctrine §21
+
+1. **Layer:** canonical CRM interoperability spans Communications Capture, Business Memory, Operational Models, and Trust Infrastructure; CRM-0 changes documentation only.
+2. **Build, integrate, or defer:** build canonical identity, evidence, policy, mapping, and orchestration; integrate commodity CRMs through adapters; defer runtime to CRM-1+.
+3. **Live pilot path:** the doctrine prevents a future CRM seam from corrupting the pilot path; it does not expand or activate that path.
+4. **Evidence:** ledger-first ingest, mutation intents, readback, reconciliation, and audit preserve evidence.
+5. **Verified outcomes:** provider acceptance is explicitly separated from verified and authoritative outcomes.
+6. **Proprietary learning:** canonical operational history can support learning after verified outcomes exist; no moat is claimed now.
+7. **Commodity purchase:** external CRM storage and APIs are bought/integrated, not rebuilt.
+8. **Duplication risk:** ResponseOS remains not-a-general-CRM and implements only the canonical operating layer required by its workflows.
+9. **Lock-in:** provider IDs stay outside canonical identity; mappings and adapters contain provider semantics.
+10. **Tenant isolation:** every future connection, mapping, intent, cursor, conflict, and operation is account-scoped from server-derived authority.
+11. **Attribution ambiguity:** authority, conflict, and readback rules reduce ambiguity; unresolved cases require review.
+12. **Claims:** every future contract and provider is labeled `TARGET / NOT YET IMPLEMENTED`; portability remains unproven under ADR-0043.
+13. **Human approval:** A3 and A4 require progressively stronger approval, with human approval the default for commercial, sensitive, or irreversible effects.
+14. **Compliance exposure:** sensitivity metadata, secret exclusion, audit, and do-not-write failure behavior constrain exposure; no compliance claim is created.
+15. **Required now or interesting:** CRM-0 is required now to prevent planned adapters and entities from being mistaken for implementation. CRM-1+ is strategically relevant but separately gated.
+
+### 28. Canonical language
+
+**Internal architecture doctrine only — not a current-capability or market-facing claim.** The exact statement below must retain the adjacent status caveat until ADR-0043's portability evidence standard is satisfied.
+
+> ResponseOS is not a HubSpot integration.
+>
+> ResponseOS is the provider-independent relationship, operational, memory, and intelligence layer from which external CRM systems can be synchronized through governed adapters.
+
+This language states accepted architecture intent. Generalized provider interoperability is not currently implemented or proven, and the sentence remains prohibited in public copy, demos, comments, or commit messages as a present capability claim.
+
+---
+
+## ADR-0051 — Per-tenant supervision is a mode-indexed execution policy; promotion preserves tenant identity; tenant operating configuration lives on the memory snapshot
+
+**Status:** Accepted (2026-09-10) for the *contract*; live activation of any non-demo mode remains **v0.3-gated**. **Extends ADR-0047** (which scoped supervision to the deploy lane) and **ADR-0048**. Does **not** supersede ADR-0046 — `account_type` remains administrative-only and gates no runtime behaviour.
+
+**Context.** [`RESPONSEOS_CLIENT_ACTIVATION_RECONCILIATION.md`](./ops/client-delivery/RESPONSEOS_CLIENT_ACTIVATION_RECONCILIATION.md) established that a reusable client-activation substrate is largely present but unconsolidated: ten subsystem surveys raised 25 candidate gaps and independent verification returned **0 `REAL_GAP` / 25 `PARTIAL`**. Three questions blocked further work because each had more than one defensible answer and each is doctrine-level rather than an engineering choice.
+
+1. Supervision is presently a **deploy-lane** property. Every live capability is gated by a process-wide environment flag (ADR-0047), so two tenants in one deployment cannot sit at different supervision levels. ADR-0046 §2 forbids expressing the tier on `account_type`.
+2. `BootstrapPromotion` **creates a new `Account`** from a signed manifest and disposes of the sandbox one, whereas a client-activation lifecycle implies a single profile advancing.
+3. ADR-0046 §9 already declined a generic settings blob on `Account`, leaving per-tenant operating configuration — business hours, holidays, service area, escalation contacts, consent posture — without a home.
+
+**Decision.**
+
+1. **Supervision is a mode-indexed execution policy, not a tenant column and not only a deploy lane.** `lib/agentExecution/policy.ts` declares `ExecutionMode` (`PROSPECT_DEMO`, `SUPERVISED_PILOT`, `PRODUCTION_SUPERVISED`, `MANAGED_AUTONOMY`) and a policy table of identical shape per mode, reusing the shipped **canonical-JSON equality** mechanism.
+   - **Status note — there is no checksum or digest pinning of policies today.** `activateProspectBootstrap()` compares two `stableJson(...)` strings directly (`lib/prospectBootstrap/service.ts:776`); nothing computes, stores, or verifies a policy digest. Digest-based pinning is `NOT_PLANNED` by this ADR. Any later activation work that wants it must add the storage and verification path explicitly rather than assuming one exists.
+   - `PROSPECT_DEMO` is re-exported **byte-identically** from `lib/prospectBootstrap/policy.ts`, because `lib/prospectBootstrap/service.ts` compares a stored `AgentProfile.system_policy_json` against that frozen object.
+   - `resolveExecutionPolicy()` **fails closed**, and authorisation is **bound to the specific gate** the mode requires. A caller passes the set of open gates, not a single boolean, so an approval issued for `v0.3-live-communications` cannot unlock `MANAGED_AUTONOMY`, whose gate is `post-pilot-operator-authorization`. An unrecognised mode, or a gated mode whose gate is not authorised, resolves to the most restrictive policy rather than throwing.
+   - A mode is **policy intent, never activation.** Activation gates remain the existing environment flags and the v0.3/v0.4 roadmap gates. `EXECUTION_MODE_ACTIVATION_GATES` records the gate each mode still requires and is held *outside* the policy objects so that adding it cannot break the stored-policy comparison.
+   - Payment, provider memory, and recording stay `false` at **every** tier; no ratified decision authorises any of them.
+2. **Promotion preserves tenant identity.** A client profile advances in place through its lifecycle; the originating `Account.id` is retained across the sandbox → pilot → production boundary so that calls, transcripts, and evidence remain attached to one tenant. The current dispose-and-recreate behaviour of `BootstrapPromotion` is superseded as the *target*; the change is not implemented by this ADR.
+3. **Per-tenant operating configuration lives on the memory snapshot.** `BusinessMemorySnapshotSchema` is the tenant operating-configuration document. This respects ADR-0046 §9, inherits the existing versioning, content-hash, approval, and provenance machinery, and keeps a single artifact for the agent to read at runtime. No parallel `ClientConfig` or `TenantSettings` model is introduced.
+
+**Consequences.** Per-tenant supervision becomes expressible without touching `account_type` and without superseding ADR-0046, so two tenants can differ within one deployment once their gates open. The prospect-demo lane is unchanged and its stored-policy comparison still holds. Decisions 2 and 3 set targets that later changes implement: preserving tenant identity requires reworking `exportBootstrapPromotion`/`importBootstrapPromotion`, and carrying operator-asserted configuration requires relaxing `ApprovedKnowledgeFactSchema`, which currently demands an `https` source URL and content hash for every fact and therefore cannot yet hold operator-asserted configuration. Neither is authorised as a live capability by this ADR, and no provider, deployment, or environment behaviour changes.
+
+**Amendment (2026-09-10) — authority of operator-entered configuration.** Operator decision. When an operator-entered fact (`operator_configured`) and an owner-confirmed fact disagree on the same key, the owner-confirmed fact wins: `operator_configured` ranks equal to `operator_approved_for_demo` and below `owner_confirmed`, and ties resolve to the most recent `reviewedAt`, then `validAsOf`, then `id`. The schema relaxation decision 3 required is made: `ApprovedKnowledgeFactSchema` accepts an `operator_configured` fact whose evidence cites an approval record instead of a URL, and rejects that evidence on any other status. The rank takes effect in code when the snapshot compiler first accepts operator-entered facts; that write path is not implemented. Governing detail: [`RESPONSEOS_CLIENT_OPERATING_CONFIGURATION_STANDARD.md`](./ops/client-delivery/RESPONSEOS_CLIENT_OPERATING_CONFIGURATION_STANDARD.md).
+
+---
+
+## ADR-0052 — A public, server-owned surface reads its tenant's stored policy through a parameterless accessor
+
+**Status.** Accepted · 2026-09-12 · Supersedes nothing. Narrows the reading of the tenant-isolation rule in [`SECURITY.md`](./SECURITY.md) rather than relaxing it.
+
+**Context.** ADR-0046's seventh follow-up shipped `/demo/receptionist`, the receptionist's only entry point, and recorded a gap it declined to close: the page read the answering profile from `lib/mock/agentProfiles` rather than from the tenant's stored `AgentProfile`. Raised as a P1 on PR #161 and tracked as issue #164.
+
+The consequence was operator-facing, not visitor-facing. Fixtures and seeded rows are identical — the mock-parity integration test asserts it — so nothing was ever misreported. But in a DB-backed deployment an operator who disabled the profile, or dropped an asset type such as the owner's email address from its stored `system_policy_json`, would not have changed what the page disclosed. Revoking disclosure would have required a code deployment.
+
+The obvious fix does not work. `lib/data/agentProfiles.listAgentProfiles` routes through `withTenantScope`, which resolves the account from the session and returns `no_session` when there is none. `/demo` is a public prefix and the page is anonymous by design, so the scoped accessor returns an error envelope for every visitor and the asset list renders empty. That refusal is correct behaviour: `SECURITY.md` requires `account_id` **derived from the session, never trusted from client input**, and a sessionless caller has nothing to derive from.
+
+The professional knowledge provider is not the seam either. It is sessionless and keyed by the same constant, but it fronts Career OS — external professional truth. `AgentProfile` is a ResponseOS tenant table, and putting tenant configuration behind that boundary inverts the separation `lib/professional/index.ts` exists to state.
+
+**Decision.**
+
+1. **`lib/data/agentProfiles.listInternalDemoAgentProfiles()` reads the internal demo tenant's profiles without a session.** It is the only accessor in `lib/data` that does not call `withTenantScope`.
+
+2. **It takes no parameters, and that is the whole safety argument.** `withTenantScope` exists to stop a caller *naming* a tenant it has no claim to, and it does that by deriving the account from the session. Where there is no session, the equivalent guarantee is that the account is not derivable from the request at all: the account id is a module constant, the function has an empty parameter list, and nothing a request carries can reach the `where` clause. This is a **stronger** guarantee than the scoped path, not a weaker one — the scoped path accepts a caller-supplied id and then checks it, while this one has no argument to check. A unit test asserts the arity stays zero, because a later signature that accepted an account id would silently convert a compile-time constant into request-supplied input on a public route.
+
+3. **No governing profile means the surface does not answer at all.** An error envelope means the stored policy is unknown; `resolveAgentProfile` returns null when every profile is disabled. In both cases the page holds a **null policy** and reaches neither the answering path nor the asset list.
+
+   Falling back to `DEFAULT_AGENT_PROFILE_POLICY` here is not fail-closed, and the first draft of this ADR wrongly said it was. That default withholds assets and escalates compensation and references — but `applyPolicy` consults the policy for *those three categories only*. Work history, projects, skills and certifications keep their base `answer` authority, so a page falling back to it would go on reciting verified records after the operator switched the agent off. Revocation has to stop the answering, not just the sharing. Raised by Codex on PR #165.
+
+   Falling back to the *fixtures* is worse still and separately forbidden: it reintroduces exactly the drift this ADR removes.
+
+4. **The `db === null` branch still reads fixtures, and that is the mock-first rule, not the bug.** With no database configured there is no stored policy to honour and the fixtures *are* the configuration (ADR-0001). The branch now filters by tenant, which the page it replaced did not.
+
+5. **The accessor is narrow, not general.** It serves one server-owned account. No `withServerOwnedScope(accountId)` helper is introduced: a general accessor taking an account id would restore the injection surface decision 2 exists to remove, and a second public surface can add a second named accessor when one actually exists.
+
+6. **`INTERNAL_DEMO_ACCOUNT_ID` moves to `lib/tenancy/internalDemo.ts`.** `lib/data` must not import a provider fixture, and duplicating the id would let the two layers drift — a page answering from one tenant's records under another tenant's policy, failing silently. The knowledge fixture re-exports it, so every existing import site is unchanged.
+
+**§21 checklist.** Layer: data access (§8), no new capability. Built, not integrated or deferred; no vendor involved, so no lock-in. It does not improve the live pilot path and creates no proprietary learning — it is a correctness and control fix, not a feature. It preserves evidence (the policy governing an answer is now the stored one, so what the page disclosed is reconstructable from the tenant's own rows) and does not touch attribution. It duplicates no CRM, FSM, telecom, or workflow-platform functionality. **Tenant isolation: strengthened** — see decision 2, plus an integration test that a foreign tenant's enabled, default, more permissive profile cannot govern this page. It supports no new public claim; on the contrary it retires a `PROHIBITED_CLAIM` risk, since the page previously could not honour a revocation while appearing to enforce a policy. It requires no new human-approval control and reduces compliance exposure by making disclosure revocable without a deployment. Required now: the surface is public and already shares the owner's email address under a policy no operator could change.
+
+**Consequences.** An operator revoking disclosure takes effect on the next request, with no deployment. `SECURITY.md` gains an explicit, bounded exception to the "derived from session" rule — bounded to a parameterless accessor for a server-owned account — so the rule is no longer silently contradicted by a public route that cannot follow it. The mock-first boot path is unchanged: with no `DATABASE_URL` the app still runs, now reading tenant-filtered fixtures. No provider, schema, migration, or environment change; no v0.3 gate moves. Issue #164 closes.
+
+---
+
+## ADR-0053 — A bounded production carve-out for the public read-only demo surface
+
+**Status.** Accepted · 2026-09-12 · Operator-authorized. Narrows the "no production deploys" hard rule for one surface, and narrows **ADR-0019**'s Clerk precondition for that same surface (decision 2). **Does not authorize v0.3** (doctrine D-1 stays open).
+
+**Context.** "No production deploys from this repo until v0.3 readiness gates clear" is stated in **eleven** places and has been binding since ADR-0001/ADR-0019. (The first draft of this ADR said eight and its changelog claimed every occurrence was amended; three more were found on review — `docs/product/RESPONSEOS_ROADMAP.md`, `docs/governance/PROJECT_CONSTITUTION.md`, and the demo-deploy checkpoint — along with three stale gate rows still listing this authorization as outstanding.) `vercel.json` carries `git.deploymentEnabled: false`, and the only deploy lane is a manual, environment-approved staging workflow whose URL sits behind Vercel deployment protection and therefore cannot be shared.
+
+The operator asked to deploy `/demo/receptionist` so the link can be shared, and authorized a carve-out from the rule. A blanket lift would unlock live telephony, Stripe, CRM sync, and the rest of §22 — none of which was asked for and all of which D-1 governs. So the carve-out is written to the surface actually requested and no further.
+
+**What makes this surface cheap to deploy — and the trap in saying so.** The *page* needs no secrets: with `DATABASE_URL` and `DIRECT_URL` unset, `/demo/receptionist` returns 200, answers "What is ARO?" from a verified record, and lists the permitted assets. Every provider resolves to a mock (ADR-0001), the write path has no caller (ADR-0046 seventh follow-up), and the account id is a compile-time constant (ADR-0052).
+
+But a *deployment* is not a page. Vercel serves the whole app, and with `RESPONSEOS_REQUIRE_AUTH` unset the auth gate is opt-in: `proxy.ts` passes every path through and `getCurrentSession()` grants a placeholder `aj_admin`. Measured on this branch with no secrets at all:
+
+| Path | no flag | `RESPONSEOS_REQUIRE_AUTH=1` |
+|---|---|---|
+| `/demo/receptionist` | 200 | 200 (still answers) |
+| `/admin` | **200** | 307 → sign-in |
+| `/admin/receptionist` | **200** | 307 → sign-in |
+| `/client/dashboard` | **200** | 307 → sign-in |
+
+"Needs no secrets" was true of the page and false of the deploy. The first draft of this ADR and its runbook said the former and meant the latter, which would have published the admin console. Raised by Codex on PR #166.
+
+**Decision.**
+
+1. **Production deployment is authorized for the public read-only surfaces only** — the marketing pages and `/demo/receptionist` — running on mock adapters with no provider credentials.
+
+2. **`RESPONSEOS_REQUIRE_AUTH` must be set on the deployment.** It is a precondition of this carve-out, not a recommendation: without it every authenticated surface in the app is anonymously reachable with a privileged placeholder session, and the deploy publishes far more than the page it authorizes. The operator verifies `/admin` and `/client/dashboard` redirect before sharing the URL.
+
+   Real Clerk credentials are **not** required, and the reason is worth stating rather than assuming. With the flag set and Clerk absent, the gate fails closed — nobody can sign in, so nothing behind it is reachable by anyone. That is the safest configuration for a demo-only deploy where no one is meant to log in.
+
+   **This narrows ADR-0019, deliberately and on the record.** ADR-0019 decision 3 requires that "the basic-auth shim is replaced with real Clerk-authenticated login before that deploy goes live." It was written against PR #14's shape: a password-gated deploy of the whole `master` surface that granted every visitor behind the gate a uniform `aj_admin` session. Its objection was to shipping a *privileged shim* as the first public face of ResponseOS.
+
+   That objection does not reach this deploy, which grants **no session to anyone**. Requiring Clerk here would fit a lock to a door already welded shut — and would make the deployment less safe, not more, by making the admin surfaces reachable to whoever holds credentials. So for this surface, and only this surface, ADR-0019's Clerk precondition is satisfied by the fail-closed gate instead. ADR-0019 continues to govern unchanged for any deploy where someone is meant to sign in, which remains every other deploy.
+
+3. **This is not v0.3 authorization.** D-1 remains open. No live provider account, no real Stripe, no CRM sync, no telephony, no recording, no outbound. Deploying this surface moves no gate in §22 and grants no precedent for deploying anything else; a second surface needs its own decision.
+
+4. **Automatic git deploys stay disabled.** `vercel.json` keeps `deploymentEnabled: false`. A production deploy remains a deliberate, operator-run act, matching the containment decision that disabled them; nothing merges its way to production.
+
+5. **The write path must remain unreachable for as long as this is deployed.** `lib/professional/intake.ts` has no caller by design and a smoke test asserts the page imports none of its three writers. That test is now load-bearing in a way it was not before: it is the thing standing between an anonymous internet visitor and a row in the database.
+
+6. **Deploying without a database is permitted, and its consequence is recorded.** With no `DATABASE_URL` the disclosure policy comes from the fixtures, so revoking an asset — the owner's email address, say — again requires a deployment, which is precisely the gap ADR-0052 closed for the DB-backed case. An operator who wants revocation-without-deploy must point the deployment at a seeded database. Neither choice is wrong; the difference has to be known rather than discovered.
+
+**§21 checklist.** Layer: delivery, no new capability. Deferred-to-bought infrastructure (Vercel), already the planned target, so no new lock-in. It does not improve the live pilot path and creates no proprietary learning — it publishes an existing read-only surface. Evidence and attribution are untouched. Tenant isolation is unchanged and structural. It duplicates no CRM, FSM, telecom, or workflow-platform functionality. **Public claims:** the surface states its own status — mock adapters, records real, delivery simulated — and doctrine §20's prohibitions continue to bind its copy. It requires no new human-approval control beyond the operator running the deploy. Compliance exposure: the page discloses the owner's own professional records and email address, which the owner controls and has approved (ADR-0046, #157); no customer data of any kind is present. Required now: the operator asked for a shareable link and the surface is finished.
+
+**Consequences.** Every statement of the hard rule is amended to name this exception rather than be contradicted by it, and the gate rows that tracked this authorization (D3, Q1) are marked granted rather than left open; the rule still governs everything else, and "no production deploys" remains true of every surface except the one named here. The deploy itself is the operator's to run — the Vercel credentials are theirs and must not enter this repo or an agent session (`AGENTS.md`). If the deployment is later pointed at a database, decision 6's consequence reverses and ADR-0052's revocation path becomes live.

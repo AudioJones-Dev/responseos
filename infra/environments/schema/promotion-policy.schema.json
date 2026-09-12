@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://responseos.dev/schemas/promotion-policy.v1.json",
+  "title": "ResponseOS Environment Promotion Policy v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "policyVersion", "sourceEnvironment", "targetEnvironment", "rules"],
+  "properties": {
+    "schemaVersion": { "const": "responseos.promotion-policy.v1" },
+    "policyVersion": { "const": "1.0.0" },
+    "sourceEnvironment": { "const": "staging" },
+    "targetEnvironment": { "const": "production" },
+    "rules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "label", "path", "classification", "category", "required", "rationale"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "label": { "type": "string", "minLength": 1 },
+          "path": { "type": "string", "pattern": "^/" },
+          "classification": { "enum": ["MUST_MATCH", "MUST_DIFFER", "HUMAN_APPROVAL_REQUIRED"] },
+          "category": { "enum": ["runtime", "resource", "control", "authentication", "database", "provider", "approval", "audit"] },
+          "required": { "type": "boolean" },
+          "rationale": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

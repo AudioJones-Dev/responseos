@@ -82,6 +82,7 @@ export async function normalizeTelnyxEvent(params: {
   demoNumber: string;
   webhookEventId: string;
   event: TelnyxWebhookEnvelope;
+  transcriptExpiresAt?: Date;
 }): Promise<{ callId: string | null; finalized: boolean }> {
   if (db === null) throw new Error("database_unavailable");
   const payload = params.event.data.payload;
@@ -193,9 +194,15 @@ export async function normalizeTelnyxEvent(params: {
         account_id: params.accountId,
         call_id: call.id,
         inline_text: transcript,
-        retention_lane: "full",
+        retention_lane: params.transcriptExpiresAt ? "redacted_only" : "full",
+        expires_at: params.transcriptExpiresAt,
       },
-      update: { inline_text: transcript },
+      update: {
+        inline_text: transcript,
+        ...(params.transcriptExpiresAt
+          ? { retention_lane: "redacted_only", expires_at: params.transcriptExpiresAt }
+          : {}),
+      },
     });
   }
 

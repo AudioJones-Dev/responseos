@@ -1,0 +1,45 @@
+# repo-pruner (aj-prune) configuration.
+# Detection-only: this tool never remediates. Findings land in .pruner/ and are
+# handed to DMAIC Analyze as evidence, never actioned automatically.
+#
+# base_ref is origin/master because this repo's default branch is master; the
+# tool's built-in default (origin/main) does not resolve here.
+version: 1
+scope: component
+base_ref: origin/master
+registry: .dmaic/components.yaml
+output_dir: .pruner
+detectors:
+  jscpd:
+    enabled: true
+    min_lines: 15
+    min_tokens: 70
+  knip:
+    enabled: true
+  # Re-enabled: the adapter now takes source_roots instead of hardcoding "src"
+  # (upstream AJ-DIGITAL-OS-V1#125). This repo uses the Next.js App Router
+  # layout, so the graph is rooted at app/, lib/, and components/. Files under
+  # types/ still enter the graph wherever they are imported; listing a root
+  # only adds its unreferenced files as orphan candidates.
+  # The previous COVERAGE GAP (no import-cycle or orphan-module detection) is
+  # closed.
+  madge:
+    enabled: true
+    source_roots: [app, lib, components]
+  eslint:
+    enabled: true
+    complexity: 15
+    max_lines: 400
+  tsc:
+    enabled: true
+  tests:
+    enabled: false
+    command: null
+thresholds:
+  min_confidence_to_emit: 0.6
+  blast_radius_decision_threshold: 5
+path_classes:
+  # Left empty deliberately: classifyPath() already maps .next/**,
+  # node_modules/**, dist/**, and coverage/** to "generated", which the
+  # protection invariant forces to "excluded".
+  excluded_globs: []

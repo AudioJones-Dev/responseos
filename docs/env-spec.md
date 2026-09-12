@@ -26,6 +26,9 @@ placeholder keys are present. **Local development never requires a secret.**
 ### Database (Postgres — Neon default per ADR-0026)
 - `DATABASE_URL` — pooled connection string used at runtime.
 - `DIRECT_URL` — non-pooled connection string used by Prisma migrations.
+- `RESPONSEOS_DATABASE_IDENTITY` — governed-custom-environment-only, non-secret version 2 JSON attestation binding canonical Neon identity and fingerprint, exact Vercel Sensitive DB variable ids/revisions, Vercel project id, and custom environment id/slug. Version 1 or any changed scope/id/revision is rejected for custom-environment certification.
+
+The GitHub `staging` Environment also requires a least-privilege `NEON_API_KEY` for read-only control-plane verification. It is workflow-only, is never passed to Vercel or the application, and must not appear in `.env.example` as an application variable.
 
 ### Auth (Clerk)
 - `CLERK_SECRET_KEY` — server-side; setting it activates the Clerk session path (`lib/auth/session.ts`) + `proxy.ts` route protection. Absent → placeholder dev-session + pass-through proxy (ADR-0001).
@@ -40,6 +43,11 @@ placeholder keys are present. **Local development never requires a secret.**
   - **Absent → unchanged mock-first behaviour** for local dev, CI, and `next build` (ADR-0001).
   - **Hosted staging contract:** set it alongside the Clerk keys. The manual staging workflow rejects
     the deployment before migration or build when this flag is absent or disabled.
+  - **Mock-staging Clerk posture:** the publishable key must be `pk_test_`; the private key must be a
+    known `sk_test_` from the same Clerk development instance. Keep the private key and webhook
+    secret marked Sensitive in the governed Vercel custom environment. Vercel intentionally does not return Sensitive values
+    to `vercel pull`, so the workflow verifies their name/scope/type and the human approval gate
+    verifies same-instance provenance before a deployment retry.
 
 ### Dev session override (local / test / dev only)
 - `RESPONSEOS_DEV_SESSION` — **optional**, read by `lib/auth/session.ts`. Forces a fixed placeholder
@@ -87,6 +95,9 @@ placeholder keys are present. **Local development never requires a secret.**
 - `RESPONSEOS_DEMO_PHONE_E164` — server-only E.164 demo number rendered only behind the visibility flag and used to reject events for other destinations.
 - `RESPONSEOS_DEMO_RESET` — explicit reset-command enable; the command additionally requires `RESPONSEOS_DEPLOYMENT_LANE=mock-staging` and refuses production.
 - `RESPONSEOS_PROSPECT_PURGE_ENABLED` — explicit non-production PII purge-command enable.
+- `RESPONSEOS_PROSPECT_BOOTSTRAP_ENABLED` — exact activation gate for an already-reviewed, number-assigned personalized bootstrap. It does not acquire or purchase a number and is insufficient without signed Telnyx ingest, a current approved snapshot, and valid provider attestation.
+- `RESPONSEOS_PROVIDER_ATTESTATION_PUBLIC_KEY` — Ed25519 public key used only to verify short-lived provider-workflow readback attestations. The signing key and Telnyx API credential never enter the app runtime.
+- `RESPONSEOS_PROMOTION_IMPORT_ENABLED` — separate default-deny gate for importing an allowlisted promotion manifest into a new disabled customer tenant. It does not activate the imported tenant and is never required for demo operation.
 
 ## Required / optional matrix
 
@@ -99,6 +110,7 @@ placeholder keys are present. **Local development never requires a secret.**
 | `NEXT_PUBLIC_APP_URL` | opt | opt | req | req | opt locally | base browser URL; staging host per Path A runbook |
 | `DATABASE_URL` | mock | req (integration) | req | req | mock-first | unit tests run keyless; integration needs Postgres |
 | `DIRECT_URL` | mock | req (integration) | req | req | mock-first | Prisma migrations only |
+| `RESPONSEOS_DATABASE_IDENTITY` | — | — | req (Path A) | — | staging-only | non-secret Vercel revision attestation; missing/stale/conflicting evidence blocks migration |
 | `CLERK_SECRET_KEY` | mock | — | req (Path A) | req (live auth) | mock-first | absent → dev-session + pass-through proxy |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | mock | — | req (Path A) | req (live auth) | mock-first | client-side |
 | `CLERK_WEBHOOK_SECRET` | mock | — | req (Path A) | req (clerk webhook) | mock-first | absent → 503 fail-closed |
@@ -106,6 +118,9 @@ placeholder keys are present. **Local development never requires a secret.**
 | **`RESPONSEOS_DEV_SESSION`** | opt | set by tests | **never** (hosted) | **never** | opt | dev/test override; hard-fails in production |
 | **`RESPONSEOS_REQUIRE_AUTH`** | — | — | req (any hosted surface) | req | opt | absent → mock-first fallback; set → session + proxy fail closed (ADR-0039) |
 | **`RESPONSEOS_PROVIDER_KEY`** | mock | mock | opt (Path A) | req (live creds, v0.3+) | mock-first | base64 32-byte AES; absent → encryption mock mode |
+| `RESPONSEOS_PROSPECT_BOOTSTRAP_ENABLED` | opt | opt | **never (Path A)** | req (personalized live-demo only) | opt/default-deny | activation gate only; no provider resource mutation |
+| `RESPONSEOS_PROVIDER_ATTESTATION_PUBLIC_KEY` | opt | opt | **never (Path A)** | req (personalized live-demo only) | opt/default-deny | verification-only public key; signing key stays outside runtime |
+| `RESPONSEOS_PROMOTION_IMPORT_ENABLED` | opt | opt | **never (Path A)** | req (authorized import only) | opt/default-deny | creates a disabled customer draft; never enables it |
 | R2 / Telnyx / Twilio / Retell / Vapi / Bland / Stripe / GHL / HubSpot / Calendly | mock | mock | **never (Path A)** | req (when live) | mock-first | staging preflight rejects live-provider/storage credentials; keys alone do not activate a live factory |
 | Resend / n8n | mock | mock | mock (Path A) | req (when live) | mock-first | no live behavior in the mock staging slice |
 | `SENTRY_DSN` / `POSTHOG_KEY` / `NEXT_PUBLIC_POSTHOG_KEY` | opt | opt | opt | opt | opt | observability; see staging runbook §6 |
@@ -124,6 +139,7 @@ Path A staging checklist (operator): [`ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md
    absent. Setting it in production is a hard fail by design.
 5. **CI integration** is the only lane that needs a real connection — a throwaway Postgres 16 service
    container with a `DATABASE_URL` to it. No vendor secrets are required for CI.
+6. **Hosted staging migration** additionally requires canonical Neon identity proof: both GitHub URLs must derive the same endpoint/database, Vercel's non-secret attestation must match those identities and the current Sensitive-variable revisions, and the Neon API must bind that endpoint/database to project `patient-snow-16014934` branch `br-mute-boat-a6ylen11`.
 
 ## Secret handling rules
 
@@ -134,6 +150,17 @@ Path A staging checklist (operator): [`ops/RESPONSEOS_STAGING_HOSTING_RUNBOOK.md
   in `.env` — decrypted at request time via the `RESPONSEOS_PROVIDER_KEY`-backed module (ADR-0020).
 - **Never commit real secrets.** `.env.example` = placeholders; `.env.local` = gitignored; real values
   in the platform env store.
+
+## Environment Promotion Contract v1
+
+Environment-variable meaning is defined here; promotion metadata and environment identity are governed by [`infra/environments/`](../infra/environments/) and the [`Environment Promotion Runbook`](./ops/RESPONSEOS_ENVIRONMENT_PROMOTION_RUNBOOK.md).
+
+- [`staging/secret-contract.json`](../infra/environments/staging/secret-contract.json) records application-runtime and CI/workflow-control metadata separately. It contains names, classifications, required scope, owner, exposure, rotation, transfer prohibition, and activation effect only.
+- [`production/secret-contract.json`](../infra/environments/production/secret-contract.json) requires independent Production values for database credentials, Clerk Production credentials, webhook secrets, project-scoped control credentials, Telnyx/HubSpot/Vapi credentials when separately authorized, and `RESPONSEOS_PROVIDER_KEY` when a Production key posture is approved.
+- Secret values never enter Git, environment/configuration fingerprints, diffs, promotion plans, or certification records.
+- `prospect-promotion.v1` remains a business/customer-state manifest and is not an environment or secret promotion mechanism.
+
+Validate all v1 schemas, manifests, policy coverage, semantic rules, and certification hashes with `npm run config:validate`.
 
 ## Relationship to ADR-0020
 

@@ -18,6 +18,9 @@ import { err, ok, type Result } from "@/lib/data/result";
  * - Membership events set the tenant binding (`User.account_id`) that the 32B
  *   session derivation checks; removal clears it and resets to `client_viewer`.
  *   This is the authoritative source for the PR #40 tenant-isolation guard.
+ * - The configured AJ Digital control organization is not a tenant. Its org
+ *   events create no `Account`, and its membership events keep the DB role
+ *   authoritative while ensuring the control-plane user has no tenant binding.
  * - This is org-membership-driven provisioning via signed webhooks, NOT
  *   just-in-time provisioning during session derivation (session.ts is
  *   unchanged and still creates nothing).
@@ -41,6 +44,10 @@ class RetryableSyncError extends Error {}
 
 function asString(value: unknown): string | undefined {
   return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+function isControlOrganization(clerkOrgId: string): boolean {
+  return clerkOrgId === process.env.AJ_DIGITAL_CLERK_ORG_ID;
 }
 
 function extractEmail(data: Record<string, unknown>): string | undefined {
@@ -127,6 +134,7 @@ async function upsertAccount(data: Record<string, unknown>): Promise<void> {
   if (!db) return;
   const clerkOrgId = asString(data.id);
   if (!clerkOrgId) return;
+  if (isControlOrganization(clerkOrgId)) return;
 
   const name = asString(data.name);
   const slug = asString(data.slug) ?? clerkOrgId;
@@ -178,6 +186,19 @@ async function syncMembership(data: Record<string, unknown>): Promise<void> {
   const { clerkUserId, clerkOrgId } = extractMembership(data);
   if (!clerkUserId || !clerkOrgId) return;
 
+  if (isControlOrganization(clerkOrgId)) {
+    const updated = await db.user.updateMany({
+      where: { clerk_user_id: clerkUserId },
+      data: { account_id: null },
+    });
+    if (updated.count === 0) {
+      throw new RetryableSyncError(
+        `control membership references unsynced user ${clerkUserId}`,
+      );
+    }
+    return;
+  }
+
   const account = await db.account.findUnique({
     where: { clerk_org_id: clerkOrgId },
     select: { id: true },
@@ -209,8 +230,16 @@ async function syncMembership(data: Record<string, unknown>): Promise<void> {
 
 async function detachMembership(data: Record<string, unknown>): Promise<void> {
   if (!db) return;
-  const { clerkUserId } = extractMembership(data);
+  const { clerkUserId, clerkOrgId } = extractMembership(data);
   if (!clerkUserId) return;
+
+  if (clerkOrgId && isControlOrganization(clerkOrgId)) {
+    await db.user.updateMany({
+      where: { clerk_user_id: clerkUserId },
+      data: { account_id: null },
+    });
+    return;
+  }
 
   // Operator Q6 safe default: detach from the tenant and drop to the lowest
   // role so a removed member cannot retain elevated access.

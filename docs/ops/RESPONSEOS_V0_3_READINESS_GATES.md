@@ -14,19 +14,19 @@ Clears a non-production staging surface for private operator testing. It authori
 | # | Gate | Evidence |
 |---|---|---|
 | A1 | Written Stage C authorization | Recorded operator instruction naming Stage B reconciliation and secure staging only |
-| A2 | Dedicated staging target selected | Separate Vercel project recommended, or verified branch-scoped staging environment |
+| A2 | Dedicated staging target selected | `audiojones/responseos-staging-mock`; workflow fails closed on name/team/project mismatch |
 | A3 | GitHub `staging` Environment has reviewer and branch protection | GitHub Environment settings |
-| A4 | `RESPONSEOS_REQUIRE_AUTH=1` and staging Clerk variables are present | Value-redacting workflow preflight |
+| A4 | `RESPONSEOS_REQUIRE_AUTH=1` and same-instance development Clerk variables are present | Value-redacting Preview metadata preflight + human verification of write-only private key/webhook/org provenance |
 | A5 | `RESPONSEOS_DEV_SESSION` and all live-provider credentials are absent | Value-redacting workflow preflight |
-| A6 | Dedicated Neon staging database verified; direct and pooled URLs are distinct and scoped | Operator platform evidence |
+| A6 | GitHub migration URLs and the exact governed Vercel custom-environment runtime variables are proven to resolve to canonical Neon project `patient-snow-16014934`, branch `br-mute-boat-a6ylen11`, endpoint `ep-young-morning-a6oeu9vv`, database `neondb`, with pooled runtime/direct migration roles before migration | Credential-free URL-derived identity + version 2 project/environment-bound Vercel Sensitive-variable revision attestation + live Neon control-plane metadata |
 | A7 | Migration deploy is mandatory; no skip or pooled-URL fallback | `.github/workflows/deploy-staging.yml` |
-| A8 | Build uses repository Node 24.x and exact reviewed SHA | Workflow log + `/api/health` |
+| A8 | Project/build use Node 24.x and exact reviewed SHA | Fail-closed project metadata + workflow log + `/api/health` |
 | A9 | Public `/demo` responds while anonymous protected routes do not return application content | Post-deploy smoke |
 | A10 | Clerk webhook invalid-signature path produces no mutation | Route test + staging delivery evidence |
 | A11 | Tenant user resolves only the mapped staging account | Integration suite + authenticated staging smoke |
 | A12 | Rollback to the previous staging artifact is recorded and exercised | Staging runbook evidence |
 
-**Current state:** repository-side controls are review-ready on the Stage B worktree. Platform provisioning, secret injection, staging deployment, authenticated tenant smoke, and rollback exercise remain uncleared.
+**Current state:** Protected run `32586167278` configuration-certified the governed custom environment under workflow-control SHA `6202da68cb9b517b39814bab5b1542fd65adae22`, with reviewed application SHA `4a5b29b83cb3f18137b0151ae6242b2ac484ef08` reserved separately. [Environment Promotion Contract v1](./RESPONSEOS_ENVIRONMENT_PROMOTION_RUNBOOK.md) records that secret-free configuration baseline and its canonical hashes. Deploy Staging run [`32587779315`](https://github.com/AudioJones-Dev/responseos/actions/runs/32587779315) then reverified canonical database identity and applied all 13 Prisma migrations to staging Neon before Vercel rejected the deployment command and the workflow entered its post-migration SAFE STOP. The governed Vercel project still has zero deployments; READY, hosted authentication/tenant smoke, recovery evidence, and all Gate Set B work remain uncleared. The configuration certification remains configuration-only.
 
 The public `/audit` form is not a Gate Set A prospect-capture path until canonical persistence/idempotency and durable host-level abuse controls are implemented and verified. Do not make `/api/audit-requests` public merely to make the form submit.
 
@@ -52,6 +52,7 @@ Required before any live phone, SMS, CRM, scheduling, billing, or provider-webho
 ## Related runbooks
 
 - [`RESPONSEOS_STAGING_HOSTING_RUNBOOK.md`](./RESPONSEOS_STAGING_HOSTING_RUNBOOK.md) — Gate Set A provisioning, deploy, smoke, and rollback.
+- [`RESPONSEOS_ENVIRONMENT_PROMOTION_RUNBOOK.md`](./RESPONSEOS_ENVIRONMENT_PROMOTION_RUNBOOK.md) — secret-free contract, Production planning, diff, certification, and future drift governance.
 - [`RESPONSEOS_DEPLOYMENT_PLAN.md`](./RESPONSEOS_DEPLOYMENT_PLAN.md) — target topology and release process.
 - [`responseos-v0.3-provider-readiness.md`](../product/responseos-v0.3-provider-readiness.md) — provider planning baseline.
 - [`responseos-v0.3-live-call-demo-slice.md`](../product/responseos-v0.3-live-call-demo-slice.md) — bounded live-call scope; planning only.

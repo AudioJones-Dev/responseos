@@ -1,0 +1,102 @@
+{
+  "schemaVersion": "responseos.environment.v1",
+  "contractVersion": "1.0.0",
+  "identity": {
+    "name": "staging",
+    "environmentClass": "staging",
+    "lifecycle": "governed",
+    "application": {
+      "framework": "nextjs",
+      "nodeVersion": "24.x",
+      "packageManager": "npm@11.16.0",
+      "schemaLineage": "prisma/migrations"
+    }
+  },
+  "vercel": {
+    "teamId": "team_BHxIkAGPW6qEKKQBAt9c0NGz",
+    "projectId": "prj_pbzqdkzp322jcHWIsi19GhsnWXRm",
+    "projectName": "responseos-staging-mock",
+    "nodeVersion": "24.x",
+    "customEnvironment": {
+      "id": "env_uX6Qp8F6w9aBgx2ikH3BiREB8aHH",
+      "slug": "staging",
+      "type": "preview"
+    },
+    "deploymentMode": "manual",
+    "automaticGitDeployments": false,
+    "manualOnly": true,
+    "deploymentProtection": "required",
+    "aliasPolicy": "none",
+    "domainPolicy": "none"
+  },
+  "database": {
+    "provider": "neon-postgres",
+    "projectId": "patient-snow-16014934",
+    "projectName": "responseos-staging-mock",
+    "branchId": "br-mute-boat-a6ylen11",
+    "branchName": "main",
+    "endpointId": "ep-young-morning-a6oeu9vv",
+    "databaseName": "neondb",
+    "runtimeConnectionMode": "pooled",
+    "migrationConnectionMode": "direct",
+    "pooledDirectSeparationRequired": true,
+    "migrationPolicy": "prisma-migrate-deploy-before-application"
+  },
+  "authentication": {
+    "provider": "clerk",
+    "authRequired": true,
+    "providerClass": "development",
+    "credentialClass": "test",
+    "requiredVariables": [
+      "AJ_DIGITAL_CLERK_ORG_ID",
+      "CLERK_SECRET_KEY",
+      "CLERK_WEBHOOK_SECRET",
+      "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+      "RESPONSEOS_REQUIRE_AUTH"
+    ],
+    "failClosed": true
+  },
+  "deploymentControls": {
+    "exactShaRequired": true,
+    "separateControlAndApplicationSha": true,
+    "workflowControlSha": "6202da68cb9b517b39814bab5b1542fd65adae22",
+    "intendedApplicationSha": "4a5b29b83cb3f18137b0151ae6242b2ac484ef08",
+    "concurrency": {
+      "group": "responseos-staging-exclusive",
+      "cancelInProgress": false
+    },
+    "promotionPolicy": "certify-plan-provision-readback-diff-approve-deploy",
+    "healthCheck": {
+      "required": true,
+      "path": "/api/health"
+    },
+    "postDeploymentIdentityValidation": {
+      "required": true,
+      "fields": ["project", "environment", "applicationSha", "readyState", "aliases"]
+    },
+    "rollbackPolicy": "redeploy-known-good-exact-sha-no-schema-auto-rollback",
+    "configurationCertificationRequired": true
+  },
+  "providerPosture": {
+    "mode": "mock-only",
+    "activationGateRequired": true,
+    "credentialsAllowed": "forbidden",
+    "enabledProviders": [],
+    "liveExecutionApprovalState": "not-authorized",
+    "secretValuesForbiddenInGit": true
+  },
+  "humanApprovals": {
+    "productionDomainActivation": "not-applicable",
+    "providerEnablement": "not-applicable",
+    "telnyxActivation": "not-applicable",
+    "hubspotLiveWrites": "not-applicable",
+    "productionPhoneAssignment": "not-applicable",
+    "recordingEnablement": "not-applicable",
+    "publicDemoExposure": "not-applicable",
+    "prospectExposure": "not-applicable",
+    "customerTenantActivation": "not-applicable",
+    "retentionPolicyChange": "not-applicable",
+    "productionPromotion": "not-applicable",
+    "liveProviderExecution": "not-applicable"
+  }
+}

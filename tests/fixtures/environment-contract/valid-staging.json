@@ -1,0 +1,4 @@
+{
+  "base": "infra/environments/staging/environment.json",
+  "overrides": {}
+}

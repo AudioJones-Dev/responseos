@@ -1,6 +1,6 @@
 # ResponseOS — Staging Hosting Runbook (Path A)
 
-**Owner:** Audio (AJ Digital LLC) · **Status:** Operator runbook (Stage C hardening in review)
+**Owner:** Audio (AJ Digital LLC) · **Status:** Operator runbook (configuration/database/deployment identity proven; anonymous browser auth pending read-only recertification)
 **Scope:** Hosted **staging only** — Neon + Clerk + Vercel client access while providers remain **mock**.  
 **Does not authorize:** live Telnyx/Vapi/Twilio/HubSpot/Calendly, production deploy, or pilot go-live.  
 **Canon:** [`../product/responseos-v0.3-founding-pilot-scope.md`](../product/responseos-v0.3-founding-pilot-scope.md) Stage **C**, [`../env-spec.md`](../env-spec.md), [`../DEPLOYMENT.md`](../DEPLOYMENT.md), ADR-0001 / ADR-0019.
@@ -11,12 +11,12 @@
 
 | Gate | Done when |
 |---|---|
-| Staging URL | HTTPS URL you can open (Vercel staging alias or preview URL aliased) |
+| Staging environment | Governed Vercel custom environment `staging` (`env_uX6Qp8F6w9aBgx2ikH3BiREB8aHH`), type `preview`; no branch matcher or configured domain; exact deployment and managed routing certified independently |
 | Auth | Real Clerk login (no `RESPONSEOS_DEV_SESSION`) |
 | Tenant | Clerk org → `Account.clerk_org_id` → membership → portal session with `accountId` |
-| Data | Neon staging DB migrated; seed optional for demo fixtures |
+| Data | Canonical Neon identity proven before migration; staging DB migrated; seed optional for demo fixtures |
 | Providers | Still mock (no telephony/CRM/scheduling secrets required) |
-| Prod | **Still off** — `vercel.json` keeps `master` auto-deploy disabled; no prod GH job |
+| Prod | **Still off** — `vercel.json` disables every automatic Git deployment; no prod GH job |
 | Identity | `/api/health` reports the exact reviewed build SHA and staging environment |
 
 Until the staging URL is live with Clerk login, dashboard **L-02** stays partial / In Progress — not Done.
@@ -25,15 +25,15 @@ Until the staging URL is live with Clerk login, dashboard **L-02** stays partial
 
 ## 1. Credential / platform audit (names only — no secrets)
 
-Snapshot from Phase 2 prep (operator may re-run):
+Verified snapshot through read-only hosted certification run `32663419658` (operator must re-check before certification or retry):
 
 | Surface | Observed | Gap for Path A staging |
 |---|---|---|
-| **GitHub Environments** | `Preview`, `Production`, `github-pages`, `copilot`; no `staging` Environment verified on 2026-08-18 | **Create `staging`** with required reviewers (human approval). Do not wire auto-prod. |
-| **GitHub Actions secrets (repo)** | `NEON_API_KEY`, `NOTION_TOKEN` present | Add staging deploy secrets below (prefer **Environment `staging`** scope, not repo-wide). |
-| **Vercel** | Project `audiojones/responseos` exists (`responseos.vercel.app`); current project setting reports Node 22.x; `vercel.json` disables auto-deploy from `master` | Prefer a separate `responseos-staging` project (or true branch-scoped staging environment), create a staging alias, and set Node **24.x** to match `package.json` engines (`24.18.0`). Production aliases and auto-deploy stay untouched. |
-| **Neon** | Repo has `NEON_API_KEY` (API access possible) | Create **staging** project or branch DB; copy pooled + direct URLs into GH/Vercel (never into git). |
-| **Clerk** | App code ready (`lib/auth/session.ts`, `clerk-sync.ts`, webhook) | Staging Clerk application (or staging instance) + org + webhook to staging URL. |
+| **GitHub Environment** | `staging` exists with required reviewer `AudioJones-Dev` and a `master`-only deployment branch policy | Keep all deploy credentials Environment-scoped; deployment retry still requires a separate approval. |
+| **GitHub staging secrets** | Database URLs, verified Vercel team/project ids, Vercel token, automation-bypass secret, and a secret named `NEON_API_KEY` are present; protected runs proved the key can read the canonical Neon resources | Values remain unreadable by design. Reverify identity and the current version 2 attestation before every deployment retry. |
+| **Vercel** | Dedicated `audiojones/responseos-staging-mock`; Node **24.x**; `live=false`; two retained deployments: quarantined Production-target `dpl_Htoemv2DjREXACEZTKMuwVQRrwAj` and non-Production READY staging candidate `dpl_SC8XuZJFXFec15ECfCmGtNtdChs4`; the canonical managed alias resolves to deployment #2; no custom domains or automatic Git deployments | Keep Vercel Authentication enabled (`all_except_custom_domains`). Do not create deployment #3 for the auth-smoke remediation; certify deployment #2 through the separately authorized read-only workflow. |
+| **Neon** | Canonical project `responseos-staging-mock` (`patient-snow-16014934`), branch `main` (`br-mute-boat-a6ylen11`), endpoint `ep-young-morning-a6oeu9vv`, and database `neondb` were reverified; run `32587779315` applied all 13 Prisma migrations | Never substitute the separate `responseos` project. The retry must reverify identity and should observe a current migration status plus a no-op `prisma migrate deploy`. |
+| **Clerk** | All required Custom Environment variables and same-development-instance provenance are verified | Do not change Clerk configuration for read-only hosted certification. Resolved application dependency evidence is `@clerk/nextjs` 7.6.1 / `@clerk/backend` 3.13.1 / `@clerk/shared` 4.25.8. The exact test-key Frontend API `/v1/environment`, not a reconstructed hostname, supplies the authoritative Account Portal `display_config.sign_in_url`. |
 | **Sentry / PostHog** | Env placeholders in `.env.example`; **no SDK packages wired** | Optional for Path A: create projects, set DSNs later; tagging contract documented in §6. |
 | **Live providers** | Forbidden until Stage D+ | Leave Telnyx/Vapi/etc. unset. The staging preflight rejects live-provider credentials before migration or build. |
 
@@ -47,17 +47,18 @@ Copy from [`.env.example`](../../.env.example) / [`../env-spec.md`](../env-spec.
 
 | Variable | Where | Notes |
 |---|---|---|
-| `DATABASE_URL` | Vercel + `STAGING_DATABASE_URL` (GH) | Neon **pooled** connection string |
-| `DIRECT_URL` | Vercel + `STAGING_DIRECT_URL` (GH) | Neon **direct** (migrations) |
-| `CLERK_SECRET_KEY` | Vercel only | Staging Clerk secret |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Vercel only | Staging publishable key |
-| `CLERK_WEBHOOK_SECRET` | Vercel only | Svix secret for `/api/webhooks/clerk` |
-| `AJ_DIGITAL_CLERK_ORG_ID` | Vercel only | Control-plane Clerk org id (`Session.account = null`) |
-| `NEXT_PUBLIC_APP_URL` | Vercel only | Public staging base URL (e.g. `https://staging.example`) |
-| `RESPONSEOS_REQUIRE_AUTH` | Vercel only | Set (`1` or `true`) on hosted staging so auth cannot fail-open (ADR-0039) |
-| `RESPONSEOS_PROVIDER_KEY` | Vercel only | Optional for Path A mock; base64 32-byte AES if encrypting stored creds later |
+| `DATABASE_URL` | Governed custom environment Sensitive + `STAGING_DATABASE_URL` (GH) | Neon **pooled** connection string |
+| `DIRECT_URL` | Governed custom environment Sensitive + `STAGING_DIRECT_URL` (GH) | Neon **direct** (migrations) |
+| `RESPONSEOS_DATABASE_IDENTITY` | Governed custom environment encrypted | Version 2 non-secret JSON attestation binding Neon identity, Vercel project/custom-environment identity, and exact DB variable ids/revisions |
+| `CLERK_SECRET_KEY` | Governed custom environment Sensitive | Known `sk_test_` secret from the same development instance as the publishable key |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Governed custom environment encrypted | Staging publishable key |
+| `CLERK_WEBHOOK_SECRET` | Governed custom environment Sensitive | Svix secret for that development instance's `/api/webhooks/clerk` endpoint |
+| `AJ_DIGITAL_CLERK_ORG_ID` | Governed custom environment encrypted | Control-plane Clerk org id (`Session.account = null`) |
+| `NEXT_PUBLIC_APP_URL` | Governed custom environment encrypted | Non-production HTTPS base URL |
+| `RESPONSEOS_REQUIRE_AUTH` | Governed custom environment encrypted | Set (`1` or `true`) so auth cannot fail-open (ADR-0039) |
+| `RESPONSEOS_PROVIDER_KEY` | Not migrated by this gate | Optional mock-only key remains separately gated; it is not one of the nine certified variables |
 
-The workflow loads these names from the selected Vercel Preview/Staging scope and validates the contract without printing any values. Missing auth/application variables stop the job before database migration.
+Vercel does not return values marked Sensitive. The configuration-only workflow validates the complete nine-variable generic Preview source plan before its first mutation, then edits each existing variable by ID using only `target: []` and the exact `customEnvironmentIds`. No Sensitive value is sent. Unfiltered metadata must prove generic Preview applicability is gone, while `customEnvironmentId`-filtered metadata must prove the same IDs are available to governed staging. `decrypt=true` remains restricted to the five exact readable names after encrypted type, exact scope, ID, and uniqueness checks. Temporary readable responses stay under `RUNNER_TEMP` and are never logged or uploaded. The version 2 database attestation binds live canonical Neon evidence, a credential-free fingerprint, DB variable IDs/revisions, the Vercel project, and the exact custom environment. Any partial scope failure SAFE STOPs, reports only changed IDs and observed scopes, and performs no rollback, migration, or deployment.
 
 ### Must NOT be set on staging/prod
 
@@ -70,8 +71,10 @@ The workflow loads these names from the selected Vercel Preview/Staging scope an
 | Secret | Purpose |
 |---|---|
 | `VERCEL_TOKEN` | Vercel deploy token (team-scoped, least privilege) |
-| `VERCEL_ORG_ID` | Team id (from `.vercel/project.json` after `vercel link`) |
+| `VERCEL_ORG_ID` | Canonical Vercel team id; configuration verification checks it by REST readback |
 | `VERCEL_PROJECT_ID` | Project id |
+| `VERCEL_AUTOMATION_BYPASS_SECRET` | Must match a Protection Bypass for Automation secret on `responseos-staging-mock`; smoke sends it only as an HTTP header |
+| `NEON_API_KEY` | Least-privilege Neon control-plane key used only by preflight to read canonical project, branch, endpoint, and database metadata; never passed to Vercel or the app |
 | `STAGING_DATABASE_URL` | Neon pooled URL for `prisma migrate deploy` |
 | `STAGING_DIRECT_URL` | Neon direct URL for migrations |
 
@@ -94,10 +97,25 @@ Do these in order. Stop if any step needs a credential you do not have — do no
 
 ### 3.1 Neon staging database
 
-1. In Neon console: create a **staging** project (or a `staging` branch of the ResponseOS project).
-2. Copy **pooled** → `DATABASE_URL` / `STAGING_DATABASE_URL`.
-3. Copy **direct** → `DIRECT_URL` / `STAGING_DIRECT_URL`.
-4. Do not reuse a production database for staging.
+1. Use only project `responseos-staging-mock` (`patient-snow-16014934`) and branch `main` (`br-mute-boat-a6ylen11`). The separate `responseos` project must never satisfy this gate.
+2. From that branch, set **pooled** only in GitHub staging `STAGING_DATABASE_URL` and **direct** only in GitHub staging `STAGING_DIRECT_URL`.
+3. Configuration-only run `32586167278` re-scoped the existing Vercel `DATABASE_URL` and `DIRECT_URL` variables to the exact governed custom environment without reading or sending either value; they remain Sensitive.
+4. The project-scoped `NEON_API_KEY` in GitHub Environment `staging` was proven able to read the canonical project, branch, endpoint, and database. The verification workflow uses only `GET` requests and never passes the key to Vercel or the app.
+5. PR #131 merged the deployment-workflow controls that verify the exact custom-environment ID and explicitly target slug `staging`; configuration run `32586167278` accepted that compatibility contract and completed version 2 recertification.
+6. Authorized Deploy Staging run `32587779315` reverified the canonical Vercel/Neon/database contract, reported all 13 migrations pending, and applied all 13 to canonical staging Neon. Vercel deployment creation then failed before a deployment record existed; READY and hosted smoke were not reached. The post-migration SAFE STOP performed no rollback, alias, domain, promotion, or Production action.
+7. Merge the separately reviewed deployment CLI remediation before any retry. Because canonical staging Neon is now current, the retry should observe `prisma migrate status` as current and `prisma migrate deploy` as a safe no-op; both commands remain mandatory and fail closed.
+8. If either GitHub database URL changes, rerun configuration verification before any deployment retry. The Vercel ids/`updatedAt` bindings intentionally make old evidence stale.
+9. Never print, persist, diff, hash in full, or compare plaintext connection strings. The workflow streams values between protected stores and emits only resource identity and a credential-free SHA-256 fingerprint.
+
+Protected run `32538420957` proved the staging Environment `NEON_API_KEY` can read the canonical project, branch, endpoint, and database. The key remains confined to the GitHub Environment and is never sent to Vercel or the application.
+
+The repository also contains an older repository-level `NEON_API_KEY`. Repository search finds no legitimate consumer outside jobs that declare `environment: staging`, where GitHub resolves the Environment-scoped secret of the same name. The broader repository secret is redundant and should be removed under a separate credential-cleanup authorization only after the Environment credential passes the protected preflight; do not rotate or delete it as part of this change.
+
+Configuration-only run [`32538420957`](https://github.com/AudioJones-Dev/responseos/actions/runs/32538420957) passed the earlier REST-only generic Preview certification. Configuration-only run [`32586167278`](https://github.com/AudioJones-Dev/responseos/actions/runs/32586167278), controlled by `6202da68cb9b517b39814bab5b1542fd65adae22`, is the certified governed-custom-environment baseline recorded by [Environment Promotion Contract v1](../../infra/environments/staging/certification.json). It certifies configuration only and preserves the separately reviewed intended application SHA `4a5b29b83cb3f18137b0151ae6242b2ac484ef08`; it is not deployment evidence. **Deploy Staging** remains a separate authorization.
+
+Run [`32587779315`](https://github.com/AudioJones-Dev/responseos/actions/runs/32587779315) is separate execution evidence for the successful canonical database migration and the subsequent pre-deployment SAFE STOP. It does not turn the configuration-only certification into migration or deployment certification. `infra/environments/staging/environment.json` intentionally describes the governed configuration contract rather than ephemeral migration/deployment execution state, so no deployed state is recorded there.
+
+Both **Verify Staging Configuration** and **Deploy Staging** use the top-level concurrency group `responseos-staging-exclusive` with `cancel-in-progress: false`. One run queues behind the other, so database synchronization/attestation cannot overlap deployment preflight, migration, build, or staging deployment.
 
 ### 3.2 Clerk staging application
 
@@ -109,32 +127,36 @@ Do these in order. Stop if any step needs a credential you do not have — do no
    `https://<STAGING_HOST>/api/webhooks/clerk`  
    for `organization.*`, `organizationMembership.*`, `user.*` (as implemented by `lib/auth/clerk-sync.ts`). Copy signing secret → `CLERK_WEBHOOK_SECRET`.
 6. Set allowed origins / redirect URLs to the staging host.
+7. Before approving a retry, verify the secret key is `sk_test_`, the publishable key is `pk_test_`, and both plus the webhook and control org belong to the same Clerk development instance. Vercel metadata cannot prove write-only secret provenance.
 
 ### 3.3 Vercel staging surface
 
-1. Choose a dedicated `responseos-staging` project (recommended) or a true staging environment with strict branch scoping. Do not reuse a broad Preview environment without verifying database and secret isolation.
-2. Keep **Production auto-deploy from `master` disabled** (`vercel.json` → `git.deploymentEnabled.master: false`).
+1. Use only the dedicated `responseos-staging-mock` project. The workflow fails closed on any name, team, project-id, or account-id mismatch.
+2. Keep **all automatic Git-triggered Vercel deployments disabled** (`vercel.json` → `git.deploymentEnabled: false`). Explicit governed deployment workflows remain separately gated.
 3. Set Path A env vars for Preview (or Staging) — values live only in the platform store, never in git.
-4. Prefer a stable alias (e.g. `responseos-staging.vercel.app` or custom domain) after the first successful deploy.
-5. Align Node version to **24.x** (`24.18.0` in CI/`package.json`).
+4. Add the database identity attestation from §3.1 as readable encrypted metadata. Do not mark it Sensitive because the workflow must read it; it contains no credential material.
+5. Keep Vercel Authentication enabled. Create one Protection Bypass for Automation secret for GitHub staging smoke; do not create a public exception domain or disable protection.
+6. Preserve the verified project Node version **24.x** (`24.18.0` in CI/`package.json`).
 
 ### 3.4 GitHub Environment protection
 
 1. Repo → Settings → Environments → **New environment: `staging`**.
 2. Enable **Required reviewers** (Audio or designated operator).
 3. Optional: deployment branch policy limiting to `master` + release tags (never open to arbitrary forks).
-4. Add the deploy secrets from §2 (environment-scoped).
+4. Add the deploy secrets from §2 (environment-scoped), including the read-only `NEON_API_KEY`.
 5. Do **not** add an automatic production deploy workflow. `Production` environment may exist historically — leave it unused until Stage I authorization.
 
 ### 3.5 First staging deploy
 
-1. Merge the reviewed Stage B/staging-hardening PR when ready.
-2. Actions → **Deploy Staging** → Run workflow.
-3. Confirmation input: type exactly `staging`.
-4. Approve the Environment gate when prompted.
-5. On success: note the deployment URL; alias it if needed; set `NEXT_PUBLIC_APP_URL` to that host; re-deploy if the URL changed.
-6. Confirm the automated health/build-identity, public-demo, and anonymous protected-route smoke checks passed.
-7. Run tenant bootstrap smoke (§4).
+1. Confirm `NEON_API_KEY` and `RESPONSEOS_DATABASE_IDENTITY` are configured and the private Clerk same-instance gate is cleared.
+2. Confirm the one-time custom-environment scope migration and version 2 recertification run succeeded after the deployment-control PR merged.
+3. Actions → **Deploy Staging** → Run workflow.
+4. Confirmation input: type exactly `staging`.
+5. Control input: enter the exact current `master` workflow-control SHA. Application input: enter the separately reviewed application SHA; the workflow never substitutes one for the other.
+6. Approve the Environment gate when prompted.
+7. On success: record the unique protected custom-environment deployment URL. Alias/promotion remains a separate operator action and is not part of this workflow.
+8. Confirm the automated database-identity, health/build-identity, public-demo, and anonymous protected-route smoke checks passed.
+9. Run tenant bootstrap smoke (§4).
 
 ---
 
@@ -192,14 +214,59 @@ Do not run seed/migrate against production until Stage I.
 
 ## 5. Deploy workflow reference
 
-- Workflow file: [`.github/workflows/deploy-staging.yml`](../../.github/workflows/deploy-staging.yml)
-- Trigger: **manual** `workflow_dispatch` only
-- Guard: confirmation string must equal `staging`
-- Environment: `staging` (approval gate)
-- Behavior: secret-name guard → `vercel pull` → mock-only env preflight → `prisma migrate deploy` → `vercel build` → `vercel deploy --prebuilt` → build-identity/auth smoke
-- Explicit non-goals: no `on: push` to `master`; no production target; no live provider cutover
+Configuration gate:
 
-Rollback: redeploy the previous **staging** deployment from the Vercel UI, or re-run the workflow on a known-good SHA. Production aliases are never part of this workflow. The app continues to boot with mock providers because the staging preflight rejects live-provider credentials.
+- Workflow file: [`.github/workflows/verify-staging-configuration.yml`](../../.github/workflows/verify-staging-configuration.yml)
+- Trigger: manual `workflow_dispatch` from `master` only, with `configuration-only` plus the exact current master SHA
+- Behavior: exact control SHA → protected project + exact custom-environment posture → deployment-workflow compatibility → complete generic Preview source plan → allowlisted readable posture → canonical Neon/GitHub database evidence → value-less nine-variable scope migration → filtered/unfiltered readback → version 2 environment-bound attestation → final custom-environment certification
+- Compatibility stop: this gate fails before migration planning or scope mutation unless the exact checked-out Deploy Staging controls verify custom environment `env_uX6Qp8F6w9aBgx2ikH3BiREB8aHH` and explicitly target its `staging` slug without a generic Preview fallback.
+- Explicit non-goals: no migration, deploy, alias, production target, provider activation, phone routing, or prospect exposure
+
+Deployment gate:
+
+- Workflow file: [`.github/workflows/deploy-staging.yml`](../../.github/workflows/deploy-staging.yml)
+- Trigger: **manual** `workflow_dispatch` from `master` only, with `staging`, exact current `control_sha`, and separate exact reviewed `application_sha`
+- Guard: both SHAs must be lowercase 40-character values; the control SHA must equal the dispatched workflow SHA and current remote `master` before and after the protected Environment wait
+- Environment: `staging` (approval gate)
+- Behavior: control/source dual checkout → REST-only exact project/custom-environment/protection/bypass/posture checks → canonical Neon and GitHub pooled/direct identity → current version 2 DB-variable revision attestation → dependency/Prisma setup → migration status → immediate REST recertification → `prisma migrate deploy` → pinned CLI deployment to REST-verified slug `staging` with exact-checked `VERCEL_ORG_ID`/`VERCEL_PROJECT_ID` and no link/pull → exact environment/source/deployment readback → READY → capture exact deployment ID → bounded read-only managed-alias lookup → prove alias project and deployment ID → final Custom Environment recertification → immutable-origin and managed-alias health/auth smoke. The Production-only `--skip-domain` flag is forbidden. `aliasPolicy=none` means no user-configured alias, custom domain, Production alias, or promotion alias; Vercel's provider-generated Custom Environment routing alias is permitted only when it exactly equals `responseos-staging-mock-env-staging-audiojones.vercel.app` and maps to the exact READY deployment created by the current run.
+- Explicit non-goals: no `on: push`; no generic Preview or Production target; no seed; no alias/promotion; no live provider cutover
+
+Read-only hosted certification gate:
+
+- Workflow file: [`.github/workflows/verify-staging-hosted.yml`](../../.github/workflows/verify-staging-hosted.yml)
+- Trigger: **manual** `workflow_dispatch` from `master` only, with `hosted-certification`, exact current `control_sha`, exact reviewed `application_sha`, and exact existing `deployment_id`
+- Permissions/credentials: GitHub `contents: read`; protected `staging` Environment supplies only the Vercel REST token and automation-bypass secret. No Neon/database credential is loaded.
+- Behavior: exact control guard → project/Custom Environment/readable mock posture → existing READY non-Production deployment identity → Alias API exact deployment-ID binding → final Custom Environment posture → immutable and managed-alias health → `/demo` → read-only exact Clerk FAPI environment lookup → anonymous browser-document auth redirect classification for both `/admin` and `/client/dashboard`
+- Auth evidence: direct sign-in must match the exact `display_config.sign_in_url`; a handshake must use the exact publishable-key FAPI `/v1/client/handshake` and return to the immutable origin plus the exact protected route. Only sanitized classification evidence is logged. HTTP 404 is not accepted for a document probe.
+- Explicit non-goals: no Prisma command, seed, Vercel deployment, alias/domain/promotion mutation, provider activation, credential rotation, or Production action
+
+The Vercel-hosted build is deliberate: custom-environment database and Clerk server values are marked Sensitive and cannot be downloaded for a local prebuilt build. Vercel consumes them inside its protected build/runtime boundary while GitHub retains only the migration database URLs and deploy credentials. `vercel link` and `vercel pull` are not used. The workflow first proves the exact environment ID maps to slug `staging`, then targets that slug explicitly while injecting the non-secret application SHA into build/runtime health evidence.
+
+If migration succeeds but deployment, readiness, or smoke fails, the workflow SAFE STOPs. It records non-secret migration/deployment outcome evidence, performs no automatic schema rollback, issues no alias/domain/promotion mutation command, and requires separate remediation authorization.
+
+Run `32587779315` exercised that SAFE STOP after migration: the deployment command failed before Vercel created a deployment, so READY and smoke were skipped and the governed project remained at zero deployments. Do not retry until the separate CLI remediation is reviewed and merged. With the database already current, the retry should retain migration status/deploy checks and expect them to no-op before deployment creation.
+
+Run `32606945362` created READY deployment `dpl_Htoemv2DjREXACEZTKMuwVQRrwAj` from application SHA `4a5b29b83cb3f18137b0151ae6242b2ac484ef08` in Custom Environment `env_uX6Qp8F6w9aBgx2ikH3BiREB8aHH` (`staging`). Vercel classified this first project deployment as `target=production` and assigned its managed environment alias `responseos-staging-mock-env-staging-audiojones.vercel.app`. The workflow correctly SAFE STOPPED before hosted smoke.
+
+Classify that artifact as `FIRST_DEPLOYMENT_BOOTSTRAP_ANOMALY`, certification `REJECTED / NOT ELIGIBLE`. Its immutable URL is `responseos-staging-mock-orc2fr3of-audiojones.vercel.app`. Do not delete, relabel, promote, alias, or use it for hosted staging certification. A Production target remains an unconditional containment failure even when the project, Custom Environment, application SHA, variables, and provider-managed alias are otherwise canonical.
+
+Source SHA proves reviewed application source, the new `dpl_...` identifier proves deployment identity, and `GET /v4/aliases/{idOrAlias}` returning that exact deployment ID proves routing identity. These are separate requirements. A matching `/api/health.build_sha` through the alias is supplementary runtime evidence because two deployments can share the same source SHA.
+
+`currentDeploymentAliases` in the Custom Environment response is optional alias telemetry, not authoritative routing state. Omitted, `null`, empty, or the single canonical managed alias are acceptable environment-posture evidence; arbitrary, custom-domain, malformed, or multiple aliases still fail closed. The Custom Environment API remains authoritative for environment ID, slug, type, branch matching, and configured domains. The Alias API remains authoritative for the canonical managed alias → exact deployment ID binding, and the Deployment API remains authoritative for deployment identity, immutable URL, target, readiness, project, Custom Environment, and application SHA.
+
+Deploy Staging run [`32654354652`](https://github.com/AudioJones-Dev/responseos/actions/runs/32654354652) SAFE STOPPED at the initial Custom Environment gate because optional alias telemetry was treated as mandatory. The stop occurred before Neon/database verification, migration status, `prisma migrate deploy`, or deployment creation. At that checkpoint, deployment #2 did not exist; the governed project contained only quarantined deployment `dpl_Htoemv2DjREXACEZTKMuwVQRrwAj`, and the Alias API legitimately showed the canonical managed alias still routed to that artifact before a new READY deployment existed. That was pending routing state, not contradictory Custom Environment evidence.
+
+Deploy Staging run [`32659300496`](https://github.com/AudioJones-Dev/responseos/actions/runs/32659300496) reverified canonical controls, Custom Environment, Neon identity, current migration status, and the version 2 database attestation. `prisma migrate deploy` completed as a no-op with zero new migrations. It created non-Production READY deployment `dpl_SC8XuZJFXFec15ECfCmGtNtdChs4` at immutable host `responseos-staging-mock-fwzvl66pv-audiojones.vercel.app`; application SHA metadata, Alias API binding to the exact deployment ID, final Custom Environment posture, immutable health, managed-alias health, and `/demo` all passed. Deployment #1 remained quarantined and unchanged.
+
+The same run SAFE STOPPED only when the old plain-curl `/admin` probe returned 404; `/client/dashboard` was not reached. The built route was present, and resolved Clerk 7.6.1 treats a request as a page when `sec-fetch-dest` is `document`/`iframe`, `Accept` includes `text/html`, or a Next internal navigation marker is present. Its `auth.protect()` returns 404 for an anonymous non-page request but redirects an anonymous page request through `NextResponse.redirect`, which is HTTP 307 in this resolved stack. Therefore 404 remains a failure for the required document probe and is never blanket-accepted.
+
+Deployment #2 is retained as the canonical staging candidate. The next gate is the separately authorized read-only hosted certification workflow, which must send `Accept: text/html,application/xhtml+xml` plus `Sec-Fetch-Dest: document`, disable redirect following, and require both protected routes to return HTTP 307 with either the exact configured Account Portal sign-in destination or the exact Frontend API handshake. The publishable key identifies the development FAPI; its read-only `/v1/environment` response, not hostname reconstruction, supplies the authoritative Account Portal URL. The Alias API remains authoritative for routing; the Custom Environment API remains authoritative for environment/domain posture. No deployment #3 is required or authorized by this remediation.
+
+Read-only hosted certification run [`32663419658`](https://github.com/AudioJones-Dev/responseos/actions/runs/32663419658) then reconfirmed project containment, Custom Environment posture, exact deployment #2 identity, Alias API routing, immutable and managed-alias health, and `/demo`. Both `/admin` and `/client/dashboard` returned parseable HTTP 307 redirects and both probes completed. Certification SAFE STOPPED only because the validator required the first hop to equal a reconstructed Account Portal URL. Raw Locations were intentionally not logged, so this evidence is most consistent with—but does not yet certify—the resolved Clerk handshake path.
+
+Resolved `@clerk/backend` 3.13.1 marks GET requests with `Sec-Fetch-Dest: document` as handshake-eligible and constructs the first hop at the exact publishable-key Frontend API `/v1/client/handshake`, including an immutable `redirect_url` and `format=nonce`; `@clerk/nextjs` 7.6.1 forwards that Location as the 307 response. Certification now obtains `display_config.sign_in_url` from the exact development FAPI `/v1/environment` and accepts only two fully validated classes: direct configured Account Portal sign-in or exact FAPI handshake. It never forwards the Vercel automation-bypass secret to Clerk and never logs raw handshake query material. Deployment #2 remains the canonical staging candidate; deployment #3 remains unnecessary and unauthorized.
+
+Current classification: infrastructure containment **PASS**; deployment identity **PASS**; routing identity **PASS**; public health **PASS**; public demo **PASS**; anonymous browser auth redirect **PENDING RE-CERTIFICATION**; authenticated operator access **NOT YET TESTED**; prospect bootstrap and live providers **NOT AUTHORIZED**.
 
 ---
 
@@ -219,7 +286,9 @@ Until SDKs land: rely on Vercel runtime logs + Clerk webhook logs + Neon metrics
 
 ## 7. Authorization reminder
 
-Repository-side Stage C hardening was authorized on 2026-08-18. Creating platform resources, injecting secret values, and running the actual staging deployment remain operator/platform steps and are not implied by that code authorization.
+Repository-side Stage C hardening was authorized on 2026-08-18. Configuration certification, canonical staging database migration, and deployment #2 identity/routing/public smoke have completed. Anonymous browser auth recertification, authenticated operator access, recovery evidence, prospect exercises, and every Production action remain separately authorized operator/platform steps.
+
+The [Environment Promotion Runbook](./RESPONSEOS_ENVIRONMENT_PROMOTION_RUNBOOK.md) governs any future staging-to-Production planning. It does not alter this first-staging-deployment path and does not authorize a Production resource, secret, alias, provider, or deploy action.
 
 | Stage | This runbook |
 |---|---|

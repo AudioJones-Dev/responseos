@@ -37,6 +37,15 @@ a winner, or convert an assumption into an actual.
 - [`RESPONSEOS_CANON_RECONCILIATION.md`](./RESPONSEOS_CANON_RECONCILIATION.md)
   — overlap, conflicts, current authorities, ratified opening decisions, and
   remaining unknowns.
+- [`RESPONSEOS_CLIENT_ACTIVATION_RECONCILIATION.md`](./RESPONSEOS_CLIENT_ACTIVATION_RECONCILIATION.md)
+  — current-state reconciliation of the client-activation substrate against the
+  repository: what already exists and under which name, which documentation is
+  contradicted by code, which open pull requests carry load-bearing work, and
+  which ratified decisions constrain a first supervised pilot.
+- [`RESPONSEOS_CLIENT_OPERATING_CONFIGURATION_STANDARD.md`](./RESPONSEOS_CLIENT_OPERATING_CONFIGURATION_STANDARD.md)
+  — where a tenant's operating configuration lives, how operator-entered facts
+  are evidenced and ranked, and what each supervision mode requires before
+  activation.
 
 ## Templates
 
