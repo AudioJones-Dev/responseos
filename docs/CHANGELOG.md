@@ -4,6 +4,11 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — test: disconnect application client before seed schema resets
+
+- Disconnect both integration and application Prisma clients before the seed-determinism test recreates the local database schema. This prevents a reused application connection from retaining removed PostgreSQL enum identifiers.
+- Exercise enum-bearing audit writes before and after each reset so cached-client failures are covered, while retaining the seeded-payload determinism assertion.
+
 ## Unreleased — docs: authorize a bounded production carve-out for the public demo surface
 
 - The operator authorized deploying `/demo/receptionist` so the link can be shared. "No production deploys from this repo until v0.3 readiness gates clear" was stated in **eleven** places and binding since ADR-0001/ADR-0019, so the authorization is **recorded rather than assumed** — ratified as ADR-0053 and written into each of them, plus the three stale gate rows (D3, Q1) that still listed this very authorization as outstanding.
