@@ -14,6 +14,10 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - **What was deliberately not built.** No Langfuse SDK, and no internal `AIObservability` interface behind a disable flag. The SDK would be the first vendor package in the tree, breaking the mock-first shape; the interface would abstract over zero callers, which scope discipline forbids. The seam gets built in the slice that introduces the first direct model call, shaped against that call site.
 - **Gaps recorded, not closed.** The seven-field commercial audit trail (vendor, billing period, tenant, usage category, measured consumption, underlying vendor cost, amount passed through) does not exist in the schema — the only adjacent fields are `Engagement.usage_model` and `TelephonyNumber.monthly_cost_micros`. There are no prompt files to inventory. `WorkflowRun` is identified as the natural trace-root substrate for later, and `QaLog` is noted as a human rubric scorer rather than LLM evaluation, so neither is mistaken for existing coverage.
 - **Helicone is deferred**, not rejected: it becomes worth revisiting only if centralized gateway routing, caching, provider fallback, or gateway-level rate controls are required. ResponseOS remains authoritative for usage accounting and billing; telemetry may inform reconciliation but never becomes the invoice ledger.
+## Unreleased — test: disconnect application client before seed schema resets
+
+- Disconnect both integration and application Prisma clients before the seed-determinism test recreates the local database schema. This prevents a reused application connection from retaining removed PostgreSQL enum identifiers.
+- Exercise enum-bearing audit writes before and after each reset so cached-client failures are covered, while retaining the seeded-payload determinism assertion.
 
 ## Unreleased — docs: authorize a bounded production carve-out for the public demo surface
 
