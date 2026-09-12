@@ -8,6 +8,10 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 - Preserves the reviewed local atomic claim for pending and retryable CRM operations, preventing concurrent workers from both performing provider effects. A failed contender cannot overwrite the owner's state.
 - Adds unit and Postgres concurrency regressions. Existing provider checkpoints remain; abandoned processing operations require operator reconciliation. No provider activation, schema, or deployment change.
+## Unreleased — test: disconnect application client before seed schema resets
+
+- Disconnect both integration and application Prisma clients before the seed-determinism test recreates the local database schema. This prevents a reused application connection from retaining removed PostgreSQL enum identifiers.
+- Exercise enum-bearing audit writes before and after each reset so cached-client failures are covered, while retaining the seeded-payload determinism assertion.
 
 ## Unreleased — docs: authorize a bounded production carve-out for the public demo surface
 
