@@ -1111,6 +1111,16 @@
       "due": "2026-08-31",
       "blocked": true,
       "blockedReason": "External hotlinking of the five public URLs cannot be disproven from inside the repository; watch edge logs for 404s on /file.svg, /globe.svg, /next.svg, /vercel.svg and /window.svg for one traffic cycle after the next staging deploy"
+    },
+    {
+      "id": "CONVERGE-DB-RESET",
+      "phase": "Integrations",
+      "title": "Disconnect cached application client before test schema resets",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "blocked": false
     }
   ],
   "liveIssues": [
