@@ -32,6 +32,19 @@
   ],
   "tasks": [
     {
+      "id": "CONVERGE-CRM-CLAIM",
+      "ref": 168,
+      "refType": "pull",
+      "phase": "Tech Debt & Hardening",
+      "title": "Preserve tenant-scoped atomic CRM retry ownership",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-09-12",
+      "blocked": false
+    },
+    {
       "id": "F-01",
       "phase": "v0.1 · Foundation",
       "title": "Next.js app scaffold",
