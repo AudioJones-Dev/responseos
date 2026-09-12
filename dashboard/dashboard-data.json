@@ -42,8 +42,7 @@
       "progress": 90,
       "priority": "High",
       "start": "2026-09-12",
-      "blocked": true,
-      "blockedReason": "Local Postgres concurrency regression awaits Docker Linux engine."
+      "blocked": false
     },
     {
       "id": "F-01",
