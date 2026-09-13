@@ -1592,7 +1592,7 @@ But a *deployment* is not a page. Vercel serves the whole app, and with `RESPONS
 
 ---
 
-## ADR-0055 — Consent evidence is a per-call immutable event; per-contact state is a derived summary, not the record of authority
+## ADR-0055 — Consent evidence is an immutable event carrying its source channel; per-contact state is a derived summary, not the record of authority
 
 **Status:** Accepted (2026-09-13) for the *contract*. Documentation only — this ADR authorises no schema, no migration, no runtime, and no recording. Recording stays `false` at every supervision tier per ADR-0051, and G-11 of the FRL policy still requires a separate ratified amendment before any FRL recording at all.
 
@@ -1602,7 +1602,8 @@ Review surfaced the conflict. Per-contact state answers *what does this contact 
 
 **Decision.**
 
-1. **The record of authority is a per-call immutable consent event.** Each event is tied to the call, and to the artifact class it authorises, and carries at minimum: the disclosure actually presented, the grant or withdrawal, the timestamp, and the jurisdiction basis. Events are append-only — a withdrawal is a new event, never a mutation of an earlier one.
+1. **The record of authority is an immutable consent event.** Each event carries at minimum: the disclosure actually presented, the grant or withdrawal, the timestamp, the jurisdiction basis, and **the source interaction and channel it arrived through** — a call, an SMS reply, a web form, or any other channel. Consent is not call-only: outbound campaign consent and opt-out (§9 of the security contract) and the cross-channel consent left open in the readiness contract are the same kind of record and live in the same event stream. Events are append-only — a withdrawal is a new event, never a mutation of an earlier one.
+   **Where the artifact is a recording or a persisted transcript, the authorising event must additionally be linked to that call and artifact class.** A general per-contact grant arriving by web form does not authorise capturing a particular call; that specific linkage is what makes the evidence auditable.
 2. **Per-contact state remains, as a derived summary.** It answers the "what does this contact currently permit" question for routing and preference purposes. It is a projection of the event stream and is never the evidence relied on to justify a retained artifact.
 3. **Consent is evaluated per artifact class, not once per call.** Recording and transcript persistence are independent switches — `CallTranscript.inline_text` and `CallSegment.text` persist verbatim caller speech regardless of the recording flag — so an authorisation for one is not an authorisation for the other.
 4. **Absence of an event is refusal.** No affirmative event means no capture. Silence is not consent, and a missing record is not a permissive default.
