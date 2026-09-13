@@ -54,7 +54,7 @@ Reuse candidate runtime, configuration, normalization, HubSpot and Resend work f
 
 ### Local validation — 2026-09-13
 
-Branch `feat/mike-live-demo`, worktree `C:/dev/responseos-mike-live-demo`. Changes remain uncommitted; this is local working-tree evidence, not current-head review or CI evidence.
+Branch `feat/mike-live-demo`, worktree `C:/dev/responseos-mike-live-demo`, [draft PR #177](https://github.com/AudioJones-Dev/responseos/pull/177). The validation below covers the implementation committed as `9458513`; it is local test evidence, not independent review or CI evidence.
 
 - Node 24.18.0 / npm 11.16.0: lint, typecheck, 687 unit tests across 60 files, and production build passed.
 - PostgreSQL 16.15 on loopback with synthetic databases: all 15 migrations applied; Prisma schema diff reported no difference; all 180 integration tests across 15 files passed. The production build also passed with the synthetic preview database configured.
