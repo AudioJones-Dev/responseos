@@ -378,7 +378,7 @@ depends on it.
 | G-7 | Whether evaluation is phone, video, or on-site, per product | `QUALIFIED_FREE_EVALUATION` |
 | G-8 | Photo/image upload mechanism | §5–§8 documentation intake |
 | G-9 | Manufacturer product-compatibility rules | `PRODUCT_COMPATIBILITY_REVIEW` |
-| G-10 | Notification mailbox spelling (C-1) | §12 live send |
+| G-10 | Verification that the configured `notification.completed_interaction.recipient` value matches the governing 2026-09-11 spelling. C-1 settled which source governs; it did not verify what is configured | §12 live send |
 
 ---
 
