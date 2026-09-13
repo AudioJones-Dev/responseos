@@ -160,8 +160,14 @@ Only what is genuinely missing for a *reduced-scope* MVP:
 3. **A typed capability schema** generalizing the single hardcoded template to N.
 4. **Per-tenant runtime version pinning** — which tenant executes which checksummed version.
    `AgentProfile.system_policy_json` holds policy but no pinned capability version.
-5. **Evidence classification** (`KNOWN`/`INFERRED`/`ASSUMED`/`UNKNOWN`) as structured state.
-   No enum or field exists.
+5. ~~**Evidence classification** (`KNOWN`/`INFERRED`/`ASSUMED`/`UNKNOWN`) as structured state.~~
+   **Not a gap — rejected brief requirement.** This originally read "no enum or field exists",
+   which was wrong: `KnowledgeFactStatusSchema` (`lib/prospectBootstrap/contracts.ts`) already
+   defines a richer six-state provenance vocabulary, and `knowledgeFallback: "verified_only"`
+   is the receptionist's evidence rule. The four-state enum is explicitly rejected in §B in
+   favour of that vocabulary plus required-known fields. Listing it here as a genuine gap
+   would have pointed later increments at the duplicate ontology the accepted plan forbids.
+   Raised by Codex on PR #174.
 6. **Simulation trace record.** Mocks exist; a persisted, inspectable trace does not.
 7. **Permission-broadening detection** between two versions.
 
