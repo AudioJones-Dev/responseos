@@ -1,6 +1,7 @@
 # Unreleased — supervised FRL demonstration (in review)
 
 - Reuse the supervised runtime candidate and add approved business knowledge, pinned call context, per-call consent evidence, operator-reviewed CRM/email follow-up, and a rehearsal contract. Live activation and provider consent verification remain gated.
+- Review remediation (Codex, Copilot): dispatch re-checks the execution gate before any CRM or email effect, so revoking `RESPONSEOS_AUTHORIZED_EXECUTION_GATES` stops an older approval the same way it fails assistant initialization closed; the latest-revision check and the dispatch claim now run under the queue's advisory lock; the dispatching operator and the dispatch outcome are written to the audit log; a supervised CRM operation awaiting approval is released instead of being left claimed as `processing`; operator-edited caller and location reach HubSpot redacted; and the metadata-only consent projection and the insight emptiness check no longer drop provider fields the Telnyx helpers accept.
 
 # Changelog — ResponseOS
 

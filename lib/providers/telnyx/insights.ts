@@ -183,7 +183,14 @@ function isEmpty(insight: TelnyxCallInsight): boolean {
     !insight.serviceRequested &&
     !insight.nextAction &&
     !insight.city &&
+    !insight.state &&
     !insight.postalCode &&
+    !insight.canonicalInteraction &&
+    !insight.product &&
+    !insight.outcome &&
+    !insight.urgency &&
+    !insight.callbackWindow &&
+    !insight.identityConfirmed &&
     !insight.quoteRequested &&
     !insight.photosRequested &&
     !insight.qualification

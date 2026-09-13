@@ -138,7 +138,16 @@ export async function runCrmSyncForCall(params: {
   const protectedCall = call;
   const approvedRow = protectedCall?.review_required && params.reviewId
     ? await db.callReview.findFirst({ where: { id: params.reviewId, account_id: params.accountId, call_id: params.callId, status: "approved" } }) : null;
-  if (protectedCall?.review_required && !approvedRow) return err("approval_required", "An approved call review is required.");
+  if (protectedCall?.review_required && !approvedRow) {
+    // The claim above already moved this operation to `processing`; leaving it
+    // there makes the later approved dispatch return the claimed row without
+    // ever synchronizing.
+    operation = await db.crmSyncOperation.update({
+      where: { id: operation.id, account_id: params.accountId },
+      data: { status: "retryable_failed", last_error_code: "approval_required", last_error_redacted: "approval_required", next_attempt_at: null },
+    });
+    return err("approval_required", "An approved call review is required.");
+  }
   const approved = approvedRow ? ReviewPayloadSchema.parse(approvedRow.payload_json) : null;
 
     const contact = call.contact_id
@@ -164,7 +173,10 @@ export async function runCrmSyncForCall(params: {
     // or email, so it is sanitized before it reaches the CRM.
     const nextAction = approved ? sanitizeCrmText(approved.nextAction) : lead?.notes ? sanitizeCrmText(lead.notes) : undefined;
     const evidenceReference = `ResponseOS call ${call.id}`;
-    const detail = approved ? { caller: approved.caller, eventType: approved.interaction, service: approved.product, location: approved.location } : params.structuredActivity
+    // The approved caller and location are free text an operator can edit, so
+    // they are sanitized like the summary; interaction and product are enums.
+    const redactIfPresent = (value: string | null | undefined) => (value ? sanitizeCrmText(value) : undefined);
+    const detail = approved ? { caller: redactIfPresent(approved.caller), eventType: approved.interaction, service: approved.product, location: redactIfPresent(approved.location) } : params.structuredActivity
       ? {
           caller: [contact?.first_name, contact?.last_name].filter(Boolean).join(" ") || undefined,
           relationship: call.caller_relationship ?? undefined,

@@ -7,7 +7,9 @@ import type { TelnyxWebhookEnvelope } from "@/lib/providers/telnyx/webhook";
 
 export function metadataOnly(event: TelnyxWebhookEnvelope): TelnyxWebhookEnvelope {
   const payload: Record<string, unknown> = {};
-  for (const key of ["call_control_id", "call_session_id", "conversation_id", "to", "start_time", "end_time", "duration_secs"]) {
+  // Every correlation and duration key the Telnyx helpers accept, so a
+  // metadata-only event still correlates and still carries its duration.
+  for (const key of ["call_control_id", "call_session_id", "conversation_id", "call_leg_id", "to", "start_time", "end_time", "duration_sec", "duration_secs", "duration_seconds"]) {
     const value = event.data.payload[key];
     if (typeof value === "string" || typeof value === "number") payload[key] = value;
   }

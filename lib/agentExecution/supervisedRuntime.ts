@@ -113,6 +113,27 @@ export async function resolveSupervisedTenantForNumber(
 }
 
 /**
+ * Re-checks that supervised execution is still authorized for an account.
+ *
+ * The execution gate is an operational kill switch: assistant initialization
+ * fails closed when it is revoked, so an external effect approved before the
+ * revocation must not be allowed to bypass it afterwards.
+ */
+export async function supervisedExecutionAuthorized(accountId: string): Promise<boolean> {
+  if (!db) return false;
+  const profile = await db.agentProfile.findFirst({
+    where: { account_id: accountId, type: "supervised_receptionist", enabled: true },
+    orderBy: { created_at: "asc" },
+  });
+  if (!profile) return false;
+  const resolved = resolveTenantExecutionPolicy({
+    profilePolicy: profile.system_policy_json,
+    authorizedGates: authorizedExecutionGates(),
+  });
+  return resolved.degraded === null && resolved.mode !== "PROSPECT_DEMO";
+}
+
+/**
  * Records that a supervised number carried inbound traffic. Never moves the
  * assignment's lifecycle; the prospect lane's quarantine logic is untouched.
  */

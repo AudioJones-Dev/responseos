@@ -4,7 +4,7 @@ import { ReviewPayloadSchema, reviewMessage } from "@/lib/callReview/contracts";
 import { decideCallReview, dispatchCallReview } from "@/lib/callReview/service";
 
 const mocks = vi.hoisted(() => ({
-  session: vi.fn(), crm: vi.fn(), send: vi.fn(),
+  session: vi.fn(), crm: vi.fn(), send: vi.fn(), gate: vi.fn(),
   db: {
     $transaction: vi.fn(), $executeRaw: vi.fn(),
     callReview: { findUnique: vi.fn(), findFirst: vi.fn(), updateMany: vi.fn(), update: vi.fn() },
@@ -15,6 +15,7 @@ vi.mock("@/lib/db/client", () => ({ db: mocks.db }));
 vi.mock("@/lib/auth/session", () => ({ getCurrentSession: mocks.session }));
 vi.mock("@/lib/crm/syncFinalizedCall", () => ({ runCrmSyncForCall: mocks.crm }));
 vi.mock("@/lib/providers/email", () => ({ getEmailProvider: () => ({ providerId: "resend", send: mocks.send }) }));
+vi.mock("@/lib/agentExecution/supervisedRuntime", () => ({ supervisedExecutionAuthorized: mocks.gate }));
 
 const payload = ReviewPayloadSchema.parse({ caller: "Fictional caller", phone: "+15555550199", interaction: "new_sales", product: "ramp", location: "Example city", summary: "Requested a ramp evaluation.", qualification: "qualified", outcome: "QUALIFIED_FREE_EVALUATION", urgency: "medium", callbackWindow: "Tomorrow afternoon", nextAction: "Call to discuss evaluation.", flags: [] });
 const now = new Date();
@@ -28,6 +29,7 @@ beforeEach(() => {
   mocks.db.callReview.findFirst.mockResolvedValue({ ...base });
   mocks.db.callReview.updateMany.mockResolvedValue({ count: 1 });
   mocks.db.call.findFirst.mockResolvedValue({ transcript: "caller: I need a ramp", summary: "summary" });
+  mocks.gate.mockResolvedValue(true);
   mocks.crm.mockResolvedValue({ ok: true, data: { status: "succeeded" } });
   mocks.send.mockResolvedValue({ providerMessageId: "email-1" });
 });
@@ -109,6 +111,20 @@ test("a lost dispatch claim produces no effects", async () => {
 test("provider accepted emails are never resent", async () => {
   approved({ email_status: "accepted" });
   await dispatchCallReview("review"); expect(mocks.send).not.toHaveBeenCalled();
+});
+
+test("a revoked execution gate produces no effects", async () => {
+  approved(); mocks.gate.mockResolvedValue(false);
+  await expect(dispatchCallReview("review")).rejects.toThrow("execution_gate_not_authorized");
+  expect(mocks.db.callReview.updateMany).not.toHaveBeenCalled();
+  expect(mocks.crm).not.toHaveBeenCalled(); expect(mocks.send).not.toHaveBeenCalled();
+});
+
+test("the dispatching operator is audited", async () => {
+  approved();
+  await dispatchCallReview("review");
+  expect(mocks.db.auditLog.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ action: "call_review_dispatch_attempt", actor_user_id: "operator" }) }));
+  expect(mocks.db.auditLog.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ action: "call_review_dispatch_outcome", metadata_json: expect.objectContaining({ outcome: "accepted" }) }) }));
 });
 
 test("old ambiguous email attempts require reconciliation", async () => {

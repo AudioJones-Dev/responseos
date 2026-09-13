@@ -7,6 +7,7 @@ import { contentHash } from "@/lib/prospectBootstrap/memory";
 import { extractTelnyxCallInsight } from "@/lib/providers/telnyx/insights";
 import { BusinessMemorySnapshotSchema } from "@/lib/prospectBootstrap/contracts";
 import { readOperatingConfigurationValue } from "@/lib/agentExecution/operatingConfiguration";
+import { supervisedExecutionAuthorized } from "@/lib/agentExecution/supervisedRuntime";
 import { runCrmSyncForCall } from "@/lib/crm/syncFinalizedCall";
 import { getEmailProvider } from "@/lib/providers/email";
 import { FRL_INTERACTIONS, FRL_OUTCOMES, ReviewPayloadSchema, reviewMessage, type ReviewPayload } from "./contracts";
@@ -71,22 +72,35 @@ export async function decideCallReview(id: string, revision: number, action: "ap
 }
 
 export async function dispatchCallReview(id: string) {
-  await requireReviewOperator();
+  const operator = await requireReviewOperator();
   if (!db) throw new Error("database_unavailable");
   const row = await db.callReview.findUnique({ where: { id } });
   if (!row || row.status !== "approved") throw new Error("approval_required");
-  const latest = await db.callReview.findFirst({ where: { account_id: row.account_id, call_id: row.call_id }, orderBy: { revision: "desc" } });
-  if (latest?.id !== id) throw new Error("stale_review");
-  const prior = await db.callReview.findFirst({ where: { account_id: row.account_id, call_id: row.call_id, id: { not: id }, OR: [{ dispatch_at: { not: null } }, { email_attempt_at: { not: null } }, { crm_status: { not: "pending" } }] } });
-  if (prior) throw new Error("prior_revision_requires_reconciliation");
-  if (row.dispatch_at) throw new Error("dispatch_in_progress_or_uncertain");
-  const claim = await db.callReview.updateMany({ where: { id, account_id: row.account_id, status: "approved", dispatch_at: null }, data: { dispatch_at: new Date() } });
-  if (!claim.count) throw new Error("dispatch_in_progress_or_uncertain");
+  // The execution gate can be revoked between approval and dispatch. Assistant
+  // initialization fails closed on it, so this path must too before it writes
+  // to a CRM or sends mail.
+  if (!(await supervisedExecutionAuthorized(row.account_id))) throw new Error("execution_gate_not_authorized");
+  const audit = (action: string, metadata: Prisma.InputJsonValue) => db!.auditLog.create({ data: { account_id: row.account_id, actor_type: "user", actor_user_id: operator.user.id, actor_role: operator.user.role, action, category: "workflow", target_type: "CallReview", target_id: id, metadata_json: metadata } });
+  // Claiming under the queue's lock keeps a revision created by late evidence
+  // from slipping in between the latest-revision check and the claim.
+  await db.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${row.account_id + ":" + row.call_id}))`;
+    const latest = await tx.callReview.findFirst({ where: { account_id: row.account_id, call_id: row.call_id }, orderBy: { revision: "desc" } });
+    if (latest?.id !== id) throw new Error("stale_review");
+    const prior = await tx.callReview.findFirst({ where: { account_id: row.account_id, call_id: row.call_id, id: { not: id }, OR: [{ dispatch_at: { not: null } }, { email_attempt_at: { not: null } }, { crm_status: { not: "pending" } }] } });
+    if (prior) throw new Error("prior_revision_requires_reconciliation");
+    const claim = await tx.callReview.updateMany({ where: { id, account_id: row.account_id, status: "approved", dispatch_at: null }, data: { dispatch_at: new Date() } });
+    if (!claim.count) throw new Error("dispatch_in_progress_or_uncertain");
+  });
+  await audit("call_review_dispatch_attempt", { revision: row.revision });
   const value = ReviewPayloadSchema.parse(row.payload_json);
   try {
     const crm = await runCrmSyncForCall({ accountId: row.account_id, callId: row.call_id, requireLiveProvider: true, reviewId: id });
     await db.callReview.update({ where: { id, account_id: row.account_id }, data: { crm_status: crm.ok ? crm.data.status : "failed" } });
-    if (row.email_status === "accepted") return { status: "already_accepted" };
+    if (row.email_status === "accepted") {
+      await audit("call_review_dispatch_outcome", { revision: row.revision, outcome: "already_accepted", crmStatus: crm.ok ? crm.data.status : "failed" });
+      return { status: "already_accepted" };
+    }
     if (row.email_attempt_at && Date.now() - row.email_attempt_at.getTime() >= 23 * 60 * 60 * 1000) throw new Error("email_delivery_requires_reconciliation");
     const provider = getEmailProvider();
     if (provider.providerId !== "resend") throw new Error("live_email_disabled");
@@ -94,9 +108,11 @@ export async function dispatchCallReview(id: string) {
     const message = reviewMessage(value, row.call_id);
     const sent = await provider.send({ to: row.recipient, ...message, idempotencyKey: `review:${id}` });
     await db.callReview.update({ where: { id, account_id: row.account_id }, data: { email_status: "accepted", email_message_id: sent.providerMessageId } });
+    await audit("call_review_dispatch_outcome", { revision: row.revision, outcome: "accepted" });
     return { status: "accepted" };
   } catch (error) {
     await db.callReview.update({ where: { id, account_id: row.account_id }, data: { email_status: row.email_status === "accepted" ? "accepted" : "failed" } });
+    await audit("call_review_dispatch_outcome", { revision: row.revision, outcome: "failed", error: error instanceof Error ? error.message : "dispatch_failed" });
     throw error;
   } finally {
     await db.callReview.update({ where: { id, account_id: row.account_id }, data: { dispatch_at: null } });
