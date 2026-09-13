@@ -38,11 +38,18 @@ export const INBOUND_LEAD_QUALIFICATION_CAPABILITY: CapabilityDescriptor = Objec
     "lead_event",
     "service_area",
   ] as const),
-  // `service_area_match` is non-nullable on `LeadQualification`, so it cannot be
-  // left unknown; `leadQualificationScore` weights it at 30 of 100.
+  // Mirrors the mandatory inputs of `leadQualificationScore`, not the columns
+  // that happen to look important. `LeadQualificationInput` requires
+  // `serviceAreaMatch` and `urgency` — the latter indexes `URGENCY_WEIGHT`
+  // directly, so a missing value scores `undefined`. `serviceRequested` is
+  // optional there (worth 10 of 100 when present) and is therefore *not*
+  // required here, despite `service_needed` being the more obvious-looking
+  // field. An earlier draft listed `service_needed` and omitted `urgency`,
+  // which would have rejected scoreable leads and admitted unscoreable ones
+  // the moment anything started trusting this list. Raised by Codex on #174.
   requiredKnownFields: Object.freeze([
     "service_area_match",
-    "service_needed",
+    "urgency",
   ] as const),
   minimumExecutionMode: "PROSPECT_DEMO",
   allowedTools: Object.freeze([] as const),

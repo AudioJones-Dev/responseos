@@ -10,6 +10,7 @@ import {
   type CapabilityDescriptor,
 } from "@/lib/capabilities";
 import { PROSPECT_DEMO_POLICY } from "@/lib/prospectBootstrap/policy";
+import { leadQualificationScore } from "@/lib/scoring/leadQualificationScore";
 import { PROSPECT_RECEPTIONIST_TEMPLATE } from "@/lib/prospectBootstrap/template";
 
 function mutate(
@@ -227,6 +228,48 @@ describe("descriptor permission surface is deeply immutable", () => {
     for (const capability of CAPABILITIES) {
       expect(Object.isFrozen(capability.allowedTools)).toBe(true);
     }
+  });
+});
+
+describe("requiredKnownFields tracks the deterministic scorer", () => {
+  // Without this, `requiredKnownFields` is prose that drifts from the rule it
+  // claims to describe — which is exactly how it came to list an optional field
+  // while omitting a mandatory one.
+  test("a lead missing a required field cannot be scored meaningfully", () => {
+    const complete = {
+      serviceAreaMatch: true,
+      urgency: "high",
+    } as const;
+    expect(Number.isFinite(leadQualificationScore(complete))).toBe(true);
+
+    // `urgency` indexes URGENCY_WEIGHT directly; absent, the score is NaN.
+    const missingUrgency = { serviceAreaMatch: true } as unknown as Parameters<
+      typeof leadQualificationScore
+    >[0];
+    expect(Number.isFinite(leadQualificationScore(missingUrgency))).toBe(false);
+  });
+
+  test("the optional field is genuinely optional to the scorer", () => {
+    const withoutService = leadQualificationScore({
+      serviceAreaMatch: true,
+      urgency: "high",
+    });
+    const withService = leadQualificationScore({
+      serviceAreaMatch: true,
+      urgency: "high",
+      serviceRequested: "hvac repair",
+    });
+    expect(Number.isFinite(withoutService)).toBe(true);
+    expect(withService).toBeGreaterThan(withoutService);
+    expect(
+      INBOUND_LEAD_QUALIFICATION_CAPABILITY.requiredKnownFields,
+    ).not.toContain("service_needed");
+  });
+
+  test("declares exactly the scorer's mandatory inputs", () => {
+    expect([...INBOUND_LEAD_QUALIFICATION_CAPABILITY.requiredKnownFields]).toEqual(
+      ["service_area_match", "urgency"],
+    );
   });
 });
 
