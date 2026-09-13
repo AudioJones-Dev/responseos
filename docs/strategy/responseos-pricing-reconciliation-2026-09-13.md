@@ -63,13 +63,17 @@ Acceptance criteria:
 
 **Agent role:** Prepare the changes for pinned-version CI and eligible independent review. Claude Code is used only as an independent read-only reviewer; Codex remains the authoring agent. Broader homepage/product claims outside the commercial section remain a separate content audit.
 
+## Review follow-up scope
+
+PR #176 review follow-up corrects stale implementation-status wording, adds commercial supersession notices to the canonical brand voice and positioning documents, and aligns the demo and three industry-page CTAs with the free fit-review destination. The doctrine and intake behavior remain unchanged.
+
 ## Evidence limits and open questions
 
 The initial documentation pass validated 32 added relative file links, dashboard JSON, all 31 doctrine sections, and whitespace. The subsequent public-copy pass passed lint, type checking, 618 unit tests across 54 files, and the production build. Desktop and mobile browser checks verified pricing, tier labels, mobile overflow (content width equals viewport width), metadata, and the `/pricing` to `/audit` link. These checks are self-validation, not independent review.
 
-The first validation used older installed dependencies. A subsequent clean source snapshot based on `ed7a9e708a2b9f71e68da89dca4c89260d9616a9` plus this change set passed `npm ci` (zero vulnerabilities), Prisma generation, lint, typecheck, all 618 unit tests, and the production build under Node 24.18.0 / npm 11.16.0 / Next 16.3.4 / Vitest 4.1.11. No local environment file was copied into that snapshot. CI on the final PR head remains required.
+The first validation used older installed dependencies. A subsequent clean source snapshot based on `ed7a9e708a2b9f71e68da89dca4c89260d9616a9` plus this change set passed `npm ci` (zero vulnerabilities), Prisma generation, lint, typecheck, all 618 unit tests, and the production build under Node 24.18.0 / npm 11.16.0 / Next 16.3.4 / Vitest 4.1.11. No local environment file was copied into that snapshot. This is historical validation evidence; current-head checks are recorded on PR #176.
 
-Local Postgres integration validation could not run: Docker Desktop failed while initializing its inference socket, before its Linux engine became available. No existing database was used or reset. The repository's Postgres 16 CI job is the remaining integration validation path. This local limitation is not a passing integration result.
+Docker Desktop initially failed while initializing its inference socket. Validation subsequently used a new disposable loopback PostgreSQL 16.15 cluster: migration drift check, all 13 migrations, seed, 156 integration tests across 12 files, and the database-backed build passed on commit `9a83e85a63a16fb05c3e7dff73d7f6899000e1a0`. That commit also passed local lint, typecheck, 626 unit tests, and both CI jobs. The disposable server was stopped; no existing database was used or reset. These results apply to that commit, not automatically to later review fixes; PR #176 carries current-head validation and independent-review evidence.
 
 - The doctrine's market-validation claims are supplied by the owner; this pass does not audit the underlying market-pricing research.
 - Actual FRL hours, provider costs, QA, exceptions, support burden, and margins remain unmeasured here. Doctrine section 30 governs their validation.

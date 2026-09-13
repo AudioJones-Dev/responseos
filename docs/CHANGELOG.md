@@ -7,7 +7,7 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 ## Unreleased — align commercial doctrine and public pricing (#176)
 
 - Record owner-ratified Pricing & Commercial Doctrine v1.0 and ADR-0054; mark conflicting legacy commercial references historical while preserving runtime and attribution gates.
-- Align pricing, assessment, and homepage commercial copy with bounded Pilot pricing, conditional assessment, transparent provider usage, and target-offering readiness labels. Intake behavior is unchanged.
+- Align pricing, assessment, and homepage commercial copy with bounded Pilot pricing, conditional assessment, transparent provider usage, and target-offering readiness labels. Intake behavior is unchanged. Review follow-up aligns demo/industry CTAs, supersedes legacy canonical brand offers, and corrects implementation-status records.
 
 ## Unreleased — docs: canonical FRL inbound intake & routing policy
 
