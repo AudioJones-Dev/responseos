@@ -437,3 +437,177 @@ narrowest safe default recommended for each.
 **Recommendation: do not proceed into implementation beyond increment 1 (ADR-0054) without
 operator sign-off**, because the reduced scope materially narrows what the brief requested — and
 scaling work down is the operator's call, not the agent's.
+
+---
+
+# Increment Plan (operator-directed, 2026-09-13)
+
+Added after the operator ratified the ADR-0054 direction and revised the implementation
+strategy. This section supersedes §13's sequence. Sections 1–16 above remain the
+current-state assessment that justified it.
+
+## A. Evidence supporting the ADR-0054 decision
+
+| Claim | Evidence at `ec4eb1d` |
+|---|---|
+| Git is already the definition-of-record | `lib/agentExecution/policy.ts` docstring: `service.ts` compares stored `AgentProfile.system_policy_json` **byte-identically** against the frozen Git constant, "so its shape and values must not drift" |
+| Published versions are already checksummed | `PROSPECT_RECEPTIONIST_TEMPLATE_CHECKSUM` = SHA-256 over the frozen template; `validateProspectAssistantPreflight` throws `assistant_template_checksum_mismatch` |
+| Version labels already exist alongside checksums | `PROSPECT_AGENT_TEMPLATE_VERSION = "home-services-receptionist.v1"`; `BootstrapPromotionManifestSchema` pins it with `z.literal` |
+| Publication-by-manifest is already proven | `BootstrapPromotion.manifest_hash`, `validatePromotionManifest`, `assertNoForbiddenPromotionKeys` |
+| Tenant config already narrows, never widens | `AgentProfilePolicy`: "can only narrow what the claim-authority matrix already permits — `escalate` categories can be made `refuse`, never `answer`"; `parseAgentProfilePolicy` falls back to the strict default so "a malformed policy must never widen" |
+| Default-deny is already structural | `resolveExecutionPolicy` returns `PROSPECT_DEMO_POLICY` on unrecognised mode or unauthorized gate |
+| A canonicalizing hash helper already exists | `contentHash` (`lib/prospectBootstrap/memory.ts`) = SHA-256 over `stableJson` |
+| No generic engine exists | No step walker, condition evaluator, or suspend/resume primitive in `lib/` |
+| Hardcoded orchestration does exist | `runCrmSyncForCall`; `answerProfessionalQuestion` → `applyPolicy` |
+
+## B. Contradictions and alternatives considered
+
+**Database-of-record with a draft UI.** Rejected *for now*, not forever (ADR-0054 q11/q12).
+It inverts a pattern the repo already relies on, makes immutability a thing to defend rather
+than a property, and needs a new in-app publication authority that partially duplicates the
+human merge gate the governance kernel reserves.
+
+**A four-state evidence enum (`KNOWN`/`INFERRED`/`ASSUMED`/`UNKNOWN`) from the brief.**
+**Rejected — the repository already has a richer, real vocabulary.** `KnowledgeFactStatusSchema`
+is `source_observed | cross_source_confirmed | operator_approved_for_demo | owner_confirmed |
+conflicted | rejected`, and `knowledgeFallback: "verified_only"` is the receptionist's rule.
+Adding a parallel four-state enum would be the research ontology overriding repository evidence,
+which decision 8 forbids. The shared abstraction is **required-known fields**, expressed over
+existing vocabulary.
+
+**A new trigger enum.** Rejected. `AutomationTriggerType` (`missed_call`, `after_hours_call`,
+`new_lead`, …) and `LeadEventType` already exist. Inventing a third is the collision ADR-0054
+decision 9 names.
+
+**A third hash helper.** Rejected. `contentHash` canonicalizes key order; capability checksums
+reuse it. Accepted coupling: `lib/capabilities` imports one pure function from
+`lib/prospectBootstrap/memory`. Revisit only if a third consumer appears.
+
+**Naming resolution (ADR-0054 decision 9), settled here.** **"Capability"** is the term for a
+governed unit of ResponseOS behaviour. **`Automation`** keeps its current meaning — n8n trigger
+configuration (ADR-0017) — and is not renamed. The **`playbooks`** admin stub is retargeted in
+Increment 7, not now. "Template" stays scoped to the provider-assistant artifact it already names.
+
+## C. Consequences
+
+Capability authoring remains an engineering activity; an operator who cannot open a PR cannot
+author a capability. Immutability stays free. The human merge stays the single publication
+authority. Existing primitives are extended, never displaced. The `operator`-as-author question
+stays explicitly open (ADR-0054 decision 10).
+
+## D. Migration path toward database-backed authoring
+
+Additive and reversible. (1) Evidence accumulates against ADR-0054 q11. (2) A superseding ADR
+answers q12. (3) Draft rows land in Postgres as *mutable* records with no runtime authority.
+(4) Publication resolves a draft into a frozen artifact, checksums it with `contentHash`, and
+writes the checksum into a release assignment. (5) Runtime continues to resolve by checksum and
+cannot tell whether the artifact originated in Git or a draft. Git-defined capabilities keep
+resolving throughout; the two models coexist.
+
+## E. Proposed second capability — Inbound Lead Qualification
+
+**Chosen over Missed Call Recovery on gate evidence.** Missed Call Recovery's core action is
+outbound contact, and `outboundEnabled` is `false` at every mode except `MANAGED_AUTONOMY`, whose
+gate is `post-pilot-operator-authorization`. It cannot be exercised. Inbound is permitted at every
+mode (`inboundOnly: true` permits inbound), and the qualification tail is already modelled:
+`leadQualificationScore`, `LeadQualification`, `QualificationStatus`, and a writer in
+`lib/providers/telnyx/normalize.ts`. Booking is the gated part and is **excluded** — the capability
+terminates at a qualification outcome.
+
+**The duplication it exposes — the key proof point.** The same business decision is computed two
+ways depending on entry path:
+
+| Path | How the score is produced |
+|---|---|
+| `app/api/leads/[id]/qualify/route.ts` | `leadQualificationScore(parsed.data)` — deterministic, weighted, inspectable |
+| `lib/providers/telnyx/normalize.ts` | `boundedScore(insight.qualification?.score, status)` — trusts the provider's number, falls back to literals `80`/`20`/`50` |
+
+This is precisely the "LLM decides everything" pattern the brief warns against, present in the
+repository today, and it is evidence-grounded rather than inferred. Capability #2's substance in
+Increment 2 is routing the provider path through the deterministic rule: provider extracts
+structured values, ResponseOS computes the score.
+
+**This is documented, not fixed, in Increment 1.** Changing `normalize.ts` scoring behaviour is a
+business-logic change on a provider ingest path and belongs in its own reviewable increment.
+
+## F. Increment 1 — smallest implementation plan
+
+**Goal: prove the contract is *describable*, not *executable*.** Two descriptors plus a governance
+validator demonstrate that one contract fits two real capabilities. Neither executes through
+shared primitives; that is Increment 3, after Increment 2 implements capability #2's behaviour.
+Nothing in Increment 1 changes runtime behaviour.
+
+**Field-by-field justification** (a field is carried only if *both* capabilities need it):
+
+| Field | Cap #1 receptionist | Cap #2 qualification | Carried? |
+|---|---|---|---|
+| `slug` / `name` | `prospect-receptionist` | `inbound-lead-qualification` | yes |
+| `versionLabel` | `home-services-receptionist.v1` | `inbound-lead-qualification.v1` | yes |
+| `checksum` | derived | derived | yes (derived, not stored) |
+| `objective` | answer from verified facts, capture callback | produce a scored qualification | yes |
+| `trigger` | inbound call | inbound call / lead form | yes — reuses existing vocabulary |
+| `requiredContext` | approved `BusinessMemorySnapshot` | contact, lead event, service area | yes |
+| `requiredKnownFields` | verified facts only | `service_area_match` (non-nullable on `LeadQualification`) | yes |
+| `executionMode` | `PROSPECT_DEMO` | `PROSPECT_DEMO` (min) | yes |
+| `allowedTools` | `["hangup"]` | `[]` | yes — `[]` is meaningful under intersection |
+| `producesRecords` | `Call`, `CallTranscript`, `Contact`, `LeadEvent` | `LeadEvent`, `LeadQualification` | yes — both grounded in `normalize.ts` writers |
+| `readinessGates` | mode activation gate + operating config | same | yes |
+| generic `steps[]` | — | — | **NO** — no engine; would be ontology, not evidence |
+| `evidenceEnum` 4-state | — | — | **NO** — existing vocabulary covers it |
+| `componentVersions[]` | — | — | **NO** — containment already pins them (ADR-0054 q7) |
+
+**Why each new abstraction exists** (ADR-0054 decision 8):
+
+- `CapabilityDescriptor` — the one new abstraction. Justified because two real capabilities share
+  every field above; without it there is no way to state "capability N" at all.
+- `capabilityChecksum` — a thin wrapper over existing `contentHash`, so a descriptor is identified
+  the same way a template already is. Not a new hashing scheme.
+- `validateCapabilityGovernance` — one pure function. Justified because ADR-0054 decision 5's
+  intersection rule is otherwise unenforceable and untested.
+
+No other abstraction is introduced.
+
+## G. Files expected to change — Increment 1
+
+```
+lib/capabilities/contract.ts                          new  — CapabilityDescriptor + checksum
+lib/capabilities/validate.ts                          new  — governance validator (pure)
+lib/capabilities/descriptors/receptionist.ts          new  — cap #1, wraps existing constants
+lib/capabilities/descriptors/inboundLeadQualification.ts  new — cap #2
+lib/capabilities/index.ts                             new  — registry (frozen array)
+tests/unit/capabilities/contract.test.ts              new
+tests/unit/capabilities/validate.test.ts              new
+docs/CHANGELOG.md                                     edit — PR line
+dashboard/dashboard-data.json                         edit — task state
+```
+
+**Constraint:** cap #1's descriptor **imports and wraps** `PROSPECT_RECEPTIONIST_TEMPLATE` and
+`PROSPECT_DEMO_POLICY`. It never redefines or restructures them — their shapes are byte-compared
+in `lib/prospectBootstrap/service.ts` and the template checksum is surfaced in the admin UI.
+
+## H. Is new schema required?
+
+**No.** Increment 1 adds zero tables, zero columns, zero migrations, zero enum changes. The
+descriptor is a frozen TypeScript module; `typecheck` is its structural validator (`AGENTS.md`
+validates at boundaries only, and internal code is not a boundary). A release-assignment table is
+Increment 5 and only if existing runtime mechanisms cannot represent pinning. Zod is deliberately
+not used here — it earns its place when a real boundary (a DB draft, a CLI input) appears.
+
+## I. Increment sequence (revised, operator-directed)
+
+| # | Increment | Status |
+|---|---|---|
+| 0 | ADR-0054 | done |
+| 1 | Capability contract + two descriptors + governance validator | **this PR** |
+| 2 | Implement capability #2 behaviour; document what stayed bespoke | next |
+| 3 | Minimal executor extraction — only from duplication two capabilities prove | gated on 2 |
+| 4 | Simulation + trace | gated on 3 |
+| 5 | Runtime assignment / pinning | gated on 4 |
+| 6 | Semantic review tooling (CLI/report first) | gated on 5 |
+| 7 | Authoring-interface decision, on measured friction | gated on 6 |
+
+## J. Builder-UI gate
+
+Not built until **at least two** of ADR-0054 q11's conditions are demonstrated. Until then, Git
+plus typed contracts plus validation plus simulation is treated as the authoring system, not as a
+placeholder for one.
