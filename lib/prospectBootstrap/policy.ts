@@ -29,7 +29,12 @@ export const PROSPECT_DEMO_POLICY = Object.freeze({
   outboundEnabled: false,
   transferEnabled: false,
   providerMemoryEnabled: false,
-  allowedTools: ["hangup"],
+  // Frozen because `Object.freeze` is shallow: without this the array inside
+  // the frozen policy stays mutable, and anything aliasing it — a capability
+  // descriptor, say — shares mutable state with the policy export. Freezing
+  // does not change the serialized value, so the `stableJson` comparison in
+  // `service.ts` is unaffected.
+  allowedTools: Object.freeze(["hangup"]),
   requiredDisclosure: "This is an automated ResponseOS demonstration. This call may be transcribed for the supervised demonstration, but it is not being recorded.",
   uncertaintyFallback: "I don't have verified information available for that. I can capture a request for a human callback.",
   prohibitedAdvice: ["medical", "legal", "financial", "emergency"],

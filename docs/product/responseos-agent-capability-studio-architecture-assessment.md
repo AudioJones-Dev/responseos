@@ -3,7 +3,7 @@
 **Status:** §1–16 are assessment (`DOCUMENTED_ONLY`). The increment plan below is operator-directed (2026-09-13), and **Increment 1 is implemented in the same PR as this document**. Nothing beyond Increment 1 is authorized here.
 **Date:** 2026-09-13
 **Base commit:** `ec4eb1d`
-**Author:** Claude Opus 5 (agent-authored; requires independent review per `AGENTS.md`)
+**Author:** Claude Opus 5 (agent-authored; requires independent review per operator governance policy)
 **Requested by:** Operator brief, "ResponseOS Agent Capability Studio"
 
 > This is the "First Deliverable" the brief requires before implementation. It answers the
@@ -105,7 +105,7 @@ premature at N=1 without an engine.
 | Hash-pinned publication manifest | **VERIFIED SHIPPED** | `BootstrapPromotion` (`schema.prisma:916`): `manifest_json`, `manifest_hash`, `source_snapshot_hash`, draft→exported→imported; `validatePromotionManifest` + `assertNoForbiddenPromotionKeys` | The brief's "publication resolution to deterministic manifest" has a working precedent. |
 | Git-as-source-of-truth for policy | **VERIFIED SHIPPED** | `lib/agentExecution/policy.ts` docstring: `service.ts` "compares a stored `AgentProfile.system_policy_json` against that frozen object, so its shape and values must not drift" | The repo has **already decided** definition lives in Git, DB holds the assignment. |
 | Audit substrate | **VERIFIED SHIPPED** | `AuditLog` (`schema.prisma:645`) with `before_ref`/`after_ref`/`category`/`target_type`; real writers in `lib/auth/clerk-sync.ts`, `lib/data/prospectIntakes.ts`, `lib/professional/intake.ts`, `lib/prospectBootstrap/service.ts` | Publication and permission-broadening audit can reuse this directly. `AuditCategory.workflow` already exists. |
-| Approval workflow | **VERIFIED SHIPPED** | `app/api/admin/prospect-bootstraps/[id]/approve|activate|complete/route.ts`; `BootstrapPromotionStatus` | An operator approval lifecycle exists and is a usable model. It is **request/response**, not a *suspended execution* gate. |
+| Approval workflow | **VERIFIED SHIPPED** | `app/api/admin/prospect-bootstraps/[id]/approve\|activate\|complete/route.ts`; `BootstrapPromotionStatus` | An operator approval lifecycle exists and is a usable model. It is **request/response**, not a *suspended execution* gate. |
 | Mock-first provider resolution | **VERIFIED SHIPPED** | `lib/providers/resolve.ts` (ADR-0001): env-absent → mock; `createLive` omitted → always mock | Simulation can run safely today. Strongest enabler in the repo. |
 | Test + fixture infrastructure | VERIFIED | 65 test files; `tests/{unit,integration,e2e,fixtures,factories}`; tenant-isolation matrix in `data-tenant-matrix.integration.test.ts` | Simulation harness has foundations. |
 | Operator role exists | VERIFIED | `UserRole` enum (`schema.prisma:42`): `aj_admin`, `operator`, `client_admin`, `client_viewer` | A non-engineer operator persona is modeled. *Whether staff in that role author capabilities today* is **UNKNOWN** — operator decision. |

@@ -121,9 +121,44 @@ describe("governance validation", () => {
 });
 
 describe("effective tools are an intersection, never a union", () => {
+  // A capability that legitimately wants `schedule` at a gated mode. Used to
+  // prove the gate is respected: reading the raw policy table would hand it
+  // `schedule` with no authorization at all.
+  const scheduling = mutate(RECEPTIONIST_CAPABILITY, {
+    slug: "scheduling-capability",
+    minimumExecutionMode: "PRODUCTION_SUPERVISED",
+    allowedTools: Object.freeze(["hangup", "schedule"]),
+  });
+
+  test("a gated mode grants nothing extra without its activation gate", () => {
+    expect(effectiveAllowedTools(scheduling, "PRODUCTION_SUPERVISED")).toEqual([
+      "hangup",
+    ]);
+  });
+
+  test("the same mode grants the tool once its named gate is authorized", () => {
+    expect(
+      effectiveAllowedTools(scheduling, "PRODUCTION_SUPERVISED", {
+        authorizedGates: ["v0.3-live-communications"],
+      }),
+    ).toEqual(["hangup", "schedule"]);
+  });
+
+  test("a gate opened for a different mode does not unlock this one", () => {
+    expect(
+      effectiveAllowedTools(
+        mutate(scheduling, { minimumExecutionMode: "MANAGED_AUTONOMY" }),
+        "MANAGED_AUTONOMY",
+        { authorizedGates: ["v0.3-live-communications"] },
+      ),
+    ).toEqual(["hangup"]);
+  });
+
   test("a more permissive mode cannot widen a capability's declared set", () => {
     expect(
-      effectiveAllowedTools(RECEPTIONIST_CAPABILITY, "MANAGED_AUTONOMY"),
+      effectiveAllowedTools(RECEPTIONIST_CAPABILITY, "MANAGED_AUTONOMY", {
+        authorizedGates: ["post-pilot-operator-authorization"],
+      }),
     ).toEqual(["hangup"]);
   });
 
@@ -140,8 +175,29 @@ describe("effective tools are an intersection, never a union", () => {
     }
   });
 
-  test("an unrecognised mode grants nothing", () => {
-    expect(effectiveAllowedTools(RECEPTIONIST_CAPABILITY, "nonsense")).toEqual([]);
+  // Fail-closed here means "degrade to the demo lane", matching
+  // `resolveExecutionPolicy`, which resolves an unrecognised mode to
+  // PROSPECT_DEMO rather than throwing. Deliberately not a second, stricter
+  // fail-closed rule: two different degraded behaviours would be worse than one
+  // shared one, and the demo lane is already the most restrictive policy.
+  test("an unrecognised mode grants no more than the demo lane", () => {
+    expect(effectiveAllowedTools(RECEPTIONIST_CAPABILITY, "nonsense")).toEqual([
+      "hangup",
+    ]);
+    expect(
+      effectiveAllowedTools(INBOUND_LEAD_QUALIFICATION_CAPABILITY, "nonsense"),
+    ).toEqual([]);
+  });
+
+  test("an unrecognised mode cannot grant a gated tool", () => {
+    expect(
+      effectiveAllowedTools(
+        mutate(RECEPTIONIST_CAPABILITY, {
+          allowedTools: Object.freeze(["hangup", "schedule"]),
+        }),
+        "nonsense",
+      ),
+    ).toEqual(["hangup"]);
   });
 
   test("a tool the mode withholds is dropped rather than granted", () => {
@@ -151,6 +207,26 @@ describe("effective tools are an intersection, never a union", () => {
     expect(effectiveAllowedTools(overreaching, "PROSPECT_DEMO")).toEqual([
       "hangup",
     ]);
+  });
+});
+
+describe("descriptor permission surface is deeply immutable", () => {
+  // Object.freeze is shallow, so a frozen descriptor aliasing an unfrozen array
+  // would share mutable state with its source and let the checksum drift within
+  // a single process.
+  test("allowedTools cannot be mutated through the descriptor", () => {
+    const before = capabilityChecksum(RECEPTIONIST_CAPABILITY);
+    expect(Object.isFrozen(RECEPTIONIST_CAPABILITY.allowedTools)).toBe(true);
+    expect(() => {
+      (RECEPTIONIST_CAPABILITY.allowedTools as string[]).push("schedule");
+    }).toThrow();
+    expect(capabilityChecksum(RECEPTIONIST_CAPABILITY)).toBe(before);
+  });
+
+  test("every registered capability's tool list is frozen", () => {
+    for (const capability of CAPABILITIES) {
+      expect(Object.isFrozen(capability.allowedTools)).toBe(true);
+    }
   });
 });
 
