@@ -264,7 +264,7 @@ The deep research report defined an event-ledger-first canonical model. v0.2 has
 | `outcome_fees` | Computed performance fees per period per tenant with evidence references |
 | `billing_events` | Stripe-side billing state changes mirrored locally (invoice.created, paid, refunded) |
 | `files` / `media` | Uploaded artifacts (quote photos, recordings, exports) with R2/S3 keys + retention policy |
-| `consent_records` | Per-contact consent state (recording, AI handling, marketing) with jurisdiction + timestamp |
+| `consent_records` | Consent evidence for recording, AI handling and marketing. Per **ADR-0055** the record of authority is a **per-call immutable event** — the disclosure presented, the grant or withdrawal, the timestamp, the jurisdiction basis — tied to the call and the artifact class it authorises; append-only, so a withdrawal is a new event rather than a mutation. Per-contact state is a **derived summary** of that stream for routing and preference, never the evidence relied on to justify a retained artifact. Recording and transcript persistence are evaluated independently. Absence of an event is refusal. **Not implemented** — absent from all Prisma models; see the readiness contract |
 
 ### Why event-ledger-first
 

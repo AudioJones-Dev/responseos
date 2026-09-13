@@ -286,13 +286,15 @@ is urgent; or agent confidence is below the approved threshold.
 
 1. Offer a callback.
 2. Collect the preferred callback window.
-3. Create the CRM follow-up task **where the outcome is qualified**. An escalation that is not also
-   qualified is outside the ratified closure scope (§16) until ADR-0047 is amended; the escalation
-   is still *specified* to be captured by steps 4 and 5. Note what that does and does not mean:
-   this document is `DOCUMENTED_ONLY`, and neither the ledger escalation record nor the
-   completed-interaction notification is built — `lib/notifications` holds no implementation. Until
-   they ship, withholding the CRM task leaves an unqualified escalation with **no automated
-   fallback**, reaching a human only through whatever manual review the operator runs.
+3. Create the CRM follow-up task **where the interaction is qualified**, as the shipped
+   `qualification_status` field determines (§16). An escalation that is not qualified falls outside
+   the ratified closure scope until ADR-0047 is amended; steps 4 and 5 are *specified* to carry it
+   instead. Note what that does and does not mean: this document is `DOCUMENTED_ONLY`, and neither
+   the ledger escalation record nor the completed-interaction notification is built —
+   `lib/notifications` holds no implementation. Until they ship and are verified end to end,
+   withholding the CRM task leaves an unqualified escalation with **no automated fallback**,
+   reaching a human only through whatever manual review the operator runs. This is a demo blocker
+   (§15), not a residual risk.
 4. Persist the escalation in the ResponseOS ledger.
 5. Send the completed-interaction notification (§12).
 
@@ -367,7 +369,7 @@ All three were resolved by operator decision on 2026-09-13.
 | # | Conflict | Resolution |
 |---|---|---|
 | C-1 | The source specification spells the notification mailbox local-part differently from the address recorded twice in the operator's own 2026-09-11 decisions. A wrong address loses every notification. | **Operator confirmed 2026-09-13: the 2026-09-11 recorded spelling governs**, and the 2026-09-12 specification spelling is superseded. The address itself stays client operational data and is not recorded here — it enters through the operating-configuration write path onto the tenant's `BusinessMemorySnapshot`. |
-| C-2 | The source specification creates HubSpot **Notes** and **Tickets**, and Deals/Companies across three role paths. The binding closure scope is contact + call activity with an enriched `hs_call_body`, a HIGH follow-up task, and **explicitly no Note**. | **Operator ratified the narrow scope 2026-09-13.** Closure scope governs: contact, call activity, HIGH follow-up task **on a qualified outcome**, no Note. Ticket, Deal and Company stay `ROADMAP` (§16) and must not enter the in-flight closure change. The qualified-only trigger was confirmed later the same day after review found that "on escalation" would have widened accepted ADR-0047 (§16). |
+| C-2 | The source specification creates HubSpot **Notes** and **Tickets**, and Deals/Companies across three role paths. The binding closure scope is contact + call activity with an enriched `hs_call_body`, a HIGH follow-up task, and **explicitly no Note**. | **Operator ratified the narrow scope 2026-09-13.** Closure scope governs: contact, call activity, HIGH follow-up task **on a qualified interaction** as the shipped `qualification_status` field determines, no Note. Ticket, Deal and Company stay `ROADMAP` (§16) and must not enter the in-flight closure change. The qualified-only trigger was confirmed later the same day after review found that "on escalation" would have widened accepted ADR-0047. **Which canonical §10 outcomes should count as qualified is a separate, still-open business decision** — §16 records a proposed allowlist that is not ratified and not implemented. |
 | C-3 | The source specification lists operating hours and geography as unresolved. They are already decided: 24/7 including holidays; South and Central Florida with no county inference. | **Operator ratified the recorded decisions 2026-09-13.** 24/7 answering including holidays; South and Central Florida; no county or ZIP inference from a city name. The specification's "unresolved" framing is superseded. |
 
 Resolving C-1 settles which *source* governs the spelling. It does not record the value and does not
@@ -388,7 +390,8 @@ depends on it.
 | G-3 | Callback SLA | §11 task due date |
 | G-4 | Final recording and AI-disclosure wording | §13, any live call |
 | G-11 | A ratified ADR amendment making recording tenant-configurable. ADR-0051 currently keeps it `false` at every tier | Any FRL recording at all — this gate precedes G-4 and G-12 |
-| G-12 | Before enabling recording or transcript persistence, verify that **neither artifact is persisted until the caller gives affirmative consent** following the approved disclosure. Refusal **or no affirmative response** keeps both disabled and routes to the approved non-capturing/manual path. Verify that **withdrawal of consent stops further recording and transcript persistence**. If the provider or runtime cannot enforce these controls, activation remains blocked. **Durable, tenant-scoped consent evidence is a prerequisite, and it must be per-call, not merely per-contact**: immutable consent events tied to the call or artifact, each carrying the disclosure presented and the grant or withdrawal timestamp. The `consent_records` model of [`../../data-schema.md`](../../data-schema.md) is specified as *per-contact* state and is present in none of the Prisma models; per-contact state alone cannot establish which disclosure and grant authorised a particular retained recording or transcript, nor when a withdrawal took effect, so satisfying it literally would leave the audit gap this gate exists to close | Recording **and** transcript persistence on any call. Independent of G-4: approved wording does not make an unenforceable consent path safe. Independent of G-11: keeping recording off postpones the exposure, it does not satisfy this gate |
+| G-12 | Before enabling recording or transcript persistence, verify that **neither artifact is persisted until the caller gives affirmative consent** following the approved disclosure. Refusal **or no affirmative response** keeps both disabled and routes to the approved non-capturing/manual path. Verify that **withdrawal of consent stops further recording and transcript persistence**. If the provider or runtime cannot enforce these controls, activation remains blocked. **Durable, tenant-scoped consent evidence is a prerequisite, and it must be per-call, not merely per-contact**: immutable consent events tied to the call or artifact, each carrying the disclosure presented and the grant or withdrawal timestamp. The shape is governed by **[ADR-0055](../../DECISIONS.md)**: the per-call event is the record of authority and per-contact state is a derived summary, evaluated independently for recording and for transcript persistence, with absence of an event treated as refusal. `consent_records` is present in none of the Prisma models, so this is a migration with a named enforcement point, not a configuration step | Recording **and** transcript persistence on any call. Independent of G-4: approved wording does not make an unenforceable consent path safe. Independent of G-11: keeping recording off postpones the exposure, it does not satisfy this gate |
+| G-13 | A **verified end-to-end escalation fallback**: ledger persistence and the completed-interaction notification of §11 steps 4–5, actually built and demonstrated. `lib/notifications` holds no implementation and no completed-interaction path exists in `lib` or `app`, so an escalation that does not produce a CRM task currently reaches no one automatically | Any demo or pilot in which a follow-up task can be withheld. **Demo blocker**, not a residual risk — the argument that withholding a task is safe rests entirely on this path existing |
 | G-5 | CRM pipeline names and stages | §16 projection |
 | G-6 | Qualification confidence thresholds | `HUMAN_REVIEW_REQUIRED` |
 | G-7 | Whether evaluation is phone, video, or on-site, per product | `QUALIFIED_FREE_EVALUATION` |
@@ -401,30 +404,42 @@ depends on it.
 ## 16. CRM projection — scope split
 
 **In the supervised-pilot closure scope:** contact create/reconcile; call activity with a structured
-summary block in `hs_call_body`; a HIGH-priority follow-up task **on a qualified outcome**. No Note.
+summary block in `hs_call_body`; a HIGH-priority follow-up task **on a qualified interaction**,
+as the shipped `qualification_status` field determines. No Note.
 
-The task trigger is **qualified-only**, matching accepted ADR-0047 — which limits the export to a
-contact, a sanitized call activity and a *qualified* follow-up task — and matching
-`runCrmSyncForCall`, which creates one only when `qualification_status === "qualified"`.
+Two different things have to be stated separately here, and an earlier draft of this section
+wrongly presented them as one.
 
-**Which canonical outcomes qualify (§10) is an explicit allowlist, not an inference.** §10 replaces
-the qualified/not-qualified boolean, so "qualified" needs defining against those outcomes rather
-than left to an implementer to guess:
+**Current behaviour (`SHIPPED`).** `runCrmSyncForCall` creates the follow-up task when
+`qualification_status === "qualified"` — a single retained field. It does **not** evaluate the
+canonical §10 outcome at all. Accepted ADR-0047 likewise speaks of a "qualified follow-up task"
+without reference to the outcome vocabulary. So a builder/GC or commercial inquiry **can** receive
+a task today, whenever the upstream payload marks it qualified. Nothing in the shipped code
+excludes those outcomes.
 
-| Canonical outcome (§10) | Creates the closure-scope task? |
+**Proposed allowlist (`DOCUMENTED_ONLY`, not ratified and not implemented).** §10 replaced the
+qualified/not-qualified boolean with eleven canonical outcomes, so "qualified" has no defined
+meaning against them. The proposal is to define it explicitly:
+
+| Canonical outcome (§10) | Proposed: creates the closure-scope task? |
 |---|---|
-| `QUALIFIED_FREE_EVALUATION` | **Yes** |
-| `QUALIFIED_QUOTE_REVIEW` | **Yes** |
-| Every other outcome in §10 — including `BUILDER_GC_PROJECT_REVIEW`, `COMMERCIAL_PROJECT_REVIEW`, `EXISTING_CUSTOMER_SERVICE`, `EXISTING_PROJECT_FOLLOW_UP`, `HUMAN_REVIEW_REQUIRED` | No, in the closure scope |
+| `QUALIFIED_FREE_EVALUATION` | Yes |
+| `QUALIFIED_QUOTE_REVIEW` | Yes |
+| Every other outcome in §10 — including `BUILDER_GC_PROJECT_REVIEW`, `COMMERCIAL_PROJECT_REVIEW`, `EXISTING_CUSTOMER_SERVICE`, `EXISTING_PROJECT_FOLLOW_UP`, `HUMAN_REVIEW_REQUIRED` | No |
 
-Note the consequence, because it is deliberate rather than an oversight: a live builder/GC or
-commercial project produces **no CRM follow-up task** in this scope. Those are real leads, and
-including them is a defensible future position — but it is broader than ADR-0047 and broader than
-the shipped code, so it needs the amendment below first. The lead is not lost meanwhile: it is
-persisted to the ledger and raised by the completed-interaction notification.
+**This table describes a proposal, not current behaviour, and adopting it is an open business
+decision** — it would exclude live builder/GC and commercial projects, which are real leads. It is
+recorded here so the choice is explicit rather than left to an implementer, not because it has been
+decided. Until it is ratified and the runtime enforces outcomes rather than the single field, the
+`qualification_status` field is what actually governs, and the two must not be described as
+equivalent.
 
-The retained `qualification_status` the implementation checks must agree with this allowlist;
-where the two ever disagree, the allowlist is the specification and the field is the encoding.
+**There is no verified end-to-end fallback for a withheld task, and this is a demo blocker.** §11
+steps 4 and 5 specify ledger persistence and a completed-interaction notification, but this
+document is `DOCUMENTED_ONLY`: `lib/notifications` contains no implementation and no
+completed-interaction path exists in `lib` or `app`. Any reasoning that withholding a CRM task is
+safe *because* the lead still reaches a human is unsupported until that path ships and is verified
+end to end.
 
 §11 calls
 for a follow-up task after an unavailable or failed transfer, and an escalation that is not also
@@ -453,4 +468,6 @@ ResponseOS remains the detailed evidence layer; the CRM receives the operational
 | 2026-09-13 | G-12 further requires a durable tenant-scoped `consent_records` model before activation, so retained audio or text cannot exist without auditable consent evidence. Operator decision. | Claude Opus 5, for Audio |
 | 2026-09-13 | §16 and §11 narrowed to a **qualified-only** follow-up task trigger, matching accepted ADR-0047 and `runCrmSyncForCall`. The §11 escalation-triggered task for outcomes that are not qualified moves to `ROADMAP` pending an ADR-0047 amendment, rather than silently widening ratified closure behaviour. Operator decision; refines the C-2 scope ratified earlier today. | Claude Opus 5, for Audio |
 | 2026-09-13 | G-12's consent evidence made **per-call, not per-contact**: immutable consent events tied to the call or artifact, carrying the disclosure presented and the grant/withdrawal timestamp. Per-contact state cannot attribute a particular retained recording or transcript. Operator decision. | Claude Opus 5, for Audio |
-| 2026-09-13 | §16 gains an **explicit allowlist** of the canonical §10 outcomes that create the closure-scope task — `QUALIFIED_FREE_EVALUATION` and `QUALIFIED_QUOTE_REVIEW` only. §10 replaced the qualified/not-qualified boolean, so "qualified" needed defining against the outcomes rather than inferred. The project-review outcomes are deliberately excluded here and deferred to the roadmap. Operator decision. | Claude Opus 5, for Audio |
+| 2026-09-13 | §16 records a **proposed** allowlist of the canonical §10 outcomes that would create the closure-scope task — `QUALIFIED_FREE_EVALUATION` and `QUALIFIED_QUOTE_REVIEW`. Corrected the same day after review: an earlier draft presented this as settled and as matching shipped behaviour. It is neither. The runtime checks the single `qualification_status` field and never evaluates the canonical outcome, so a builder/GC or commercial inquiry **can** receive a task today. Current behaviour and the proposal are now stated separately; adopting the allowlist is an open business decision. | Claude Opus 5, for Audio |
+| 2026-09-13 | Removed the claim that a withheld task still reaches a human by ledger and notification. Neither is built. Added **G-13**, a verified end-to-end escalation fallback, as a demo blocker. | Claude Opus 5, for Audio |
+| 2026-09-13 | G-12's consent-evidence shape moved into **ADR-0055**, which the policy now cites rather than restates; `data-schema.md` and the readiness contract are aligned to it. Contract only — no schema, migration or runtime. | Claude Opus 5, for Audio |
