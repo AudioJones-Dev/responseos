@@ -108,8 +108,8 @@ Enforced at the data layer (server-side) AND hidden in the UI (defense in depth)
 ## 9. Consent & disclosure
 
 - Recording + AI disclosure on every call; **tenant policy objects**, jurisdiction-aware (not hardcoded). Per-state/per-country variants in v0.3.
-- `consent_records` per contact (recording, AI handling, marketing) with jurisdiction + timestamp.
-- Outbound campaigns: consent + jurisdiction validated before dispatch (TCPA-aware); opt-out honored immediately.
+- `consent_records` (recording, AI handling, marketing) with jurisdiction + timestamp. **Per [ADR-0055](../DECISIONS.md), the record of authority is an immutable consent *event*, not per-contact state.** Each event carries the disclosure presented, the grant or withdrawal, the timestamp, the jurisdiction basis, and the source interaction and channel — call, SMS reply, web form, or other. Per-contact state is a **derived summary** of that stream for routing and preference, never the evidence relied on to justify a retained artifact. Where the artifact is a recording or persisted transcript, the authorising event must also be linked to that call and artifact class; recording and transcript persistence are authorised independently. Absence of an event is refusal. **Not implemented** — absent from all Prisma models, and its enforcement point must be named before the model is built.
+- Outbound campaigns: consent + jurisdiction validated before dispatch (TCPA-aware); opt-out honored immediately. Campaign consent and opt-out are the same event stream, distinguished by their source channel rather than held in a separate contract.
 
 ---
 

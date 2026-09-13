@@ -34,13 +34,39 @@
     {
       "id": "G-15",
       "phase": "Tech Debt & Hardening",
-      "title": "Designate Langfuse as the AI observability layer (ADR-0054)",
+      "title": "Designate Langfuse as the AI observability layer (ADR-0056)",
       "owner": "Claude Code",
       "status": "Review",
       "progress": 100,
       "priority": "Med",
       "start": "2026-09-12",
       "due": "2026-09-12"
+    },
+    {
+      "id": "CONVERGE-TRANSPORT",
+      "ref": 167,
+      "refType": "pull",
+      "phase": "Tech Debt & Hardening",
+      "title": "Preserve bounded prospect HTTPS transport and metadata validation",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-09-12",
+      "blocked": false
+    },
+    {
+      "id": "CONVERGE-CRM-CLAIM",
+      "ref": 168,
+      "refType": "pull",
+      "phase": "Tech Debt & Hardening",
+      "title": "Preserve tenant-scoped atomic CRM retry ownership",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-09-12",
+      "blocked": false
     },
     {
       "id": "F-01",
@@ -807,6 +833,32 @@
       "priority": "High",
       "start": "2026-09-12",
       "due": "2026-09-12"
+    },
+    {
+      "id": "V-20",
+      "phase": "v0.3 · Demo Scope",
+      "title": "FRL inbound intake & routing policy (canonical source for the supervised pilot)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-09-12",
+      "due": "2026-09-12",
+      "ref": 171,
+      "refType": "pull"
+    },
+    {
+      "id": "V-21",
+      "phase": "v0.3 · Demo Scope",
+      "title": "FRL policy: qualified-only CRM task trigger + auditable consent-evidence prerequisite",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-09-13",
+      "due": "2026-09-13",
+      "refType": "pull",
+      "ref": 175
     },
     {
       "id": "V-16",
