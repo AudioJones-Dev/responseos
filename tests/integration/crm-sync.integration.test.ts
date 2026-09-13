@@ -7,6 +7,25 @@ describe("durable CRM synchronization", () => {
   beforeEach(resetAndSeedTestDb);
   afterAll(disconnectTestDb);
 
+  test("concurrent retries claim one operation before provider effects", async () => {
+    const provider = new MockCrmProvider();
+    const contact = vi.spyOn(provider, "createContact");
+    const activity = vi.spyOn(provider, "createCallActivity");
+    const task = vi.spyOn(provider, "createFollowUpTask");
+    await prisma.crmSyncOperation.create({ data: {
+      account_id: "org_responseos_demo", call_id: "call_responseos_demo",
+      operation_key: "crm-call:org_responseos_demo:call_responseos_demo",
+      provider: "mock", status: "retryable_failed",
+    } });
+    const params = { accountId: "org_responseos_demo", callId: "call_responseos_demo", providerOverride: provider };
+    const results = await Promise.all([runCrmSyncForCall(params), runCrmSyncForCall(params)]);
+    expect(results.every((result) => result.ok)).toBe(true);
+    expect(contact).toHaveBeenCalledOnce();
+    expect(activity).toHaveBeenCalledOnce();
+    expect(task).toHaveBeenCalledOnce();
+    expect(await prisma.crmSyncOperation.findFirstOrThrow()).toMatchObject({ status: "succeeded", attempt_count: 1 });
+  });
+
   test("replays one finalized qualified call without duplicate operations", async () => {
     const params = {
       accountId: "org_responseos_demo",

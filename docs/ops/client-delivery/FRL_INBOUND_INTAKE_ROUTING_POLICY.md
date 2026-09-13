@@ -346,13 +346,17 @@ honour a refusal it has already recorded past. G-12 tracks that separately for e
 
 ## 14. Conflicts with recorded decisions
 
-Registered, not resolved. Each needs an operator decision.
+All three were resolved by operator decision on 2026-09-13.
 
-| # | Conflict | Recorded position governs |
+| # | Conflict | Resolution |
 |---|---|---|
-| C-1 | The source specification spells the notification mailbox local-part differently from the address recorded twice in the operator's own 2026-09-11 decisions. A wrong address loses every notification. | The 2026-09-11 recorded address is the default. **Operator to confirm the spelling before any live send.** |
-| C-2 | The source specification creates HubSpot **Notes** and **Tickets**, and Deals/Companies across three role paths. The binding closure scope is contact + call activity with an enriched `hs_call_body`, a HIGH follow-up task, and **explicitly no Note**. | Closure scope governs. The broader CRM projection is `ROADMAP` (§15) and must not enter the in-flight closure change. |
-| C-3 | The source specification lists operating hours and geography as unresolved. They are already decided: 24/7 including holidays; South and Central Florida with no county inference. | The recorded decisions govern. |
+| C-1 | The source specification spells the notification mailbox local-part differently from the address recorded twice in the operator's own 2026-09-11 decisions. A wrong address loses every notification. | **Operator confirmed 2026-09-13: the 2026-09-11 recorded spelling governs**, and the 2026-09-12 specification spelling is superseded. The address itself stays client operational data and is not recorded here — it enters through the operating-configuration write path onto the tenant's `BusinessMemorySnapshot`. |
+| C-2 | The source specification creates HubSpot **Notes** and **Tickets**, and Deals/Companies across three role paths. The binding closure scope is contact + call activity with an enriched `hs_call_body`, a HIGH follow-up task, and **explicitly no Note**. | **Operator ratified the narrow scope 2026-09-13.** Closure scope governs: contact, call activity, HIGH follow-up task, no Note. Ticket, Deal and Company stay `ROADMAP` (§16) and must not enter the in-flight closure change. |
+| C-3 | The source specification lists operating hours and geography as unresolved. They are already decided: 24/7 including holidays; South and Central Florida with no county inference. | **Operator ratified the recorded decisions 2026-09-13.** 24/7 answering including holidays; South and Central Florida; no county or ZIP inference from a city name. The specification's "unresolved" framing is superseded. |
+
+Resolving C-1 settles which *source* governs the spelling. It does not record the value and does not
+activate notification: **G-10 is unchanged**, and still blocks live send until the configured value
+is verified against the 2026-09-11 decision.
 
 ---
 
@@ -397,3 +401,4 @@ ResponseOS remains the detailed evidence layer; the CRM receives the operational
 | Date | Change | Author |
 |---|---|---|
 | 2026-09-12 | Initial policy, from the operator-supplied intake specification of the same date | Claude Opus 5, for Audio |
+| 2026-09-13 | C-1, C-2 and C-3 resolved by operator decision; §14 records the resolutions. No behavioural content changed and no activation gate moved. | Claude Opus 5, for Audio |
