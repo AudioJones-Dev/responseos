@@ -837,6 +837,19 @@
       "refType": "pull"
     },
     {
+      "id": "V-21",
+      "phase": "v0.3 · Demo Scope",
+      "title": "FRL policy: qualified-only CRM task trigger + auditable consent-evidence prerequisite",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-09-13",
+      "due": "2026-09-13",
+      "refType": "pull",
+      "ref": 175
+    },
+    {
       "id": "V-16",
       "phase": "v0.3 · Demo Scope",
       "title": "Consolidate normalizeE164 into one shared helper (caller-resolution prerequisite)",
