@@ -286,7 +286,10 @@ is urgent; or agent confidence is below the approved threshold.
 
 1. Offer a callback.
 2. Collect the preferred callback window.
-3. Create the CRM follow-up task.
+3. Create the CRM follow-up task **where the outcome is qualified**. An escalation that is not also
+   qualified is outside the ratified closure scope (§16) until ADR-0047 is amended; the escalation
+   is still captured by steps 4 and 5, so nothing is lost — it travels by ledger and notification
+   rather than as a CRM task.
 4. Persist the escalation in the ResponseOS ledger.
 5. Send the completed-interaction notification (§12).
 
@@ -361,7 +364,7 @@ All three were resolved by operator decision on 2026-09-13.
 | # | Conflict | Resolution |
 |---|---|---|
 | C-1 | The source specification spells the notification mailbox local-part differently from the address recorded twice in the operator's own 2026-09-11 decisions. A wrong address loses every notification. | **Operator confirmed 2026-09-13: the 2026-09-11 recorded spelling governs**, and the 2026-09-12 specification spelling is superseded. The address itself stays client operational data and is not recorded here — it enters through the operating-configuration write path onto the tenant's `BusinessMemorySnapshot`. |
-| C-2 | The source specification creates HubSpot **Notes** and **Tickets**, and Deals/Companies across three role paths. The binding closure scope is contact + call activity with an enriched `hs_call_body`, a HIGH follow-up task, and **explicitly no Note**. | **Operator ratified the narrow scope 2026-09-13.** Closure scope governs: contact, call activity, HIGH follow-up task, no Note. Ticket, Deal and Company stay `ROADMAP` (§16) and must not enter the in-flight closure change. |
+| C-2 | The source specification creates HubSpot **Notes** and **Tickets**, and Deals/Companies across three role paths. The binding closure scope is contact + call activity with an enriched `hs_call_body`, a HIGH follow-up task, and **explicitly no Note**. | **Operator ratified the narrow scope 2026-09-13.** Closure scope governs: contact, call activity, HIGH follow-up task **on a qualified outcome**, no Note. Ticket, Deal and Company stay `ROADMAP` (§16) and must not enter the in-flight closure change. The qualified-only trigger was confirmed later the same day after review found that "on escalation" would have widened accepted ADR-0047 (§16). |
 | C-3 | The source specification lists operating hours and geography as unresolved. They are already decided: 24/7 including holidays; South and Central Florida with no county inference. | **Operator ratified the recorded decisions 2026-09-13.** 24/7 answering including holidays; South and Central Florida; no county or ZIP inference from a city name. The specification's "unresolved" framing is superseded. |
 
 Resolving C-1 settles which *source* governs the spelling. It does not record the value and does not
@@ -382,7 +385,7 @@ depends on it.
 | G-3 | Callback SLA | §11 task due date |
 | G-4 | Final recording and AI-disclosure wording | §13, any live call |
 | G-11 | A ratified ADR amendment making recording tenant-configurable. ADR-0051 currently keeps it `false` at every tier | Any FRL recording at all — this gate precedes G-4 and G-12 |
-| G-12 | Before enabling recording or transcript persistence, verify that **neither artifact is persisted until the caller gives affirmative consent** following the approved disclosure. Refusal **or no affirmative response** keeps both disabled and routes to the approved non-capturing/manual path. Verify that **withdrawal of consent stops further recording and transcript persistence**. If the provider or runtime cannot enforce these controls, activation remains blocked | Recording **and** transcript persistence on any call. Independent of G-4: approved wording does not make an unenforceable consent path safe. Independent of G-11: keeping recording off postpones the exposure, it does not satisfy this gate |
+| G-12 | Before enabling recording or transcript persistence, verify that **neither artifact is persisted until the caller gives affirmative consent** following the approved disclosure. Refusal **or no affirmative response** keeps both disabled and routes to the approved non-capturing/manual path. Verify that **withdrawal of consent stops further recording and transcript persistence**. If the provider or runtime cannot enforce these controls, activation remains blocked. **A durable, tenant-scoped consent record is a prerequisite**: the `consent_records` model of [`../../data-schema.md`](../../data-schema.md) is specified but present in none of the Prisma models, and verifying start/stop behaviour alone would leave retained audio or text with no auditable evidence that consent was granted or withdrawn | Recording **and** transcript persistence on any call. Independent of G-4: approved wording does not make an unenforceable consent path safe. Independent of G-11: keeping recording off postpones the exposure, it does not satisfy this gate |
 | G-5 | CRM pipeline names and stages | §16 projection |
 | G-6 | Qualification confidence thresholds | `HUMAN_REVIEW_REQUIRED` |
 | G-7 | Whether evaluation is phone, video, or on-site, per product | `QUALIFIED_FREE_EVALUATION` |
@@ -395,12 +398,21 @@ depends on it.
 ## 16. CRM projection — scope split
 
 **In the supervised-pilot closure scope:** contact create/reconcile; call activity with a structured
-summary block in `hs_call_body`; a HIGH-priority follow-up task on escalation. No Note.
+summary block in `hs_call_body`; a HIGH-priority follow-up task **on a qualified outcome**. No Note.
+
+The task trigger is **qualified-only**, matching accepted ADR-0047 — which limits the export to a
+contact, a sanitized call activity and a *qualified* follow-up task — and matching
+`runCrmSyncForCall`, which creates one only when `qualification_status === "qualified"`. §11 calls
+for a follow-up task after an unavailable or failed transfer, and an escalation that is not also
+qualified therefore falls **outside** the ratified closure scope: that broader trigger is `ROADMAP`
+below and needs an explicit ADR-0047 amendment before it is implemented. Widening it here would
+have expanded ratified behaviour silently, which the closure change must not do.
 
 **`ROADMAP`, post-closure:** Company association for builder/GC and commercial callers; Deal
 creation once a qualification threshold is met; Ticket creation and update for service events;
 role-specific project fields; the existing-customer branches that route to a new Deal rather than a
-new Contact.
+new Contact; and the §11 escalation-triggered follow-up task for outcomes that are not qualified,
+which requires an ADR-0047 amendment first.
 
 ResponseOS remains the detailed evidence layer; the CRM receives the operational projection.
 
@@ -414,3 +426,5 @@ ResponseOS remains the detailed evidence layer; the CRM receives the operational
 | 2026-09-13 | C-1, C-2 and C-3 resolved by operator decision; §14 records the resolutions. No behavioural content changed and no activation gate moved. | Claude Opus 5, for Audio |
 | 2026-09-13 | G-10 renamed to the configured-value verification it actually blocks, so the resolution of C-1 cannot be mistaken for clearing it. Delivery index and the ADR-0051 amendment citation corrected. | Claude Opus 5, for Audio |
 | 2026-09-13 | G-12 strengthened by operator decision to require affirmative consent before **either** recording or transcript persistence, to treat no response as refusal, to require that withdrawal stops both, and to block activation where the runtime cannot enforce it. §13 updated to match, including removal of the "where technically supported" exemption. Approves no disclosure wording (G-4), establishes no legal sufficiency, and authorises no recording (G-11). | Claude Opus 5, for Audio |
+| 2026-09-13 | G-12 further requires a durable tenant-scoped `consent_records` model before activation, so retained audio or text cannot exist without auditable consent evidence. Operator decision. | Claude Opus 5, for Audio |
+| 2026-09-13 | §16 and §11 narrowed to a **qualified-only** follow-up task trigger, matching accepted ADR-0047 and `runCrmSyncForCall`. The §11 escalation-triggered task for outcomes that are not qualified moves to `ROADMAP` pending an ADR-0047 amendment, rather than silently widening ratified closure behaviour. Operator decision; refines the C-2 scope ratified earlier today. | Claude Opus 5, for Audio |
