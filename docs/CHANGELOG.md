@@ -13,12 +13,18 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - **Three abstractions from the research brief were rejected on repository evidence**, not on preference: a four-state `KNOWN/INFERRED/ASSUMED/UNKNOWN` evidence enum (`KnowledgeFactStatus` already exists and is richer), a new trigger enum (`AutomationTriggerType` is n8n config per ADR-0017 and `LeadEventType` already exists), and a third hash helper (`contentHash` already canonicalizes key order via `stableJson`). Generic `steps[]` and a component-version registry are absent because no current capability demonstrates them.
 - **Inbound lead qualification was chosen as capability #2 on gate evidence.** Missed-call recovery's core action is outbound, and `outboundEnabled` is `false` at every mode except `MANAGED_AUTONOMY` (gate `post-pilot-operator-authorization`), so it cannot be exercised; inbound is permitted everywhere. Describing it surfaced a real divergence: the same qualification score is computed two ways — `app/api/leads/[id]/qualify/route.ts` uses the deterministic weighted `leadQualificationScore`, while `lib/providers/telnyx/normalize.ts` trusts a provider-supplied number and falls back to literals `80`/`20`/`50`. **Documented, not changed** — that is Increment 2.
 - **Increment 1 proves the contract is describable, not executable.** Neither capability executes through shared primitives yet. `WorkflowRun` still has no production writer, so version-pinned execution provenance remains designed rather than operational, and no surface may claim ResponseOS traces outcomes to capability versions (doctrine §20).
+## Unreleased — fix: claim CRM retries before provider effects
+
+- Preserves the reviewed local atomic claim for pending and retryable CRM operations, preventing concurrent workers from both performing provider effects. A failed contender cannot overwrite the owner's state.
+- Adds unit and Postgres concurrency regressions. Existing provider checkpoints remain; abandoned processing operations require operator reconciliation. No provider activation, schema, or deployment change.
+- Scope operation creation/lookups, atomic claims, checkpoints and failure writes to the owning account; a mismatched operation cannot be claimed or disclosed by a competing tenant.
 
 ## Unreleased — fix: bound prospect website transport
 
 - Preserves the reviewed local remediation: honor Node DNS lookup modes, keep deadlines active through body reads, and cancel redirect bodies. Validated-address pinning remains intact.
 - Regression coverage exercises lookup modes, stalled bodies, redirect cancellation, and oversized/stalled robots 404 bodies. Error responses are cancelled without consuming their bodies, preserving status-based handling. No provider activation or deployment.
 - Validate page status, final origin and content type before body reads; discard-body cancellation failures cannot override accepted robots 404 metadata. Covers stalled forbidden content and already-errored 404 streams.
+
 ## Unreleased — test: disconnect application client before seed schema resets
 
 - Disconnect both integration and application Prisma clients before the seed-determinism test recreates the local database schema. This prevents a reused application connection from retaining removed PostgreSQL enum identifiers.
