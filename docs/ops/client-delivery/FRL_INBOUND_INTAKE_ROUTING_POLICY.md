@@ -385,7 +385,7 @@ depends on it.
 | G-3 | Callback SLA | §11 task due date |
 | G-4 | Final recording and AI-disclosure wording | §13, any live call |
 | G-11 | A ratified ADR amendment making recording tenant-configurable. ADR-0051 currently keeps it `false` at every tier | Any FRL recording at all — this gate precedes G-4 and G-12 |
-| G-12 | Before enabling recording or transcript persistence, verify that **neither artifact is persisted until the caller gives affirmative consent** following the approved disclosure. Refusal **or no affirmative response** keeps both disabled and routes to the approved non-capturing/manual path. Verify that **withdrawal of consent stops further recording and transcript persistence**. If the provider or runtime cannot enforce these controls, activation remains blocked. **A durable, tenant-scoped consent record is a prerequisite**: the `consent_records` model of [`../../data-schema.md`](../../data-schema.md) is specified but present in none of the Prisma models, and verifying start/stop behaviour alone would leave retained audio or text with no auditable evidence that consent was granted or withdrawn | Recording **and** transcript persistence on any call. Independent of G-4: approved wording does not make an unenforceable consent path safe. Independent of G-11: keeping recording off postpones the exposure, it does not satisfy this gate |
+| G-12 | Before enabling recording or transcript persistence, verify that **neither artifact is persisted until the caller gives affirmative consent** following the approved disclosure. Refusal **or no affirmative response** keeps both disabled and routes to the approved non-capturing/manual path. Verify that **withdrawal of consent stops further recording and transcript persistence**. If the provider or runtime cannot enforce these controls, activation remains blocked. **Durable, tenant-scoped consent evidence is a prerequisite, and it must be per-call, not merely per-contact**: immutable consent events tied to the call or artifact, each carrying the disclosure presented and the grant or withdrawal timestamp. The `consent_records` model of [`../../data-schema.md`](../../data-schema.md) is specified as *per-contact* state and is present in none of the Prisma models; per-contact state alone cannot establish which disclosure and grant authorised a particular retained recording or transcript, nor when a withdrawal took effect, so satisfying it literally would leave the audit gap this gate exists to close | Recording **and** transcript persistence on any call. Independent of G-4: approved wording does not make an unenforceable consent path safe. Independent of G-11: keeping recording off postpones the exposure, it does not satisfy this gate |
 | G-5 | CRM pipeline names and stages | §16 projection |
 | G-6 | Qualification confidence thresholds | `HUMAN_REVIEW_REQUIRED` |
 | G-7 | Whether evaluation is phone, video, or on-site, per product | `QUALIFIED_FREE_EVALUATION` |
@@ -402,7 +402,28 @@ summary block in `hs_call_body`; a HIGH-priority follow-up task **on a qualified
 
 The task trigger is **qualified-only**, matching accepted ADR-0047 — which limits the export to a
 contact, a sanitized call activity and a *qualified* follow-up task — and matching
-`runCrmSyncForCall`, which creates one only when `qualification_status === "qualified"`. §11 calls
+`runCrmSyncForCall`, which creates one only when `qualification_status === "qualified"`.
+
+**Which canonical outcomes qualify (§10) is an explicit allowlist, not an inference.** §10 replaces
+the qualified/not-qualified boolean, so "qualified" needs defining against those outcomes rather
+than left to an implementer to guess:
+
+| Canonical outcome (§10) | Creates the closure-scope task? |
+|---|---|
+| `QUALIFIED_FREE_EVALUATION` | **Yes** |
+| `QUALIFIED_QUOTE_REVIEW` | **Yes** |
+| Every other outcome in §10 — including `BUILDER_GC_PROJECT_REVIEW`, `COMMERCIAL_PROJECT_REVIEW`, `EXISTING_CUSTOMER_SERVICE`, `EXISTING_PROJECT_FOLLOW_UP`, `HUMAN_REVIEW_REQUIRED` | No, in the closure scope |
+
+Note the consequence, because it is deliberate rather than an oversight: a live builder/GC or
+commercial project produces **no CRM follow-up task** in this scope. Those are real leads, and
+including them is a defensible future position — but it is broader than ADR-0047 and broader than
+the shipped code, so it needs the amendment below first. The lead is not lost meanwhile: it is
+persisted to the ledger and raised by the completed-interaction notification.
+
+The retained `qualification_status` the implementation checks must agree with this allowlist;
+where the two ever disagree, the allowlist is the specification and the field is the encoding.
+
+§11 calls
 for a follow-up task after an unavailable or failed transfer, and an escalation that is not also
 qualified therefore falls **outside** the ratified closure scope: that broader trigger is `ROADMAP`
 below and needs an explicit ADR-0047 amendment before it is implemented. Widening it here would
@@ -428,3 +449,5 @@ ResponseOS remains the detailed evidence layer; the CRM receives the operational
 | 2026-09-13 | G-12 strengthened by operator decision to require affirmative consent before **either** recording or transcript persistence, to treat no response as refusal, to require that withdrawal stops both, and to block activation where the runtime cannot enforce it. §13 updated to match, including removal of the "where technically supported" exemption. Approves no disclosure wording (G-4), establishes no legal sufficiency, and authorises no recording (G-11). | Claude Opus 5, for Audio |
 | 2026-09-13 | G-12 further requires a durable tenant-scoped `consent_records` model before activation, so retained audio or text cannot exist without auditable consent evidence. Operator decision. | Claude Opus 5, for Audio |
 | 2026-09-13 | §16 and §11 narrowed to a **qualified-only** follow-up task trigger, matching accepted ADR-0047 and `runCrmSyncForCall`. The §11 escalation-triggered task for outcomes that are not qualified moves to `ROADMAP` pending an ADR-0047 amendment, rather than silently widening ratified closure behaviour. Operator decision; refines the C-2 scope ratified earlier today. | Claude Opus 5, for Audio |
+| 2026-09-13 | G-12's consent evidence made **per-call, not per-contact**: immutable consent events tied to the call or artifact, carrying the disclosure presented and the grant/withdrawal timestamp. Per-contact state cannot attribute a particular retained recording or transcript. Operator decision. | Claude Opus 5, for Audio |
+| 2026-09-13 | §16 gains an **explicit allowlist** of the canonical §10 outcomes that create the closure-scope task — `QUALIFIED_FREE_EVALUATION` and `QUALIFIED_QUOTE_REVIEW` only. §10 replaced the qualified/not-qualified boolean, so "qualified" needed defining against the outcomes rather than inferred. The project-review outcomes are deliberately excluded here and deferred to the roadmap. Operator decision. | Claude Opus 5, for Audio |
