@@ -1,4 +1,5 @@
 import {
+  EXECUTION_MODES,
   EXECUTION_MODE_ACTIVATION_GATES,
   EXECUTION_MODE_POLICIES,
   isExecutionMode,
@@ -40,10 +41,43 @@ export function readinessGate(descriptor: CapabilityDescriptor): string | null {
 }
 
 /**
+ * Whether a mode is at or above the capability's declared minimum.
+ *
+ * `EXECUTION_MODES` is ordered by permissiveness — demo, supervised pilot,
+ * production supervised, managed autonomy — so index is rank. An unrecognised
+ * mode ranks as the demo lane, matching `resolveExecutionPolicy`'s degrade
+ * behaviour. A descriptor whose *own* minimum is unrecognised is ineligible
+ * everywhere rather than eligible everywhere; publication already rejects such
+ * a descriptor, and failing closed here means a malformed one cannot slip
+ * through by a different route.
+ *
+ * Exported separately because the answer is not recoverable from
+ * `effectiveAllowedTools` alone: an empty tool set means "ineligible" for one
+ * capability and "eligible, declares no tools" for another — inbound lead
+ * qualification declares none by design.
+ */
+export function meetsMinimumExecutionMode(
+  descriptor: CapabilityDescriptor,
+  mode: unknown,
+): boolean {
+  if (!isExecutionMode(descriptor.minimumExecutionMode)) return false;
+  const required = EXECUTION_MODES.indexOf(descriptor.minimumExecutionMode);
+  const offered = isExecutionMode(mode) ? EXECUTION_MODES.indexOf(mode) : 0;
+  return offered >= required;
+}
+
+/**
  * The effective tool set: the intersection of what the capability declares with
  * what the tenant's *resolved* policy permits. Intersection, never union — a
  * capability must not acquire a tool by being assigned to a more permissive
  * tenant, and an empty declared set stays empty everywhere.
+ *
+ * A mode below the descriptor's minimum grants nothing at all. Without that
+ * check the intersection alone would still return whatever overlapped — a
+ * capability declaring `PRODUCTION_SUPERVISED` as its minimum would run
+ * partially under `SUPERVISED_PILOT` — which makes `minimumExecutionMode` read
+ * as a contract while enforcing none of it. Callers that need to distinguish
+ * ineligibility from an empty declared set use `meetsMinimumExecutionMode`.
  *
  * Resolution goes through `resolveExecutionPolicy` rather than reading
  * `EXECUTION_MODE_POLICIES` directly, so a gated mode whose activation gate is
@@ -58,6 +92,7 @@ export function effectiveAllowedTools(
   mode: unknown,
   options: { authorizedGates?: readonly string[] } = {},
 ): string[] {
+  if (!meetsMinimumExecutionMode(descriptor, mode)) return [];
   const policy = resolveExecutionPolicy(mode, options);
   return descriptor.allowedTools.filter((tool) => policy.allowedTools.includes(tool));
 }

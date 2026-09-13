@@ -5,10 +5,12 @@ import {
   RECEPTIONIST_CAPABILITY,
   capabilityChecksum,
   effectiveAllowedTools,
+  meetsMinimumExecutionMode,
   readinessGate,
   validateCapabilityGovernance,
   type CapabilityDescriptor,
 } from "@/lib/capabilities";
+import { EXECUTION_MODES } from "@/lib/agentExecution/policy";
 import { PROSPECT_DEMO_POLICY } from "@/lib/prospectBootstrap/policy";
 import { leadQualificationScore } from "@/lib/scoring/leadQualificationScore";
 import { PROSPECT_RECEPTIONIST_TEMPLATE } from "@/lib/prospectBootstrap/template";
@@ -228,6 +230,62 @@ describe("descriptor permission surface is deeply immutable", () => {
     for (const capability of CAPABILITIES) {
       expect(Object.isFrozen(capability.allowedTools)).toBe(true);
     }
+  });
+});
+
+describe("minimumExecutionMode is enforced, not merely declared", () => {
+  const scheduling = mutate(RECEPTIONIST_CAPABILITY, {
+    slug: "scheduling-capability",
+    minimumExecutionMode: "PRODUCTION_SUPERVISED",
+    allowedTools: Object.freeze(["hangup", "schedule"]),
+  });
+
+  // The case Codex described: an authorized mode one rung below the declared
+  // minimum previously returned the overlap, so the capability ran partially
+  // under a mode its own contract excluded.
+  test("a mode below the minimum grants nothing, even when authorized", () => {
+    expect(
+      effectiveAllowedTools(scheduling, "SUPERVISED_PILOT", {
+        authorizedGates: ["v0.3-live-communications"],
+      }),
+    ).toEqual([]);
+    expect(meetsMinimumExecutionMode(scheduling, "SUPERVISED_PILOT")).toBe(false);
+  });
+
+  test("the minimum itself is eligible", () => {
+    expect(meetsMinimumExecutionMode(scheduling, "PRODUCTION_SUPERVISED")).toBe(true);
+  });
+
+  test("a mode above the minimum is eligible", () => {
+    expect(meetsMinimumExecutionMode(scheduling, "MANAGED_AUTONOMY")).toBe(true);
+  });
+
+  test("an unrecognised mode ranks as the demo lane", () => {
+    expect(meetsMinimumExecutionMode(scheduling, "nonsense")).toBe(false);
+    expect(meetsMinimumExecutionMode(RECEPTIONIST_CAPABILITY, "nonsense")).toBe(true);
+  });
+
+  // Fails closed rather than open: a malformed descriptor is ineligible
+  // everywhere, not eligible everywhere.
+  test("a descriptor with an unrecognised minimum is ineligible everywhere", () => {
+    const malformed = mutate(RECEPTIONIST_CAPABILITY, {
+      minimumExecutionMode: "TOTALLY_PERMISSIVE" as never,
+    });
+    for (const mode of EXECUTION_MODES) {
+      expect(meetsMinimumExecutionMode(malformed, mode)).toBe(false);
+      expect(effectiveAllowedTools(malformed, mode)).toEqual([]);
+    }
+  });
+
+  // Eligibility and an empty tool set are different facts; this is why the
+  // predicate is exported rather than inferred from the array.
+  test("eligible-with-no-tools is distinguishable from ineligible", () => {
+    expect(
+      meetsMinimumExecutionMode(INBOUND_LEAD_QUALIFICATION_CAPABILITY, "PROSPECT_DEMO"),
+    ).toBe(true);
+    expect(
+      effectiveAllowedTools(INBOUND_LEAD_QUALIFICATION_CAPABILITY, "PROSPECT_DEMO"),
+    ).toEqual([]);
   });
 });
 

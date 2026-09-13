@@ -11,6 +11,7 @@ export { capabilityChecksum } from "./contract";
 export {
   validateCapabilityGovernance,
   effectiveAllowedTools,
+  meetsMinimumExecutionMode,
   readinessGate,
   type CapabilityGovernanceResult,
 } from "./validate";
