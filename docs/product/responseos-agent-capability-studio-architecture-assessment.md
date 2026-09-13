@@ -1,6 +1,6 @@
 # Agent Capability Studio — Architecture Assessment
 
-**Status:** `DOCUMENTED_ONLY` — assessment only. No implementation is authorized by this document.
+**Status:** §1–16 are assessment (`DOCUMENTED_ONLY`). The increment plan below is operator-directed (2026-09-13), and **Increment 1 is implemented in the same PR as this document**. Nothing beyond Increment 1 is authorized here.
 **Date:** 2026-09-13
 **Base commit:** `ec4eb1d`
 **Author:** Claude Opus 5 (agent-authored; requires independent review per `AGENTS.md`)
@@ -527,6 +527,16 @@ structured values, ResponseOS computes the score.
 **This is documented, not fixed, in Increment 1.** Changing `normalize.ts` scoring behaviour is a
 business-logic change on a provider ingest path and belongs in its own reviewable increment.
 
+**The second piece of Increment 2 evidence, surfaced by writing the descriptors.** The two
+descriptors partition `producesRecords` — the receptionist produces `Contact`, `Call`,
+`CallTranscript`, `LeadEvent`; qualification produces `LeadEvent`, `LeadQualification`. But
+`lib/providers/telnyx/normalize.ts` is a *single* function that writes all five in one pass.
+**The capability boundary the descriptors describe does not exist in the code.** That is the
+concrete duplication Increment 2 must confront: either `normalize.ts` separates into a
+receptionist-ingest concern and a qualification concern, or the descriptors are describing a
+boundary that should not be drawn there. Deciding which is Increment 2's first question, and the
+answer is evidence for what Increment 3 should extract.
+
 ## F. Increment 1 — smallest implementation plan
 
 **Goal: prove the contract is *describable*, not *executable*.** Two descriptors plus a governance
@@ -548,7 +558,7 @@ Nothing in Increment 1 changes runtime behaviour.
 | `executionMode` | `PROSPECT_DEMO` | `PROSPECT_DEMO` (min) | yes |
 | `allowedTools` | `["hangup"]` | `[]` | yes — `[]` is meaningful under intersection |
 | `producesRecords` | `Call`, `CallTranscript`, `Contact`, `LeadEvent` | `LeadEvent`, `LeadQualification` | yes — both grounded in `normalize.ts` writers |
-| `readinessGates` | mode activation gate + operating config | same | yes |
+| `readinessGates` | mode activation gate + operating config | same | **derived, not stored** — see below |
 | generic `steps[]` | — | — | **NO** — no engine; would be ontology, not evidence |
 | `evidenceEnum` 4-state | — | — | **NO** — existing vocabulary covers it |
 | `componentVersions[]` | — | — | **NO** — containment already pins them (ADR-0054 q7) |

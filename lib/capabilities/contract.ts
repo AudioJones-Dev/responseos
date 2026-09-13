@@ -74,11 +74,6 @@ export interface CapabilityDescriptor {
   readonly minimumExecutionMode: ExecutionMode;
   readonly allowedTools: readonly string[];
   readonly producesRecords: readonly CapabilityRecord[];
-  /**
-   * The named gate that must be open before this capability may run live,
-   * or `null` when it carries none. Mirrors `EXECUTION_MODE_ACTIVATION_GATES`.
-   */
-  readonly readinessGate: string | null;
 }
 
 /**

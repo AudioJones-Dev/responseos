@@ -11,6 +11,7 @@ export { capabilityChecksum } from "./contract";
 export {
   validateCapabilityGovernance,
   effectiveAllowedTools,
+  readinessGate,
   type CapabilityGovernanceResult,
 } from "./validate";
 export { RECEPTIONIST_CAPABILITY } from "./descriptors/receptionist";

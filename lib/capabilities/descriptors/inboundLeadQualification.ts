@@ -1,4 +1,3 @@
-import { EXECUTION_MODE_ACTIVATION_GATES } from "@/lib/agentExecution/policy";
 import type { CapabilityDescriptor } from "../contract";
 
 /**
@@ -48,5 +47,4 @@ export const INBOUND_LEAD_QUALIFICATION_CAPABILITY: CapabilityDescriptor = Objec
   minimumExecutionMode: "PROSPECT_DEMO",
   allowedTools: Object.freeze([] as const),
   producesRecords: Object.freeze(["LeadEvent", "LeadQualification"] as const),
-  readinessGate: EXECUTION_MODE_ACTIVATION_GATES.PROSPECT_DEMO,
 });

@@ -5,6 +5,7 @@ import {
   RECEPTIONIST_CAPABILITY,
   capabilityChecksum,
   effectiveAllowedTools,
+  readinessGate,
   validateCapabilityGovernance,
   type CapabilityDescriptor,
 } from "@/lib/capabilities";
@@ -31,7 +32,6 @@ describe("capability checksum", () => {
       requiredKnownFields: RECEPTIONIST_CAPABILITY.requiredKnownFields,
       minimumExecutionMode: RECEPTIONIST_CAPABILITY.minimumExecutionMode,
       allowedTools: RECEPTIONIST_CAPABILITY.allowedTools,
-      readinessGate: RECEPTIONIST_CAPABILITY.readinessGate,
     } as CapabilityDescriptor;
 
     expect(capabilityChecksum(reordered)).toBe(
@@ -39,7 +39,11 @@ describe("capability checksum", () => {
     );
   });
 
-  test("changes when any behaviour-bearing field changes", () => {
+  // Scoped deliberately: the descriptor references the prospect template by
+  // version label rather than containing it, so the prompt is pinned by
+  // PROSPECT_RECEPTIONIST_TEMPLATE_CHECKSUM, not by this one. See the note in
+  // descriptors/receptionist.ts.
+  test("changes when any descriptor field changes", () => {
     const before = capabilityChecksum(RECEPTIONIST_CAPABILITY);
     const after = capabilityChecksum(
       mutate(RECEPTIONIST_CAPABILITY, { allowedTools: ["hangup", "transfer"] }),
@@ -86,14 +90,15 @@ describe("governance validation", () => {
     expect(result.violations).toContain("tool_not_permitted_by_mode:schedule");
   });
 
-  test("rejects a readiness gate that is not the one the mode requires", () => {
-    const result = validateCapabilityGovernance(
-      mutate(RECEPTIONIST_CAPABILITY, {
-        readinessGate: "v0.3-live-communications",
-      }),
-    );
-    expect(result.valid).toBe(false);
-    expect(result.violations).toContain("readiness_gate_mismatch:expected_null");
+  test("readiness gate is derived from the mode, not stored", () => {
+    expect(readinessGate(RECEPTIONIST_CAPABILITY)).toBeNull();
+    expect(
+      readinessGate(
+        mutate(RECEPTIONIST_CAPABILITY, {
+          minimumExecutionMode: "PRODUCTION_SUPERVISED",
+        }),
+      ),
+    ).toBe("v0.3-live-communications");
   });
 
   test("rejects an unrecognised execution mode without throwing", () => {

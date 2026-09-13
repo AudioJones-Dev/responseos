@@ -30,6 +30,20 @@ export interface CapabilityGovernanceResult {
  * able to acquire a tool by being assigned to a more permissive tenant, and an
  * empty declared set must stay empty everywhere.
  */
+/**
+ * The named gate that must be open before this capability may run live, or
+ * `null` when it carries none.
+ *
+ * Derived rather than stored. An earlier draft carried `readinessGate` as a
+ * descriptor field, but the validator could only ever accept the value the mode
+ * already implies — a field that must equal a derived value *is* a derived
+ * value, and storing it invites the two to disagree.
+ */
+export function readinessGate(descriptor: CapabilityDescriptor): string | null {
+  if (!isExecutionMode(descriptor.minimumExecutionMode)) return null;
+  return EXECUTION_MODE_ACTIVATION_GATES[descriptor.minimumExecutionMode];
+}
+
 export function effectiveAllowedTools(
   descriptor: CapabilityDescriptor,
   mode: unknown,
@@ -62,14 +76,6 @@ export function validateCapabilityGovernance(
   const modeTools = EXECUTION_MODE_POLICIES[descriptor.minimumExecutionMode].allowedTools;
   for (const tool of descriptor.allowedTools) {
     if (!modeTools.includes(tool)) violations.push(`tool_not_permitted_by_mode:${tool}`);
-  }
-
-  // The declared gate must be the one the mode actually requires. A descriptor
-  // naming a different gate — or none where one exists — would misreport what
-  // has to be open before it can run live.
-  const requiredGate = EXECUTION_MODE_ACTIVATION_GATES[descriptor.minimumExecutionMode];
-  if (descriptor.readinessGate !== requiredGate) {
-    violations.push(`readiness_gate_mismatch:expected_${requiredGate ?? "null"}`);
   }
 
   return { valid: violations.length === 0, violations: Object.freeze(violations) };

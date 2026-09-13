@@ -1,6 +1,5 @@
 import { PROSPECT_DEMO_POLICY } from "@/lib/prospectBootstrap/policy";
 import { PROSPECT_RECEPTIONIST_TEMPLATE } from "@/lib/prospectBootstrap/template";
-import { EXECUTION_MODE_ACTIVATION_GATES } from "@/lib/agentExecution/policy";
 import type { CapabilityDescriptor } from "../contract";
 
 /**
@@ -16,6 +15,18 @@ import type { CapabilityDescriptor } from "../contract";
  * Describing an existing capability changes nothing about how it runs. The
  * prospect-demo lane pushes a prompt to a provider assistant; this descriptor
  * does not execute it.
+ *
+ * **What this descriptor's checksum does and does not cover.** ADR-0054 q7
+ * describes checksums as pinning components by containment. This descriptor
+ * *references* the template by version label rather than containing it, so
+ * `capabilityChecksum` covers the descriptor's own fields only. Editing
+ * `PROSPECT_RECEPTIONIST_TEMPLATE.instructions` changes
+ * `PROSPECT_RECEPTIONIST_TEMPLATE_CHECKSUM` but not this descriptor's checksum.
+ * That is correct for Increment 1 — the descriptor is metadata *over* a
+ * separately checksummed artifact, and the prompt is pinned by the template's
+ * own checksum, which `validateProspectAssistantPreflight` already enforces.
+ * Unifying the two identifiers is Increment 5's runtime-assignment concern and
+ * is deliberately not attempted here.
  */
 export const RECEPTIONIST_CAPABILITY: CapabilityDescriptor = Object.freeze({
   slug: "prospect-receptionist",
@@ -39,5 +50,4 @@ export const RECEPTIONIST_CAPABILITY: CapabilityDescriptor = Object.freeze({
     "CallTranscript",
     "LeadEvent",
   ] as const),
-  readinessGate: EXECUTION_MODE_ACTIVATION_GATES.PROSPECT_DEMO,
 });
