@@ -5,7 +5,7 @@ behaviour of the FRL supervised-pilot receptionist so that schemas, call state, 
 test fixtures can be designed against one source instead of placeholders.
 **Owner:** AJ Digital LLC / Audio Jones
 **Applies to:** the Florida Ramp & Lift tenant only, in `SUPERVISED_PILOT`.
-**Governing decisions:** ADR-0051 and its 2026-09-10 / 2026-09-11 amendments; ADR-0048;
+**Governing decisions:** ADR-0051 and its 2026-09-10 amendment; ADR-0048;
 [`RESPONSEOS_CLIENT_OPERATING_CONFIGURATION_STANDARD.md`](./RESPONSEOS_CLIENT_OPERATING_CONFIGURATION_STANDARD.md)
 (the "configuration standard" below).
 
