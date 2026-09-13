@@ -44,13 +44,10 @@ assessment promotes that from a risk to the headline constraint.
 
 **Three findings drive the reduced scope:**
 
-**(a) Much of the governance stack the brief specifies is already built** — specifically:
-explicit `allowedTools` allowlists, fail-closed default-deny resolution, gate-bound
-authorization, version pinning by checksum, immutable publication manifests with hash
-verification, forbidden-field scanning, and audit with before/after refs. `ExecutionPolicy`
-(`lib/agentExecution/policy.ts`) already implements explicit `allowedTools` allowlists,
-fail-closed default-deny resolution, gate-bound authorization, `templateVersion` pinning,
-required disclosure, and prohibited-advice lists. `PROSPECT_RECEPTIONIST_TEMPLATE` is already
+**(a) Much of the governance stack the brief specifies is already built.** `ExecutionPolicy`
+(`lib/agentExecution/policy.ts`) implements explicit `allowedTools` allowlists, fail-closed
+default-deny resolution, gate-bound authorization, `templateVersion` pinning, required
+disclosure, and prohibited-advice lists. `PROSPECT_RECEPTIONIST_TEMPLATE` is already
 an immutable, SHA-256-checksummed capability artifact with preflight validation.
 `BootstrapPromotion` is already a hash-pinned publication manifest with a draft→exported
 lifecycle and a forbidden-field scanner. The brief asks for these; they exist.
@@ -545,7 +542,7 @@ Nothing in Increment 1 changes runtime behaviour.
 | `versionLabel` | `home-services-receptionist.v1` | `inbound-lead-qualification.v1` | yes |
 | `checksum` | derived | derived | yes (derived, not stored) |
 | `objective` | answer from verified facts, capture callback | produce a scored qualification | yes |
-| `trigger` | inbound call | inbound call / lead form | yes — reuses existing vocabulary |
+| `trigger` | inbound call | inbound call / lead form | yes — see note below |
 | `requiredContext` | approved `BusinessMemorySnapshot` | contact, lead event, service area | yes |
 | `requiredKnownFields` | verified facts only | `service_area_match` (non-nullable on `LeadQualification`) | yes |
 | `executionMode` | `PROSPECT_DEMO` | `PROSPECT_DEMO` (min) | yes |
@@ -555,6 +552,14 @@ Nothing in Increment 1 changes runtime behaviour.
 | generic `steps[]` | — | — | **NO** — no engine; would be ontology, not evidence |
 | `evidenceEnum` 4-state | — | — | **NO** — existing vocabulary covers it |
 | `componentVersions[]` | — | — | **NO** — containment already pins them (ADR-0054 q7) |
+
+**Correction on the trigger field.** An earlier draft of this plan said `trigger` "reuses existing
+vocabulary." On inspection it cannot: `AutomationTriggerType` is n8n automation configuration
+(ADR-0017) with no inbound-call member, and `LeadEventSource` describes where a lead came from,
+not what starts a capability. Widening either to fit would *be* the collision ADR-0054 decision 9
+exists to prevent. `CapabilityTrigger` is therefore a deliberate two-value union —
+`inbound_call | lead_form` — carrying exactly the values two capabilities prove, with a third
+added only when a third capability needs it.
 
 **Why each new abstraction exists** (ADR-0054 decision 8):
 

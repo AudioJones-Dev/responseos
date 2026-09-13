@@ -787,6 +787,17 @@
       "refType": "issue"
     },
     {
+      "id": "C-01",
+      "phase": "Tech Debt & Hardening",
+      "title": "Capability contract + governance validator (ADR-0054, Increment 1)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 100,
+      "priority": "Medium",
+      "start": "2026-09-13",
+      "due": "2026-09-13"
+    },
+    {
       "id": "V-19",
       "phase": "v0.3 · Demo Scope",
       "title": "Production carve-out for the public demo surface (ADR-0053)",
