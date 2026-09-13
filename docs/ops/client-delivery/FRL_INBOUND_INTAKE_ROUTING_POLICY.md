@@ -333,14 +333,24 @@ owner's to set, and it must be reviewed for legal sufficiency before any real ca
 > an evaluation, a quote request, a service question, or an existing project. This call may be
 > recorded and transcribed so our team can assist you. Do I have your permission to continue?"
 
-**On refusal**, the agent disables recording and transcription where technically supported, or
-routes to an approved human/manual path. It does not proceed to record silently.
+**Consent is affirmative, and silence is not consent.** Neither a recording nor a persisted
+transcript may exist until the caller affirmatively agrees following the approved disclosure. On
+refusal — or on no affirmative response — both stay disabled and the call routes to the approved
+non-capturing/manual path. Withdrawal of consent mid-call stops further recording and further
+transcript persistence. The agent does not proceed to capture silently, and "where technically
+supported" is not an exemption: where the runtime cannot enforce these controls, activation is
+blocked rather than degraded (G-12).
 
-Two gaps are recorded in the in-flight closure change: recording begins at answer, before the
-disclosure; and stopping an in-progress recording on refusal is not implemented. **Together these
-make the refusal path above unenforceable.** Approving the wording (G-4) does not make it safe —
-a call recorded under that wording would still violate the refusal rule, because the runtime cannot
-honour a refusal it has already recorded past. G-12 tracks that separately for exactly this reason.
+Three gaps are recorded in the in-flight closure change: capture begins at answer, before the
+disclosure; stopping an in-progress capture on refusal is not implemented; and recording and
+transcript persistence are independent, so disabling one does not disable the other
+([`../../readiness/CRITICAL_PATH_AMENDMENT.md`](../../readiness/CRITICAL_PATH_AMENDMENT.md)).
+**Together these make the consent rule above unenforceable.** Approving the wording (G-4) does not
+make it safe — a call captured under that wording would still violate the rule, because the runtime
+cannot honour a refusal it has already captured past, and a suppressed recording can still leave a
+persisted transcript. Nor does G-11: keeping recording off postpones the exposure without correcting
+the control. G-12 tracks all of this separately for exactly that reason, and blocks activation
+rather than allowing a degraded path.
 
 ---
 
@@ -372,7 +382,7 @@ depends on it.
 | G-3 | Callback SLA | §11 task due date |
 | G-4 | Final recording and AI-disclosure wording | §13, any live call |
 | G-11 | A ratified ADR amendment making recording tenant-configurable. ADR-0051 currently keeps it `false` at every tier | Any FRL recording at all — this gate precedes G-4 and G-12 |
-| G-12 | Disclosure before audio capture begins, **or** verified stop-on-refusal in the runtime | Recording on a call where the caller may refuse. Independent of G-4: approved wording does not make an unenforceable refusal path safe |
+| G-12 | Before enabling recording or transcript persistence, verify that **neither artifact is persisted until the caller gives affirmative consent** following the approved disclosure. Refusal **or no affirmative response** keeps both disabled and routes to the approved non-capturing/manual path. Verify that **withdrawal of consent stops further recording and transcript persistence**. If the provider or runtime cannot enforce these controls, activation remains blocked | Recording **and** transcript persistence on any call. Independent of G-4: approved wording does not make an unenforceable consent path safe. Independent of G-11: keeping recording off postpones the exposure, it does not satisfy this gate |
 | G-5 | CRM pipeline names and stages | §16 projection |
 | G-6 | Qualification confidence thresholds | `HUMAN_REVIEW_REQUIRED` |
 | G-7 | Whether evaluation is phone, video, or on-site, per product | `QUALIFIED_FREE_EVALUATION` |
@@ -402,3 +412,5 @@ ResponseOS remains the detailed evidence layer; the CRM receives the operational
 |---|---|---|
 | 2026-09-12 | Initial policy, from the operator-supplied intake specification of the same date | Claude Opus 5, for Audio |
 | 2026-09-13 | C-1, C-2 and C-3 resolved by operator decision; §14 records the resolutions. No behavioural content changed and no activation gate moved. | Claude Opus 5, for Audio |
+| 2026-09-13 | G-10 renamed to the configured-value verification it actually blocks, so the resolution of C-1 cannot be mistaken for clearing it. Delivery index and the ADR-0051 amendment citation corrected. | Claude Opus 5, for Audio |
+| 2026-09-13 | G-12 strengthened by operator decision to require affirmative consent before **either** recording or transcript persistence, to treat no response as refusal, to require that withdrawal stops both, and to block activation where the runtime cannot enforce it. §13 updated to match, including removal of the "where technically supported" exemption. Approves no disclosure wording (G-4), establishes no legal sufficiency, and authorises no recording (G-11). | Claude Opus 5, for Audio |
