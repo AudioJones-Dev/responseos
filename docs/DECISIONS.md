@@ -468,6 +468,8 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 
 ## ADR-0028 — Go-forward pricing model: capacity + voice + AI-usage memory tiers (billing implementation stays v0.5)
 
+> **Commercially superseded on 2026-09-13 by ADR-0054.** The memory-tier model, optional outcome-fee offer, usage markup, and open-price posture below are historical. ADR-0010's billing implementation gate remains in force.
+
 **Status:** Accepted (2026-05-30) for the pricing **model/structure**. Price points and billing implementation remain **open / v0.5-gated** (ADR-0010). Resolves the *model* half of §24 row 2; specific numbers stay open.
 
 **Context.** Existing canon (`pricing-and-onboarding.md`) frames public plans as Recovery Core / Recovery Pro / Recovery Performance + outcome fees, with the billing engine, Stripe, and outcome-fee ledger shipping in **v0.5** (ADR-0010). The GTM direction (§6–§8) reframes pricing around **managed business-memory capacity** — Starter / Operator / Growth Intelligence / Enterprise Memory System.
@@ -1589,3 +1591,24 @@ But a *deployment* is not a page. Vercel serves the whole app, and with `RESPONS
 **§21 checklist.** Layer: delivery, no new capability. Deferred-to-bought infrastructure (Vercel), already the planned target, so no new lock-in. It does not improve the live pilot path and creates no proprietary learning — it publishes an existing read-only surface. Evidence and attribution are untouched. Tenant isolation is unchanged and structural. It duplicates no CRM, FSM, telecom, or workflow-platform functionality. **Public claims:** the surface states its own status — mock adapters, records real, delivery simulated — and doctrine §20's prohibitions continue to bind its copy. It requires no new human-approval control beyond the operator running the deploy. Compliance exposure: the page discloses the owner's own professional records and email address, which the owner controls and has approved (ADR-0046, #157); no customer data of any kind is present. Required now: the operator asked for a shareable link and the surface is finished.
 
 **Consequences.** Every statement of the hard rule is amended to name this exception rather than be contradicted by it, and the gate rows that tracked this authorization (D3, Q1) are marked granted rather than left open; the rule still governs everything else, and "no production deploys" remains true of every surface except the one named here. The deploy itself is the operator's to run — the Vercel credentials are theirs and must not enter this repo or an agent session (`AGENTS.md`). If the deployment is later pointed at a database, decision 6's consequence reverses and ADR-0052's revocation path becomes live.
+
+---
+
+## ADR-0054 — Managed revenue-response commercial doctrine supersedes legacy pricing models
+
+**Status:** Accepted commercial decision (2026-09-13), supplied and ratified by Audio; repository reconciliation by Codex. Documentation only. Independent review and merge remain pending.
+
+**Context.** The owner supplied Pricing & Commercial Doctrine v1.0 as the current commercial source of truth and authorized reconciliation. ADR-0028 and several companions still described capacity-based Business Memory tiers, open price points, optional outcome fees, or legacy Recovery offers. Those references cannot continue to govern current proposals.
+
+**Decision.**
+
+1. [Pricing & Commercial Doctrine v1.0](./strategy/responseos-pricing-commercial-doctrine-v1.md) governs commercial positioning, pricing, scope, qualification, terms, usage treatment, and attribution. ResponseOS is managed revenue-response infrastructure for founder-led service businesses.
+2. Assessment + Implementation + Managed Operations + Transparent Provider Usage replaces ADR-0028's commercial model. Business Memory remains a strategic layer, not the primary public pricing meter. Legacy Recovery and memory-tier names, automatic usage markups, and open-price statements are superseded commercially.
+3. The standard assessment is $1,500; the Supervised Recovery Pilot is $8,500 implementation + $1,500/month with a 90-day minimum after go-live. The doctrine's section 27 controls the full table. Managed Core and Managed Operations retain the readiness limitations in sections 5 and 20; Enterprise / Regulated remains future. Founding-client rates are constrained exceptions.
+4. Paid assessment is conditional on investigative need. A free fit review may establish a simple, already-bounded pilot. Fit/no-fit judgment remains mandatory; the diagnostic-first principle does not require a paid assessment in every case.
+5. Prefer client-owned provider accounts where practical; AJ Digital-operated usage passes through at cost unless a separate administration fee is expressly approved. No automatic percentage markup applies. This commercial preference does not modify platform credential ownership or activate a provider.
+6. No standard revenue-share model applies. Existing outcome-fee schema fields and historical offer language grant no billing authority. ADR-0042's evidence and dispute gates remain binding, and doctrine sections 11–12 govern attribution and any future consideration of revenue share.
+7. Commercial ratification does not verify operating hours, margins, market research, implementation readiness, or live results. Market-validation labels are owner-supplied; the underlying September 13 research was not independently audited in this reconciliation. Operational assumptions stay provisional.
+8. ADR-0010's v0.5 billing implementation gate and existing provider, security, customer-data, deployment, and human-only merge controls remain unchanged. A sellable supervised scope is not authorization to activate an unready runtime. Public starting-at language is defined by doctrine section 15; public page implementation and publication are separate work.
+
+**Consequences.** Current companion guidance links to the doctrine, and conflicting historical material is explicitly marked as superseded. [The reconciliation register](./strategy/responseos-pricing-reconciliation-2026-09-13.md) identifies remaining public-copy work. This decision changes commercial documentation, not architecture, schema, billing behavior, or milestone timing.

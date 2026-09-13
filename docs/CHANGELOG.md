@@ -4,6 +4,11 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — align commercial doctrine and public pricing
+
+- Record owner-ratified Pricing & Commercial Doctrine v1.0 and ADR-0054; mark conflicting legacy commercial references historical while preserving runtime and attribution gates.
+- Align pricing, assessment, and homepage commercial copy with bounded Pilot pricing, conditional assessment, transparent provider usage, and target-offering readiness labels. Intake behavior is unchanged.
+
 ## Unreleased — docs: canonical FRL inbound intake & routing policy
 
 - The operator supplied a full inbound qualification and routing specification for Florida Ramp & Lift, replacing the placeholders the supervised-pilot work has been carrying. Recorded as [`FRL_INBOUND_INTAKE_ROUTING_POLICY.md`](./ops/client-delivery/FRL_INBOUND_INTAKE_ROUTING_POLICY.md), `DOCUMENTED_ONLY` — it describes intended behaviour so schemas, call state, CRM mapping and fixtures can be designed against one source. It authorizes nothing; readiness is not activation.

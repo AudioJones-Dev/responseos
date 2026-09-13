@@ -1,5 +1,27 @@
 # Pricing and Onboarding
 
+**Current commercial authority:** [ResponseOS Pricing & Commercial Doctrine v1.0](./strategy/responseos-pricing-commercial-doctrine-v1.md), effective September 13, 2026; recorded by ADR-0054.
+
+## Current operating guidance
+
+ResponseOS is managed revenue-response infrastructure for founder-led service businesses. Its commercial architecture is Assessment + Implementation + Managed Operations + Transparent Provider Usage.
+
+1. Start with a free fit review. Use the $1,500 standard assessment when leakage, workflow complexity, operating rules, integrations, or readiness need investigation. Complex assessments are $2,500–$5,000. A simple, already-bounded pilot does not require a paid assessment.
+2. Preserve fit/no-fit judgment. A no-fit assessment still delivers useful findings, a workflow map, and a leak estimate where supported. Do not promise implementation merely because the assessment was purchased.
+3. Scope against doctrine sections 5, 13, 21, and 22. Use the bounded Supervised Recovery Pilot for the present offer; Managed Core and Managed Operations retain their target-state and operationally provisional qualifications. The complete prices and terms are in doctrine section 27.
+4. Apply the standard assessment credit only to a qualifying Managed Core implementation within 30 days, with substantially consistent scope and no extraordinary fieldwork or custom architecture (section 5.1).
+5. Record workflows, locations, channels, integrations, support boundaries, optimization allowance, exclusions, and change-order triggers. Use the implementation billing milestones and after-go-live minimum terms in section 10. Preserve separately approved support and launch gates.
+6. Prefer client-owned provider accounts where operationally practical. Where AJ Digital operates them, pass usage through at cost unless a separate provider-administration fee is expressly approved. No automatic percentage markup or bundled allowance applies. Commercial preference does not authorize changes to credential or provider architecture.
+7. Keep fixed implementation and managed operations as the current model. No standard revenue share applies. Potential revenue, estimated influence, verified bookings/jobs, collected revenue, and attributable recovered revenue must remain distinct.
+8. Measure delivery hours, support burden, usage, QA, exceptions, and account margin under doctrine sections 24 and 30. Commercially ratified prices are not measured delivery economics or proof of operational readiness.
+
+Billing implementation remains v0.5-gated under ADR-0010. Provider activation, credentials, production deployment, and customer-specific contractual commitments remain separately governed.
+
+## Historical planning — superseded commercial terms
+
+The original material below is retained for provenance and earlier cross-references. Its prices, tier names, credit rules, standard outcome-fee options, usage allowances, markups, and default quotes must not be used for current proposals. The commercial doctrine above controls where they conflict.
+
+
 > **Commercial status:** The amounts, legacy Recovery-tier names, included
 > usage, overages, pilot terms, and default quote in this document are
 > provisional planning material—not newly validated or approved public pricing.

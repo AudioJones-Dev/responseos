@@ -27,27 +27,26 @@ const PROOF = [
   { value: "1 ledger", label: "Every event tied to recovered revenue" },
 ];
 
-// OFFER — the commercial philosophy (docs/README.md). RECOVER is the delivery loop.
 const OFFER = [
   {
     title: "Outcomes First",
-    body: "We sell recovered revenue and booked jobs — not AI features or seat licenses.",
+    body: "We scope work around response delays, missed opportunities, follow-up, and operational visibility.",
   },
   {
-    title: "Front the Work",
-    body: "We do the setup and integration up front, so you see proof before you commit a dollar.",
+    title: "Define the Work",
+    body: "Start with a free fit review. When investigation is needed, a paid assessment defines scope before implementation.",
   },
   {
     title: "Framework Driven",
     body: "Every engagement runs the same RECOVER loop: respond, evaluate, capture, offer, verify, escalate, report.",
   },
   {
-    title: "Earn on Outcomes",
-    body: "Optional outcome fees are upside, tied to verified results — never performance-only.",
+    title: "Managed Accountability",
+    body: "A fixed implementation fee and monthly managed service cover agreed responsibilities. Provider usage is separate.",
   },
   {
-    title: "ROI-Aligned Partnerships",
-    body: "Pricing is anchored to the revenue we recover, so cost only matters next to what it returns.",
+    title: "Bounded Scope",
+    body: "Pricing follows workflows, locations, channels, integrations, and support obligations. Expanded scope requires a change order.",
   },
 ];
 
@@ -94,14 +93,14 @@ export default function MarketingHome() {
       <section className="relative isolate mx-auto w-full max-w-6xl overflow-hidden px-4 py-16 sm:px-6">
         <AtmosphereBackground family="noise-glass" size="1600x900" intensity={0.55} />
         <p className="text-xs font-semibold uppercase tracking-widest text-ink-muted">
-          The OFFER philosophy
+          Our commercial approach
         </p>
         <h2 className="mt-2 font-display text-2xl font-semibold text-ink">
-          Why we win when you win
+          Clear scope. Managed responsibility.
         </h2>
         <p className="mt-2 max-w-2xl text-sm text-ink-secondary">
-          OFFER is how we structure the relationship. Five principles keep the
-          incentives pointed at your recovered revenue, not our feature list.
+          Start with a defined operating problem and agree on scope, fees, and
+          measurement before implementation.
         </p>
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {OFFER.map((o) => (

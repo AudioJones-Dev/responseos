@@ -1,5 +1,8 @@
 # ResponseOS — Product Requirements Document (PRD)
 
+> **Commercial supersession — September 13, 2026:** [Pricing & Commercial Doctrine v1.0](../strategy/responseos-pricing-commercial-doctrine-v1.md), recorded by ADR-0054, governs current positioning, assessment fees, tiers, terms, provider usage, qualification, and attribution. Conflicting Recovery or Business Memory tiers, old prices, mandatory paid assessments, automatic usage markups, and standard outcome-fee offers below are historical planning only. Delivery assumptions remain provisional. Provider ownership, runtime readiness, support commitments, and deployment permissions require their existing separate gates.
+
+
 **Owner:** AJ Digital LLC / Audio Jones
 **Status:** Expanded product-definition companion. The short [`../PRD.md`](../PRD.md) remains the operational PRD entry point; `../ROADMAP.md` and `../DECISIONS.md` remain authoritative for milestone status and accepted decisions until the documentation governance canonicalization pass is approved.
 **Last updated:** 2026-06-02

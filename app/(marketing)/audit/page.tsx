@@ -1,27 +1,31 @@
 import { ButtonLink, Card } from "@/components/ui";
 import { AuditRequestForm } from "./AuditRequestForm";
 
+const description =
+  "Start with a free ResponseOS fit review. When investigation is needed, a $1,500 standard assessment defines readiness, potential leakage, and implementation scope.";
+
 export const metadata = {
-  title: "Revenue recovery audit",
-  description:
-    "Map your missed-demand surface and get an estimated recovered-revenue number for the next 30 days — a clear figure, not a sales pitch.",
+  title: "Fit review and assessment",
+  description,
+  openGraph: { title: "ResponseOS Fit Review", description },
+  twitter: { title: "ResponseOS Fit Review", description },
 };
 
 const STEPS = [
   {
     n: "01",
-    title: "Connect your call log + CRM",
-    body: "We pull your missed calls, after-hours traffic, and quote history (mock for now). No rip-and-replace — we read what you already have.",
+    title: "Start with a free fit review",
+    body: "Discuss your response process, business goals, and approximate opportunity economics. This review determines fit and whether a paid assessment is needed.",
   },
   {
     n: "02",
-    title: "We size the missed-demand surface",
-    body: "Missed calls, unanswered SMS, lost quote requests, and slow follow-up are mapped against your average job value to find the leak.",
+    title: "Investigate where needed",
+    body: "The standard assessment is $1,500; complex assessments are $2,500–$5,000. A simple, already-bounded pilot does not require a paid assessment.",
   },
   {
     n: "03",
-    title: "You get a recovery plan with an ROI estimate",
-    body: "A RECOVER deployment plan and an estimated recovered-revenue number for the next 30 days — proof before you commit a dollar.",
+    title: "Agree on a bounded scope",
+    body: "An assessment produces findings, a fit/no-fit recommendation, and implementation scope where appropriate. Opportunity estimates remain estimates, not attributable recovered revenue.",
   },
 ];
 
@@ -36,28 +40,28 @@ export default function AuditPage() {
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-16 sm:px-6">
       <p className="text-xs font-semibold uppercase tracking-widest text-ink-muted">
-        Revenue recovery audit
+        Fit review and assessment
       </p>
       <h1 className="mt-2 max-w-3xl font-display text-3xl font-semibold leading-[1.1] text-ink sm:text-4xl">
-        See the revenue you&apos;re already missing
+        Find the response problem worth solving
       </h1>
       <p className="mt-4 max-w-2xl text-lg text-ink-secondary">
-        We map your missed-demand surface area and hand you an estimated
-        recovered-revenue number for the next 30 days. A clear figure, not a
-        sales pitch.
+        Start with a free fit review. If your workflows, systems, or readiness
+        need investigation, we agree on a paid assessment before beginning that
+        work. The recommendation may be to proceed, narrow scope, or use a simpler solution.
       </p>
       <div className="mt-8 flex flex-wrap gap-3">
         <ButtonLink href="#request" glow>
-          Request my audit
+          Request a free fit review
         </ButtonLink>
         <ButtonLink href="/demo" variant="secondary">
-          See it on real workflows
+          See the simulated workflow
         </ButtonLink>
       </div>
 
       <section className="mt-14">
         <h2 className="font-display text-2xl font-semibold text-ink">
-          How the audit runs
+          How the review works
         </h2>
         <ol className="mt-8 space-y-4">
           {STEPS.map((s) => (
@@ -79,8 +83,9 @@ export default function AuditPage() {
           What we look for
         </h2>
         <p className="mt-2 max-w-2xl text-sm text-ink-secondary">
-          Every leak is logged as a lead event and priced against your average
-          job value.
+          We examine response delays, missed demand, and follow-up gaps.
+          Opportunity value informs fit; workflow complexity and operating
+          responsibility determine scope and pricing.
         </p>
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
           {SURFACE.map((item) => (
@@ -94,11 +99,11 @@ export default function AuditPage() {
 
       <section id="request" className="mt-14 scroll-mt-24">
         <h2 className="font-display text-2xl font-semibold text-ink">
-          Request your audit
+          Request a free fit review
         </h2>
         <p className="mt-2 max-w-2xl text-sm text-ink-secondary">
-          Tell us where the demand is leaking. We&apos;ll come back with a
-          recovery plan and a 30-day recovered-revenue estimate.
+          Tell us about your response process and operating needs. Submitting
+          a request does not purchase an assessment or book a meeting.
         </p>
         <Card className="mt-8" as="section">
           <AuditRequestForm />

@@ -32,6 +32,28 @@
   ],
   "tasks": [
     {
+      "id": "COMMERCIAL-PRICING-PAGE-V1",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Align public pricing and linked fit-review copy with commercial doctrine",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-09-13",
+      "due": "2026-09-13"
+    },
+    {
+      "id": "COMMERCIAL-DOCTRINE-V1",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Save pricing doctrine v1.0 and reconcile internal commercial references",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-09-13",
+      "due": "2026-09-13"
+    },
+    {
       "id": "CONVERGE-TRANSPORT",
       "ref": 167,
       "refType": "pull",

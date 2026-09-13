@@ -1,5 +1,28 @@
 # Client-Facing Offer
 
+**Current commercial authority:** [ResponseOS Pricing & Commercial Doctrine v1.0](./strategy/responseos-pricing-commercial-doctrine-v1.md), effective September 13, 2026; recorded by ADR-0054.
+
+## Current offer summary
+
+ResponseOS is managed revenue-response infrastructure for founder-led service businesses.
+
+ResponseOS implementations start at $8,500. Managed ResponseOS starts at $1,500/month, plus provider usage.
+
+The Supervised Recovery Pilot covers one defined revenue-response workflow under supervised conditions, with a 90-day minimum after go-live. Scope, integrations, support, reporting, and optimization are bounded in the agreement. It does not include unlimited changes, causal revenue attribution, enterprise governance, or 24/7 custom incident response.
+
+A free fit review determines whether a paid assessment is needed. The standard assessment is $1,500; complex assessments are $2,500–$5,000. A paid assessment is not mandatory for a simple, already-bounded pilot.
+
+Managed Core and Managed Operations are scoped against workflows, locations, channels, integrations, support, and governance. Their delivery assumptions remain provisional; their target pricing does not establish that every listed capability is ready. Enterprise / Regulated remains future, proposal only. Refer to doctrine sections 5 and 27 for the full ranges and statuses.
+
+Provider usage is separate and transparent. Founding-client pricing is an explicitly constrained exception, not the list-price anchor. Fixed implementation + managed operations is the standard; no standard revenue share applies. Only evidence meeting an agreed attribution methodology supports an attributable recovered-revenue claim.
+
+Commercial scope must be checked against repository capability and delivery readiness before any client commitment. This document does not activate providers or authorize deployment.
+
+## Historical offer — not for current proposals or publication
+
+The original offer below is retained for provenance. Its Recovery tiers, numeric terms, usage allowances, automatic markups, outcome-fee clauses, SLA defaults, and unverified delivery claims are superseded planning, not approved current commitments. Use the current summary and governing doctrine above.
+
+
 > **Commercial and support status:** The price points, legacy Recovery-tier
 > names, and pilot terms below remain unresolved prior planning—not validated or
 > approved public pricing. The bundled-usage table and SLA defaults are

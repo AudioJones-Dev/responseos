@@ -184,7 +184,7 @@ Trust Infrastructure
 The repository has carried two positioning narratives in parallel:
 
 - **"AI Revenue Recovery Platform"** — `PRD.md`, `product-spec.md`, `client-facing-offer.md`, the `EngagementTier` enum (`recovery_core` / `recovery_pro` / `recovery_performance`), and the shipped marketing surface.
-- **"Managed Business Memory System"** — the GTM roadmap, ratified as positioning by ADR-0022 and as the public pricing *model* by ADR-0028.
+- **"Managed Business Memory System"** — the GTM roadmap, ratified as positioning by ADR-0022 and historically as the public pricing *model* by ADR-0028. ADR-0054 supersedes that commercial model; Business Memory remains a strategic mechanism, not the primary public pricing meter.
 
 They are not competing brands. They are **adjacent stages of one progression**, and the doctrine fixes their relationship:
 
@@ -193,7 +193,7 @@ They are not competing brands. They are **adjacent stages of one progression**, 
 | What does the buyer come for? | Revenue recovery. Primary CTA is **"Revenue Recovery Demo"**. | ADR-0035 |
 | What is the mechanism? | Business Memory — captured operational evidence. | ADR-0022 |
 | What proves it worked? | Recovered revenue, separated into estimated and verified. | ADR-0022, §14 |
-| What is the public pricing model? | Capacity-based Business Memory tiers, with optional outcome fees layered on. Price points remain open. | ADR-0028 |
+| What is the public pricing model? | Assessment + Implementation + Managed Operations + Transparent Provider Usage. Complexity-based scope and starting-at public pricing; Business Memory is not the primary pricing meter. | ADR-0054; [commercial doctrine](./responseos-pricing-commercial-doctrine-v1.md) |
 | What does it become? | Founder Intelligence. | This doctrine, §8 |
 
 **Business memory is the mechanism; recovered revenue is the proof; founder intelligence is the destination.** Any asset that leads with memory *instead of* recovery, or that treats them as alternatives, is off-doctrine.
@@ -270,6 +270,8 @@ These belong in technical documentation, where they are accurate and useful. In 
 ## 7. Diagnostic-first doctrine
 
 **Immutable commercial principle: diagnose before implementation.**
+
+Under ADR-0054 and commercial doctrine sections 5.1 and 10, a free fit review may establish a simple, already-bounded pilot's scope. A paid assessment is required where meaningful investigation is needed, not universally. The fit/no-fit obligation remains.
 
 The diagnostic determines: inbound call volume · missed-call volume · after-hours demand · lead quality · response latency · current call-routing setup · current CRM or FSM · current booking process · follow-up process · average job value · close-rate assumptions · data readiness · integration readiness · compliance requirements · whether ResponseOS is likely to produce measurable value.
 
@@ -620,7 +622,7 @@ amount · state · evidence source · originating event · intervention · custo
 
 > **Outcome fees must not be charged until the attribution and dispute process is operationally validated.**
 
-The fourth rule has a commercial consequence: `Engagement.outcome_fee_kind` already supports `pct_recovered_revenue` and `per_verified_recovered_lead`. **Neither may be billed** until §18's Revenue Gate passes. Outcome fees remain optional upside on a retainer — never the whole deal ([`pricing-and-onboarding.md`](../pricing-and-onboarding.md)).
+The fourth rule has a commercial consequence: `Engagement.outcome_fee_kind` already supports `pct_recovered_revenue` and `per_verified_recovered_lead`. **Neither may be billed** until §18's Revenue Gate passes. These schema options do not authorize an offer. ADR-0054 establishes fixed implementation + managed operations as the current commercial model, with no standard revenue share; a future outcome-based arrangement requires separately agreed terms and validated attribution and dispute procedures.
 
 ### 14.4 Start manual
 
