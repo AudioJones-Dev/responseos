@@ -5,7 +5,7 @@
 
 **Owner:** AJ Digital LLC / Audio Jones
 **Status:** Expanded product-definition companion. The short [`../PRD.md`](../PRD.md) remains the operational PRD entry point; `../ROADMAP.md` and `../DECISIONS.md` remain authoritative for milestone status and accepted decisions until the documentation governance canonicalization pass is approved.
-**Last updated:** 2026-06-02
+**Last updated:** 2026-09-13
 **Read first:** [`RESPONSEOS_BUILD_SOURCE.md`](./RESPONSEOS_BUILD_SOURCE.md)
 
 > **Provider-stack note — supersedes inline framing below.** This PRD predates ADR-0031 → ADR-0037. For the current provider stack the **`../DECISIONS.md` ADRs are authoritative**: Telnyx primary carrier / Twilio failover; Vapi primary orchestration with **OpenAI as the preferred in-Vapi brain** / Retell secondary; HubSpot default CRM SoR; **Calendly** as the v0.3 MVP scheduling baseline (Cal.com deferred); the Node voice gateway + Redis are **deferred**. Any **Grok Voice / OpenAI-Realtime-fallback / Twilio-default / dedicated-gateway** wording below is **superseded** by ADR-0031/0032/0033/0036/0037.

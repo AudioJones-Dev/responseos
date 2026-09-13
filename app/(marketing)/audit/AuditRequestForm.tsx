@@ -184,7 +184,7 @@ export function AuditRequestForm() {
           <p className="text-sm text-danger">{error}</p>
         ) : (
           <p className="text-xs text-ink-muted">
-            Your submitted details are stored for fit review and follow-up.
+            Successfully submitted details are stored for fit review and follow-up.
             No payment or assessment purchase.
           </p>
         )}

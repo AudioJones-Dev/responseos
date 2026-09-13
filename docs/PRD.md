@@ -51,7 +51,7 @@ Commercial authority is [Pricing & Commercial Doctrine v1.0](./strategy/response
 | **Offer** | Present estimate, financing, self-scheduling, callback path | Faster conversion |
 | **Verify** | Confirm appointment, consent, payment intent, routing | Lower no-shows, fewer errors |
 | **Escalate** | Hand off edge cases, high-value jobs, compliance-sensitive calls | Better customer trust |
-| **Report** | Prove recovered leads, booked jobs, revenue by tenant and source | Outcome-based pricing |
+| **Report** | Prove recovered leads, booked jobs, revenue by tenant and source | Evidence-based revenue reporting |
 
 Buyer-facing version of the same 7 stages: Revenue Leak Detection · Engagement Automation · Call Capture System · Outcome-Based Booking · Verification + Qualification · Economic ROI Tracking · Reporting + Retention.
 

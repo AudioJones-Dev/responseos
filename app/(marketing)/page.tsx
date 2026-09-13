@@ -68,9 +68,9 @@ export default function MarketingHome() {
           follow-up, books opportunities, and reports the revenue you recovered.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
-          <ButtonLink href="/audit" glow>Start with a free fit review</ButtonLink>
-          <ButtonLink href="/demo" variant="secondary">
-            Watch the demo
+          <ButtonLink href="/demo" glow>Revenue Recovery Demo</ButtonLink>
+          <ButtonLink href="/audit" variant="secondary">
+            Start with a free fit review
           </ButtonLink>
         </div>
 
