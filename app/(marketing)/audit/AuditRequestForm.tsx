@@ -77,12 +77,11 @@ export function AuditRequestForm() {
           Request received
         </p>
         <h3 className="mt-2 font-display text-xl font-semibold text-ink">
-          Your audit is queued
+          Your fit-review request is recorded
         </h3>
         <p className="mt-2 text-sm text-ink-secondary">
-          We&apos;ll map your missed-demand surface and follow up with a
-          recovery plan and a 30-day recovered-revenue estimate. No spam, no
-          sales pressure.
+          Your request has been recorded. No assessment has been purchased
+          and no meeting has been booked.
         </p>
         {reference ? (
           <p className="mt-4 font-mono text-xs text-ink-muted">
@@ -179,13 +178,14 @@ export function AuditRequestForm() {
 
       <div className="flex items-center gap-4 sm:col-span-2">
         <Button type="submit" glow disabled={status === "submitting"}>
-          {status === "submitting" ? "Sending…" : "Request my audit"}
+          {status === "submitting" ? "Submitting…" : "Request a free fit review"}
         </Button>
         {status === "error" ? (
           <p className="text-sm text-danger">{error}</p>
         ) : (
           <p className="text-xs text-ink-muted">
-            Mock capture — no data leaves this demo.
+            Successfully submitted details are stored for fit review and follow-up.
+            No payment or assessment purchase.
           </p>
         )}
       </div>

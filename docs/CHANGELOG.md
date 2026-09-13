@@ -4,6 +4,11 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — align commercial doctrine and public pricing (#176)
+
+- Record owner-ratified Pricing & Commercial Doctrine v1.0 and ADR-0054; mark conflicting legacy commercial references historical while preserving runtime and attribution gates.
+- Align pricing, assessment, and homepage commercial copy with bounded Pilot pricing, conditional assessment, transparent provider usage, and target-offering readiness labels. Intake behavior is unchanged. Review follow-up aligns demo/industry CTAs, supersedes legacy canonical brand offers, and corrects implementation-status records.
+
 ## Unreleased — docs: keep the FRL CRM task qualified-only and require auditable consent evidence
 
 - Two findings arrived from review **after** [#171](https://github.com/AudioJones-Dev/responseos/pull/171) had already merged, so they land here rather than being folded into the entry below. Both were verified against the repository and decided by the operator; neither changes caller-facing behaviour and no gate was removed.

@@ -38,7 +38,7 @@ The authoritative provider-stack baseline is the decision log: Telnyx primary / 
 
 10. [`DESIGN.md`](./DESIGN.md) — visual system, UX spine, design maturity ladder.
 11. [`client-facing-offer.md`](./client-facing-offer.md) — buyer-facing summary.
-12. [`pricing-and-onboarding.md`](./pricing-and-onboarding.md) — provisional commercial strategy and qualification gates; numeric terms remain unvalidated for publication.
+12. [Pricing & Commercial Doctrine v1.0](./strategy/responseos-pricing-commercial-doctrine-v1.md) — owner-ratified pricing, scope, usage, and attribution rules; delivery economics remain provisional. [Pricing and onboarding](./pricing-and-onboarding.md) applies the doctrine; [reconciliation](./strategy/responseos-pricing-reconciliation-2026-09-13.md) records superseded references, completed public-page copy, and the separate publication/deployment gate.
 13. [`ops/client-delivery/README.md`](./ops/client-delivery/README.md) — canonical future-client delivery standards, reconciliation, and reusable templates.
 
 ## Environment, deployment, security
@@ -67,7 +67,7 @@ Historical implementation briefs whose work has shipped. Kept for provenance; ma
 
 ## Frameworks
 
-- **OFFER** = Philosophy. Outcomes First / Front the Work / Framework Driven / Earn on Outcomes / ROI-Aligned Partnerships.
+- **OFFER** = Historical philosophy wording: Outcomes First / Front the Work / Framework Driven / Earn on Outcomes / ROI-Aligned Partnerships. This wording does not govern current payment timing, outcome fees, or pricing; ADR-0054 and the [commercial doctrine](./strategy/responseos-pricing-commercial-doctrine-v1.md) supersede those commercial interpretations.
 - **RECOVER** = Service Delivery. Seven stages, operator-mapped: Respond / Evaluate / Capture / Offer / Verify / Escalate / Report. Buyer-facing translation: Revenue Leak Detection / Engagement Automation / Call Capture System / Outcome-Based Booking / Verification + Qualification / Economic ROI Tracking / Reporting + Retention.
 
 ResponseOS is the software layer where OFFER + RECOVER lives.

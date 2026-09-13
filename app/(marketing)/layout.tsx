@@ -42,7 +42,7 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
               Operator console
             </Link>
             <ButtonLink href="/audit" size="sm" glow>
-              Run a revenue audit
+              Free fit review
             </ButtonLink>
           </div>
         </div>
@@ -64,7 +64,7 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
                 Demo
               </Link>
               <Link href="/audit" className="hover:text-ink-secondary">
-                Revenue audit
+                Free fit review
               </Link>
               <Link href="/trust" className="hover:text-ink-secondary">
                 Trust

@@ -1,5 +1,7 @@
 # RESPONSEOS_POSITIONING.md — Market Positioning & Category
 
+> **Commercial supersession — September 13, 2026:** [Pricing & Commercial Doctrine v1.0](../strategy/responseos-pricing-commercial-doctrine-v1.md), recorded by ADR-0054, governs current positioning, assessment fees, tiers, terms, provider usage, qualification, and attribution. Conflicting Recovery or Business Memory tiers, old prices, mandatory paid assessments, automatic usage markups, and standard outcome-fee offers below are historical planning only. Delivery assumptions remain provisional. Provider ownership, runtime readiness, support commitments, and deployment permissions require their existing separate gates.
+
 **Product:** ResponseOS
 **Owner:** AJ Digital LLC / Audio Jones
 **Status:** Canonical brand doc. Source of truth for positioning, category, and differentiation. Update via PR.

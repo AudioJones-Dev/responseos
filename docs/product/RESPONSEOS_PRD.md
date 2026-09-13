@@ -1,8 +1,11 @@
 # ResponseOS — Product Requirements Document (PRD)
 
+> **Commercial supersession — September 13, 2026:** [Pricing & Commercial Doctrine v1.0](../strategy/responseos-pricing-commercial-doctrine-v1.md), recorded by ADR-0054, governs current positioning, assessment fees, tiers, terms, provider usage, qualification, and attribution. Conflicting Recovery or Business Memory tiers, old prices, mandatory paid assessments, automatic usage markups, and standard outcome-fee offers below are historical planning only. Delivery assumptions remain provisional. Provider ownership, runtime readiness, support commitments, and deployment permissions require their existing separate gates.
+
+
 **Owner:** AJ Digital LLC / Audio Jones
 **Status:** Expanded product-definition companion. The short [`../PRD.md`](../PRD.md) remains the operational PRD entry point; `../ROADMAP.md` and `../DECISIONS.md` remain authoritative for milestone status and accepted decisions until the documentation governance canonicalization pass is approved.
-**Last updated:** 2026-06-02
+**Last updated:** 2026-09-13
 **Read first:** [`RESPONSEOS_BUILD_SOURCE.md`](./RESPONSEOS_BUILD_SOURCE.md)
 
 > **Provider-stack note — supersedes inline framing below.** This PRD predates ADR-0031 → ADR-0037. For the current provider stack the **`../DECISIONS.md` ADRs are authoritative**: Telnyx primary carrier / Twilio failover; Vapi primary orchestration with **OpenAI as the preferred in-Vapi brain** / Retell secondary; HubSpot default CRM SoR; **Calendly** as the v0.3 MVP scheduling baseline (Cal.com deferred); the Node voice gateway + Redis are **deferred**. Any **Grok Voice / OpenAI-Realtime-fallback / Twilio-default / dedicated-gateway** wording below is **superseded** by ADR-0031/0032/0033/0036/0037.

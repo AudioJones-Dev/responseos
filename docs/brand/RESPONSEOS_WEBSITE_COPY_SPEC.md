@@ -1,5 +1,8 @@
 # RESPONSEOS_WEBSITE_COPY_SPEC.md — Marketing Site Copy Specification
 
+> **Commercial supersession — September 13, 2026:** [Pricing & Commercial Doctrine v1.0](../strategy/responseos-pricing-commercial-doctrine-v1.md), recorded by ADR-0054, governs current positioning, assessment fees, tiers, terms, provider usage, qualification, and attribution. Conflicting Recovery or Business Memory tiers, old prices, mandatory paid assessments, automatic usage markups, and standard outcome-fee offers below are historical planning only. Delivery assumptions remain provisional. Provider ownership, runtime readiness, support commitments, and deployment permissions require their existing separate gates.
+
+
 **Product:** ResponseOS
 **Owner:** AJ Digital LLC / Audio Jones
 **Status:** Canonical brand doc. Page-by-page copy spec for the marketing site (`app/(marketing)/`). Update via PR.

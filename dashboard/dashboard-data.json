@@ -32,6 +32,32 @@
   ],
   "tasks": [
     {
+      "id": "COMMERCIAL-PRICING-PAGE-V1",
+      "ref": 176,
+      "refType": "pull",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Align public pricing and all fit-review entry CTAs with commercial doctrine",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-09-13",
+      "due": "2026-09-13"
+    },
+    {
+      "id": "COMMERCIAL-DOCTRINE-V1",
+      "ref": 176,
+      "refType": "pull",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Save pricing doctrine v1.0 and reconcile commercial and canonical brand references",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-09-13",
+      "due": "2026-09-13"
+    },
+    {
       "id": "CONVERGE-TRANSPORT",
       "ref": 167,
       "refType": "pull",
