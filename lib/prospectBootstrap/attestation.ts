@@ -18,9 +18,20 @@ const ProviderAttestationPayloadSchema = z.object({
   recordingEnabled: z.boolean(),
   providerMemoryEnabled: z.boolean(),
   allowedTools: z.array(z.string()),
+  // Supervised tenants attest three further provider settings (ADR-0052).
+  // Optional so every prospect attestation already signed stays valid and its
+  // canonical payload is unchanged.
+  insightGroupConfigured: z.boolean().optional(),
+  messageHistoryUpdatesEnabled: z.boolean().optional(),
+  numberRecordingEnabled: z.boolean().optional(),
+  consentCaptureVerified: z.boolean().optional(),
+  captureIntervalVerified: z.boolean().optional(),
+  consentEvidenceRef: z.string().min(1).optional(),
   attestedAt: z.iso.datetime(),
   expiresAt: z.iso.datetime(),
 });
+
+export type ProviderAttestationPayload = z.infer<typeof ProviderAttestationPayloadSchema>;
 
 const SignedProviderAttestationSchema = z.object({
   payload: ProviderAttestationPayloadSchema,
@@ -62,7 +73,13 @@ function canonicalE164(value: string): string {
   return e164;
 }
 
-export function verifyProspectProviderAttestation(params: {
+/**
+ * Verifies authorship and freshness only: the signature over the canonical
+ * payload, the number it names, and its time window. What the attested
+ * configuration must *say* depends on the lane, so each caller applies its own
+ * preflight to the returned payload (ADR-0052).
+ */
+export function verifyProviderAttestationSignature(params: {
   value: unknown;
   providerNumberId: string;
   e164: string;
@@ -87,6 +104,18 @@ export function verifyProspectProviderAttestation(params: {
     Buffer.from(attestation.signature, "base64"),
   );
   if (!valid) throw new Error("provider_attestation_signature_invalid");
-  validateProspectAssistantPreflight(payload);
+  return attestation;
+}
+
+/** Signature and window, then the prospect-demo assistant preflight. */
+export function verifyProspectProviderAttestation(params: {
+  value: unknown;
+  providerNumberId: string;
+  e164: string;
+  publicKey: string | undefined;
+  now?: Date;
+}): SignedProviderAttestation {
+  const attestation = verifyProviderAttestationSignature(params);
+  validateProspectAssistantPreflight(attestation.payload);
   return attestation;
 }

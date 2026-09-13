@@ -8,6 +8,7 @@ const database = vi.hoisted(() => ({
   contact: { findFirst: vi.fn() },
   leadEvent: { findFirst: vi.fn() },
   leadQualification: { findUnique: vi.fn() },
+  quoteRequest: { findUnique: vi.fn() },
 }));
 vi.mock("@/lib/db/client", () => ({ db: database }));
 vi.mock("@/lib/auth/session", () => ({ requireRole: vi.fn() }));

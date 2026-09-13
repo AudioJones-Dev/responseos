@@ -215,3 +215,7 @@ POST /api/appointments/availability
   { "start": "2026-05-08T13:00:00-04:00", "end": "2026-05-08T15:00:00-04:00" }
 ]}
 ```
+
+### Supervised call review (repository implementation; activation gated)
+
+`POST /api/admin/call-reviews/:id` approves/rejects an expected revision or dispatches an approved revision. `POST /api/admin/call-capture/:id/consent` appends operator-observed per-call transcript consent at server time. Both require an authenticated operator; clients cannot invoke them. Detailed payloads and limitations: [Mike demonstration brief](./product/responseos-mike-live-demo.md).

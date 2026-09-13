@@ -329,3 +329,7 @@ Architectural placement and product framing are documented in `architecture.md` 
 - No file-upload schema is committed to. Uploads are gated on the `files` / `media` model already on the v0.2 roadmap above.
 - No third-party knowledge integrations (Obsidian, Notion, Confluence, etc.) are committed to.
 - No additional general-knowledge Prisma models, retrieval runtime, or provider integration ships from this roadmap entry.
+
+### Supervised demonstration evidence (0014–0015, in review)
+
+Additive candidate runtime fields are followed by CallCaptureSession (pinned approved snapshot per tenant/provider call), CallConsentEvent (append-only per-call artifact authority), and CallReview (immutable evidence and approved payload revision with independent CRM/email state). New supervised calls carry review_required; legacy calls default false. See [implementation brief](./product/responseos-mike-live-demo.md). No database migration or live activation is claimed by this documentation.

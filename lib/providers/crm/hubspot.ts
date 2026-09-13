@@ -124,12 +124,27 @@ export class HubSpotCrmProvider implements CrmProvider {
   }
 
   async createCallActivity(activity: CrmCallActivityCreate) {
-    const body = [
-      activity.sanitizedSummary,
-      `Qualification: ${activity.qualification}`,
-      activity.nextAction ? `Next action: ${activity.nextAction}` : null,
-      `ResponseOS evidence: ${activity.evidenceReference}`,
-    ].filter(Boolean).join("\n")
+    const body = activity.detail
+      ? [
+          "ResponseOS Call Summary",
+          `Caller: ${activity.detail.caller ?? "Not captured"}`,
+          `Relationship: ${activity.detail.relationship ?? "Not captured"}`,
+          `Event Type: ${activity.detail.eventType ?? "Not captured"}`,
+          `Service: ${activity.detail.service ?? "Not captured"}`,
+          `Location: ${activity.detail.location ?? "Not captured"}`,
+          `Summary: ${activity.sanitizedSummary}`,
+          `Qualification: ${activity.qualification}`,
+          `Quote Requested: ${activity.detail.quoteRequested ? "Yes" : "No"}`,
+          `Installation Photos Requested: ${activity.detail.photosRequested ? "Yes" : "No"}`,
+          `Next Action: ${activity.nextAction ?? "None recorded"}`,
+          `ResponseOS Evidence: ${activity.evidenceReference}`,
+        ].join("\n")
+      : [
+          activity.sanitizedSummary,
+          `Qualification: ${activity.qualification}`,
+          activity.nextAction ? `Next action: ${activity.nextAction}` : null,
+          `ResponseOS evidence: ${activity.evidenceReference}`,
+        ].filter(Boolean).join("\n")
     const created = await this.request<HubSpotObject>("/crm/v3/objects/calls", {
       method: "POST",
       body: JSON.stringify({

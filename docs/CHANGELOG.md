@@ -1,3 +1,7 @@
+# Unreleased — supervised FRL demonstration (in review)
+
+- Reuse the supervised runtime candidate and add approved business knowledge, pinned call context, per-call consent evidence, operator-reviewed CRM/email follow-up, and a rehearsal contract. Live activation and provider consent verification remain gated.
+
 # Changelog — ResponseOS
 
 All notable changes to this repo. Newest first. Format is a lightweight take on Keep-a-Changelog. Each entry links to the merge commit; PR numbers reference `audiojones-dev/responseos`.

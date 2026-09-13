@@ -1,6 +1,9 @@
+import { canRetainCallContent, metadataOnly, withCaptureLock } from "@/lib/callReview/consent";
+import { queueCallReview } from "@/lib/callReview/service";
 import { after, NextResponse } from "next/server";
 import { runCrmSyncForCall } from "@/lib/crm/syncFinalizedCall";
 import {
+  findAgentTargetForProviderCall,
   getWebhookProcessingState,
   recordWebhookEvent,
   setWebhookProcessStatus,
@@ -8,16 +11,32 @@ import {
 import { errorResponse } from "@/lib/providers/webhook-helpers";
 import { normalizeTelnyxEvent } from "@/lib/providers/telnyx/normalize";
 import {
-  resolveTelnyxEventAssignment,
-} from "@/lib/prospectBootstrap/service";
+  resolveSupervisedTenantForNumber,
+  touchSupervisedAssignment,
+} from "@/lib/agentExecution/supervisedRuntime";
+import { resolveTelnyxEventAssignment } from "@/lib/prospectBootstrap/service";
 import { PROSPECT_CONTENT_RETENTION_DAYS } from "@/lib/prospectBootstrap/contracts";
 import {
+  getTelnyxCallId,
+  getTelnyxCallIds,
   getTelnyxAgentTarget,
   getTelnyxOccurredAt,
   parseTelnyxWebhook,
   verifyTelnyxWebhook,
 } from "@/lib/providers/telnyx/webhook";
 
+/**
+ * Three lanes share this endpoint, resolved from the called number:
+ *
+ *   supervised — a customer tenant with a dedicated number. Full retention,
+ *                CRM against the live provider, completed-interaction email.
+ *   prospect   — a personalized demo bootstrap (ADR-0048). Unchanged.
+ *   legacy     — the evergreen demo number (ADR-0047), kept as a documented
+ *                compatibility shim through pilot certification.
+ *
+ * Post-call insight events carry no called number, only call-control ids, so
+ * the destination is recovered from the signed events already in the ledger.
+ */
 export async function POST(req: Request) {
   const publicKey = process.env.TELNYX_PUBLIC_KEY;
   if (
@@ -49,16 +68,31 @@ export async function POST(req: Request) {
     });
   }
 
-  const target = getTelnyxAgentTarget(event.data.payload);
+  const providerCallId = getTelnyxCallId(event.data.payload);
+  const directTarget = getTelnyxAgentTarget(event.data.payload);
+  const correlatedTarget = directTarget
+    ? null
+    : await findAgentTargetForProviderCall({
+        provider: "telnyx",
+        providerCallIds: getTelnyxCallIds(event.data.payload),
+      });
+  const target = directTarget ?? correlatedTarget;
   const occurredAt = getTelnyxOccurredAt(event);
   const receivedAt = new Date();
-  let resolved = process.env.RESPONSEOS_PROSPECT_BOOTSTRAP_ENABLED === "true" && target && occurredAt
+
+  const supervised = target ? await resolveSupervisedTenantForNumber(target, occurredAt ?? receivedAt) : null;
+
+  let resolved = !supervised &&
+    process.env.RESPONSEOS_PROSPECT_BOOTSTRAP_ENABLED === "true" &&
+    target &&
+    occurredAt
     ? await resolveTelnyxEventAssignment({ target, occurredAt, receivedAt })
     : null;
   let personalized = true;
   const legacyAccountId = process.env.RESPONSEOS_DEMO_ACCOUNT_ID;
   const legacyNumber = process.env.RESPONSEOS_DEMO_PHONE_E164;
   if (
+    !supervised &&
     !resolved &&
     target &&
     legacyAccountId &&
@@ -74,30 +108,44 @@ export async function POST(req: Request) {
     personalized = false;
   }
 
-  const ledger = await recordWebhookEvent({
-    account_id: resolved?.accountId,
+  // A supervised tenant is a real client: its call evidence is retained, not
+  // aged out on the prospect content clock.
+  const retainPayload = Boolean(supervised) || (!personalized && Boolean(resolved));
+  const record = async (allowed: boolean, client?: import("@prisma/client").Prisma.TransactionClient) => recordWebhookEvent({
+    client,
+
+    account_id: supervised?.accountId ?? resolved?.accountId,
     provider: "telnyx",
     provider_event_id: event.data.id,
     event_type: event.data.event_type,
-    raw_body: rawBody,
+    raw_body: JSON.stringify(allowed ? event : metadataOnly(event)),
     signature_header: signature ?? undefined,
     signature_valid: true,
-    ...(personalized || !resolved
-      ? { payload_expires_at: new Date((occurredAt ?? receivedAt).getTime() + PROSPECT_CONTENT_RETENTION_DAYS * 24 * 60 * 60 * 1000) }
-      : {}),
+    provider_call_id: providerCallId ?? undefined,
+    // Only a number the provider itself put on this event anchors correlation.
+    agent_target: directTarget ?? undefined,
+    ...(retainPayload
+      ? {}
+      : { payload_expires_at: new Date((occurredAt ?? receivedAt).getTime() + PROSPECT_CONTENT_RETENTION_DAYS * 24 * 60 * 60 * 1000) }),
   });
+  const ledger = supervised && providerCallId
+    ? await withCaptureLock(supervised.accountId, providerCallId, async (client) => record(await canRetainCallContent(supervised.accountId, providerCallId, event, client), client))
+    : await record(Boolean(resolved));
   if (!ledger.ok) {
     return errorResponse(503, {
       code: "webhook_ledger_unavailable",
       message: "Telnyx webhook ledger is unavailable.",
     });
   }
-  if (!target || !occurredAt || !resolved) {
+
+  if (!supervised && (!target || !occurredAt || !resolved)) {
     await setWebhookProcessStatus({
       id: ledger.data.id,
       process_status: "rejected",
       process_error: !target
-        ? "missing_destination"
+        ? providerCallId
+          ? "awaiting_call_correlation"
+          : "missing_destination"
         : !occurredAt
           ? "missing_occurred_at"
           : "unassigned_destination",
@@ -107,18 +155,48 @@ export async function POST(req: Request) {
       { status: 202 },
     );
   }
-  const assignment = resolved;
+
+  const assignment = supervised
+    ? {
+        accountId: supervised.accountId,
+        demoNumber: supervised.numberE164,
+        assignmentId: supervised.assignmentId,
+      }
+    : resolved!;
+  const supervisedTenant = supervised;
+
   const normalizeAfterAck = () => after(async () => {
     try {
-      const normalized = await normalizeTelnyxEvent({
+      const normalize = async (client?: import("@prisma/client").Prisma.TransactionClient) => {
+        const contentAllowed = supervisedTenant && providerCallId
+          ? await canRetainCallContent(assignment.accountId, providerCallId, event, client) : true;
+        const normalized = await normalizeTelnyxEvent({
+        client,
         accountId: assignment.accountId,
         demoNumber: assignment.demoNumber,
         webhookEventId: ledger.data.id,
-        event,
-        ...(personalized
+        event: contentAllowed ? event : metadataOnly(event),
+        ...(supervisedTenant
+          ? { options: { captureCallerIdentity: contentAllowed, createQuoteRequest: false, reviewRequired: true } }
+          : {}),
+        ...(!supervisedTenant && personalized && occurredAt
           ? { transcriptExpiresAt: new Date(occurredAt.getTime() + PROSPECT_CONTENT_RETENTION_DAYS * 24 * 60 * 60 * 1000) }
           : {}),
       });
+        return { normalized, contentAllowed };
+      };
+      const { normalized, contentAllowed } = supervisedTenant && providerCallId
+        ? await withCaptureLock(assignment.accountId, providerCallId, normalize) : await normalize();
+
+
+      if (supervisedTenant) {
+        await touchSupervisedAssignment(supervisedTenant.assignmentId, occurredAt ?? receivedAt);
+        if (normalized.callId && contentAllowed) {
+          await queueCallReview(assignment.accountId, normalized.callId, event.data.payload);
+        }
+        return;
+      }
+
       if (!personalized && normalized.finalized && normalized.callId) {
         await runCrmSyncForCall({
           accountId: assignment.accountId,

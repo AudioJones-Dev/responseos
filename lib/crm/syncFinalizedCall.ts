@@ -1,3 +1,4 @@
+import { ReviewPayloadSchema } from "@/lib/callReview/contracts";
 import "@/lib/serverOnlyGuard";
 import { requireRole } from "@/lib/auth/session";
 import { db } from "@/lib/db/client";
@@ -70,6 +71,15 @@ export async function runCrmSyncForCall(params: {
   callId: string;
   sourceWebhookId?: string;
   providerOverride?: CrmProvider;
+  /**
+   * A live tenant must never be told a mock write succeeded. Recording the
+   * operation against `hubspot` makes the existing stickiness check fail the
+   * attempt as `live_provider_disabled` when the live adapter is not active.
+   */
+  requireLiveProvider?: boolean;
+  /** Write the structured call-summary block instead of the legacy body. */
+  structuredActivity?: boolean;
+  reviewId?: string;
 }): Promise<Result<CrmSyncOperationView>> {
   if (db === null) return err("no_database", "CRM synchronization requires a database connection.");
 
@@ -83,7 +93,7 @@ export async function runCrmSyncForCall(params: {
       create: {
         account_id: params.accountId,
         operation_key: operationKey,
-        provider: provider.providerId,
+        provider: params.requireLiveProvider ? "hubspot" : provider.providerId,
         call_id: params.callId,
         source_webhook_id: params.sourceWebhookId,
       },
@@ -125,12 +135,18 @@ export async function runCrmSyncForCall(params: {
       where: { id: params.callId, account_id: params.accountId },
     });
     if (!call || call.status !== "completed") throw new Error("canonical_call_not_finalized");
+  const protectedCall = call;
+  const approvedRow = protectedCall?.review_required && params.reviewId
+    ? await db.callReview.findFirst({ where: { id: params.reviewId, account_id: params.accountId, call_id: params.callId, status: "approved" } }) : null;
+  if (protectedCall?.review_required && !approvedRow) return err("approval_required", "An approved call review is required.");
+  const approved = approvedRow ? ReviewPayloadSchema.parse(approvedRow.payload_json) : null;
+
     const contact = call.contact_id
       ? await db.contact.findFirst({
           where: { id: call.contact_id, account_id: params.accountId },
         })
       : null;
-    const phone = normalizeE164(contact?.phone ?? call.from_number);
+    const phone = normalizeE164(approved?.phone ?? contact?.phone ?? call.from_number);
     if (!phone) throw new Error("caller_phone_unavailable");
     const lead = await db.leadEvent.findFirst({
       where: { account_id: params.accountId, call_id: call.id },
@@ -139,13 +155,30 @@ export async function runCrmSyncForCall(params: {
     const qualification = lead
       ? await db.leadQualification.findUnique({ where: { lead_event_id: lead.id } })
       : null;
-    const qualificationLabel = qualification?.qualification_status ?? "not_scored";
-    const sanitizedSummary = sanitizeCrmText(call.summary);
+    const quote = lead
+      ? await db.quoteRequest.findUnique({ where: { lead_event_id: lead.id } })
+      : null;
+    const qualificationLabel = approved?.qualification ?? qualification?.qualification_status ?? "not_scored";
+    const sanitizedSummary = sanitizeCrmText(approved?.summary ?? call.summary);
+    // The next action is agent-generated text and can repeat a caller's phone
+    // or email, so it is sanitized before it reaches the CRM.
+    const nextAction = approved ? sanitizeCrmText(approved.nextAction) : lead?.notes ? sanitizeCrmText(lead.notes) : undefined;
     const evidenceReference = `ResponseOS call ${call.id}`;
+    const detail = approved ? { caller: approved.caller, eventType: approved.interaction, service: approved.product, location: approved.location } : params.structuredActivity
+      ? {
+          caller: [contact?.first_name, contact?.last_name].filter(Boolean).join(" ") || undefined,
+          relationship: call.caller_relationship ?? undefined,
+          eventType: call.interaction_class ?? undefined,
+          service: quote?.service_type ?? qualification?.service_needed ?? undefined,
+          location: [contact?.city, contact?.state, contact?.zip].filter(Boolean).join(", ") || undefined,
+          quoteRequested: Boolean(quote),
+          photosRequested: quote?.photos_requested === true,
+        }
+      : undefined;
 
     let providerContactId = operation.provider_contact_id;
     if (!providerContactId) {
-      const verifiedEmail = contact?.email_verified
+      const verifiedEmail = !approved && contact?.email_verified
         ? contact.email ?? undefined
         : undefined;
       const matches = await provider.findContacts({ phone, verifiedEmail });
@@ -166,8 +199,8 @@ export async function runCrmSyncForCall(params: {
           await provider.createContact({
             phone,
             verifiedEmail,
-            firstName: contact?.first_name ?? undefined,
-            lastName: contact?.last_name ?? undefined,
+            firstName: approved?.caller ?? contact?.first_name ?? undefined,
+            lastName: approved ? undefined : contact?.last_name ?? undefined,
           })
         ).providerContactId;
       }
@@ -186,8 +219,9 @@ export async function runCrmSyncForCall(params: {
           durationSeconds: call.duration_seconds ?? undefined,
           sanitizedSummary,
           qualification: qualificationLabel,
-          nextAction: lead?.notes ?? undefined,
+          nextAction,
           evidenceReference,
+          detail,
         }));
       operation = await db.crmSyncOperation.update({
         where: { id: operation.id, account_id: params.accountId },
@@ -201,7 +235,7 @@ export async function runCrmSyncForCall(params: {
     );
 
     if (
-      qualification?.qualification_status === "qualified" &&
+      (qualificationLabel === "qualified") &&
       !operation.provider_task_id
     ) {
       const task =
@@ -210,7 +244,7 @@ export async function runCrmSyncForCall(params: {
           contactId: providerContactId,
           dueAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
           sanitizedSummary,
-          nextAction: lead?.notes ?? "Review and contact the qualified caller.",
+          nextAction: nextAction ?? "Review and contact the caller.",
           evidenceReference,
         }));
       operation = await db.crmSyncOperation.update({

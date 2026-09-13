@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   recordWebhookEvent: vi.fn(),
   setWebhookProcessStatus: vi.fn(),
   resolveActiveProspectAgentContext: vi.fn(),
+  resolveSupervisedTenantForNumber: vi.fn(),
 }));
 
 vi.mock("@/lib/data/webhookEvents", () => ({
@@ -13,6 +14,9 @@ vi.mock("@/lib/data/webhookEvents", () => ({
 }));
 vi.mock("@/lib/prospectBootstrap/service", () => ({
   resolveActiveProspectAgentContext: mocks.resolveActiveProspectAgentContext,
+}));
+vi.mock("@/lib/agentExecution/supervisedRuntime", () => ({
+  resolveSupervisedTenantForNumber: mocks.resolveSupervisedTenantForNumber,
 }));
 
 const originalEnv = { ...process.env };
@@ -51,14 +55,28 @@ describe("signed Telnyx assistant initialization", () => {
     process.env.RESPONSEOS_PROSPECT_BOOTSTRAP_ENABLED = "true";
     mocks.recordWebhookEvent.mockResolvedValue({ ok: true, data: { id: "ledger-1", process_status: "received" } });
     mocks.setWebhookProcessStatus.mockResolvedValue({ ok: true, data: undefined });
+    mocks.resolveSupervisedTenantForNumber.mockResolvedValue(null);
   });
   afterEach(() => { process.env = { ...originalEnv }; });
 
-  test("requires the independent prospect-bootstrap gate", async () => {
-    delete process.env.RESPONSEOS_PROSPECT_BOOTSTRAP_ENABLED;
+  test("requires the live ingest gate before anything is resolved or recorded", async () => {
+    delete process.env.RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED;
     const { POST } = await import("@/app/api/webhooks/telnyx/assistant-initialization/route");
     expect((await POST(signedRequest())).status).toBe(503);
     expect(mocks.recordWebhookEvent).not.toHaveBeenCalled();
+  });
+
+  // The supervised lane answers on this endpoint too (ADR-0052), so the
+  // prospect-bootstrap flag gates the prospect branch rather than the route.
+  test("keeps the prospect branch behind its own gate and answers unavailable without it", async () => {
+    delete process.env.RESPONSEOS_PROSPECT_BOOTSTRAP_ENABLED;
+    const { POST } = await import("@/app/api/webhooks/telnyx/assistant-initialization/route");
+    const response = await POST(signedRequest());
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      dynamic_variables: { demo_available: "false", execution_mode: "PROSPECT_DEMO_UNAVAILABLE" },
+    });
+    expect(mocks.resolveActiveProspectAgentContext).not.toHaveBeenCalled();
   });
 
   test("rejects an invalid signature before resolution or persistence", async () => {

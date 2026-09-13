@@ -1162,6 +1162,17 @@
       "refType": "pull",
       "priority": "High",
       "blocked": false
+    },
+    {
+      "id": "FRL-MIKE-LIVE-DEMO",
+      "phase": "Integrations",
+      "title": "Supervised FRL demonstration: approved knowledge, consent, review, CRM and email",
+      "owner": "Codex",
+      "status": "In Progress",
+      "progress": 60,
+      "priority": "High",
+      "blocked": true,
+      "blockedReason": "Live consent transport, approved FRL configuration, isolated activation and rehearsal remain unverified."
     }
   ],
   "liveIssues": [

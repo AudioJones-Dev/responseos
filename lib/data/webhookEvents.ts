@@ -1,7 +1,7 @@
 import "@/lib/serverOnlyGuard";
 import { createHash } from "node:crypto";
 import { Prisma } from "@prisma/client";
-import { db } from "@/lib/db/client";
+import { db, db as database } from "@/lib/db/client";
 import { err, errFromThrown, ok, type Result } from "./result";
 import { requireRole } from "@/lib/auth/session";
 
@@ -88,6 +88,7 @@ export function computeDedupeHash(
  * return process_status = "duplicate" and do not insert again.
  */
 export async function recordWebhookEvent(entry: {
+  client?: Prisma.TransactionClient;
   account_id?: string;
   provider: string;
   provider_event_id: string;
@@ -96,7 +97,10 @@ export async function recordWebhookEvent(entry: {
   signature_header?: string;
   signature_valid?: boolean;
   payload_expires_at?: Date;
+  provider_call_id?: string;
+  agent_target?: string;
 }): Promise<Result<{ id: string; process_status: WebhookProcessStatus }>> {
+  const db = entry.client ?? database;
   if (db === null) {
     return err(
       "no_database",
@@ -127,6 +131,8 @@ export async function recordWebhookEvent(entry: {
         dedupe_hash,
         process_status: "received",
         payload_expires_at: entry.payload_expires_at ?? null,
+        provider_call_id: entry.provider_call_id ?? null,
+        agent_target: entry.agent_target ?? null,
       },
       select: { id: true, process_status: true },
     });
@@ -149,6 +155,35 @@ export async function recordWebhookEvent(entry: {
       e,
     );
   }
+}
+
+/**
+ * Recovers the called number for a provider event that omits it.
+ *
+ * Telnyx sends conversation-insight events with call-control identifiers only:
+ * no `to`, no `telnyx_agent_target`. The number arrived on an earlier signed
+ * event for the same call (the assistant initialization, and the conversation
+ * end), so the ledger is the authority for which tenant the call belongs to.
+ * Reads only rows this provider already recorded; never guesses.
+ */
+export async function findAgentTargetForProviderCall(params: {
+  provider: string;
+  providerCallIds: readonly string[];
+}): Promise<string | null> {
+  if (db === null) return null;
+  const providerCallIds = params.providerCallIds.filter((value) => typeof value === "string" && value.length > 0);
+  if (providerCallIds.length === 0) return null;
+  const row = await db.webhookEvent.findFirst({
+    where: {
+      provider: params.provider,
+      provider_call_id: { in: [...providerCallIds] },
+      agent_target: { not: null },
+      signature_valid: true,
+    },
+    orderBy: { received_at: "desc" },
+    select: { agent_target: true },
+  });
+  return row?.agent_target ?? null;
 }
 
 export async function purgeExpiredWebhookPayloads(now = new Date()): Promise<Result<{ purged: number }>> {
