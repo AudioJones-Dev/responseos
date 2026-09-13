@@ -48,7 +48,8 @@ assessment promotes that from a risk to the headline constraint.
 (`lib/agentExecution/policy.ts`) implements explicit `allowedTools` allowlists, fail-closed
 default-deny resolution, gate-bound authorization, `templateVersion` pinning, required
 disclosure, and prohibited-advice lists. `PROSPECT_RECEPTIONIST_TEMPLATE` is already
-an immutable, SHA-256-checksummed capability artifact with preflight validation.
+a SHA-256-checksummed capability artifact with preflight validation — though see §2
+on the limits of its immutability.
 `BootstrapPromotion` is already a hash-pinned publication manifest with a draft→exported
 lifecycle and a forbidden-field scanner. The brief asks for these; they exist.
 
@@ -101,7 +102,8 @@ premature at N=1 without an engine.
 | Execution policy / tool allowlist | **VERIFIED SHIPPED** | `lib/agentExecution/policy.ts` (164 lines): 4 frozen `ExecutionPolicy` objects, `allowedTools`, `resolveExecutionPolicy` fails closed to `PROSPECT_DEMO` | The brief's "Tool Policy" + "default-deny" is **already implemented** at mode granularity. Extend, do not rebuild. |
 | Gate-bound authorization | **VERIFIED SHIPPED** | `EXECUTION_MODE_ACTIVATION_GATES` binds each mode to a *named* gate; a boolean would let one approval unlock another mode | The brief's "Safety Gates" have a working, well-reasoned precedent. |
 | Runtime-readiness validation | **VERIFIED SHIPPED** | `lib/agentExecution/operatingConfiguration.ts`: `evaluateOperatingConfiguration` returns `{ready, missing, conflicts}` | The brief's validation layer 3 exists for tenant config. |
-| Immutable checksummed template | **VERIFIED SHIPPED** | `lib/prospectBootstrap/template.ts`: `PROSPECT_RECEPTIONIST_TEMPLATE` + `PROSPECT_RECEPTIONIST_TEMPLATE_CHECKSUM` (SHA-256); `validateProspectAssistantPreflight` | A capability *version* already exists — Git-authored, not DB-authored. **The pattern to generalize.** |
+| Checksummed template | **PARTIALLY_SHIPPED** | `lib/prospectBootstrap/template.ts`: `PROSPECT_RECEPTIONIST_TEMPLATE` + `PROSPECT_RECEPTIONIST_TEMPLATE_CHECKSUM` (SHA-256); `validateProspectAssistantPreflight` | A capability *version* already exists — Git-authored, not DB-authored. **The pattern to generalize**, but not yet the *proven immutable* pattern: see the row below. |
+| Template immutability is shallow | **VERIFIED DEFECT (pre-existing)** | `Object.freeze` on the template freezes only the outer object; `instructions`, `dynamicVariables`, and `allowedTools` remain mutable arrays, and the checksum is computed once at module load | An importer mutating any of those arrays makes the executable template diverge from the checksum `validateProspectAssistantPreflight` accepts. Raised by Codex on PR #174. **Not introduced by this PR and not fixed here** — a separate change; noted so the containment argument is not read as stronger than the code. |
 | Hash-pinned publication manifest | **VERIFIED SHIPPED** | `BootstrapPromotion` (`schema.prisma:916`): `manifest_json`, `manifest_hash`, `source_snapshot_hash`, draft→exported→imported; `validatePromotionManifest` + `assertNoForbiddenPromotionKeys` | The brief's "publication resolution to deterministic manifest" has a working precedent. |
 | Git-as-source-of-truth for policy | **VERIFIED SHIPPED** | `lib/agentExecution/policy.ts` docstring: `service.ts` "compares a stored `AgentProfile.system_policy_json` against that frozen object, so its shape and values must not drift" | The repo has **already decided** definition lives in Git, DB holds the assignment. |
 | Audit substrate | **VERIFIED SHIPPED** | `AuditLog` (`schema.prisma:645`) with `before_ref`/`after_ref`/`category`/`target_type`; real writers in `lib/auth/clerk-sync.ts`, `lib/data/prospectIntakes.ts`, `lib/professional/intake.ts`, `lib/prospectBootstrap/service.ts` | Publication and permission-broadening audit can reuse this directly. `AuditCategory.workflow` already exists. |
@@ -448,7 +450,7 @@ current-state assessment that justified it.
 | Claim | Evidence at `ec4eb1d` |
 |---|---|
 | Git is already the definition-of-record | `lib/agentExecution/policy.ts` docstring: `service.ts` compares stored `AgentProfile.system_policy_json` **byte-identically** against the frozen Git constant, "so its shape and values must not drift" |
-| Published versions are already checksummed | `PROSPECT_RECEPTIONIST_TEMPLATE_CHECKSUM` = SHA-256 over the frozen template; `validateProspectAssistantPreflight` throws `assistant_template_checksum_mismatch` |
+| Published versions are already checksummed | `PROSPECT_RECEPTIONIST_TEMPLATE_CHECKSUM` = SHA-256 over the template, computed once at module load; `validateProspectAssistantPreflight` throws `assistant_template_checksum_mismatch`. The template's outer object is frozen but its arrays are not — see §2 |
 | Version labels already exist alongside checksums | `PROSPECT_AGENT_TEMPLATE_VERSION = "home-services-receptionist.v1"`; `BootstrapPromotionManifestSchema` pins it with `z.literal` |
 | Publication-by-manifest is already proven | `BootstrapPromotion.manifest_hash`, `validatePromotionManifest`, `assertNoForbiddenPromotionKeys` |
 | Tenant config already narrows, never widens | `AgentProfilePolicy`: "can only narrow what the claim-authority matrix already permits — `escalate` categories can be made `refuse`, never `answer`"; `parseAgentProfilePolicy` falls back to the strict default so "a malformed policy must never widen" |
@@ -554,7 +556,7 @@ Nothing in Increment 1 changes runtime behaviour.
 | `objective` | answer from verified facts, capture callback | produce a scored qualification | yes |
 | `trigger` | inbound call | inbound call / lead form | yes — see note below |
 | `requiredContext` | approved `BusinessMemorySnapshot` | contact, lead event, service area | yes |
-| `requiredKnownFields` | verified facts only | `service_area_match` (non-nullable on `LeadQualification`) | yes |
+| `requiredKnownFields` | verified facts only | `service_area_match` **and `urgency`** — the scorer's two mandatory inputs | yes |
 | `executionMode` | `PROSPECT_DEMO` | `PROSPECT_DEMO` (min) | yes |
 | `allowedTools` | `["hangup"]` | `[]` | yes — `[]` is meaningful under intersection |
 | `producesRecords` | `Call`, `CallTranscript`, `Contact`, `LeadEvent` | `LeadEvent`, `LeadQualification` | yes — both grounded in `normalize.ts` writers |
