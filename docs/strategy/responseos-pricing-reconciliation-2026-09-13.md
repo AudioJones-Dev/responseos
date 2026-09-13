@@ -44,6 +44,10 @@ Historical ADRs, archived plans, research, schema descriptions, and prior delive
 
 **Implemented scope:** The pricing page now uses current prices, minimum terms, conditional assessment and credit rules, transparent usage, bounded scope, and current-versus-target labels. The homepage commercial section no longer promises work before payment or standard outcome fees. The assessment route now describes the free fit review and conditional paid assessment, with matching description and social metadata.
 
+Independent snapshot review by Claude Code found two blocking defects: shallow metadata overrides dropped social-image fields, and July 28 publication restrictions lacked explicit supersession. Both were corrected before final-head review. Open Graph and Twitter now retain the shared image/card fields; ADR-0054 and both affected standards explicitly supersede the old publication posture without claiming validated delivery economics. The prior browser check of descriptions alone did not detect the social-image regression.
+
+Smaller review findings were also addressed: remove the homepage's dangling OFFER reference and annotate historical framework wording; align homepage/header/footer fit-review labels; clarify that assessment credit requires a qualifying Core contract and is not standard for the Pilot; explain form data storage/use; place mock/readiness language next to the tiers; and include the changelog entry. No pricing decision or API behavior changed.
+
 **Verified runtime distinction:** The existing audit endpoint can persist intake and schedule notification when explicitly enabled; it is not an unconditional mock acknowledgment. Form copy now describes a request without promising a meeting, purchased assessment, or recovered-revenue forecast. API behavior, enablement flags, and notification logic were not changed. No form submission was used during browser validation.
 
 Acceptance criteria:

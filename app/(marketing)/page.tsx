@@ -66,10 +66,9 @@ export default function MarketingHome() {
         <p className="mt-6 max-w-2xl text-lg text-ink-secondary">
           ResponseOS captures missed calls, qualifies leads, automates
           follow-up, books opportunities, and reports the revenue you recovered.
-          OFFER is the philosophy. RECOVER is how we ship it.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
-          <ButtonLink href="/audit" glow>Run a revenue audit</ButtonLink>
+          <ButtonLink href="/audit" glow>Start with a free fit review</ButtonLink>
           <ButtonLink href="/demo" variant="secondary">
             Watch the demo
           </ButtonLink>

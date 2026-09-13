@@ -7,8 +7,15 @@ const description =
 export const metadata = {
   title: "Pricing",
   description,
-  openGraph: { title: "ResponseOS Pricing", description },
-  twitter: { title: "ResponseOS Pricing", description },
+  openGraph: {
+    title: "ResponseOS Pricing", description, type: "website",
+    siteName: "ResponseOS", locale: "en_US",
+    images: [{ url: "/og/responseos-og.png", width: 1200, height: 630, alt: "ResponseOS — stop losing revenue to missed calls." }],
+  },
+  twitter: {
+    title: "ResponseOS Pricing", description, card: "summary_large_image",
+    images: ["/og/responseos-og.png"],
+  },
 };
 
 const tiers = [
@@ -113,6 +120,11 @@ export default function PricingPage() {
               scope remains substantially consistent and no extraordinary
               fieldwork or custom architecture was required.
             </p>
+            <p className="mt-3 text-sm text-ink-secondary">
+              Credit applies when a qualifying Managed Core implementation is
+              contracted; Pilot credits are not standard. Core availability
+              depends on delivery-readiness validation.
+            </p>
           </div>
         </Card>
         <Card className="p-8">
@@ -139,6 +151,8 @@ export default function PricingPage() {
         The supervised Pilot is the current commercial offer. Core and Operations
         describe target scopes; delivery assumptions remain provisional. Every
         engagement requires a capability and readiness check before commitment.
+        This demonstration uses mock adapters; live integrations require separate
+        validation before launch.
       </p>
       <div className="mt-8 grid gap-4 lg:grid-cols-3">
         {tiers.map((tier) => (

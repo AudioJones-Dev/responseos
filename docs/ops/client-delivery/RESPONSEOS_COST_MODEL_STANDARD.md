@@ -1,6 +1,9 @@
 # ResponseOS Cost Model Standard
 
 > **Commercial supersession — September 13, 2026:** [Pricing & Commercial Doctrine v1.0](../../strategy/responseos-pricing-commercial-doctrine-v1.md), recorded by ADR-0054, governs current positioning, assessment fees, tiers, terms, provider usage, qualification, and attribution. Conflicting Recovery or Business Memory tiers, old prices, mandatory paid assessments, automatic usage markups, and standard outcome-fee offers below are historical planning only. Delivery assumptions remain provisional. Provider ownership, runtime readiness, support commitments, and deployment permissions require their existing separate gates.
+>
+> **Publication posture:** Item 1 of the July 28 opening decision is superseded by the owner's September 13 authorization and commercial doctrine section 15 (ADR-0054). Ratified pricing copy may be published under the applicable deployment controls. This approval is owner commercial judgment; it does not establish measured delivery economics or satisfy the older economic-validation condition. Statements below that public prices remain unpublished are historical.
+
 
 
 **Status:** Canonical internal commercial and delivery planning standard

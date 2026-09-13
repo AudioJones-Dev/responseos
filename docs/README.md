@@ -67,7 +67,7 @@ Historical implementation briefs whose work has shipped. Kept for provenance; ma
 
 ## Frameworks
 
-- **OFFER** = Philosophy. Outcomes First / Front the Work / Framework Driven / Earn on Outcomes / ROI-Aligned Partnerships.
+- **OFFER** = Historical philosophy wording: Outcomes First / Front the Work / Framework Driven / Earn on Outcomes / ROI-Aligned Partnerships. This wording does not govern current payment timing, outcome fees, or pricing; ADR-0054 and the [commercial doctrine](./strategy/responseos-pricing-commercial-doctrine-v1.md) supersede those commercial interpretations.
 - **RECOVER** = Service Delivery. Seven stages, operator-mapped: Respond / Evaluate / Capture / Offer / Verify / Escalate / Report. Buyer-facing translation: Revenue Leak Detection / Engagement Automation / Call Capture System / Outcome-Based Booking / Verification + Qualification / Economic ROI Tracking / Reporting + Retention.
 
 ResponseOS is the software layer where OFFER + RECOVER lives.

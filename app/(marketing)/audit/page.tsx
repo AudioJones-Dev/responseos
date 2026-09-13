@@ -7,8 +7,15 @@ const description =
 export const metadata = {
   title: "Fit review and assessment",
   description,
-  openGraph: { title: "ResponseOS Fit Review", description },
-  twitter: { title: "ResponseOS Fit Review", description },
+  openGraph: {
+    title: "ResponseOS Fit Review", description, type: "website",
+    siteName: "ResponseOS", locale: "en_US",
+    images: [{ url: "/og/responseos-og.png", width: 1200, height: 630, alt: "ResponseOS — stop losing revenue to missed calls." }],
+  },
+  twitter: {
+    title: "ResponseOS Fit Review", description, card: "summary_large_image",
+    images: ["/og/responseos-og.png"],
+  },
 };
 
 const STEPS = [
