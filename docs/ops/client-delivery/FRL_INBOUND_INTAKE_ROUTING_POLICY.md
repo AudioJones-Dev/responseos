@@ -288,8 +288,11 @@ is urgent; or agent confidence is below the approved threshold.
 2. Collect the preferred callback window.
 3. Create the CRM follow-up task **where the outcome is qualified**. An escalation that is not also
    qualified is outside the ratified closure scope (§16) until ADR-0047 is amended; the escalation
-   is still captured by steps 4 and 5, so nothing is lost — it travels by ledger and notification
-   rather than as a CRM task.
+   is still *specified* to be captured by steps 4 and 5. Note what that does and does not mean:
+   this document is `DOCUMENTED_ONLY`, and neither the ledger escalation record nor the
+   completed-interaction notification is built — `lib/notifications` holds no implementation. Until
+   they ship, withholding the CRM task leaves an unqualified escalation with **no automated
+   fallback**, reaching a human only through whatever manual review the operator runs.
 4. Persist the escalation in the ResponseOS ledger.
 5. Send the completed-interaction notification (§12).
 
