@@ -4,7 +4,7 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
-## Unreleased — align commercial doctrine and public pricing
+## Unreleased — align commercial doctrine and public pricing (#176)
 
 - Record owner-ratified Pricing & Commercial Doctrine v1.0 and ADR-0054; mark conflicting legacy commercial references historical while preserving runtime and attribution gates.
 - Align pricing, assessment, and homepage commercial copy with bounded Pilot pricing, conditional assessment, transparent provider usage, and target-offering readiness labels. Intake behavior is unchanged.

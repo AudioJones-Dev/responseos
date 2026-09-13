@@ -33,6 +33,8 @@
   "tasks": [
     {
       "id": "COMMERCIAL-PRICING-PAGE-V1",
+      "ref": 176,
+      "refType": "pull",
       "phase": "v0.3 · Demo Scope",
       "title": "Align public pricing and linked fit-review copy with commercial doctrine",
       "owner": "Codex",
@@ -44,6 +46,8 @@
     },
     {
       "id": "COMMERCIAL-DOCTRINE-V1",
+      "ref": 176,
+      "refType": "pull",
       "phase": "v0.3 · Demo Scope",
       "title": "Save pricing doctrine v1.0 and reconcile internal commercial references",
       "owner": "Codex",

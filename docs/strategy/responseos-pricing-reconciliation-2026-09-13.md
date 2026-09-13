@@ -3,7 +3,7 @@
 **Owner:** AJ Digital LLC / Audio Jones  
 **Execution:** Codex, documentation and subsequently authorized public-copy implementation  
 **Authority:** [Pricing & Commercial Doctrine v1.0](./responseos-pricing-commercial-doctrine-v1.md), recorded by [ADR-0054](../DECISIONS.md#adr-0054--managed-revenue-response-commercial-doctrine-supersedes-legacy-pricing-models)  
-**Status:** Local documentation and bounded public-copy reconciliation complete. Clean pinned-toolchain checks passed; Postgres CI and independent review are being prepared through a draft PR. Human merge and deployment remain separate.
+**Status:** Local documentation and bounded public-copy reconciliation complete. Clean pinned-toolchain checks passed; [PR #176](https://github.com/AudioJones-Dev/responseos/pull/176) carries the final-head CI and independent-review evidence. Human merge and deployment remain separate. This file records local validation; the live PR determines current review and CI status.
 
 ## Task specification
 
