@@ -54,7 +54,7 @@ a winner, or convert an assumption into an actual.
   disclosure gate, the four product qualification trees, the canonical
   qualification outcomes, escalation and notification behaviour. Its three
   conflicts with earlier recorded decisions (C-1 to C-3) were resolved by
-  operator decision on 2026-09-13; the twelve activation gates in §15 remain
+  operator decision on 2026-09-13; the thirteen activation gates in §15 remain
   open and are the prerequisites to check before activating any behaviour.
   `DOCUMENTED_ONLY`. It sits here, beside the standards, rather than in a client
   directory: only one of the two conditions below is met — the operator approved
