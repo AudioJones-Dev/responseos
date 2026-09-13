@@ -441,9 +441,13 @@ scaling work down is the operator's call, not the agent's.
 
 # Increment Plan (operator-directed, 2026-09-13)
 
-Added after the operator ratified the ADR-0054 direction and revised the implementation
+Added after the operator accepted the *direction* ADR-0054 proposes and revised the implementation
 strategy. This section supersedes §13's sequence. Sections 1–16 above remain the
 current-state assessment that justified it.
+
+**Accepting a direction is not ratifying the decision.** ADR-0054 remains `Proposed`
+pending explicit operator ratification, which is the operator's act and not an agent's.
+Work proceeding under its direction does not advance its status.
 
 ## A. Evidence supporting the ADR-0054 decision
 
@@ -612,16 +616,24 @@ not used here — it earns its place when a real boundary (a DB draft, a CLI inp
 
 ## I. Increment sequence (revised, operator-directed)
 
+Status language here is load-bearing (doctrine §2, §20). "Drafted" is not "ratified",
+and "held" is not "next" — a table that blurs either would misreport what has actually
+been authorized.
+
 | # | Increment | Status |
 |---|---|---|
-| 0 | ADR-0054 | done |
-| 1 | Capability contract + two descriptors + governance validator | **this PR** |
-| 2 | Implement capability #2 behaviour; document what stayed bespoke | next |
-| 3 | Minimal executor extraction — only from duplication two capabilities prove | gated on 2 |
-| 4 | Simulation + trace | gated on 3 |
-| 5 | Runtime assignment / pinning | gated on 4 |
-| 6 | Semantic review tooling (CLI/report first) | gated on 5 |
-| 7 | Authoring-interface decision, on measured friction | gated on 6 |
+| 0 | ADR-0054 | **Proposed / pending ratification** — drafted, not ratified; the operator ratifies |
+| 1 | Capability contract + two descriptors + governance validator | **this PR** — open, not merged |
+| 2 | Implement capability #2 behaviour; document what stayed bespoke | **Held / requires authorization** — starts only from clean master after #174 merges |
+| 3 | Minimal executor extraction — only from duplication two capabilities prove | Held; gated on 2 |
+| 4 | Simulation + trace | Held; gated on 3 |
+| 5 | Runtime assignment / pinning | Held; gated on 4 |
+| 6 | Semantic review tooling (CLI/report first) | Held; gated on 5 |
+| 7 | Authoring-interface decision, on measured friction | Held; gated on 6 |
+
+An earlier version of this table marked increment 0 `done` and increment 2 `next`,
+which contradicted ADR-0054's own `Proposed` status and the operator's hold on
+Increment 2. Raised by Codex on PR #174.
 
 ## J. Builder-UI gate
 
