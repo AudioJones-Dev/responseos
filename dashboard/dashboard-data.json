@@ -32,6 +32,19 @@
   ],
   "tasks": [
     {
+      "id": "CONVERGE-TRANSPORT",
+      "ref": 167,
+      "refType": "pull",
+      "phase": "Tech Debt & Hardening",
+      "title": "Preserve bounded prospect HTTPS transport and metadata validation",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-09-12",
+      "blocked": false
+    },
+    {
       "id": "F-01",
       "phase": "v0.1 · Foundation",
       "title": "Next.js app scaffold",
