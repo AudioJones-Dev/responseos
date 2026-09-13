@@ -4,11 +4,18 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — fix: claim CRM retries before provider effects
+
+- Preserves the reviewed local atomic claim for pending and retryable CRM operations, preventing concurrent workers from both performing provider effects. A failed contender cannot overwrite the owner's state.
+- Adds unit and Postgres concurrency regressions. Existing provider checkpoints remain; abandoned processing operations require operator reconciliation. No provider activation, schema, or deployment change.
+- Scope operation creation/lookups, atomic claims, checkpoints and failure writes to the owning account; a mismatched operation cannot be claimed or disclosed by a competing tenant.
+
 ## Unreleased — fix: bound prospect website transport
 
 - Preserves the reviewed local remediation: honor Node DNS lookup modes, keep deadlines active through body reads, and cancel redirect bodies. Validated-address pinning remains intact.
 - Regression coverage exercises lookup modes, stalled bodies, redirect cancellation, and oversized/stalled robots 404 bodies. Error responses are cancelled without consuming their bodies, preserving status-based handling. No provider activation or deployment.
 - Validate page status, final origin and content type before body reads; discard-body cancellation failures cannot override accepted robots 404 metadata. Covers stalled forbidden content and already-errored 404 streams.
+
 ## Unreleased — test: disconnect application client before seed schema resets
 
 - Disconnect both integration and application Prisma clients before the seed-determinism test recreates the local database schema. This prevents a reused application connection from retaining removed PostgreSQL enum identifiers.
