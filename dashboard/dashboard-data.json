@@ -45,6 +45,17 @@
       "refType": "pull"
     },
     {
+      "id": "G-15",
+      "phase": "Tech Debt & Hardening",
+      "title": "Designate Langfuse as the AI observability layer (ADR-0056)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 100,
+      "priority": "Med",
+      "start": "2026-09-12",
+      "due": "2026-09-12"
+    },
+    {
       "id": "G-13",
       "phase": "Tech Debt & Hardening",
       "title": "Adopt supplied logo pack, rebuild favicons, UI and label cleanup",
