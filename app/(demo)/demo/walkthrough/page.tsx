@@ -22,7 +22,7 @@ export default async function RevenueRecoveryOverview() {
         />
         <div className="relative">
           <p className="text-xs font-semibold uppercase tracking-widest text-accent">
-            Estimated Revenue Protected
+            Illustrative Revenue at Stake
           </p>
           <p className="mt-3 font-display text-4xl font-semibold tabular-nums text-accent sm:text-5xl">
             {usd(overview.revenueProtected)}
