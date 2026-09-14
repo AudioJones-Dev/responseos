@@ -225,7 +225,8 @@ export async function POST(req: Request) {
     const abandonedReceived =
       state?.process_status === "received" &&
       Date.now() - state.received_at.getTime() > 30_000;
-    if (state?.process_status === "error" || abandonedReceived) {
+    const awaitingCorrelation = state?.process_status === "rejected" && state.process_error === "awaiting_call_correlation";
+    if (state?.process_status === "error" || abandonedReceived || awaitingCorrelation) {
       normalizeAfterAck();
     }
     return NextResponse.json({ ok: true, data: { accepted: true, duplicate: true } });

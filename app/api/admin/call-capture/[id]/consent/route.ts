@@ -21,7 +21,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
     const value = input.data;
     const data = await withCaptureLock(capture.account_id, capture.provider_call_id, (client) => client.callConsentEvent.upsert({
       where: { event_key: `${capture.id}:${value.eventKey}` }, update: {},
-      create: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, event_key: `${capture.id}:${value.eventKey}`, action: value.action, artifact: "transcript", disclosure_ref: value.disclosureRef, evidence_ref: value.evidenceRef, actor_user_id: operator.user.id },
+      create: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, event_key: `${capture.id}:${value.eventKey}`, action: value.action, artifact: "transcript", disclosure_ref: value.disclosureRef, evidence_ref: value.evidenceRef, actor_user_id: operator.user.id, occurred_at: new Date() },
     }));
     if (data.action !== value.action || data.disclosure_ref !== value.disclosureRef || data.evidence_ref !== value.evidenceRef) return Response.json({ ok: false, error: "idempotency_conflict" }, { status: 409 });
     return Response.json({ ok: true, data: { id: data.id, action: data.action, occurredAt: data.occurred_at } });

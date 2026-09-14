@@ -214,6 +214,7 @@ export async function configureSupervisedTenant(
     }
 
     if (input.activate === true) {
+      if (!readOperatingConfigurationValue(built.memory, "policy.consent")?.transcription.enabled) stops.push("transcription_required_for_review");
       if (!readOperatingConfigurationValue(built.memory, "business.knowledge")) stops.push("approved_business_knowledge_required");
       if (!readOperatingConfigurationValue(built.memory, "notification.completed_interaction.recipient")?.enabled) stops.push("notification_recipient_required");
       if (readOperatingConfigurationValue(built.memory, "policy.consent")?.recording.enabled) stops.push("recording_not_authorized");

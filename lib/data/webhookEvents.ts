@@ -208,10 +208,12 @@ export async function purgeExpiredWebhookPayloads(now = new Date()): Promise<Res
 }
 
 export async function setWebhookProcessStatus(params: {
+  client?: Prisma.TransactionClient;
   id: string;
   process_status: "processed" | "rejected" | "error";
   process_error?: string;
 }): Promise<void> {
+  const db = params.client ?? database;
   if (db === null) return;
   await db.webhookEvent.update({
     where: { id: params.id },
@@ -224,17 +226,18 @@ export async function setWebhookProcessStatus(params: {
 }
 
 export async function getWebhookProcessingState(id: string): Promise<
-  | { process_status: WebhookProcessStatus; received_at: Date }
+  | { process_status: WebhookProcessStatus; process_error: string | null; received_at: Date }
   | null
 > {
   if (db === null) return null;
   const event = await db.webhookEvent.findUnique({
     where: { id },
-    select: { process_status: true, received_at: true },
+    select: { process_status: true, process_error: true, received_at: true },
   });
   return event
     ? {
         process_status: event.process_status as WebhookProcessStatus,
+        process_error: event.process_error,
         received_at: event.received_at,
       }
     : null;

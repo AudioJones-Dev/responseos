@@ -296,4 +296,13 @@ describe("supervised tenant configuration", () => {
     expect(result).toMatchObject({ ok: false, error: { code: "configuration_stopped" } });
     if (!result.ok) expect(result.error.details?.stops).toContain("operating_configuration_incomplete");
   });
+
+  test("transcription-disabled configuration cannot activate the transcript review workflow", async () => {
+    const result = await configureSupervisedTenant(input({ activate: true,
+      configuration: CONFIGURATION.map((entry) => entry.key === "policy.consent" ? { ...entry, value: { ...CONSENT_RECORDING_OFF, transcription: { enabled: false } } } : entry),
+      number: { providerNumberId: PROVIDER_NUMBER_ID, e164: NUMBER, providerAttestation: attestation() },
+    }), now);
+    expect(result).toMatchObject({ ok: false, error: { code: "configuration_stopped" } });
+    if (!result.ok) expect(result.error.details?.stops).toContain("transcription_required_for_review");
+  });
 });

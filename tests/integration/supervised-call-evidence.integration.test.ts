@@ -168,6 +168,19 @@ async function normalize(account: { id: string }, eventId: string) {
   });
 }
 
+test("a failed normalization transaction cannot leave the webhook marked processed", async () => {
+  await resetAndSeedTestDb();
+  const account = await createTenant();
+  const event = insightEvent("rollback-event");
+  const eventId = await ledger(event, account.id);
+  await expect(prisma.$transaction(async (client) => {
+    await normalizeTelnyxEvent({ client, accountId: account.id, demoNumber: TENANT_NUMBER, webhookEventId: eventId, event });
+    throw new Error("rollback-fixture");
+  })).rejects.toThrow("rollback-fixture");
+  expect(await prisma.webhookEvent.findUnique({ where: { id: eventId } })).toMatchObject({ process_status: "received" });
+  expect(await prisma.call.count({ where: { account_id: account.id } })).toBe(0);
+});
+
 describe("supervised call evidence", () => {
   beforeEach(async () => {
     await resetAndSeedTestDb();

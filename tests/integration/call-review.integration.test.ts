@@ -89,6 +89,8 @@ test("capture requires the initialized tenant, consent and interval; withdrawal 
   expect(await canRetainCallContent(accountId, "provider-call", event)).toBe(false);
   await prisma.callConsentEvent.create({ data: { account_id: accountId, provider_call_id: "provider-call", event_key: "grant", action: "grant", artifact: "transcript", disclosure_ref: "fixture", evidence_ref: "fixture", actor_user_id: "test", occurred_at: now } });
   expect(await canRetainCallContent(accountId, "provider-call", event)).toBe(true);
+  const futureEvent = { data: { ...event.data, payload: { ...event.data.payload, capture_ended_at: new Date(Date.now() + 60_000).toISOString() } } };
+  expect(await canRetainCallContent(accountId, "provider-call", futureEvent)).toBe(false);
   expect(await canRetainCallContent("other-account", "provider-call", event)).toBe(false);
   await prisma.callConsentEvent.create({ data: { account_id: accountId, provider_call_id: "provider-call", event_key: "withdraw", action: "withdraw", artifact: "transcript", disclosure_ref: "fixture", evidence_ref: "fixture", actor_user_id: "test", occurred_at: new Date(now.getTime() + 1500) } });
   expect(await canRetainCallContent(accountId, "provider-call", event)).toBe(false);

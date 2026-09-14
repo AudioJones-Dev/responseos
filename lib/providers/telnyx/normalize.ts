@@ -103,6 +103,7 @@ export async function normalizeTelnyxEvent(params: {
   const providerCallId = getTelnyxCallId(payload);
   if (!providerCallId) {
     await setWebhookProcessStatus({
+      client: params.client,
       id: params.webhookEventId,
       process_status: "rejected",
       process_error: "missing_provider_call_id",
@@ -126,6 +127,7 @@ export async function normalizeTelnyxEvent(params: {
   const toNumber = stringValue(payload.to) ?? existing?.to_number ?? params.demoNumber;
   if (toNumber !== "unavailable" && !sameNumber(toNumber, params.demoNumber)) {
     await setWebhookProcessStatus({
+      client: params.client,
       id: params.webhookEventId,
       process_status: "rejected",
       process_error: "unexpected_destination",
@@ -351,6 +353,6 @@ export async function normalizeTelnyxEvent(params: {
     }
   }
 
-  await setWebhookProcessStatus({ id: params.webhookEventId, process_status: "processed" });
+  await setWebhookProcessStatus({ client: params.client, id: params.webhookEventId, process_status: "processed" });
   return { callId: call.id, finalized };
 }

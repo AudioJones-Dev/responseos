@@ -1,4 +1,16 @@
--- Supervised tenant runtime (ADR-0051 amendment + ADR-0052).
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM "QuoteRequest"
+    WHERE "lead_event_id" IS NOT NULL
+    GROUP BY "lead_event_id" HAVING COUNT(*) > 1
+  ) THEN
+    RAISE EXCEPTION 'QuoteRequest duplicate lead_event_id values block migration 0014'
+      USING HINT = 'Preserve and reconcile duplicate quote requests with the operator before retrying this migration. No rows were deleted by this preflight.';
+  END IF;
+END $$;
+
+-- Supervised tenant runtime (ADR-0056).
 --
 -- Additive only. Every new column is nullable or carries a default, so existing
 -- rows stay valid without a backfill, and the prospect-demo lane is unchanged.

@@ -34,6 +34,7 @@ export async function canRetainCallContent(accountId: string, providerCallId: st
   const start = event.data.payload.capture_started_at;
   const end = event.data.payload.capture_ended_at;
   if (typeof start !== "string" || typeof end !== "string") return false;
+  if (new Date(end).getTime() > Date.now()) return false;
   const events = await client.callConsentEvent.findMany({ where: { account_id: accountId, provider_call_id: providerCallId, artifact: "transcript" }, orderBy: { occurred_at: "asc" } });
   if (events.at(-1)?.action !== "grant") return false;
   return consentAllowsCapture(events, new Date(start), new Date(end));
