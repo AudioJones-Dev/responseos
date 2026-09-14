@@ -37,7 +37,7 @@ export default function DemoClientDashboard() {
       <section className="mb-6 overflow-hidden rounded-lg border border-accent/30 bg-surface">
         <div className="bg-accent-soft p-8">
           <p className="text-xs font-semibold uppercase tracking-widest text-accent">
-            Recovered Revenue - Sample Month
+            Estimated Recovered Revenue – Sample Month
           </p>
           <p className="mt-3 font-display text-4xl font-semibold tabular-nums text-ink sm:text-5xl">
             {formatUsd(m.estimated_recovered_revenue)}

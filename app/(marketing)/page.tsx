@@ -101,9 +101,19 @@ export default function MarketingHome() {
           Start with a defined operating problem and agree on scope, fees, and
           measurement before implementation.
         </p>
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {OFFER.map((o) => (
-            <Card key={o.title} interactive>
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+          {OFFER.map((o, i) => (
+            <Card
+              key={o.title}
+              interactive
+              className={
+                i < 3
+                  ? "lg:col-span-2"
+                  : i === 3
+                    ? "lg:col-span-3"
+                    : "sm:col-span-2 lg:col-span-3"
+              }
+            >
               <h3 className="text-base font-semibold text-ink">{o.title}</h3>
               <p className="mt-2 text-sm text-ink-secondary">{o.body}</p>
             </Card>

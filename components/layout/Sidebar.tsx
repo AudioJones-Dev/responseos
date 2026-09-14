@@ -31,7 +31,7 @@ export function Sidebar({
         className="flex h-16 items-center justify-center gap-2.5 border-b border-line px-3 lg:justify-start lg:px-4"
       >
         <span aria-hidden="true">
-          <LogoMark className="h-7 w-auto shrink-0" />
+          <LogoMark className="h-6 w-auto shrink-0" />
         </span>
         <span className="hidden flex-col leading-tight lg:flex">
           <span className="font-display text-sm font-semibold text-ink">
