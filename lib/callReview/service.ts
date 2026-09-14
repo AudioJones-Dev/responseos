@@ -140,8 +140,10 @@ export async function dispatchCallReview(id: string) {
     await audit("call_review_dispatch_outcome", { revision: row.revision, outcome: "accepted" });
     return { status: "accepted" };
   } catch (error) {
-    await db.callReview.updateMany({ where: { id, account_id: row.account_id, email_status: { not: "accepted" } }, data: { email_status: "failed" } });
-    await audit("call_review_dispatch_outcome", { revision: row.revision, outcome: "failed", error: error instanceof Error ? error.message : "dispatch_failed" });
+    // A provider-accepted email is irreversible; if the failure came after
+    // acceptance the audit must say so rather than contradict the ledger.
+    const downgraded = await db.callReview.updateMany({ where: { id, account_id: row.account_id, email_status: { not: "accepted" } }, data: { email_status: "failed" } });
+    await audit("call_review_dispatch_outcome", { revision: row.revision, outcome: downgraded.count ? "failed" : "accepted", error: error instanceof Error ? error.message : "dispatch_failed" });
     throw error;
   } finally {
     await db.callReview.update({ where: { id, account_id: row.account_id }, data: { dispatch_at: null } });

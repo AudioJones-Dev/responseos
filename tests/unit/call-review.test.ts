@@ -123,9 +123,11 @@ test("a revoked execution gate produces no effects", async () => {
 test("audit failure after provider acceptance cannot overwrite accepted delivery", async () => {
   approved();
   mocks.db.auditLog.create.mockResolvedValueOnce({}).mockRejectedValueOnce(new Error("audit_unavailable"));
+  mocks.db.callReview.updateMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 });
   await expect(dispatchCallReview("review")).rejects.toThrow("audit_unavailable");
   expect(mocks.db.callReview.update).toHaveBeenCalledWith(expect.objectContaining({ data: { email_status: "accepted", email_message_id: "email-1" } }));
   expect(mocks.db.callReview.updateMany).toHaveBeenLastCalledWith(expect.objectContaining({ where: expect.objectContaining({ email_status: { not: "accepted" } }) }));
+  expect(mocks.db.auditLog.create).toHaveBeenLastCalledWith(expect.objectContaining({ data: expect.objectContaining({ action: "call_review_dispatch_outcome", metadata_json: expect.objectContaining({ outcome: "accepted", error: "audit_unavailable" }) }) }));
 });
 
 test("revocation during CRM dispatch prevents the later email effect", async () => {

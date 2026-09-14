@@ -21,6 +21,14 @@ test("provider acceptance is reconciled without sending again after persistence 
   expect(await retryCompletedInteractionNotification({ id: "notification", providerOverride: provider })).toMatchObject({ ok: true, data: { status: "sent" } });
   expect(mocks.send).toHaveBeenCalledTimes(1);
 });
+test("a mock acceptance cannot be reconciled as sent when live delivery is required", async () => {
+  mocks.find.mockResolvedValue({ ...row, provider: "mock", provider_message_id: "mock-id", last_error_code: "accepted_delivery_reconciliation_required" });
+  const mock = { providerId: "mock" as const, send: mocks.send };
+  const result = await dispatchCompletedInteractionNotification({ accountId: "account", callId: "call", requireLiveProvider: true, providerOverride: mock });
+  expect(result).toMatchObject({ ok: true, data: { status: "failed", reason: "live_provider_disabled" } });
+  expect(mocks.send).not.toHaveBeenCalled();
+  expect(mocks.update).not.toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ status: "sent" }) }));
+});
 test("database read failures stay within the Result contract", async () => {
   mocks.call.mockRejectedValueOnce(new Error("read_failed"));
   expect(await dispatchCompletedInteractionNotification({ accountId: "account", callId: "call", providerOverride: provider })).toMatchObject({ ok: false });

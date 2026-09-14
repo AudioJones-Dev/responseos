@@ -194,7 +194,10 @@ export async function dispatchCompletedInteractionNotification(params: {
     const provider = params.providerOverride ?? getEmailProvider();
 
     if (existing) {
-      if (existing.last_error_code === "accepted_delivery_reconciliation_required" && existing.provider_message_id) {
+      // A mock acceptance is not a delivery. When live delivery is required the
+      // row falls through to the live-provider check instead of becoming `sent`.
+      const liveReconcilable = existing.provider === "resend" || params.requireLiveProvider !== true;
+      if (existing.last_error_code === "accepted_delivery_reconciliation_required" && existing.provider_message_id && liveReconcilable) {
         await db.notification.update({ where: { id: existing.id }, data: { status: "sent", sent_at: now, last_error_code: null, next_attempt_at: null } });
         return ok({ status: "sent", notificationId: existing.id, providerId: existing.provider ?? undefined });
       }
