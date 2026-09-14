@@ -40,34 +40,63 @@ export async function loadCallReviewConsole() {
   return { captures: withConsent, reviews };
 }
 
-export async function queueCallReview(accountId: string, callId: string, payload: Record<string, unknown>) {
-  if (!db) throw new Error("database_unavailable");
-  const call = await db.call.findFirst({ where: { id: callId, account_id: accountId } });
-  if (!call?.provider_call_id || !call.review_required) throw new Error("review_call_missing");
-  if (call.status !== "completed") return null;
-  const capture = await db.callCaptureSession.findUnique({ where: { account_id_provider_call_id: { account_id: accountId, provider_call_id: call.provider_call_id } } });
-  if (!capture) throw new Error("call_snapshot_missing");
-  const memory = BusinessMemorySnapshotSchema.parse(capture.snapshot_json);
-  const recipient = readOperatingConfigurationValue(memory, "notification.completed_interaction.recipient");
+const DRAFT_DEFAULTS = {
+  caller: "Unknown caller", interaction: "administrative", product: "unknown", location: "",
+  summary: "Analysis unavailable — review the transcript.", qualification: "maybe", outcome: "HUMAN_REVIEW_REQUIRED",
+  urgency: "medium", callbackWindow: "", nextAction: "Review and arrange an appropriate callback.",
+};
+
+/** Only the fields this event actually carried; absent fields inherit from the prior revision. */
+function extractedDraftFields(payload: Record<string, unknown>) {
   const insight = extractTelnyxCallInsight(payload);
   const qualification = insight.qualification?.status;
-  const draft = {
-    caller: [insight.firstName, insight.lastName].filter(Boolean).join(" ") || "Unknown caller",
-    phone: call.from_number,
-    interaction: FRL_INTERACTIONS.includes(insight.canonicalInteraction as never) ? insight.canonicalInteraction : ({ new_sales: "new_sales", existing_customer_new_sale: "existing_customer_new_sale", new_service_request: "new_service", existing_service_request: "existing_service" } as Record<string, string>)[insight.interactionClass ?? ""] ?? "administrative",
-    product: ["vpl", "vehicle_lift", "ceiling_lift", "ramp"].includes(insight.product ?? "") ? insight.product : "unknown", location: [insight.city, insight.state, insight.postalCode].filter(Boolean).join(", "),
-    summary: insight.summary || "Analysis unavailable — review the transcript.",
-    qualification: ["qualified", "unqualified", "spam"].includes(String(qualification)) ? qualification : "maybe",
-    outcome: FRL_OUTCOMES.includes(insight.outcome as never) ? insight.outcome : "HUMAN_REVIEW_REQUIRED", urgency: ["low", "medium", "high"].includes(insight.urgency ?? "") ? insight.urgency : "medium", callbackWindow: insight.callbackWindow ?? "",
-    nextAction: insight.nextAction || "Review and arrange an appropriate callback.",
-    flags: ["Confirm interaction, product, outcome and callback details against the transcript.", ...(!insight.summary ? ["Extraction missing or failed."] : [])],
-  };
-  const hash = contentHash({ payload, transcript: call.transcript, snapshot: capture.snapshot_id });
+  const fields: Record<string, string> = {};
+  const caller = [insight.firstName, insight.lastName].filter(Boolean).join(" ");
+  if (caller) fields.caller = caller;
+  const interaction = FRL_INTERACTIONS.includes(insight.canonicalInteraction as never) ? insight.canonicalInteraction : ({ new_sales: "new_sales", existing_customer_new_sale: "existing_customer_new_sale", new_service_request: "new_service", existing_service_request: "existing_service" } as Record<string, string>)[insight.interactionClass ?? ""];
+  if (interaction) fields.interaction = interaction;
+  if (["vpl", "vehicle_lift", "ceiling_lift", "ramp"].includes(insight.product ?? "")) fields.product = insight.product!;
+  const location = [insight.city, insight.state, insight.postalCode].filter(Boolean).join(", ");
+  if (location) fields.location = location;
+  if (insight.summary) fields.summary = insight.summary;
+  if (["qualified", "unqualified", "spam"].includes(String(qualification))) fields.qualification = String(qualification);
+  if (FRL_OUTCOMES.includes(insight.outcome as never)) fields.outcome = insight.outcome!;
+  if (["low", "medium", "high"].includes(insight.urgency ?? "")) fields.urgency = insight.urgency!;
+  if (insight.callbackWindow) fields.callbackWindow = insight.callbackWindow;
+  if (insight.nextAction) fields.nextAction = insight.nextAction;
+  return fields;
+}
+
+export async function queueCallReview(accountId: string, callId: string, payload: Record<string, unknown>) {
+  if (!db) throw new Error("database_unavailable");
+  const extracted = extractedDraftFields(payload);
+  // Canonical evidence is read under the same lock that serializes revisions,
+  // so an older request cannot land a higher revision carrying stale evidence
+  // after a newer one has already committed.
   return db.$transaction(async (tx) => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${accountId + ":" + callId}))`;
+    const call = await tx.call.findFirst({ where: { id: callId, account_id: accountId } });
+    if (!call?.provider_call_id || !call.review_required) throw new Error("review_call_missing");
+    if (call.status !== "completed") return null;
+    const capture = await tx.callCaptureSession.findUnique({ where: { account_id_provider_call_id: { account_id: accountId, provider_call_id: call.provider_call_id } } });
+    if (!capture) throw new Error("call_snapshot_missing");
+    const memory = BusinessMemorySnapshotSchema.parse(capture.snapshot_json);
+    const recipient = readOperatingConfigurationValue(memory, "notification.completed_interaction.recipient");
+    const hash = contentHash({ payload, transcript: call.transcript, snapshot: capture.snapshot_id });
     const latest = await tx.callReview.findFirst({ where: { account_id: accountId, call_id: callId }, orderBy: { revision: "desc" } });
     if (latest?.source_hash === hash) return latest;
     if (latest?.dispatch_at) throw new Error("review_dispatch_in_progress");
+    const previous = latest?.payload_json && typeof latest.payload_json === "object" && !Array.isArray(latest.payload_json) ? (latest.payload_json as Record<string, unknown>) : {};
+    const inherited = Object.fromEntries(Object.entries(previous).filter(([key]) => key !== "phone" && key !== "flags"));
+    const preserved = !extracted.summary && typeof previous.summary === "string" && previous.summary !== DRAFT_DEFAULTS.summary;
+    const draft = {
+      ...DRAFT_DEFAULTS, ...inherited, ...extracted,
+      phone: call.from_number,
+      flags: [
+        "Confirm interaction, product, outcome and callback details against the transcript.",
+        ...(preserved ? ["This event carried no analysis; earlier analysis was preserved."] : !extracted.summary ? ["Extraction missing or failed."] : []),
+      ],
+    };
     return tx.callReview.create({ data: { account_id: accountId, call_id: callId, revision: (latest?.revision ?? 0) + 1, source_hash: hash, evidence_json: { transcript: call.transcript, summary: call.summary, snapshotId: capture.snapshot_id }, payload_json: draft as Prisma.InputJsonValue, recipient: recipient?.enabled ? recipient.recipient : "" } });
   });
 }

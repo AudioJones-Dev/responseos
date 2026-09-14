@@ -1,14 +1,15 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { consentAllowsCapture, metadataOnly } from "@/lib/callReview/consent";
 import { ReviewPayloadSchema, reviewMessage } from "@/lib/callReview/contracts";
-import { decideCallReview, dispatchCallReview } from "@/lib/callReview/service";
+import { decideCallReview, dispatchCallReview, queueCallReview } from "@/lib/callReview/service";
+import { PROSPECT_BOOTSTRAP_SCHEMA_VERSION } from "@/lib/prospectBootstrap/contracts";
 
 const mocks = vi.hoisted(() => ({
   session: vi.fn(), crm: vi.fn(), send: vi.fn(), gate: vi.fn(),
   db: {
     $transaction: vi.fn(), $executeRaw: vi.fn(),
-    callReview: { findUnique: vi.fn(), findFirst: vi.fn(), updateMany: vi.fn(), update: vi.fn() },
-    call: { findFirst: vi.fn() }, auditLog: { create: vi.fn() },
+    callReview: { findUnique: vi.fn(), findFirst: vi.fn(), updateMany: vi.fn(), update: vi.fn(), create: vi.fn() },
+    call: { findFirst: vi.fn() }, auditLog: { create: vi.fn() }, callCaptureSession: { findUnique: vi.fn() },
   },
 }));
 vi.mock("@/lib/db/client", () => ({ db: mocks.db }));
@@ -57,6 +58,34 @@ describe("capture authorization", () => {
     const result = metadataOnly({ data: { id: "event", event_type: "call.hangup", payload: { call_control_id: "call", transcript: "SECRET", result: { summary: "SECRET" }, metadata: { text: "SECRET" }, from: "SECRET", recording_url: "SECRET" } } });
     expect(JSON.stringify(result)).not.toContain("SECRET");
     expect(result.data.payload.call_control_id).toBe("call");
+  });
+});
+
+describe("review queueing", () => {
+  const completedCall = { id: "call", account_id: "account", provider_call_id: "pc", review_required: true, status: "completed", from_number: "+15555550199", transcript: "caller: I need a ramp", summary: "summary" };
+  const snapshot = { snapshot_id: "snap", snapshot_json: { schemaVersion: PROSPECT_BOOTSTRAP_SCHEMA_VERSION, bootstrapId: null, accountId: "account", generatedAt: now.toISOString(), businessProfile: [], services: [], locations: [], operatingHours: [], serviceAreas: [], faqs: [], policies: [], contactPaths: [], brandVoice: [], unknowns: [], conflicts: [], agentBoundaries: [], sourceManifest: [] } };
+  beforeEach(() => {
+    mocks.db.call.findFirst.mockResolvedValue(completedCall);
+    mocks.db.callCaptureSession.findUnique.mockResolvedValue(snapshot);
+    mocks.db.callReview.create.mockImplementation(async ({ data }) => data);
+  });
+  test("canonical evidence is read only after the revision lock is held", async () => {
+    mocks.db.callReview.findFirst.mockResolvedValue(null);
+    await queueCallReview("account", "call", { summary: "Requested a ramp evaluation." });
+    const lock = mocks.db.$executeRaw.mock.invocationCallOrder[0];
+    expect(mocks.db.call.findFirst.mock.invocationCallOrder[0]).toBeGreaterThan(lock);
+    expect(mocks.db.callCaptureSession.findUnique.mock.invocationCallOrder[0]).toBeGreaterThan(lock);
+  });
+  test("a transcript-only late event preserves the earlier analysis", async () => {
+    mocks.db.callReview.findFirst.mockResolvedValue({ ...base, revision: 1, source_hash: "older", dispatch_at: null });
+    const created = await queueCallReview("account", "call", { transcript: "caller: I need a ramp, sorry, a vehicle lift" });
+    expect(created).toMatchObject({ revision: 2, payload_json: expect.objectContaining({ summary: payload.summary, product: "ramp", qualification: "qualified", outcome: payload.outcome, phone: "+15555550199" }) });
+    expect((created as unknown as { payload_json: { flags: string[] } }).payload_json.flags).toContain("This event carried no analysis; earlier analysis was preserved.");
+  });
+  test("a late event with new analysis overrides the earlier draft", async () => {
+    mocks.db.callReview.findFirst.mockResolvedValue({ ...base, revision: 1, source_hash: "older", dispatch_at: null });
+    const created = await queueCallReview("account", "call", { summary: "Corrected: vehicle lift.", product_path: "vehicle_lift" });
+    expect(created).toMatchObject({ payload_json: expect.objectContaining({ summary: "Corrected: vehicle lift.", product: "vehicle_lift", qualification: "qualified" }) });
   });
 });
 
