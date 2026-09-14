@@ -13,6 +13,7 @@ import {
 import { errorResponse } from "@/lib/providers/webhook-helpers";
 import { normalizeTelnyxEvent } from "@/lib/providers/telnyx/normalize";
 import {
+  isSupervisedNumber,
   resolveSupervisedTenantForNumber,
   touchSupervisedAssignment,
 } from "@/lib/agentExecution/supervisedRuntime";
@@ -88,8 +89,12 @@ export async function POST(req: Request) {
   }
   const supervisedReady = supervised?.readiness.ready === true &&
     supervised.resolved.degraded === null && supervised.resolved.mode === "SUPERVISED_PILOT";
+  // Ownership is independent of whether the runtime resolves right now. An
+  // owned number's event must never fall through to the prospect lane, where
+  // it would be stored unscoped and never retried.
+  const supervisedOwned = supervised !== null || (target ? await isSupervisedNumber(target, occurredAt ?? receivedAt) : false);
 
-  let resolved = !supervised &&
+  let resolved = !supervisedOwned &&
     process.env.RESPONSEOS_PROSPECT_BOOTSTRAP_ENABLED === "true" &&
     target &&
     occurredAt
@@ -99,7 +104,7 @@ export async function POST(req: Request) {
   const legacyAccountId = process.env.RESPONSEOS_DEMO_ACCOUNT_ID;
   const legacyNumber = process.env.RESPONSEOS_DEMO_PHONE_E164;
   if (
-    !supervised &&
+    !supervisedOwned &&
     !resolved &&
     target &&
     legacyAccountId &&
@@ -117,8 +122,11 @@ export async function POST(req: Request) {
 
   // A supervised tenant is a real client: its call evidence is retained, not
   // aged out on the prospect content clock.
-  const retainPayload = Boolean(supervised) || (!personalized && Boolean(resolved));
+  const retainPayload = supervisedOwned || (!personalized && Boolean(resolved));
   const payloadExpiresAt = retainPayload ? null : new Date((occurredAt ?? receivedAt).getTime() + PROSPECT_CONTENT_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+  // Retained content is the exact signed bytes, so the stored body matches the
+  // recorded signature; only the denied branch stores a projection.
+  const retainedBody = (allowed: boolean) => (allowed ? rawBody : JSON.stringify(metadataOnly(event)));
   const record = async (allowed: boolean, client?: import("@prisma/client").Prisma.TransactionClient) => recordWebhookEvent({
     client,
 
@@ -126,7 +134,7 @@ export async function POST(req: Request) {
     provider: "telnyx",
     provider_event_id: event.data.id,
     event_type: event.data.event_type,
-    raw_body: JSON.stringify(allowed ? event : metadataOnly(event)),
+    raw_body: retainedBody(allowed),
     signature_header: signature ?? undefined,
     signature_valid: true,
     provider_call_id: providerCallId ?? undefined,
@@ -143,6 +151,14 @@ export async function POST(req: Request) {
       code: "webhook_ledger_unavailable",
       message: "Telnyx webhook ledger is unavailable.",
     });
+  }
+
+  if (supervisedOwned && !supervised) {
+    // Owned, but the runtime could not be resolved (profile, snapshot, or
+    // snapshot JSON missing or invalid). Keep the event retryable: a
+    // redelivery after repair is picked up by the duplicate handler below.
+    await setWebhookProcessStatus({ id: ledger.data.id, process_status: "rejected", process_error: "supervised_runtime_unresolved" });
+    return NextResponse.json({ ok: true, data: { accepted: true, normalized: false } }, { status: 202 });
   }
 
   if (supervised && !supervisedReady) {
@@ -235,7 +251,8 @@ export async function POST(req: Request) {
     const abandonedReceived =
       state?.process_status === "received" &&
       Date.now() - state.received_at.getTime() > 30_000;
-    const awaitingCorrelation = state?.process_status === "rejected" && state.process_error === "awaiting_call_correlation";
+    const awaitingCorrelation = state?.process_status === "rejected" &&
+      (state.process_error === "awaiting_call_correlation" || state.process_error === "supervised_runtime_unresolved");
     if (awaitingCorrelation) {
       // The row was recorded unscoped before the call could be correlated;
       // scope it to the tenant and its retention policy before it is processed.
@@ -245,7 +262,7 @@ export async function POST(req: Request) {
         client,
         id: ledger.data.id,
         account_id: assignment.accountId,
-        raw_body: JSON.stringify(allowed ? event : metadataOnly(event)),
+        raw_body: retainedBody(allowed),
         payload_expires_at: payloadExpiresAt,
         provider_call_id: providerCallId ?? undefined,
         provider_call_ids: getTelnyxCallIds(event.data.payload),

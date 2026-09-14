@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   getWebhookProcessingState: vi.fn(),
   resolveTelnyxEventAssignment: vi.fn(),
   resolveSupervisedTenantForNumber: vi.fn(),
+  isSupervisedNumber: vi.fn(),
   touchSupervisedAssignment: vi.fn(),
   normalizeTelnyxEvent: vi.fn(),
   runCrmSyncForCall: vi.fn(),
@@ -40,6 +41,7 @@ vi.mock("@/lib/prospectBootstrap/service", () => ({
 }));
 vi.mock("@/lib/agentExecution/supervisedRuntime", () => ({
   resolveSupervisedTenantForNumber: mocks.resolveSupervisedTenantForNumber,
+  isSupervisedNumber: mocks.isSupervisedNumber,
   touchSupervisedAssignment: mocks.touchSupervisedAssignment,
 }));
 vi.mock("@/lib/providers/telnyx/normalize", () => ({ normalizeTelnyxEvent: mocks.normalizeTelnyxEvent }));
@@ -102,6 +104,7 @@ describe("supervised Telnyx call lane", () => {
     vi.clearAllMocks();
     mocks.pending.length = 0;
     mocks.canRetainCallContent.mockResolvedValue(true);
+    mocks.isSupervisedNumber.mockResolvedValue(false);
     process.env = { ...originalEnv };
     process.env.TELNYX_PUBLIC_KEY = publicKey;
     process.env.RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED = "true";
@@ -203,6 +206,41 @@ describe("supervised Telnyx call lane", () => {
     expect(mocks.normalizeTelnyxEvent).toHaveBeenCalledOnce();
     expect(mocks.touchSupervisedAssignment).toHaveBeenCalled();
     expect(mocks.queueCallReview).not.toHaveBeenCalled();
+  });
+
+  test("an owned number whose runtime cannot resolve is retained as retryable, never handed to the prospect lane", async () => {
+    mocks.resolveSupervisedTenantForNumber.mockResolvedValue(null);
+    mocks.isSupervisedNumber.mockResolvedValue(true);
+    const { POST } = await import("@/app/api/webhooks/telnyx/calls/route");
+    const response = await POST(signedEvent({ call_control_id: "call-owned", to: TENANT_NUMBER, transcript: "private caller text" }));
+    await settle();
+    expect(response.status).toBe(202);
+    expect(mocks.resolveTelnyxEventAssignment).not.toHaveBeenCalled();
+    expect(mocks.normalizeTelnyxEvent).not.toHaveBeenCalled();
+    expect(mocks.recordWebhookEvent.mock.calls[0][0].raw_body).not.toContain("private caller text");
+    expect(mocks.recordWebhookEvent.mock.calls[0][0]).not.toHaveProperty("payload_expires_at");
+    expect(mocks.setWebhookProcessStatus).toHaveBeenCalledWith(expect.objectContaining({ process_status: "rejected", process_error: "supervised_runtime_unresolved" }));
+  });
+
+  test("a redelivery after the runtime is repaired backfills and normalizes the retained event", async () => {
+    mocks.resolveSupervisedTenantForNumber.mockResolvedValue(supervisedTenant());
+    mocks.recordWebhookEvent.mockResolvedValue({ ok: true, data: { id: "ledger-owned", process_status: "duplicate" } });
+    mocks.getWebhookProcessingState.mockResolvedValue({ process_status: "rejected", process_error: "supervised_runtime_unresolved", received_at: new Date() });
+    const { POST } = await import("@/app/api/webhooks/telnyx/calls/route");
+    await POST(signedEvent({ call_control_id: "call-owned", to: TENANT_NUMBER, transcript: "private caller text" }));
+    await settle();
+    expect(mocks.backfillWebhookEvent).toHaveBeenCalledWith(expect.objectContaining({ id: "ledger-owned", account_id: supervisedTenant().accountId, payload_expires_at: null }));
+    expect(mocks.normalizeTelnyxEvent).toHaveBeenCalledOnce();
+  });
+
+  test("consent-authorized retention stores the exact signed bytes", async () => {
+    mocks.resolveSupervisedTenantForNumber.mockResolvedValue(supervisedTenant());
+    const request = signedEvent({ call_control_id: "call-signed", to: TENANT_NUMBER, transcript: "caller: I need a ramp" });
+    const signedBytes = await request.clone().text();
+    const { POST } = await import("@/app/api/webhooks/telnyx/calls/route");
+    await POST(request);
+    await settle();
+    expect(mocks.recordWebhookEvent.mock.calls[0][0].raw_body).toBe(signedBytes);
   });
 
   test("retains the raw payload for a real client instead of expiring it on the prospect clock", async () => {

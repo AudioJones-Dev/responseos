@@ -20,6 +20,7 @@ vi.mock("@/lib/prospectBootstrap/service", () => ({
 }));
 vi.mock("@/lib/agentExecution/supervisedRuntime", () => ({
   resolveSupervisedTenantForNumber: mocks.resolveSupervisedTenantForNumber,
+  isSupervisedNumber: vi.fn().mockResolvedValue(false),
   touchSupervisedAssignment: vi.fn(),
 }));
 vi.mock("@/lib/notifications/completedInteraction", () => ({
