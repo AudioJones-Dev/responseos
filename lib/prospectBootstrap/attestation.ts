@@ -27,6 +27,9 @@ const ProviderAttestationPayloadSchema = z.object({
   consentCaptureVerified: z.boolean().optional(),
   captureIntervalVerified: z.boolean().optional(),
   consentEvidenceRef: z.string().min(1).optional(),
+  // Where the provider's `transfer` tool sends the caller; the supervised
+  // preflight compares it to the approved escalation contact.
+  transferDestinationE164: z.string().min(1).optional(),
   attestedAt: z.iso.datetime(),
   expiresAt: z.iso.datetime(),
 });
