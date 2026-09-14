@@ -2,7 +2,7 @@ import { contentHash } from "@/lib/prospectBootstrap/memory";
 import type { ExecutionMode } from "@/lib/agentExecution/policy";
 
 /**
- * The shared capability contract (ADR-0054).
+ * The shared capability contract (ADR-0057).
  *
  * A capability descriptor is the Git-authored definition of record for one
  * governed unit of ResponseOS behaviour. It is frozen, checksummed, and
@@ -13,7 +13,7 @@ import type { ExecutionMode } from "@/lib/agentExecution/policy";
  * need it — the prospect receptionist and inbound lead qualification. Fields
  * the research brief proposed but neither capability demonstrates (generic
  * `steps[]`, a four-state evidence enum, an independent component-version
- * registry) are deliberately absent. ADR-0054 decision 8: generalize from two
+ * registry) are deliberately absent. ADR-0057 decision 8: generalize from two
  * verified implementations, not from one implementation plus an ontology.
  *
  * This contract describes capabilities. It does not execute them.
@@ -26,7 +26,7 @@ import type { ExecutionMode } from "@/lib/agentExecution/policy";
  * `AutomationTriggerType` is n8n automation configuration (ADR-0017) and has no
  * inbound-call member; `LeadEventSource` describes where a lead came from, not
  * what starts a capability. Widening either to fit would be the naming
- * collision ADR-0054 decision 9 exists to prevent. Two values because two
+ * collision ADR-0057 decision 9 exists to prevent. Two values because two
  * capabilities prove two values — add a third when a third capability needs it.
  */
 export type CapabilityTrigger = "inbound_call" | "lead_form";
@@ -50,7 +50,7 @@ export interface CapabilityDescriptor {
   /**
    * Human-readable version label, e.g. `home-services-receptionist.v1`.
    * For humans and logs only — never trusted for resolution, because a label
-   * can be reused by mistake and a checksum cannot (ADR-0054 q5).
+   * can be reused by mistake and a checksum cannot (ADR-0057 q5).
    */
   readonly versionLabel: string;
   /** The operational outcome this capability exists to produce. */
@@ -69,7 +69,7 @@ export interface CapabilityDescriptor {
    * The least permissive execution mode that can run this capability. The
    * effective tool set is the intersection of `allowedTools` here with the
    * resolved `ExecutionPolicy` for the tenant's mode — never the union
-   * (ADR-0054 decision 5).
+   * (ADR-0057 decision 5).
    */
   readonly minimumExecutionMode: ExecutionMode;
   readonly allowedTools: readonly string[];

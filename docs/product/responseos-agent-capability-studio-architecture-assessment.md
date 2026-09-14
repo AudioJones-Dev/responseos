@@ -118,7 +118,7 @@ premature at N=1 without an engine.
 | Evidence writers (`Call`, `CallTranscript`, `QaLog`) | **VERIFIED SHIPPED** | `lib/providers/telnyx/normalize.ts:154,191` (call + transcript upsert); `lib/data/callTranscripts.ts:132`; `lib/data/qaLogs.ts:90` | Unlike `WorkflowRun`, these have real production writers. Evidence capture is operational. |
 | v0.3 authorization | VERIFIED (closed) | `ROADMAP.md` "Next milestone: v0.3 — gated"; doctrine §23 D-1 open | No live provider path. Simulation-only is the *only* lane available. |
 | Doctrine §22 item 7 (the pivot) | **VERIFIED NOT DONE** | §22 "Item 7 is the pivot"; no reconciled pilot in repo or changelog | The Studio optimizes capability N+1 before capability 1 is proven. |
-| Latest ADR | VERIFIED | `ADR-0053` is highest in `docs/DECISIONS.md` | A new decision would be **ADR-0054**. |
+| Latest ADR | VERIFIED | `ADR-0053` is highest in `docs/DECISIONS.md` | A new decision would be **ADR-0057**. |
 
 ---
 
@@ -334,7 +334,7 @@ is the clearest evidence for reduced scope: the MVP's own acceptance criteria st
 
 Smallest reviewable increments. **Each is a separate PR; none is authorized by this document.**
 
-1. **ADR-0054** — where the capability definition of record lives. *Decision only, no code.*
+1. **ADR-0057** — where the capability definition of record lives. *Decision only, no code.*
 2. **Typed capability schema + checksum** — generalize the template pattern; port the existing
    prospect template to it as proof. Pure `lib/`, no schema change.
 3. **Governance validator** — pure function + unit tests. No schema change.
@@ -355,7 +355,7 @@ Smallest reviewable increments. **Each is a separate PR; none is authorized by t
 *Increments 1–7 only.*
 
 ```
-docs/DECISIONS.md                              ADR-0054
+docs/DECISIONS.md                              ADR-0057
 docs/ROADMAP.md                                placement
 docs/CHANGELOG.md                              per PR
 docs/product/…-architecture-assessment.md      this file
@@ -392,7 +392,7 @@ app/(admin)/admin/playbooks/page.tsx           replace stub
 
 ## 16. ADR Decision
 
-**Yes — ADR-0054 is required, and it is the first increment.**
+**Yes — ADR-0057 is required, and it is the first increment.**
 
 > **Decision required:** Does the capability definition of record live in Git (typed,
 > checksummed module) with the database holding only the release assignment — or does it live in
@@ -415,7 +415,7 @@ whether per-capability policy intersects the mode policy (**recommended**) or re
 
 | # | Question | Answer |
 |---|---|---|
-| 1 | Which layer (§8)? | Authoring/governance layer above execution, below product surface. Layer placement itself needs ADR-0054. |
+| 1 | Which layer (§8)? | Authoring/governance layer above execution, below product surface. Layer placement itself needs ADR-0057. |
 | 2 | Built, integrated, or deferred (§11)? | **Partially deferred.** Schema+validation+pinning built; engine, UI, components deferred. |
 | 3 | Improves the live pilot path? | **No — not yet.** No live path exists; both flagship capabilities are gate-blocked. |
 | 4 | Produces or preserves evidence? | Yes — version-pinned lineage on `WorkflowRun` + `AuditLog`, once a writer exists. |
@@ -435,11 +435,11 @@ whether per-capability policy intersects the mode policy (**recommended**) or re
 
 ## Execution Gate
 
-Per the brief's own gate: a consequential unresolved decision **does** exist (ADR-0054, plus the
+Per the brief's own gate: a consequential unresolved decision **does** exist (ADR-0057, plus the
 provider-vs-ResponseOS runtime-ownership question). Both are named precisely above, with the
 narrowest safe default recommended for each.
 
-**Recommendation: do not proceed into implementation beyond increment 1 (ADR-0054) without
+**Recommendation: do not proceed into implementation beyond increment 1 (ADR-0057) without
 operator sign-off**, because the reduced scope materially narrows what the brief requested — and
 scaling work down is the operator's call, not the agent's.
 
@@ -447,15 +447,15 @@ scaling work down is the operator's call, not the agent's.
 
 # Increment Plan (operator-directed, 2026-09-13)
 
-Added after the operator accepted the *direction* ADR-0054 proposes and revised the implementation
+Added after the operator accepted the *direction* ADR-0057 proposes and revised the implementation
 strategy. This section supersedes §13's sequence. Sections 1–16 above remain the
 current-state assessment that justified it.
 
-**Accepting a direction is not ratifying the decision.** ADR-0054 remains `Proposed`
+**Accepting a direction is not ratifying the decision.** ADR-0057 remains `Proposed`
 pending explicit operator ratification, which is the operator's act and not an agent's.
 Work proceeding under its direction does not advance its status.
 
-## A. Evidence supporting the ADR-0054 decision
+## A. Evidence supporting the ADR-0057 decision
 
 | Claim | Evidence at `ec4eb1d` |
 |---|---|
@@ -471,7 +471,7 @@ Work proceeding under its direction does not advance its status.
 
 ## B. Contradictions and alternatives considered
 
-**Database-of-record with a draft UI.** Rejected *for now*, not forever (ADR-0054 q11/q12).
+**Database-of-record with a draft UI.** Rejected *for now*, not forever (ADR-0057 q11/q12).
 It inverts a pattern the repo already relies on, makes immutability a thing to defend rather
 than a property, and needs a new in-app publication authority that partially duplicates the
 human merge gate the governance kernel reserves.
@@ -485,14 +485,14 @@ which decision 8 forbids. The shared abstraction is **required-known fields**, e
 existing vocabulary.
 
 **A new trigger enum.** Rejected. `AutomationTriggerType` (`missed_call`, `after_hours_call`,
-`new_lead`, …) and `LeadEventType` already exist. Inventing a third is the collision ADR-0054
+`new_lead`, …) and `LeadEventType` already exist. Inventing a third is the collision ADR-0057
 decision 9 names.
 
 **A third hash helper.** Rejected. `contentHash` canonicalizes key order; capability checksums
 reuse it. Accepted coupling: `lib/capabilities` imports one pure function from
 `lib/prospectBootstrap/memory`. Revisit only if a third consumer appears.
 
-**Naming resolution (ADR-0054 decision 9), settled here.** **"Capability"** is the term for a
+**Naming resolution (ADR-0057 decision 9), settled here.** **"Capability"** is the term for a
 governed unit of ResponseOS behaviour. **`Automation`** keeps its current meaning — n8n trigger
 configuration (ADR-0017) — and is not renamed. The **`playbooks`** admin stub is retargeted in
 Increment 7, not now. "Template" stays scoped to the provider-assistant artifact it already names.
@@ -502,11 +502,11 @@ Increment 7, not now. "Template" stays scoped to the provider-assistant artifact
 Capability authoring remains an engineering activity; an operator who cannot open a PR cannot
 author a capability. Immutability stays free. The human merge stays the single publication
 authority. Existing primitives are extended, never displaced. The `operator`-as-author question
-stays explicitly open (ADR-0054 decision 10).
+stays explicitly open (ADR-0057 decision 10).
 
 ## D. Migration path toward database-backed authoring
 
-Additive and reversible. (1) Evidence accumulates against ADR-0054 q11. (2) A superseding ADR
+Additive and reversible. (1) Evidence accumulates against ADR-0057 q11. (2) A superseding ADR
 answers q12. (3) Draft rows land in Postgres as *mutable* records with no runtime authority.
 (4) Publication resolves a draft into a frozen artifact, checksums it with `contentHash`, and
 writes the checksum into a release assignment. (5) Runtime continues to resolve by checksum and
@@ -573,23 +573,23 @@ Nothing in Increment 1 changes runtime behaviour.
 | `readinessGates` | mode activation gate + operating config | same | **derived, not stored** — see below |
 | generic `steps[]` | — | — | **NO** — no engine; would be ontology, not evidence |
 | `evidenceEnum` 4-state | — | — | **NO** — existing vocabulary covers it |
-| `componentVersions[]` | — | — | **NO** — containment already pins them (ADR-0054 q7) |
+| `componentVersions[]` | — | — | **NO** — containment already pins them (ADR-0057 q7) |
 
 **Correction on the trigger field.** An earlier draft of this plan said `trigger` "reuses existing
 vocabulary." On inspection it cannot: `AutomationTriggerType` is n8n automation configuration
 (ADR-0017) with no inbound-call member, and `LeadEventSource` describes where a lead came from,
-not what starts a capability. Widening either to fit would *be* the collision ADR-0054 decision 9
+not what starts a capability. Widening either to fit would *be* the collision ADR-0057 decision 9
 exists to prevent. `CapabilityTrigger` is therefore a deliberate two-value union —
 `inbound_call | lead_form` — carrying exactly the values two capabilities prove, with a third
 added only when a third capability needs it.
 
-**Why each new abstraction exists** (ADR-0054 decision 8):
+**Why each new abstraction exists** (ADR-0057 decision 8):
 
 - `CapabilityDescriptor` — the one new abstraction. Justified because two real capabilities share
   every field above; without it there is no way to state "capability N" at all.
 - `capabilityChecksum` — a thin wrapper over existing `contentHash`, so a descriptor is identified
   the same way a template already is. Not a new hashing scheme.
-- `validateCapabilityGovernance` — one pure function. Justified because ADR-0054 decision 5's
+- `validateCapabilityGovernance` — one pure function. Justified because ADR-0057 decision 5's
   intersection rule is otherwise unenforceable and untested.
 
 No other abstraction is introduced.
@@ -628,7 +628,7 @@ been authorized.
 
 | # | Increment | Status |
 |---|---|---|
-| 0 | ADR-0054 | **Proposed / pending ratification** — drafted, not ratified; the operator ratifies |
+| 0 | ADR-0057 | **Proposed / pending ratification** — drafted, not ratified; the operator ratifies |
 | 1 | Capability contract + two descriptors + governance validator | **this PR** — open, not merged |
 | 2 | Implement capability #2 behaviour; document what stayed bespoke | **Held / requires authorization** — starts only from clean master after #174 merges |
 | 3 | Minimal executor extraction — only from duplication two capabilities prove | Held; gated on 2 |
@@ -638,11 +638,11 @@ been authorized.
 | 7 | Authoring-interface decision, on measured friction | Held; gated on 6 |
 
 An earlier version of this table marked increment 0 `done` and increment 2 `next`,
-which contradicted ADR-0054's own `Proposed` status and the operator's hold on
+which contradicted ADR-0057's own `Proposed` status and the operator's hold on
 Increment 2. Raised by Codex on PR #174.
 
 ## J. Builder-UI gate
 
-Not built until **at least two** of ADR-0054 q11's conditions are demonstrated. Until then, Git
+Not built until **at least two** of ADR-0057 q11's conditions are demonstrated. Until then, Git
 plus typed contracts plus validation plus simulation is treated as the authoring system, not as a
 placeholder for one.

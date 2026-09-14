@@ -21,7 +21,7 @@ export { INBOUND_LEAD_QUALIFICATION_CAPABILITY } from "./descriptors/inboundLead
 /**
  * Every capability described in Git. A plain frozen array rather than a lookup
  * service: two entries do not justify a registry abstraction, and a registry is
- * exactly the kind of scaffolding ADR-0054 decision 8 defers until repetition
+ * exactly the kind of scaffolding ADR-0057 decision 8 defers until repetition
  * proves it necessary.
  */
 export const CAPABILITIES: readonly CapabilityDescriptor[] = Object.freeze([

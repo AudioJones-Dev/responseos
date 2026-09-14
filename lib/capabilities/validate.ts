@@ -8,7 +8,7 @@ import {
 import type { CapabilityDescriptor } from "./contract";
 
 /**
- * Governance validation (ADR-0054 decision 5).
+ * Governance validation (ADR-0057 decision 5).
  *
  * Answers one question: *is this capability allowed to publish?* It is separate
  * from structural validity, which the type system and `Object.freeze` already

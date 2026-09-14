@@ -15,7 +15,7 @@ import type { CapabilityDescriptor } from "../contract";
  *
  * `allowedTools` is empty and that is meaningful rather than a placeholder:
  * qualification writes internal records only and calls no provider tool. Under
- * the intersection rule (ADR-0054 decision 5) an empty set stays empty at every
+ * the intersection rule (ADR-0057 decision 5) an empty set stays empty at every
  * mode, so this capability cannot acquire a tool by being assigned to a more
  * permissive tenant.
  *
