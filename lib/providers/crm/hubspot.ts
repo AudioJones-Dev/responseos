@@ -134,8 +134,10 @@ export class HubSpotCrmProvider implements CrmProvider {
           `Location: ${activity.detail.location ?? "Not captured"}`,
           `Summary: ${activity.sanitizedSummary}`,
           `Qualification: ${activity.qualification}`,
-          `Quote Requested: ${activity.detail.quoteRequested ? "Yes" : "No"}`,
-          `Installation Photos Requested: ${activity.detail.photosRequested ? "Yes" : "No"}`,
+          // A reviewed supervised payload carries no quote or photo flags;
+          // an absent value is unknown, not "No", so the line is omitted.
+          ...(activity.detail.quoteRequested === undefined ? [] : [`Quote Requested: ${activity.detail.quoteRequested ? "Yes" : "No"}`]),
+          ...(activity.detail.photosRequested === undefined ? [] : [`Installation Photos Requested: ${activity.detail.photosRequested ? "Yes" : "No"}`]),
           `Next Action: ${activity.nextAction ?? "None recorded"}`,
           `ResponseOS Evidence: ${activity.evidenceReference}`,
         ].join("\n")

@@ -137,6 +137,17 @@ test("CRM failure does not suppress the approved email", async () => {
   expect(mocks.send).toHaveBeenCalledWith({ to: base.recipient, ...reviewMessage(payload, "call"), idempotencyKey: "review:review" });
 });
 
+test("an abandoned dispatch claim is recovered after its TTL and audited as such", async () => {
+  const abandonedAt = new Date(Date.now() - 20 * 60 * 1000);
+  approved({ dispatch_at: abandonedAt });
+  await dispatchCallReview("review");
+  const claim = mocks.db.callReview.updateMany.mock.calls[0][0];
+  expect(claim.where.OR).toEqual([{ dispatch_at: null }, { dispatch_at: { lte: expect.any(Date) } }]);
+  expect(claim.where.OR[1].dispatch_at.lte.getTime()).toBeGreaterThan(abandonedAt.getTime());
+  expect(mocks.db.auditLog.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ action: "call_review_dispatch_attempt", metadata_json: expect.objectContaining({ recoveredStaleClaimFrom: abandonedAt.toISOString() }) }) }));
+  expect(mocks.send).toHaveBeenCalledTimes(1);
+});
+
 test("a lost dispatch claim produces no effects", async () => {
   approved(); mocks.db.callReview.updateMany.mockResolvedValue({ count: 0 });
   await expect(dispatchCallReview("review")).rejects.toThrow("dispatch_in_progress_or_uncertain");

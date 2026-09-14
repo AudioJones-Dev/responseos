@@ -12,6 +12,15 @@ import { runCrmSyncForCall } from "@/lib/crm/syncFinalizedCall";
 import { getEmailProvider } from "@/lib/providers/email";
 import { FRL_INTERACTIONS, FRL_OUTCOMES, ReviewPayloadSchema, reviewMessage, type ReviewPayload } from "./contracts";
 
+/**
+ * A dispatch claim older than this is treated as abandoned: the invocation
+ * that took it terminated before its `finally` released it. Reclaiming it is
+ * safe because every external effect behind it is idempotent (the CRM
+ * operation by key, the email by review id) and the 23-hour email
+ * reconciliation rule still applies on top.
+ */
+export const DISPATCH_CLAIM_TTL_MS = 15 * 60 * 1000;
+
 export async function requireReviewOperator() {
   const session = await getCurrentSession();
   if (!session || !isCrossTenantRole(session)) throw new Error("operator_required");
@@ -101,7 +110,7 @@ export async function queueCallReview(accountId: string, callId: string, payload
     const hash = contentHash({ payload, transcript: call.transcript, snapshot: capture.snapshot_id });
     const latest = await tx.callReview.findFirst({ where: { account_id: accountId, call_id: callId }, orderBy: { revision: "desc" } });
     if (latest?.source_hash === hash) return latest;
-    if (latest?.dispatch_at) throw new Error("review_dispatch_in_progress");
+    if (latest?.dispatch_at && latest.dispatch_at.getTime() > Date.now() - DISPATCH_CLAIM_TTL_MS) throw new Error("review_dispatch_in_progress");
     const previous = latest?.payload_json && typeof latest.payload_json === "object" && !Array.isArray(latest.payload_json) ? (latest.payload_json as Record<string, unknown>) : {};
     const inherited = Object.fromEntries(Object.entries(previous).filter(([key]) => key !== "phone" && key !== "flags"));
     const preserved = !extracted.summary && typeof previous.summary === "string" && previous.summary !== DRAFT_DEFAULTS.summary;
@@ -180,9 +189,14 @@ export async function dispatchCallReview(id: string) {
       const recorded = await tx.callReview.findFirst({ where: { account_id: row.account_id, call_id: row.call_id, crm_status: { not: "pending" } }, select: { id: true } });
       if (earlier && !recorded) throw new Error("prior_revision_requires_reconciliation");
     }
-    const claim = await tx.callReview.updateMany({ where: { id, account_id: row.account_id, status: "approved", dispatch_at: null }, data: { dispatch_at: new Date() } });
+    const staleBefore = new Date(Date.now() - DISPATCH_CLAIM_TTL_MS);
+    const recoveringStaleClaim = row.dispatch_at !== null && row.dispatch_at <= staleBefore;
+    const claim = await tx.callReview.updateMany({
+      where: { id, account_id: row.account_id, status: "approved", OR: [{ dispatch_at: null }, { dispatch_at: { lte: staleBefore } }] },
+      data: { dispatch_at: new Date() },
+    });
     if (!claim.count) throw new Error("dispatch_in_progress_or_uncertain");
-    await tx.auditLog.create(auditEntry("call_review_dispatch_attempt", { revision: row.revision }));
+    await tx.auditLog.create(auditEntry("call_review_dispatch_attempt", { revision: row.revision, ...(recoveringStaleClaim ? { recoveredStaleClaimFrom: row.dispatch_at!.toISOString() } : {}) }));
   });
   let crmStatus: string | null = null;
   try {

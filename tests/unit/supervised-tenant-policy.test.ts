@@ -349,7 +349,20 @@ describe("supervised assistant preflight", () => {
     const lines = SUPERVISED_RECEPTIONIST_TEMPLATE.instructions.split("\n");
     const disclosureLine = lines.findIndex((line) => line.includes("{{ai_disclosure}}"));
     expect(disclosureLine).toBeGreaterThan(-1);
-    expect(lines.findIndex((line) => line.includes("Ask who is calling"))).toBeGreaterThan(disclosureLine);
+    const collectionLine = lines.findIndex((line) => line.includes("Ask who is calling"));
+    expect(collectionLine).toBeGreaterThan(disclosureLine);
+    // An explicit consent question with a refusal branch sits between the
+    // disclosure and any collection, and uses the configured refusal wording.
+    const consentLine = lines.findIndex((line) => line.includes("Is it okay to continue?"));
+    expect(consentLine).toBeGreaterThan(disclosureLine);
+    expect(consentLine).toBeLessThan(collectionLine);
+    expect(lines[consentLine]).toContain("{{recording_refusal_acknowledgement}}");
+    expect(lines[consentLine]).toContain("{{recording_refusal_offer}}");
+    expect(lines[consentLine]).toMatch(/Do not ask for or record any details after a refusal/);
+    // Location collection defers to the configured service-area statement
+    // rather than naming fields the operator may not have approved.
+    expect(SUPERVISED_RECEPTIONIST_TEMPLATE.instructions).not.toMatch(/city and postal code/);
+    expect(lines.find((line) => line.startsWith("Never infer a service area"))).toContain("{{service_area_statement}}");
     expect(SUPERVISED_RECEPTIONIST_TEMPLATE.dynamicVariables).toContain("ai_disclosure");
     expect(SUPERVISED_RECEPTIONIST_TEMPLATE_VERSION).toBe("supervised-receptionist.v3");
   });
