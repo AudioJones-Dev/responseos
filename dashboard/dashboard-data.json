@@ -32,6 +32,45 @@
   ],
   "tasks": [
     {
+      "id": "G-13",
+      "phase": "Tech Debt & Hardening",
+      "title": "Adopt supplied logo pack, rebuild favicons, UI and label cleanup",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "Med",
+      "start": "2026-09-11",
+      "due": "2026-09-11",
+      "ref": 162,
+      "refType": "pull"
+    },
+    {
+      "id": "CONVERGE-TRANSPORT",
+      "ref": 167,
+      "refType": "pull",
+      "phase": "Tech Debt & Hardening",
+      "title": "Preserve bounded prospect HTTPS transport and metadata validation",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-09-12",
+      "blocked": false
+    },
+    {
+      "id": "CONVERGE-CRM-CLAIM",
+      "ref": 168,
+      "refType": "pull",
+      "phase": "Tech Debt & Hardening",
+      "title": "Preserve tenant-scoped atomic CRM retry ownership",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-09-12",
+      "blocked": false
+    },
+    {
       "id": "F-01",
       "phase": "v0.1 · Foundation",
       "title": "Next.js app scaffold",
@@ -798,6 +837,32 @@
       "due": "2026-09-12"
     },
     {
+      "id": "V-20",
+      "phase": "v0.3 · Demo Scope",
+      "title": "FRL inbound intake & routing policy (canonical source for the supervised pilot)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-09-12",
+      "due": "2026-09-12",
+      "ref": 171,
+      "refType": "pull"
+    },
+    {
+      "id": "V-21",
+      "phase": "v0.3 · Demo Scope",
+      "title": "FRL policy: qualified-only CRM task trigger + auditable consent-evidence prerequisite",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-09-13",
+      "due": "2026-09-13",
+      "refType": "pull",
+      "ref": 175
+    },
+    {
       "id": "V-16",
       "phase": "v0.3 · Demo Scope",
       "title": "Consolidate normalizeE164 into one shared helper (caller-resolution prerequisite)",
@@ -1113,17 +1178,16 @@
       "blockedReason": "External hotlinking of the five public URLs cannot be disproven from inside the repository; watch edge logs for 404s on /file.svg, /globe.svg, /next.svg, /vercel.svg and /window.svg for one traffic cycle after the next staging deploy"
     },
     {
-      "id": "G-13",
-      "phase": "Tech Debt & Hardening",
-      "title": "Adopt supplied logo pack, rebuild favicons, UI and label cleanup",
-      "owner": "Claude Code",
+      "id": "CONVERGE-DB-RESET",
+      "phase": "Integrations",
+      "title": "Disconnect cached application client before test schema resets",
+      "owner": "Codex",
       "status": "Review",
       "progress": 90,
-      "priority": "Med",
-      "start": "2026-09-11",
-      "due": "2026-09-11",
-      "ref": 162,
-      "refType": "pull"
+      "ref": 170,
+      "refType": "pull",
+      "priority": "High",
+      "blocked": false
     }
   ],
   "liveIssues": [
