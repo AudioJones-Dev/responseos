@@ -9,7 +9,7 @@ export const metadata = {
 const POINTS = [
   {
     title: "Catch the 6:42pm missed call",
-    body: "After-hours and on-the-job calls get a response instead of voicemail.",
+    body: "Designed so after-hours and on-the-job calls get a response instead of voicemail.",
   },
   {
     title: "Reply in under 60 seconds",

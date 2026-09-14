@@ -22,7 +22,7 @@ const tiers = [
   {
     name: "Recovery Pro",
     price: "Setup + monthly",
-    summary: "Intake, booking, quoting, CRM sync, and ROI reporting.",
+    summary: "Intake, booking, quoting, CRM sync, and ROI reporting (in development).",
     bullets: [
       "Everything in Core",
       "Quote + booking flows",

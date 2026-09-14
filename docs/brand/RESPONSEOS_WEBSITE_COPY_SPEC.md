@@ -83,7 +83,7 @@ This is the copy spec for every public marketing page. It defines goal, audience
 
 - **Goal:** Make the two-phase motion legible and qualify-in serious buyers.
 - **Audience:** Owner/operator evaluating cost vs the leak (warm).
-- **Primary conversion action:** Book the Readiness Assessment.
+- **Primary conversion action:** Revenue Recovery Demo. Secondary: Book the Readiness & Revenue Leak Assessment.
 
 **Hero**
 
@@ -120,7 +120,7 @@ This is the copy spec for every public marketing page. It defines goal, audience
 
 - **Goal:** Make the primary vertical see itself; convert to assessment.
 - **Audience:** HVAC, roofing, plumbing, electrical, landscaping owners/office managers.
-- **Primary conversion action:** Book the Readiness Assessment.
+- **Primary conversion action:** Revenue Recovery Demo. Secondary: Book the Readiness & Revenue Leak Assessment.
 
 **Hero**
 
@@ -149,7 +149,7 @@ This is the copy spec for every public marketing page. It defines goal, audience
 
 - **Goal:** Speak to general contractors and trades with project-based, high-value work.
 - **Audience:** Contractor owner/operator, often the estimator and the dispatcher.
-- **Primary conversion action:** Book the Readiness Assessment.
+- **Primary conversion action:** Revenue Recovery Demo. Secondary: Book the Readiness & Revenue Leak Assessment.
 
 **Hero**
 
@@ -208,7 +208,7 @@ This is the copy spec for every public marketing page. It defines goal, audience
 
 - **Goal:** Sell the Readiness & Revenue Leak Assessment as the obvious first step.
 - **Audience:** Warm owner ready to size the leak.
-- **Primary conversion action:** Book / request the assessment (the site's main conversion).
+- **Primary conversion action:** Book / request the assessment (the site's secondary conversion, after the Revenue Recovery Demo).
 
 **Hero**
 
@@ -298,7 +298,7 @@ All copy must comply with [`./RESPONSEOS_BRAND_VOICE.md`](./RESPONSEOS_BRAND_VOI
 - Numbers are real or clearly labeled illustrative/example. No fake logos, testimonials, or stats.
 - No HIPAA/compliance claims that aren't true.
 - Sentence-case headlines, active voice, no exclamation points.
-- Funnel converges on the Readiness Assessment.
+- Funnel converges on the Revenue Recovery Demo, with the Readiness Assessment as the secondary path.
 
 ---
 
@@ -318,7 +318,7 @@ All copy must comply with [`./RESPONSEOS_BRAND_VOICE.md`](./RESPONSEOS_BRAND_VOI
 ## Assumptions
 
 - The seven routes above are the full public marketing surface for MVP; no blog/resources hub in scope yet.
-- The assessment is the single primary conversion site-wide; demo is the secondary path.
+- The Revenue Recovery Demo is the single primary conversion site-wide; the assessment is the secondary path.
 - Visual system (dark-first, #FF4500 accent) is governed by [`../DESIGN.md`](../DESIGN.md); this spec covers copy only.
 
 ## Open questions
