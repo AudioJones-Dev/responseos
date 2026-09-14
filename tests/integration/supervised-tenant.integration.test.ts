@@ -238,6 +238,15 @@ describe("supervised tenant configuration", () => {
     expect(runtime?.resolved.policy.crmSyncEnabled).toBe(true);
     expect(runtime?.resolved.policy.recordingEnabled).toBe(false);
 
+    // Ownership follows the assignment interval, not the current holder: once
+    // the number is released, an event from inside the interval still resolves
+    // to this tenant and an event from after it resolves to nobody.
+    const assignment = await prisma.telephonyNumberAssignment.findFirstOrThrow({ where: { account_id: runtime!.accountId, status: "active" } });
+    await prisma.telephonyNumberAssignment.update({ where: { id: assignment.id }, data: { status: "released", unassigned_at: new Date(now.getTime() + 2 * 60 * 60_000) } });
+    expect((await resolveSupervisedTenantForNumber(NUMBER, new Date(now.getTime() + 60 * 60_000)))?.accountId).toBe(runtime!.accountId);
+    expect(await resolveSupervisedTenantForNumber(NUMBER, new Date(now.getTime() + 3 * 60 * 60_000))).toBeNull();
+    expect(await resolveSupervisedTenantForNumber(NUMBER, new Date(now.getTime() - 60_000))).toBeNull();
+
     // The prospect resolver must not claim a bootstrap-less assignment.
     expect(
       await resolveTelnyxEventAssignment({

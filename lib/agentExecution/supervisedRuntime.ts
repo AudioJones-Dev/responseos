@@ -55,17 +55,21 @@ export async function resolveSupervisedTenantForNumber(
   const number = await db.telephonyNumber.findUnique({
     where: { provider_e164: { provider: "telnyx", e164 } },
   });
-  if (!number || number.status !== "assigned") return null;
+  if (!number) return null;
 
+  // Ownership is the assignment whose interval contains the event time, the
+  // same rule the prospect resolver uses. A delayed event for a number that
+  // has since been released or reassigned still belongs to the tenant that
+  // held it when the call happened; it must never resolve to the current one.
   const assignment = await db.telephonyNumberAssignment.findFirst({
     where: {
       telephony_number_id: number.id,
       bootstrap_id: null,
-      status: "active",
-      unassigned_at: null,
+      status: { in: ["active", "quarantined", "released"] },
       activated_at: { lte: now },
+      OR: [{ unassigned_at: null }, { unassigned_at: { gte: now } }],
     },
-    orderBy: { assigned_at: "desc" },
+    orderBy: { activated_at: "desc" },
   });
   if (!assignment) return null;
 
@@ -125,7 +129,13 @@ export async function isSupervisedNumber(target: string, now = new Date()): Prom
   const number = await db.telephonyNumber.findUnique({ where: { provider_e164: { provider: "telnyx", e164 } } });
   if (!number) return false;
   const assignment = await db.telephonyNumberAssignment.findFirst({
-    where: { telephony_number_id: number.id, bootstrap_id: null, status: "active", unassigned_at: null, activated_at: { lte: now } },
+    where: {
+      telephony_number_id: number.id,
+      bootstrap_id: null,
+      status: { in: ["active", "quarantined", "released"] },
+      activated_at: { lte: now },
+      OR: [{ unassigned_at: null }, { unassigned_at: { gte: now } }],
+    },
     select: { id: true },
   });
   return assignment !== null;

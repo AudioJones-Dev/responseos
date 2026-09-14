@@ -225,6 +225,23 @@ describe("supervised Telnyx call lane", () => {
     expect(mocks.queueCallReview.mock.invocationCallOrder[0]).toBeLessThan(mocks.touchSupervisedAssignment.mock.invocationCallOrder[0]);
   });
 
+  test("a supervised event without a trustworthy time is never resolved from receipt time", async () => {
+    mocks.resolveSupervisedTenantForNumber.mockResolvedValue(supervisedTenant());
+    mocks.isSupervisedNumber.mockResolvedValue(true);
+    const rawBody = JSON.stringify({ data: { id: "event-no-time", event_type: "call.conversation_insights.generated", payload: { call_control_id: "call-untimed", to: TENANT_NUMBER, transcript: "private caller text" } } });
+    const timestamp = String(Math.floor(Date.now() / 1000));
+    const signature = sign(null, Buffer.from(`${timestamp}|${rawBody}`), keys.privateKey).toString("base64");
+    const { POST } = await import("@/app/api/webhooks/telnyx/calls/route");
+    const response = await POST(new Request("https://responseos.example/api/webhooks/telnyx/calls", { method: "POST", headers: { "content-type": "application/json", "telnyx-timestamp": timestamp, "telnyx-signature-ed25519": signature }, body: rawBody }));
+    await settle();
+    expect(response.status).toBe(202);
+    expect(mocks.resolveSupervisedTenantForNumber).not.toHaveBeenCalled();
+    expect(mocks.resolveTelnyxEventAssignment).not.toHaveBeenCalled();
+    expect(mocks.normalizeTelnyxEvent).not.toHaveBeenCalled();
+    expect(mocks.recordWebhookEvent.mock.calls[0][0].raw_body).not.toContain("private caller text");
+    expect(mocks.setWebhookProcessStatus).toHaveBeenCalledWith(expect.objectContaining({ process_status: "rejected", process_error: "missing_occurred_at" }));
+  });
+
   test("an owned number whose runtime cannot resolve is retained as retryable, never handed to the prospect lane", async () => {
     mocks.resolveSupervisedTenantForNumber.mockResolvedValue(null);
     mocks.isSupervisedNumber.mockResolvedValue(true);

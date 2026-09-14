@@ -83,7 +83,10 @@ export async function POST(req: Request) {
   const occurredAt = getTelnyxOccurredAt(event);
   const receivedAt = new Date();
 
-  const supervised = target ? await resolveSupervisedTenantForNumber(target, occurredAt ?? receivedAt) : null;
+  // Tenant resolution is by event time only. Receipt time is not a substitute:
+  // a retried event from a number's previous tenant would otherwise resolve to
+  // whoever holds the number now.
+  const supervised = target && occurredAt ? await resolveSupervisedTenantForNumber(target, occurredAt) : null;
   if (supervised && target) {
     providerCallId = await findInitializedProviderCallId({ provider: "telnyx", providerCallIds: getTelnyxCallIds(event.data.payload), target }) ?? providerCallId;
   }
@@ -154,10 +157,11 @@ export async function POST(req: Request) {
   }
 
   if (supervisedOwned && !supervised) {
-    // Owned, but the runtime could not be resolved (profile, snapshot, or
-    // snapshot JSON missing or invalid). Keep the event retryable: a
-    // redelivery after repair is picked up by the duplicate handler below.
-    await setWebhookProcessStatus({ id: ledger.data.id, process_status: "rejected", process_error: "supervised_runtime_unresolved" });
+    // Owned, but not resolvable: either the event carries no trustworthy time
+    // (permanent — never retried), or the runtime could not be resolved
+    // (profile, snapshot, or snapshot JSON missing or invalid — retryable: a
+    // redelivery after repair is picked up by the duplicate handler below).
+    await setWebhookProcessStatus({ id: ledger.data.id, process_status: "rejected", process_error: occurredAt ? "supervised_runtime_unresolved" : "missing_occurred_at" });
     return NextResponse.json({ ok: true, data: { accepted: true, normalized: false } }, { status: 202 });
   }
 
