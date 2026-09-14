@@ -1656,7 +1656,7 @@ So the brief's generation instrumentation, retrieval instrumentation, evaluation
 
 ---
 
-## ADR-0057 — Capability definition authority, publication, and runtime assignment
+## ADR-0058 — Capability definition authority, publication, and runtime assignment
 
 **Status.** Proposed · 2026-09-13 · pending operator ratification; direction set by the operator on 2026-09-13. Extends **ADR-0001** (mock-first), **ADR-0017** (orchestration placement), **ADR-0046** (agent profiles), **ADR-0048** (prospect bootstrap), and **ADR-0051** (execution modes). **Authorizes no implementation** — no schema change, migration, table, authoring surface, execution engine, or provider activation. **Does not authorize v0.3** (doctrine D-1 stays open) and moves no item in doctrine §22.
 

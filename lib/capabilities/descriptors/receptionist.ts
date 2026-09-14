@@ -16,7 +16,7 @@ import type { CapabilityDescriptor } from "../contract";
  * prospect-demo lane pushes a prompt to a provider assistant; this descriptor
  * does not execute it.
  *
- * **What this descriptor's checksum does and does not cover.** ADR-0057 q7
+ * **What this descriptor's checksum does and does not cover.** ADR-0058 q7
  * describes checksums as pinning components by containment. This descriptor
  * *references* the template by version label rather than containing it, so
  * `capabilityChecksum` covers the descriptor's own fields only. Editing
