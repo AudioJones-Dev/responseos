@@ -240,6 +240,11 @@ describe("supervised Telnyx call lane", () => {
     expect(mocks.normalizeTelnyxEvent).not.toHaveBeenCalled();
     expect(mocks.recordWebhookEvent.mock.calls[0][0].raw_body).not.toContain("private caller text");
     expect(mocks.setWebhookProcessStatus).toHaveBeenCalledWith(expect.objectContaining({ process_status: "rejected", process_error: "missing_occurred_at" }));
+    // Without an event time no assignment interval can be established, so the
+    // row is not attributed to the number's current holder and is not retained
+    // on the tenant's clock.
+    expect(mocks.recordWebhookEvent.mock.calls[0][0].account_id).toBeUndefined();
+    expect(mocks.recordWebhookEvent.mock.calls[0][0]).toHaveProperty("payload_expires_at");
   });
 
   test("an owned number whose runtime cannot resolve is retained as retryable, never handed to the prospect lane", async () => {

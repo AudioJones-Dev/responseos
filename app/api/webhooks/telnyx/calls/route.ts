@@ -128,7 +128,11 @@ export async function POST(req: Request) {
 
   // A supervised tenant is a real client: its call evidence is retained, not
   // aged out on the prospect content clock.
-  const retainPayload = supervisedOwned || (!personalized && Boolean(resolved));
+  // An owned number's event without a trustworthy time can never be attributed
+  // to an assignment interval, so it is retained unscoped and ages out like
+  // prospect data; only routing (never the prospect lane) uses the ownership.
+  const attributable = supervisedOwned && occurredAt !== null;
+  const retainPayload = attributable || (!personalized && Boolean(resolved));
   const payloadExpiresAt = retainPayload ? null : new Date((occurredAt ?? receivedAt).getTime() + PROSPECT_CONTENT_RETENTION_DAYS * 24 * 60 * 60 * 1000);
   // Retained content is the exact signed bytes, so the stored body matches the
   // recorded signature; only the denied branch stores a projection.
@@ -137,8 +141,9 @@ export async function POST(req: Request) {
     client,
 
     // The verified number assignment identifies the tenant even when its
-    // runtime cannot be resolved, so the evidence is never stored unscoped.
-    account_id: owner?.accountId ?? resolved?.accountId,
+    // runtime cannot be resolved — but only at the event's own time; an
+    // untimed event is stored unscoped rather than under the current holder.
+    account_id: (attributable ? owner?.accountId : undefined) ?? resolved?.accountId,
     provider: "telnyx",
     provider_event_id: event.data.id,
     event_type: event.data.event_type,

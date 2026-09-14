@@ -93,8 +93,11 @@ export async function POST(req: Request) {
       ? await resolveActiveProspectAgentContext(target)
       : null;
 
+  // Ownership at receipt time routes an untimed event to the neutral response,
+  // but attribution needs the event's own time: an untimed initialization is
+  // stored unscoped rather than under whoever holds the number now.
   const ledger = await recordWebhookEvent({
-    account_id: owner?.accountId ?? prospect?.accountId,
+    account_id: (occurredAt ? owner?.accountId : undefined) ?? prospect?.accountId,
     provider: "telnyx",
     provider_event_id: event.data.id,
     event_type: event.data.event_type,
