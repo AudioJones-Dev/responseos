@@ -283,7 +283,9 @@ describe("supervised tenant configuration", () => {
     expect(await prisma.businessMemorySnapshot.count({ where: { account_id: before.account_id } })).toBe(1);
     const valid = await configureSupervisedTenant(input({ activate: true,
       number: { providerNumberId: PROVIDER_NUMBER_ID, e164: NUMBER, providerAttestation: attestation() },
-    }), new Date(now.getTime() + 60 * 60_000));
+    // Half an hour later: inside the attestation's one-hour validity, but far
+    // enough that a reset activated_at would be observable.
+    }), new Date(now.getTime() + 30 * 60_000));
     expect(valid.ok && valid.data.activated).toBe(true);
     // Reactivating a continuously active number keeps its original activation
     // time, so webhooks that occurred before the reconfiguration still resolve.
