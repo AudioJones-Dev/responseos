@@ -1,6 +1,6 @@
 # Mike's supervised FRL demonstration
 
-Status: local implementation validated; independent review and live activation remain pending. No live demonstration has passed. Owner: Audio. Implementers: Claude (reused closure candidate `e55c100`), Codex (reconciliation and review/consent changes). Base: `8df3aeb`.
+Status: local implementation under review; independent review and live activation remain pending. No live demonstration has passed. Owner: Audio. Implementers: Claude (reused closure candidate `e55c100`), Codex (reconciliation and review/consent changes). Reconciled base: `a9747cc` (includes PR #175 and ADR-0055).
 
 ## Approved task
 
@@ -21,10 +21,14 @@ Reuse candidate runtime, configuration, normalization, HubSpot and Resend work f
 - Keep recording disabled. Append `CallConsentEvent` records for the transcript artifact. The authenticated operator records witnessed grant/refusal/withdrawal at current server time; entries cannot be backdated or edited. This endpoint records evidence; it does not control Telnyx capture.
 - Require verified provider capture controls and interval provenance in the signed preflight. Content events require `capture_started_at` and `capture_ended_at` covering their entire cumulative content. Missing or unauthorized intervals are metadata-only before ledger storage and normalization. This transport contract is **not verified against a live provider**. A prompt instruction or operator consent row is not proof that capture stopped at the provider.
 - Finalized calls create versioned `CallReview` drafts. Authenticated operators edit the structured payload and preview the exact email before approving. Approval freezes the payload and records the reviewer. Stale or duplicate decisions fail closed.
-- A separate dispatch action uses the approved content. Ordinary personalized prospect demos retain their CRM prohibition. Qualified-only task eligibility is retained; the pending PR #175 outcome allowlist is not adopted.
+- A separate dispatch action uses the approved content. Ordinary personalized prospect demos retain their CRM prohibition. Qualified-only task eligibility is retained; PR #175's unratified outcome allowlist is not adopted.
 - CRM and email statuses are independent. Provider acceptance is not inbox receipt. Retries reuse the frozen payload and email idempotency key; old ambiguous deliveries require reconciliation. No background scheduler or unattended retry is claimed.
 
 ## Interfaces
+
+Updates to an enabled supervised profile require explicit reactivation with the complete approved configuration and fresh number preflight. Omitting activation cannot change an active tenant's policy. The call webhook records only metadata and rejects normalization when the supervised runtime is incomplete, degraded or outside `SUPERVISED_PILOT`. Existing notification retries use their stored recipient and message even if the latest configuration was revoked; the live email provider gate remains required for previously live attempts. These controls are repository behavior, not proof of provider activation or delivery.
+
+Late evidence cannot create a superseding review while a dispatch is claimed. The webhook retains the event and marks processing as failed for a retry after dispatch releases its claim; replay is not an unattended scheduler. A later revision following provider effects requires reconciliation. Revoking the execution gate during CRM dispatch prevents the subsequent email effect. G-12 still stops new transcript persistence after withdrawal, including delayed content from an earlier capture interval; previously retained evidence is not deleted by this check.
 
 - Existing `POST /api/admin/supervised-tenants` accepts typed configuration entries including `business.knowledge`; use `dryRun` before an authorized apply.
 - `POST /api/admin/call-capture/:id/consent`: `{action: grant|refuse|withdraw, disclosureRef, evidenceRef, eventKey}`. Actor, tenant, artifact and event time are server-owned. `:id` is an initialized capture session, not a caller-selected tenant.
@@ -79,3 +83,7 @@ Record exact build SHA, snapshot version, provider call ID, consent evidence, re
 ## Operator presentation
 
 Allow 20–30 minutes: explain real facts versus fictional scenarios and the approval boundary; let Mike choose a caller/product; accept unscripted questions; inspect transcript and analysis; approve and dispatch; inspect CRM and inbox together; repeat with a service/project call. Capture corrections and objections before proposing the operational pilot.
+
+### Repair validation — 2026-09-13
+
+After reconciling master at `a9747cc`: `npm run lint`, `npm run typecheck`, `npm test` (693 tests), `npm run test:integration` (183 tests), `npm run build` with the isolated database, and `npm audit --audit-level=high` passed. Prisma migration diff, all 15 migrations and seed passed against synthetic Postgres 16 on loopback. Configuration validation passed. No provider effect, live call, deployment or client-data mutation was exercised. Independent CodeRabbit review and GitHub CI of the published repair remain separate gates.

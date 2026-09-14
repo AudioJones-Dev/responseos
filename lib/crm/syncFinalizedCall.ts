@@ -211,7 +211,7 @@ export async function runCrmSyncForCall(params: {
           await provider.createContact({
             phone,
             verifiedEmail,
-            firstName: approved?.caller ?? contact?.first_name ?? undefined,
+            firstName: approved ? sanitizeCrmText(approved.caller) : contact?.first_name ?? undefined,
             lastName: approved ? undefined : contact?.last_name ?? undefined,
           })
         ).providerContactId;

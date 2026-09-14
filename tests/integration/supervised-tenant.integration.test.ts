@@ -262,6 +262,28 @@ describe("supervised tenant configuration", () => {
     expect(runtime?.resolved.policy.crmSyncEnabled).toBe(false);
   });
 
+  test("active tenant edits require explicit reactivation and a fresh complete preflight", async () => {
+    const activated = await configureSupervisedTenant(input({ activate: true,
+      number: { providerNumberId: PROVIDER_NUMBER_ID, e164: NUMBER, providerAttestation: attestation() },
+    }), now);
+    expect(activated.ok).toBe(true);
+    if (!activated.ok) return;
+    const before = await prisma.agentProfile.findUniqueOrThrow({ where: { id: activated.data.profileId! } });
+    for (const dryRun of [true, false]) {
+      const update = await configureSupervisedTenant(input({ executionMode: "MANAGED_AUTONOMY", dryRun }), now);
+      expect(update).toMatchObject({ ok: false, error: { code: "configuration_stopped" } });
+      if (!update.ok) expect(update.error.details?.stops).toContain("active_tenant_requires_activation");
+    }
+    const missingNumber = await configureSupervisedTenant(input({ activate: true }), now);
+    expect(missingNumber).toMatchObject({ ok: false, error: { code: "configuration_stopped" } });
+    expect(await prisma.agentProfile.findUnique({ where: { id: before.id } })).toEqual(before);
+    expect(await prisma.businessMemorySnapshot.count({ where: { account_id: before.account_id } })).toBe(1);
+    const valid = await configureSupervisedTenant(input({ activate: true,
+      number: { providerNumberId: PROVIDER_NUMBER_ID, e164: NUMBER, providerAttestation: attestation() },
+    }), now);
+    expect(valid.ok && valid.data.activated).toBe(true);
+  });
+
   test("refuses activation while the configuration is incomplete", async () => {
     const result = await configureSupervisedTenant(
       input({

@@ -1,4 +1,4 @@
-import { afterAll, beforeEach, expect, test } from "vitest";
+import { afterAll, beforeEach, expect, test, vi } from "vitest";
 import { Prisma } from "@prisma/client";
 import { disconnectTestDb, prisma, resetAndSeedTestDb, setDevSession } from "./setup";
 import { buildOperatingConfigurationSnapshot } from "@/lib/agentExecution/operatingConfigurationSnapshot";
@@ -48,9 +48,32 @@ test("late evidence creates a new review and invalidates an earlier approval req
   await expect(decideCallReview(first!.id, 1, "approve", value)).rejects.toThrow("stale_review");
 });
 
+test("late evidence cannot supersede a dispatch claim and can be retried after release", async () => {
+  const first = await queueCallReview(accountId, callId, { summary: value.summary });
+  await decideCallReview(first!.id, 1, "approve", value);
+  await prisma.callReview.update({ where: { id: first!.id }, data: { dispatch_at: now } });
+  await expect(queueCallReview(accountId, callId, { summary: "Corrected request" })).rejects.toThrow("review_dispatch_in_progress");
+  expect(await prisma.callReview.count({ where: { account_id: accountId } })).toBe(1);
+  await prisma.callReview.update({ where: { id: first!.id }, data: { dispatch_at: null } });
+  expect((await queueCallReview(accountId, callId, { summary: "Corrected request" }))?.revision).toBe(2);
+});
+
+test("approved CRM retry releases an earlier claim and sanitizes the contact name", async () => {
+  const provider = new MockCrmProvider();
+  await runCrmSyncForCall({ accountId, callId, providerOverride: provider });
+  const row = await queueCallReview(accountId, callId, { summary: value.summary });
+  await decideCallReview(row!.id, 1, "approve", { ...value, caller: "Caller owner@example.test +15555550123" });
+  const create = vi.spyOn(provider, "createContact");
+  const result = await runCrmSyncForCall({ accountId, callId, reviewId: row!.id, providerOverride: provider });
+  expect(result).toMatchObject({ ok: true, data: { status: "succeeded" } });
+  expect(create).toHaveBeenCalledWith(expect.objectContaining({ firstName: "Caller [email redacted] [phone redacted]" }));
+});
+
 test("legacy retry entrypoints cannot bypass a supervised review", async () => {
   const crm = await runCrmSyncForCall({ accountId, callId, providerOverride: new MockCrmProvider() });
   expect(crm.ok && crm.data.status === "succeeded").toBe(false);
+  expect(await prisma.crmSyncOperation.findUnique({ where: { operation_key: `crm-call:${accountId}:${callId}` } }))
+    .toMatchObject({ status: "retryable_failed", last_error_code: "approval_required" });
   const email = await dispatchCompletedInteractionNotification({ accountId, callId });
   expect(email).toMatchObject({ ok: false, error: { code: "approval_required" } });
 });

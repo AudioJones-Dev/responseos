@@ -130,7 +130,7 @@ export async function supervisedExecutionAuthorized(accountId: string): Promise<
     profilePolicy: profile.system_policy_json,
     authorizedGates: authorizedExecutionGates(),
   });
-  return resolved.degraded === null && resolved.mode !== "PROSPECT_DEMO";
+  return resolved.degraded === null && resolved.mode === "SUPERVISED_PILOT";
 }
 
 /**

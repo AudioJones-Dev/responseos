@@ -163,6 +163,10 @@ export async function configureSupervisedTenant(
     const readiness = evaluateOperatingConfiguration(built.memory, input.executionMode);
 
     const existingAccount = await db.account.findUnique({ where: { slug: input.accountSlug } });
+    const enabledProfile = existingAccount && await db.agentProfile.findFirst({
+      where: { account_id: existingAccount.id, type: "supervised_receptionist", enabled: true },
+    });
+    if (enabledProfile && input.activate !== true) stops.push("active_tenant_requires_activation");
 
     // The account id is only known after the upsert, so the snapshot is rebuilt
     // inside the transaction once it is. Hash comparison uses that final form.
@@ -253,6 +257,7 @@ export async function configureSupervisedTenant(
     if (dryRun) return ok(plan);
 
     const applied = await db.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${"supervised-config:" + input.accountSlug}))`;
       const account = await tx.account.upsert({
         where: { slug: input.accountSlug },
         create: {
@@ -264,6 +269,10 @@ export async function configureSupervisedTenant(
         },
         update: { name: input.businessName, timezone: input.timezone },
       });
+
+      if (input.activate !== true && await tx.agentProfile.findFirst({
+        where: { account_id: account.id, type: "supervised_receptionist", enabled: true },
+      })) throw new Error("active_tenant_requires_activation");
 
       const snapshotBuild = buildOperatingConfigurationSnapshot({
         accountId: account.id,

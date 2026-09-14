@@ -218,4 +218,6 @@ POST /api/appointments/availability
 
 ### Supervised call review (repository implementation; activation gated)
 
+Updating an enabled supervised profile through `POST /api/admin/supervised-tenants` requires `activate: true` with the full activation preflight; a configuration-only update is rejected before commit. Signed call events for an unready/degraded supervised runtime receive a metadata-only ledger entry and HTTP 202 with `normalized: false`.
+
 `POST /api/admin/call-reviews/:id` approves/rejects an expected revision or dispatches an approved revision. `POST /api/admin/call-capture/:id/consent` appends operator-observed per-call transcript consent at server time. Both require an authenticated operator; clients cannot invoke them. Detailed payloads and limitations: [Mike demonstration brief](./product/responseos-mike-live-demo.md).

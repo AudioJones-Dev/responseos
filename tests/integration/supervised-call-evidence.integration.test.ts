@@ -286,7 +286,7 @@ describe("supervised call evidence", () => {
     expect(notification.message).not.toContain("+15555550123");
   });
 
-  test("sends once, resends the frozen body on retry, and skips a second dispatch", async () => {
+  test("retries the frozen payload after configuration revocation while preserving the live-provider gate", async () => {
     const account = await createTenant();
     const normalized = await normalize(account, "event-1");
     await dispatchCompletedInteractionNotification({
@@ -297,6 +297,10 @@ describe("supervised call evidence", () => {
     });
     const failed = await prisma.notification.findFirstOrThrow({ where: { account_id: account.id } });
 
+    await prisma.businessMemorySnapshot.updateMany({ where: { account_id: account.id }, data: { status: "revoked" } });
+    await prisma.notification.update({ where: { id: failed.id }, data: { provider: "resend", last_error_code: "email_request_failed" } });
+    const disabledRetry = await retryCompletedInteractionNotification({ id: failed.id, now });
+    expect(disabledRetry).toMatchObject({ ok: true, data: { status: "failed", reason: "live_provider_disabled" } });
     const provider = new StubEmailProvider();
     const retried = await retryCompletedInteractionNotification({ id: failed.id, providerOverride: provider, now });
     expect(retried.ok).toBe(true);

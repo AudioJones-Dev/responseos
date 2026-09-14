@@ -837,6 +837,19 @@
       "refType": "pull"
     },
     {
+      "id": "V-21",
+      "phase": "v0.3 · Demo Scope",
+      "title": "FRL policy: qualified-only CRM task trigger + auditable consent-evidence prerequisite",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-09-13",
+      "due": "2026-09-13",
+      "refType": "pull",
+      "ref": 175
+    },
+    {
       "id": "V-16",
       "phase": "v0.3 · Demo Scope",
       "title": "Consolidate normalizeE164 into one shared helper (caller-resolution prerequisite)",
@@ -1170,11 +1183,11 @@
       "phase": "Integrations",
       "title": "Supervised FRL demonstration: approved knowledge, consent, review, CRM and email",
       "owner": "Codex",
-      "status": "In Progress",
-      "progress": 60,
+      "status": "Review",
+      "progress": 80,
       "priority": "High",
       "blocked": true,
-      "blockedReason": "Live consent transport, approved FRL configuration, isolated activation and rehearsal remain unverified."
+      "blockedReason": "CodeRabbit review of the repaired head is required. Live consent transport, approved FRL configuration, isolated activation and rehearsal remain unverified."
     }
   ],
   "liveIssues": [

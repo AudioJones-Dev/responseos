@@ -45,6 +45,7 @@ export async function queueCallReview(accountId: string, callId: string, payload
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${accountId + ":" + callId}))`;
     const latest = await tx.callReview.findFirst({ where: { account_id: accountId, call_id: callId }, orderBy: { revision: "desc" } });
     if (latest?.source_hash === hash) return latest;
+    if (latest?.dispatch_at) throw new Error("review_dispatch_in_progress");
     return tx.callReview.create({ data: { account_id: accountId, call_id: callId, revision: (latest?.revision ?? 0) + 1, source_hash: hash, evidence_json: { transcript: call.transcript, summary: call.summary, snapshotId: capture.snapshot_id }, payload_json: draft as Prisma.InputJsonValue, recipient: recipient?.enabled ? recipient.recipient : "" } });
   });
 }
@@ -107,6 +108,7 @@ export async function dispatchCallReview(id: string) {
       return { status: "already_accepted" };
     }
     if (row.email_attempt_at && Date.now() - row.email_attempt_at.getTime() >= 23 * 60 * 60 * 1000) throw new Error("email_delivery_requires_reconciliation");
+    if (!(await supervisedExecutionAuthorized(row.account_id))) throw new Error("execution_gate_not_authorized");
     const provider = getEmailProvider();
     if (provider.providerId !== "resend") throw new Error("live_email_disabled");
     await db.callReview.update({ where: { id, account_id: row.account_id }, data: { email_attempt_at: row.email_attempt_at ?? new Date(), email_status: "sending" } });

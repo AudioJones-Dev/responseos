@@ -188,18 +188,6 @@ export async function dispatchCompletedInteractionNotification(params: {
       return ok({ status: "skipped", notificationId: existing.id, reason: "already_sent" });
     }
 
-    const snapshot = await db.businessMemorySnapshot.findFirst({
-      where: { account_id: params.accountId, bootstrap_id: null, status: "approved" },
-      orderBy: { version: "desc" },
-    });
-    const parsedMemory = snapshot ? BusinessMemorySnapshotSchema.safeParse(snapshot.memory_json) : null;
-    const configured = parsedMemory?.success
-      ? readOperatingConfigurationValue(parsedMemory.data, "notification.completed_interaction.recipient")
-      : null;
-    if (!configured || !configured.enabled) {
-      return ok({ status: "skipped", notificationId: existing?.id ?? null, reason: "recipient_not_configured" });
-    }
-
     const provider = params.providerOverride ?? getEmailProvider();
 
     if (existing) {
@@ -211,11 +199,23 @@ export async function dispatchCompletedInteractionNotification(params: {
           message: existing.message,
           dedupeKey,
           provider,
-          requireLiveProvider: params.requireLiveProvider === true,
+          requireLiveProvider: params.requireLiveProvider === true || existing.provider === "resend" || existing.last_error_code === "live_provider_disabled",
           attemptCount: existing.attempt_count,
           now,
         }),
       );
+    }
+
+    const snapshot = await db.businessMemorySnapshot.findFirst({
+      where: { account_id: params.accountId, bootstrap_id: null, status: "approved" },
+      orderBy: { version: "desc" },
+    });
+    const parsedMemory = snapshot ? BusinessMemorySnapshotSchema.safeParse(snapshot.memory_json) : null;
+    const configured = parsedMemory?.success
+      ? readOperatingConfigurationValue(parsedMemory.data, "notification.completed_interaction.recipient")
+      : null;
+    if (!configured || !configured.enabled) {
+      return ok({ status: "skipped", notificationId: null, reason: "recipient_not_configured" });
     }
 
     const [account, call] = await Promise.all([
@@ -313,7 +313,7 @@ export async function retryCompletedInteractionNotification(params: {
   return dispatchCompletedInteractionNotification({
     accountId: notification.account_id,
     callId: notification.call_id,
-    requireLiveProvider: notification.last_error_code === "live_provider_disabled",
+    requireLiveProvider: notification.provider === "resend" || notification.last_error_code === "live_provider_disabled",
     providerOverride: params.providerOverride,
     now: params.now,
   });

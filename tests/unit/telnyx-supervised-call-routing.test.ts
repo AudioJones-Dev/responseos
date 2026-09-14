@@ -114,6 +114,23 @@ describe("supervised Telnyx call lane", () => {
   });
   afterEach(() => { process.env = { ...originalEnv }; });
 
+  test.each(["incomplete", "degraded", "out-of-scope"])("rejects %s supervised calls before retaining content or queuing review", async (reason) => {
+    const runtime = supervisedTenant();
+    if (reason === "incomplete") runtime.readiness.ready = false;
+    if (reason === "degraded") Object.assign(runtime.resolved, { degraded: "gate_not_authorized" });
+    if (reason === "out-of-scope") runtime.resolved.mode = "PRODUCTION_SUPERVISED";
+    mocks.resolveSupervisedTenantForNumber.mockResolvedValue(runtime);
+    const { POST } = await import("@/app/api/webhooks/telnyx/calls/route");
+    const response = await POST(signedEvent({ call_control_id: "call-a", to: TENANT_NUMBER, transcript: "private caller text" }));
+    await settle();
+    expect(response.status).toBe(202);
+    expect(mocks.recordWebhookEvent.mock.calls[0][0].raw_body).not.toContain("private caller text");
+    expect(mocks.setWebhookProcessStatus).toHaveBeenCalledWith(expect.objectContaining({ process_status: "rejected", process_error: "supervised_runtime_not_ready" }));
+    expect(mocks.canRetainCallContent).not.toHaveBeenCalled();
+    expect(mocks.normalizeTelnyxEvent).not.toHaveBeenCalled();
+    expect(mocks.queueCallReview).not.toHaveBeenCalled();
+  });
+
   test("queues consented evidence without CRM or email effects", async () => {
     mocks.resolveSupervisedTenantForNumber.mockResolvedValue(supervisedTenant());
     const { POST } = await import("@/app/api/webhooks/telnyx/calls/route");
@@ -176,7 +193,7 @@ describe("supervised Telnyx call lane", () => {
     expect(mocks.normalizeTelnyxEvent).not.toHaveBeenCalled();
   });
 
-  test("writes nothing to the CRM when the tenant degraded to the demo policy", async () => {
+  test("does not normalize evidence when the tenant degraded to the demo policy", async () => {
     mocks.resolveSupervisedTenantForNumber.mockResolvedValue({
       ...supervisedTenant(PROSPECT_DEMO_POLICY),
       resolved: {
@@ -191,7 +208,7 @@ describe("supervised Telnyx call lane", () => {
     await POST(signedEvent({ call_control_id: "call-e", to: TENANT_NUMBER }));
     await settle();
 
-    expect(mocks.normalizeTelnyxEvent).toHaveBeenCalled();
+    expect(mocks.normalizeTelnyxEvent).not.toHaveBeenCalled();
     expect(mocks.runCrmSyncForCall).not.toHaveBeenCalled();
   });
 

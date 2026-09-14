@@ -1590,6 +1590,29 @@ But a *deployment* is not a page. Vercel serves the whole app, and with `RESPONS
 
 **Consequences.** Every statement of the hard rule is amended to name this exception rather than be contradicted by it, and the gate rows that tracked this authorization (D3, Q1) are marked granted rather than left open; the rule still governs everything else, and "no production deploys" remains true of every surface except the one named here. The deploy itself is the operator's to run — the Vercel credentials are theirs and must not enter this repo or an agent session (`AGENTS.md`). If the deployment is later pointed at a database, decision 6's consequence reverses and ADR-0052's revocation path becomes live.
 
+---
+
+## ADR-0055 — Consent evidence is an immutable event carrying its source channel; per-contact state is a derived summary, not the record of authority
+
+**Status:** Accepted (2026-09-13) for the *contract*. Documentation only — this ADR authorises no schema, no migration, no runtime, and no recording. Recording stays `false` at every supervision tier per ADR-0051, and G-11 of the FRL policy still requires a separate ratified amendment before any FRL recording at all.
+
+**Context.** `docs/data-schema.md` specifies `consent_records` as "per-contact consent state (recording, AI handling, marketing) with jurisdiction + timestamp", and `docs/readiness/CRITICAL_PATH_AMENDMENT.md` describes the semantics as "per-call grant → per-contact state". Neither exists: the model is absent from all Prisma models. Separately, the FRL inbound policy's G-12 was strengthened on 2026-09-13 to require affirmative consent before either a recording or a persisted transcript.
+
+Review surfaced the conflict. Per-contact state answers *what does this contact currently permit*. It cannot answer *which disclosure and which grant authorised this particular retained recording or transcript, and when did a withdrawal take effect* — and that second question is the one an audit asks. An implementer following the readiness plan would have delivered per-contact state and satisfied the letter of G-12 while leaving exactly the gap G-12 exists to close.
+
+**Decision.**
+
+1. **The record of authority is an immutable consent event.** Each event carries at minimum: the disclosure actually presented, the grant or withdrawal, the timestamp, the jurisdiction basis, and **the source interaction and channel it arrived through** — a call, an SMS reply, a web form, or any other channel. Consent is not call-only: outbound campaign consent and opt-out (§9 of the security contract) and the cross-channel consent left open in the readiness contract are the same kind of record and live in the same event stream. Events are append-only — a withdrawal is a new event, never a mutation of an earlier one.
+   **Where the artifact is a recording or a persisted transcript, the authorising event must additionally be linked to that call and artifact class.** A general per-contact grant arriving by web form does not authorise capturing a particular call; that specific linkage is what makes the evidence auditable.
+2. **Per-contact state remains, as a derived summary.** It answers the "what does this contact currently permit" question for routing and preference purposes. It is a projection of the event stream and is never the evidence relied on to justify a retained artifact.
+3. **Consent is evaluated per artifact class, not once per call.** Recording and transcript persistence are independent switches — `CallTranscript.inline_text` and `CallSegment.text` persist verbatim caller speech regardless of the recording flag — so an authorisation for one is not an authorisation for the other.
+4. **Absence of an event is refusal.** No affirmative event means no capture. Silence is not consent, and a missing record is not a permissive default.
+5. **The enforcement point must be named before the model is built.** `CallTranscript.retention_lane` is the precedent this repository already has for a compliance label that is stored and enforced nowhere (`CRITICAL_PATH_AMENDMENT.md`). A consent event that no read path consults would repeat it.
+
+**Consequences.** `docs/data-schema.md` and `docs/readiness/CRITICAL_PATH_AMENDMENT.md` are updated to describe the event as the record of authority and the per-contact row as its projection; the readiness item stays a required tenant-scoped migration with accessor, mock parity and isolation tests. FRL G-12 is consistent with this ADR rather than contradicting it. No model, migration, accessor, or runtime is created here — implementation is a separate authorised change, and until it exists and its enforcement point is verified, recording and transcript persistence stay blocked.
+
+**§21 checklist.** Layer: data/compliance contract, no new capability. Built rather than bought — consent evidence is inseparable from the ledger that already holds the artifacts. It preserves evidence by construction, which is the point of the change, and tenant scoping is a stated requirement of the deferred migration. It duplicates no CRM or telecom function. **Public claims:** none — this ADR creates no capability and the model does not exist; nothing here may be described as consent management the platform performs. Required now because a canonical policy gate (FRL G-12) and two canonical contracts disagreed about what consent evidence means, and an implementer would have resolved that disagreement by accident.
+
 ## ADR-0056 — Isolated FRL demonstrations require per-call consent evidence and approved follow-up
 
 Status: repository implementation authorized by the owner on 2026-09-13 through the Mike demonstration plan. Activation is separately gated. This is not the pending recording amendment, capability-studio proposal, pricing proposal or PR #175's proposed outcome allowlist.

@@ -120,6 +120,14 @@ test("a revoked execution gate produces no effects", async () => {
   expect(mocks.crm).not.toHaveBeenCalled(); expect(mocks.send).not.toHaveBeenCalled();
 });
 
+test("revocation during CRM dispatch prevents the later email effect", async () => {
+  approved();
+  mocks.gate.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
+  await expect(dispatchCallReview("review")).rejects.toThrow("execution_gate_not_authorized");
+  expect(mocks.crm).toHaveBeenCalledOnce();
+  expect(mocks.send).not.toHaveBeenCalled();
+});
+
 test("the dispatching operator is audited", async () => {
   approved();
   await dispatchCallReview("review");

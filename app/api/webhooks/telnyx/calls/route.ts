@@ -81,6 +81,8 @@ export async function POST(req: Request) {
   const receivedAt = new Date();
 
   const supervised = target ? await resolveSupervisedTenantForNumber(target, occurredAt ?? receivedAt) : null;
+  const supervisedReady = supervised?.readiness.ready === true &&
+    supervised.resolved.degraded === null && supervised.resolved.mode === "SUPERVISED_PILOT";
 
   let resolved = !supervised &&
     process.env.RESPONSEOS_PROSPECT_BOOTSTRAP_ENABLED === "true" &&
@@ -129,13 +131,18 @@ export async function POST(req: Request) {
       : { payload_expires_at: new Date((occurredAt ?? receivedAt).getTime() + PROSPECT_CONTENT_RETENTION_DAYS * 24 * 60 * 60 * 1000) }),
   });
   const ledger = supervised && providerCallId
-    ? await withCaptureLock(supervised.accountId, providerCallId, async (client) => record(await canRetainCallContent(supervised.accountId, providerCallId, event, client), client))
+    ? await withCaptureLock(supervised.accountId, providerCallId, async (client) => record(supervisedReady && await canRetainCallContent(supervised.accountId, providerCallId, event, client), client))
     : await record(Boolean(resolved));
   if (!ledger.ok) {
     return errorResponse(503, {
       code: "webhook_ledger_unavailable",
       message: "Telnyx webhook ledger is unavailable.",
     });
+  }
+
+  if (supervised && !supervisedReady) {
+    await setWebhookProcessStatus({ id: ledger.data.id, process_status: "rejected", process_error: "supervised_runtime_not_ready" });
+    return NextResponse.json({ ok: true, data: { accepted: true, normalized: false } }, { status: 202 });
   }
 
   if (!supervised && (!target || !occurredAt || !resolved)) {
