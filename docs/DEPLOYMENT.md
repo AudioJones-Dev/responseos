@@ -162,6 +162,21 @@ Pipeline gates:
 | Booking success after slot selection | >98% |
 | Weekly report generation completion | >99% |
 
+## Migration deployment requirements
+
+Prisma applies each migration inside a transaction, so `CREATE INDEX CONCURRENTLY` cannot appear in a migration file. Any migration that creates an index on a table the runtime writes to therefore blocks those writes until the index is built. A migration carrying that hazard must record it here and in [`data-schema.md`](./data-schema.md) before it merges; the deploy step may not proceed on the assumption that the table is small.
+
+| Migration | Table / index | Requirement |
+|---|---|---|
+| `0015_supervised_call_review` | `WebhookEvent` — GIN on `provider_call_ids` | Apply only to a ledger verified empty (`SELECT count(*) FROM "WebhookEvent"` is `0`), or with webhook ingestion paused (`RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED` unset on every lane writing to this database) for the duration of `prisma migrate deploy`. A populated live ledger requires the concurrent procedure below instead. |
+
+**Concurrent procedure (populated live ledger).** Not validated yet; must be rehearsed against a copy of the target database and its evidence attached to the deploy record before use.
+
+1. Remove the `CREATE INDEX` statement from the migration in a follow-on migration that marks it applied, or edit the unapplied migration before its first deploy.
+2. Run `CREATE INDEX CONCURRENTLY "WebhookEvent_provider_call_ids_idx" ON "WebhookEvent" USING GIN ("provider_call_ids");` outside any transaction, as a separate operator-executed step.
+3. Confirm `pg_index.indisvalid` is true for the index; a failed concurrent build leaves an invalid index that must be dropped and rebuilt.
+4. Run `prisma migrate diff` against the schema to confirm the database and `schema.prisma` agree.
+
 ## Rollback plan
 
 - Revert prompt version to last known good.
