@@ -458,9 +458,14 @@ export async function configureSupervisedTenant(
         if (stableJson(profile.system_policy_json) !== stableJson(EXECUTION_MODE_POLICIES[input.executionMode])) {
           throw new Error("policy_checksum_mismatch");
         }
+        // A number that stayed active through a reconfiguration keeps its
+        // original activation time: a delayed or redelivered webhook from
+        // before this moment must still satisfy `activated_at <= occurredAt`.
+        const current = await tx.telephonyNumberAssignment.findUnique({ where: { id: assignmentId }, select: { status: true, activated_at: true } });
+        const activatedAt = current?.status === "active" && current.activated_at ? current.activated_at : now;
         await tx.telephonyNumberAssignment.update({
           where: { id: assignmentId },
-          data: { status: "active", activated_at: now },
+          data: { status: "active", activated_at: activatedAt },
         });
         await tx.agentProfile.update({ where: { id: profile.id }, data: { enabled: true } });
         await tx.account.update({ where: { id: account.id }, data: { status: "active" } });

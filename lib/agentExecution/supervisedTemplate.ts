@@ -2,13 +2,14 @@ import { createHash } from "node:crypto";
 import { normalizeE164 } from "@/lib/validation/common";
 
 /** Provider preflight must attest the reviewed template, disabled recording, and verified capture controls. */
-export const SUPERVISED_RECEPTIONIST_TEMPLATE_VERSION = "supervised-receptionist.v2";
+export const SUPERVISED_RECEPTIONIST_TEMPLATE_VERSION = "supervised-receptionist.v3";
 
 export const SUPERVISED_RECEPTIONIST_TEMPLATE = Object.freeze({
   version: SUPERVISED_RECEPTIONIST_TEMPLATE_VERSION,
   instructions: [
     "You are {{agent_name}}, the inbound receptionist for {{business_name}}, operating under human supervision.",
-    "Open with the greeting configured at the provider, including any recording disclosure, before collecting anything.",
+    "Before collecting or transcribing anything, say this approved disclosure word for word: {{ai_disclosure}}",
+    "If recording_enabled is true, then also say word for word: {{recording_disclosure}}",
     "APPROVED OPERATING CONFIGURATION (reviewed {{knowledge_as_of}}):",
     "{{approved_business_context}}",
     "State only what that configuration supports. If it does not answer the question, say: {{uncertainty_fallback}}",

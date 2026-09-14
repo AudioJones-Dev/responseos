@@ -271,6 +271,7 @@ describe("supervised tenant configuration", () => {
     expect(activated.ok).toBe(true);
     if (!activated.ok) return;
     const before = await prisma.agentProfile.findUniqueOrThrow({ where: { id: activated.data.profileId! } });
+    const firstActivation = await prisma.telephonyNumberAssignment.findFirstOrThrow({ where: { account_id: before.account_id, status: "active" } });
     for (const dryRun of [true, false]) {
       const update = await configureSupervisedTenant(input({ executionMode: "MANAGED_AUTONOMY", dryRun }), now);
       expect(update).toMatchObject({ ok: false, error: { code: "configuration_stopped" } });
@@ -282,8 +283,13 @@ describe("supervised tenant configuration", () => {
     expect(await prisma.businessMemorySnapshot.count({ where: { account_id: before.account_id } })).toBe(1);
     const valid = await configureSupervisedTenant(input({ activate: true,
       number: { providerNumberId: PROVIDER_NUMBER_ID, e164: NUMBER, providerAttestation: attestation() },
-    }), now);
+    }), new Date(now.getTime() + 60 * 60_000));
     expect(valid.ok && valid.data.activated).toBe(true);
+    // Reactivating a continuously active number keeps its original activation
+    // time, so webhooks that occurred before the reconfiguration still resolve.
+    const reactivated = await prisma.telephonyNumberAssignment.findUniqueOrThrow({ where: { id: firstActivation.id } });
+    expect(reactivated.status).toBe("active");
+    expect(reactivated.activated_at).toEqual(firstActivation.activated_at);
   });
 
   test("refuses activation while the configuration is incomplete", async () => {

@@ -21,6 +21,7 @@ import {
   resolveTenantExecutionPolicy,
 } from "@/lib/agentExecution/tenantPolicy";
 import {
+  SUPERVISED_RECEPTIONIST_TEMPLATE,
   SUPERVISED_RECEPTIONIST_TEMPLATE_CHECKSUM,
   SUPERVISED_RECEPTIONIST_TEMPLATE_VERSION,
   validateSupervisedAssistantPreflight,
@@ -328,6 +329,15 @@ describe("supervised assistant preflight", () => {
     captureIntervalVerified: true,
     consentEvidenceRef: "test-evidence-only",
   };
+
+  test("the attested template speaks the approved AI disclosure before any collection", () => {
+    const lines = SUPERVISED_RECEPTIONIST_TEMPLATE.instructions.split("\n");
+    const disclosureLine = lines.findIndex((line) => line.includes("{{ai_disclosure}}"));
+    expect(disclosureLine).toBeGreaterThan(-1);
+    expect(lines.findIndex((line) => line.includes("Ask who is calling"))).toBeGreaterThan(disclosureLine);
+    expect(SUPERVISED_RECEPTIONIST_TEMPLATE.dynamicVariables).toContain("ai_disclosure");
+    expect(SUPERVISED_RECEPTIONIST_TEMPLATE_VERSION).toBe("supervised-receptionist.v3");
+  });
 
   test("accepts provider configuration that matches the resolved policy", () => {
     expect(
