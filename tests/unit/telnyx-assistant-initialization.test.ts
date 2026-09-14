@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => ({
   setWebhookProcessStatus: vi.fn(),
   resolveActiveProspectAgentContext: vi.fn(),
   resolveSupervisedTenantForNumber: vi.fn(),
-  isSupervisedNumber: vi.fn(),
+  findSupervisedNumberOwner: vi.fn(),
 }));
 
 vi.mock("@/lib/data/webhookEvents", () => ({
@@ -18,7 +18,7 @@ vi.mock("@/lib/prospectBootstrap/service", () => ({
 }));
 vi.mock("@/lib/agentExecution/supervisedRuntime", () => ({
   resolveSupervisedTenantForNumber: mocks.resolveSupervisedTenantForNumber,
-  isSupervisedNumber: mocks.isSupervisedNumber,
+  findSupervisedNumberOwner: mocks.findSupervisedNumberOwner,
 }));
 
 const originalEnv = { ...process.env };
@@ -51,7 +51,7 @@ describe("signed Telnyx assistant initialization", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-    mocks.isSupervisedNumber.mockResolvedValue(false);
+    mocks.findSupervisedNumberOwner.mockResolvedValue(null);
     process.env = { ...originalEnv };
     process.env.TELNYX_PUBLIC_KEY = publicKey;
     process.env.RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED = "true";
@@ -129,7 +129,7 @@ describe("signed Telnyx assistant initialization", () => {
 
   test("an owned supervised number whose runtime fails closed never hears demonstration copy", async () => {
     mocks.resolveSupervisedTenantForNumber.mockResolvedValue(null);
-    mocks.isSupervisedNumber.mockResolvedValue(true);
+    mocks.findSupervisedNumberOwner.mockResolvedValue({ accountId: "owned-account", assignmentId: "owned-assignment" });
     mocks.resolveActiveProspectAgentContext.mockResolvedValue({ accountId: "prospect", context: { demo_available: "true" } });
     const { POST } = await import("@/app/api/webhooks/telnyx/assistant-initialization/route");
     const response = await POST(signedRequest("+13055550777"));
@@ -137,6 +137,7 @@ describe("signed Telnyx assistant initialization", () => {
     expect(body).toMatchObject({ conversation: { metadata: { execution_mode: "SUPERVISED_UNAVAILABLE" } } });
     expect(JSON.stringify(body)).not.toContain("demonstration");
     expect(mocks.resolveActiveProspectAgentContext).not.toHaveBeenCalled();
+    expect(mocks.recordWebhookEvent).toHaveBeenCalledWith(expect.objectContaining({ account_id: "owned-account" }));
     expect(mocks.setWebhookProcessStatus).toHaveBeenCalledWith(expect.objectContaining({ process_status: "rejected", process_error: "supervised_runtime_unresolved" }));
   });
 

@@ -8,6 +8,7 @@ import { errorResponse } from "@/lib/providers/webhook-helpers";
 import {
   getTelnyxAgentTarget,
   getTelnyxCallId,
+  getTelnyxOccurredAt,
   getTelnyxCallIds,
   parseTelnyxWebhook,
   verifyTelnyxWebhook,
@@ -17,7 +18,7 @@ import {
   PROSPECT_CONTENT_RETENTION_DAYS,
 } from "@/lib/prospectBootstrap/contracts";
 import { resolveActiveProspectAgentContext } from "@/lib/prospectBootstrap/service";
-import { isSupervisedNumber, resolveSupervisedTenantForNumber } from "@/lib/agentExecution/supervisedRuntime";
+import { findSupervisedNumberOwner, resolveSupervisedTenantForNumber } from "@/lib/agentExecution/supervisedRuntime";
 import {
   buildSupervisedAgentContext,
   SUPERVISED_UNAVAILABLE_CONTEXT,
@@ -68,7 +69,11 @@ export async function POST(req: Request) {
   }
 
   const target = getTelnyxAgentTarget(event.data.payload);
-  const supervised = target ? await resolveSupervisedTenantForNumber(target) : null;
+  // Resolved against the event's own time, as the calls webhook does: a delayed
+  // initialization for a number released and reassigned since must reach the
+  // tenant that held the number when the call began, never the current holder.
+  const occurredAt = getTelnyxOccurredAt(event);
+  const supervised = target && occurredAt ? await resolveSupervisedTenantForNumber(target, occurredAt) : null;
   const supervisedReady =
     supervised !== null &&
     supervised.readiness.ready &&
@@ -78,7 +83,10 @@ export async function POST(req: Request) {
   // Ownership is resolved separately from readiness: a supervised number whose
   // runtime fails closed still belongs to that tenant and never falls through
   // to the prospect lane.
-  const supervisedOwned = supervised !== null || (target ? await isSupervisedNumber(target) : false);
+  const owner = supervised
+    ? { accountId: supervised.accountId, assignmentId: supervised.assignmentId }
+    : target ? await findSupervisedNumberOwner(target, occurredAt ?? new Date()) : null;
+  const supervisedOwned = owner !== null;
 
   const prospect =
     !supervisedOwned && target && process.env.RESPONSEOS_PROSPECT_BOOTSTRAP_ENABLED === "true"
@@ -86,7 +94,7 @@ export async function POST(req: Request) {
       : null;
 
   const ledger = await recordWebhookEvent({
-    account_id: supervised?.accountId ?? prospect?.accountId,
+    account_id: owner?.accountId ?? prospect?.accountId,
     provider: "telnyx",
     provider_event_id: event.data.id,
     event_type: event.data.event_type,
@@ -118,7 +126,7 @@ export async function POST(req: Request) {
           ? "supervised_tenant_not_authorized"
           : "supervised_configuration_incomplete"
         : supervisedOwned
-          ? "supervised_runtime_unresolved"
+          ? occurredAt ? "supervised_runtime_unresolved" : "missing_occurred_at"
           : target
           ? "inactive_destination"
           : "missing_destination",

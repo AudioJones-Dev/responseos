@@ -13,7 +13,7 @@ import {
 import { errorResponse } from "@/lib/providers/webhook-helpers";
 import { normalizeTelnyxEvent } from "@/lib/providers/telnyx/normalize";
 import {
-  isSupervisedNumber,
+  findSupervisedNumberOwner,
   resolveSupervisedTenantForNumber,
   touchSupervisedAssignment,
 } from "@/lib/agentExecution/supervisedRuntime";
@@ -95,7 +95,10 @@ export async function POST(req: Request) {
   // Ownership is independent of whether the runtime resolves right now. An
   // owned number's event must never fall through to the prospect lane, where
   // it would be stored unscoped and never retried.
-  const supervisedOwned = supervised !== null || (target ? await isSupervisedNumber(target, occurredAt ?? receivedAt) : false);
+  const owner = supervised
+    ? { accountId: supervised.accountId, assignmentId: supervised.assignmentId }
+    : target ? await findSupervisedNumberOwner(target, occurredAt ?? receivedAt) : null;
+  const supervisedOwned = owner !== null;
 
   let resolved = !supervisedOwned &&
     process.env.RESPONSEOS_PROSPECT_BOOTSTRAP_ENABLED === "true" &&
@@ -133,7 +136,9 @@ export async function POST(req: Request) {
   const record = async (allowed: boolean, client?: import("@prisma/client").Prisma.TransactionClient) => recordWebhookEvent({
     client,
 
-    account_id: supervised?.accountId ?? resolved?.accountId,
+    // The verified number assignment identifies the tenant even when its
+    // runtime cannot be resolved, so the evidence is never stored unscoped.
+    account_id: owner?.accountId ?? resolved?.accountId,
     provider: "telnyx",
     provider_event_id: event.data.id,
     event_type: event.data.event_type,
@@ -162,6 +167,10 @@ export async function POST(req: Request) {
     // (profile, snapshot, or snapshot JSON missing or invalid — retryable: a
     // redelivery after repair is picked up by the duplicate handler below).
     await setWebhookProcessStatus({ id: ledger.data.id, process_status: "rejected", process_error: occurredAt ? "supervised_runtime_unresolved" : "missing_occurred_at" });
+    // The retryable case answers 503 so the provider redelivers after repair
+    // and the duplicate handler can normalize the retained event; acknowledging
+    // it would leave recovery to a manual redelivery nobody is prompted to make.
+    if (occurredAt) return errorResponse(503, { code: "supervised_runtime_unresolved", message: "The supervised runtime for this number is not resolvable yet; redeliver this signed event." });
     return NextResponse.json({ ok: true, data: { accepted: true, normalized: false } }, { status: 202 });
   }
 

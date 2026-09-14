@@ -122,12 +122,15 @@ export async function resolveSupervisedTenantForNumber(
  * must answer with the neutral supervised wording when the tenant fails
  * closed, never with prospect-demonstration copy.
  */
-export async function isSupervisedNumber(target: string, now = new Date()): Promise<boolean> {
-  if (!db) return false;
+export async function findSupervisedNumberOwner(
+  target: string,
+  now = new Date(),
+): Promise<{ accountId: string; assignmentId: string } | null> {
+  if (!db) return null;
   const e164 = normalizeE164(target);
-  if (!e164) return false;
+  if (!e164) return null;
   const number = await db.telephonyNumber.findUnique({ where: { provider_e164: { provider: "telnyx", e164 } } });
-  if (!number) return false;
+  if (!number) return null;
   const assignment = await db.telephonyNumberAssignment.findFirst({
     where: {
       telephony_number_id: number.id,
@@ -136,9 +139,10 @@ export async function isSupervisedNumber(target: string, now = new Date()): Prom
       activated_at: { lte: now },
       OR: [{ unassigned_at: null }, { unassigned_at: { gte: now } }],
     },
-    select: { id: true },
+    orderBy: { activated_at: "desc" },
+    select: { id: true, account_id: true },
   });
-  return assignment !== null;
+  return assignment ? { accountId: assignment.account_id, assignmentId: assignment.id } : null;
 }
 
 /**

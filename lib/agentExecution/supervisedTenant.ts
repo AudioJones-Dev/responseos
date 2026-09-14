@@ -302,6 +302,10 @@ export async function configureSupervisedTenant(
         mode: input.executionMode,
       });
 
+      const priorProfile = await tx.agentProfile.findUnique({
+        where: { account_id_slug: { account_id: account.id, slug: SUPERVISED_AGENT_PROFILE_SLUG } },
+        select: { name: true },
+      });
       const profile = await tx.agentProfile.upsert({
         where: { account_id_slug: { account_id: account.id, slug: SUPERVISED_AGENT_PROFILE_SLUG } },
         create: {
@@ -320,6 +324,28 @@ export async function configureSupervisedTenant(
           metadata_json: { agentName: input.agentName } as never,
         },
       });
+
+      // The business name, timezone and assistant name are tenant identity an
+      // operator can change without touching the configuration snapshot. Such
+      // a change is audited on its own, so it is never an unattributed write.
+      const identityChanges: Record<string, { from: string; to: string }> = {};
+      if (existingAccount && existingAccount.name !== input.businessName) identityChanges.businessName = { from: existingAccount.name, to: input.businessName };
+      if (existingAccount && existingAccount.timezone !== input.timezone) identityChanges.timezone = { from: existingAccount.timezone, to: input.timezone };
+      if (priorProfile && priorProfile.name !== input.agentName) identityChanges.agentName = { from: priorProfile.name, to: input.agentName };
+      if (Object.keys(identityChanges).length > 0) {
+        await tx.auditLog.create({
+          data: auditData({
+            accountId: account.id,
+            actorUserId: operator.data.user.id,
+            actorRole: operator.data.user.role,
+            action: "supervised_tenant.identity_updated",
+            targetType: "AgentProfile",
+            targetId: profile.id,
+            reason: "Operator changed supervised tenant identity fields.",
+            metadata: identityChanges,
+          }),
+        });
+      }
 
       const latest = await tx.businessMemorySnapshot.findFirst({
         where: { account_id: account.id, bootstrap_id: null },

@@ -303,6 +303,19 @@ describe("supervised tenant configuration", () => {
     expect(reactivated.activated_at).toEqual(firstActivation.activated_at);
   });
 
+  test("an identity-only reconfiguration of an inactive tenant is audited", async () => {
+    const first = await configureSupervisedTenant(input({}), now);
+    expect(first.ok).toBe(true);
+    const renamed = await configureSupervisedTenant(input({ businessName: "Renamed Business", agentName: "Alex" }), new Date(now.getTime() + 60_000));
+    expect(renamed.ok).toBe(true);
+    const audits = await prisma.auditLog.findMany({ where: { action: "supervised_tenant.identity_updated" } });
+    expect(audits).toHaveLength(1);
+    expect(audits[0]?.metadata_json).toMatchObject({ businessName: { from: "Example Business", to: "Renamed Business" }, agentName: { from: "Sam", to: "Alex" } });
+    // An unchanged resubmission writes no identity audit.
+    await configureSupervisedTenant(input({ businessName: "Renamed Business", agentName: "Alex" }), new Date(now.getTime() + 120_000));
+    expect(await prisma.auditLog.count({ where: { action: "supervised_tenant.identity_updated" } })).toBe(1);
+  });
+
   test("refuses activation while the configuration is incomplete", async () => {
     const result = await configureSupervisedTenant(
       input({
