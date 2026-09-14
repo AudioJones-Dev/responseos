@@ -4,6 +4,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — fix: refresh the brand icon assets from the approved favicon pack
+
+- Replaced `public/favicon.svg`, `favicon.ico`, `apple-touch-icon.png`, `icon-192.png`, and `icon-512.png` with the owner-supplied pack. Dimensions verified: 180×180 Apple touch icon, 192×192 and 512×512 PWA icons, and a multi-resolution `.ico` (48/32/16).
+- **Deliberately not applied from the generator output.** Its `site.webmanifest` is unbranded boilerplate (`"MyWebSite"` / `"MySite"`, `#ffffff` theme and background) and would have replaced the ResponseOS manifest and flipped the dark theme colour, so the repo's manifest is unchanged. Its `<link rel="icon">` tags were not added either — `app/layout.tsx` declares icons through the Next.js `metadata.icons` export and emits those tags itself, so hand-adding them would duplicate every tag.
+- The pack's PWA icons are also renamed to the repo's existing `icon-192.png` / `icon-512.png` names so no manifest or metadata reference had to change. No code, route, dependency, or configuration changes.
+
 ## Unreleased — fix: apply the owner-approved copy redlines across the site, demo, and consoles
 
 - **Owner decisions (2026-09-11).** The homepage headline is "Stop losing revenue to missed calls.", matching the OG card. The paid diagnostic is the **Readiness & Revenue Leak Assessment** everywhere, retiring "revenue audit" and "Revenue Leak Assessment". Following ADR-0035, **Revenue Recovery Demo** is the primary call to action and the assessment is secondary; the pricing page's tier buttons point at the assessment. The OFFER principles moved below the RECOVER loop. `/industries/med-spas` is unpublished until the privacy-hardened pilot (copy spec §5); nothing linked to it. **Assessment credit (D4):** the owner confirmed the **full fee** applies toward implementation when the client signs **within 30 days**, which is what `/pricing` already said; the "optional credit within 14–30 days" wording in the copy spec, client-facing offer, pricing-and-onboarding, and sales narrative is corrected to match. The owner also confirmed that the assessment runs from exports the client shares, so the step-01 wording stands.
