@@ -19,7 +19,7 @@ import { validateSupervisedAssistantPreflight } from "./supervisedTemplate";
 import { buildSupervisedAgentContext } from "./supervisedContext";
 
 /**
- * Operator write path for a supervised customer tenant (ADR-0056).
+ * Operator write path for a supervised customer tenant (ADR-0057).
  *
  * One entry point configures the account, its agent profile, its approved
  * operating configuration, its dedicated number, and activation. Everything is

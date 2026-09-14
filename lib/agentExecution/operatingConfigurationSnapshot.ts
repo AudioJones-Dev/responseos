@@ -13,7 +13,7 @@ import {
 
 /**
  * Builds a tenant operating-configuration snapshot from operator-entered
- * values (ADR-0051, ADR-0056).
+ * values (ADR-0051, ADR-0057).
  *
  * Pure: no database, no clock of its own, no environment. Every fact is
  * `operator_configured` and cites the operator's approval record, because

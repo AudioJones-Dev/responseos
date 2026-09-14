@@ -7,7 +7,7 @@ import {
 import type { ExecutionPolicy } from "./policy";
 
 /**
- * Dynamic variables handed to a supervised tenant's assistant (ADR-0056).
+ * Dynamic variables handed to a supervised tenant's assistant (ADR-0057).
  *
  * Two rules govern what may appear here. Everything the agent may say comes
  * from approved configuration, and client operational contacts never do: the

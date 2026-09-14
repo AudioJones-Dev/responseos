@@ -9,7 +9,7 @@ import { readOperatingConfigurationValue } from "@/lib/agentExecution/operatingC
 import { getEmailProvider, isRetryableEmailErrorCode, type EmailProvider } from "@/lib/providers/email";
 
 /**
- * Completed-interaction notification (ADR-0056).
+ * Completed-interaction notification (ADR-0057).
  *
  * A durable row first, then one provider dispatch, then `sent` or `failed`
  * with a retryable error code. A failure here never fails the call: the

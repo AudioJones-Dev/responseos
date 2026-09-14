@@ -431,6 +431,8 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 
 **Consequences.** Asset production has a fixed, minimal target (two source marks → derived icons), preventing logo sprawl. Later favicon/app-icon work is a mechanical export from one source. No runtime/asset change now.
 
+**Follow-up (2026-09-11) — the two core assets are the owner-supplied logo pack, not Syne exports.** The owner chose the supplied `Response OS Logo Pack.zip` over the reconstructed RO SVGs, and PR #162 wires it into the web surface. Decisions 2 and 3 hold unchanged: favicons and app icons derive from the compact mark, the wordmark is the primary lockup, and the compact mark serves small surfaces. Decision 1's "Syne" description no longer fits — the pack's wordmark and `RO` mark have their own letterforms, while Syne remains the display typeface for headings (ADR-0021). The pack is raster-only, so 16/32/48px PNG frames take the place of `favicon.svg` in decision 2, and vector masters remain an open follow-up. Provenance, derivation rules, and QA live in [`brand/RESPONSEOS_ASSET_MANIFEST.md`](./brand/RESPONSEOS_ASSET_MANIFEST.md).
+
 ---
 
 ## ADR-0026 — Neon Postgres is the default structured-memory database (supersedes ADR-0003)
@@ -1613,9 +1615,50 @@ Review surfaced the conflict. Per-contact state answers *what does this contact 
 
 **§21 checklist.** Layer: data/compliance contract, no new capability. Built rather than bought — consent evidence is inseparable from the ledger that already holds the artifacts. It preserves evidence by construction, which is the point of the change, and tenant scoping is a stated requirement of the deferred migration. It duplicates no CRM or telecom function. **Public claims:** none — this ADR creates no capability and the model does not exist; nothing here may be described as consent management the platform performs. Required now because a canonical policy gate (FRL G-12) and two canonical contracts disagreed about what consent evidence means, and an implementer would have resolved that disagreement by accident.
 
-## ADR-0056 — Isolated FRL demonstrations require per-call consent evidence and approved follow-up
+## ADR-0056 — Langfuse is the designated AI observability layer; the integration is gated on ResponseOS owning a model call
 
-Status: repository implementation authorized by the owner on 2026-09-13 through the Mike demonstration plan. Activation is separately gated. This is not the pending recording amendment, capability-studio proposal, pricing proposal or PR #175's proposed outcome allowlist.
+**Status.** Accepted · 2026-09-12 · Owner-authorized designation. **Documentation-stage — no integration exists, and none is authorized by this ADR.** **Composes with ADR-0018 and amends nothing in it** (decision 5). Does not authorize v0.3 (doctrine D-1 stays open) and does not authorize live external telemetry.
+
+**Context.** An implementation brief asked for Langfuse to be added as the default AI observability layer: LLM request and response tracing, agent execution, tool calls, retrieval, prompt versions, token consumption, estimated AI cost, evaluation scores and tenant attribution — with at least one representative workflow instrumented end to end.
+
+Repository discovery contradicts the premise. There is no LLM SDK in the tree: `package.json` carries no `openai`, `@anthropic-ai/*`, `ai`, `langchain`, `langfuse` or `helicone`, and a search across `app`, `lib`, `components`, `scripts` and `tests` finds no import site for any of them. No tracing vendor is *implemented* in code either — no Sentry, PostHog or OpenTelemetry package or import site exists. That is a statement about code, not about decisions: **ADR-0018 already designates** an OpenTelemetry spine with PostHog, Sentry and Better Stack, and `docs/ops/RESPONSEOS_OBSERVABILITY_AND_GOVERNANCE.md` marks that architecture canonical. Decision 5 below reconciles the two.
+
+**`lib/providers/*` is mostly, but not entirely, empty scaffolding — and the exception matters.** `twilio/`, `stripe/`, `vapi/`, `retell/` and `bland/` are empty directories with no vendor package installed, resolved through `resolveProvider` (ADR-0001), which states that "live factories are optional and unauthorized in the CAL scaffold slice — when `createLive` is omitted, mock is always returned."
+
+`telnyx/` is different. It contains `webhook.ts` and `normalize.ts` — signed webhook verification and canonical normalization — and `app/api/webhooks/telnyx/calls/route.ts` invokes both behind the live-ingest flag. **That path never passes through `resolveProvider`**, so the mock-first characterization does not describe it. It is a partially shipped ingest path, not a stub. It is still not an LLM call site, so the conclusion below is unchanged; but a future implementer must not be told all six resolve to mocks.
+
+So the brief's generation instrumentation, retrieval instrumentation, evaluation framework, and "one workflow traced end to end" have no call site to attach to. **This is a missing precondition, not a missing permission.** It would still hold on the day v0.3 is authorized, because v0.3 is a communications stack, not a model layer. Retrieval is further out still: per-tenant knowledge ingestion, retrieval, vector search and RAG are v0.4-gated in [`ROADMAP.md`](./ROADMAP.md).
+
+**A second conflict, recorded because it changes what the tool would be for.** The brief describes ResponseOS orchestrating the model — transcription, then LLM reasoning, then tool calls. The roadmap describes close to the opposite: the voice adapters are Vapi, Retell, Bland and Telnyx AI Assistant, vendors that run the model server-side and return post-call webhooks. If that shape holds, tokens are consumed inside the vendor and never inside ResponseOS, and observability here is webhook-ingest and workflow tracing rather than generation tracing. Token and cost telemetry would then have to be read out of vendor payloads rather than instrumented at an SDK.
+
+**Decision.**
+
+1. **Langfuse is the designated platform** for ResponseOS AI observability, tracing, evaluation and prompt-version visibility, at the point such a layer is built. **Helicone is deferred** unless a future requirement justifies centralized gateway routing, caching, provider fallback, or gateway-level rate controls — the capabilities that would actually distinguish it from Langfuse for this product.
+
+2. **ResponseOS remains authoritative for tenant usage accounting and commercial billing.** Langfuse telemetry may inform reconciliation but must never become the sole source for a client invoice. Observed or estimated AI cost and commercially billable usage are distinct quantities and are not to be conflated in either direction.
+
+3. **No integration is built under this ADR**, and no Langfuse SDK is installed. The observability seam is built in the slice that introduces ResponseOS's first direct model call, shaped against that call site. An observability interface written now would abstract over zero callers, which the scope-discipline rule in [`AGENTS.md`](../AGENTS.md) forbids; and installing a vendor SDK behind a disable flag would make it the first vendor SDK in the tree, breaking the mock-first shape ADR-0001 establishes.
+
+4. **Any live telemetry transmission stays gated** on v0.3 authorization, exactly as every other external provider is. Langfuse is an external service holding credentials; designating it changes nothing about when data may leave this repository.
+
+5. **Langfuse is additive to ADR-0018, not a replacement for it, and ADR-0018 is not amended.** ADR-0018's OpenTelemetry spine remains the general tracing, metrics and logging architecture for the Next.js app, the voice gateway and async workers, with PostHog for product analytics, Sentry for errors and release health, and Better Stack for uptime and on-call. Langfuse is scoped to **AI-specific telemetry that the OTel spine does not model** — LLM generations, prompt versions, evaluation scores and per-generation token and cost attribution. Where both are eventually implemented, **Langfuse rides on or exports through the OTel spine rather than running as a second parallel trace system**, per the brief's own instruction to avoid parallel incompatible tracing. **ADR-0018's constraints bind Langfuse unchanged**: telemetry is tagged with `account_id`, never with raw PII, and the mock-first rule applies — absent keys emit to a no-op sink. If a future implementer finds the two cannot be composed this way, that is a conflict to resolve in a new ADR, not by preferring whichever is newer.
+
+**§21 checklist.** Layer: cross-cutting observability; no product capability is added. Build-vs-buy: bought, and deliberately deferred rather than bought now. Evidence and tenant isolation are preserved because nothing is touched. **Public claims:** this designation is documentation-stage and must not be described as an integration, as a shipped capability, or as ResponseOS "having observability"; doctrine §20's status vocabulary binds every reference to it. It creates no new human-approval control and no new compliance exposure. Required now: recording the decision is required now so it is not re-litigated; building it is not.
+
+**Consequences.**
+
+- The seven-field commercial audit trail the brief requires — vendor, billing period, tenant, usage category, measured consumption, underlying vendor cost, amount passed through — **does not exist in the schema.** The only adjacent fields are `Engagement.usage_model` and `TelephonyNumber.monthly_cost_micros`. Recorded here as a known gap; not built by this ADR.
+- `WorkflowRun` is the natural trace-root substrate when the time comes. It already carries `account_id`, a unique `workflow_run_id` idempotency spine, `workflow_id`, status, timings, and a `trigger_event_id` forward-compat hook into the events ledger.
+- `QaLog` is a human rubric scorer (`reviewer_type`, `rubric_version`) and is not LLM evaluation; it should not be mistaken for an existing evaluation framework. `lib/agentExecution/` is policy and operating configuration, not an agent runtime.
+- Prompt management has nothing to inventory: there are no prompt files in the tree, so no migration question exists yet.
+- The Telnyx ingest path above is corroborating evidence for the vendor-side-model shape, not a counterexample to it. What exists today is a signed webhook arriving *after* the vendor has run the conversation — which is what "webhook-ingest tracing rather than generation tracing" describes.
+- If the vendor-side-model shape described above holds, this ADR should be revisited before implementation begins, because what would be traced differs from what the brief assumed.
+
+---
+
+## ADR-0057 — Isolated FRL demonstrations require per-call consent evidence and approved follow-up
+
+Status: repository implementation authorized by the owner on 2026-09-13 through the Mike demonstration plan. Activation is separately gated. This is not the pending recording amendment, capability-studio proposal, pricing proposal or PR #175's proposed outcome allowlist. Numbered 0057 by owner decision on 2026-09-14: it was drafted as 0056 while ADR-0056 (Langfuse) was merged to master first; the owner assigned 0054 to the commercial doctrine (#176), 0057 to this decision, and 0058 to the Agent Capability Studio decision (#174).
 
 Use SUPERVISED_PILOT in an isolated demonstration environment with real approved business facts and explicitly fictional customer records. Pin the memory snapshot on initialization. Recording stays disabled. Transcript authority is an append-only per-call event, separately scoped to the artifact; absence is denial. The provider must prove consent enforcement and complete capture bounds before activation. The operator evidence endpoint does not itself stop provider capture.
 

@@ -11,7 +11,7 @@
  * provider-side insight can be renamed or reordered without a code change and
  * without storing provider ids in tenant configuration.
  *
- * The pre-ADR-0056 readers (`payload.summary`, `payload.qualification`,
+ * The pre-ADR-0057 readers (`payload.summary`, `payload.qualification`,
  * `payload.insights`) are kept as a fallback for the legacy demo lane. That
  * shape is not documented by the provider and is confirmed by no captured
  * event; it is retained only because the legacy lane already depends on it.

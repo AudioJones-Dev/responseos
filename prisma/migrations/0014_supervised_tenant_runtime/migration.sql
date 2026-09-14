@@ -10,7 +10,7 @@ BEGIN
   END IF;
 END $$;
 
--- Supervised tenant runtime (ADR-0056).
+-- Supervised tenant runtime (ADR-0057).
 --
 -- Additive only. Every new column is nullable or carries a default, so existing
 -- rows stay valid without a backfill, and the prospect-demo lane is unchanged.

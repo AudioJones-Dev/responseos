@@ -13,7 +13,7 @@ const Input = z.strictObject({
 });
 
 /**
- * Operator-only write path for supervised tenant configuration (ADR-0056).
+ * Operator-only write path for supervised tenant configuration (ADR-0057).
  * Client operational values arrive here in the request body and go straight to
  * the database; they are never echoed back beyond configured key names.
  */

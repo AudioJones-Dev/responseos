@@ -15,7 +15,7 @@ import {
 
 /**
  * Resolves which supervised tenant owns an inbound number, and what its agent
- * is permitted to do on that call (ADR-0056).
+ * is permitted to do on that call (ADR-0057).
  *
  * A supervised assignment is a `TelephonyNumberAssignment` with no bootstrap:
  * prospect-demo assignments always carry one, so the two lanes cannot resolve
