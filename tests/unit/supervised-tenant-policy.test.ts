@@ -26,7 +26,7 @@ import {
   SUPERVISED_RECEPTIONIST_TEMPLATE_VERSION,
   validateSupervisedAssistantPreflight,
 } from "@/lib/agentExecution/supervisedTemplate";
-import { buildSupervisedAgentContext } from "@/lib/agentExecution/supervisedContext";
+import { buildSupervisedAgentContext, SUPERVISED_UNAVAILABLE_CONTEXT, SupervisedAgentContextSchema } from "@/lib/agentExecution/supervisedContext";
 
 const GATE = "v0.3-live-communications";
 const now = new Date("2026-09-11T12:00:00.000Z");
@@ -329,6 +329,21 @@ describe("supervised assistant preflight", () => {
     captureIntervalVerified: true,
     consentEvidenceRef: "test-evidence-only",
   };
+
+  test("the fail-closed context terminates the call and satisfies every template variable", () => {
+    const lines = SUPERVISED_RECEPTIONIST_TEMPLATE.instructions.split("\n");
+    expect(lines[0]).toContain("supervised_available is false");
+    expect(lines[0]).toContain("hangup");
+    expect(lines[0]).toContain("{{uncertainty_fallback}}");
+    const referenced = [...SUPERVISED_RECEPTIONIST_TEMPLATE.instructions.matchAll(/\{\{(\w+)\}\}/g)].map((match) => match[1]);
+    for (const variable of new Set([...referenced, ...SUPERVISED_RECEPTIONIST_TEMPLATE.dynamicVariables])) {
+      expect(SUPERVISED_RECEPTIONIST_TEMPLATE.dynamicVariables, variable).toContain(variable);
+      expect(Object.keys(SUPERVISED_UNAVAILABLE_CONTEXT), variable).toContain(variable);
+      expect(Object.keys(SupervisedAgentContextSchema.shape), variable).toContain(variable);
+    }
+    expect(SUPERVISED_UNAVAILABLE_CONTEXT.supervised_available).toBe("false");
+    expect(JSON.stringify(SUPERVISED_UNAVAILABLE_CONTEXT)).not.toMatch(/demo/i);
+  });
 
   test("the attested template speaks the approved AI disclosure before any collection", () => {
     const lines = SUPERVISED_RECEPTIONIST_TEMPLATE.instructions.split("\n");

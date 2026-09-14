@@ -7,6 +7,7 @@ export const SUPERVISED_RECEPTIONIST_TEMPLATE_VERSION = "supervised-receptionist
 export const SUPERVISED_RECEPTIONIST_TEMPLATE = Object.freeze({
   version: SUPERVISED_RECEPTIONIST_TEMPLATE_VERSION,
   instructions: [
+    "If supervised_available is false: say only this, word for word, then end the call with the hangup tool and do nothing else on this call: {{uncertainty_fallback}}",
     "You are {{agent_name}}, the inbound receptionist for {{business_name}}, operating under human supervision.",
     "Before collecting or transcribing anything, say this approved disclosure word for word: {{ai_disclosure}}",
     "If recording_enabled is true, then also say word for word: {{recording_disclosure}}",
@@ -26,6 +27,7 @@ export const SUPERVISED_RECEPTIONIST_TEMPLATE = Object.freeze({
     "Never give medical, legal, financial, emergency, or other regulated advice.",
   ].join("\n"),
   dynamicVariables: [
+    "supervised_available",
     "agent_name",
     "business_name",
     "execution_mode",

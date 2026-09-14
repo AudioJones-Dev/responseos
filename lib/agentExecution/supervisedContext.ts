@@ -44,15 +44,32 @@ export type SupervisedAgentContext = z.infer<typeof SupervisedAgentContextSchema
  * a real client's caller must never hear demonstration copy. The tenant's own
  * wording replaces this once the operator approves one.
  */
+const UNAVAILABLE_MESSAGE =
+  "I'm not able to take details on this call. Please call back shortly and someone will help you.";
+
+// Every variable the attested template can reference is present, so the
+// fail-closed context never renders an unresolved placeholder; the template's
+// first instruction reads `supervised_available` and terminates the call.
 export const SupervisedUnavailableContextSchema = z.object({
   supervised_available: z.literal("false"),
   execution_mode: z.literal("SUPERVISED_UNAVAILABLE"),
   agent_name: z.literal("Assistant"),
   business_name: z.literal("this business"),
   approved_business_context: z.literal("No approved business information is available for this call."),
-  uncertainty_fallback: z.literal(
-    "I'm not able to take details on this call. Please call back shortly and someone will help you.",
-  ),
+  knowledge_as_of: z.literal("1970-01-01T00:00:00.000Z"),
+  uncertainty_fallback: z.literal(UNAVAILABLE_MESSAGE),
+  ai_disclosure: z.literal(UNAVAILABLE_MESSAGE),
+  recording_enabled: z.literal("false"),
+  recording_disclosure: z.literal(""),
+  recording_continuation: z.literal(""),
+  recording_refusal_acknowledgement: z.literal(""),
+  recording_refusal_offer: z.literal(""),
+  service_area_statement: z.literal("No service area information is available for this call."),
+  location_confirmation_required: z.literal("false"),
+  operating_hours_statement: z.literal("No operating hours are available for this call."),
+  quote_photo_submission_email: z.literal(""),
+  transfer_enabled: z.literal("false"),
+  closing_statement: z.literal(UNAVAILABLE_MESSAGE),
 });
 
 export const SUPERVISED_UNAVAILABLE_CONTEXT = SupervisedUnavailableContextSchema.parse({
@@ -61,8 +78,20 @@ export const SUPERVISED_UNAVAILABLE_CONTEXT = SupervisedUnavailableContextSchema
   agent_name: "Assistant",
   business_name: "this business",
   approved_business_context: "No approved business information is available for this call.",
-  uncertainty_fallback:
-    "I'm not able to take details on this call. Please call back shortly and someone will help you.",
+  knowledge_as_of: "1970-01-01T00:00:00.000Z",
+  uncertainty_fallback: UNAVAILABLE_MESSAGE,
+  ai_disclosure: UNAVAILABLE_MESSAGE,
+  recording_enabled: "false",
+  recording_disclosure: "",
+  recording_continuation: "",
+  recording_refusal_acknowledgement: "",
+  recording_refusal_offer: "",
+  service_area_statement: "No service area information is available for this call.",
+  location_confirmation_required: "false",
+  operating_hours_statement: "No operating hours are available for this call.",
+  quote_photo_submission_email: "",
+  transfer_enabled: "false",
+  closing_statement: UNAVAILABLE_MESSAGE,
 });
 
 const DAY_ORDER = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
