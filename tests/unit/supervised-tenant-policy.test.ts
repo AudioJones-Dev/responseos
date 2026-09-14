@@ -368,6 +368,14 @@ describe("supervised assistant preflight", () => {
         allowedTools: ["hangup", "transfer"],
       }),
     ).toThrow("assistant_tools_exceed_policy");
+    for (const allowedTools of [[], ["hangup"]]) {
+      expect(() =>
+        validateSupervisedAssistantPreflight({ ...attested, allowedTools }, {
+          recordingEnabled: false,
+          allowedTools: ["hangup", "transfer"],
+        }),
+      ).toThrow("assistant_tools_missing_policy_tool");
+    }
     expect(() =>
       validateSupervisedAssistantPreflight({ ...attested, providerMemoryEnabled: true }, {
         recordingEnabled: false,

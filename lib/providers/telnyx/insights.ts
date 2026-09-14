@@ -284,7 +284,10 @@ export function extractTelnyxTranscript(payload: Record<string, unknown>): Telny
     const content = text(item.content) ?? text(item.text);
     if (!content) return [];
     const speaker = text(item.role) ?? text(item.speaker) ?? "speaker";
-    return [`${speaker}: ${content}`];
+    // One rendered line per turn: the stored transcript's line count is what
+    // later cumulative updates are compared against, so a message must never
+    // span more than one line.
+    return [`${speaker}: ${content.replace(/\s*\r?\n\s*/g, " ")}`];
   });
   return lines.length ? { text: lines.join("\n"), turns: lines.length } : null;
 }

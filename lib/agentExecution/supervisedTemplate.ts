@@ -99,6 +99,10 @@ export function validateSupervisedAssistantPreflight(
   if (!Array.isArray(metadata.allowedTools)) throw new Error("assistant_tools_missing");
   const permitted = new Set(expected.allowedTools);
   if (metadata.allowedTools.some((tool) => !permitted.has(tool))) throw new Error("assistant_tools_exceed_policy");
+  // The policy's tools are promises the context makes to the caller (a human
+  // transfer, for one), so the provider must attest every one of them.
+  const attested = new Set(metadata.allowedTools);
+  if (expected.allowedTools.some((tool) => !attested.has(tool))) throw new Error("assistant_tools_missing_policy_tool");
   if (metadata.consentCaptureVerified !== true || metadata.captureIntervalVerified !== true || !metadata.consentEvidenceRef?.trim()) throw new Error("consent_transport_not_verified");
   return metadata as SupervisedAssistantPreflightMetadata;
 }

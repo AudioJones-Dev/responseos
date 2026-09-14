@@ -265,6 +265,7 @@ export async function setWebhookProcessStatus(params: {
  * scheduled for purge.
  */
 export async function backfillWebhookEvent(entry: {
+  client?: Prisma.TransactionClient;
   id: string;
   account_id: string;
   raw_body: string;
@@ -273,9 +274,10 @@ export async function backfillWebhookEvent(entry: {
   provider_call_ids?: readonly string[];
   agent_target?: string;
 }): Promise<void> {
-  if (db === null) return;
-  const current = await db.webhookEvent.findUnique({ where: { id: entry.id }, select: { provider_call_ids: true } });
-  await db.webhookEvent.update({
+  const client = entry.client ?? db;
+  if (client === null) return;
+  const current = await client.webhookEvent.findUnique({ where: { id: entry.id }, select: { provider_call_ids: true } });
+  await client.webhookEvent.update({
     where: { id: entry.id },
     data: {
       account_id: entry.account_id,

@@ -131,9 +131,13 @@ describe("supervised Telnyx call lane", () => {
     mocks.resolveSupervisedTenantForNumber.mockResolvedValue(supervisedTenant());
     mocks.recordWebhookEvent.mockResolvedValue({ ok: true, data: { id: "ledger-1", process_status: "duplicate" } });
     mocks.getWebhookProcessingState.mockResolvedValue({ process_status: "rejected", process_error: "awaiting_call_correlation", received_at: new Date() });
+    // Consent is granted at the ledger write but withdrawn by the time the
+    // backfill re-checks it under the lock, so the stored body stays metadata.
+    mocks.canRetainCallContent.mockReset().mockResolvedValueOnce(true).mockResolvedValueOnce(false).mockResolvedValue(true);
     await POST(request);
     await settle();
     expect(mocks.normalizeTelnyxEvent).toHaveBeenCalledOnce();
+    expect(mocks.backfillWebhookEvent.mock.calls[0][0].raw_body).not.toContain("private call");
     // The unscoped first-delivery row is claimed by the tenant and taken off
     // the prospect expiry clock before it is normalized.
     expect(mocks.backfillWebhookEvent).toHaveBeenCalledOnce();

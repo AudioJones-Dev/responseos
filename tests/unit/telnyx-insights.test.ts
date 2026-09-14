@@ -95,6 +95,17 @@ describe("Telnyx transcript extraction", () => {
     });
   });
 
+  test("keeps one rendered line per turn when a message spans lines", () => {
+    const transcript = extractTelnyxTranscript({
+      message_history: [
+        { role: "assistant", content: "Two things:\n  first the ramp,\r\n  then the lift." },
+        { role: "user", content: "Both." },
+      ],
+    });
+    expect(transcript).toEqual({ text: "assistant: Two things: first the ramp, then the lift.\nuser: Both.", turns: 2 });
+    expect(transcript!.text.split("\n")).toHaveLength(transcript!.turns);
+  });
+
   test("reads the legacy transcript array and a plain string", () => {
     expect(extractTelnyxTranscript({ transcript: [{ role: "caller", content: "Hello" }] })?.text).toBe("caller: Hello");
     expect(extractTelnyxTranscript({ transcript: "caller: Hello" })?.turns).toBe(1);
