@@ -56,6 +56,19 @@
       "refType": "pull"
     },
     {
+      "id": "ADR-0056-COMMIT-TITLE-NOTE",
+      "phase": "Tech Debt & Hardening",
+      "title": "Record that #169's commit subject says ADR-0054 but contains ADR-0056",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "Low",
+      "start": "2026-09-14",
+      "due": "2026-09-14",
+      "ref": 178,
+      "refType": "pull"
+    },
+    {
       "id": "CONVERGE-TRANSPORT",
       "ref": 167,
       "refType": "pull",
