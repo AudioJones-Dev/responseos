@@ -41,8 +41,13 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
             >
               Operator console
             </Link>
-            <ButtonLink href="/audit" size="sm" glow className="whitespace-nowrap">
-              Run a revenue audit
+            <ButtonLink
+              href="/demo/walkthrough"
+              size="sm"
+              glow
+              className="whitespace-nowrap"
+            >
+              Revenue Recovery Demo
             </ButtonLink>
           </div>
         </div>
@@ -62,7 +67,7 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
                 Demo
               </Link>
               <Link href="/audit" className="hover:text-ink-secondary">
-                Revenue audit
+                Readiness Assessment
               </Link>
               <Link href="/trust" className="hover:text-ink-secondary">
                 Trust
@@ -70,6 +75,10 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
             </div>
             <SocialLinks />
           </div>
+          <p>
+            Revenue Recovery Infrastructure for founder-led service businesses.
+            ResponseOS is built by AJ Digital LLC and is not HIPAA-certified.
+          </p>
           <p>
             © {new Date().getFullYear()} AJ Digital LLC. ResponseOS is an
             internal-first product in active development. Demo capabilities are

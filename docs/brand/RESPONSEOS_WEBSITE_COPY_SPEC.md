@@ -11,6 +11,15 @@
 
 This is the copy spec for every public marketing page. It defines goal, audience, hero, section blocks, CTAs, proof, SEO, and the primary conversion action per page — plus global components and copy guardrails. All copy must pass the [voice review checklist](./RESPONSEOS_BRAND_VOICE.md#9-voice-review-checklist). Headline options are provided where useful; pick one per surface and keep it consistent.
 
+> **Owner decisions (2026-09-11).** These supersede the matching options and guardrails below.
+> - **Home headline:** "Stop losing revenue to missed calls." — the same line as OG Variant A.
+> - **Assessment name:** **Readiness & Revenue Leak Assessment** on every surface; "the assessment" on later reference. "Revenue audit" is retired.
+> - **Primary CTA:** **Revenue Recovery Demo**, per ADR-0035; the assessment is the secondary CTA. This replaces the "primary conversion funnels to the assessment" guardrail and the §8 navigation button.
+> - **OFFER** principles sit below the RECOVER loop on `/`.
+> - **Assessment credit:** the **full fee** applies toward implementation when the client signs **within 30 days**. This replaces the "optional credit within 14–30 days" wording in §2 and §6.
+> - **`/industries/med-spas` is unpublished** until the privacy-hardened pilot; the §5 copy stays here for that launch.
+> - **Doctrine §20 governs sample copy.** Where this spec states recovered revenue as delivered (for example the §1 meta description), the doctrine's status language wins.
+
 ### Routes in scope (already scaffolded)
 
 | Page | Route | Phase |
@@ -19,7 +28,7 @@ This is the copy spec for every public marketing page. It defines goal, audience
 | Pricing | `/pricing` | MVP |
 | Industries — Home services | `/industries/home-services` | MVP |
 | Industries — Contractors | `/industries/contractors` | MVP |
-| Industries — Med spas | `/industries/med-spas` | Phase 2+ (compliance-gated) |
+| Industries — Med spas | `/industries/med-spas` | Phase 2+ (compliance-gated) — route unpublished 2026-09-11 |
 | Audit / assessment | `/audit` | MVP |
 | Demo | `/demo` | MVP |
 
@@ -31,15 +40,15 @@ This is the copy spec for every public marketing page. It defines goal, audience
 - No fabricated logos, testimonials, or stats. Any number is real or labeled illustrative/example.
 - No HIPAA or compliance claim that isn't true. **ResponseOS is not HIPAA-certified.**
 - Sentence-case headlines, active voice, no exclamation points.
-- Primary conversion across the site funnels to **Book the Readiness Assessment** (`/audit`); secondary is **See a demo** (`/demo`).
+- Primary conversion across the site funnels to the **Revenue Recovery Demo** (`/demo`), per ADR-0035; secondary is **Book the Readiness & Revenue Leak Assessment** (`/audit`).
 
 ---
 
 ## 1. Home / landing — `/`
 
-- **Goal:** Establish the category and the leak; drive to the assessment.
+- **Goal:** Establish the category and the leak; drive to the Revenue Recovery Demo, with the assessment as the next step.
 - **Audience:** Owner/operator or office manager of a founder-led service business (cold).
-- **Primary conversion action:** Book the Readiness Assessment.
+- **Primary conversion action:** See the Revenue Recovery Demo. Secondary: Book the Readiness & Revenue Leak Assessment.
 
 **Hero**
 
@@ -48,7 +57,7 @@ This is the copy spec for every public marketing page. It defines goal, audience
   - B. "Recover the revenue your business is already losing."
   - C. "Revenue Recovery Infrastructure for founder-led service businesses."
 - Subhead: "ResponseOS captures every call, qualifies the lead, books the work, and reports the recovered revenue — across phone, text, and web. The receptionist is one input; ResponseOS is the recovery layer on top."
-- CTAs: Primary "Book the Readiness Assessment" → `/audit`. Secondary "See a demo" → `/demo`.
+- CTAs: Primary "See the Revenue Recovery Demo" → `/demo`. Secondary "Book the Readiness & Revenue Leak Assessment" → `/audit`.
 
 **Section blocks**
 
@@ -59,7 +68,7 @@ This is the copy spec for every public marketing page. It defines goal, audience
 5. **The proof** — the 9 KPIs as a labeled grid (no fabricated values; show as "what we report," not "results we got").
 6. **Why not just an AI receptionist** — short block restating: a receptionist answers, ResponseOS recovers and proves it. Link to industries.
 7. **How we work** — two phases: paid assessment first, then implementation + retainer. No performance-only pricing.
-8. **Closing CTA banner** — "See what you're leaving in voicemail. Book the Readiness Assessment."
+8. **Closing CTA banner** — "See what you're leaving in voicemail." Primary → Revenue Recovery Demo; secondary → Book the Readiness & Revenue Leak Assessment.
 
 **Proof elements:** 9-KPI grid, the two-phase model, the under-60s response claim, framework transparency (RECOVER). No logos/testimonials until real ones exist (mark as a Future slot).
 
@@ -74,7 +83,7 @@ This is the copy spec for every public marketing page. It defines goal, audience
 
 - **Goal:** Make the two-phase motion legible and qualify-in serious buyers.
 - **Audience:** Owner/operator evaluating cost vs the leak (warm).
-- **Primary conversion action:** Book the Readiness Assessment.
+- **Primary conversion action:** Revenue Recovery Demo. Secondary: Book the Readiness & Revenue Leak Assessment.
 
 **Hero**
 
@@ -83,7 +92,7 @@ This is the copy spec for every public marketing page. It defines goal, audience
 
 **Section blocks**
 
-1. **Phase 1 — Readiness & Revenue Leak Assessment** — $1,000 flat ($750–$1,500 by size/complexity). Deliverables list: Readiness Score, Revenue Leak Estimate, AI Fit/No-Fit Diagnosis, current + recommended workflow maps, implementation scope, projected ROI, Pricing Proposal. Note the optional credit toward implementation if signed within 14–30 days.
+1. **Phase 1 — Readiness & Revenue Leak Assessment** — $1,000 flat ($750–$1,500 by size/complexity). Deliverables list: Readiness Score, Revenue Leak Estimate, AI Fit/No-Fit Diagnosis, current + recommended workflow maps, implementation scope, projected ROI, Pricing Proposal. Note that the full fee applies toward implementation when the client signs within 30 days.
 2. **Phase 2 — Implementation + Monthly Recovery Retainer** — the three-tier table:
 
    | Tier | Setup | Monthly | Best for |
@@ -111,7 +120,7 @@ This is the copy spec for every public marketing page. It defines goal, audience
 
 - **Goal:** Make the primary vertical see itself; convert to assessment.
 - **Audience:** HVAC, roofing, plumbing, electrical, landscaping owners/office managers.
-- **Primary conversion action:** Book the Readiness Assessment.
+- **Primary conversion action:** Revenue Recovery Demo. Secondary: Book the Readiness & Revenue Leak Assessment.
 
 **Hero**
 
@@ -140,7 +149,7 @@ This is the copy spec for every public marketing page. It defines goal, audience
 
 - **Goal:** Speak to general contractors and trades with project-based, high-value work.
 - **Audience:** Contractor owner/operator, often the estimator and the dispatcher.
-- **Primary conversion action:** Book the Readiness Assessment.
+- **Primary conversion action:** Revenue Recovery Demo. Secondary: Book the Readiness & Revenue Leak Assessment.
 
 **Hero**
 
@@ -199,7 +208,7 @@ This is the copy spec for every public marketing page. It defines goal, audience
 
 - **Goal:** Sell the Readiness & Revenue Leak Assessment as the obvious first step.
 - **Audience:** Warm owner ready to size the leak.
-- **Primary conversion action:** Book / request the assessment (the site's main conversion).
+- **Primary conversion action:** Book / request the assessment (the site's secondary conversion, after the Revenue Recovery Demo).
 
 **Hero**
 
@@ -208,7 +217,7 @@ This is the copy spec for every public marketing page. It defines goal, audience
 
 **Section blocks**
 
-1. **What it is** — a paid diagnostic; $1,000 flat ($750–$1,500 by complexity). Optional credit toward implementation if you sign within 14–30 days.
+1. **What it is** — a paid diagnostic; $1,000 flat ($750–$1,500 by complexity). The full fee applies toward implementation if you sign within 30 days.
 2. **What we evaluate** — missed-call volume, after-hours demand, average job value, close rate, current response time, lead sources, CRM/booking/quote/follow-up workflows, compliance risk, AI fit/no-fit.
 3. **What you walk away with** — Readiness Score, Revenue Leak Estimate, AI Fit/No-Fit Diagnosis, current + recommended workflow maps, implementation scope, projected ROI, Pricing Proposal.
 4. **The honest part** — "If the numbers don't justify implementation, we tell you. You keep the workflow map and the leak estimate either way."
@@ -255,8 +264,8 @@ This is the copy spec for every public marketing page. It defines goal, audience
 
 ### Navigation
 
-- Items: Home · Industries (Home services, Contractors, Med spas) · Pricing · How it works (anchor to RECOVER on `/`) · Demo · **Book the assessment** (primary button).
-- Logo links to `/`. Primary nav button is the assessment CTA in the accent color.
+- Items: Home · Industries (Home services, Contractors) · Pricing · How it works (anchor to RECOVER on `/`) · Book the assessment · **Revenue Recovery Demo** (primary button).
+- Logo links to `/`. Primary nav button is the Revenue Recovery Demo CTA in the accent color; the assessment is a plain nav item.
 
 ### Footer
 
@@ -267,8 +276,8 @@ This is the copy spec for every public marketing page. It defines goal, audience
 
 ### CTA banners (reusable)
 
-- Primary: "See what you're leaving in voicemail." → Book the Readiness Assessment.
-- Secondary: "Want to see it first?" → See a demo.
+- Primary: "See what you're leaving in voicemail." → See the Revenue Recovery Demo.
+- Secondary: "Ready for your real numbers?" → Book the Readiness & Revenue Leak Assessment.
 - Pricing-context: "Not sure it's worth it? That's what the assessment is for."
 
 ### Microcopy
@@ -289,7 +298,7 @@ All copy must comply with [`./RESPONSEOS_BRAND_VOICE.md`](./RESPONSEOS_BRAND_VOI
 - Numbers are real or clearly labeled illustrative/example. No fake logos, testimonials, or stats.
 - No HIPAA/compliance claims that aren't true.
 - Sentence-case headlines, active voice, no exclamation points.
-- Funnel converges on the Readiness Assessment.
+- Funnel converges on the Revenue Recovery Demo, with the Readiness Assessment as the secondary path.
 
 ---
 
@@ -309,7 +318,7 @@ All copy must comply with [`./RESPONSEOS_BRAND_VOICE.md`](./RESPONSEOS_BRAND_VOI
 ## Assumptions
 
 - The seven routes above are the full public marketing surface for MVP; no blog/resources hub in scope yet.
-- The assessment is the single primary conversion site-wide; demo is the secondary path.
+- The Revenue Recovery Demo is the single primary conversion site-wide; the assessment is the secondary path.
 - Visual system (dark-first, #FF4500 accent) is governed by [`../DESIGN.md`](../DESIGN.md); this spec covers copy only.
 
 ## Open questions

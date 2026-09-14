@@ -33,7 +33,7 @@ export default async function ClientDashboard() {
   if (!m) {
     return (
       <>
-        <PageHeader eyebrow="Client Dashboard" title="Sample Month" />
+        <PageHeader eyebrow="Client portal" title="Sample month" />
         <EmptyState
           title="No revenue metrics yet"
           description="Once missed demand is captured and recovered, your recovered-revenue summary will appear here."
@@ -45,8 +45,8 @@ export default async function ClientDashboard() {
   return (
     <>
       <PageHeader
-        eyebrow="Client Dashboard"
-        title="Sample Month"
+        eyebrow="Client portal"
+        title="Sample month"
         description={`${formatPeriod(m.period_start, m.period_end)} · mock data`}
       />
 
