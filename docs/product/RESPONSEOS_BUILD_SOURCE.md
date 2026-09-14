@@ -209,7 +209,7 @@ These constrain every implementation phase:
 10. **No Firebase. Ever.**
 11. **No premature microservices.** Any self-hosted realtime voice service (if retained — deferred per ADR-0036) is the *only* sanctioned service split; everything else stays a modular monolith until scale demands otherwise. (ADR-0013, ADR-0036)
 12. **Mock-first; no live provider integrations until v0.3 is authorized;** adapters fall back to mock when env vars are missing. (ADR-0001)
-13. **No production deploys until v0.3 readiness gates clear.**
+13. **No production deploys until v0.3 readiness gates clear**, except the public read-only demo surface (ADR-0053).
 14. **ResponseOS is not HIPAA-certified.** Never represent it as compliant; HIPAA-readiness is a per-deployment lane, not a product property. (ADR-0004)
 15. **Favor maintainability over hype architecture.**
 

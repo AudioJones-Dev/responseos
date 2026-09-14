@@ -28,7 +28,7 @@ If the conflict affects scope, security, production, secrets, provider integrati
 - No live provider integrations until v0.3 is explicitly authorized.
 - No real secrets in the repo.
 - No Firebase.
-- No production deploys until v0.3 readiness gates clear.
+- No production deploys until v0.3 readiness gates clear, except the public read-only demo surface (ADR-0053) — scoped to the marketing pages and `/demo/receptionist` on mock adapters, requiring `RESPONSEOS_REQUIRE_AUTH`, and moving no v0.3 gate.
 - Tenant isolation is mandatory for every tenant-scoped read/write.
 - Webhook signature validation is mandatory before any business mutation.
 - Provider adapters must fall back to mock behavior when env vars are missing.

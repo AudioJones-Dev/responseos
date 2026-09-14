@@ -42,9 +42,15 @@ import type {
   ProjectRecord,
   SkillRecord,
 } from "./types"
+import { INTERNAL_DEMO_ACCOUNT_ID } from "@/lib/tenancy/internalDemo"
 
-/** Account id of the seeded internal demo tenant (prisma/seed.ts). */
-export const INTERNAL_DEMO_ACCOUNT_ID = "org_tyrone_1"
+/**
+ * Account id of the seeded internal demo tenant (prisma/seed.ts).
+ * Defined in `lib/tenancy` because the data layer resolves the same
+ * tenant and must not import a provider fixture; re-exported here so
+ * every existing import site keeps working.
+ */
+export { INTERNAL_DEMO_ACCOUNT_ID }
 
 /** Date the resume below was imported. Bump it on every re-import. */
 export const RESUME_IMPORTED_AT = "2026-09-10"
@@ -315,6 +321,11 @@ export const demoKnowledgeRecords: ProfessionalKnowledgeResult[] = [
       "open to",
       "contract",
       "full time",
+      // Both spellings, per keywordVariants: hyphens are not normalized,
+      // so "full-time" misses the spaced keyword. Without it "is he free
+      // for full-time work?" classifies correctly and then retrieves
+      // nothing, declining a question this record answers.
+      "full-time",
       "remote",
       "relocate",
     ],

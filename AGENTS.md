@@ -22,7 +22,7 @@ This file is the contract for any AI agent (Claude Code, Codex, etc.) working in
 - **No live provider integrations** until v0.3 is explicitly authorized. `lib/providers/*` mocks stay in force.
 - **No real secrets in the repo.** `.env.example` is placeholders only. If you need a credential to test, ask the human — don't paste one in.
 - **No Firebase.**
-- **No production deploys** from this repo until v0.3 readiness gates clear.
+- **No production deploys** from this repo until v0.3 readiness gates clear — with one operator-authorized exception, ADR-0053: the public read-only surfaces (marketing pages and `/demo/receptionist`) may be deployed on mock adapters with no provider credentials. `RESPONSEOS_REQUIRE_AUTH` must be set on any such deployment — without it the whole app ships with an anonymous privileged session. That is not v0.3 authorization, it moves no gate, and it extends to no other surface. Automatic git deploys stay disabled.
 - **Tenant isolation is non-negotiable.** Every read/write filters by `accountId` derived from the session, never from client input. See [`docs/SECURITY.md`](./docs/SECURITY.md).
 - **Webhook signature validation is mandatory** before any business mutation. See ADR-0009 in [`docs/DECISIONS.md`](./docs/DECISIONS.md).
 - **Provider adapters must fall back to mock** when env vars are missing. The app boots and runs without secrets at every version.

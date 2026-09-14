@@ -75,10 +75,11 @@ export async function runCrmSyncForCall(params: {
 
   const provider = params.providerOverride ?? getCrmProvider();
   const operationKey = `crm-call:${params.accountId}:${params.callId}`;
+  let claimed = false;
 
   try {
     let operation = await db.crmSyncOperation.upsert({
-      where: { operation_key: operationKey },
+      where: { operation_key: operationKey, account_id: params.accountId },
       create: {
         account_id: params.accountId,
         operation_key: operationKey,
@@ -88,12 +89,28 @@ export async function runCrmSyncForCall(params: {
       },
       update: {},
     });
-    if (operation.status === "succeeded" || operation.status === "review_required") {
+    if (operation.status !== "pending" && operation.status !== "retryable_failed") {
       return ok(toView(operation));
     }
+    const claim = await db.crmSyncOperation.updateMany({
+      where: { id: operation.id, account_id: params.accountId, status: { in: ["pending", "retryable_failed"] } },
+      data: {
+        status: "processing",
+        attempt_count: { increment: 1 },
+        last_error_code: null,
+        last_error_redacted: null,
+        next_attempt_at: null,
+      },
+    });
+    if (claim.count === 0) {
+      const current = await db.crmSyncOperation.findUniqueOrThrow({ where: { id: operation.id, account_id: params.accountId } });
+      return ok(toView(current));
+    }
+    claimed = true;
+    operation = await db.crmSyncOperation.findUniqueOrThrow({ where: { id: operation.id, account_id: params.accountId } });
     if (operation.provider === "hubspot" && provider.providerId !== "hubspot") {
       operation = await db.crmSyncOperation.update({
-        where: { id: operation.id },
+        where: { id: operation.id, account_id: params.accountId },
         data: {
           status: "retryable_failed",
           last_error_code: "live_provider_disabled",
@@ -103,17 +120,6 @@ export async function runCrmSyncForCall(params: {
       });
       return ok(toView(operation));
     }
-
-    operation = await db.crmSyncOperation.update({
-      where: { id: operation.id },
-      data: {
-        status: "processing",
-        attempt_count: { increment: 1 },
-        last_error_code: null,
-        last_error_redacted: null,
-        next_attempt_at: null,
-      },
-    });
 
     const call = await db.call.findFirst({
       where: { id: params.callId, account_id: params.accountId },
@@ -145,7 +151,7 @@ export async function runCrmSyncForCall(params: {
       const matches = await provider.findContacts({ phone, verifiedEmail });
       if (matches.length > 1) {
         operation = await db.crmSyncOperation.update({
-          where: { id: operation.id },
+          where: { id: operation.id, account_id: params.accountId },
           data: {
             status: "review_required",
             last_error_code: "ambiguous_contact_match",
@@ -166,7 +172,7 @@ export async function runCrmSyncForCall(params: {
         ).providerContactId;
       }
       operation = await db.crmSyncOperation.update({
-        where: { id: operation.id },
+        where: { id: operation.id, account_id: params.accountId },
         data: { provider_contact_id: providerContactId },
       });
     }
@@ -184,7 +190,7 @@ export async function runCrmSyncForCall(params: {
           evidenceReference,
         }));
       operation = await db.crmSyncOperation.update({
-        where: { id: operation.id },
+        where: { id: operation.id, account_id: params.accountId },
         data: { provider_activity_id: activity.providerActivityId },
       });
     }
@@ -208,7 +214,7 @@ export async function runCrmSyncForCall(params: {
           evidenceReference,
         }));
       operation = await db.crmSyncOperation.update({
-        where: { id: operation.id },
+        where: { id: operation.id, account_id: params.accountId },
         data: { provider_task_id: task.providerTaskId },
       });
     }
@@ -221,14 +227,15 @@ export async function runCrmSyncForCall(params: {
     }
 
     operation = await db.crmSyncOperation.update({
-      where: { id: operation.id },
+      where: { id: operation.id, account_id: params.accountId },
       data: { status: "succeeded", completed_at: new Date() },
     });
     return ok(toView(operation));
   } catch (error) {
     const safe = redactedError(error);
+    if (!claimed) return err(safe.code, safe.message);
     const updated = await db.crmSyncOperation.update({
-      where: { operation_key: operationKey },
+      where: { operation_key: operationKey, account_id: params.accountId },
       data: {
         status: "retryable_failed",
         last_error_code: safe.code,

@@ -156,4 +156,4 @@ Future-target Terraform layout (per `../DEPLOYMENT.md`): `infra/terraform/{modul
 
 ---
 
-*ResponseOS Deployment Plan — AJ Digital LLC / Audio Jones. Documentation phase only. No production deploys until v0.3 gates clear.*
+*ResponseOS Deployment Plan — AJ Digital LLC / Audio Jones. Documentation phase only. No production deploys until v0.3 gates clear, except the public read-only demo surface (ADR-0053).*

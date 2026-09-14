@@ -247,9 +247,9 @@ A mock-safe hosted demo. Per **ADR-0019** this is a *v0.3-gated, production-faci
 - ✅ Demo walkthrough built and mock-safe
 - ✅ Deployment contained (`vercel.json`, Pages double-gated)
 - ✅ **Fail-closed auth gate exists** — #96 merged (`8fffd57`)
-- ⬜ **Set `RESPONSEOS_REQUIRE_AUTH` on the hosted deploy** — the gate is opt-in; unset, `master` is still fail-open by default
+- ⬜ **Set `RESPONSEOS_REQUIRE_AUTH` on the hosted deploy** — the gate is opt-in; unset, `master` is still fail-open by default. **ADR-0053 makes this a precondition of the demo carve-out**, measured: without it `/admin` returns 200 to anonymous traffic, with it 307.
 - ⬜ **Confirm `/api/audit-requests` reachability** before enabling the flag — it is not on the public path list (§3e)
-- ⬜ **Founder authorization + an explicit carve-out** from the "no production deploys" hard rule (`AGENTS.md:24`)
+- ✅ **Founder authorization + an explicit carve-out** from the "no production deploys" hard rule — granted 2026-09-12 and ratified as ADR-0053, **scoped to the public read-only demo surface only** (marketing pages + `/demo/receptionist`, mock adapters, no provider credentials). It is not v0.3 authorization and unlocks no other lane.
 - ⬜ **Real Clerk login replacing the basic-auth shim** — ADR-0019 makes this a precondition
 - ⬜ No hosted-deploy artifact exists on `master` (`vercel.json` is a *blocker*, not a pipeline)
 
@@ -271,7 +271,7 @@ Knowledge layer / RAG is v0.4-gated. Out of scope, correctly.
 
 ### 🔴 "v0.3 readiness gates" are cited but never defined
 
-The phrase appears as a **binding constraint in 7 files** — `AGENTS.md:24`, `docs/ROADMAP.md:100`, `README.md:102`, `docs/PRD.md:73`, `docs/ops/RESPONSEOS_DEPLOYMENT_PLAN.md:7`, `docs/ops/RESPONSEOS_OBSERVABILITY_AND_GOVERNANCE.md:126`, `docs/product/RESPONSEOS_BUILD_SOURCE.md:211` — always as *"no production deploys until they clear."*
+The phrase appears as a **binding constraint in 7 files** — `AGENTS.md`, `docs/ROADMAP.md`, `README.md`, `docs/PRD.md`, `docs/ops/RESPONSEOS_DEPLOYMENT_PLAN.md`, `docs/ops/RESPONSEOS_OBSERVABILITY_AND_GOVERNANCE.md`, `docs/product/RESPONSEOS_BUILD_SOURCE.md` — as *"no production deploys until they clear,"* each now carrying the single ADR-0053 exception for the public read-only demo surface. The gates themselves are still undefined; the carve-out deliberately does not define them, it bypasses them for one surface that needs no credentials.
 
 **No document defines what they are.** The nearest artifacts are a provider-readiness gate (`docs/architecture/RESPONSEOS_BACKEND_SPEC.md:205`) and two pre-deploy checklists — and **all of them still name the superseded ADR-0012 stack** (Grok Voice, OpenAI Realtime, Twilio Media Streams, the deferred Node voice gateway) rather than the current Telnyx/Vapi canon from ADR-0031/0032/0036.
 
@@ -287,7 +287,7 @@ These are yours. None is an engineering task; each blocks work downstream.
 |---|---|---|---|
 | **D1** | **Which GTM narrative is canonical?** "AI Revenue Recovery Platform" (what the code, the marketing site, and the `Engagement` enum implement) vs "Managed Business Memory System" (ADR-0022 + ADR-0028), vs a third hardcoded tier mock in admin billing. **Nothing currently decides what a prospect is quoted.** | All sales assets, CTA copy, brand assets, pricing pages | **Now has a proposed answer on `master`.** #105 added `docs/strategy/responseos-platform-doctrine-v1.md` as item 0 of the docs index, reconciling the two as *stages of one progression* — explicitly marked **"Proposed — pending operator ratification."** Merging it did not ratify it. Ratify or reject deliberately, before it hardens into assumed canon. |
 | ~~**D2**~~ | ✅ **RESOLVED by #109.** `docs/product/responseos-v0.3-founding-pilot-scope.md` freezes Path B founding-pilot scope with concrete acceptance gates and a **staged authorization checklist** (mock CAL → schema → staging → each live provider → prod). | — | Stage 1 (mock CAL) is satisfied by #108. **Every later stage still needs written human authorization** — #109 authorizes nothing live. |
-| **D3** | **Authorize the Aug-15 demo deploy** and grant the carve-out from the no-production-deploys rule. | Lane 1 entirely | Per ADR-0019, also requires real Clerk login. |
+| **D3** | ~~**Authorize the Aug-15 demo deploy** and grant the carve-out from the no-production-deploys rule.~~ **Granted 2026-09-12 as ADR-0053**, narrowed to the public read-only demo surface. | Lane 1 entirely | Superseded by ADR-0053. `RESPONSEOS_REQUIRE_AUTH` is a precondition; real Clerk login is not, because with the flag set and Clerk absent the gate fails closed and nobody can reach the admin surfaces at all. Clerk returns as a precondition when someone needs to *use* them (ADR-0019). |
 | **D4** | **Authorize v0.3** (or don't, yet). | Lane 2 entirely | Separate from D3. Explicitly written authorization required. |
 | **D5** | **Disposition `codex/preserve-primary-dirty-2026-07-01`** — the rescued branch. Its editorial design doctrine supersedes part of ADR-0021 (brand palette + fonts) and changes 192 lines of `globals.css`. Promote to a PR (needs ADR-0046), or close out? | Brand/visual system; interacts with **D1** | This is brand doctrine — squarely yours. Now safely mirrored on `origin`. |
 | **D6** | **Cut a version.** Reconcile `package.json` (`0.1.0`), the hardcoded health endpoint, 63 `## Unreleased` changelog entries, and the board's "v0.3 Demo". | External legibility of any demo | Cheap; do before showing anyone. |

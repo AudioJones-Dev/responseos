@@ -19,7 +19,7 @@
 | REQ-002 | No live provider integrations before v0.3 authorization. | `AGENTS.md`, ADR-0001, `docs/ROADMAP.md` | `lib/providers/*` mock-first pattern | PR review confirms mock fallback remains | Current |
 | REQ-003 | No real secrets in repo. | `AGENTS.md`, `docs/SECURITY.md`, `.env.example` | Placeholder env docs only | Secret scan and review before merge | Current |
 | REQ-004 | No Firebase. | `AGENTS.md`, roadmap acceptance criteria | No approved Firebase integration | Dependency/config review | Current |
-| REQ-005 | No production deploys before v0.3 gates clear. | `AGENTS.md`, `docs/ROADMAP.md` | Deployment docs and PR gates | Deployment docs do not imply authorization | Needs Review |
+| REQ-005 | No production deploys before v0.3 gates clear, except the public read-only demo surface (ADR-0053). | `AGENTS.md`, `docs/ROADMAP.md`, ADR-0053 | Deployment docs and PR gates; carve-out scoped to marketing pages + `/demo/receptionist` on mock adapters | Deployment docs do not imply authorization; the carve-out names its own limits and moves no v0.3 gate | Needs Review |
 | REQ-006 | Tenant isolation is mandatory. | `AGENTS.md`, `docs/SECURITY.md`, ADR-0005 | Session-derived `accountId` data access pattern | Tests/review for tenant-scoped reads and writes | Needs Review |
 | REQ-007 | Webhook signature validation is mandatory before business mutation. | ADR-0009, `AGENTS.md` | Webhook route patterns | Integration/security tests before live provider work | Needs Review |
 | REQ-008 | Provider adapters must fall back to mock when env vars are missing. | ADR-0001, `AGENTS.md` | Provider adapter implementations | Unit/integration coverage and manual review | Current |

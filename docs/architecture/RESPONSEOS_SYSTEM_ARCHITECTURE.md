@@ -258,7 +258,7 @@ flowchart TB
 
 - **Standard lane (MVP):** Next.js app + the **voice gateway as a separate deployable**, Postgres, Redis, object storage. The gateway scales on concurrent-call count; the app scales on request load.
 - **Privacy-hardened / HIPAA-ready lanes:** per ADR-0004 — PII scrubbing + short retention, and (HIPAA) AWS-hosted primitives with BAAs. Voice providers (Grok/OpenAI) are **blocked on the HIPAA lane** until their compliance posture is verified (ADR-0012).
-- No production deploys until v0.3 gates clear. Full topology, environments, and release process: [`../ops/RESPONSEOS_DEPLOYMENT_PLAN.md`](../ops/RESPONSEOS_DEPLOYMENT_PLAN.md).
+- No production deploys until v0.3 gates clear, except the public read-only demo surface (ADR-0053). Full topology, environments, and release process: [`../ops/RESPONSEOS_DEPLOYMENT_PLAN.md`](../ops/RESPONSEOS_DEPLOYMENT_PLAN.md).
 
 ---
 

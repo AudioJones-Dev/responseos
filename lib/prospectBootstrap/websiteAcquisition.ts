@@ -129,9 +129,10 @@ async function pinnedHttpsFetch(url: URL, init: RequestInit, address: LookupAddr
       headers: init.headers as Record<string, string>,
       signal: init.signal ?? undefined,
       servername: url.hostname,
-      lookup: ((_hostname: string, _options: unknown, callback: (error: NodeJS.ErrnoException | null, address: string, family: number) => void) => {
-        callback(null, address.address, address.family);
-      }) as never,
+      lookup: (_hostname, options, callback) => {
+        if (options.all) callback(null, [address]);
+        else callback(null, address.address, address.family);
+      },
     }, (response) => {
       const headers = new Headers();
       for (const [name, value] of Object.entries(response.headers)) {
@@ -220,14 +221,15 @@ async function fetchWithSafeRedirects(params: {
   url: URL;
   fetchFn?: FetchFn;
   lookupFn: LookupFn;
-}): Promise<{ response: Response; finalUrl: URL }> {
+  validateMetadata?: (response: Response, finalUrl: URL) => void;
+}): Promise<{ response: Response; finalUrl: URL; body: string }> {
   let current = params.url;
   for (let redirect = 0; redirect <= MAX_REDIRECTS; redirect += 1) {
     const resolved = await resolveSafePublicWebsiteUrl(current.toString(), params.lookupFn);
     current = resolved.url;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), PROSPECT_FETCH_TIMEOUT_MS);
-    let response: Response;
+    let response: Response | undefined;
     try {
       const init = {
         redirect: "manual",
@@ -237,15 +239,22 @@ async function fetchWithSafeRedirects(params: {
       response = params.fetchFn
         ? await params.fetchFn(current, init)
         : await pinnedHttpsFetch(current, init, resolved.address);
+      if (![301, 302, 303, 307, 308].includes(response.status)) {
+        params.validateMetadata?.(response, current);
+        const body = response.ok ? await readBoundedBody(response) : "";
+        return { response, finalUrl: current, body };
+      }
+      const location = response.headers.get("location");
+      if (!location) throw new Error("website_redirect_missing_location");
+      current = new URL(location, current);
     } finally {
       clearTimeout(timeout);
+      try {
+        if (response?.body && !response.body.locked) await response.body.cancel().catch(() => undefined);
+      } finally {
+        controller.abort();
+      }
     }
-    if (![301, 302, 303, 307, 308].includes(response.status)) {
-      return { response, finalUrl: current };
-    }
-    const location = response.headers.get("location");
-    if (!location) throw new Error("website_redirect_missing_location");
-    current = await assertSafePublicWebsiteUrl(new URL(location, current).toString(), params.lookupFn);
   }
   throw new Error("website_redirect_limit_exceeded");
 }
@@ -284,14 +293,14 @@ async function readRobots(params: {
   lookupFn: LookupFn;
 }): Promise<string> {
   const robotsUrl = new URL("/robots.txt", params.canonical);
-  const { response } = await fetchWithSafeRedirects({
+  const { response, body } = await fetchWithSafeRedirects({
     url: robotsUrl,
     fetchFn: params.fetchFn,
     lookupFn: params.lookupFn,
   });
   if (response.status === 404) return "";
   if (!response.ok) throw new Error("website_robots_unavailable");
-  return readBoundedBody(response);
+  return body;
 }
 
 export async function acquireProspectWebsite(params: {
@@ -329,18 +338,20 @@ export async function acquireProspectWebsite(params: {
         continue;
       }
       try {
-        const { response, finalUrl } = await fetchWithSafeRedirects({
+        const { response, finalUrl, body } = await fetchWithSafeRedirects({
           url: requestedUrl,
           fetchFn: params.fetchFn,
           lookupFn,
+          validateMetadata(response, finalUrl) {
+            if (!response.ok) throw new Error(`website_http_${response.status}`);
+            if (finalUrl.origin !== canonical.origin) throw new Error("website_cross_origin_redirect");
+            const contentType = response.headers.get("content-type")?.split(";")[0].trim() ?? "";
+            if (contentType !== "text/html" && contentType !== "text/plain") {
+              throw new Error("website_content_type_forbidden");
+            }
+          },
         });
-        if (!response.ok) throw new Error(`website_http_${response.status}`);
-        if (finalUrl.origin !== canonical.origin) throw new Error("website_cross_origin_redirect");
         const contentType = response.headers.get("content-type")?.split(";")[0].trim() ?? "";
-        if (contentType !== "text/html" && contentType !== "text/plain") {
-          throw new Error("website_content_type_forbidden");
-        }
-        const body = await readBoundedBody(response);
         const normalizedUrl = normalizeProspectUrl(finalUrl.toString());
         const links = contentType === "text/html"
           ? extractSameOriginLinks(body, finalUrl, canonical.origin)

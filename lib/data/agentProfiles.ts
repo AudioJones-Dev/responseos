@@ -1,6 +1,7 @@
 import "@/lib/serverOnlyGuard";
 import { db } from "@/lib/db/client";
 import { getMockAgentProfiles } from "@/lib/mock/agentProfiles";
+import { INTERNAL_DEMO_ACCOUNT_ID } from "@/lib/tenancy/internalDemo";
 import type { AgentProfile, AgentProfileType } from "@/types/agentProfile";
 import { err, errFromThrown, ok, type Result } from "./result";
 import { withTenantScope } from "./session-helpers";
@@ -33,6 +34,51 @@ function rowToAgentProfile(row: AgentProfileRow): AgentProfile {
     created_at: row.created_at.toISOString(),
     updated_at: row.updated_at.toISOString(),
   };
+}
+
+/**
+ * The internal demo tenant's agent profiles, for the public surface
+ * that has no session (ADR-0052).
+ *
+ * This is the only accessor in `lib/data` that does not call
+ * `withTenantScope`, and it does not weaken the rule it sits beside.
+ * `withTenantScope` exists to stop a caller *naming* a tenant it has no
+ * claim to, and it does that by deriving the account from the session.
+ * A public page has no session to derive from, so the account is fixed
+ * at compile time instead — this function takes no parameters, so there
+ * is no argument to poison. Nothing a request carries can reach the
+ * `where` clause below.
+ *
+ * Callers must fail closed on an error envelope: a failed query means
+ * the stored policy is unknown, and the strict default
+ * (`DEFAULT_AGENT_PROFILE_POLICY`, which permits no assets) is the safe
+ * reading. Falling back to the fixtures on error would reintroduce
+ * exactly the drift this accessor exists to remove.
+ *
+ * The `db === null` branch is different, and is the mock-first rule
+ * (ADR-0001), not a failure: with no database configured there is no
+ * stored policy to honour and the fixtures *are* the configuration.
+ */
+export async function listInternalDemoAgentProfiles(): Promise<
+  Result<AgentProfile[]>
+> {
+  if (db === null) {
+    return ok(
+      getMockAgentProfiles().filter(
+        (profile) => profile.account_id === INTERNAL_DEMO_ACCOUNT_ID,
+      ),
+    );
+  }
+
+  try {
+    const rows = await db.agentProfile.findMany({
+      where: { account_id: INTERNAL_DEMO_ACCOUNT_ID },
+      orderBy: { slug: "asc" },
+    });
+    return ok(rows.map(rowToAgentProfile));
+  } catch (e) {
+    return errFromThrown<AgentProfile[]>(e);
+  }
 }
 
 export async function listAgentProfiles(params: {

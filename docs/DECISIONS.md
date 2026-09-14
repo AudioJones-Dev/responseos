@@ -866,6 +866,18 @@ That property is asserted, not assumed. One test asks every seeded profile the c
 
 Two additive optional fields are the whole contract change. No authority entry, disclosure policy, or escalation rule moved, and no adapter is obliged to populate the field.
 
+**Follow-up (2026-09-11, seventh) — the receptionist has an entry point, and it is the read path only.** The previous follow-up established that nothing called the receptionist at all. `/demo/receptionist` now calls `answerProfessionalQuestion` and `listShareableAssets`, so a visitor can ask a question and see the answer, the claim category, the governing authority, and the cited records.
+
+**The write path is deliberately still unreachable.** `captureProfessionalOpportunity`, `requestProfessionalEscalation`, and `bookProfessionalAppointment` write rows, and an anonymous visitor must not create them; `lib/professional/index.ts` already declines to export `intake.ts` for the same reason. The page can honestly show that a question *escalates* without emitting an escalation, because decision 5's answering path is pure: it resolves authority and returns, and only `intake.ts` emits or writes. That purity is what makes a public read surface safe at all.
+
+**Tenant isolation holds by construction, not by validation.** The account id is a module constant in the page; the request supplies the question and nothing else. There is no code path by which a query parameter could name an account, which is the form SECURITY.md asks for — derived, never accepted.
+
+**The route does not share the walkthrough's layout.** `app/(demo)/layout.tsx` frames its children as Coastal Comfort, a fictional business, and closes with "fictional scenario, no real customer information". Every record this receptionist speaks is verified and about a real person, so rendering one inside the other asserts both at once, and §20's status vocabulary is load-bearing precisely here. The page therefore lives in `app/(professional)`, which keeps the URL — route groups do not affect the path — and carries a footer that separates the two claims: the records are real, the *delivery* is mocked.
+
+**One gap is recorded rather than closed.** The disclosure policy is read from the fixtures, not from the tenant's stored `AgentProfile`, because `lib/data/agentProfiles` resolves scope from the session and this page has none by design. The fixtures and the seeded rows are identical today (mock-parity), so nothing is misreported; but in a DB-backed deployment an operator who disabled the profile or dropped an asset type would not change what this page discloses. Closing it requires a sessionless read of a tenant-owned table, which is a SECURITY.md decision about the "derived, never accepted" invariant — not a detail of this route — and is deliberately left to its own ADR rather than settled in passing here.
+
+This moves a public question surface from `DOCUMENTED_ONLY` to `SHIPPED` in the brief's status vocabulary, narrowed to reading. A surface that lets a caller capture, book, or hand off remains `DOCUMENTED_ONLY`, and live telephony stays v0.3-gated (ADR-0019, ADR-0045). No adapter, policy, or authority entry changed.
+
 ---
 
 ## ADR-0047 — The first prospect proof is an isolated, supervised post-call evidence chain
@@ -1496,3 +1508,109 @@ This language states accepted architecture intent. Generalized provider interope
 **Consequences.** Per-tenant supervision becomes expressible without touching `account_type` and without superseding ADR-0046, so two tenants can differ within one deployment once their gates open. The prospect-demo lane is unchanged and its stored-policy comparison still holds. Decisions 2 and 3 set targets that later changes implement: preserving tenant identity requires reworking `exportBootstrapPromotion`/`importBootstrapPromotion`, and carrying operator-asserted configuration requires relaxing `ApprovedKnowledgeFactSchema`, which currently demands an `https` source URL and content hash for every fact and therefore cannot yet hold operator-asserted configuration. Neither is authorised as a live capability by this ADR, and no provider, deployment, or environment behaviour changes.
 
 **Amendment (2026-09-10) — authority of operator-entered configuration.** Operator decision. When an operator-entered fact (`operator_configured`) and an owner-confirmed fact disagree on the same key, the owner-confirmed fact wins: `operator_configured` ranks equal to `operator_approved_for_demo` and below `owner_confirmed`, and ties resolve to the most recent `reviewedAt`, then `validAsOf`, then `id`. The schema relaxation decision 3 required is made: `ApprovedKnowledgeFactSchema` accepts an `operator_configured` fact whose evidence cites an approval record instead of a URL, and rejects that evidence on any other status. The rank takes effect in code when the snapshot compiler first accepts operator-entered facts; that write path is not implemented. Governing detail: [`RESPONSEOS_CLIENT_OPERATING_CONFIGURATION_STANDARD.md`](./ops/client-delivery/RESPONSEOS_CLIENT_OPERATING_CONFIGURATION_STANDARD.md).
+
+---
+
+## ADR-0052 — A public, server-owned surface reads its tenant's stored policy through a parameterless accessor
+
+**Status.** Accepted · 2026-09-12 · Supersedes nothing. Narrows the reading of the tenant-isolation rule in [`SECURITY.md`](./SECURITY.md) rather than relaxing it.
+
+**Context.** ADR-0046's seventh follow-up shipped `/demo/receptionist`, the receptionist's only entry point, and recorded a gap it declined to close: the page read the answering profile from `lib/mock/agentProfiles` rather than from the tenant's stored `AgentProfile`. Raised as a P1 on PR #161 and tracked as issue #164.
+
+The consequence was operator-facing, not visitor-facing. Fixtures and seeded rows are identical — the mock-parity integration test asserts it — so nothing was ever misreported. But in a DB-backed deployment an operator who disabled the profile, or dropped an asset type such as the owner's email address from its stored `system_policy_json`, would not have changed what the page disclosed. Revoking disclosure would have required a code deployment.
+
+The obvious fix does not work. `lib/data/agentProfiles.listAgentProfiles` routes through `withTenantScope`, which resolves the account from the session and returns `no_session` when there is none. `/demo` is a public prefix and the page is anonymous by design, so the scoped accessor returns an error envelope for every visitor and the asset list renders empty. That refusal is correct behaviour: `SECURITY.md` requires `account_id` **derived from the session, never trusted from client input**, and a sessionless caller has nothing to derive from.
+
+The professional knowledge provider is not the seam either. It is sessionless and keyed by the same constant, but it fronts Career OS — external professional truth. `AgentProfile` is a ResponseOS tenant table, and putting tenant configuration behind that boundary inverts the separation `lib/professional/index.ts` exists to state.
+
+**Decision.**
+
+1. **`lib/data/agentProfiles.listInternalDemoAgentProfiles()` reads the internal demo tenant's profiles without a session.** It is the only accessor in `lib/data` that does not call `withTenantScope`.
+
+2. **It takes no parameters, and that is the whole safety argument.** `withTenantScope` exists to stop a caller *naming* a tenant it has no claim to, and it does that by deriving the account from the session. Where there is no session, the equivalent guarantee is that the account is not derivable from the request at all: the account id is a module constant, the function has an empty parameter list, and nothing a request carries can reach the `where` clause. This is a **stronger** guarantee than the scoped path, not a weaker one — the scoped path accepts a caller-supplied id and then checks it, while this one has no argument to check. A unit test asserts the arity stays zero, because a later signature that accepted an account id would silently convert a compile-time constant into request-supplied input on a public route.
+
+3. **No governing profile means the surface does not answer at all.** An error envelope means the stored policy is unknown; `resolveAgentProfile` returns null when every profile is disabled. In both cases the page holds a **null policy** and reaches neither the answering path nor the asset list.
+
+   Falling back to `DEFAULT_AGENT_PROFILE_POLICY` here is not fail-closed, and the first draft of this ADR wrongly said it was. That default withholds assets and escalates compensation and references — but `applyPolicy` consults the policy for *those three categories only*. Work history, projects, skills and certifications keep their base `answer` authority, so a page falling back to it would go on reciting verified records after the operator switched the agent off. Revocation has to stop the answering, not just the sharing. Raised by Codex on PR #165.
+
+   Falling back to the *fixtures* is worse still and separately forbidden: it reintroduces exactly the drift this ADR removes.
+
+4. **The `db === null` branch still reads fixtures, and that is the mock-first rule, not the bug.** With no database configured there is no stored policy to honour and the fixtures *are* the configuration (ADR-0001). The branch now filters by tenant, which the page it replaced did not.
+
+5. **The accessor is narrow, not general.** It serves one server-owned account. No `withServerOwnedScope(accountId)` helper is introduced: a general accessor taking an account id would restore the injection surface decision 2 exists to remove, and a second public surface can add a second named accessor when one actually exists.
+
+6. **`INTERNAL_DEMO_ACCOUNT_ID` moves to `lib/tenancy/internalDemo.ts`.** `lib/data` must not import a provider fixture, and duplicating the id would let the two layers drift — a page answering from one tenant's records under another tenant's policy, failing silently. The knowledge fixture re-exports it, so every existing import site is unchanged.
+
+**§21 checklist.** Layer: data access (§8), no new capability. Built, not integrated or deferred; no vendor involved, so no lock-in. It does not improve the live pilot path and creates no proprietary learning — it is a correctness and control fix, not a feature. It preserves evidence (the policy governing an answer is now the stored one, so what the page disclosed is reconstructable from the tenant's own rows) and does not touch attribution. It duplicates no CRM, FSM, telecom, or workflow-platform functionality. **Tenant isolation: strengthened** — see decision 2, plus an integration test that a foreign tenant's enabled, default, more permissive profile cannot govern this page. It supports no new public claim; on the contrary it retires a `PROHIBITED_CLAIM` risk, since the page previously could not honour a revocation while appearing to enforce a policy. It requires no new human-approval control and reduces compliance exposure by making disclosure revocable without a deployment. Required now: the surface is public and already shares the owner's email address under a policy no operator could change.
+
+**Consequences.** An operator revoking disclosure takes effect on the next request, with no deployment. `SECURITY.md` gains an explicit, bounded exception to the "derived from session" rule — bounded to a parameterless accessor for a server-owned account — so the rule is no longer silently contradicted by a public route that cannot follow it. The mock-first boot path is unchanged: with no `DATABASE_URL` the app still runs, now reading tenant-filtered fixtures. No provider, schema, migration, or environment change; no v0.3 gate moves. Issue #164 closes.
+
+---
+
+## ADR-0053 — A bounded production carve-out for the public read-only demo surface
+
+**Status.** Accepted · 2026-09-12 · Operator-authorized. Narrows the "no production deploys" hard rule for one surface, and narrows **ADR-0019**'s Clerk precondition for that same surface (decision 2). **Does not authorize v0.3** (doctrine D-1 stays open).
+
+**Context.** "No production deploys from this repo until v0.3 readiness gates clear" is stated in **eleven** places and has been binding since ADR-0001/ADR-0019. (The first draft of this ADR said eight and its changelog claimed every occurrence was amended; three more were found on review — `docs/product/RESPONSEOS_ROADMAP.md`, `docs/governance/PROJECT_CONSTITUTION.md`, and the demo-deploy checkpoint — along with three stale gate rows still listing this authorization as outstanding.) `vercel.json` carries `git.deploymentEnabled: false`, and the only deploy lane is a manual, environment-approved staging workflow whose URL sits behind Vercel deployment protection and therefore cannot be shared.
+
+The operator asked to deploy `/demo/receptionist` so the link can be shared, and authorized a carve-out from the rule. A blanket lift would unlock live telephony, Stripe, CRM sync, and the rest of §22 — none of which was asked for and all of which D-1 governs. So the carve-out is written to the surface actually requested and no further.
+
+**What makes this surface cheap to deploy — and the trap in saying so.** The *page* needs no secrets: with `DATABASE_URL` and `DIRECT_URL` unset, `/demo/receptionist` returns 200, answers "What is ARO?" from a verified record, and lists the permitted assets. Every provider resolves to a mock (ADR-0001), the write path has no caller (ADR-0046 seventh follow-up), and the account id is a compile-time constant (ADR-0052).
+
+But a *deployment* is not a page. Vercel serves the whole app, and with `RESPONSEOS_REQUIRE_AUTH` unset the auth gate is opt-in: `proxy.ts` passes every path through and `getCurrentSession()` grants a placeholder `aj_admin`. Measured on this branch with no secrets at all:
+
+| Path | no flag | `RESPONSEOS_REQUIRE_AUTH=1` |
+|---|---|---|
+| `/demo/receptionist` | 200 | 200 (still answers) |
+| `/admin` | **200** | 307 → sign-in |
+| `/admin/receptionist` | **200** | 307 → sign-in |
+| `/client/dashboard` | **200** | 307 → sign-in |
+
+"Needs no secrets" was true of the page and false of the deploy. The first draft of this ADR and its runbook said the former and meant the latter, which would have published the admin console. Raised by Codex on PR #166.
+
+**Decision.**
+
+1. **Production deployment is authorized for the public read-only surfaces only** — the marketing pages and `/demo/receptionist` — running on mock adapters with no provider credentials.
+
+2. **`RESPONSEOS_REQUIRE_AUTH` must be set on the deployment.** It is a precondition of this carve-out, not a recommendation: without it every authenticated surface in the app is anonymously reachable with a privileged placeholder session, and the deploy publishes far more than the page it authorizes. The operator verifies `/admin` and `/client/dashboard` redirect before sharing the URL.
+
+   Real Clerk credentials are **not** required, and the reason is worth stating rather than assuming. With the flag set and Clerk absent, the gate fails closed — nobody can sign in, so nothing behind it is reachable by anyone. That is the safest configuration for a demo-only deploy where no one is meant to log in.
+
+   **This narrows ADR-0019, deliberately and on the record.** ADR-0019 decision 3 requires that "the basic-auth shim is replaced with real Clerk-authenticated login before that deploy goes live." It was written against PR #14's shape: a password-gated deploy of the whole `master` surface that granted every visitor behind the gate a uniform `aj_admin` session. Its objection was to shipping a *privileged shim* as the first public face of ResponseOS.
+
+   That objection does not reach this deploy, which grants **no session to anyone**. Requiring Clerk here would fit a lock to a door already welded shut — and would make the deployment less safe, not more, by making the admin surfaces reachable to whoever holds credentials. So for this surface, and only this surface, ADR-0019's Clerk precondition is satisfied by the fail-closed gate instead. ADR-0019 continues to govern unchanged for any deploy where someone is meant to sign in, which remains every other deploy.
+
+3. **This is not v0.3 authorization.** D-1 remains open. No live provider account, no real Stripe, no CRM sync, no telephony, no recording, no outbound. Deploying this surface moves no gate in §22 and grants no precedent for deploying anything else; a second surface needs its own decision.
+
+4. **Automatic git deploys stay disabled.** `vercel.json` keeps `deploymentEnabled: false`. A production deploy remains a deliberate, operator-run act, matching the containment decision that disabled them; nothing merges its way to production.
+
+5. **The write path must remain unreachable for as long as this is deployed.** `lib/professional/intake.ts` has no caller by design and a smoke test asserts the page imports none of its three writers. That test is now load-bearing in a way it was not before: it is the thing standing between an anonymous internet visitor and a row in the database.
+
+6. **Deploying without a database is permitted, and its consequence is recorded.** With no `DATABASE_URL` the disclosure policy comes from the fixtures, so revoking an asset — the owner's email address, say — again requires a deployment, which is precisely the gap ADR-0052 closed for the DB-backed case. An operator who wants revocation-without-deploy must point the deployment at a seeded database. Neither choice is wrong; the difference has to be known rather than discovered.
+
+**§21 checklist.** Layer: delivery, no new capability. Deferred-to-bought infrastructure (Vercel), already the planned target, so no new lock-in. It does not improve the live pilot path and creates no proprietary learning — it publishes an existing read-only surface. Evidence and attribution are untouched. Tenant isolation is unchanged and structural. It duplicates no CRM, FSM, telecom, or workflow-platform functionality. **Public claims:** the surface states its own status — mock adapters, records real, delivery simulated — and doctrine §20's prohibitions continue to bind its copy. It requires no new human-approval control beyond the operator running the deploy. Compliance exposure: the page discloses the owner's own professional records and email address, which the owner controls and has approved (ADR-0046, #157); no customer data of any kind is present. Required now: the operator asked for a shareable link and the surface is finished.
+
+**Consequences.** Every statement of the hard rule is amended to name this exception rather than be contradicted by it, and the gate rows that tracked this authorization (D3, Q1) are marked granted rather than left open; the rule still governs everything else, and "no production deploys" remains true of every surface except the one named here. The deploy itself is the operator's to run — the Vercel credentials are theirs and must not enter this repo or an agent session (`AGENTS.md`). If the deployment is later pointed at a database, decision 6's consequence reverses and ADR-0052's revocation path becomes live.
+
+---
+
+## ADR-0055 — Consent evidence is an immutable event carrying its source channel; per-contact state is a derived summary, not the record of authority
+
+**Status:** Accepted (2026-09-13) for the *contract*. Documentation only — this ADR authorises no schema, no migration, no runtime, and no recording. Recording stays `false` at every supervision tier per ADR-0051, and G-11 of the FRL policy still requires a separate ratified amendment before any FRL recording at all.
+
+**Context.** `docs/data-schema.md` specifies `consent_records` as "per-contact consent state (recording, AI handling, marketing) with jurisdiction + timestamp", and `docs/readiness/CRITICAL_PATH_AMENDMENT.md` describes the semantics as "per-call grant → per-contact state". Neither exists: the model is absent from all Prisma models. Separately, the FRL inbound policy's G-12 was strengthened on 2026-09-13 to require affirmative consent before either a recording or a persisted transcript.
+
+Review surfaced the conflict. Per-contact state answers *what does this contact currently permit*. It cannot answer *which disclosure and which grant authorised this particular retained recording or transcript, and when did a withdrawal take effect* — and that second question is the one an audit asks. An implementer following the readiness plan would have delivered per-contact state and satisfied the letter of G-12 while leaving exactly the gap G-12 exists to close.
+
+**Decision.**
+
+1. **The record of authority is an immutable consent event.** Each event carries at minimum: the disclosure actually presented, the grant or withdrawal, the timestamp, the jurisdiction basis, and **the source interaction and channel it arrived through** — a call, an SMS reply, a web form, or any other channel. Consent is not call-only: outbound campaign consent and opt-out (§9 of the security contract) and the cross-channel consent left open in the readiness contract are the same kind of record and live in the same event stream. Events are append-only — a withdrawal is a new event, never a mutation of an earlier one.
+   **Where the artifact is a recording or a persisted transcript, the authorising event must additionally be linked to that call and artifact class.** A general per-contact grant arriving by web form does not authorise capturing a particular call; that specific linkage is what makes the evidence auditable.
+2. **Per-contact state remains, as a derived summary.** It answers the "what does this contact currently permit" question for routing and preference purposes. It is a projection of the event stream and is never the evidence relied on to justify a retained artifact.
+3. **Consent is evaluated per artifact class, not once per call.** Recording and transcript persistence are independent switches — `CallTranscript.inline_text` and `CallSegment.text` persist verbatim caller speech regardless of the recording flag — so an authorisation for one is not an authorisation for the other.
+4. **Absence of an event is refusal.** No affirmative event means no capture. Silence is not consent, and a missing record is not a permissive default.
+5. **The enforcement point must be named before the model is built.** `CallTranscript.retention_lane` is the precedent this repository already has for a compliance label that is stored and enforced nowhere (`CRITICAL_PATH_AMENDMENT.md`). A consent event that no read path consults would repeat it.
+
+**Consequences.** `docs/data-schema.md` and `docs/readiness/CRITICAL_PATH_AMENDMENT.md` are updated to describe the event as the record of authority and the per-contact row as its projection; the readiness item stays a required tenant-scoped migration with accessor, mock parity and isolation tests. FRL G-12 is consistent with this ADR rather than contradicting it. No model, migration, accessor, or runtime is created here — implementation is a separate authorised change, and until it exists and its enforcement point is verified, recording and transcript persistence stay blocked.
+
+**§21 checklist.** Layer: data/compliance contract, no new capability. Built rather than bought — consent evidence is inseparable from the ledger that already holds the artifacts. It preserves evidence by construction, which is the point of the change, and tenant scoping is a stated requirement of the deferred migration. It duplicates no CRM or telecom function. **Public claims:** none — this ADR creates no capability and the model does not exist; nothing here may be described as consent management the platform performs. Required now because a canonical policy gate (FRL G-12) and two canonical contracts disagreed about what consent evidence means, and an implementer would have resolved that disagreement by accident.
