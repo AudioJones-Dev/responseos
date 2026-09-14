@@ -32,6 +32,19 @@
   ],
   "tasks": [
     {
+      "id": "G-14",
+      "phase": "Tech Debt & Hardening",
+      "title": "Apply owner-approved copy redlines (claims, naming, CTA)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-09-11",
+      "due": "2026-09-11",
+      "ref": 163,
+      "refType": "pull"
+    },
+    {
       "id": "G-15",
       "phase": "Tech Debt & Hardening",
       "title": "Designate Langfuse as the AI observability layer (ADR-0056)",
