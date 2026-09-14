@@ -17,7 +17,7 @@ const POINTS = [
   },
   {
     title: "Track quote-to-job, not spreadsheets",
-    body: "Every quote is designed to trace back to the lead that started it, so you see win rate and verified revenue in one place.",
+    body: "Every quote is designed to trace back to the lead that started it. Win-rate and verified-revenue reporting is planned on top of that trail.",
   },
 ];
 
