@@ -205,7 +205,10 @@ export async function POST(req: Request) {
 
       if (supervisedTenant) {
         await touchSupervisedAssignment(supervisedTenant.assignmentId, occurredAt ?? receivedAt);
-        if (normalized.callId && contentAllowed) {
+        // A review is queued only from the finalized insight event. A hangup
+        // completes the call but carries no analysis; a review built from it
+        // could be approved and dispatched before the evidence exists.
+        if (normalized.callId && normalized.finalized && contentAllowed) {
           await queueCallReview(assignment.accountId, normalized.callId, event.data.payload);
         }
         return;

@@ -194,6 +194,17 @@ describe("supervised Telnyx call lane", () => {
     expect(mocks.touchSupervisedAssignment).toHaveBeenCalled();
   });
 
+  test("a consented hangup completes the call but queues no review until the final analysis arrives", async () => {
+    mocks.resolveSupervisedTenantForNumber.mockResolvedValue(supervisedTenant());
+    mocks.normalizeTelnyxEvent.mockResolvedValue({ callId: "call-1", finalized: false });
+    const { POST } = await import("@/app/api/webhooks/telnyx/calls/route");
+    await POST(signedEvent({ call_control_id: "call-hangup", to: TENANT_NUMBER, transcript: "caller: I need a ramp" }, "call.hangup"));
+    await settle();
+    expect(mocks.normalizeTelnyxEvent).toHaveBeenCalledOnce();
+    expect(mocks.touchSupervisedAssignment).toHaveBeenCalled();
+    expect(mocks.queueCallReview).not.toHaveBeenCalled();
+  });
+
   test("retains the raw payload for a real client instead of expiring it on the prospect clock", async () => {
     mocks.resolveSupervisedTenantForNumber.mockResolvedValue(supervisedTenant());
     const { POST } = await import("@/app/api/webhooks/telnyx/calls/route");

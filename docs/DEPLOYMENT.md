@@ -172,10 +172,13 @@ Prisma applies each migration inside a transaction, so `CREATE INDEX CONCURRENTL
 
 **Concurrent procedure (populated live ledger).** Not validated yet; must be rehearsed against a copy of the target database and its evidence attached to the deploy record before use.
 
-1. Edit the unapplied migration to remove its `CREATE INDEX` statement **before its first deployment to that database**. A follow-on migration cannot help: Prisma applies `0015` first, inside its own transaction, so the original statement would already have run.
-2. Run `CREATE INDEX CONCURRENTLY "WebhookEvent_provider_call_ids_idx" ON "WebhookEvent" USING GIN ("provider_call_ids");` outside any transaction, as a separate operator-executed step.
-3. Confirm `pg_index.indisvalid` is true for the index; a failed concurrent build leaves an invalid index that must be dropped and rebuilt.
-4. Run `prisma migrate diff` against the schema to confirm the database and `schema.prisma` agree.
+This is a **repository change, not a deploy-time edit**: Prisma checksums applied migrations, and CI's `prisma migrate diff --from-schema-datamodel --to-migrations` requires `schema.prisma` and the migration history to agree.
+
+1. In one reviewed commit, remove the `CREATE INDEX` statement from `0015` **and** remove `@@index([provider_call_ids], type: Gin)` from `WebhookEvent` in `schema.prisma`, so CI parity still holds. Valid only while `0015` is unapplied on every database that will receive it; a follow-on migration cannot help, because Prisma applies `0015` first, inside its own transaction.
+2. Deploy that commit: `prisma migrate deploy` creates `WebhookEvent.provider_call_ids` (the column the index needs) without building the index.
+3. Run `CREATE INDEX CONCURRENTLY "WebhookEvent_provider_call_ids_idx" ON "WebhookEvent" USING GIN ("provider_call_ids");` outside any transaction, as a separate operator-executed step. Prisma does not manage this index afterwards.
+4. Confirm `pg_index.indisvalid` is true for the index; a failed concurrent build leaves an invalid index that must be dropped and rebuilt.
+5. Record the index as operator-managed in this table; `findAgentTargetForProviderCall` depends on it for correlation performance, not correctness.
 
 ## Rollback plan
 
