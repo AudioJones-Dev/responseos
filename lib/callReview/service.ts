@@ -80,9 +80,15 @@ export async function dispatchCallReview(id: string) {
   // initialization fails closed on it, so this path must too before it writes
   // to a CRM or sends mail.
   if (!(await supervisedExecutionAuthorized(row.account_id))) throw new Error("execution_gate_not_authorized");
-  const audit = (action: string, metadata: Prisma.InputJsonValue) => db!.auditLog.create({ data: { account_id: row.account_id, actor_type: "user", actor_user_id: operator.user.id, actor_role: operator.user.role, action, category: "workflow", target_type: "CallReview", target_id: id, metadata_json: metadata } });
+  const auditEntry = (action: string, metadata: Prisma.InputJsonValue): Prisma.AuditLogCreateArgs => ({ data: { account_id: row.account_id, actor_type: "user", actor_user_id: operator.user.id, actor_role: operator.user.role, action, category: "workflow", target_type: "CallReview", target_id: id, metadata_json: metadata } });
+  const audit = (action: string, metadata: Prisma.InputJsonValue) => db!.auditLog.create(auditEntry(action, metadata));
+  // Parsed before the claim: a payload this dispatch cannot read must not leave
+  // the row claimed.
+  const value = ReviewPayloadSchema.parse(row.payload_json);
   // Claiming under the queue's lock keeps a revision created by late evidence
-  // from slipping in between the latest-revision check and the claim.
+  // from slipping in between the latest-revision check and the claim. The
+  // attempt is audited inside the same transaction, so a failed audit rolls the
+  // claim back instead of orphaning it.
   await db.$transaction(async (tx) => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${row.account_id + ":" + row.call_id}))`;
     const latest = await tx.callReview.findFirst({ where: { account_id: row.account_id, call_id: row.call_id }, orderBy: { revision: "desc" } });
@@ -91,9 +97,8 @@ export async function dispatchCallReview(id: string) {
     if (prior) throw new Error("prior_revision_requires_reconciliation");
     const claim = await tx.callReview.updateMany({ where: { id, account_id: row.account_id, status: "approved", dispatch_at: null }, data: { dispatch_at: new Date() } });
     if (!claim.count) throw new Error("dispatch_in_progress_or_uncertain");
+    await tx.auditLog.create(auditEntry("call_review_dispatch_attempt", { revision: row.revision }));
   });
-  await audit("call_review_dispatch_attempt", { revision: row.revision });
-  const value = ReviewPayloadSchema.parse(row.payload_json);
   try {
     const crm = await runCrmSyncForCall({ accountId: row.account_id, callId: row.call_id, requireLiveProvider: true, reviewId: id });
     await db.callReview.update({ where: { id, account_id: row.account_id }, data: { crm_status: crm.ok ? crm.data.status : "failed" } });
