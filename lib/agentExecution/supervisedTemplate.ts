@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { normalizeE164 } from "@/lib/validation/common";
 
 /** Provider preflight must attest the reviewed template, disabled recording, and verified capture controls. */
 export const SUPERVISED_RECEPTIONIST_TEMPLATE_VERSION = "supervised-receptionist.v2";
@@ -55,6 +56,8 @@ export const SUPERVISED_RECEPTIONIST_TEMPLATE_CHECKSUM = createHash("sha256")
 export interface SupervisedAssistantPreflightExpectation {
   recordingEnabled: boolean;
   allowedTools: readonly string[];
+  /** The approved escalation contact; required whenever `transfer` is a policy tool. */
+  transferDestination?: string | null;
 }
 
 export interface SupervisedAssistantPreflightMetadata {
@@ -71,6 +74,8 @@ export interface SupervisedAssistantPreflightMetadata {
   consentCaptureVerified?: boolean;
   captureIntervalVerified?: boolean;
   consentEvidenceRef?: string;
+  /** Where the provider's `transfer` tool actually sends the caller. */
+  transferDestinationE164?: string;
 }
 
 /**
@@ -103,6 +108,14 @@ export function validateSupervisedAssistantPreflight(
   // transfer, for one), so the provider must attest every one of them.
   const attested = new Set(metadata.allowedTools);
   if (expected.allowedTools.some((tool) => !attested.has(tool))) throw new Error("assistant_tools_missing_policy_tool");
+  // A tool named `transfer` proves nothing about where it sends the caller;
+  // the attested destination must be the approved escalation contact.
+  if (permitted.has("transfer")) {
+    const expectedDestination = expected.transferDestination ? normalizeE164(expected.transferDestination) : null;
+    if (!expectedDestination) throw new Error("escalation_contact_required_for_transfer");
+    const attestedDestination = typeof metadata.transferDestinationE164 === "string" ? normalizeE164(metadata.transferDestinationE164) : null;
+    if (attestedDestination !== expectedDestination) throw new Error("assistant_transfer_destination_mismatch");
+  }
   if (metadata.consentCaptureVerified !== true || metadata.captureIntervalVerified !== true || !metadata.consentEvidenceRef?.trim()) throw new Error("consent_transport_not_verified");
   return metadata as SupervisedAssistantPreflightMetadata;
 }

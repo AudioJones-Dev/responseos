@@ -113,6 +113,25 @@ export async function resolveSupervisedTenantForNumber(
 }
 
 /**
+ * Whether a number is owned by a supervised tenant at all, independent of
+ * whether that tenant's runtime currently resolves. A real client's number
+ * must answer with the neutral supervised wording when the tenant fails
+ * closed, never with prospect-demonstration copy.
+ */
+export async function isSupervisedNumber(target: string, now = new Date()): Promise<boolean> {
+  if (!db) return false;
+  const e164 = normalizeE164(target);
+  if (!e164) return false;
+  const number = await db.telephonyNumber.findUnique({ where: { provider_e164: { provider: "telnyx", e164 } } });
+  if (!number) return false;
+  const assignment = await db.telephonyNumberAssignment.findFirst({
+    where: { telephony_number_id: number.id, bootstrap_id: null, status: "active", unassigned_at: null, activated_at: { lte: now } },
+    select: { id: true },
+  });
+  return assignment !== null;
+}
+
+/**
  * Re-checks that supervised execution is still authorized for an account.
  *
  * The execution gate is an operational kill switch: assistant initialization

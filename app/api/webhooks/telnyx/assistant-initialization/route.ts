@@ -17,7 +17,7 @@ import {
   PROSPECT_CONTENT_RETENTION_DAYS,
 } from "@/lib/prospectBootstrap/contracts";
 import { resolveActiveProspectAgentContext } from "@/lib/prospectBootstrap/service";
-import { resolveSupervisedTenantForNumber } from "@/lib/agentExecution/supervisedRuntime";
+import { isSupervisedNumber, resolveSupervisedTenantForNumber } from "@/lib/agentExecution/supervisedRuntime";
 import {
   buildSupervisedAgentContext,
   SUPERVISED_UNAVAILABLE_CONTEXT,
@@ -75,8 +75,13 @@ export async function POST(req: Request) {
     supervised.resolved.degraded === null &&
     supervised.resolved.mode === "SUPERVISED_PILOT";
 
+  // Ownership is resolved separately from readiness: a supervised number whose
+  // runtime fails closed still belongs to that tenant and never falls through
+  // to the prospect lane.
+  const supervisedOwned = supervised !== null || (target ? await isSupervisedNumber(target) : false);
+
   const prospect =
-    !supervised && target && process.env.RESPONSEOS_PROSPECT_BOOTSTRAP_ENABLED === "true"
+    !supervisedOwned && target && process.env.RESPONSEOS_PROSPECT_BOOTSTRAP_ENABLED === "true"
       ? await resolveActiveProspectAgentContext(target)
       : null;
 
@@ -112,7 +117,9 @@ export async function POST(req: Request) {
         ? supervised.readiness.ready
           ? "supervised_tenant_not_authorized"
           : "supervised_configuration_incomplete"
-        : target
+        : supervisedOwned
+          ? "supervised_runtime_unresolved"
+          : target
           ? "inactive_destination"
           : "missing_destination",
   });
@@ -142,7 +149,7 @@ export async function POST(req: Request) {
     });
   }
 
-  if (supervised) {
+  if (supervisedOwned) {
     return NextResponse.json({
       dynamic_variables: SUPERVISED_UNAVAILABLE_CONTEXT,
       conversation: { metadata: { execution_mode: "SUPERVISED_UNAVAILABLE" } },

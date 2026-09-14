@@ -320,6 +320,7 @@ describe("supervised assistant preflight", () => {
     recordingEnabled: false,
     providerMemoryEnabled: false,
     allowedTools: ["hangup", "transfer"],
+    transferDestinationE164: "+1 (555) 555-0123",
     insightGroupConfigured: true,
     messageHistoryUpdatesEnabled: true,
     numberRecordingEnabled: false,
@@ -333,6 +334,7 @@ describe("supervised assistant preflight", () => {
       validateSupervisedAssistantPreflight(attested, {
         recordingEnabled: false,
         allowedTools: ["hangup", "transfer"],
+        transferDestination: "+15555550123",
       }).assistantId,
     ).toBe("assistant-1");
   });
@@ -342,12 +344,14 @@ describe("supervised assistant preflight", () => {
       validateSupervisedAssistantPreflight({ ...attested, recordingEnabled: true }, {
         recordingEnabled: false,
         allowedTools: ["hangup", "transfer"],
+        transferDestination: "+15555550123",
       }),
     ).toThrow("assistant_recording_policy_mismatch");
     expect(() =>
       validateSupervisedAssistantPreflight({ ...attested, numberRecordingEnabled: true }, {
         recordingEnabled: false,
         allowedTools: ["hangup", "transfer"],
+        transferDestination: "+15555550123",
       }),
     ).toThrow("number_recording_policy_mismatch");
   });
@@ -357,8 +361,18 @@ describe("supervised assistant preflight", () => {
       validateSupervisedAssistantPreflight(attested, {
         recordingEnabled: true,
         allowedTools: ["hangup", "transfer"],
+        transferDestination: "+15555550123",
       }),
     ).toThrow("assistant_recording_policy_mismatch");
+  });
+
+  test("binds the transfer tool to the approved escalation contact", () => {
+    const expectation = { recordingEnabled: false, allowedTools: ["hangup", "transfer"], transferDestination: "+15555550123" };
+    expect(validateSupervisedAssistantPreflight(attested, expectation).transferDestinationE164).toBe("+1 (555) 555-0123");
+    expect(() => validateSupervisedAssistantPreflight({ ...attested, transferDestinationE164: "+15555550999" }, expectation)).toThrow("assistant_transfer_destination_mismatch");
+    expect(() => validateSupervisedAssistantPreflight({ ...attested, transferDestinationE164: undefined }, expectation)).toThrow("assistant_transfer_destination_mismatch");
+    expect(() => validateSupervisedAssistantPreflight(attested, { ...expectation, transferDestination: null })).toThrow("escalation_contact_required_for_transfer");
+    expect(validateSupervisedAssistantPreflight({ ...attested, allowedTools: ["hangup"], transferDestinationE164: undefined }, { recordingEnabled: false, allowedTools: ["hangup"] }).assistantId).toBe("assistant-1");
   });
 
   test("rejects a tool beyond the policy, memory, or a missing insight group", () => {
@@ -366,6 +380,7 @@ describe("supervised assistant preflight", () => {
       validateSupervisedAssistantPreflight({ ...attested, allowedTools: ["hangup", "transfer", "pay"] }, {
         recordingEnabled: false,
         allowedTools: ["hangup", "transfer"],
+        transferDestination: "+15555550123",
       }),
     ).toThrow("assistant_tools_exceed_policy");
     for (const allowedTools of [[], ["hangup"]]) {
@@ -373,6 +388,7 @@ describe("supervised assistant preflight", () => {
         validateSupervisedAssistantPreflight({ ...attested, allowedTools }, {
           recordingEnabled: false,
           allowedTools: ["hangup", "transfer"],
+        transferDestination: "+15555550123",
         }),
       ).toThrow("assistant_tools_missing_policy_tool");
     }
@@ -380,12 +396,14 @@ describe("supervised assistant preflight", () => {
       validateSupervisedAssistantPreflight({ ...attested, providerMemoryEnabled: true }, {
         recordingEnabled: false,
         allowedTools: ["hangup", "transfer"],
+        transferDestination: "+15555550123",
       }),
     ).toThrow("assistant_provider_memory_must_be_disabled");
     expect(() =>
       validateSupervisedAssistantPreflight({ ...attested, insightGroupConfigured: false }, {
         recordingEnabled: false,
         allowedTools: ["hangup", "transfer"],
+        transferDestination: "+15555550123",
       }),
     ).toThrow("assistant_insight_group_missing");
   });

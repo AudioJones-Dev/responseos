@@ -210,6 +210,7 @@ export async function configureSupervisedTenant(
         attestationPayload = validateSupervisedAssistantPreflight(attestation.payload, {
           recordingEnabled: resolved.policy.recordingEnabled,
           allowedTools: resolved.policy.allowedTools,
+          transferDestination: readOperatingConfigurationValue(built.memory, "contact.escalation.primary")?.phone ?? null,
         });
       }
     }

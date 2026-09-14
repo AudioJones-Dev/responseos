@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   setWebhookProcessStatus: vi.fn(),
   resolveActiveProspectAgentContext: vi.fn(),
   resolveSupervisedTenantForNumber: vi.fn(),
+  isSupervisedNumber: vi.fn(),
 }));
 
 vi.mock("@/lib/data/webhookEvents", () => ({
@@ -17,6 +18,7 @@ vi.mock("@/lib/prospectBootstrap/service", () => ({
 }));
 vi.mock("@/lib/agentExecution/supervisedRuntime", () => ({
   resolveSupervisedTenantForNumber: mocks.resolveSupervisedTenantForNumber,
+  isSupervisedNumber: mocks.isSupervisedNumber,
 }));
 
 const originalEnv = { ...process.env };
@@ -49,6 +51,7 @@ describe("signed Telnyx assistant initialization", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    mocks.isSupervisedNumber.mockResolvedValue(false);
     process.env = { ...originalEnv };
     process.env.TELNYX_PUBLIC_KEY = publicKey;
     process.env.RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED = "true";
@@ -122,6 +125,19 @@ describe("signed Telnyx assistant initialization", () => {
       signature_valid: true,
     }));
     expect(mocks.setWebhookProcessStatus).toHaveBeenCalledWith({ id: "ledger-1", process_status: "processed" });
+  });
+
+  test("an owned supervised number whose runtime fails closed never hears demonstration copy", async () => {
+    mocks.resolveSupervisedTenantForNumber.mockResolvedValue(null);
+    mocks.isSupervisedNumber.mockResolvedValue(true);
+    mocks.resolveActiveProspectAgentContext.mockResolvedValue({ accountId: "prospect", context: { demo_available: "true" } });
+    const { POST } = await import("@/app/api/webhooks/telnyx/assistant-initialization/route");
+    const response = await POST(signedRequest("+13055550777"));
+    const body = await response.json();
+    expect(body).toMatchObject({ conversation: { metadata: { execution_mode: "SUPERVISED_UNAVAILABLE" } } });
+    expect(JSON.stringify(body)).not.toContain("demonstration");
+    expect(mocks.resolveActiveProspectAgentContext).not.toHaveBeenCalled();
+    expect(mocks.setWebhookProcessStatus).toHaveBeenCalledWith(expect.objectContaining({ process_status: "rejected", process_error: "supervised_runtime_unresolved" }));
   });
 
   test("uses the generic unavailable context when no assignment resolves", async () => {

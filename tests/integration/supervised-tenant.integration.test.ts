@@ -60,6 +60,7 @@ function attestation(overrides: Record<string, unknown> = {}) {
     recordingEnabled: false,
     providerMemoryEnabled: false,
     allowedTools: ["hangup", "transfer"],
+    transferDestinationE164: "+15555550123",
     insightGroupConfigured: true,
     messageHistoryUpdatesEnabled: true,
     numberRecordingEnabled: false,
