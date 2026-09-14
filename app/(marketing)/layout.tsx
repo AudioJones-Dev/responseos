@@ -37,11 +37,11 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-3">
             <Link
               href="/demo/operator-console"
-              className="hidden text-sm text-ink-secondary transition-colors hover:text-ink sm:inline"
+              className="hidden text-sm text-ink-secondary transition-colors hover:text-ink lg:inline"
             >
               Operator console
             </Link>
-            <ButtonLink href="/audit" size="sm" glow>
+            <ButtonLink href="/audit" size="sm" glow className="whitespace-nowrap">
               Run a revenue audit
             </ButtonLink>
           </div>
@@ -54,9 +54,7 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-2 px-4 py-8 text-xs text-ink-muted sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-              <span className="font-display text-sm font-semibold text-ink-secondary">
-                ResponseOS
-              </span>
+              <Logo />
               <Link href="/pricing" className="hover:text-ink-secondary">
                 Pricing
               </Link>

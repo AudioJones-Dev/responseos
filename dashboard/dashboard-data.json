@@ -32,6 +32,19 @@
   ],
   "tasks": [
     {
+      "id": "G-13",
+      "phase": "Tech Debt & Hardening",
+      "title": "Adopt supplied logo pack, rebuild favicons, UI and label cleanup",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "Med",
+      "start": "2026-09-11",
+      "due": "2026-09-11",
+      "ref": 162,
+      "refType": "pull"
+    },
+    {
       "id": "CONVERGE-TRANSPORT",
       "ref": 167,
       "refType": "pull",

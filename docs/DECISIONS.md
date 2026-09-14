@@ -431,6 +431,8 @@ The **provider-abstraction principle is retained**: all providers sit behind `li
 
 **Consequences.** Asset production has a fixed, minimal target (two source marks → derived icons), preventing logo sprawl. Later favicon/app-icon work is a mechanical export from one source. No runtime/asset change now.
 
+**Follow-up (2026-09-11) — the two core assets are the owner-supplied logo pack, not Syne exports.** The owner chose the supplied `Response OS Logo Pack.zip` over the reconstructed RO SVGs, and PR #162 wires it into the web surface. Decisions 2 and 3 hold unchanged: favicons and app icons derive from the compact mark, the wordmark is the primary lockup, and the compact mark serves small surfaces. Decision 1's "Syne" description no longer fits — the pack's wordmark and `RO` mark have their own letterforms, while Syne remains the display typeface for headings (ADR-0021). The pack is raster-only, so 16/32/48px PNG frames take the place of `favicon.svg` in decision 2, and vector masters remain an open follow-up. Provenance, derivation rules, and QA live in [`brand/RESPONSEOS_ASSET_MANIFEST.md`](./brand/RESPONSEOS_ASSET_MANIFEST.md).
+
 ---
 
 ## ADR-0026 — Neon Postgres is the default structured-memory database (supersedes ADR-0003)
