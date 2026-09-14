@@ -3,6 +3,7 @@ import { queueCallReview } from "@/lib/callReview/service";
 import { after, NextResponse } from "next/server";
 import { runCrmSyncForCall } from "@/lib/crm/syncFinalizedCall";
 import {
+  backfillWebhookEvent,
   findAgentTargetForProviderCall,
   findInitializedProviderCallId,
   getWebhookProcessingState,
@@ -117,7 +118,13 @@ export async function POST(req: Request) {
   // A supervised tenant is a real client: its call evidence is retained, not
   // aged out on the prospect content clock.
   const retainPayload = Boolean(supervised) || (!personalized && Boolean(resolved));
-  const record = async (allowed: boolean, client?: import("@prisma/client").Prisma.TransactionClient) => recordWebhookEvent({
+  const payloadExpiresAt = retainPayload ? null : new Date((occurredAt ?? receivedAt).getTime() + PROSPECT_CONTENT_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+  // Remembered so a later backfill of an unscoped duplicate row stores the
+  // same body this delivery was permitted to store.
+  let bodyAllowed = false;
+  const record = async (allowed: boolean, client?: import("@prisma/client").Prisma.TransactionClient) => {
+    bodyAllowed = allowed;
+    return recordWebhookEvent({
     client,
 
     account_id: supervised?.accountId ?? resolved?.accountId,
@@ -131,10 +138,9 @@ export async function POST(req: Request) {
     provider_call_ids: getTelnyxCallIds(event.data.payload),
     // Only a number the provider itself put on this event anchors correlation.
     agent_target: directTarget ?? undefined,
-    ...(retainPayload
-      ? {}
-      : { payload_expires_at: new Date((occurredAt ?? receivedAt).getTime() + PROSPECT_CONTENT_RETENTION_DAYS * 24 * 60 * 60 * 1000) }),
-  });
+    ...(payloadExpiresAt ? { payload_expires_at: payloadExpiresAt } : {}),
+    });
+  };
   const ledger = supervised && providerCallId
     ? await withCaptureLock(supervised.accountId, providerCallId, async (client) => record(supervisedReady && await canRetainCallContent(supervised.accountId, providerCallId, event, client), client))
     : await record(Boolean(resolved));
@@ -233,6 +239,19 @@ export async function POST(req: Request) {
       state?.process_status === "received" &&
       Date.now() - state.received_at.getTime() > 30_000;
     const awaitingCorrelation = state?.process_status === "rejected" && state.process_error === "awaiting_call_correlation";
+    if (awaitingCorrelation) {
+      // The row was recorded unscoped before the call could be correlated;
+      // scope it to the tenant and its retention policy before it is processed.
+      await backfillWebhookEvent({
+        id: ledger.data.id,
+        account_id: assignment.accountId,
+        raw_body: JSON.stringify(bodyAllowed ? event : metadataOnly(event)),
+        payload_expires_at: payloadExpiresAt,
+        provider_call_id: providerCallId ?? undefined,
+        provider_call_ids: getTelnyxCallIds(event.data.payload),
+        agent_target: directTarget ?? undefined,
+      });
+    }
     if (state?.process_status === "error" || abandonedReceived || awaitingCorrelation) {
       normalizeAfterAck();
     }

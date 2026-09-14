@@ -255,6 +255,39 @@ export async function setWebhookProcessStatus(params: {
   });
 }
 
+/**
+ * Scopes a ledger row that was recorded before its call could be correlated.
+ *
+ * The first delivery of an uncorrelated event is stored unscoped and on the
+ * prospect expiry clock. Once a redelivery resolves the tenant, the row must
+ * carry that tenant, its retention policy, and the body that policy permits
+ * before it is normalized — otherwise supervised evidence sits unscoped and
+ * scheduled for purge.
+ */
+export async function backfillWebhookEvent(entry: {
+  id: string;
+  account_id: string;
+  raw_body: string;
+  payload_expires_at: Date | null;
+  provider_call_id?: string;
+  provider_call_ids?: readonly string[];
+  agent_target?: string;
+}): Promise<void> {
+  if (db === null) return;
+  const current = await db.webhookEvent.findUnique({ where: { id: entry.id }, select: { provider_call_ids: true } });
+  await db.webhookEvent.update({
+    where: { id: entry.id },
+    data: {
+      account_id: entry.account_id,
+      raw_body: entry.raw_body,
+      payload_expires_at: entry.payload_expires_at,
+      provider_call_id: entry.provider_call_id ?? undefined,
+      provider_call_ids: [...new Set([...(current?.provider_call_ids ?? []), ...(entry.provider_call_ids ?? []), ...(entry.provider_call_id ? [entry.provider_call_id] : [])])],
+      agent_target: entry.agent_target ?? undefined,
+    },
+  });
+}
+
 export async function getWebhookProcessingState(id: string): Promise<
   | { process_status: WebhookProcessStatus; process_error: string | null; received_at: Date }
   | null

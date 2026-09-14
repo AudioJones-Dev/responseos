@@ -5,6 +5,7 @@ import { PROSPECT_DEMO_POLICY } from "@/lib/prospectBootstrap/policy";
 
 const mocks = vi.hoisted(() => ({
   recordWebhookEvent: vi.fn(),
+  backfillWebhookEvent: vi.fn(),
   setWebhookProcessStatus: vi.fn(),
   findAgentTargetForProviderCall: vi.fn(),
   findInitializedProviderCallId: vi.fn(),
@@ -28,6 +29,7 @@ vi.mock("next/server", async (importOriginal) => ({
 }));
 vi.mock("@/lib/data/webhookEvents", () => ({
   recordWebhookEvent: mocks.recordWebhookEvent,
+  backfillWebhookEvent: mocks.backfillWebhookEvent,
   setWebhookProcessStatus: mocks.setWebhookProcessStatus,
   findAgentTargetForProviderCall: mocks.findAgentTargetForProviderCall,
   findInitializedProviderCallId: mocks.findInitializedProviderCallId,
@@ -132,6 +134,11 @@ describe("supervised Telnyx call lane", () => {
     await POST(request);
     await settle();
     expect(mocks.normalizeTelnyxEvent).toHaveBeenCalledOnce();
+    // The unscoped first-delivery row is claimed by the tenant and taken off
+    // the prospect expiry clock before it is normalized.
+    expect(mocks.backfillWebhookEvent).toHaveBeenCalledOnce();
+    expect(mocks.backfillWebhookEvent).toHaveBeenCalledWith(expect.objectContaining({ id: "ledger-1", account_id: supervisedTenant().accountId, payload_expires_at: null, provider_call_ids: expect.arrayContaining(["call-correlation"]) }));
+    expect(mocks.backfillWebhookEvent.mock.invocationCallOrder[0]).toBeLessThan(mocks.normalizeTelnyxEvent.mock.invocationCallOrder[0]);
   });
 
   test.each(["incomplete", "degraded", "out-of-scope"])("rejects %s supervised calls before retaining content or queuing review", async (reason) => {
