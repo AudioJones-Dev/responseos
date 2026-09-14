@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
   dispatchCompletedInteractionNotification: vi.fn(),
   canRetainCallContent: vi.fn(),
   queueCallReview: vi.fn(),
+  hasQueuedReview: vi.fn(),
   pending: [] as Promise<unknown>[],
 }));
 
@@ -50,7 +51,7 @@ vi.mock("@/lib/notifications/completedInteraction", () => ({
   dispatchCompletedInteractionNotification: mocks.dispatchCompletedInteractionNotification,
 }));
 
-vi.mock("@/lib/callReview/service", () => ({ queueCallReview: mocks.queueCallReview }));
+vi.mock("@/lib/callReview/service", () => ({ queueCallReview: mocks.queueCallReview, hasQueuedReview: mocks.hasQueuedReview }));
 vi.mock("@/lib/callReview/consent", async (original) => ({ ...await original<typeof import("@/lib/callReview/consent")>(), canRetainCallContent: mocks.canRetainCallContent, withCaptureLock: (_account: string, _provider: string, run: () => Promise<unknown>) => run() }));
 const originalEnv = { ...process.env };
 const keys = generateKeyPairSync("ed25519");
@@ -105,6 +106,7 @@ describe("supervised Telnyx call lane", () => {
     mocks.pending.length = 0;
     mocks.canRetainCallContent.mockResolvedValue(true);
     mocks.isSupervisedNumber.mockResolvedValue(false);
+    mocks.hasQueuedReview.mockResolvedValue(false);
     process.env = { ...originalEnv };
     process.env.TELNYX_PUBLIC_KEY = publicKey;
     process.env.RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED = "true";
@@ -206,6 +208,17 @@ describe("supervised Telnyx call lane", () => {
     expect(mocks.normalizeTelnyxEvent).toHaveBeenCalledOnce();
     expect(mocks.touchSupervisedAssignment).toHaveBeenCalled();
     expect(mocks.queueCallReview).not.toHaveBeenCalled();
+  });
+
+  test("a transcript update arriving after the insight event queues a fresh revision", async () => {
+    mocks.resolveSupervisedTenantForNumber.mockResolvedValue(supervisedTenant());
+    mocks.normalizeTelnyxEvent.mockResolvedValue({ callId: "call-1", finalized: false });
+    mocks.hasQueuedReview.mockResolvedValue(true);
+    const { POST } = await import("@/app/api/webhooks/telnyx/calls/route");
+    await POST(signedEvent({ call_control_id: "call-late", to: TENANT_NUMBER, message_history: [{ role: "user", content: "Actually a vehicle lift." }] }, "call.conversation.message_history_updated"));
+    await settle();
+    expect(mocks.hasQueuedReview).toHaveBeenCalledWith(supervisedTenant().accountId, "call-1");
+    expect(mocks.queueCallReview).toHaveBeenCalledOnce();
   });
 
   test("an owned number whose runtime cannot resolve is retained as retryable, never handed to the prospect lane", async () => {

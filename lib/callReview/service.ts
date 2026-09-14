@@ -67,6 +67,12 @@ function extractedDraftFields(payload: Record<string, unknown>) {
   return fields;
 }
 
+/** Whether any review revision exists for the call — a later evidence update must then produce a new one. */
+export async function hasQueuedReview(accountId: string, callId: string): Promise<boolean> {
+  if (!db) return false;
+  return (await db.callReview.count({ where: { account_id: accountId, call_id: callId } })) > 0;
+}
+
 export async function queueCallReview(accountId: string, callId: string, payload: Record<string, unknown>) {
   if (!db) throw new Error("database_unavailable");
   const extracted = extractedDraftFields(payload);

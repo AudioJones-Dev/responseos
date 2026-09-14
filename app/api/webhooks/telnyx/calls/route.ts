@@ -1,5 +1,5 @@
 import { canRetainCallContent, metadataOnly, withCaptureLock } from "@/lib/callReview/consent";
-import { queueCallReview } from "@/lib/callReview/service";
+import { hasQueuedReview, queueCallReview } from "@/lib/callReview/service";
 import { after, NextResponse } from "next/server";
 import { runCrmSyncForCall } from "@/lib/crm/syncFinalizedCall";
 import {
@@ -221,10 +221,13 @@ export async function POST(req: Request) {
 
       if (supervisedTenant) {
         await touchSupervisedAssignment(supervisedTenant.assignmentId, occurredAt ?? receivedAt);
-        // A review is queued only from the finalized insight event. A hangup
-        // completes the call but carries no analysis; a review built from it
-        // could be approved and dispatched before the evidence exists.
-        if (normalized.callId && normalized.finalized && contentAllowed) {
+        // The first review is queued only from the finalized insight event: a
+        // hangup completes the call but carries no analysis, and a review built
+        // from it could be dispatched before the evidence exists. Once a review
+        // exists, any later evidence (a message-history update after the
+        // insight) must produce a new revision, or the existing one is stale
+        // against the canonical transcript and can never be approved.
+        if (normalized.callId && contentAllowed && (normalized.finalized || await hasQueuedReview(assignment.accountId, normalized.callId))) {
           await queueCallReview(assignment.accountId, normalized.callId, event.data.payload);
         }
         return;
