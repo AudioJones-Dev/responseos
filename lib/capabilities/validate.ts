@@ -59,10 +59,16 @@ export function readinessGate(descriptor: CapabilityDescriptor): string | null {
 export function meetsMinimumExecutionMode(
   descriptor: CapabilityDescriptor,
   mode: unknown,
+  options: { authorizedGates?: readonly string[] } = {},
 ): boolean {
   if (!isExecutionMode(descriptor.minimumExecutionMode)) return false;
+  // Compared against the *resolved* mode, not the requested one. Requesting a
+  // gated mode whose gate is closed degrades to the demo lane, so comparing the
+  // raw request would call a capability eligible while it actually runs under a
+  // policy below its minimum — the same partial-execution hole one level down.
+  const resolved = resolveExecutionPolicy(mode, options).executionMode;
   const required = EXECUTION_MODES.indexOf(descriptor.minimumExecutionMode);
-  const offered = isExecutionMode(mode) ? EXECUTION_MODES.indexOf(mode) : 0;
+  const offered = isExecutionMode(resolved) ? EXECUTION_MODES.indexOf(resolved) : 0;
   return offered >= required;
 }
 
@@ -92,7 +98,7 @@ export function effectiveAllowedTools(
   mode: unknown,
   options: { authorizedGates?: readonly string[] } = {},
 ): string[] {
-  if (!meetsMinimumExecutionMode(descriptor, mode)) return [];
+  if (!meetsMinimumExecutionMode(descriptor, mode, options)) return [];
   const policy = resolveExecutionPolicy(mode, options);
   return descriptor.allowedTools.filter((tool) => policy.allowedTools.includes(tool));
 }

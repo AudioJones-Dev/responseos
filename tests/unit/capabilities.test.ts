@@ -133,10 +133,11 @@ describe("effective tools are an intersection, never a union", () => {
     allowedTools: Object.freeze(["hangup", "schedule"]),
   });
 
-  test("a gated mode grants nothing extra without its activation gate", () => {
-    expect(effectiveAllowedTools(scheduling, "PRODUCTION_SUPERVISED")).toEqual([
-      "hangup",
-    ]);
+  // Requesting the capability's own minimum with its gate closed degrades to
+  // the demo lane, which is *below* that minimum — so the capability is
+  // ineligible outright, not merely reduced to the overlapping tool.
+  test("a gated mode grants nothing without its activation gate", () => {
+    expect(effectiveAllowedTools(scheduling, "PRODUCTION_SUPERVISED")).toEqual([]);
   });
 
   test("the same mode grants the tool once its named gate is authorized", () => {
@@ -154,7 +155,7 @@ describe("effective tools are an intersection, never a union", () => {
         "MANAGED_AUTONOMY",
         { authorizedGates: ["v0.3-live-communications"] },
       ),
-    ).toEqual(["hangup"]);
+    ).toEqual([]);
   });
 
   test("a more permissive mode cannot widen a capability's declared set", () => {
@@ -252,12 +253,28 @@ describe("minimumExecutionMode is enforced, not merely declared", () => {
     expect(meetsMinimumExecutionMode(scheduling, "SUPERVISED_PILOT")).toBe(false);
   });
 
-  test("the minimum itself is eligible", () => {
-    expect(meetsMinimumExecutionMode(scheduling, "PRODUCTION_SUPERVISED")).toBe(true);
+  test("the minimum itself is eligible once its gate is authorized", () => {
+    expect(
+      meetsMinimumExecutionMode(scheduling, "PRODUCTION_SUPERVISED", {
+        authorizedGates: ["v0.3-live-communications"],
+      }),
+    ).toBe(true);
   });
 
-  test("a mode above the minimum is eligible", () => {
-    expect(meetsMinimumExecutionMode(scheduling, "MANAGED_AUTONOMY")).toBe(true);
+  test("a mode above the minimum is eligible once its own gate is authorized", () => {
+    expect(
+      meetsMinimumExecutionMode(scheduling, "MANAGED_AUTONOMY", {
+        authorizedGates: ["post-pilot-operator-authorization"],
+      }),
+    ).toBe(true);
+  });
+
+  // The gap Codex found: the requested mode equals the minimum, so a raw
+  // comparison passes, but the closed gate degrades the resolved policy to the
+  // demo lane and the capability would have run partially beneath its minimum.
+  test("eligibility is judged on the resolved mode, not the requested one", () => {
+    expect(meetsMinimumExecutionMode(scheduling, "PRODUCTION_SUPERVISED")).toBe(false);
+    expect(effectiveAllowedTools(scheduling, "PRODUCTION_SUPERVISED")).toEqual([]);
   });
 
   test("an unrecognised mode ranks as the demo lane", () => {
