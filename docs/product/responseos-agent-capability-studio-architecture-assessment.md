@@ -118,7 +118,7 @@ premature at N=1 without an engine.
 | Evidence writers (`Call`, `CallTranscript`, `QaLog`) | **VERIFIED SHIPPED** | `lib/providers/telnyx/normalize.ts:154,191` (call + transcript upsert); `lib/data/callTranscripts.ts:132`; `lib/data/qaLogs.ts:90` | Unlike `WorkflowRun`, these have real production writers. Evidence capture is operational. |
 | v0.3 authorization | VERIFIED (closed) | `ROADMAP.md` "Next milestone: v0.3 — gated"; doctrine §23 D-1 open | No live provider path. Simulation-only is the *only* lane available. |
 | Doctrine §22 item 7 (the pivot) | **VERIFIED NOT DONE** | §22 "Item 7 is the pivot"; no reconciled pilot in repo or changelog | The Studio optimizes capability N+1 before capability 1 is proven. |
-| Latest ADR | VERIFIED | `ADR-0053` is highest in `docs/DECISIONS.md` | A new decision would be **ADR-0057**. |
+| Latest ADR | VERIFIED (re-verified 2026-09-14) | At the `ec4eb1d` snapshot, `ADR-0053` was highest and this decision was drafted as ADR-0054. Since then `master` has landed ADR-0055 (#175) and ADR-0056 (#169), and open PR #176 claims ADR-0054 for the owner-ratified Pricing & Commercial Doctrine | This decision is therefore **ADR-0057** — the lowest number neither `master` nor any open PR claims. The snapshot and the numbering state are deliberately kept distinct here. |
 
 ---
 
