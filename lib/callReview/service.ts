@@ -68,18 +68,28 @@ function extractedDraftFields(payload: Record<string, unknown>) {
 }
 
 /** Whether any review revision exists for the call — a later evidence update must then produce a new one. */
-export async function hasQueuedReview(accountId: string, callId: string): Promise<boolean> {
-  if (!db) return false;
-  return (await db.callReview.count({ where: { account_id: accountId, call_id: callId } })) > 0;
+export async function hasQueuedReview(accountId: string, callId: string, client?: Prisma.TransactionClient): Promise<boolean> {
+  const reader = client ?? db;
+  if (!reader) return false;
+  return (await reader.callReview.count({ where: { account_id: accountId, call_id: callId } })) > 0;
 }
 
-export async function queueCallReview(accountId: string, callId: string, payload: Record<string, unknown>) {
+/**
+ * Creates the next review revision from canonical evidence.
+ *
+ * When called with the capture lock's transaction client, the revision is
+ * created in the same transaction that normalized the evidence, so there is no
+ * committed state in which the call's evidence is newer than its latest
+ * revision. Approval takes the same capture lock, so it cannot run inside that
+ * window either.
+ */
+export async function queueCallReview(accountId: string, callId: string, payload: Record<string, unknown>, client?: Prisma.TransactionClient) {
   if (!db) throw new Error("database_unavailable");
   const extracted = extractedDraftFields(payload);
   // Canonical evidence is read under the same lock that serializes revisions,
   // so an older request cannot land a higher revision carrying stale evidence
   // after a newer one has already committed.
-  return db.$transaction(async (tx) => {
+  const run = async (tx: Prisma.TransactionClient) => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${accountId + ":" + callId}))`;
     const call = await tx.call.findFirst({ where: { id: callId, account_id: accountId } });
     if (!call?.provider_call_id || !call.review_required) throw new Error("review_call_missing");
@@ -104,7 +114,8 @@ export async function queueCallReview(accountId: string, callId: string, payload
       ],
     };
     return tx.callReview.create({ data: { account_id: accountId, call_id: callId, revision: (latest?.revision ?? 0) + 1, source_hash: hash, evidence_json: { transcript: call.transcript, summary: call.summary, snapshotId: capture.snapshot_id }, payload_json: draft as Prisma.InputJsonValue, recipient: recipient?.enabled ? recipient.recipient : "" } });
-  });
+  };
+  return client ? run(client) : db.$transaction(run);
 }
 
 export async function decideCallReview(id: string, revision: number, action: "approve" | "reject", payload?: ReviewPayload) {
@@ -113,6 +124,11 @@ export async function decideCallReview(id: string, revision: number, action: "ap
   return db.$transaction(async (tx) => {
     const row = await tx.callReview.findUnique({ where: { id } });
     if (!row) throw new Error("not_found");
+    // Same lock order as the webhook (capture, then review): approval waits
+    // for any in-flight normalization and the revision it queues, so it can
+    // never approve against evidence that is about to be superseded.
+    const located = await tx.call.findFirst({ where: { id: row.call_id, account_id: row.account_id }, select: { provider_call_id: true } });
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${"capture:" + row.account_id + ":" + (located?.provider_call_id ?? row.call_id)}))`;
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${row.account_id + ":" + row.call_id}))`;
     const latest = await tx.callReview.findFirst({ where: { account_id: row.account_id, call_id: row.call_id }, orderBy: { revision: "desc" } });
     if (row.revision !== revision || latest?.id !== row.id || row.status !== "pending") throw new Error("stale_review");

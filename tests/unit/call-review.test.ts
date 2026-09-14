@@ -29,7 +29,7 @@ beforeEach(() => {
   mocks.db.callReview.findUnique.mockResolvedValue({ ...base });
   mocks.db.callReview.findFirst.mockResolvedValue({ ...base });
   mocks.db.callReview.updateMany.mockResolvedValue({ count: 1 });
-  mocks.db.call.findFirst.mockResolvedValue({ transcript: "caller: I need a ramp", summary: "summary" });
+  mocks.db.call.findFirst.mockResolvedValue({ provider_call_id: "pc", transcript: "caller: I need a ramp", summary: "summary" });
   mocks.gate.mockResolvedValue(true);
   mocks.crm.mockResolvedValue({ ok: true, data: { status: "succeeded" } });
   mocks.send.mockResolvedValue({ providerMessageId: "email-1" });
@@ -100,6 +100,12 @@ describe("review authorization", () => {
     mocks.db.callReview.findFirst.mockResolvedValue({ ...base, id: "newer", revision: 2 });
     await expect(decideCallReview("review", 1, "approve", payload)).rejects.toThrow("stale_review");
     expect(mocks.db.callReview.updateMany).not.toHaveBeenCalled();
+  });
+  test("approval takes the capture lock before the review lock", async () => {
+    await decideCallReview("review", 1, "approve", payload);
+    const lockKeys = mocks.db.$executeRaw.mock.calls.map((call) => call[1]);
+    expect(lockKeys[0]).toBe("capture:account:pc");
+    expect(lockKeys[1]).toBe("account:call");
   });
   test("approval records the reviewer but sends nothing", async () => {
     await decideCallReview("review", 1, "approve", payload);

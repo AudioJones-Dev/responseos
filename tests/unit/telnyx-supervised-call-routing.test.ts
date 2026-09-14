@@ -217,8 +217,12 @@ describe("supervised Telnyx call lane", () => {
     const { POST } = await import("@/app/api/webhooks/telnyx/calls/route");
     await POST(signedEvent({ call_control_id: "call-late", to: TENANT_NUMBER, message_history: [{ role: "user", content: "Actually a vehicle lift." }] }, "call.conversation.message_history_updated"));
     await settle();
-    expect(mocks.hasQueuedReview).toHaveBeenCalledWith(supervisedTenant().accountId, "call-1");
+    expect(mocks.hasQueuedReview.mock.calls[0].slice(0, 2)).toEqual([supervisedTenant().accountId, "call-1"]);
     expect(mocks.queueCallReview).toHaveBeenCalledOnce();
+    // Both calls happen inside the capture-locked normalization closure, i.e.
+    // before the lock is released — the order relative to normalization proves it.
+    expect(mocks.queueCallReview.mock.invocationCallOrder[0]).toBeGreaterThan(mocks.normalizeTelnyxEvent.mock.invocationCallOrder[0]);
+    expect(mocks.queueCallReview.mock.invocationCallOrder[0]).toBeLessThan(mocks.touchSupervisedAssignment.mock.invocationCallOrder[0]);
   });
 
   test("an owned number whose runtime cannot resolve is retained as retryable, never handed to the prospect lane", async () => {

@@ -213,23 +213,25 @@ export async function POST(req: Request) {
           ? { transcriptExpiresAt: new Date(occurredAt.getTime() + PROSPECT_CONTENT_RETENTION_DAYS * 24 * 60 * 60 * 1000) }
           : {}),
       });
-        return { normalized, contentAllowed };
-      };
-      const { normalized, contentAllowed } = supervisedTenant && providerCallId
-        ? await withCaptureLock(assignment.accountId, providerCallId, normalize) : await normalize();
-
-
-      if (supervisedTenant) {
-        await touchSupervisedAssignment(supervisedTenant.assignmentId, occurredAt ?? receivedAt);
+        // The review revision is created inside the same capture-locked
+        // transaction as the normalization it reflects, so no committed state
+        // exists in which the evidence is newer than the latest revision.
         // The first review is queued only from the finalized insight event: a
         // hangup completes the call but carries no analysis, and a review built
         // from it could be dispatched before the evidence exists. Once a review
-        // exists, any later evidence (a message-history update after the
-        // insight) must produce a new revision, or the existing one is stale
-        // against the canonical transcript and can never be approved.
-        if (normalized.callId && contentAllowed && (normalized.finalized || await hasQueuedReview(assignment.accountId, normalized.callId))) {
-          await queueCallReview(assignment.accountId, normalized.callId, event.data.payload);
+        // exists, any later evidence must produce a new revision, or the
+        // existing one is stale against the canonical call and can never be
+        // approved.
+        if (supervisedTenant && normalized.callId && (normalized.finalized && contentAllowed || await hasQueuedReview(assignment.accountId, normalized.callId, client))) {
+          await queueCallReview(assignment.accountId, normalized.callId, contentAllowed ? event.data.payload : metadataOnly(event).data.payload, client);
         }
+        return { normalized, contentAllowed };
+      };
+      const { normalized } = supervisedTenant && providerCallId
+        ? await withCaptureLock(assignment.accountId, providerCallId, normalize) : await normalize();
+
+      if (supervisedTenant) {
+        await touchSupervisedAssignment(supervisedTenant.assignmentId, occurredAt ?? receivedAt);
         return;
       }
 
