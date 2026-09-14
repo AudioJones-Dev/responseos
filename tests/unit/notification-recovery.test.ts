@@ -1,8 +1,8 @@
 import { beforeEach, expect, test, vi } from "vitest";
 import { dispatchCompletedInteractionNotification, retryCompletedInteractionNotification } from "@/lib/notifications/completedInteraction";
-const mocks = vi.hoisted(() => ({ call: vi.fn(), find: vi.fn(), update: vi.fn(), send: vi.fn() }));
-vi.mock("@/lib/auth/session", () => ({ requireRole: async () => ({}) }));
-vi.mock("@/lib/db/client", () => ({ db: { call: { findFirst: mocks.call }, notification: { findUnique: mocks.find, update: mocks.update } } }));
+const mocks = vi.hoisted(() => ({ call: vi.fn(), find: vi.fn(), update: vi.fn(), send: vi.fn(), audit: vi.fn() }));
+vi.mock("@/lib/auth/session", () => ({ requireRole: async () => ({ user: { id: "operator", role: "operator" } }) }));
+vi.mock("@/lib/db/client", () => ({ db: { call: { findFirst: mocks.call }, notification: { findUnique: mocks.find, update: mocks.update }, auditLog: { create: mocks.audit } } }));
 const provider = { providerId: "resend" as const, send: mocks.send };
 const row = { id: "notification", account_id: "account", call_id: "call", recipient: "owner@example.test", subject: "Callback", message: "Approved summary", status: "failed", provider: "resend", attempt_count: 1, last_error_code: "email_request_failed", provider_message_id: null };
 beforeEach(() => {
@@ -20,6 +20,9 @@ test("provider acceptance is reconciled without sending again after persistence 
   mocks.find.mockResolvedValue({ ...row, provider_message_id: "accepted-id", last_error_code: "accepted_delivery_reconciliation_required" });
   expect(await retryCompletedInteractionNotification({ id: "notification", providerOverride: provider })).toMatchObject({ ok: true, data: { status: "sent" } });
   expect(mocks.send).toHaveBeenCalledTimes(1);
+  // The operator who triggered the retry, and its outcome, are on the audit trail.
+  expect(mocks.audit).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ action: "notification_retry_attempt", actor_user_id: "operator", target_type: "Notification", target_id: "notification" }) }));
+  expect(mocks.audit).toHaveBeenLastCalledWith(expect.objectContaining({ data: expect.objectContaining({ action: "notification_retry_outcome", metadata_json: expect.objectContaining({ status: "sent" }) }) }));
 });
 test("a mock acceptance cannot be reconciled as sent when live delivery is required", async () => {
   mocks.find.mockResolvedValue({ ...row, provider: "mock", provider_message_id: "mock-id", last_error_code: "accepted_delivery_reconciliation_required" });

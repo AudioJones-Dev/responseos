@@ -1,4 +1,5 @@
 import "@/lib/serverOnlyGuard";
+import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
 import { requireRole } from "@/lib/auth/session";
 import { err, errFromThrown, ok, type Result } from "@/lib/data/result";
@@ -304,8 +305,9 @@ export async function retryCompletedInteractionNotification(params: {
   providerOverride?: EmailProvider;
   now?: Date;
 }): Promise<Result<CompletedInteractionDispatch>> {
+  let operator: Awaited<ReturnType<typeof requireRole>>;
   try {
-    await requireRole(["aj_admin", "operator"]);
+    operator = await requireRole(["aj_admin", "operator"]);
   } catch (error) {
     return errFromThrown(error);
   }
@@ -321,13 +323,23 @@ export async function retryCompletedInteractionNotification(params: {
       return err("invalid_transition", "Only a call notification can be retried.");
     }
 
-    return await dispatchCompletedInteractionNotification({
+    // A retry is an operator-triggered external send; the initiating actor and
+    // the outcome are audited like a call-review dispatch.
+    const audit = (action: string, metadata: Record<string, unknown>) => db!.auditLog.create({
+      data: { account_id: notification.account_id, actor_type: "user", actor_user_id: operator.user.id, actor_role: operator.user.role, action, category: "workflow", target_type: "Notification", target_id: notification.id, metadata_json: metadata as Prisma.InputJsonValue },
+    });
+    await audit("notification_retry_attempt", { callId: notification.call_id, provider: notification.provider, lastErrorCode: notification.last_error_code });
+    const result = await dispatchCompletedInteractionNotification({
       accountId: notification.account_id,
       callId: notification.call_id,
       requireLiveProvider: notification.provider === "resend" || notification.last_error_code === "live_provider_disabled",
       providerOverride: params.providerOverride,
       now: params.now,
     });
+    await audit("notification_retry_outcome", result.ok
+      ? { status: result.data.status, reason: result.data.reason ?? null, providerId: result.data.providerId ?? null }
+      : { status: "error", code: result.error.code });
+    return result;
   } catch (error) {
     return errFromThrown(error);
   }
