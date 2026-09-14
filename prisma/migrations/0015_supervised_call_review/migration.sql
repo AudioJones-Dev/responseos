@@ -10,7 +10,8 @@ CREATE INDEX "CallCaptureSession_account_id_idx" ON "CallCaptureSession"("accoun
 CREATE TABLE "CallConsentEvent" (
   "id" TEXT PRIMARY KEY, "account_id" TEXT NOT NULL, "provider_call_id" TEXT NOT NULL,
   "event_key" TEXT NOT NULL, "action" TEXT NOT NULL, "artifact" TEXT NOT NULL,
-  "disclosure_ref" TEXT NOT NULL, "evidence_ref" TEXT NOT NULL, "actor_user_id" TEXT NOT NULL,
+  "disclosure_ref" TEXT NOT NULL, "evidence_ref" TEXT NOT NULL,
+  "jurisdiction_basis" TEXT NOT NULL, "source_channel" TEXT NOT NULL, "actor_user_id" TEXT NOT NULL,
   "occurred_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE UNIQUE INDEX "CallConsentEvent_event_key_key" ON "CallConsentEvent"("event_key");

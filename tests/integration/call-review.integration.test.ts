@@ -41,7 +41,7 @@ test("signed initialization aliases recover both the tenant and canonical captur
 test("console limits calls after grouping revisions and loads each capture's consent", async () => {
   const row = (await queueCallReview(accountId, callId, { summary: value.summary }))!;
   await prisma.callReview.createMany({ data: Array.from({ length: 60 }, (_, index) => ({ account_id: accountId, call_id: "newer-call", revision: index + 1, source_hash: `hash-${index}`, evidence_json: {}, payload_json: {}, recipient: "owner@example.test", created_at: new Date(now.getTime() + index + 1) })) });
-  await prisma.callConsentEvent.createMany({ data: Array.from({ length: 60 }, (_, index) => ({ account_id: accountId, provider_call_id: index ? "unrelated" : "provider-call", event_key: `event-${index}`, action: "grant", artifact: "transcript", disclosure_ref: "test", evidence_ref: "test", actor_user_id: "operator", occurred_at: new Date(now.getTime() + index) })) });
+  await prisma.callConsentEvent.createMany({ data: Array.from({ length: 60 }, (_, index) => ({ account_id: accountId, provider_call_id: index ? "unrelated" : "provider-call", event_key: `event-${index}`, action: "grant", artifact: "transcript", disclosure_ref: "test", evidence_ref: "test", jurisdiction_basis: "test", source_channel: "call", actor_user_id: "operator", occurred_at: new Date(now.getTime() + index) })) });
   const consoleData = await loadCallReviewConsole();
   expect(consoleData.reviews.map((review) => review.id)).toContain(row.id);
   expect(consoleData.reviews.find((review) => review.call_id === "newer-call")?.revision).toBe(60);
@@ -120,11 +120,11 @@ test("a client cannot review another tenant's call", async () => {
 test("capture requires the initialized tenant, consent and interval; withdrawal closes it", async () => {
   const event = { data: { id: "event", event_type: "call.conversation.ended", payload: { capture_started_at: new Date(now.getTime() + 1000).toISOString(), capture_ended_at: new Date(now.getTime() + 2000).toISOString() } } };
   expect(await canRetainCallContent(accountId, "provider-call", event)).toBe(false);
-  await prisma.callConsentEvent.create({ data: { account_id: accountId, provider_call_id: "provider-call", event_key: "grant", action: "grant", artifact: "transcript", disclosure_ref: "fixture", evidence_ref: "fixture", actor_user_id: "test", occurred_at: now } });
+  await prisma.callConsentEvent.create({ data: { account_id: accountId, provider_call_id: "provider-call", event_key: "grant", action: "grant", artifact: "transcript", disclosure_ref: "fixture", evidence_ref: "fixture", jurisdiction_basis: "fixture", source_channel: "call", actor_user_id: "test", occurred_at: now } });
   expect(await canRetainCallContent(accountId, "provider-call", event)).toBe(true);
   const futureEvent = { data: { ...event.data, payload: { ...event.data.payload, capture_ended_at: new Date(Date.now() + 60_000).toISOString() } } };
   expect(await canRetainCallContent(accountId, "provider-call", futureEvent)).toBe(false);
   expect(await canRetainCallContent("other-account", "provider-call", event)).toBe(false);
-  await prisma.callConsentEvent.create({ data: { account_id: accountId, provider_call_id: "provider-call", event_key: "withdraw", action: "withdraw", artifact: "transcript", disclosure_ref: "fixture", evidence_ref: "fixture", actor_user_id: "test", occurred_at: new Date(now.getTime() + 1500) } });
+  await prisma.callConsentEvent.create({ data: { account_id: accountId, provider_call_id: "provider-call", event_key: "withdraw", action: "withdraw", artifact: "transcript", disclosure_ref: "fixture", evidence_ref: "fixture", jurisdiction_basis: "fixture", source_channel: "call", actor_user_id: "test", occurred_at: new Date(now.getTime() + 1500) } });
   expect(await canRetainCallContent(accountId, "provider-call", event)).toBe(false);
 });

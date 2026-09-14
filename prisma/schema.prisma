@@ -335,6 +335,10 @@ model CallConsentEvent {
   artifact         String
   disclosure_ref   String
   evidence_ref     String
+  /// ADR-0055 §1: the jurisdiction basis and the source channel are part of the
+  /// minimum immutable record of authority.
+  jurisdiction_basis String
+  source_channel     String
   actor_user_id    String
   occurred_at      DateTime @default(now())
   @@index([account_id, provider_call_id, occurred_at])
