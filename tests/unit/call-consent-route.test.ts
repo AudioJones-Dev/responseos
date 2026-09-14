@@ -32,3 +32,9 @@ test("rejects a caller-supplied consent timestamp", async () => {
   expect(response.status).toBe(422);
   expect(mocks.upsert).not.toHaveBeenCalled();
 });
+
+test("reports consent persistence failure as unavailable", async () => {
+  mocks.upsert.mockRejectedValue(new Error("database_unavailable"));
+  const response = await POST(new Request("https://example.test/consent", { method: "POST", body: JSON.stringify(input) }), { params: Promise.resolve({ id: "capture" }) });
+  expect(response.status).toBe(503);
+});

@@ -59,6 +59,13 @@ describe("signed Telnyx assistant initialization", () => {
   });
   afterEach(() => { process.env = { ...originalEnv }; });
 
+  test.each(["PRODUCTION_SUPERVISED", "MANAGED_AUTONOMY"])("does not initialize the out-of-scope %s mode", async (mode) => {
+    mocks.resolveSupervisedTenantForNumber.mockResolvedValue({ accountId: "fixture", readiness: { ready: true }, resolved: { mode, degraded: null } });
+    const { POST } = await import("@/app/api/webhooks/telnyx/assistant-initialization/route");
+    const response = await POST(signedRequest());
+    expect(await response.json()).toMatchObject({ dynamic_variables: { supervised_available: "false" } });
+  });
+
   test("requires the live ingest gate before anything is resolved or recorded", async () => {
     delete process.env.RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED;
     const { POST } = await import("@/app/api/webhooks/telnyx/assistant-initialization/route");

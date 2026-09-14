@@ -18,6 +18,28 @@ export async function requireReviewOperator() {
   return session;
 }
 
+export async function loadCallReviewConsole() {
+  await requireReviewOperator();
+  if (!db) return { captures: [], reviews: [] };
+  const captures = await db.callCaptureSession.findMany({ orderBy: { created_at: "desc" }, take: 20 });
+  const withConsent = await Promise.all(captures.map(async (capture) => ({
+    ...capture,
+    consentAction: (await db!.callConsentEvent.findFirst({
+      where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, artifact: "transcript" },
+      orderBy: [{ occurred_at: "desc" }, { id: "desc" }], select: { action: true },
+    }))?.action ?? null,
+  })));
+  const latest = await db.callReview.groupBy({
+    by: ["account_id", "call_id"], _max: { revision: true, created_at: true },
+    orderBy: { _max: { created_at: "desc" } }, take: 50,
+  });
+  const reviews = latest.length ? await db.callReview.findMany({
+    where: { OR: latest.map((row) => ({ account_id: row.account_id, call_id: row.call_id, revision: row._max.revision! })) },
+    orderBy: { created_at: "desc" },
+  }) : [];
+  return { captures: withConsent, reviews };
+}
+
 export async function queueCallReview(accountId: string, callId: string, payload: Record<string, unknown>) {
   if (!db) throw new Error("database_unavailable");
   const call = await db.call.findFirst({ where: { id: callId, account_id: accountId } });

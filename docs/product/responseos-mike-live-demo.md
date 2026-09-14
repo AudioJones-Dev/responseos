@@ -38,6 +38,15 @@ Activation requires transcription to be enabled because this workflow requires a
 - `/admin/demo-operations` shows review, transcript, email preview and delivery state. Full transcript remains authenticated and is never exported to CRM or email.
 - Additive migrations 0014 (reused runtime) and 0015 (capture/consent/review). Existing rows default to legacy behavior; new supervised calls require approval. Existing prospect-demo behavior is preserved.
 
+Review repairs also enforce these limits:
+
+- Configuration input is checked before service dispatch. Duplicate weekdays/dates and inherited object keys are rejected. Activation renders the complete context and rejects overflow without truncation. Dry runs return a null final snapshot hash; apply returns the persisted snapshot hash.
+- Changing an active dedicated number is blocked until the existing assignment is explicitly released. This demonstration does not silently perform provider release or number replacement.
+- Signed webhook rows preserve indexed call aliases. A numberless event can recover its target and original initialized capture identity from those aliases; ambiguous targets are refused. An event still awaiting correlation returns HTTP 503 and retains metadata only. [Telnyx documents retrying 5xx voice webhook responses](https://developers.telnyx.com/docs/voice/programmable-voice/voice-api-webhooks). Recovery still depends on redelivery arriving while consent permits retention; provider retry exhaustion needs operator reconciliation.
+- The console selects the latest review per call before limiting calls, and reads current consent separately for each displayed capture.
+- Live CRM dispatch rejects existing mock operations, including mock successes. Supervised retries must use the original approved review's dispatch action; the legacy CRM retry endpoint rejects them. This retains the reviewed payload and current execution-gate checks without inferring a newer approval.
+- A notification accepted by the provider but not persisted successfully receives a reconciliation code and retained provider message ID when the recovery write succeeds. Operator retry repairs that state without another send. If even recovery persistence fails, delivery remains uncertain and requires reconciliation.
+
 ## Architecture checklist (§21)
 
 1. Layers: communications capture, operational memory, follow-up.
@@ -88,4 +97,4 @@ Allow 20–30 minutes: explain real facts versus fictional scenarios and the app
 
 ### Repair validation — 2026-09-13
 
-After reconciling master at `a9747cc`: `npm run lint`, `npm run typecheck`, `npm test` (697 tests), `npm run test:integration` (185 tests), `npm run build` with the isolated database, and `npm audit --audit-level=high` passed. Prisma migration diff, all 15 migrations and seed passed against synthetic Postgres 16 on loopback. Configuration validation passed. No provider effect, live call, deployment or client-data mutation was exercised. Independent CodeRabbit review and GitHub CI of the published repair remain separate gates.
+After reconciling master at `a9747cc`: `npm run lint`, `npm run typecheck`, `npm test` (710 tests), `npm run test:integration` (192 tests), `npm run build` with the isolated database, and `npm audit --audit-level=high` passed. Prisma migration diff, all 15 migrations and seed passed against synthetic Postgres 16 on loopback. Configuration validation passed. No provider effect, live call, deployment or client-data mutation was exercised. Independent CodeRabbit review and GitHub CI of the published repair remain separate gates.

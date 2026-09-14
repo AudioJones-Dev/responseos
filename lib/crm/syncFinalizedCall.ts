@@ -99,6 +99,9 @@ export async function runCrmSyncForCall(params: {
       },
       update: {},
     });
+    if (params.requireLiveProvider && operation.provider !== "hubspot") {
+      return err("live_provider_reconciliation_required", "The existing CRM operation was not created for live delivery; reconcile it before dispatch.");
+    }
     if (operation.status !== "pending" && operation.status !== "retryable_failed") {
       return ok(toView(operation));
     }
@@ -348,6 +351,8 @@ export async function prepareCrmSyncRetry(params: {
   if (operation.status !== "retryable_failed") {
     return err("invalid_transition", "Only retryable CRM operations can be retried.");
   }
+  const call = await db.call.findFirst({ where: { id: operation.call_id, account_id: params.accountId } });
+  if (call?.review_required) return err("review_dispatch_required", "Retry from the originally approved call review so its payload and execution gate remain authoritative.");
   return ok({
     callId: operation.call_id,
     sourceWebhookId: operation.source_webhook_id ?? undefined,

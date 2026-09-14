@@ -3,11 +3,12 @@ import { Prisma } from "@prisma/client";
 import { disconnectTestDb, prisma, resetAndSeedTestDb, setDevSession } from "./setup";
 import { buildOperatingConfigurationSnapshot } from "@/lib/agentExecution/operatingConfigurationSnapshot";
 import { canRetainCallContent } from "@/lib/callReview/consent";
-import { decideCallReview, queueCallReview } from "@/lib/callReview/service";
-import { runCrmSyncForCall } from "@/lib/crm/syncFinalizedCall";
+import { decideCallReview, queueCallReview, loadCallReviewConsole } from "@/lib/callReview/service";
+import { runCrmSyncForCall, prepareCrmSyncRetry } from "@/lib/crm/syncFinalizedCall";
 import { dispatchCompletedInteractionNotification } from "@/lib/notifications/completedInteraction";
 import { MockCrmProvider } from "@/lib/providers/crm";
 import { ReviewPayloadSchema } from "@/lib/callReview/contracts";
+import { recordWebhookEvent, findAgentTargetForProviderCall, findInitializedProviderCallId } from "@/lib/data/webhookEvents";
 
 const now = new Date();
 const value = ReviewPayloadSchema.parse({ caller: "Example Caller", phone: "+15555550199", interaction: "new_sales", product: "ramp", location: "Example city", summary: "Request for ramp evaluation.", qualification: "qualified", outcome: "QUALIFIED_FREE_EVALUATION", urgency: "medium", callbackWindow: "Tomorrow", nextAction: "Call back", flags: [] });
@@ -27,6 +28,38 @@ beforeEach(async () => {
   callId = call.id;
 });
 afterAll(disconnectTestDb);
+
+test("signed initialization aliases recover both the tenant and canonical capture identity", async () => {
+  await recordWebhookEvent({ account_id: accountId, provider: "telnyx", provider_event_id: "aliases", event_type: "assistant.initialization", raw_body: "{}", signature_valid: true, provider_call_id: "provider-call", provider_call_ids: ["provider-call", "shared-session"], agent_target: "+15555550188" });
+  expect(await findAgentTargetForProviderCall({ provider: "telnyx", providerCallIds: ["shared-session"] })).toBe("+15555550188");
+  expect(await findInitializedProviderCallId({ provider: "telnyx", providerCallIds: ["shared-session"], target: "+15555550188" })).toBe("provider-call");
+  expect(await findInitializedProviderCallId({ provider: "telnyx", providerCallIds: ["shared-session"], target: "+15555550189" })).toBeNull();
+  await recordWebhookEvent({ account_id: "another-account", provider: "telnyx", provider_event_id: "other-leg", event_type: "assistant.initialization", raw_body: "{}", signature_valid: true, provider_call_id: "other-control", provider_call_ids: ["shared-session"], agent_target: "+15555550189" });
+  expect(await findAgentTargetForProviderCall({ provider: "telnyx", providerCallIds: ["shared-session"] })).toBeNull();
+});
+
+test("console limits calls after grouping revisions and loads each capture's consent", async () => {
+  const row = (await queueCallReview(accountId, callId, { summary: value.summary }))!;
+  await prisma.callReview.createMany({ data: Array.from({ length: 60 }, (_, index) => ({ account_id: accountId, call_id: "newer-call", revision: index + 1, source_hash: `hash-${index}`, evidence_json: {}, payload_json: {}, recipient: "owner@example.test", created_at: new Date(now.getTime() + index + 1) })) });
+  await prisma.callConsentEvent.createMany({ data: Array.from({ length: 60 }, (_, index) => ({ account_id: accountId, provider_call_id: index ? "unrelated" : "provider-call", event_key: `event-${index}`, action: "grant", artifact: "transcript", disclosure_ref: "test", evidence_ref: "test", actor_user_id: "operator", occurred_at: new Date(now.getTime() + index) })) });
+  const consoleData = await loadCallReviewConsole();
+  expect(consoleData.reviews.map((review) => review.id)).toContain(row.id);
+  expect(consoleData.reviews.find((review) => review.call_id === "newer-call")?.revision).toBe(60);
+  expect(consoleData.captures.find((capture) => capture.provider_call_id === "provider-call")?.consentAction).toBe("grant");
+});
+
+test.each(["pending", "succeeded"] as const)("live CRM cannot reuse a %s mock operation", async (status) => {
+  await prisma.crmSyncOperation.create({ data: { account_id: accountId, call_id: callId, operation_key: `crm-call:${accountId}:${callId}`, provider: "mock", status } });
+  const provider = new MockCrmProvider();
+  const find = vi.spyOn(provider, "findContacts");
+  expect(await runCrmSyncForCall({ accountId, callId, requireLiveProvider: true, providerOverride: provider })).toMatchObject({ ok: false, error: { code: "live_provider_reconciliation_required" } });
+  expect(find).not.toHaveBeenCalled();
+});
+
+test("legacy retry directs supervised calls to their approved review", async () => {
+  const operation = await prisma.crmSyncOperation.create({ data: { account_id: accountId, call_id: callId, operation_key: `crm-call:${accountId}:${callId}`, provider: "hubspot", status: "retryable_failed" } });
+  expect(await prepareCrmSyncRetry({ id: operation.id, accountId })).toMatchObject({ ok: false, error: { code: "review_dispatch_required" } });
+});
 
 test("concurrent finalization creates one revision and approval has no external effects", async () => {
   const payload = { summary: value.summary, qualification: { status: "qualified" } };

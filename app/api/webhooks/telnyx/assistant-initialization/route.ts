@@ -8,6 +8,7 @@ import { errorResponse } from "@/lib/providers/webhook-helpers";
 import {
   getTelnyxAgentTarget,
   getTelnyxCallId,
+  getTelnyxCallIds,
   parseTelnyxWebhook,
   verifyTelnyxWebhook,
 } from "@/lib/providers/telnyx/webhook";
@@ -72,7 +73,7 @@ export async function POST(req: Request) {
     supervised !== null &&
     supervised.readiness.ready &&
     supervised.resolved.degraded === null &&
-    supervised.resolved.mode !== "PROSPECT_DEMO";
+    supervised.resolved.mode === "SUPERVISED_PILOT";
 
   const prospect =
     !supervised && target && process.env.RESPONSEOS_PROSPECT_BOOTSTRAP_ENABLED === "true"
@@ -88,6 +89,7 @@ export async function POST(req: Request) {
     signature_header: signature ?? undefined,
     signature_valid: true,
     provider_call_id: getTelnyxCallId(event.data.payload) ?? undefined,
+    provider_call_ids: getTelnyxCallIds(event.data.payload),
     // This is the event that binds a call id to the number it reached; later
     // insight events carry no number and correlate back through this row.
     agent_target: target ?? undefined,

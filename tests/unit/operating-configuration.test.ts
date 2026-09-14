@@ -8,10 +8,17 @@ import { compileBusinessMemorySnapshot, contentHash } from "@/lib/prospectBootst
 import {
   OPERATING_CONFIGURATION_REQUIREMENTS,
   evaluateOperatingConfiguration,
+  WeeklyOperatingHoursSchema, HolidayOperatingHoursSchema, isOperatingConfigurationKey,
 } from "@/lib/agentExecution/operatingConfiguration";
 import { EXECUTION_MODES, EXECUTION_MODE_ACTIVATION_GATES } from "@/lib/agentExecution/policy";
 
 const now = "2026-09-10T16:00:00.000Z";
+
+test("configuration rejects inherited keys and contradictory duplicate schedules", () => {
+  for (const key of ["constructor", "toString", "__proto__"]) expect(isOperatingConfigurationKey(key)).toBe(false);
+  expect(WeeklyOperatingHoursSchema.safeParse({ type: "schedule", timezone: "America/New_York", days: [{ day: "monday", closed: true }, { day: "monday", closed: false, opensAt: "09:00", closesAt: "17:00" }] }).success).toBe(false);
+  expect(HolidayOperatingHoursSchema.safeParse({ type: "closures", timezone: "America/New_York", closures: [{ date: "2026-12-25", name: "Holiday", closed: true }, { date: "2026-12-25", name: "Holiday", closed: false }] }).success).toBe(false);
+});
 const recordRef = "approval-record:operator-session-1";
 
 function operatorFact(key: string, value: unknown) {

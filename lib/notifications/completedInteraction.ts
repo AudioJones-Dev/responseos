@@ -123,6 +123,7 @@ async function sendNotificationRow(params: {
     };
   }
 
+  let acceptedMessageId: string | null = null;
   try {
     // The stored subject and body are resent verbatim. Rebuilding them would
     // change the payload behind an unchanged idempotency key, which the
@@ -133,6 +134,7 @@ async function sendNotificationRow(params: {
       text: params.message,
       idempotencyKey: params.dedupeKey,
     });
+    acceptedMessageId = sent.providerMessageId;
     await db.notification.update({
       where: { id: params.notificationId },
       data: {
@@ -147,7 +149,7 @@ async function sendNotificationRow(params: {
     });
     return { status: "sent", notificationId: params.notificationId, providerId: params.provider.providerId };
   } catch (error) {
-    const code = error instanceof Error ? error.message.slice(0, 120) : "email_send_failed";
+    const code = acceptedMessageId ? "accepted_delivery_reconciliation_required" : error instanceof Error ? error.message.slice(0, 120) : "email_send_failed";
     await db.notification.update({
       where: { id: params.notificationId },
       data: {
@@ -155,7 +157,8 @@ async function sendNotificationRow(params: {
         provider: params.provider.providerId,
         attempt_count: params.attemptCount + 1,
         last_error_code: code,
-        next_attempt_at: isRetryableEmailErrorCode(code)
+        ...(acceptedMessageId ? { provider_message_id: acceptedMessageId } : {}),
+        next_attempt_at: acceptedMessageId || isRetryableEmailErrorCode(code)
           ? new Date(params.now.getTime() + RETRY_DELAY_MS)
           : null,
       },
@@ -177,12 +180,12 @@ export async function dispatchCompletedInteractionNotification(params: {
   now?: Date;
 }): Promise<Result<CompletedInteractionDispatch>> {
   if (!db) return err("no_database", "Notification dispatch requires DATABASE_URL.");
-  const protectedCall = await db.call.findFirst({ where: { id: params.callId, account_id: params.accountId } });
-  if (protectedCall?.review_required) return err("approval_required", "Use the approved call review dispatch.");
   const now = params.now ?? new Date();
   const dedupeKey = `${NOTIFICATION_EVENT}:${params.accountId}:${params.callId}`;
 
   try {
+    const protectedCall = await db.call.findFirst({ where: { id: params.callId, account_id: params.accountId } });
+    if (protectedCall?.review_required) return err("approval_required", "Use the approved call review dispatch.");
     const existing = await db.notification.findUnique({ where: { dedupe_key: dedupeKey } });
     if (existing?.status === "sent") {
       return ok({ status: "skipped", notificationId: existing.id, reason: "already_sent" });
@@ -191,6 +194,10 @@ export async function dispatchCompletedInteractionNotification(params: {
     const provider = params.providerOverride ?? getEmailProvider();
 
     if (existing) {
+      if (existing.last_error_code === "accepted_delivery_reconciliation_required" && existing.provider_message_id) {
+        await db.notification.update({ where: { id: existing.id }, data: { status: "sent", sent_at: now, last_error_code: null, next_attempt_at: null } });
+        return ok({ status: "sent", notificationId: existing.id, providerId: existing.provider ?? undefined });
+      }
       return ok(
         await sendNotificationRow({
           notificationId: existing.id,
@@ -301,20 +308,24 @@ export async function retryCompletedInteractionNotification(params: {
   }
   if (!db) return err("no_database", "Notification retry requires DATABASE_URL.");
 
-  const notification = await db.notification.findUnique({ where: { id: params.id } });
-  if (!notification) return err("not_found", "Notification not found.");
-  if (notification.status !== "failed") {
-    return err("invalid_transition", "Only a failed notification can be retried.");
-  }
-  if (!notification.call_id) {
-    return err("invalid_transition", "Only a call notification can be retried.");
-  }
+  try {
+    const notification = await db.notification.findUnique({ where: { id: params.id } });
+    if (!notification) return err("not_found", "Notification not found.");
+    if (notification.status !== "failed") {
+      return err("invalid_transition", "Only a failed notification can be retried.");
+    }
+    if (!notification.call_id) {
+      return err("invalid_transition", "Only a call notification can be retried.");
+    }
 
-  return dispatchCompletedInteractionNotification({
-    accountId: notification.account_id,
-    callId: notification.call_id,
-    requireLiveProvider: notification.provider === "resend" || notification.last_error_code === "live_provider_disabled",
-    providerOverride: params.providerOverride,
-    now: params.now,
-  });
+    return await dispatchCompletedInteractionNotification({
+      accountId: notification.account_id,
+      callId: notification.call_id,
+      requireLiveProvider: notification.provider === "resend" || notification.last_error_code === "live_provider_disabled",
+      providerOverride: params.providerOverride,
+      now: params.now,
+    });
+  } catch (error) {
+    return errFromThrown(error);
+  }
 }

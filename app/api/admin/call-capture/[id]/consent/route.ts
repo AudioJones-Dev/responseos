@@ -25,7 +25,8 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
     }));
     if (data.action !== value.action || data.disclosure_ref !== value.disclosureRef || data.evidence_ref !== value.evidenceRef) return Response.json({ ok: false, error: "idempotency_conflict" }, { status: 409 });
     return Response.json({ ok: true, data: { id: data.id, action: data.action, occurredAt: data.occurred_at } });
-  } catch {
-    return Response.json({ ok: false, error: "consent_not_recorded" }, { status: 403 });
+  } catch (error) {
+    const denied = error instanceof Error && error.message === "operator_required";
+    return Response.json({ ok: false, error: denied ? "operator_required" : "consent_not_recorded" }, { status: denied ? 403 : 503 });
   }
 }

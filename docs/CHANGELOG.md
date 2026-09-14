@@ -1,5 +1,6 @@
 # Unreleased — supervised FRL demonstration (in review)
 
+- CodeRabbit repairs validate configuration boundaries and rendered context, block unreleased number replacement, preserve indexed call aliases and retry missing correlation, show latest records per call, reject mock CRM reuse, require reviewed dispatch for supervised retries, and reconcile accepted notification persistence without resending.
 - Follow-up review fixes require transcription for activation, preserve accepted email status on audit failure, commit webhook status with normalization, retry signed redelivery after correlation, reject future capture intervals, timestamp consent after lock acquisition, and stop migration 0014 before duplicate quote links can fail its unique index.
 - Reconcile ADR-0055 from master while preserving ADR-0056; require fresh activation checks for enabled tenant updates, reject unready supervised webhook normalization, and preserve frozen notification retries without treating a disabled live provider as successful mock delivery.
 - Reuse the supervised runtime candidate and add approved business knowledge, pinned call context, per-call consent evidence, operator-reviewed CRM/email follow-up, and a rehearsal contract. Live activation and provider consent verification remain gated.

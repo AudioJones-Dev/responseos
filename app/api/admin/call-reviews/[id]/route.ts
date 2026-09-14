@@ -19,7 +19,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
     return Response.json({ ok: true, data });
   } catch (error) {
     const code = error instanceof Error ? error.message : "review_failed";
-    const allowed = ["operator_required", "not_found", "stale_review", "recipient_not_configured", "approval_required", "dispatch_in_progress_or_uncertain", "prior_revision_requires_reconciliation", "email_delivery_requires_reconciliation", "live_email_disabled"];
+    const allowed = ["operator_required", "not_found", "stale_review", "recipient_not_configured", "approval_required", "dispatch_in_progress_or_uncertain", "prior_revision_requires_reconciliation", "email_delivery_requires_reconciliation", "live_email_disabled", "execution_gate_not_authorized"];
     return Response.json({ ok: false, error: { code: allowed.includes(code) ? code : "review_failed", message: "The action did not complete. Refresh the review and check delivery status before retrying." } }, { status: code === "operator_required" ? 403 : code === "not_found" ? 404 : 409 });
   }
 }

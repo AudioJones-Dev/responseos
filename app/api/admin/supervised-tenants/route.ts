@@ -1,5 +1,16 @@
-import { configureSupervisedTenant, type SupervisedTenantInput } from "@/lib/agentExecution/supervisedTenant";
+import { z } from "zod";
+import { configureSupervisedTenant } from "@/lib/agentExecution/supervisedTenant";
 import { errorResponse, respondWithResult, safeJson } from "@/lib/providers/webhook-helpers";
+
+const Input = z.strictObject({
+  accountSlug: z.string().trim().min(1), businessName: z.string().trim().min(1),
+  timezone: z.string().trim().min(1), agentName: z.string().trim().min(1),
+  industry: z.string().optional(), approvalRecordRef: z.string().trim().min(1),
+  executionMode: z.enum(["SUPERVISED_PILOT", "PRODUCTION_SUPERVISED", "MANAGED_AUTONOMY"]),
+  configuration: z.array(z.strictObject({ key: z.string(), value: z.unknown() })),
+  number: z.strictObject({ providerNumberId: z.string().min(1), e164: z.string().min(1), providerAttestation: z.unknown() }).optional(),
+  activate: z.boolean().optional(), dryRun: z.boolean().optional(),
+});
 
 /**
  * Operator-only write path for supervised tenant configuration (ADR-0056).
@@ -7,29 +18,17 @@ import { errorResponse, respondWithResult, safeJson } from "@/lib/providers/webh
  * the database; they are never echoed back beyond configured key names.
  */
 export async function POST(req: Request) {
-  const parsed = await safeJson<Partial<SupervisedTenantInput>>(req);
+  const parsed = await safeJson<unknown>(req);
   if (!parsed.ok) return errorResponse(400, parsed.error);
-  const body = parsed.data;
-
-  if (!body.accountSlug || !body.businessName || !body.timezone || !body.agentName || !body.executionMode) {
+  const input = Input.safeParse(parsed.data);
+  if (!input.success) {
     return errorResponse(422, {
       code: "validation_failed",
-      message: "accountSlug, businessName, timezone, agentName, and executionMode are required.",
-    });
-  }
-  if (!Array.isArray(body.configuration)) {
-    return errorResponse(422, {
-      code: "validation_failed",
-      message: "configuration must be an array of { key, value } entries.",
-    });
-  }
-  if (!body.approvalRecordRef) {
-    return errorResponse(422, {
-      code: "validation_failed",
-      message: "approvalRecordRef must cite the operator approval record for this configuration.",
+      message: "Check the supervised tenant configuration fields.",
     });
   }
 
+  const body = input.data;
   return respondWithResult(
     await configureSupervisedTenant({
       accountSlug: body.accountSlug,

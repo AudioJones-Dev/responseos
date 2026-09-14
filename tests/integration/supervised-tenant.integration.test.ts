@@ -105,6 +105,7 @@ describe("supervised tenant configuration", () => {
     if (!result.ok) return;
     expect(result.data).toMatchObject({ dryRun: true, gateAuthorized: true, activated: false });
     expect(result.data.configuration.ready).toBe(true);
+    expect(result.data.configuration.hash).toBeNull();
     expect(await prisma.account.findUnique({ where: { slug: "example-supervised" } })).toBeNull();
   });
 
@@ -304,5 +305,20 @@ describe("supervised tenant configuration", () => {
     }), now);
     expect(result).toMatchObject({ ok: false, error: { code: "configuration_stopped" } });
     if (!result.ok) expect(result.error.details?.stops).toContain("transcription_required_for_review");
+  });
+
+  test("activation refuses a context that exceeds the provider bound", async () => {
+    const result = await configureSupervisedTenant(input({ activate: true, businessName: "B".repeat(24_000), number: { providerNumberId: PROVIDER_NUMBER_ID, e164: NUMBER, providerAttestation: attestation() } }), now);
+    expect(result).toMatchObject({ ok: false, error: { details: { stops: expect.arrayContaining(["agent_context_invalid"]) } } });
+    expect(await prisma.account.findUnique({ where: { slug: "example-supervised" } })).toBeNull();
+  });
+
+  test("number replacement stops before writing a second active assignment", async () => {
+    const original = await configureSupervisedTenant(input({ activate: true, number: { providerNumberId: PROVIDER_NUMBER_ID, e164: NUMBER, providerAttestation: attestation() } }), now);
+    expect(original.ok).toBe(true);
+    const replacement = { providerNumberId: "number-replacement", e164: "+15555550189" };
+    const result = await configureSupervisedTenant(input({ activate: true, number: { ...replacement, providerAttestation: attestation(replacement) } }), now);
+    expect(result).toMatchObject({ ok: false, error: { details: { stops: expect.arrayContaining(["dedicated_number_change_requires_release"]) } } });
+    expect(await prisma.telephonyNumberAssignment.count({ where: { status: "active", bootstrap_id: null } })).toBe(1);
   });
 });

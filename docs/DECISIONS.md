@@ -1621,4 +1621,6 @@ Use SUPERVISED_PILOT in an isolated demonstration environment with real approved
 
 Require operator approval of a specific evidence revision before CRM or email. Preserve qualified-only CRM tasks, bounded contact/call synchronization and no standalone CRM Notes, Tickets, Deals or Companies. Freeze reviewed payloads for retries. Late evidence creates a new review and cannot silently change authorized effects. Provider acceptance never proves inbox receipt. PROSPECT_DEMO retains its CRM prohibition.
 
+Implementation detail: signed call aliases are indexed in the webhook ledger and resolve to the initialized capture identity, preserving the same consent lock across event shapes. Ambiguous or unavailable correlation authorizes no content retention. Supervised CRM retry remains the original approved review's dispatch action; the legacy retry path cannot substitute a different approval. Dedicated-number replacement requires prior release instead of implicitly enabling a second route. These safeguards do not authorize provider operations.
+
 Implementation and all fifteen architecture answers: [Mike demonstration brief](./product/responseos-mike-live-demo.md). Authoring: Claude candidate e55c100 plus Codex reconciliation. Mixed authorship requires CodeRabbit review at the current head and human merge.

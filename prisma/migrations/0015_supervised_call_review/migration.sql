@@ -1,4 +1,6 @@
 ALTER TABLE "Call" ADD COLUMN "review_required" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "WebhookEvent" ADD COLUMN "provider_call_ids" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[];
+CREATE INDEX "WebhookEvent_provider_call_ids_idx" ON "WebhookEvent" USING GIN ("provider_call_ids");
 CREATE TABLE "CallCaptureSession" (
   "id" TEXT PRIMARY KEY, "account_id" TEXT NOT NULL, "provider_call_id" TEXT NOT NULL,
   "snapshot_id" TEXT NOT NULL, "snapshot_json" JSONB NOT NULL, "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP

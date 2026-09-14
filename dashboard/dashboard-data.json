@@ -1187,7 +1187,7 @@
       "progress": 80,
       "priority": "High",
       "blocked": true,
-      "blockedReason": "CodeRabbit review of the repaired head is required. Live consent transport, approved FRL configuration, isolated activation and rehearsal remain unverified."
+      "blockedReason": "CodeRabbit findings repaired; final-head validation and independent re-review pending. Live consent transport, approved FRL configuration, isolated activation and rehearsal remain unverified."
     }
   ],
   "liveIssues": [

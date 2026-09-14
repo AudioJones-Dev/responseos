@@ -1,6 +1,5 @@
 import { ConsentControls } from "./ConsentControls";
-import { db } from "@/lib/db/client";
-import { requireReviewOperator } from "@/lib/callReview/service";
+import { loadCallReviewConsole } from "@/lib/callReview/service";
 import type { ReviewPayload } from "@/lib/callReview/contracts";
 import { CallReviewCard } from "./CallReviewCard";
 import { CrmRetryAction, ProspectActions } from "./DemoOperationActions";
@@ -12,11 +11,7 @@ import { EmptyState, PageHeader, StatusBadge, Table, TBody, TD, THead, TR } from
 export const dynamic = "force-dynamic";
 
 export default async function DemoOperationsPage() {
-  await requireReviewOperator();
-  const captures = db ? await db.callCaptureSession.findMany({ orderBy: { created_at: "desc" }, take: 20 }) : [];
-  const consentEvents = db ? await db.callConsentEvent.findMany({ orderBy: { occurred_at: "desc" }, take: 50 }) : [];
-  const reviewRows = db ? await db.callReview.findMany({ orderBy: { created_at: "desc" }, take: 50 }) : [];
-  const reviews = reviewRows.filter((row, index) => reviewRows.findIndex((other) => other.call_id === row.call_id && other.account_id === row.account_id) === index);
+  const { captures, reviews } = await loadCallReviewConsole();
 
   const demoAccountId = process.env.RESPONSEOS_DEMO_ACCOUNT_ID;
   const inboundAccountId = process.env.RESPONSEOS_INBOUND_ACCOUNT_ID;
@@ -42,7 +37,7 @@ export default async function DemoOperationsPage() {
       />
 
       <h2 className="mb-3 mt-8 font-display text-xl font-semibold text-ink">Capture consent</h2>
-      {captures.map((capture) => <div key={capture.id}><ConsentControls id={capture.id} callReference={capture.provider_call_id} /><p>Latest consent: {consentEvents.find((event) => event.account_id === capture.account_id && event.provider_call_id === capture.provider_call_id)?.action ?? "No affirmative consent recorded"}</p></div>)}
+      {captures.map((capture) => <div key={capture.id}><ConsentControls id={capture.id} callReference={capture.provider_call_id} /><p>Latest consent: {capture.consentAction ?? "No affirmative consent recorded"}</p></div>)}
       <h2 className="mb-3 mt-8 font-display text-xl font-semibold text-ink">Supervised call review</h2>
       <p>Review each call before approving its CRM record and email. Email acceptance does not confirm inbox delivery.</p>
       {reviews.length === 0 && <EmptyState title="No calls awaiting review" description="A finalized call with consented evidence will appear here." />}

@@ -786,10 +786,12 @@ model WebhookEvent {
   // Correlation keys for provider events that omit the called number
   // (Telnyx insights events carry only call-control identifiers).
   provider_call_id   String?
+  provider_call_ids  String[]             @default([])
   agent_target       String?
 
   @@unique([provider, provider_event_id])
   @@index([provider, provider_call_id])
+  @@index([provider_call_ids], type: Gin)
   @@index([account_id])
   @@index([provider])
   @@index([received_at])

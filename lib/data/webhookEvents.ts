@@ -98,6 +98,7 @@ export async function recordWebhookEvent(entry: {
   signature_valid?: boolean;
   payload_expires_at?: Date;
   provider_call_id?: string;
+  provider_call_ids?: readonly string[];
   agent_target?: string;
 }): Promise<Result<{ id: string; process_status: WebhookProcessStatus }>> {
   const db = entry.client ?? database;
@@ -132,6 +133,7 @@ export async function recordWebhookEvent(entry: {
         process_status: "received",
         payload_expires_at: entry.payload_expires_at ?? null,
         provider_call_id: entry.provider_call_id ?? null,
+        provider_call_ids: [...new Set([...(entry.provider_call_ids ?? []), ...(entry.provider_call_id ? [entry.provider_call_id] : [])])],
         agent_target: entry.agent_target ?? null,
       },
       select: { id: true, process_status: true },
@@ -176,14 +178,42 @@ export async function findAgentTargetForProviderCall(params: {
   const row = await db.webhookEvent.findFirst({
     where: {
       provider: params.provider,
-      provider_call_id: { in: [...providerCallIds] },
+      OR: [{ provider_call_id: { in: [...providerCallIds] } }, { provider_call_ids: { hasSome: [...providerCallIds] } }],
       agent_target: { not: null },
       signature_valid: true,
     },
     orderBy: { received_at: "desc" },
     select: { agent_target: true },
   });
-  return row?.agent_target ?? null;
+  if (!row?.agent_target) return null;
+  const conflict = await db.webhookEvent.findFirst({
+    where: { provider: params.provider, signature_valid: true, agent_target: { not: row.agent_target },
+      OR: [{ provider_call_id: { in: [...providerCallIds] } }, { provider_call_ids: { hasSome: [...providerCallIds] } }],
+    }, select: { id: true },
+  });
+  return conflict ? null : row.agent_target;
+}
+
+export async function findInitializedProviderCallId(params: { provider: string; providerCallIds: readonly string[]; target: string }): Promise<string | null> {
+  if (!db || params.providerCallIds.length === 0) return null;
+  const exact = await db.webhookEvent.findFirst({
+    where: { provider: params.provider, event_type: "assistant.initialization", signature_valid: true, agent_target: params.target, provider_call_id: { in: [...params.providerCallIds] } },
+    select: { provider_call_id: true },
+  });
+  if (exact?.provider_call_id) return exact.provider_call_id;
+  const row = await db.webhookEvent.findFirst({
+    where: { provider: params.provider, event_type: "assistant.initialization", signature_valid: true, agent_target: params.target,
+      OR: [{ provider_call_id: { in: [...params.providerCallIds] } }, { provider_call_ids: { hasSome: [...params.providerCallIds] } }],
+    },
+    orderBy: { received_at: "asc" }, select: { provider_call_id: true },
+  });
+  if (!row?.provider_call_id) return null;
+  const conflict = await db.webhookEvent.findFirst({
+    where: { provider: params.provider, event_type: "assistant.initialization", signature_valid: true, agent_target: params.target,
+      provider_call_id: { not: row.provider_call_id }, provider_call_ids: { hasSome: [...params.providerCallIds] },
+    }, select: { id: true },
+  });
+  return conflict ? null : row.provider_call_id;
 }
 
 export async function purgeExpiredWebhookPayloads(now = new Date()): Promise<Result<{ purged: number }>> {

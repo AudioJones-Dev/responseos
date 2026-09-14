@@ -60,7 +60,7 @@ export const WeeklyOperatingHoursSchema = z.union([
   z.strictObject({
     type: z.literal("schedule"),
     timezone: configuredString(64),
-    days: z.array(WeeklyDaySchema).min(1).max(7),
+    days: z.array(WeeklyDaySchema).min(1).max(7).refine((days) => new Set(days.map((day) => day.day)).size === days.length, "duplicate_weekday"),
   }),
 ]);
 
@@ -72,7 +72,8 @@ export const HolidayOperatingHoursSchema = z.union([
     closures: z
       .array(z.strictObject({ date: z.iso.date(), name: configuredString(80), closed: z.boolean() }))
       .min(1)
-      .max(60),
+      .max(60)
+      .refine((closures) => new Set(closures.map((closure) => closure.date)).size === closures.length, "duplicate_holiday_date"),
   }),
 ]);
 
@@ -164,7 +165,7 @@ export const OPERATING_CONFIGURATION_KEYS = Object.freeze(
 );
 
 export function isOperatingConfigurationKey(value: unknown): value is OperatingConfigurationKey {
-  return typeof value === "string" && value in OPERATING_CONFIGURATION_VALUE_SCHEMAS;
+  return typeof value === "string" && Object.hasOwn(OPERATING_CONFIGURATION_VALUE_SCHEMAS, value);
 }
 
 /** Which typed key satisfies each readiness requirement. */

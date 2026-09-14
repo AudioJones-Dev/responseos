@@ -333,3 +333,5 @@ Architectural placement and product framing are documented in `architecture.md` 
 ### Supervised demonstration evidence (0014–0015, in review)
 
 Additive candidate runtime fields are followed by CallCaptureSession (pinned approved snapshot per tenant/provider call), CallConsentEvent (append-only per-call artifact authority), and CallReview (immutable evidence and approved payload revision with independent CRM/email state). New supervised calls carry review_required; legacy calls default false. See [implementation brief](./product/responseos-mike-live-demo.md). No database migration or live activation is claimed by this documentation.
+
+Migration 0015 also adds `WebhookEvent.provider_call_ids`, an empty-by-default array with a GIN index for signed provider aliases. The original primary identifier remains available for older rows. Correlation resolves the initialized capture identity before applying its consent lock; conflicting tenant targets do not authorize retention.

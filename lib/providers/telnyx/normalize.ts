@@ -89,6 +89,7 @@ export interface NormalizeTelnyxEventOptions {
 }
 
 export async function normalizeTelnyxEvent(params: {
+  providerCallId?: string;
   client?: Prisma.TransactionClient;
   accountId: string;
   demoNumber: string;
@@ -100,7 +101,7 @@ export async function normalizeTelnyxEvent(params: {
   const db = params.client ?? database;
   if (db === null) throw new Error("database_unavailable");
   const payload = params.event.data.payload;
-  const providerCallId = getTelnyxCallId(payload);
+  const providerCallId = params.providerCallId ?? getTelnyxCallId(payload);
   if (!providerCallId) {
     await setWebhookProcessStatus({
       client: params.client,

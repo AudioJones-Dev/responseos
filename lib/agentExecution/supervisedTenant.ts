@@ -16,6 +16,7 @@ import { readOperatingConfigurationValue, evaluateOperatingConfiguration } from 
 import { EXECUTION_MODE_POLICIES, type ExecutionMode } from "./policy";
 import { authorizedExecutionGates, resolveTenantExecutionPolicy } from "./tenantPolicy";
 import { validateSupervisedAssistantPreflight } from "./supervisedTemplate";
+import { buildSupervisedAgentContext } from "./supervisedContext";
 
 /**
  * Operator write path for a supervised customer tenant (ADR-0056).
@@ -65,7 +66,7 @@ export interface SupervisedTenantPlan {
   configuration: {
     keys: string[];
     version: number | null;
-    hash: string;
+    hash: string | null;
     unchanged: boolean;
     ready: boolean;
     missing: string[];
@@ -214,6 +215,14 @@ export async function configureSupervisedTenant(
     }
 
     if (input.activate === true) {
+      try {
+        buildSupervisedAgentContext({ businessName: input.businessName, agentName: input.agentName, memory: built.memory, policy: resolved.policy });
+      } catch {
+        stops.push("agent_context_invalid");
+      }
+      if (existingAccount && input.number && await db.telephonyNumberAssignment.findFirst({
+        where: { account_id: existingAccount.id, bootstrap_id: null, status: "active", unassigned_at: null, telephony_number_id: { not: numberRow?.id ?? "" } },
+      })) stops.push("dedicated_number_change_requires_release");
       if (!readOperatingConfigurationValue(built.memory, "policy.consent")?.transcription.enabled) stops.push("transcription_required_for_review");
       if (!readOperatingConfigurationValue(built.memory, "business.knowledge")) stops.push("approved_business_knowledge_required");
       if (!readOperatingConfigurationValue(built.memory, "notification.completed_interaction.recipient")?.enabled) stops.push("notification_recipient_required");
@@ -234,7 +243,7 @@ export async function configureSupervisedTenant(
       configuration: {
         keys: input.configuration.map((entry) => entry.key).sort(),
         version: null,
-        hash: built.hash,
+        hash: null,
         unchanged: false,
         ready: readiness.ready,
         missing: readiness.missing,
@@ -274,6 +283,9 @@ export async function configureSupervisedTenant(
       if (input.activate !== true && await tx.agentProfile.findFirst({
         where: { account_id: account.id, type: "supervised_receptionist", enabled: true },
       })) throw new Error("active_tenant_requires_activation");
+      if (input.activate === true && input.number && await tx.telephonyNumberAssignment.findFirst({
+        where: { account_id: account.id, bootstrap_id: null, status: "active", unassigned_at: null, telephony_number_id: { not: numberRow?.id ?? "" } },
+      })) throw new Error("dedicated_number_change_requires_release");
 
       const snapshotBuild = buildOperatingConfigurationSnapshot({
         accountId: account.id,

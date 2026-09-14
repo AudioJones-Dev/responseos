@@ -4,6 +4,7 @@ import { after, NextResponse } from "next/server";
 import { runCrmSyncForCall } from "@/lib/crm/syncFinalizedCall";
 import {
   findAgentTargetForProviderCall,
+  findInitializedProviderCallId,
   getWebhookProcessingState,
   recordWebhookEvent,
   setWebhookProcessStatus,
@@ -68,7 +69,7 @@ export async function POST(req: Request) {
     });
   }
 
-  const providerCallId = getTelnyxCallId(event.data.payload);
+  let providerCallId = getTelnyxCallId(event.data.payload);
   const directTarget = getTelnyxAgentTarget(event.data.payload);
   const correlatedTarget = directTarget
     ? null
@@ -81,6 +82,9 @@ export async function POST(req: Request) {
   const receivedAt = new Date();
 
   const supervised = target ? await resolveSupervisedTenantForNumber(target, occurredAt ?? receivedAt) : null;
+  if (supervised && target) {
+    providerCallId = await findInitializedProviderCallId({ provider: "telnyx", providerCallIds: getTelnyxCallIds(event.data.payload), target }) ?? providerCallId;
+  }
   const supervisedReady = supervised?.readiness.ready === true &&
     supervised.resolved.degraded === null && supervised.resolved.mode === "SUPERVISED_PILOT";
 
@@ -124,6 +128,7 @@ export async function POST(req: Request) {
     signature_header: signature ?? undefined,
     signature_valid: true,
     provider_call_id: providerCallId ?? undefined,
+    provider_call_ids: getTelnyxCallIds(event.data.payload),
     // Only a number the provider itself put on this event anchors correlation.
     agent_target: directTarget ?? undefined,
     ...(retainPayload
@@ -157,6 +162,7 @@ export async function POST(req: Request) {
           ? "missing_occurred_at"
           : "unassigned_destination",
     });
+    if (!target && providerCallId) return errorResponse(503, { code: "awaiting_call_correlation", message: "Call correlation is not available yet; redeliver this signed event." });
     return NextResponse.json(
       { ok: true, data: { accepted: true, duplicate: ledger.data.process_status === "duplicate", normalized: false } },
       { status: 202 },
@@ -180,6 +186,7 @@ export async function POST(req: Request) {
         const normalized = await normalizeTelnyxEvent({
         client,
         accountId: assignment.accountId,
+        ...(supervisedTenant && providerCallId ? { providerCallId } : {}),
         demoNumber: assignment.demoNumber,
         webhookEventId: ledger.data.id,
         event: contentAllowed ? event : metadataOnly(event),

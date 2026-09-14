@@ -220,4 +220,6 @@ POST /api/appointments/availability
 
 Updating an enabled supervised profile through `POST /api/admin/supervised-tenants` requires `activate: true` with the full activation preflight; a configuration-only update is rejected before commit. Signed call events for an unready/degraded supervised runtime receive a metadata-only ledger entry and HTTP 202 with `normalized: false`.
 
+Malformed configuration types return 422. A dry run returns `configuration.hash: null`; only apply returns the persisted snapshot hash. Oversized rendered contexts and active dedicated-number replacement stop before writes. Signed call events with a provider call identifier but no correlation return 503 for provider redelivery and retain only metadata. Consent database/lock failures return 503; operator denial returns 403. Supervised CRM retries use the originally approved call review; the legacy CRM retry entry point returns `review_dispatch_required`.
+
 `POST /api/admin/call-reviews/:id` approves/rejects an expected revision or dispatches an approved revision. `POST /api/admin/call-capture/:id/consent` appends operator-observed per-call transcript consent at server time. Both require an authenticated operator; clients cannot invoke them. Detailed payloads and limitations: [Mike demonstration brief](./product/responseos-mike-live-demo.md).
