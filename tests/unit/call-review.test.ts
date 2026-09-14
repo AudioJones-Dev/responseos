@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
   db: {
     $transaction: vi.fn(), $executeRaw: vi.fn(),
     callReview: { findUnique: vi.fn(), findFirst: vi.fn(), updateMany: vi.fn(), update: vi.fn(), create: vi.fn() },
-    call: { findFirst: vi.fn() }, auditLog: { create: vi.fn() }, callCaptureSession: { findUnique: vi.fn() },
+    call: { findFirst: vi.fn() }, auditLog: { create: vi.fn() }, callCaptureSession: { findUnique: vi.fn() }, crmSyncOperation: { findUnique: vi.fn() },
   },
 }));
 vi.mock("@/lib/db/client", () => ({ db: mocks.db }));
@@ -137,6 +137,24 @@ test("a lost dispatch claim produces no effects", async () => {
   expect(mocks.crm).not.toHaveBeenCalled(); expect(mocks.send).not.toHaveBeenCalled();
 });
 
+test("a newer revision cannot dispatch over an earlier revision's unrecorded CRM effect", async () => {
+  const newer = { ...base, id: "newer", revision: 2, status: "approved" };
+  mocks.db.callReview.findUnique.mockResolvedValue(newer);
+  mocks.db.callReview.findFirst.mockResolvedValueOnce(newer).mockResolvedValueOnce(null).mockResolvedValueOnce({ id: "review" }).mockResolvedValueOnce(null);
+  mocks.db.crmSyncOperation.findUnique.mockResolvedValue({ provider_contact_id: "hs-contact", provider_activity_id: null, provider_task_id: null });
+  await expect(dispatchCallReview("newer")).rejects.toThrow("prior_revision_requires_reconciliation");
+  expect(mocks.db.callReview.updateMany).not.toHaveBeenCalled();
+  expect(mocks.crm).not.toHaveBeenCalled(); expect(mocks.send).not.toHaveBeenCalled();
+});
+
+test("a lost CRM status write is retried before the email is marked failed", async () => {
+  approved();
+  mocks.db.callReview.update.mockRejectedValueOnce(new Error("status_write_failed"));
+  await expect(dispatchCallReview("review")).rejects.toThrow("status_write_failed");
+  expect(mocks.db.callReview.updateMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ crm_status: "pending" }), data: { crm_status: "succeeded" } }));
+  expect(mocks.send).not.toHaveBeenCalled();
+});
+
 test("provider accepted emails are never resent", async () => {
   approved({ email_status: "accepted" });
   await dispatchCallReview("review"); expect(mocks.send).not.toHaveBeenCalled();
@@ -152,7 +170,8 @@ test("a revoked execution gate produces no effects", async () => {
 test("audit failure after provider acceptance cannot overwrite accepted delivery", async () => {
   approved();
   mocks.db.auditLog.create.mockResolvedValueOnce({}).mockRejectedValueOnce(new Error("audit_unavailable"));
-  mocks.db.callReview.updateMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 });
+  // claim → CRM-status retry → email downgrade (no row, already accepted)
+  mocks.db.callReview.updateMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 }).mockResolvedValueOnce({ count: 0 });
   await expect(dispatchCallReview("review")).rejects.toThrow("audit_unavailable");
   expect(mocks.db.callReview.update).toHaveBeenCalledWith(expect.objectContaining({ data: { email_status: "accepted", email_message_id: "email-1" } }));
   expect(mocks.db.callReview.updateMany).toHaveBeenLastCalledWith(expect.objectContaining({ where: expect.objectContaining({ email_status: { not: "accepted" } }) }));

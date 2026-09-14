@@ -147,13 +147,26 @@ export async function dispatchCallReview(id: string) {
     if (latest?.id !== id) throw new Error("stale_review");
     const prior = await tx.callReview.findFirst({ where: { account_id: row.account_id, call_id: row.call_id, id: { not: id }, OR: [{ dispatch_at: { not: null } }, { email_attempt_at: { not: null } }, { crm_status: { not: "pending" } }] } });
     if (prior) throw new Error("prior_revision_requires_reconciliation");
+    // The CRM operation is call-wide and idempotent. If an earlier revision
+    // reached the provider but its status write was lost, no review records
+    // the effect; a newer revision must not dispatch on top of it, because the
+    // CRM would keep the old payload while email sent the new one.
+    const operation = await tx.crmSyncOperation.findUnique({ where: { operation_key: `crm-call:${row.account_id}:${row.call_id}` } });
+    const effectReached = Boolean(operation?.provider_contact_id || operation?.provider_activity_id || operation?.provider_task_id);
+    if (effectReached) {
+      const earlier = await tx.callReview.findFirst({ where: { account_id: row.account_id, call_id: row.call_id, id: { not: id } }, select: { id: true } });
+      const recorded = await tx.callReview.findFirst({ where: { account_id: row.account_id, call_id: row.call_id, crm_status: { not: "pending" } }, select: { id: true } });
+      if (earlier && !recorded) throw new Error("prior_revision_requires_reconciliation");
+    }
     const claim = await tx.callReview.updateMany({ where: { id, account_id: row.account_id, status: "approved", dispatch_at: null }, data: { dispatch_at: new Date() } });
     if (!claim.count) throw new Error("dispatch_in_progress_or_uncertain");
     await tx.auditLog.create(auditEntry("call_review_dispatch_attempt", { revision: row.revision }));
   });
+  let crmStatus: string | null = null;
   try {
     const crm = await runCrmSyncForCall({ accountId: row.account_id, callId: row.call_id, requireLiveProvider: true, reviewId: id });
-    await db.callReview.update({ where: { id, account_id: row.account_id }, data: { crm_status: crm.ok ? crm.data.status : "failed" } });
+    crmStatus = crm.ok ? crm.data.status : "failed";
+    await db.callReview.update({ where: { id, account_id: row.account_id }, data: { crm_status: crmStatus } });
     if (row.email_status === "accepted") {
       await audit("call_review_dispatch_outcome", { revision: row.revision, outcome: "already_accepted", crmStatus: crm.ok ? crm.data.status : "failed" });
       return { status: "already_accepted" };
@@ -171,6 +184,9 @@ export async function dispatchCallReview(id: string) {
   } catch (error) {
     // A provider-accepted email is irreversible; if the failure came after
     // acceptance the audit must say so rather than contradict the ledger.
+    // The CRM outcome is known once runCrmSyncForCall returned; if its status
+    // write was the failure, try once more so the effect is not orphaned.
+    if (crmStatus) await db.callReview.updateMany({ where: { id, account_id: row.account_id, crm_status: "pending" }, data: { crm_status: crmStatus } }).catch(() => null);
     const downgraded = await db.callReview.updateMany({ where: { id, account_id: row.account_id, email_status: { not: "accepted" } }, data: { email_status: "failed" } });
     await audit("call_review_dispatch_outcome", { revision: row.revision, outcome: downgraded.count ? "failed" : "accepted", error: error instanceof Error ? error.message : "dispatch_failed" });
     throw error;

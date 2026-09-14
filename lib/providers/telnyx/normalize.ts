@@ -161,7 +161,9 @@ export async function normalizeTelnyxEvent(params: {
     contactUpdate.email_verified = true;
   }
   if (contactId && captureIdentity) {
-    const contact = await db.contact.findUnique({ where: { id: contactId } });
+    // Account-scoped on purpose: nothing in the schema stops a Call from
+    // pointing at another tenant's contact, and this path writes to it.
+    const contact = await db.contact.findFirst({ where: { id: contactId, account_id: params.accountId } });
     const firstName = nameUpdate(contact?.first_name ?? null, insight.firstName, insight.identityConfirmed);
     const lastName = nameUpdate(contact?.last_name ?? null, insight.lastName, insight.identityConfirmed);
     if (firstName) contactUpdate.first_name = firstName;
@@ -171,7 +173,7 @@ export async function normalizeTelnyxEvent(params: {
     if (insight.postalCode && !contact?.zip) contactUpdate.zip = insight.postalCode;
   }
   if (contactId && Object.keys(contactUpdate).length > 0) {
-    await db.contact.update({ where: { id: contactId }, data: contactUpdate });
+    await db.contact.updateMany({ where: { id: contactId, account_id: params.accountId }, data: contactUpdate });
   }
 
   const eventType = params.event.data.event_type;
