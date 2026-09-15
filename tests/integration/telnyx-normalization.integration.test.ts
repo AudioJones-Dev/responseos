@@ -81,14 +81,12 @@ describe("Telnyx canonical normalization", () => {
     expect(await prisma.callTranscript.count({ where: { call_id: calls[0].id } })).toBe(1);
     const lead = await prisma.leadEvent.findFirst({ where: { call_id: calls[0].id } });
     expect(lead?.status).toBe("qualified");
-    // Status is the provider's classification; the score is ResponseOS's rule.
-    // The payload claimed 91 with only service_needed known — the deterministic
-    // rule scores what the facts support (urgency low = 6.25, service known = 10).
-    const qualification = await prisma.leadQualification.findUnique({
-      where: { lead_event_id: lead!.id },
-    });
-    expect(qualification?.qualification_score).toBe(16);
-    expect(qualification?.timeline).toBe("unknown");
+    // The payload claimed score 91 with only service_needed known. The
+    // required-known facts (service_area_match, timeline) are absent, so the
+    // lead exists but is not scored — missing evidence is not negative evidence.
+    expect(
+      await prisma.leadQualification.findUnique({ where: { lead_event_id: lead!.id } }),
+    ).toBeNull();
   });
 
   test("scores a fully-described lead from extracted facts, not the provider score", async () => {

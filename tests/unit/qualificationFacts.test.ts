@@ -66,17 +66,14 @@ describe("qualificationInputFromFacts", () => {
     expect("budgetTimeline" in input).toBe(false);
   });
 
-  test("a provider score never reaches the scorer", () => {
-    // The integration fixture claims score 91 with only service_needed known.
-    // The deterministic rule scores exactly what the facts support.
+  test("scores exactly what the facts support, never a provider number", () => {
     const facts = {
       serviceAreaMatch: false,
-      timeline: "unknown" as const,
+      timeline: "this_month" as const,
       serviceNeeded: "Operations assessment",
       decisionMaker: null,
     };
     const score = leadQualificationScore(qualificationInputFromFacts(facts));
-    expect(score).toBe(Math.round(25 * 0.25 + 10));
-    expect(score).not.toBe(91);
+    expect(score).toBe(Math.round(25 * 0.6 + 10));
   });
 });

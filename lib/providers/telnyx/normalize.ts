@@ -77,6 +77,28 @@ function timeline(value: unknown): QualificationTimeline {
     : "unknown";
 }
 
+/**
+ * Returns null unless both required-known fields of the qualification
+ * capability are present: `service_area_match` as a boolean and a recognised
+ * `timeline`. Coercing an absent value would score missing evidence as
+ * negative evidence. Raised by Codex on #180.
+ */
+function qualificationFactsFrom(
+  qualification: Record<string, unknown> | null,
+): QualificationFacts | null {
+  if (!qualification) return null;
+  if (typeof qualification.service_area_match !== "boolean") return null;
+  const when = timeline(qualification.timeline);
+  if (when === "unknown") return null;
+  return {
+    serviceAreaMatch: qualification.service_area_match,
+    timeline: when,
+    serviceNeeded: stringValue(qualification.service_needed),
+    decisionMaker:
+      typeof qualification.decision_maker === "boolean" ? qualification.decision_maker : null,
+  };
+}
+
 export async function normalizeTelnyxEvent(params: {
   accountId: string;
   demoNumber: string;
@@ -232,15 +254,13 @@ export async function normalizeTelnyxEvent(params: {
         notes: insight.nextAction ?? lead.notes,
       },
     });
-    const facts: QualificationFacts = {
-      serviceAreaMatch: insight.qualification?.service_area_match === true,
-      timeline: timeline(insight.qualification?.timeline),
-      serviceNeeded: stringValue(insight.qualification?.service_needed),
-      decisionMaker:
-        typeof insight.qualification?.decision_maker === "boolean"
-          ? insight.qualification.decision_maker
-          : null,
-    };
+    const facts = qualificationFactsFrom(insight.qualification);
+    if (!facts) {
+      // Required facts absent: the lead exists, but a score would turn missing
+      // evidence into negative evidence. Readers treat no row as "not scored".
+      await setWebhookProcessStatus({ id: params.webhookEventId, process_status: "processed" });
+      return { callId: call.id, finalized };
+    }
     // The provider's own `score` is not read. ResponseOS derives the score from
     // the extracted facts; the raw value survives in `WebhookEvent.raw_body`.
     const qualification = {
