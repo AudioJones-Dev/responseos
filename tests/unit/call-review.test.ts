@@ -226,3 +226,13 @@ test("old ambiguous email attempts require reconciliation", async () => {
   await expect(dispatchCallReview("review")).rejects.toThrow("email_delivery_requires_reconciliation");
   expect(mocks.send).not.toHaveBeenCalled();
 });
+
+test("a CRM claim still held by another worker stops dispatch before the email", async () => {
+  approved();
+  mocks.crm.mockResolvedValue({ ok: true, data: { status: "processing" } });
+  await expect(dispatchCallReview("review")).rejects.toThrow("crm_claim_in_progress");
+  expect(mocks.db.callReview.update).toHaveBeenCalledWith(expect.objectContaining({ data: { crm_status: "processing" } }));
+  expect(mocks.send).not.toHaveBeenCalled();
+  expect(mocks.db.auditLog.create).toHaveBeenLastCalledWith(expect.objectContaining({ data: expect.objectContaining({ action: "call_review_dispatch_outcome", metadata_json: expect.objectContaining({ error: "crm_claim_in_progress" }) }) }));
+  expect(mocks.db.callReview.update).toHaveBeenLastCalledWith(expect.objectContaining({ data: { dispatch_at: null } }));
+});

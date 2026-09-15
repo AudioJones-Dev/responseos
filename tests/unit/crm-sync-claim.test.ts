@@ -23,8 +23,12 @@ beforeEach(() => {
   };
   database.crmSyncOperation.upsert.mockImplementation(async () => ({ ...row }));
   database.crmSyncOperation.updateMany.mockImplementation(async ({ where, data }) => {
-    if ((where.account_id && where.account_id !== row.account_id) || !where.status.in.includes(row.status)) return { count: 0 };
-    row = { ...row, ...data, attempt_count: Number(row.attempt_count) + 1 };
+    const claimable = where.OR.some((clause: { status: string | { in: string[] }; updated_at?: { lte: Date } }) =>
+      typeof clause.status === "string"
+        ? clause.status === row.status && (row.updated_at as Date) <= clause.updated_at!.lte
+        : clause.status.in.includes(row.status as string));
+    if ((where.account_id && where.account_id !== row.account_id) || !claimable) return { count: 0 };
+    row = { ...row, ...data, attempt_count: Number(row.attempt_count) + 1, updated_at: new Date() };
     return { count: 1 };
   });
   database.crmSyncOperation.findUniqueOrThrow.mockImplementation(async ({ where }) => {
@@ -62,6 +66,20 @@ test.each(["processing", "cancelled", "succeeded", "review_required"])("does not
   await runCrmSyncForCall({ accountId: "account", callId: "call", providerOverride: new MockCrmProvider() });
   expect(database.crmSyncOperation.updateMany).not.toHaveBeenCalled();
   expect(database.call.findFirst).not.toHaveBeenCalled();
+});
+
+test("a claim abandoned past its TTL is reclaimed and continued, not repeated", async () => {
+  row.status = "processing";
+  row.updated_at = new Date(Date.now() - 20 * 60 * 1000);
+  row.provider_contact_id = "contact-1";
+  const provider = new MockCrmProvider();
+  const contact = vi.spyOn(provider, "createContact");
+  const activity = vi.spyOn(provider, "createCallActivity");
+  const result = await runCrmSyncForCall({ accountId: "account", callId: "call", providerOverride: provider });
+  expect(result).toMatchObject({ ok: true, data: { status: "succeeded", provider_contact_id: "contact-1" } });
+  expect(contact).not.toHaveBeenCalled();
+  expect(activity).toHaveBeenCalledOnce();
+  expect(row.attempt_count).toBe(1);
 });
 
 test("a failed contender cannot overwrite the current worker's state", async () => {

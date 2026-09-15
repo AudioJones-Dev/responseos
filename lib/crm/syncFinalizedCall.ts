@@ -8,6 +8,8 @@ import { err, errFromThrown, ok, type Result } from "@/lib/data/result";
 import { sanitizeCrmText } from "@/lib/crm/sanitization";
 import { normalizeE164 } from "@/lib/validation/common";
 
+export const CRM_CLAIM_TTL_MS = 15 * 60 * 1000;
+
 export type CrmSyncStatus =
   | "pending"
   | "processing"
@@ -102,11 +104,22 @@ export async function runCrmSyncForCall(params: {
     if (params.requireLiveProvider && operation.provider !== "hubspot") {
       return err("live_provider_reconciliation_required", "The existing CRM operation was not created for live delivery; reconcile it before dispatch.");
     }
-    if (operation.status !== "pending" && operation.status !== "retryable_failed") {
+    // A worker that died after claiming leaves the row `processing` forever.
+    // Every provider-id write bumps `updated_at`, so a live worker's claim stays
+    // fresh; one untouched for the TTL is abandoned and may be reclaimed. The
+    // steps below skip effects whose provider ids are already recorded, so a
+    // reclaim continues the operation rather than repeating it.
+    const staleBefore = new Date(Date.now() - CRM_CLAIM_TTL_MS);
+    const abandoned = operation.status === "processing" && operation.updated_at <= staleBefore;
+    if (operation.status !== "pending" && operation.status !== "retryable_failed" && !abandoned) {
       return ok(toView(operation));
     }
     const claim = await db.crmSyncOperation.updateMany({
-      where: { id: operation.id, account_id: params.accountId, status: { in: ["pending", "retryable_failed"] } },
+      where: {
+        id: operation.id,
+        account_id: params.accountId,
+        OR: [{ status: { in: ["pending", "retryable_failed"] } }, { status: "processing", updated_at: { lte: staleBefore } }],
+      },
       data: {
         status: "processing",
         attempt_count: { increment: 1 },

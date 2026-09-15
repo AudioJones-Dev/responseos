@@ -171,13 +171,17 @@ export async function recordWebhookEvent(entry: {
 export interface CallCorrelation {
   target: string;
   /**
-   * The moment the call reached the number, taken from the earliest signed
-   * event that carried it (the initialization). A later post-call event must
-   * be resolved at this time, not its own: the number may have been released
-   * or reassigned in between, and the call belongs to whoever held it then.
+   * The moment the call reached the number: the signed `occurred_at` of the
+   * assistant initialization that bound the call to it. A later post-call
+   * event must be resolved at this time, not its own: the number may have been
+   * released or reassigned in between, and the call belongs to whoever held it
+   * then. Only the initialization is trusted as the anchor. A direct call
+   * event can be delivered before it, so receipt order cannot pick the start.
    */
   anchoredAt: Date;
 }
+
+const CALL_START_EVENT_TYPE = "assistant.initialization";
 
 function occurredAtFromRawBody(rawBody: string): Date | null {
   try {
@@ -205,12 +209,18 @@ export async function findCallCorrelation(params: {
       signature_valid: true,
     },
     orderBy: { received_at: "asc" },
-    select: { agent_target: true, raw_body: true, received_at: true },
+    select: { agent_target: true, raw_body: true, event_type: true },
   });
-  const earliest = rows[0];
-  if (!earliest?.agent_target) return null;
-  if (rows.some((row) => row.agent_target !== earliest.agent_target)) return null;
-  return { target: earliest.agent_target, anchoredAt: occurredAtFromRawBody(earliest.raw_body) ?? earliest.received_at };
+  // Fail closed without a call-start anchor. Any other row for this call
+  // (a direct call event delivered before the initialization, or a
+  // conversation-end event) proves the number, but not when the call reached
+  // it, and the tenant must be resolved at that moment.
+  const start = rows.find((row) => row.event_type === CALL_START_EVENT_TYPE);
+  if (!start?.agent_target) return null;
+  if (rows.some((row) => row.agent_target !== start.agent_target)) return null;
+  const anchoredAt = occurredAtFromRawBody(start.raw_body);
+  if (!anchoredAt) return null;
+  return { target: start.agent_target, anchoredAt };
 }
 
 export async function findAgentTargetForProviderCall(params: {

@@ -211,6 +211,11 @@ export async function dispatchCallReview(id: string) {
       await audit("call_review_dispatch_outcome", { revision: row.revision, outcome: "already_accepted", crmStatus: crm.ok ? crm.data.status : "failed" });
       return { status: "already_accepted" };
     }
+    // A claim another worker still holds, or one abandoned too recently to
+    // reclaim, is not a CRM outcome. Sending the email now would present the
+    // workflow as complete while the CRM effect is unknown; stop here and let
+    // a later retry reclaim it once it has aged out.
+    if (crmStatus === "processing") throw new Error("crm_claim_in_progress");
     if (row.email_attempt_at && Date.now() - row.email_attempt_at.getTime() >= 23 * 60 * 60 * 1000) throw new Error("email_delivery_requires_reconciliation");
     if (!(await supervisedExecutionAuthorized(row.account_id))) throw new Error("execution_gate_not_authorized");
     const provider = getEmailProvider();
