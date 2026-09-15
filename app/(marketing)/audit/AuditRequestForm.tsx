@@ -77,12 +77,11 @@ export function AuditRequestForm() {
           Request received
         </p>
         <h3 className="mt-2 font-display text-xl font-semibold text-ink">
-          Your audit is queued
+          Your assessment request is in
         </h3>
         <p className="mt-2 text-sm text-ink-secondary">
-          We&apos;ll map your missed-demand surface and follow up with a
-          recovery plan and a 30-day recovered-revenue estimate. No spam, no
-          sales pressure.
+          Thanks — we&apos;ll be in touch to schedule your assessment. No spam,
+          no sales pressure.
         </p>
         {reference ? (
           <p className="mt-4 font-mono text-xs text-ink-muted">
@@ -179,7 +178,7 @@ export function AuditRequestForm() {
 
       <div className="flex items-center gap-4 sm:col-span-2">
         <Button type="submit" glow disabled={status === "submitting"}>
-          {status === "submitting" ? "Sending…" : "Request my audit"}
+          {status === "submitting" ? "Sending…" : "Request my assessment"}
         </Button>
         {status === "error" ? (
           <p className="text-sm text-danger">{error}</p>
