@@ -5,7 +5,11 @@ import { isCrossTenantRole } from "@/lib/data/session-helpers";
 import { err, errFromThrown, ok, type Result } from "@/lib/data/result";
 import { normalizeE164 } from "@/lib/validation/common";
 import { contentHash, stableJson } from "@/lib/prospectBootstrap/memory";
-import { PROSPECT_AUDIT_RETENTION_DAYS } from "@/lib/prospectBootstrap/contracts";
+import {
+  BusinessMemorySnapshotSchema,
+  PROSPECT_AUDIT_RETENTION_DAYS,
+} from "@/lib/prospectBootstrap/contracts";
+import { isOperatingConfigurationKey } from "./operatingConfiguration";
 import { verifyProviderAttestationSignature } from "@/lib/prospectBootstrap/attestation";
 import {
   buildOperatingConfigurationSnapshot,
@@ -77,6 +81,33 @@ export interface SupervisedTenantPlan {
   };
   activated: boolean;
   stops: string[];
+}
+
+/**
+ * Digest of the configuration a snapshot carries, ignoring when it was
+ * generated or asserted. The snapshot's own content hash covers the whole
+ * document including timestamps, so comparing that would record a new
+ * approved version every time an operator re-ran an unchanged configuration.
+ */
+function configurationDigest(memoryJson: unknown): string | null {
+  const parsed = BusinessMemorySnapshotSchema.safeParse(memoryJson);
+  if (!parsed.success) return null;
+  const memory = parsed.data;
+  const values = [
+    ...memory.businessProfile,
+    ...memory.services,
+    ...memory.locations,
+    ...memory.operatingHours,
+    ...memory.serviceAreas,
+    ...memory.faqs,
+    ...memory.policies,
+    ...memory.contactPaths,
+    ...memory.brandVoice,
+  ]
+    .filter((fact) => isOperatingConfigurationKey(fact.key))
+    .map((fact) => ({ key: fact.key, value: fact.value }))
+    .sort((left, right) => left.key.localeCompare(right.key));
+  return contentHash(values);
 }
 
 async function requireOperator() {
@@ -303,7 +334,13 @@ export async function configureSupervisedTenant(
       });
 
       let snapshot = current;
-      const unchanged = current?.content_hash === snapshotBuild.hash;
+      const candidateDigest = configurationDigest(snapshotBuild.memory);
+      const unchanged = Boolean(
+        current &&
+        current.template_version === input.executionMode &&
+        candidateDigest !== null &&
+        candidateDigest === configurationDigest(current.memory_json),
+      );
       if (!unchanged) {
         if (current) {
           await tx.businessMemorySnapshot.update({
@@ -451,7 +488,9 @@ export async function configureSupervisedTenant(
         configuration: {
           ...plan.configuration,
           version: snapshot?.version ?? null,
-          hash: snapshotBuild.hash,
+          // The stored snapshot's own hash, so the reported value always
+          // matches the row an operator can look up.
+          hash: snapshot?.content_hash ?? snapshotBuild.hash,
           unchanged,
         },
         number: { ...plan.number, assignmentId },
@@ -461,6 +500,16 @@ export async function configureSupervisedTenant(
 
     return ok(applied);
   } catch (error) {
-    return errFromThrown(error);
+    // Attestation and preflight failures are thrown as bare Errors whose
+    // message is already the machine-readable reason. `errFromThrown` only
+    // reads a `code` property, so without this they would all surface as
+    // `internal_error` and an operator could not tell a recording-posture
+    // mismatch from a database fault.
+    const reason = error instanceof Error && /^[a-z][a-z0-9_]{3,79}$/.test(error.message)
+      ? error.message
+      : null;
+    return reason
+      ? err(reason, "Supervised tenant configuration failed its provider or policy preflight.")
+      : errFromThrown(error);
   }
 }
