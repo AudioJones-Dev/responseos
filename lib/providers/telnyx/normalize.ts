@@ -1,6 +1,13 @@
 import "@/lib/serverOnlyGuard";
-import { db } from "@/lib/db/client";
+import { db as database } from "@/lib/db/client";
+import type { Prisma } from "@prisma/client";
 import { setWebhookProcessStatus } from "@/lib/data/webhookEvents";
+import { normalizeE164 } from "@/lib/validation/common";
+import {
+  extractTelnyxCallInsight,
+  extractTelnyxTranscript,
+  type TelnyxCallInsight,
+} from "@/lib/providers/telnyx/insights";
 import {
   getTelnyxCallId,
   type TelnyxWebhookEnvelope,
@@ -17,45 +24,17 @@ function stringValue(value: unknown): string | null {
   return null;
 }
 
-function recordValue(value: unknown): Record<string, unknown> | null {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : null;
-}
-
 function dateValue(value: unknown, fallback: Date): Date {
   if (typeof value !== "string") return fallback;
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? fallback : parsed;
 }
 
-function transcriptText(payload: Record<string, unknown>): string | null {
-  if (typeof payload.transcript === "string") return payload.transcript;
-  if (!Array.isArray(payload.transcript)) return null;
-  const lines = payload.transcript.flatMap((entry) => {
-    const item = recordValue(entry);
-    if (!item) return [];
-    const text = stringValue(item.content) ?? stringValue(item.text);
-    if (!text) return [];
-    const speaker = stringValue(item.role) ?? stringValue(item.speaker) ?? "speaker";
-    return [`${speaker}: ${text}`];
-  });
-  return lines.length ? lines.join("\n") : null;
-}
-
-function insightsFrom(payload: Record<string, unknown>) {
-  const result = recordValue(payload.result);
-  const insights = recordValue(payload.insights) ?? recordValue(result?.insights) ?? result;
-  const qualification = recordValue(payload.qualification) ?? recordValue(insights?.qualification);
-  const summary =
-    stringValue(payload.summary) ??
-    stringValue(insights?.summary) ??
-    stringValue(result?.summary);
-  const nextAction =
-    stringValue(payload.next_action) ??
-    stringValue(insights?.next_action) ??
-    stringValue(qualification?.next_action);
-  return { insights, qualification, summary, nextAction };
+function sameNumber(left: string, right: string): boolean {
+  const leftE164 = normalizeE164(left);
+  const rightE164 = normalizeE164(right);
+  if (leftE164 && rightE164) return leftE164 === rightE164;
+  return left.replace(/\D/g, "") === right.replace(/\D/g, "");
 }
 
 function qualificationStatus(value: unknown): "qualified" | "maybe" | "unqualified" | "spam" {
@@ -63,6 +42,14 @@ function qualificationStatus(value: unknown): "qualified" | "maybe" | "unqualifi
   if (value === "spam") return "spam";
   if (value === false || value === "unqualified" || value === "rejected") return "unqualified";
   return "maybe";
+}
+
+// Only an explicit rejection marks a caller unqualified. A quote request that
+// carries no qualification evidence scores "maybe", which is an unscored lead,
+// not a refused one, and `LeadEventStatus` records that as `new`.
+function leadStatusFor(status: "qualified" | "maybe" | "unqualified" | "spam"): "qualified" | "unqualified" | "new" {
+  if (status === "qualified") return "qualified";
+  return status === "unqualified" || status === "spam" ? "unqualified" : "new";
 }
 
 function boundedScore(value: unknown, status: string): number {
@@ -77,24 +64,63 @@ function timeline(value: unknown): "same_day" | "this_week" | "this_month" | "un
     : "unknown";
 }
 
+function durationSeconds(payload: Record<string, unknown>): number | undefined {
+  for (const key of ["duration_sec", "duration_secs", "duration_seconds"]) {
+    const value = payload[key];
+    if (typeof value === "number" && Number.isFinite(value)) return Math.max(0, Math.round(value));
+  }
+  return undefined;
+}
+
+/** Fill-when-empty unless the agent confirmed the caller's identity on this call. */
+function nameUpdate(
+  existing: string | null,
+  next: string | null,
+  identityConfirmed: boolean,
+): string | undefined {
+  if (!next) return undefined;
+  if (existing && !identityConfirmed) return undefined;
+  return next;
+}
+
+function locationLine(insight: TelnyxCallInsight): string | null {
+  const parts = [insight.city, insight.state, insight.postalCode].filter(Boolean);
+  return parts.length ? parts.join(", ") : null;
+}
+
+export interface NormalizeTelnyxEventOptions {
+  /** Write caller identity, location, and call classification from the insight. */
+  captureCallerIdentity?: boolean;
+  /** Create one QuoteRequest per lead event when the caller explicitly asked for a quote. */
+  createQuoteRequest?: boolean;
+  reviewRequired?: boolean;
+}
+
 export async function normalizeTelnyxEvent(params: {
+  providerCallId?: string;
+  client?: Prisma.TransactionClient;
   accountId: string;
   demoNumber: string;
   webhookEventId: string;
   event: TelnyxWebhookEnvelope;
   transcriptExpiresAt?: Date;
+  options?: NormalizeTelnyxEventOptions;
 }): Promise<{ callId: string | null; finalized: boolean }> {
+  const db = params.client ?? database;
   if (db === null) throw new Error("database_unavailable");
   const payload = params.event.data.payload;
-  const providerCallId = getTelnyxCallId(payload);
+  const providerCallId = params.providerCallId ?? getTelnyxCallId(payload);
   if (!providerCallId) {
     await setWebhookProcessStatus({
+      client: params.client,
       id: params.webhookEventId,
       process_status: "rejected",
       process_error: "missing_provider_call_id",
     });
     return { callId: null, finalized: false };
   }
+
+  const captureIdentity = params.options?.captureCallerIdentity === true;
 
   const existing = await db.call.findUnique({
     where: {
@@ -105,10 +131,12 @@ export async function normalizeTelnyxEvent(params: {
       },
     },
   });
-  const fromNumber = stringValue(payload.from) ?? existing?.from_number ?? "unavailable";
+  const rawFrom = stringValue(payload.from) ?? existing?.from_number ?? "unavailable";
+  const fromNumber = rawFrom === "unavailable" ? rawFrom : normalizeE164(rawFrom) ?? rawFrom;
   const toNumber = stringValue(payload.to) ?? existing?.to_number ?? params.demoNumber;
-  if (toNumber !== "unavailable" && toNumber.replace(/\D/g, "") !== params.demoNumber.replace(/\D/g, "")) {
+  if (toNumber !== "unavailable" && !sameNumber(toNumber, params.demoNumber)) {
     await setWebhookProcessStatus({
+      client: params.client,
       id: params.webhookEventId,
       process_status: "rejected",
       process_error: "unexpected_destination",
@@ -116,24 +144,44 @@ export async function normalizeTelnyxEvent(params: {
     return { callId: null, finalized: false };
   }
 
-  const insight = insightsFrom(payload);
+  const insight = extractTelnyxCallInsight(payload);
   let contactId = existing?.contact_id ?? null;
   if (!contactId && fromNumber !== "unavailable") {
+    // Match either spelling: contacts created before the shared E.164 helper
+    // landed may still hold the provider's raw string.
     const contact =
       (await db.contact.findFirst({
-        where: { account_id: params.accountId, phone: fromNumber },
+        where: {
+          account_id: params.accountId,
+          OR: [{ phone: fromNumber }, { phone: rawFrom }],
+        },
       })) ??
       (await db.contact.create({
         data: { account_id: params.accountId, phone: fromNumber, source: "call" },
       }));
     contactId = contact.id;
   }
+
   const verifiedEmail = stringValue(insight.qualification?.email);
-  if (contactId && verifiedEmail && insight.qualification?.email_verified === true) {
-    await db.contact.update({
-      where: { id: contactId },
-      data: { email: verifiedEmail, email_verified: true },
-    });
+  const contactUpdate: Record<string, unknown> = {};
+  if (verifiedEmail && insight.qualification?.email_verified === true) {
+    contactUpdate.email = verifiedEmail;
+    contactUpdate.email_verified = true;
+  }
+  if (contactId && captureIdentity) {
+    // Account-scoped on purpose: nothing in the schema stops a Call from
+    // pointing at another tenant's contact, and this path writes to it.
+    const contact = await db.contact.findFirst({ where: { id: contactId, account_id: params.accountId } });
+    const firstName = nameUpdate(contact?.first_name ?? null, insight.firstName, insight.identityConfirmed);
+    const lastName = nameUpdate(contact?.last_name ?? null, insight.lastName, insight.identityConfirmed);
+    if (firstName) contactUpdate.first_name = firstName;
+    if (lastName) contactUpdate.last_name = lastName;
+    if (insight.city && !contact?.city) contactUpdate.city = insight.city;
+    if (insight.state && !contact?.state) contactUpdate.state = insight.state;
+    if (insight.postalCode && !contact?.zip) contactUpdate.zip = insight.postalCode;
+  }
+  if (contactId && Object.keys(contactUpdate).length > 0) {
+    await db.contact.updateMany({ where: { id: contactId, account_id: params.accountId }, data: contactUpdate });
   }
 
   const eventType = params.event.data.event_type;
@@ -145,11 +193,27 @@ export async function normalizeTelnyxEvent(params: {
   const occurredAt = dateValue(params.event.data.occurred_at, new Date());
   const startedAt = dateValue(payload.start_time, existing?.started_at ?? occurredAt);
   const endedAt = completed ? dateValue(payload.end_time, occurredAt) : existing?.ended_at;
-  const transcript = transcriptText(payload);
-  const duration =
-    typeof payload.duration_secs === "number"
-      ? Math.max(0, Math.round(payload.duration_secs))
-      : existing?.duration_seconds;
+  const transcript = extractTelnyxTranscript(payload);
+  const duration = durationSeconds(payload) ?? existing?.duration_seconds ?? undefined;
+
+  // Message-history updates are cumulative, so a later event with fewer turns
+  // is a partial view and must not truncate what is already stored.
+  const existingTurns = existing?.transcript ? existing.transcript.split("\n").length : 0;
+  const transcriptText = transcript && transcript.turns >= existingTurns ? transcript.text : null;
+
+  const classification = captureIdentity
+    ? {
+        ...(insight.callerRelationship && !existing?.caller_relationship
+          ? { caller_relationship: insight.callerRelationship }
+          : {}),
+        ...(insight.interactionClass && !existing?.interaction_class
+          ? { interaction_class: insight.interactionClass }
+          : {}),
+        ...(insight.recordingConsent && !existing?.recording_consent
+          ? { recording_consent: insight.recordingConsent }
+          : {}),
+      }
+    : {};
 
   const call = await db.call.upsert({
     where: {
@@ -171,8 +235,10 @@ export async function normalizeTelnyxEvent(params: {
       started_at: startedAt,
       ended_at: endedAt,
       duration_seconds: duration,
-      transcript,
+      transcript: transcriptText,
       summary: insight.summary,
+      review_required: params.options?.reviewRequired === true,
+      ...classification,
     },
     update: {
       contact_id: contactId,
@@ -182,33 +248,39 @@ export async function normalizeTelnyxEvent(params: {
       started_at: existing && existing.started_at < startedAt ? existing.started_at : startedAt,
       ended_at: endedAt,
       duration_seconds: duration,
-      transcript: transcript ?? existing?.transcript,
+      transcript: transcriptText ?? existing?.transcript,
       summary: insight.summary ?? existing?.summary,
+      ...classification,
     },
   });
 
-  if (transcript) {
+  if (transcriptText) {
     await db.callTranscript.upsert({
       where: { call_id: call.id },
       create: {
         account_id: params.accountId,
         call_id: call.id,
-        inline_text: transcript,
+        inline_text: transcriptText,
         retention_lane: params.transcriptExpiresAt ? "redacted_only" : "full",
         expires_at: params.transcriptExpiresAt,
       },
       update: {
-        inline_text: transcript,
+        inline_text: transcriptText,
         ...(params.transcriptExpiresAt
-          ? { retention_lane: "redacted_only", expires_at: params.transcriptExpiresAt }
+          ? { retention_lane: "redacted_only" as const, expires_at: params.transcriptExpiresAt }
           : {}),
       },
     });
   }
 
-  if (insight.qualification || insight.summary) {
+  if (insight.qualification || insight.summary || insight.quoteRequested) {
     const rawStatus = insight.qualification?.status ?? insight.qualification?.qualified;
     const status = qualificationStatus(rawStatus);
+    const eventTypeForLead = insight.quoteRequested
+      ? "quote_request"
+      : status === "qualified"
+        ? "qualified_lead"
+        : "follow_up_needed";
     const lead =
       (await db.leadEvent.findFirst({
         where: { account_id: params.accountId, call_id: call.id },
@@ -219,53 +291,79 @@ export async function normalizeTelnyxEvent(params: {
           contact_id: contactId,
           call_id: call.id,
           source: "phone",
-          event_type: status === "qualified" ? "qualified_lead" : "follow_up_needed",
-          status: status === "qualified" ? "qualified" : "new",
+          event_type: eventTypeForLead,
+          status: leadStatusFor(status),
           notes: insight.nextAction,
         },
       }));
     await db.leadEvent.update({
       where: { id: lead.id },
       data: {
-        event_type: status === "qualified" ? "qualified_lead" : "follow_up_needed",
-        status: status === "qualified" ? "qualified" : "unqualified",
+        event_type: eventTypeForLead,
+        status: leadStatusFor(status),
         notes: insight.nextAction ?? lead.notes,
       },
     });
-    await db.leadQualification.upsert({
-      where: { lead_event_id: lead.id },
-      create: {
-        lead_event_id: lead.id,
-        service_needed: stringValue(insight.qualification?.service_needed),
-        service_area_match: insight.qualification?.service_area_match === true,
-        budget_range: stringValue(insight.qualification?.budget_range),
-        timeline: timeline(insight.qualification?.timeline),
-        property_type: stringValue(insight.qualification?.property_type),
-        decision_maker:
-          typeof insight.qualification?.decision_maker === "boolean"
-            ? insight.qualification.decision_maker
-            : null,
-        qualification_score: boundedScore(insight.qualification?.score, status),
-        qualification_status: status,
-        disqualification_reason: stringValue(insight.qualification?.disqualification_reason),
-      },
-      update: {
-        service_needed: stringValue(insight.qualification?.service_needed),
-        service_area_match: insight.qualification?.service_area_match === true,
-        budget_range: stringValue(insight.qualification?.budget_range),
-        timeline: timeline(insight.qualification?.timeline),
-        property_type: stringValue(insight.qualification?.property_type),
-        decision_maker:
-          typeof insight.qualification?.decision_maker === "boolean"
-            ? insight.qualification.decision_maker
-            : null,
-        qualification_score: boundedScore(insight.qualification?.score, status),
-        qualification_status: status,
-        disqualification_reason: stringValue(insight.qualification?.disqualification_reason),
-      },
-    });
+    if (insight.qualification || insight.summary) {
+      await db.leadQualification.upsert({
+        where: { lead_event_id: lead.id },
+        create: {
+          lead_event_id: lead.id,
+          service_needed: stringValue(insight.qualification?.service_needed) ?? insight.serviceRequested,
+          service_area_match: insight.qualification?.service_area_match === true,
+          budget_range: stringValue(insight.qualification?.budget_range),
+          timeline: timeline(insight.qualification?.timeline),
+          property_type: stringValue(insight.qualification?.property_type),
+          decision_maker:
+            typeof insight.qualification?.decision_maker === "boolean"
+              ? insight.qualification.decision_maker
+              : null,
+          qualification_score: boundedScore(insight.qualification?.score, status),
+          qualification_status: status,
+          disqualification_reason: stringValue(insight.qualification?.disqualification_reason),
+        },
+        update: {
+          service_needed: stringValue(insight.qualification?.service_needed) ?? insight.serviceRequested,
+          service_area_match: insight.qualification?.service_area_match === true,
+          budget_range: stringValue(insight.qualification?.budget_range),
+          timeline: timeline(insight.qualification?.timeline),
+          property_type: stringValue(insight.qualification?.property_type),
+          decision_maker:
+            typeof insight.qualification?.decision_maker === "boolean"
+              ? insight.qualification.decision_maker
+              : null,
+          qualification_score: boundedScore(insight.qualification?.score, status),
+          qualification_status: status,
+          disqualification_reason: stringValue(insight.qualification?.disqualification_reason),
+        },
+      });
+    }
+
+    // One quote request per lead event, and only when the caller explicitly
+    // asked for one. A replayed event updates that row rather than adding another.
+    if (params.options?.createQuoteRequest === true && insight.quoteRequested && contactId) {
+      await db.quoteRequest.upsert({
+        where: { lead_event_id: lead.id },
+        create: {
+          account_id: params.accountId,
+          contact_id: contactId,
+          lead_event_id: lead.id,
+          service_type: insight.serviceRequested ?? "unspecified",
+          description: insight.summary,
+          photos: [],
+          photos_requested: insight.photosRequested,
+          property_address: locationLine(insight),
+        },
+        update: {
+          service_type: insight.serviceRequested ?? "unspecified",
+          description: insight.summary ?? undefined,
+          photos_requested: insight.photosRequested,
+          property_address: locationLine(insight) ?? undefined,
+        },
+      });
+    }
   }
 
-  await setWebhookProcessStatus({ id: params.webhookEventId, process_status: "processed" });
+  await setWebhookProcessStatus({ client: params.client, id: params.webhookEventId, process_status: "processed" });
   return { callId: call.id, finalized };
 }

@@ -1656,6 +1656,34 @@ So the brief's generation instrumentation, retrieval instrumentation, evaluation
 
 ---
 
+## ADR-0057 — Isolated FRL demonstrations require per-call consent evidence and approved follow-up
+
+Status: repository implementation authorized by the owner on 2026-09-13 through the Mike demonstration plan. Activation is separately gated. This is not the pending recording amendment, capability-studio proposal, pricing proposal or PR #175's proposed outcome allowlist. Numbered 0057 by owner decision on 2026-09-14: it was drafted as 0056 while ADR-0056 (Langfuse) was merged to master first; the owner assigned 0054 to the commercial doctrine (#176), 0057 to this decision, and 0058 to the Agent Capability Studio decision (#174).
+
+Use SUPERVISED_PILOT in an isolated demonstration environment with real approved business facts and explicitly fictional customer records. Pin the memory snapshot on initialization. Recording stays disabled. Transcript authority is an append-only per-call event, separately scoped to the artifact; absence is denial. The provider must prove consent enforcement and complete capture bounds before activation. The operator evidence endpoint does not itself stop provider capture.
+
+Require operator approval of a specific evidence revision before CRM or email. Preserve qualified-only CRM tasks, bounded contact/call synchronization and no standalone CRM Notes, Tickets, Deals or Companies. Freeze reviewed payloads for retries. Late evidence creates a new review and cannot silently change authorized effects. Provider acceptance never proves inbox receipt. PROSPECT_DEMO retains its CRM prohibition.
+
+Approved-review email uses the same explicitly gated adapter contract ADR-0047 §4 set for HubSpot. `EmailProviderId` is exactly `"mock" | "resend"`. `ResendEmailProvider` is selected only when `RESPONSEOS_LIVE_EMAIL_ENABLED=true` and both `RESEND_API_KEY` and `EMAIL_FROM` are present; otherwise the factory returns `MockEmailProvider`, so the app boots and runs without secrets. Unit tests prove that credentials without the gate, and the gate without either credential, stay on mock. The sender must belong to a domain verified with the provider. Live send remains blocked by the v0.3 gate and the activation gates above; this adapter is `PARTIALLY_SHIPPED` and ratifies a seam, not an integration. Delivery is bounded to the operator-approved review payload for the configured completed-interaction recipient, with the review ID as the idempotency key; provider acceptance never proves inbox receipt.
+
+Implementation detail: signed call aliases are indexed in the webhook ledger and resolve to the initialized capture identity, preserving the same consent lock across event shapes. Ambiguous or unavailable correlation authorizes no content retention. Supervised CRM retry remains the original approved review's dispatch action; the legacy retry path cannot substitute a different approval. Dedicated-number replacement requires prior release instead of implicitly enabling a second route. These safeguards do not authorize provider operations.
+
+Implementation and all fifteen architecture answers: [Mike demonstration brief](./product/responseos-mike-live-demo.md). Authoring: Claude candidate e55c100 plus Codex reconciliation. Mixed authorship requires CodeRabbit review at the current head and human merge.
+
+### Ratified CRM recovery amendment — 2026-09-15
+
+Owner ratified bounded B + C recovery for PR #177 using the existing schema. A lease timeout establishes stale local ownership only. It establishes neither provider failure nor provider absence. Once an irreversible provider effect may have begun, automatic execution stops until that specific effect is reconciled.
+
+Every CREATE and ASSOCIATE requires committed, generation-bound intent and transactional audit evidence before HTTP. LOOKUP is read-only; an empty search is **not** proof of absence. No endpoint is repeatable merely because it uses PUT. Unknown outcomes, including a crash between intent and HTTP, sacrifice automatic recovery for safety. Only durably known pre-effect claims may be reclaimed. Superseded generations cannot advance, acknowledge, release, or succeed.
+
+`CrmSyncOperation` remains authoritative: typed phase codes, generation, provider IDs and an explicit redacted binding to the original frozen review and provider destination. AuditLog is immutable supporting evidence, never a state reconstruction engine. Legacy rows lacking this evidence fail closed. No migration is required by this amendment.
+
+Operator reconciliation distinguishes verified match, ambiguous/conflicting, not observed and readback unavailable. Verified adoption requires original account/call/review/effect attribution and independent evidence that the prior worker cannot submit further requests. Negative readback never automatically releases a CREATE. The bounded implementation omits retry authorization because it cannot establish adequate absence evidence; there is no force-retry override. Cancellation abandons local execution and does not undo provider effects. Every decision retains actor, binding, generation, effect, evidence, reason and resulting state.
+
+For supervised FRL, a **new email requires durable CRM success** for every required object and association. Processing, retryable failure, reconciliation-required, cancellation and legacy unknown all block email. Previously accepted email remains accepted and is not blindly resent.
+
+Supported claim after implementation and validation: ResponseOS prevents automatic duplicate retries when CRM delivery becomes uncertain and surfaces those cases for reconciliation. Prohibited claims: exactly-once external delivery/contact creation, guaranteed deduplication, universal automatic recovery, or guaranteed absence after negative readback. Provider-native unique identities and broader production recovery remain deferred. Provider activation and human merge gates are unchanged.
+
 ## ADR-0058 — Capability definition authority, publication, and runtime assignment
 
 **Status.** Proposed · 2026-09-13 · pending operator ratification; direction set by the operator on 2026-09-13. Extends **ADR-0001** (mock-first), **ADR-0017** (orchestration placement), **ADR-0046** (agent profiles), **ADR-0048** (prospect bootstrap), and **ADR-0051** (execution modes). **Authorizes no implementation** — no schema change, migration, table, authoring surface, execution engine, or provider activation. **Does not authorize v0.3** (doctrine D-1 stays open) and moves no item in doctrine §22.

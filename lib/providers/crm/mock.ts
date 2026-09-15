@@ -8,6 +8,7 @@ import type {
   CrmEventResult,
   CrmFollowUpTaskCreate,
   CrmProvider,
+  CrmReadback,
 } from "@/lib/providers/crm/types"
 
 const FIXED_SYNCED_AT = "2026-01-01T00:00:00.000Z"
@@ -15,6 +16,9 @@ const FIXED_RECORDED_AT = "2026-01-01T00:00:01.000Z"
 
 export class MockCrmProvider implements CrmProvider {
   readonly providerId = "mock" as const
+
+  async getDestination() { return "mock:local" }
+  async reconcileEffect(): Promise<CrmReadback> { return { outcome: "not_observed" } }
 
   async upsertContact(contact: CrmContactUpsert): Promise<CrmContact> {
     return {

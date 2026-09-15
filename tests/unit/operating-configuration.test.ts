@@ -8,10 +8,17 @@ import { compileBusinessMemorySnapshot, contentHash } from "@/lib/prospectBootst
 import {
   OPERATING_CONFIGURATION_REQUIREMENTS,
   evaluateOperatingConfiguration,
+  WeeklyOperatingHoursSchema, HolidayOperatingHoursSchema, isOperatingConfigurationKey,
 } from "@/lib/agentExecution/operatingConfiguration";
 import { EXECUTION_MODES, EXECUTION_MODE_ACTIVATION_GATES } from "@/lib/agentExecution/policy";
 
 const now = "2026-09-10T16:00:00.000Z";
+
+test("configuration rejects inherited keys and contradictory duplicate schedules", () => {
+  for (const key of ["constructor", "toString", "__proto__"]) expect(isOperatingConfigurationKey(key)).toBe(false);
+  expect(WeeklyOperatingHoursSchema.safeParse({ type: "schedule", timezone: "America/New_York", days: [{ day: "monday", closed: true }, { day: "monday", closed: false, opensAt: "09:00", closesAt: "17:00" }] }).success).toBe(false);
+  expect(HolidayOperatingHoursSchema.safeParse({ type: "closures", timezone: "America/New_York", closures: [{ date: "2026-12-25", name: "Holiday", closed: true }, { date: "2026-12-25", name: "Holiday", closed: false }] }).success).toBe(false);
+});
 const recordRef = "approval-record:operator-session-1";
 
 function operatorFact(key: string, value: unknown) {
@@ -68,14 +75,38 @@ function snapshot(sections: Partial<Record<keyof BusinessMemorySnapshot, unknown
   });
 }
 
+const CONSENT_VALUE = {
+  aiDisclosure: "This call is handled by an automated assistant.",
+  transcription: { enabled: true },
+  recording: { enabled: false },
+  refusal: {
+    acknowledgement: "Understood, I will not record.",
+    stopRecordingWhenSupported: true,
+    offer: "transfer_or_callback",
+    minimizeCollection: true,
+  },
+};
+
 const COMPLETE_SUPERVISED_CONFIGURATION = {
   operatingHours: [
-    operatorFact("operating_hours.weekly", { monday: "08:00-17:00" }),
-    operatorFact("operating_hours.holidays", []),
+    operatorFact("operating_hours.weekly", {
+      type: "schedule",
+      timezone: "America/New_York",
+      days: [{ day: "monday", closed: false, opensAt: "08:00", closesAt: "17:00" }],
+    }),
+    operatorFact("operating_hours.holidays", { type: "always_open" }),
   ],
-  serviceAreas: [operatorFact("service_area.coverage", ["Example County"])],
-  contactPaths: [operatorFact("contact.escalation.primary", { role: "owner" })],
-  policies: [operatorFact("policy.consent.disclosure", "automated_assistant_disclosed")],
+  serviceAreas: [
+    operatorFact("service_area.coverage", {
+      regions: ["Example Region"],
+      precision: "broad_region",
+      countyInferenceAllowed: false,
+      locationConfirmationRequired: true,
+      collectFromCaller: ["city", "postal_code"],
+    }),
+  ],
+  contactPaths: [operatorFact("contact.escalation.primary", { name: "Example Owner", phone: "+15555550123" })],
+  policies: [operatorFact("policy.consent", CONSENT_VALUE)],
 };
 
 describe("operator-asserted configuration on the memory snapshot", () => {
@@ -156,15 +187,15 @@ describe("operating configuration readiness", () => {
     expect(readiness.missing).toEqual(["contact.escalation"]);
   });
 
-  test("treats a required fact that carries no value as missing, but accepts an empty holiday list", () => {
+  test("treats a required fact whose value does not parse as missing", () => {
     const readiness = evaluateOperatingConfiguration(snapshot({
       ...COMPLETE_SUPERVISED_CONFIGURATION,
       operatingHours: [
         operatorFact("operating_hours.weekly", null),
-        operatorFact("operating_hours.holidays", []),
+        operatorFact("operating_hours.holidays", { type: "always_open" }),
       ],
       contactPaths: [operatorFact("contact.escalation.primary", {})],
-      policies: [operatorFact("policy.consent.disclosure", "   ")],
+      policies: [operatorFact("policy.consent", "   ")],
     }), "SUPERVISED_PILOT");
     expect(readiness.ready).toBe(false);
     expect(readiness.missing).toEqual(["operating_hours.weekly", "contact.escalation", "policy.consent"]);

@@ -1238,6 +1238,19 @@
       "refType": "pull",
       "priority": "High",
       "blocked": false
+    },
+    {
+      "id": "FRL-MIKE-LIVE-DEMO",
+      "ref": 177,
+      "refType": "pull",
+      "phase": "Integrations",
+      "title": "Supervised FRL demonstration: approved knowledge, consent, review, CRM and email",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 80,
+      "priority": "High",
+      "blocked": true,
+      "blockedReason": "CRM recovery closed and frozen. Approved v4 availability wording repair locally validated; owner diff approval and focused independent review pending. Live configuration, consent proof and rehearsal remain separate gates."
     }
   ],
   "liveIssues": [
