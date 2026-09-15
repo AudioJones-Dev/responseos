@@ -20,7 +20,7 @@ export const business = {
 export const overview = {
   period: "This month",
   revenueProtected: 12450,
-  revenueProtectedDelta: "+18% vs last month",
+  revenueProtectedDelta: "Illustrative: +18% vs last month",
   recoveredCalls: 31,
   qualifiedLeads: 14,
   appointments: 8,

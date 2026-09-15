@@ -2,16 +2,16 @@ import { ButtonLink, Card } from "@/components/ui";
 import { AuditRequestForm } from "./AuditRequestForm";
 
 export const metadata = {
-  title: "Revenue recovery audit",
+  title: "Readiness & Revenue Leak Assessment",
   description:
-    "Map your missed-demand surface and get an estimated recovered-revenue number for the next 30 days — a clear figure, not a sales pitch.",
+    "The Readiness & Revenue Leak Assessment sizes your missed demand, scores your readiness, and gives you a straight fit / no-fit answer before any install.",
 };
 
 const STEPS = [
   {
     n: "01",
     title: "Connect your call log + CRM",
-    body: "We pull your missed calls, after-hours traffic, and quote history (mock for now). No rip-and-replace — we read what you already have.",
+    body: "We review your missed calls, after-hours traffic, and quote history from the exports you share. No rip-and-replace.",
   },
   {
     n: "02",
@@ -21,7 +21,7 @@ const STEPS = [
   {
     n: "03",
     title: "You get a recovery plan with an ROI estimate",
-    body: "A RECOVER deployment plan and an estimated recovered-revenue number for the next 30 days — proof before you commit a dollar.",
+    body: "A recommended workflow, implementation scope, and projected ROI — before you commit to implementation.",
   },
 ];
 
@@ -36,28 +36,27 @@ export default function AuditPage() {
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-16 sm:px-6">
       <p className="text-xs font-semibold uppercase tracking-widest text-ink-muted">
-        Revenue recovery audit
+        Readiness & Revenue Leak Assessment
       </p>
       <h1 className="mt-2 max-w-3xl font-display text-3xl font-semibold leading-[1.1] text-ink sm:text-4xl">
         See the revenue you&apos;re already missing
       </h1>
       <p className="mt-4 max-w-2xl text-lg text-ink-secondary">
-        We map your missed-demand surface area and hand you an estimated
-        recovered-revenue number for the next 30 days. A clear figure, not a
-        sales pitch.
+        The assessment sizes your missed demand, scores your readiness, and
+        gives you a straight fit / no-fit answer before any install.
       </p>
       <div className="mt-8 flex flex-wrap gap-3">
         <ButtonLink href="#request" glow>
-          Request my audit
+          Request my assessment
         </ButtonLink>
         <ButtonLink href="/demo" variant="secondary">
-          See it on real workflows
+          See a demo
         </ButtonLink>
       </div>
 
       <section className="mt-14">
         <h2 className="font-display text-2xl font-semibold text-ink">
-          How the audit runs
+          How the assessment runs
         </h2>
         <ol className="mt-8 space-y-4">
           {STEPS.map((s) => (
@@ -79,8 +78,7 @@ export default function AuditPage() {
           What we look for
         </h2>
         <p className="mt-2 max-w-2xl text-sm text-ink-secondary">
-          Every leak is logged as a lead event and priced against your average
-          job value.
+          Each gap is priced against your average job value.
         </p>
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
           {SURFACE.map((item) => (
@@ -94,11 +92,11 @@ export default function AuditPage() {
 
       <section id="request" className="mt-14 scroll-mt-24">
         <h2 className="font-display text-2xl font-semibold text-ink">
-          Request your audit
+          Request your assessment
         </h2>
         <p className="mt-2 max-w-2xl text-sm text-ink-secondary">
-          Tell us where the demand is leaking. We&apos;ll come back with a
-          recovery plan and a 30-day recovered-revenue estimate.
+          Tell us where demand is slipping. We&apos;ll follow up to schedule
+          your assessment.
         </p>
         <Card className="mt-8" as="section">
           <AuditRequestForm />

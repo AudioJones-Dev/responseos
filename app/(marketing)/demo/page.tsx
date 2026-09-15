@@ -103,7 +103,7 @@ export default function DemoPage() {
             Revenue Recovery Demo
           </ButtonLink>
           <ButtonLink href="/audit" variant="secondary">
-            Run a revenue audit
+            Book the Readiness Assessment
           </ButtonLink>
         </div>
       </section>

@@ -52,7 +52,7 @@ export default function DemoOperatorConsole() {
     <>
       <PageHeader
         eyebrow="Operator Console Demo"
-        title="Admin Overview"
+        title="Admin overview"
         description="Portfolio health across demo workspaces."
       />
 
@@ -102,7 +102,7 @@ export default function DemoOperatorConsole() {
           value={
             revenue.roi_multiple ? `${revenue.roi_multiple.toFixed(1)}x` : "-"
           }
-          hint="Recovered revenue / monthly cost"
+          hint="Estimated recovered revenue / monthly cost"
         />
       </section>
 

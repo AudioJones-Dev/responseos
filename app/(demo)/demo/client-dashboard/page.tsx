@@ -25,8 +25,8 @@ export default function DemoClientDashboard() {
   return (
     <>
       <PageHeader
-        eyebrow="Client Dashboard Demo"
-        title="Sample Month"
+        eyebrow="Client portal demo"
+        title="Sample month"
         description={`${formatPeriod(m.period_start, m.period_end)} · mock data`}
       />
 
