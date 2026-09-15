@@ -208,6 +208,17 @@ export async function dispatchCallReview(id: string) {
   // did afterwards.
   let sent: { providerMessageId: string } | null = null;
   try {
+    // The CRM write is an irreversible external effect, so ownership is proven
+    // before it, not only before the email. A worker suspended past the claim
+    // TTL can have its claim taken and a newer revision queued from later
+    // evidence; without this fence it would resume here and push its stale
+    // approved payload to the CRM. The write is deliberately shaped as a no-op
+    // on `dispatch_at` so the delivery state machine is untouched: only
+    // ownership is being checked.
+    const owns = await db.callReview.updateMany({ where: { id, account_id: row.account_id, status: "approved", dispatch_at: claimedAt }, data: { dispatch_at: claimedAt } });
+    if (!owns.count) throw new Error("dispatch_claim_lost");
+    const latestBeforeCrm = await db.callReview.findFirst({ where: { account_id: row.account_id, call_id: row.call_id }, orderBy: { revision: "desc" }, select: { id: true } });
+    if (latestBeforeCrm?.id !== id) throw new Error("stale_review");
     const crm = await runCrmSyncForCall({ accountId: row.account_id, callId: row.call_id, requireLiveProvider: true, reviewId: id });
     crmStatus = crm.ok ? crm.data.status : "failed";
     await db.callReview.update({ where: { id, account_id: row.account_id }, data: { crm_status: crmStatus } });
@@ -253,7 +264,13 @@ export async function dispatchCallReview(id: string) {
       throw error;
     }
     const downgraded = await db.callReview.updateMany({ where: { id, account_id: row.account_id, email_status: { not: "accepted" }, dispatch_at: claimedAt }, data: { email_status: "failed" } });
-    await audit("call_review_dispatch_outcome", { revision: row.revision, outcome: downgraded.count ? "failed" : "accepted", error: error instanceof Error ? error.message : "dispatch_failed" });
+    // A fence that matches nothing has two causes, and they are not the same
+    // outcome: the row was already accepted, or this attempt lost its claim and
+    // never sent. Read the persisted state rather than inferring acceptance
+    // from a zero count, which would audit a send that never happened.
+    const persisted = downgraded.count ? null : await db.callReview.findUnique({ where: { id, account_id: row.account_id }, select: { email_status: true } }).catch(() => null);
+    const outcome = downgraded.count ? "failed" : persisted?.email_status === "accepted" ? "accepted" : "claim_lost";
+    await audit("call_review_dispatch_outcome", { revision: row.revision, outcome, error: error instanceof Error ? error.message : "dispatch_failed" });
     throw error;
   } finally {
     // Release only this attempt's claim; a reclaimed row belongs to someone else.

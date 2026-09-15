@@ -26,6 +26,13 @@ describe("live-demo environment contract", () => {
     expect(validateLiveDemoEnvironment(VALID)).toEqual([]);
   });
 
+  test("rejects a gate list that does not authorize live communications", () => {
+    // A non-empty but unrelated value passed the required-variable check while
+    // every supervised tenant would degrade to the demo lane at runtime.
+    const errors = validateLiveDemoEnvironment({ ...VALID, RESPONSEOS_AUTHORIZED_EXECUTION_GATES: "other-gate" });
+    expect(errors).toContain("RESPONSEOS_AUTHORIZED_EXECUTION_GATES must include v0.3-live-communications");
+  });
+
   test("rejects wrong number, disabled execution, and deferred providers", () => {
     const errors = validateLiveDemoEnvironment({
       ...VALID,

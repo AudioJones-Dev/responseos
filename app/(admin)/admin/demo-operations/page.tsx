@@ -11,7 +11,23 @@ import { EmptyState, PageHeader, StatusBadge, Table, TBody, TD, THead, TR } from
 export const dynamic = "force-dynamic";
 
 export default async function DemoOperationsPage() {
-  const { captures, reviews } = await loadCallReviewConsole();
+  // Sign-in is enforced upstream but the application role is not, so an
+  // authenticated non-operator reaches this page and the console's own
+  // operator check throws mid-render. Answer with a denied state instead of an
+  // uncaught rendering exception; the check itself stays in the console.
+  let console_: Awaited<ReturnType<typeof loadCallReviewConsole>>;
+  try {
+    console_ = await loadCallReviewConsole();
+  } catch (error) {
+    if (!(error instanceof Error) || error.message !== "operator_required") throw error;
+    return (
+      <>
+        <PageHeader title="Demo operations" />
+        <EmptyState title="Operator access required" description="This console is limited to ResponseOS operators." />
+      </>
+    );
+  }
+  const { captures, reviews } = console_;
 
   const demoAccountId = process.env.RESPONSEOS_DEMO_ACCOUNT_ID;
   const inboundAccountId = process.env.RESPONSEOS_INBOUND_ACCOUNT_ID;

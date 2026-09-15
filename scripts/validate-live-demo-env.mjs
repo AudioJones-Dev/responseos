@@ -79,12 +79,17 @@ export function validateLiveDemoEnvironment(env, expectedDatabaseEnv = undefined
     .split(",")
     .map((gate) => gate.trim())
     .filter((gate) => gate.length > 0);
-  if (gates.includes(LIVE_COMMUNICATIONS_GATE)) {
-    if (!hasValue(env.RESPONSEOS_PROVIDER_ATTESTATION_PUBLIC_KEY)) {
-      errors.push(
-        "RESPONSEOS_PROVIDER_ATTESTATION_PUBLIC_KEY is required when the live-communications gate is authorized",
-      );
-    }
+  // A non-empty gate list is not the requirement: SUPERVISED_PILOT resolves
+  // against this exact gate, and any other value degrades every supervised
+  // tenant to the demo lane while the preflight reports success.
+  if (!gates.includes(LIVE_COMMUNICATIONS_GATE)) {
+    errors.push(
+      `RESPONSEOS_AUTHORIZED_EXECUTION_GATES must include ${LIVE_COMMUNICATIONS_GATE}`,
+    );
+  } else if (!hasValue(env.RESPONSEOS_PROVIDER_ATTESTATION_PUBLIC_KEY)) {
+    errors.push(
+      "RESPONSEOS_PROVIDER_ATTESTATION_PUBLIC_KEY is required when the live-communications gate is authorized",
+    );
   }
   // Email stays optional; once switched on, both halves must be present or
   // every supervised notification fails at dispatch.

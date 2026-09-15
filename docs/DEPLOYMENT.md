@@ -168,7 +168,9 @@ Prisma applies each migration inside a transaction, so `CREATE INDEX CONCURRENTL
 
 | Migration | Table / index | Requirement |
 |---|---|---|
-| `0015_supervised_call_review` | `WebhookEvent` — GIN on `provider_call_ids` | Apply only to a ledger verified empty (`SELECT count(*) FROM "WebhookEvent"` is `0`), or with webhook ingestion paused (`RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED` unset on every lane writing to this database) for the duration of `prisma migrate deploy`. A populated live ledger requires the concurrent procedure below instead. |
+| `0015_supervised_call_review` | `WebhookEvent` — GIN on `provider_call_ids` | Apply only to a ledger verified empty (`SELECT count(*) FROM "WebhookEvent"` is `0`), or with **every** writer to this table stopped for the duration of `prisma migrate deploy`. A populated live ledger requires the concurrent procedure below instead. |
+
+**`RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED` is not a table-wide pause, and must not be treated as one.** Only the Telnyx routes check it. `app/api/webhooks/clerk/route.ts` reaches `handleClerkEvent`, which creates and updates `WebhookEvent` rows regardless of that flag, and the normalization and payload-purge helpers update the table on their own paths. Unsetting the Telnyx flag therefore leaves writers running that `0015` would block. The safe condition is an ingress-wide pause and drain — every webhook route returning 503 or removed from the load balancer, and no purge or normalization job running — verified by observing no `WebhookEvent` writes for the drain window, not by the Telnyx flag alone.
 
 **Concurrent procedure (populated live ledger).** Not validated yet; must be rehearsed against a copy of the target database and its evidence attached to the deploy record before use.
 

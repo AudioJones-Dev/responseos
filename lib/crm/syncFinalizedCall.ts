@@ -144,15 +144,26 @@ export async function runCrmSyncForCall(params: {
     // updated_at, so no reclaim can occur inside the TTL: the count read here is
     // this attempt's own generation and fences every write that must be ours.
     generation = operation.attempt_count;
+    const operationId = operation.id;
+    // Every write after the claim is fenced on this attempt's generation. A
+    // worker frozen mid-flight — inside a provider call, say — can have its
+    // operation reclaimed by the TTL path, which increments attempt_count. When
+    // it resumes, each write matches no row and it stops here instead of
+    // overwriting the replacement's state or its provider ids.
+    const fenced = async (data: Record<string, unknown>) => {
+      const result = await db!.crmSyncOperation.updateMany({
+        where: { id: operationId, account_id: params.accountId, attempt_count: generation },
+        data,
+      });
+      if (result.count === 0) throw new Error("crm_claim_lost");
+      return db!.crmSyncOperation.findUniqueOrThrow({ where: { id: operationId, account_id: params.accountId } });
+    };
     if (operation.provider === "hubspot" && provider.providerId !== "hubspot") {
-      operation = await db.crmSyncOperation.update({
-        where: { id: operation.id, account_id: params.accountId },
-        data: {
-          status: "retryable_failed",
-          last_error_code: "live_provider_disabled",
-          last_error_redacted: "live_provider_disabled",
-          next_attempt_at: null,
-        },
+      operation = await fenced({
+        status: "retryable_failed",
+        last_error_code: "live_provider_disabled",
+        last_error_redacted: "live_provider_disabled",
+        next_attempt_at: null,
       });
       return ok(toView(operation));
     }
@@ -168,10 +179,7 @@ export async function runCrmSyncForCall(params: {
     // The claim above already moved this operation to `processing`; leaving it
     // there makes the later approved dispatch return the claimed row without
     // ever synchronizing.
-    operation = await db.crmSyncOperation.update({
-      where: { id: operation.id, account_id: params.accountId },
-      data: { status: "retryable_failed", last_error_code: "approval_required", last_error_redacted: "approval_required", next_attempt_at: null },
-    });
+    operation = await fenced({ status: "retryable_failed", last_error_code: "approval_required", last_error_redacted: "approval_required", next_attempt_at: null });
     return err("approval_required", "An approved call review is required.");
   }
   const approved = approvedRow ? ReviewPayloadSchema.parse(approvedRow.payload_json) : null;
@@ -229,13 +237,10 @@ export async function runCrmSyncForCall(params: {
         : undefined;
       const matches = await provider.findContacts({ phone, verifiedEmail });
       if (matches.length > 1) {
-        operation = await db.crmSyncOperation.update({
-          where: { id: operation.id, account_id: params.accountId },
-          data: {
+        operation = await fenced({
             status: "review_required",
             last_error_code: "ambiguous_contact_match",
             last_error_redacted: "ambiguous_contact_match",
-          },
         });
         return ok(toView(operation));
       }
@@ -250,10 +255,7 @@ export async function runCrmSyncForCall(params: {
           })
         ).providerContactId;
       }
-      operation = await db.crmSyncOperation.update({
-        where: { id: operation.id, account_id: params.accountId },
-        data: { provider_contact_id: providerContactId },
-      });
+      operation = await fenced({ provider_contact_id: providerContactId });
     }
 
     if (!operation.provider_activity_id) {
@@ -269,10 +271,7 @@ export async function runCrmSyncForCall(params: {
           evidenceReference,
           detail,
         }));
-      operation = await db.crmSyncOperation.update({
-        where: { id: operation.id, account_id: params.accountId },
-        data: { provider_activity_id: activity.providerActivityId },
-      });
+      operation = await fenced({ provider_activity_id: activity.providerActivityId });
     }
     await provider.associateContact(
       "calls",
@@ -293,10 +292,7 @@ export async function runCrmSyncForCall(params: {
           nextAction: nextAction ?? "Review and contact the caller.",
           evidenceReference,
         }));
-      operation = await db.crmSyncOperation.update({
-        where: { id: operation.id, account_id: params.accountId },
-        data: { provider_task_id: task.providerTaskId },
-      });
+      operation = await fenced({ provider_task_id: task.providerTaskId });
     }
     if (operation.provider_task_id) {
       await provider.associateContact(
@@ -306,10 +302,7 @@ export async function runCrmSyncForCall(params: {
       );
     }
 
-    operation = await db.crmSyncOperation.update({
-      where: { id: operation.id, account_id: params.accountId },
-      data: { status: "succeeded", completed_at: new Date() },
-    });
+    operation = await fenced({ status: "succeeded", completed_at: new Date() });
     return ok(toView(operation));
   } catch (error) {
     const safe = redactedError(error);

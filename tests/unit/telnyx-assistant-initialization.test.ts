@@ -164,6 +164,23 @@ describe("signed Telnyx assistant initialization", () => {
     }));
   });
 
+  test("a pinned snapshot that no longer validates fails closed and corrects the ledger", async () => {
+    mocks.resolveSupervisedTenantForNumber.mockResolvedValue({
+      accountId: "supervised-account",
+      assignmentId: "supervised-assignment",
+      accountName: "Example Business",
+      agentName: "Sam",
+      snapshotId: "snapshot-1",
+      memory: { not: "a valid snapshot" },
+      readiness: { ready: true, missing: [] },
+      resolved: { mode: "SUPERVISED_PILOT", degraded: null, policy: { recordingEnabled: false } },
+    });
+    const { POST } = await import("@/app/api/webhooks/telnyx/assistant-initialization/route");
+    const response = await POST(signedRequest("+13055550188"));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ dynamic_variables: { supervised_available: "false" } });
+  });
+
   test("uses the generic unavailable context when no assignment resolves", async () => {
     mocks.resolveActiveProspectAgentContext.mockResolvedValue(null);
     const { POST } = await import("@/app/api/webhooks/telnyx/assistant-initialization/route");

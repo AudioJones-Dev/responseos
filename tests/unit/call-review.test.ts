@@ -244,26 +244,38 @@ test("a CRM claim still held by another worker stops dispatch before the email",
   expect(mocks.db.callReview.updateMany).toHaveBeenLastCalledWith(expect.objectContaining({ where: expect.objectContaining({ dispatch_at: expect.any(Date) }), data: { dispatch_at: null } }));
 });
 
+test("a reclaimed worker never reaches the CRM, and the lost claim is audited as such", async () => {
+  approved();
+  // claim succeeds; the pre-CRM ownership fence finds another attempt's dispatch_at
+  mocks.db.callReview.updateMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValue({ count: 0 });
+  await expect(dispatchCallReview("review")).rejects.toThrow("dispatch_claim_lost");
+  expect(mocks.crm).not.toHaveBeenCalled();
+  expect(mocks.send).not.toHaveBeenCalled();
+  expect(mocks.db.auditLog.create).toHaveBeenLastCalledWith(expect.objectContaining({ data: expect.objectContaining({ action: "call_review_dispatch_outcome", metadata_json: expect.objectContaining({ outcome: "claim_lost" }) }) }));
+});
+
 test("a worker whose dispatch claim was reclaimed sends nothing and touches no other attempt's state", async () => {
   approved();
-  // claim succeeds; the fenced "sending" write finds another attempt's dispatch_at
-  mocks.db.callReview.updateMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 });
+  // claim and the pre-CRM fence succeed; the fenced "sending" write does not
+  mocks.db.callReview.updateMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 });
   await expect(dispatchCallReview("review")).rejects.toThrow("dispatch_claim_lost");
   expect(mocks.send).not.toHaveBeenCalled();
   // Every write after the claim that could belong to another attempt (the
   // sending write, the failure downgrade, the release) carries the fence; the
   // call-wide crm_status write is the only one that does not need it.
   const fenced = mocks.db.callReview.updateMany.mock.calls.slice(1).map((call) => call[0]).filter((call) => !("crm_status" in call.where));
-  expect(fenced).toHaveLength(3);
+  // Pre-CRM ownership, the sending write, the failure downgrade, the release.
+  expect(fenced).toHaveLength(4);
   for (const call of fenced) expect(call.where).toEqual(expect.objectContaining({ dispatch_at: expect.any(Date) }));
 });
 
-test("evidence that arrived while a dispatch was suspended stops the send", async () => {
+test("evidence that arrived while a dispatch was suspended stops it before the CRM", async () => {
   approved();
-  // latest-revision check inside the claim passes; the pre-send recheck sees a newer revision
+  // latest-revision check inside the claim passes; the recheck before the CRM
+  // call sees the newer revision that late evidence created
   mocks.db.callReview.findFirst.mockReset();
   mocks.db.callReview.findFirst.mockResolvedValueOnce({ ...base, status: "approved" }).mockResolvedValueOnce(null).mockResolvedValueOnce({ id: "newer" });
   await expect(dispatchCallReview("review")).rejects.toThrow("stale_review");
-  expect(mocks.crm).toHaveBeenCalledOnce();
+  expect(mocks.crm).not.toHaveBeenCalled();
   expect(mocks.send).not.toHaveBeenCalled();
 });

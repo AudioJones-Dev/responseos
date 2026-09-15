@@ -35,8 +35,8 @@ beforeEach(() => {
       row = { ...row, ...data, attempt_count: Number(row.attempt_count) + 1, updated_at: new Date() };
       return { count: 1 };
     }
-    // Generation-fenced writes: ownership check before provider effects and
-    // the failure release.
+    // Generation-fenced writes: the ownership check before provider effects,
+    // every operation state write, and the failure release.
     if (where.status && where.status !== row.status) return { count: 0 };
     if (where.attempt_count !== undefined && where.attempt_count !== row.attempt_count) return { count: 0 };
     row = { ...row, ...data, updated_at: new Date() };
@@ -110,6 +110,23 @@ test("a worker whose claim was superseded reaches no provider and writes no stat
   expect(result.ok).toBe(false);
   expect(lookup).not.toHaveBeenCalled();
   expect(activity).not.toHaveBeenCalled();
+  expect(row.status).toBe("processing");
+});
+
+test("a worker reclaimed mid-flight stops at its next write and creates no further provider objects", async () => {
+  // The contact create succeeds, then the operation is reclaimed (attempt_count
+  // moves). The generation fence on the provider-id write must stop this worker
+  // before the activity is created and before any state is persisted.
+  const provider = new MockCrmProvider();
+  const activity = vi.spyOn(provider, "createCallActivity");
+  vi.spyOn(provider, "createContact").mockImplementation(async () => {
+    row.attempt_count = Number(row.attempt_count) + 1;
+    return { providerContactId: "contact-mid-flight" };
+  });
+  const result = await runCrmSyncForCall({ accountId: "account", callId: "call", providerOverride: provider });
+  expect(result.ok).toBe(false);
+  expect(activity).not.toHaveBeenCalled();
+  expect(row.provider_contact_id).toBeUndefined();
   expect(row.status).toBe("processing");
 });
 

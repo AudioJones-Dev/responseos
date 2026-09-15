@@ -10,7 +10,7 @@ The schema mirrors `types/*.ts` and `prisma/schema.prisma`. Conventions:
 
 ## Current implementation snapshot
 
-The source of truth for exact fields, enum values, relations, and indexes is `prisma/schema.prisma`. The current migration chain runs from `0001_v0_2_foundation` through `0010_v0_3_provider_enum_alignment`.
+The source of truth for exact fields, enum values, relations, and indexes is `prisma/schema.prisma`. The current migration chain runs from `0001_v0_2_foundation` through `0015_supervised_call_review`. Migrations `0011`–`0013` carry the GTM demo and prospect-bootstrap foundations; `0014` and `0015` carry the supervised demonstration substrate described below and are **neither deployed nor activated** — `0015` additionally carries a deployment requirement recorded in [`DEPLOYMENT.md`](./DEPLOYMENT.md).
 
 Current Prisma models:
 
@@ -53,6 +53,11 @@ Current migration history:
 | `0008_clerk_identity_columns` | Adds Clerk identity wiring columns. |
 | `0009_internal_demo_professional_receptionist` | Adds internal-demo account classification and professional receptionist substrate. |
 | `0010_v0_3_provider_enum_alignment` | Adds Telnyx carrier/SMS/connection and Calendly scheduling/connection enum values only; no live provider behavior. |
+| `0011_gtm_demo_closure_foundation` | Adds the GTM demo closure substrate. |
+| `0012_prospect_bootstrap_foundation` | Adds the prospect bootstrap substrate. |
+| `0013_prospect_bootstrap_review_controls` | Adds prospect bootstrap review controls. |
+| `0014_supervised_tenant_runtime` | Adds the supervised tenant runtime substrate. Not deployed or activated. |
+| `0015_supervised_call_review` | Adds supervised call review, capture and consent evidence. Not deployed or activated; carries the index deployment requirement in [`DEPLOYMENT.md`](./DEPLOYMENT.md). |
 
 The sections below retain historical v0.1/v0.2 design context. If they conflict with `prisma/schema.prisma`, the Prisma schema wins until this document is fully rewritten from the live schema.
 

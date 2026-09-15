@@ -151,11 +151,22 @@ export async function POST(req: Request) {
       create: { account_id: supervised.accountId, provider_call_id: providerCallId, snapshot_id: supervised.snapshotId, snapshot_json: supervised.memory as Prisma.InputJsonValue }, update: {},
     });
 
+    // The pinned snapshot is whatever the first delivery stored, so a schema
+    // that has moved since would make a strict parse throw and return a 500
+    // after the ledger already said processed. Fail closed to the same
+    // unavailable context the other unresolvable paths use, and correct the
+    // ledger so the evidence matches what the caller heard.
+    const pinned = BusinessMemorySnapshotSchema.safeParse(capture.snapshot_json);
+    if (!pinned.success) {
+      await setWebhookProcessStatus({ id: ledger.data.id, process_status: "rejected", process_error: "pinned_snapshot_invalid" });
+      return NextResponse.json({ dynamic_variables: SUPERVISED_UNAVAILABLE_CONTEXT });
+    }
+
     return NextResponse.json({
       dynamic_variables: buildSupervisedAgentContext({
         businessName: supervised.accountName,
         agentName: supervised.agentName,
-        memory: BusinessMemorySnapshotSchema.parse(capture.snapshot_json),
+        memory: pinned.data,
         policy: supervised.resolved.policy,
       }),
       conversation: {
