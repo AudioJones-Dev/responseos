@@ -90,8 +90,13 @@ export async function runCrmSyncForCall(params: {
   let claimed = false;
 
   try {
-    let operation = await db.crmSyncOperation.upsert({
-      where: { operation_key: operationKey, account_id: params.accountId },
+    // Read before upserting: an upsert's empty update branch still touches
+    // `updated_at`, which would make every abandoned claim look fresh on the
+    // very attempt meant to reclaim it. The upsert only runs for a missing row,
+    // where a concurrent creator's bump is harmless.
+    const operationWhere = { operation_key: operationKey, account_id: params.accountId };
+    let operation = await db.crmSyncOperation.findUnique({ where: operationWhere }) ?? await db.crmSyncOperation.upsert({
+      where: operationWhere,
       create: {
         account_id: params.accountId,
         operation_key: operationKey,

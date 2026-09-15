@@ -26,6 +26,30 @@ describe("durable CRM synchronization", () => {
     expect(await prisma.crmSyncOperation.findFirstOrThrow()).toMatchObject({ status: "succeeded", attempt_count: 1 });
   });
 
+  test("a processing claim abandoned past its TTL is reclaimed and continued once", async () => {
+    const provider = new MockCrmProvider();
+    const contact = vi.spyOn(provider, "createContact");
+    const activity = vi.spyOn(provider, "createCallActivity");
+    const abandonedAt = new Date(Date.now() - 20 * 60 * 1000);
+    await prisma.crmSyncOperation.create({ data: {
+      account_id: "org_responseos_demo", call_id: "call_responseos_demo",
+      operation_key: "crm-call:org_responseos_demo:call_responseos_demo",
+      provider: "mock", status: "processing", attempt_count: 1, provider_contact_id: "contact-abandoned", updated_at: abandonedAt,
+    } });
+    expect((await prisma.crmSyncOperation.findFirstOrThrow()).updated_at).toEqual(abandonedAt);
+    const params = { accountId: "org_responseos_demo", callId: "call_responseos_demo", providerOverride: provider };
+    const result = await runCrmSyncForCall(params);
+    expect(result.ok && result.data.status).toBe("succeeded");
+    expect(contact).not.toHaveBeenCalled();
+    expect(activity).toHaveBeenCalledOnce();
+    expect(await prisma.crmSyncOperation.findFirstOrThrow()).toMatchObject({ status: "succeeded", attempt_count: 2, provider_contact_id: "contact-abandoned" });
+    // A fresh claim is never stolen.
+    await prisma.crmSyncOperation.updateMany({ data: { status: "processing" } });
+    const held = await runCrmSyncForCall(params);
+    expect(held.ok && held.data.status).toBe("processing");
+    expect(activity).toHaveBeenCalledOnce();
+  });
+
   test("replays one finalized qualified call without duplicate operations", async () => {
     const params = {
       accountId: "org_responseos_demo",

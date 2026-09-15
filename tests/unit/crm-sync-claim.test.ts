@@ -3,7 +3,7 @@ import { runCrmSyncForCall } from "@/lib/crm/syncFinalizedCall";
 import { MockCrmProvider } from "@/lib/providers/crm/mock";
 
 const database = vi.hoisted(() => ({
-  crmSyncOperation: { upsert: vi.fn(), updateMany: vi.fn(), update: vi.fn(), findUniqueOrThrow: vi.fn() },
+  crmSyncOperation: { findUnique: vi.fn(), upsert: vi.fn(), updateMany: vi.fn(), update: vi.fn(), findUniqueOrThrow: vi.fn() },
   call: { findFirst: vi.fn() },
   contact: { findFirst: vi.fn() },
   leadEvent: { findFirst: vi.fn() },
@@ -21,7 +21,8 @@ beforeEach(() => {
     call_id: "call", status: "retryable_failed", attempt_count: 0,
     created_at: new Date(), updated_at: new Date(),
   };
-  database.crmSyncOperation.upsert.mockImplementation(async () => ({ ...row }));
+  database.crmSyncOperation.findUnique.mockImplementation(async () => ({ ...row }));
+  database.crmSyncOperation.upsert.mockImplementation(async () => ({ ...row, updated_at: new Date() }));
   database.crmSyncOperation.updateMany.mockImplementation(async ({ where, data }) => {
     const claimable = where.OR.some((clause: { status: string | { in: string[] }; updated_at?: { lte: Date } }) =>
       typeof clause.status === "string"
@@ -80,6 +81,7 @@ test("a claim abandoned past its TTL is reclaimed and continued, not repeated", 
   expect(contact).not.toHaveBeenCalled();
   expect(activity).toHaveBeenCalledOnce();
   expect(row.attempt_count).toBe(1);
+  expect(database.crmSyncOperation.upsert).not.toHaveBeenCalled();
 });
 
 test("a failed contender cannot overwrite the current worker's state", async () => {
@@ -90,7 +92,7 @@ test("a failed contender cannot overwrite the current worker's state", async () 
 });
 
 test("a tenant mismatch cannot claim or disclose another tenant's operation", async () => {
-  database.crmSyncOperation.upsert.mockImplementationOnce(async () => {
+  database.crmSyncOperation.findUnique.mockImplementationOnce(async () => {
     const snapshot = { ...row };
     row.account_id = "other-account";
     return snapshot;
