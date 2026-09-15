@@ -4,6 +4,14 @@ Status: local implementation under review; independent review and live activatio
 
 ## Approved task
 
+### Ratified recovery boundary (2026-09-15; implementation in progress)
+
+An expired lease is not evidence of provider failure. After durable intent for a contact, call, task or association, an unknown outcome stops automatic execution for reconciliation. An empty HubSpot search never authorizes a second create. The operator inspects readback, leaves unresolved, adopts a verified result with independent evidence the original worker cannot resume, or abandons local execution. No force retry is provided. Abandonment does not undo HubSpot effects. Every resolution preserves the original frozen review, actor, generation, effect, evidence and reason.
+
+New email waits for durable success of all required CRM effects. Accepted email remains accepted. False-positive blocking after intent but before HTTP is an accepted safety tradeoff. This is bounded recovery, not exactly-once delivery or universal deduplication. No provider activation is included.
+
+Doctrine §21 amendment answers: (1) execution/recovery layer; (2) built around existing adapters; (3) closes the supervised demo blocker; (4) preserves transactional evidence; (5) requires durable acknowledgments; (6) records operational failure evidence without claiming learning; (7) provider idempotency is integrated only when established; (8) no CRM/workflow engine duplication; (9) provider-specific semantics stay in adapters; (10) account-scoped CAS and server-derived review identity; (11) original review/hash binding reduces ambiguity; (12) exactly-once claims prohibited; (13) bounded existing operator reconciliation; (14) no new content capture or weakened consent; (15) required for this PR's safety boundary.
+
 Problem: the merged baseline does not connect approved FRL context, a real call, operator-reviewed evidence, test CRM records, and an email Mike receives.
 
 Target outcome: an isolated inbound demonstration that will cover every FRL intake path, using real approved business facts and clearly fictional customer/project scenarios. It is pending independent review and live activation. Audio approves the follow-up before CRM or email effects. Invite Mike only after two consecutive internal live rehearsals pass.
