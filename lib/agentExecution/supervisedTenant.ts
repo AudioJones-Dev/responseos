@@ -278,7 +278,7 @@ export async function configureSupervisedTenant(
           timezone: input.timezone,
           status: "active",
         },
-        update: { name: input.businessName, timezone: input.timezone },
+        update: { name: input.businessName, timezone: input.timezone, ...(input.industry ? { industry: input.industry } : {}) },
       });
 
       if (input.activate !== true && await tx.agentProfile.findFirst({
@@ -331,6 +331,7 @@ export async function configureSupervisedTenant(
       const identityChanges: Record<string, { from: string; to: string }> = {};
       if (existingAccount && existingAccount.name !== input.businessName) identityChanges.businessName = { from: existingAccount.name, to: input.businessName };
       if (existingAccount && existingAccount.timezone !== input.timezone) identityChanges.timezone = { from: existingAccount.timezone, to: input.timezone };
+      if (existingAccount && input.industry && existingAccount.industry !== input.industry) identityChanges.industry = { from: existingAccount.industry, to: input.industry };
       if (priorProfile && priorProfile.name !== input.agentName) identityChanges.agentName = { from: priorProfile.name, to: input.agentName };
       if (Object.keys(identityChanges).length > 0) {
         await tx.auditLog.create({
