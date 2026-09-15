@@ -4,6 +4,11 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — fix: validate the lead qualify request body before scoring
+
+- **`POST /api/leads/:id/qualify` now rejects malformed bodies with 400 instead of scoring them.** The route parsed JSON and passed it straight to `leadQualificationScore` with no runtime validation, so a body missing `urgency` indexed the weight table with `undefined` and returned `NaN` inside a `200`. `lib/validation/lead.ts` already exported `QualifyLeadInputSchema` mirroring the scorer contract, but nothing imported it. The route now applies that schema (with `lead_event_id` omitted, because the id comes from the path per `docs/api-spec.md`) and returns `{ ok: false, error: { code: "validation_failed", details: { issues } } }` with status 400 on failure. The `mock: true` envelope and the score computation are unchanged. Unit tests cover the missing-field, bad-enum, and happy paths. Pre-existing defect surfaced while reviewing PR #180 and out of that PR's scope.
+- Note for reviewers: `statusForCode` maps `validation_failed` to 422, but this route was asked to return 400. The mapping table is untouched; harmonising the two is a separate decision.
+
 ## Unreleased — feat: capability contract and governance validator (ADR-0058, Increment 1)
 
 - **Assessed the proposed Agent Capability Studio against the repository rather than the planning docs**, and the headline finding reframed the work: there is **no generic step-execution engine** — no step walker, condition evaluator, or suspend/resume primitive in `lib/` — so the brief's ordered-step procedure model has no runtime. Hardcoded orchestration *does* exist (`runCrmSyncForCall`, `answerProfessionalQuestion` → `applyPolicy`), so ADR-0017's "core orchestration lives in code" holds and there is a concrete pipeline to generalize rather than a blank page. An earlier draft claimed ADR-0017 was `DOCUMENTED_ONLY` on the strength of the missing `WorkflowRun` writer; that conflated "nothing records runs" with "nothing orchestrates" and was corrected before review.
