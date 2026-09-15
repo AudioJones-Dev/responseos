@@ -225,11 +225,14 @@ export async function runCrmSyncForCall(params: {
     // Verify ownership immediately before the first provider effect. A worker
     // suspended past the claim TTL finds its generation superseded and stops;
     // the write is harmless to a live owner and refreshes its claim.
-    const owned = await db.crmSyncOperation.updateMany({
-      where: { id: operation.id, account_id: params.accountId, status: "processing", attempt_count: generation },
-      data: { last_error_code: null },
-    });
-    if (owned.count === 0) throw new Error("crm_claim_lost");
+    const assertOwnership = async () => {
+      const owned = await db!.crmSyncOperation.updateMany({
+        where: { id: operationId, account_id: params.accountId, status: "processing", attempt_count: generation },
+        data: { last_error_code: null },
+      });
+      if (owned.count === 0) throw new Error("crm_claim_lost");
+    };
+    await assertOwnership();
     let providerContactId = operation.provider_contact_id;
     if (!providerContactId) {
       const verifiedEmail = !approved && contact?.email_verified
@@ -246,6 +249,7 @@ export async function runCrmSyncForCall(params: {
       }
       providerContactId = matches[0]?.providerContactId;
       if (!providerContactId) {
+        await assertOwnership();
         providerContactId = (
           await provider.createContact({
             phone,
@@ -259,9 +263,10 @@ export async function runCrmSyncForCall(params: {
     }
 
     if (!operation.provider_activity_id) {
-      const activity =
-        (await provider.findCallActivity(evidenceReference)) ??
-        (await provider.createCallActivity({
+      let activity = await provider.findCallActivity(evidenceReference);
+      if (!activity) {
+        await assertOwnership();
+        activity = await provider.createCallActivity({
           contactId: providerContactId,
           occurredAt: call.started_at.toISOString(),
           durationSeconds: call.duration_seconds ?? undefined,
@@ -270,9 +275,11 @@ export async function runCrmSyncForCall(params: {
           nextAction,
           evidenceReference,
           detail,
-        }));
+        });
+      }
       operation = await fenced({ provider_activity_id: activity.providerActivityId });
     }
+    await assertOwnership();
     await provider.associateContact(
       "calls",
       operation.provider_activity_id!,
@@ -283,18 +290,21 @@ export async function runCrmSyncForCall(params: {
       (qualificationLabel === "qualified") &&
       !operation.provider_task_id
     ) {
-      const task =
-        (await provider.findFollowUpTask(evidenceReference)) ??
-        (await provider.createFollowUpTask({
+      let task = await provider.findFollowUpTask(evidenceReference);
+      if (!task) {
+        await assertOwnership();
+        task = await provider.createFollowUpTask({
           contactId: providerContactId,
           dueAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
           sanitizedSummary,
           nextAction: nextAction ?? "Review and contact the caller.",
           evidenceReference,
-        }));
+        });
+      }
       operation = await fenced({ provider_task_id: task.providerTaskId });
     }
     if (operation.provider_task_id) {
+      await assertOwnership();
       await provider.associateContact(
         "tasks",
         operation.provider_task_id,

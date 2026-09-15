@@ -137,6 +137,44 @@ test("a failed contender cannot overwrite the current worker's state", async () 
   expect(database.crmSyncOperation.update).not.toHaveBeenCalled();
 });
 
+test.each([
+  ["findContacts", "createContact", []],
+  ["findCallActivity", "createCallActivity", null],
+  ["findFollowUpTask", "createFollowUpTask", null],
+] as const)("a worker reclaimed during %s cannot issue the following create", async (lookup, create, missing) => {
+  const provider = new MockCrmProvider();
+  vi.spyOn(provider, lookup).mockImplementation(async () => {
+    row.attempt_count = Number(row.attempt_count) + 1;
+    return missing as never;
+  });
+  const effect = vi.spyOn(provider, create);
+  const result = await runCrmSyncForCall({ accountId: "account", callId: "call", providerOverride: provider });
+  expect(result.ok).toBe(false);
+  expect(effect).not.toHaveBeenCalled();
+  expect(row.status).toBe("processing");
+});
+
+test.each([
+  ["provider_activity_id", "calls"],
+  ["provider_task_id", "tasks"],
+] as const)("a worker reclaimed after persisting %s cannot associate it", async (field, objectType) => {
+  let reclaimed = false;
+  database.crmSyncOperation.findUniqueOrThrow.mockImplementation(async () => {
+    const snapshot = { ...row };
+    if (row[field] && !reclaimed) {
+      row.attempt_count = Number(row.attempt_count) + 1;
+      reclaimed = true;
+    }
+    return snapshot;
+  });
+  const provider = new MockCrmProvider();
+  const associate = vi.spyOn(provider, "associateContact");
+  const result = await runCrmSyncForCall({ accountId: "account", callId: "call", providerOverride: provider });
+  expect(result.ok).toBe(false);
+  expect(associate).not.toHaveBeenCalledWith(objectType, expect.any(String), expect.any(String));
+  expect(row.status).toBe("processing");
+});
+
 test("a tenant mismatch cannot claim or disclose another tenant's operation", async () => {
   database.crmSyncOperation.findUnique.mockImplementationOnce(async () => {
     const snapshot = { ...row };
