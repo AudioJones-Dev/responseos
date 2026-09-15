@@ -1,4 +1,5 @@
 import { afterAll, beforeEach, expect, test, vi } from "vitest";
+import { EXECUTION_MODE_POLICIES } from "@/lib/agentExecution/policy";
 import { Prisma } from "@prisma/client";
 import { disconnectTestDb, prisma, resetAndSeedTestDb, setDevSession } from "./setup";
 import { buildOperatingConfigurationSnapshot } from "@/lib/agentExecution/operatingConfigurationSnapshot";
@@ -96,17 +97,20 @@ test("approved CRM retry releases an earlier claim and sanitizes the contact nam
   await runCrmSyncForCall({ accountId, callId, providerOverride: provider });
   const row = await queueCallReview(accountId, callId, { summary: value.summary });
   await decideCallReview(row!.id, 1, "approve", { ...value, caller: "Caller owner@example.test +15555550123" });
+  vi.stubEnv("RESPONSEOS_AUTHORIZED_EXECUTION_GATES", "v0.3-live-communications");
+  await prisma.agentProfile.create({ data: { account_id: accountId, name: "Test receptionist", type: "supervised_receptionist", slug: "crm-recovery-fixture", enabled: true, system_policy_json: EXECUTION_MODE_POLICIES.SUPERVISED_PILOT as unknown as Prisma.InputJsonValue } });
   const create = vi.spyOn(provider, "createContact");
   const result = await runCrmSyncForCall({ accountId, callId, reviewId: row!.id, providerOverride: provider });
   expect(result).toMatchObject({ ok: true, data: { status: "succeeded" } });
   expect(create).toHaveBeenCalledWith(expect.objectContaining({ firstName: "Caller [email redacted] [phone redacted]" }));
+  vi.unstubAllEnvs();
 });
 
 test("legacy retry entrypoints cannot bypass a supervised review", async () => {
   const crm = await runCrmSyncForCall({ accountId, callId, providerOverride: new MockCrmProvider() });
   expect(crm.ok && crm.data.status === "succeeded").toBe(false);
   expect(await prisma.crmSyncOperation.findUnique({ where: { operation_key: `crm-call:${accountId}:${callId}` } }))
-    .toMatchObject({ status: "retryable_failed", last_error_code: "approval_required" });
+    .toMatchObject({ status: "retryable_failed", last_error_code: "crm_ready:contact_create" });
   const email = await dispatchCompletedInteractionNotification({ accountId, callId });
   expect(email).toMatchObject({ ok: false, error: { code: "approval_required" } });
 });

@@ -248,7 +248,9 @@ describe("supervised call evidence", () => {
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.data).toMatchObject({ status: "retryable_failed", last_error_code: "live_provider_disabled" });
+    expect(result.data).toMatchObject({ status: "retryable_failed", last_error_code: "crm_ready:contact_create" });
+    const failure = await prisma.auditLog.findFirst({ where: { target_id: result.data.id, action: "crm_pre_effect_failure" }, orderBy: { created_at: "desc" } });
+    expect(failure?.metadata_json).toMatchObject({ cause: "live_provider_disabled" });
   });
 
   test("creates a follow-up task for a quote request and sanitizes the next action", async () => {

@@ -1250,7 +1250,7 @@
       "progress": 80,
       "priority": "High",
       "blocked": true,
-      "blockedReason": "B + C recovery ratified on 2026-09-15; narrow implementation in progress. Focused CodeRabbit review and exact-head validation required before CRM closure. Live configuration, consent proof and rehearsal remain separate gates."
+      "blockedReason": "Ratified B + C recovery implemented with existing schema; focused CodeRabbit review and exact-head validation required for CRM closure. Live configuration, consent proof and rehearsal remain separate gates."
     }
   ],
   "liveIssues": [

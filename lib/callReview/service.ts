@@ -8,17 +8,11 @@ import { extractTelnyxCallInsight } from "@/lib/providers/telnyx/insights";
 import { BusinessMemorySnapshotSchema } from "@/lib/prospectBootstrap/contracts";
 import { readOperatingConfigurationValue } from "@/lib/agentExecution/operatingConfiguration";
 import { supervisedExecutionAuthorized } from "@/lib/agentExecution/supervisedRuntime";
-import { runCrmSyncForCall } from "@/lib/crm/syncFinalizedCall";
+import { runCrmSyncForCall, reconcileCrmOperation, crmBoundToReview } from "@/lib/crm/syncFinalizedCall";
 import { getEmailProvider } from "@/lib/providers/email";
 import { FRL_INTERACTIONS, FRL_OUTCOMES, ReviewPayloadSchema, reviewMessage, type ReviewPayload } from "./contracts";
 
-/**
- * A dispatch claim older than this is treated as abandoned: the invocation
- * that took it terminated before its `finally` released it. Reclaiming it is
- * safe because every external effect behind it is idempotent (the CRM
- * operation by key, the email by review id) and the 23-hour email
- * reconciliation rule still applies on top.
- */
+// Review claims may expire; CRM effect intents and email acceptance govern recovery.
 export const DISPATCH_CLAIM_TTL_MS = 15 * 60 * 1000;
 
 export async function requireReviewOperator() {
@@ -43,8 +37,8 @@ export async function loadCallReviewConsole() {
     orderBy: { _max: { created_at: "desc" } }, take: 50,
   });
   const reviews = latest.length ? await db.callReview.findMany({
-    where: { OR: latest.map((row) => ({ account_id: row.account_id, call_id: row.call_id, revision: row._max.revision! })) },
-    orderBy: { created_at: "desc" },
+    where: { OR: [{ status: "approved" }, ...latest.map((row) => ({ account_id: row.account_id, call_id: row.call_id, revision: row._max.revision! }))] },
+    orderBy: { created_at: "desc" }, take: 50,
   }) : [];
   return { captures: withConsent, reviews };
 }
@@ -179,16 +173,17 @@ export async function dispatchCallReview(id: string) {
   await db.$transaction(async (tx) => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${row.account_id + ":" + row.call_id}))`;
     const latest = await tx.callReview.findFirst({ where: { account_id: row.account_id, call_id: row.call_id }, orderBy: { revision: "desc" } });
-    if (latest?.id !== id) throw new Error("stale_review");
+    const existingCrm = await tx.crmSyncOperation.findUnique({ where: { operation_key: `crm-call:${row.account_id}:${row.call_id}`, account_id: row.account_id } });
+    if (latest?.id !== id && !crmBoundToReview(existingCrm, id, row.payload_json)) throw new Error("stale_review");
     const prior = await tx.callReview.findFirst({ where: { account_id: row.account_id, call_id: row.call_id, id: { not: id }, OR: [{ dispatch_at: { not: null } }, { email_attempt_at: { not: null } }, { crm_status: { not: "pending" } }] } });
     if (prior) throw new Error("prior_revision_requires_reconciliation");
-    // The CRM operation is call-wide and idempotent. If an earlier revision
+    // The CRM operation is call-wide; its own durable boundary governs recovery. If an earlier revision
     // reached the provider but its status write was lost, no review records
     // the effect; a newer revision must not dispatch on top of it, because the
     // CRM would keep the old payload while email sent the new one.
     const operation = await tx.crmSyncOperation.findUnique({ where: { operation_key: `crm-call:${row.account_id}:${row.call_id}` } });
     const effectReached = Boolean(operation?.provider_contact_id || operation?.provider_activity_id || operation?.provider_task_id);
-    if (effectReached) {
+    if (effectReached && !crmBoundToReview(operation, id, row.payload_json)) {
       const earlier = await tx.callReview.findFirst({ where: { account_id: row.account_id, call_id: row.call_id, id: { not: id } }, select: { id: true } });
       const recorded = await tx.callReview.findFirst({ where: { account_id: row.account_id, call_id: row.call_id, crm_status: { not: "pending" } }, select: { id: true } });
       if (earlier && !recorded) throw new Error("prior_revision_requires_reconciliation");
@@ -218,19 +213,17 @@ export async function dispatchCallReview(id: string) {
     const owns = await db.callReview.updateMany({ where: { id, account_id: row.account_id, status: "approved", dispatch_at: claimedAt }, data: { dispatch_at: claimedAt } });
     if (!owns.count) throw new Error("dispatch_claim_lost");
     const latestBeforeCrm = await db.callReview.findFirst({ where: { account_id: row.account_id, call_id: row.call_id }, orderBy: { revision: "desc" }, select: { id: true } });
-    if (latestBeforeCrm?.id !== id) throw new Error("stale_review");
+    if (latestBeforeCrm?.id !== id && !crmBoundToReview(await db.crmSyncOperation.findUnique({ where: { operation_key: `crm-call:${row.account_id}:${row.call_id}`, account_id: row.account_id } }), id, row.payload_json)) throw new Error("stale_review");
     const crm = await runCrmSyncForCall({ accountId: row.account_id, callId: row.call_id, requireLiveProvider: true, reviewId: id });
     crmStatus = crm.ok ? crm.data.status : "failed";
-    await db.callReview.update({ where: { id, account_id: row.account_id }, data: { crm_status: crmStatus } });
+    const recordedCrm = await db.callReview.updateMany({ where: { id, account_id: row.account_id, dispatch_at: claimedAt }, data: { crm_status: crmStatus } });
+    if (!recordedCrm.count) throw new Error("dispatch_claim_lost");
     if (row.email_status === "accepted") {
       await audit("call_review_dispatch_outcome", { revision: row.revision, outcome: "already_accepted", crmStatus: crm.ok ? crm.data.status : "failed" });
       return { status: "already_accepted" };
     }
-    // A claim another worker still holds, or one abandoned too recently to
-    // reclaim, is not a CRM outcome. Sending the email now would present the
-    // workflow as complete while the CRM effect is unknown; stop here and let
-    // a later retry reclaim it once it has aged out.
-    if (crmStatus === "processing") throw new Error("crm_claim_in_progress");
+    // Required CRM effects must all be durably acknowledged before new email.
+    if (crmStatus !== "succeeded") throw new Error("crm_incomplete");
     if (row.email_attempt_at && Date.now() - row.email_attempt_at.getTime() >= 23 * 60 * 60 * 1000) throw new Error("email_delivery_requires_reconciliation");
     if (!(await supervisedExecutionAuthorized(row.account_id))) throw new Error("execution_gate_not_authorized");
     const provider = getEmailProvider();
@@ -241,7 +234,7 @@ export async function dispatchCallReview(id: string) {
     // arrived while this worker was suspended must not be undercut by the
     // payload it parsed earlier.
     const latestNow = await db.callReview.findFirst({ where: { account_id: row.account_id, call_id: row.call_id }, orderBy: { revision: "desc" }, select: { id: true } });
-    if (latestNow?.id !== id) throw new Error("stale_review");
+    if (latestNow?.id !== id && !crmBoundToReview(await db.crmSyncOperation.findUnique({ where: { operation_key: `crm-call:${row.account_id}:${row.call_id}`, account_id: row.account_id } }), id, row.payload_json)) throw new Error("stale_review");
     const fenced = await db.callReview.updateMany({ where: { id, account_id: row.account_id, status: "approved", dispatch_at: claimedAt }, data: { email_attempt_at: row.email_attempt_at ?? new Date(), email_status: "sending" } });
     if (!fenced.count) throw new Error("dispatch_claim_lost");
     const message = reviewMessage(value, row.call_id);
@@ -276,4 +269,15 @@ export async function dispatchCallReview(id: string) {
     // Release only this attempt's claim; a reclaimed row belongs to someone else.
     await db.callReview.updateMany({ where: { id, account_id: row.account_id, dispatch_at: claimedAt }, data: { dispatch_at: null } });
   }
+}
+
+export async function reconcileCallReview(id: string, input: {
+  action: "crm_inspect" | "crm_adopt" | "crm_abandon";
+  generation?: number; reason?: string; evidence?: string; priorWorkerStopped?: boolean; expectedProviderId?: string;
+}) {
+  const operator = await requireReviewOperator();
+  if (!db) throw new Error("database_unavailable");
+  const row = await db.callReview.findUnique({ where: { id } });
+  if (!row || row.status !== "approved") throw new Error("approval_required");
+  return reconcileCrmOperation({ ...input, action: input.action === "crm_inspect" ? "inspect" : input.action === "crm_adopt" ? "adopt" : "abandon", accountId: row.account_id, callId: row.call_id, reviewId: row.id, actor: { id: operator.user.id, role: operator.user.role } });
 }

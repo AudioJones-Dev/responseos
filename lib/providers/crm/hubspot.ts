@@ -9,10 +9,13 @@ import type {
   CrmEventResult,
   CrmFollowUpTaskCreate,
   CrmProvider,
+  CrmReadback,
+  CrmReadbackInput,
 } from "@/lib/providers/crm/types"
 
 interface HubSpotObject {
   id: string
+  properties?: Record<string, string | null>
 }
 
 interface HubSpotSearchResponse {
@@ -25,6 +28,41 @@ export class HubSpotCrmProvider implements CrmProvider {
   private readonly baseUrl = "https://api.hubapi.com"
 
   constructor(private readonly token: string) {}
+
+  async getDestination(): Promise<string> {
+    const account = await this.request<{ portalId: number }>("/account-info/v3/details", { method: "GET" })
+    if (!Number.isSafeInteger(account.portalId) || account.portalId <= 0) throw new Error("crm_destination_unavailable")
+    return `hubspot:${account.portalId}`
+  }
+
+  async reconcileEffect(input: CrmReadbackInput): Promise<CrmReadback> {
+    try {
+      if (input.effect.endsWith("_associate")) {
+        if (!input.objectId || !input.contactId) return { outcome: "unavailable" }
+        const kind = input.effect === "activity_associate" ? "calls" : "tasks"
+        const response = await this.request<{ results?: { toObjectId: number; associationTypes?: { category: string; typeId: number }[] }[]; paging?: unknown }>(
+          `/crm/v4/objects/${kind}/${encodeURIComponent(input.objectId)}/associations/contacts?limit=500`, { method: "GET" })
+        // Only the exact default object-to-contact relationship is acknowledged.
+        const typeId = kind === "calls" ? 194 : 204
+        if (!Array.isArray(response.results)) return { outcome: "unavailable" }
+        const found = response.results?.some((item) => String(item.toObjectId) === input.contactId && item.associationTypes?.some((type) => type.category === "HUBSPOT_DEFINED" && type.typeId === typeId))
+        return found ? { outcome: "verified_match", providerId: input.objectId } : { outcome: "not_observed" }
+      }
+      const kind = input.effect === "contact_create" ? "contacts" : input.effect === "activity_create" ? "calls" : "tasks"
+      const property = kind === "contacts" ? "phone" : kind === "calls" ? "hs_call_title" : "hs_task_subject"
+      const value = kind === "contacts" ? input.phone : input.evidenceReference
+      const response = await this.request<HubSpotSearchResponse>(`/crm/v3/objects/${kind}/search`, {
+        method: "POST", body: JSON.stringify({ filterGroups: [{ filters: [{ propertyName: property, operator: "EQ", value }] }], properties: kind === "contacts" ? [property, "firstname"] : [property], limit: 3 }),
+      })
+      const rows = response.results
+      if (!Array.isArray(rows)) return { outcome: "unavailable" }
+      if (!rows.length) return { outcome: "not_observed" }
+      if (rows.length !== 1 || (response.total ?? rows.length) !== 1 || rows[0].properties?.[property] !== value || !rows[0].id || (kind === "contacts" && input.firstName !== undefined && rows[0].properties?.firstname !== input.firstName)) {
+        return { outcome: "ambiguous", candidateIds: rows.map((row) => row.id).filter(Boolean) }
+      }
+      return { outcome: "verified_match", providerId: rows[0].id }
+    } catch { return { outcome: "unavailable" } }
+  }
 
   private async request<T>(path: string, init: RequestInit): Promise<T> {
     const response = await fetch(`${this.baseUrl}${path}`, {
@@ -59,7 +97,9 @@ export class HubSpotCrmProvider implements CrmProvider {
         }),
       },
     )
-    return response.results ?? []
+    if (!Array.isArray(response.results)) throw new Error("crm_lookup_unavailable")
+    if ((response.total ?? response.results.length) > response.results.length && response.results.length < 2) throw new Error("ambiguous_contact_match")
+    return response.results
   }
 
   async findContacts(lookup: CrmContactLookup): Promise<CrmContactMatch[]> {
@@ -99,6 +139,8 @@ export class HubSpotCrmProvider implements CrmProvider {
         }),
       },
     )
+    if (!Array.isArray(response.results)) throw new Error("crm_lookup_unavailable")
+    if ((response.total ?? response.results?.length ?? 0) > 1 || (response.results?.length ?? 0) > 1) throw new Error("ambiguous_activity_match")
     return response.results?.[0]?.id ?? null
   }
 
