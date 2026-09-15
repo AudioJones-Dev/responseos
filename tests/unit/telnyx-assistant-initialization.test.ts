@@ -141,6 +141,29 @@ describe("signed Telnyx assistant initialization", () => {
     expect(mocks.setWebhookProcessStatus).toHaveBeenCalledWith(expect.objectContaining({ process_status: "rejected", process_error: "supervised_runtime_unresolved" }));
   });
 
+  test("a ready supervised tenant without a call id is recorded as rejected, not processed", async () => {
+    // The signed payload carries the number but no call-control identifier, so
+    // there is no capture to pin the approved snapshot to. The caller hears the
+    // unavailable context, and the ledger must say so rather than "processed".
+    mocks.resolveSupervisedTenantForNumber.mockResolvedValue({
+      accountId: "supervised-account",
+      assignmentId: "supervised-assignment",
+      accountName: "Example Business",
+      agentName: "Sam",
+      snapshotId: "snapshot-1",
+      memory: {},
+      readiness: { ready: true, missing: [] },
+      resolved: { mode: "SUPERVISED_PILOT", degraded: null, policy: { recordingEnabled: false } },
+    });
+    const { POST } = await import("@/app/api/webhooks/telnyx/assistant-initialization/route");
+    const response = await POST(signedRequest("+13055550188"));
+    expect(await response.json()).toMatchObject({ dynamic_variables: { supervised_available: "false" } });
+    expect(mocks.setWebhookProcessStatus).toHaveBeenCalledWith(expect.objectContaining({
+      process_status: "rejected",
+      process_error: "missing_provider_call_id",
+    }));
+  });
+
   test("uses the generic unavailable context when no assignment resolves", async () => {
     mocks.resolveActiveProspectAgentContext.mockResolvedValue(null);
     const { POST } = await import("@/app/api/webhooks/telnyx/assistant-initialization/route");

@@ -93,6 +93,8 @@ export async function POST(req: Request) {
       ? await resolveActiveProspectAgentContext(target)
       : null;
 
+  const providerCallId = getTelnyxCallId(event.data.payload);
+
   // Ownership at receipt time routes an untimed event to the neutral response,
   // but attribution needs the event's own time: an untimed initialization is
   // stored unscoped rather than under whoever holds the number now.
@@ -104,7 +106,7 @@ export async function POST(req: Request) {
     raw_body: JSON.stringify(metadataOnly(event)),
     signature_header: signature ?? undefined,
     signature_valid: true,
-    provider_call_id: getTelnyxCallId(event.data.payload) ?? undefined,
+    provider_call_id: providerCallId ?? undefined,
     provider_call_ids: getTelnyxCallIds(event.data.payload),
     // This is the event that binds a call id to the number it reached; later
     // insight events carry no number and correlate back through this row.
@@ -119,13 +121,20 @@ export async function POST(req: Request) {
       message: "Telnyx webhook ledger is unavailable.",
     });
   }
+  // A supervised call can only be answered with context when the payload
+  // identifies it: without a call id there is no capture to pin the approved
+  // snapshot to, and the response below falls back to the unavailable context.
+  // Recording that outcome as processed would contradict what the caller got.
+  const supervisedAnswered = supervisedReady && providerCallId !== null;
   await setWebhookProcessStatus({
     id: ledger.data.id,
-    process_status: supervisedReady || prospect ? "processed" : "rejected",
-    process_error: supervisedReady || prospect
+    process_status: supervisedAnswered || prospect ? "processed" : "rejected",
+    process_error: supervisedAnswered || prospect
       ? undefined
       : supervised
-        ? supervised.readiness.ready
+        ? supervisedReady
+          ? "missing_provider_call_id"
+          : supervised.readiness.ready
           ? "supervised_tenant_not_authorized"
           : "supervised_configuration_incomplete"
         : supervisedOwned
@@ -136,7 +145,6 @@ export async function POST(req: Request) {
   });
 
   if (supervisedReady && supervised) {
-    const providerCallId = getTelnyxCallId(event.data.payload);
     if (!providerCallId || !db) return NextResponse.json({ dynamic_variables: SUPERVISED_UNAVAILABLE_CONTEXT });
     const capture = await db.callCaptureSession.upsert({
       where: { account_id_provider_call_id: { account_id: supervised.accountId, provider_call_id: providerCallId } },

@@ -44,6 +44,14 @@ function qualificationStatus(value: unknown): "qualified" | "maybe" | "unqualifi
   return "maybe";
 }
 
+// Only an explicit rejection marks a caller unqualified. A quote request that
+// carries no qualification evidence scores "maybe", which is an unscored lead,
+// not a refused one, and `LeadEventStatus` records that as `new`.
+function leadStatusFor(status: "qualified" | "maybe" | "unqualified" | "spam"): "qualified" | "unqualified" | "new" {
+  if (status === "qualified") return "qualified";
+  return status === "unqualified" || status === "spam" ? "unqualified" : "new";
+}
+
 function boundedScore(value: unknown, status: string): number {
   const numeric = typeof value === "number" ? value : Number(value);
   if (Number.isFinite(numeric)) return Math.max(0, Math.min(100, Math.round(numeric)));
@@ -284,7 +292,7 @@ export async function normalizeTelnyxEvent(params: {
           call_id: call.id,
           source: "phone",
           event_type: eventTypeForLead,
-          status: status === "qualified" ? "qualified" : "new",
+          status: leadStatusFor(status),
           notes: insight.nextAction,
         },
       }));
@@ -292,7 +300,7 @@ export async function normalizeTelnyxEvent(params: {
       where: { id: lead.id },
       data: {
         event_type: eventTypeForLead,
-        status: status === "qualified" ? "qualified" : "unqualified",
+        status: leadStatusFor(status),
         notes: insight.nextAction ?? lead.notes,
       },
     });
