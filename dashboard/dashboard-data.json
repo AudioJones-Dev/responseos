@@ -69,6 +69,19 @@
       "refType": "pull"
     },
     {
+      "id": "BRAND-ICON-REFRESH",
+      "phase": "Launch / Demo Deploy",
+      "title": "Refresh brand icon assets from the approved favicon pack",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "Low",
+      "start": "2026-09-14",
+      "due": "2026-09-14",
+      "ref": 179,
+      "refType": "pull"
+    },
+    {
       "id": "ADR-0056-COMMIT-TITLE-NOTE",
       "phase": "Tech Debt & Hardening",
       "title": "Record that #169's commit subject says ADR-0054 but contains ADR-0056",
