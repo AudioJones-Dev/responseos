@@ -1251,6 +1251,19 @@
       "blocked": false,
       "ref": 181,
       "refType": "pull"
+    },
+    {
+      "id": "TD-QUALIFY-STATUS-CODE",
+      "ref": 183,
+      "refType": "issue",
+      "phase": "Tech Debt & Hardening",
+      "title": "Decide 400 vs 422 for validation_failed on the lead qualify route",
+      "owner": "Audio",
+      "status": "To Do",
+      "progress": 0,
+      "priority": "Low",
+      "start": "2026-09-14",
+      "blocked": false
     }
   ],
   "liveIssues": [
