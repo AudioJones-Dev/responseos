@@ -5,6 +5,12 @@ import {
   getTelnyxCallId,
   type TelnyxWebhookEnvelope,
 } from "@/lib/providers/telnyx/webhook";
+import { leadQualificationScore } from "@/lib/scoring/leadQualificationScore";
+import {
+  qualificationInputFromFacts,
+  type QualificationFacts,
+  type QualificationTimeline,
+} from "@/lib/scoring/qualificationFacts";
 
 function stringValue(value: unknown): string | null {
   if (typeof value === "string" && value.trim()) return value.trim();
@@ -65,13 +71,7 @@ function qualificationStatus(value: unknown): "qualified" | "maybe" | "unqualifi
   return "maybe";
 }
 
-function boundedScore(value: unknown, status: string): number {
-  const numeric = typeof value === "number" ? value : Number(value);
-  if (Number.isFinite(numeric)) return Math.max(0, Math.min(100, Math.round(numeric)));
-  return status === "qualified" ? 80 : status === "unqualified" ? 20 : 50;
-}
-
-function timeline(value: unknown): "same_day" | "this_week" | "this_month" | "unknown" {
+function timeline(value: unknown): QualificationTimeline {
   return value === "same_day" || value === "this_week" || value === "this_month"
     ? value
     : "unknown";
@@ -232,37 +232,32 @@ export async function normalizeTelnyxEvent(params: {
         notes: insight.nextAction ?? lead.notes,
       },
     });
+    const facts: QualificationFacts = {
+      serviceAreaMatch: insight.qualification?.service_area_match === true,
+      timeline: timeline(insight.qualification?.timeline),
+      serviceNeeded: stringValue(insight.qualification?.service_needed),
+      decisionMaker:
+        typeof insight.qualification?.decision_maker === "boolean"
+          ? insight.qualification.decision_maker
+          : null,
+    };
+    // The provider's own `score` is not read. ResponseOS derives the score from
+    // the extracted facts; the raw value survives in `WebhookEvent.raw_body`.
+    const qualification = {
+      service_needed: facts.serviceNeeded,
+      service_area_match: facts.serviceAreaMatch,
+      budget_range: stringValue(insight.qualification?.budget_range),
+      timeline: facts.timeline,
+      property_type: stringValue(insight.qualification?.property_type),
+      decision_maker: facts.decisionMaker,
+      qualification_score: leadQualificationScore(qualificationInputFromFacts(facts)),
+      qualification_status: status,
+      disqualification_reason: stringValue(insight.qualification?.disqualification_reason),
+    };
     await db.leadQualification.upsert({
       where: { lead_event_id: lead.id },
-      create: {
-        lead_event_id: lead.id,
-        service_needed: stringValue(insight.qualification?.service_needed),
-        service_area_match: insight.qualification?.service_area_match === true,
-        budget_range: stringValue(insight.qualification?.budget_range),
-        timeline: timeline(insight.qualification?.timeline),
-        property_type: stringValue(insight.qualification?.property_type),
-        decision_maker:
-          typeof insight.qualification?.decision_maker === "boolean"
-            ? insight.qualification.decision_maker
-            : null,
-        qualification_score: boundedScore(insight.qualification?.score, status),
-        qualification_status: status,
-        disqualification_reason: stringValue(insight.qualification?.disqualification_reason),
-      },
-      update: {
-        service_needed: stringValue(insight.qualification?.service_needed),
-        service_area_match: insight.qualification?.service_area_match === true,
-        budget_range: stringValue(insight.qualification?.budget_range),
-        timeline: timeline(insight.qualification?.timeline),
-        property_type: stringValue(insight.qualification?.property_type),
-        decision_maker:
-          typeof insight.qualification?.decision_maker === "boolean"
-            ? insight.qualification.decision_maker
-            : null,
-        qualification_score: boundedScore(insight.qualification?.score, status),
-        qualification_status: status,
-        disqualification_reason: stringValue(insight.qualification?.disqualification_reason),
-      },
+      create: { lead_event_id: lead.id, ...qualification },
+      update: qualification,
     });
   }
 

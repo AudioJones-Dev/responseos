@@ -867,13 +867,24 @@
       "phase": "Tech Debt & Hardening",
       "title": "Capability contract + governance validator (ADR-0058, Increment 1)",
       "owner": "Claude Code",
-      "status": "Review",
+      "status": "Done",
       "progress": 100,
       "priority": "Med",
       "start": "2026-09-13",
       "due": "2026-09-13",
       "ref": 174,
       "refType": "pull"
+    },
+    {
+      "id": "C-02",
+      "phase": "Tech Debt & Hardening",
+      "title": "Derive Telnyx qualification score from extracted facts (Increment 2)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "Med",
+      "start": "2026-09-15",
+      "due": "2026-09-15"
     },
     {
       "id": "V-19",
