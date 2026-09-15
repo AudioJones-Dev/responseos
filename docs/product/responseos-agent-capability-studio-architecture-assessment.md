@@ -549,6 +549,18 @@ receptionist-ingest concern and a qualification concern, or the descriptors are 
 boundary that should not be drawn there. Deciding which is Increment 2's first question, and the
 answer is evidence for what Increment 3 should extract.
 
+**Increment 2's answer, recorded after implementation.** `normalize.ts` was *not* split. The
+narrowest change that removes the score divergence is to move the scoring decision out of the
+adapter and leave record creation where ingestion produces it: the adapter extracts facts, and
+`lib/scoring/qualificationFacts.ts` maps them into `leadQualificationScore`'s input. Nothing in
+that change reads `producesRecords`. No use case for the field surfaced in runtime behaviour,
+validation, observability, testing, governance, or discovery. What the field demonstrably
+describes today is adapter-output metadata — reading (b) of the operator's four options — and
+the descriptors' partition remains a description without a code boundary. The field is
+untouched in Increment 2; the operator decides between keeping it as documented metadata (b) and
+removing it as unenforceable (d). Expanding it toward an outcome contract (c) has no evidence
+behind it yet.
+
 ## F. Increment 1 — smallest implementation plan
 
 **Goal: prove the contract is *describable*, not *executable*.** Two descriptors plus a governance
@@ -629,8 +641,8 @@ been authorized.
 | # | Increment | Status |
 |---|---|---|
 | 0 | ADR-0058 | **Proposed / pending ratification** — drafted, not ratified; the operator ratifies |
-| 1 | Capability contract + two descriptors + governance validator | **this PR** — open, not merged |
-| 2 | Implement capability #2 behaviour; document what stayed bespoke | **Held / requires authorization** — starts only from clean master after #174 merges |
+| 1 | Capability contract + two descriptors + governance validator | **Merged** — #174, master `724a3e5` |
+| 2 | Implement capability #2 behaviour; document what stayed bespoke | **In review** — authorized by the operator after #174 merged; PR open, not merged |
 | 3 | Minimal executor extraction — only from duplication two capabilities prove | Held; gated on 2 |
 | 4 | Simulation + trace | Held; gated on 3 |
 | 5 | Runtime assignment / pinning | Held; gated on 4 |

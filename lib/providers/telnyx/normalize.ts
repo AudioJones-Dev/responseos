@@ -5,6 +5,12 @@ import {
   getTelnyxCallId,
   type TelnyxWebhookEnvelope,
 } from "@/lib/providers/telnyx/webhook";
+import { leadQualificationScore } from "@/lib/scoring/leadQualificationScore";
+import {
+  qualificationInputFromFacts,
+  type QualificationFacts,
+  type QualificationTimeline,
+} from "@/lib/scoring/qualificationFacts";
 
 function stringValue(value: unknown): string | null {
   if (typeof value === "string" && value.trim()) return value.trim();
@@ -65,16 +71,32 @@ function qualificationStatus(value: unknown): "qualified" | "maybe" | "unqualifi
   return "maybe";
 }
 
-function boundedScore(value: unknown, status: string): number {
-  const numeric = typeof value === "number" ? value : Number(value);
-  if (Number.isFinite(numeric)) return Math.max(0, Math.min(100, Math.round(numeric)));
-  return status === "qualified" ? 80 : status === "unqualified" ? 20 : 50;
-}
-
-function timeline(value: unknown): "same_day" | "this_week" | "this_month" | "unknown" {
+function timeline(value: unknown): QualificationTimeline {
   return value === "same_day" || value === "this_week" || value === "this_month"
     ? value
     : "unknown";
+}
+
+/**
+ * Returns null unless both required-known fields of the qualification
+ * capability are present: `service_area_match` as a boolean and a recognised
+ * `timeline`. Coercing an absent value would score missing evidence as
+ * negative evidence. Raised by Codex on #180.
+ */
+function qualificationFactsFrom(
+  qualification: Record<string, unknown> | null,
+): QualificationFacts | null {
+  if (!qualification) return null;
+  if (typeof qualification.service_area_match !== "boolean") return null;
+  const when = timeline(qualification.timeline);
+  if (when === "unknown") return null;
+  return {
+    serviceAreaMatch: qualification.service_area_match,
+    timeline: when,
+    serviceNeeded: stringValue(qualification.service_needed),
+    decisionMaker:
+      typeof qualification.decision_maker === "boolean" ? qualification.decision_maker : null,
+  };
 }
 
 export async function normalizeTelnyxEvent(params: {
@@ -232,37 +254,30 @@ export async function normalizeTelnyxEvent(params: {
         notes: insight.nextAction ?? lead.notes,
       },
     });
+    const facts = qualificationFactsFrom(insight.qualification);
+    if (!facts) {
+      // Required facts absent: the lead exists, but a score would turn missing
+      // evidence into negative evidence. Readers treat no row as "not scored".
+      await setWebhookProcessStatus({ id: params.webhookEventId, process_status: "processed" });
+      return { callId: call.id, finalized };
+    }
+    // The provider's own `score` is not read. ResponseOS derives the score from
+    // the extracted facts; the raw value survives in `WebhookEvent.raw_body`.
+    const qualification = {
+      service_needed: facts.serviceNeeded,
+      service_area_match: facts.serviceAreaMatch,
+      budget_range: stringValue(insight.qualification?.budget_range),
+      timeline: facts.timeline,
+      property_type: stringValue(insight.qualification?.property_type),
+      decision_maker: facts.decisionMaker,
+      qualification_score: leadQualificationScore(qualificationInputFromFacts(facts)),
+      qualification_status: status,
+      disqualification_reason: stringValue(insight.qualification?.disqualification_reason),
+    };
     await db.leadQualification.upsert({
       where: { lead_event_id: lead.id },
-      create: {
-        lead_event_id: lead.id,
-        service_needed: stringValue(insight.qualification?.service_needed),
-        service_area_match: insight.qualification?.service_area_match === true,
-        budget_range: stringValue(insight.qualification?.budget_range),
-        timeline: timeline(insight.qualification?.timeline),
-        property_type: stringValue(insight.qualification?.property_type),
-        decision_maker:
-          typeof insight.qualification?.decision_maker === "boolean"
-            ? insight.qualification.decision_maker
-            : null,
-        qualification_score: boundedScore(insight.qualification?.score, status),
-        qualification_status: status,
-        disqualification_reason: stringValue(insight.qualification?.disqualification_reason),
-      },
-      update: {
-        service_needed: stringValue(insight.qualification?.service_needed),
-        service_area_match: insight.qualification?.service_area_match === true,
-        budget_range: stringValue(insight.qualification?.budget_range),
-        timeline: timeline(insight.qualification?.timeline),
-        property_type: stringValue(insight.qualification?.property_type),
-        decision_maker:
-          typeof insight.qualification?.decision_maker === "boolean"
-            ? insight.qualification.decision_maker
-            : null,
-        qualification_score: boundedScore(insight.qualification?.score, status),
-        qualification_status: status,
-        disqualification_reason: stringValue(insight.qualification?.disqualification_reason),
-      },
+      create: { lead_event_id: lead.id, ...qualification },
+      update: qualification,
     });
   }
 

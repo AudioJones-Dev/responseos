@@ -81,6 +81,52 @@ describe("Telnyx canonical normalization", () => {
     expect(await prisma.callTranscript.count({ where: { call_id: calls[0].id } })).toBe(1);
     const lead = await prisma.leadEvent.findFirst({ where: { call_id: calls[0].id } });
     expect(lead?.status).toBe("qualified");
+    // The payload claimed score 91 with only service_needed known. The
+    // required-known facts (service_area_match, timeline) are absent, so the
+    // lead exists but is not scored — missing evidence is not negative evidence.
+    expect(
+      await prisma.leadQualification.findUnique({ where: { lead_event_id: lead!.id } }),
+    ).toBeNull();
+  });
+
+  test("scores a fully-described lead from extracted facts, not the provider score", async () => {
+    const insights: TelnyxWebhookEnvelope = {
+      data: {
+        id: "telnyx-event-insights-full",
+        event_type: "call.conversation_insights.generated",
+        occurred_at: "2026-08-18T16:04:00.000Z",
+        payload: {
+          call_control_id: "telnyx-call-002",
+          from: "+17865550103",
+          to: demoNumber,
+          summary: "Burst pipe, caller is the homeowner, wants someone today.",
+          qualification: {
+            status: "qualified",
+            score: 5,
+            service_needed: "Burst pipe",
+            service_area_match: true,
+            timeline: "same_day",
+            decision_maker: true,
+          },
+        },
+      },
+    };
+    await normalizeTelnyxEvent({
+      accountId,
+      demoNumber,
+      webhookEventId: await ledger(insights),
+      event: insights,
+    });
+    const call = await prisma.call.findFirstOrThrow({
+      where: { account_id: accountId, provider_call_id: "telnyx-call-002" },
+    });
+    const lead = await prisma.leadEvent.findFirstOrThrow({ where: { call_id: call.id } });
+    const qualification = await prisma.leadQualification.findUniqueOrThrow({
+      where: { lead_event_id: lead.id },
+    });
+    // 30 (area) + 25 (urgent) + 20 (decision maker) + 10 (service) = 85; budget unknown = 0.
+    expect(qualification.qualification_score).toBe(85);
+    expect(qualification.qualification_status).toBe("qualified");
   });
 
   test("rejects a signed event for another destination without a call mutation", async () => {

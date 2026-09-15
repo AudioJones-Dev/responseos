@@ -19,11 +19,11 @@ import type { CapabilityDescriptor } from "../contract";
  * mode, so this capability cannot acquire a tool by being assigned to a more
  * permissive tenant.
  *
- * Describing the capability does not implement it. The score divergence this
- * descriptor exposes — `app/api/leads/[id]/qualify/route.ts` uses the
- * deterministic weighted rule while `lib/providers/telnyx/normalize.ts` trusts
- * a provider-supplied number — is documented in the assessment and is
- * Increment 2's subject, not this file's.
+ * Describing the capability does not implement it. Both entry paths now derive
+ * the score from `leadQualificationScore` (Increment 2): the manual route
+ * `app/api/leads/[id]/qualify/route.ts` takes scorer input directly, and
+ * `lib/providers/telnyx/normalize.ts` extracts facts and maps them through
+ * `qualificationInputFromFacts`. The provider's own score is no longer read.
  */
 export const INBOUND_LEAD_QUALIFICATION_CAPABILITY: CapabilityDescriptor = Object.freeze({
   slug: "inbound-lead-qualification",
