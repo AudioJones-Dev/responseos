@@ -43,9 +43,9 @@ If the answer to either question is no, the engagement stops here. The deliverab
 |---|---|
 | Standard assessment | **$1,000 flat** |
 | Range by size and complexity | $750 – $1,500 |
-| Optional credit policy | Apply 100% of the assessment fee toward implementation if client signs within 14–30 days |
+| Credit policy | Apply 100% of the assessment fee toward implementation if client signs within 30 days |
 
-The credit policy is optional per engagement. Use it as a closing lever, not a default discount.
+The credit is the standard term (owner decision, 2026-09-11): the full fee applies toward implementation when the client signs within 30 days, and `/pricing` states it publicly.
 
 ### What the assessment evaluates
 
