@@ -17,6 +17,8 @@ const VALID = {
   HUBSPOT_ACCESS_TOKEN: "placeholder",
   RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED: "true",
   RESPONSEOS_LIVE_HUBSPOT_ENABLED: "true",
+  RESPONSEOS_AUTHORIZED_EXECUTION_GATES: "v0.3-live-communications",
+  RESPONSEOS_PROVIDER_ATTESTATION_PUBLIC_KEY: "placeholder",
 };
 
 describe("live-demo environment contract", () => {
@@ -35,6 +37,31 @@ describe("live-demo environment contract", () => {
     expect(errors).toContain("RESPONSEOS_LIVE_HUBSPOT_ENABLED must equal true");
     expect(errors).toContain("Forbidden in live-demo staging: VAPI_API_KEY");
     expect(errors.join(" ")).not.toContain("secret-placeholder");
+  });
+
+  test("requires the execution gate, the attestation key it implies, and both email halves", () => {
+    const without = (name: keyof typeof VALID) =>
+      Object.fromEntries(Object.entries(VALID).filter(([key]) => key !== name));
+
+    expect(validateLiveDemoEnvironment(without("RESPONSEOS_AUTHORIZED_EXECUTION_GATES"))).toContain(
+      "Missing required live-demo variable: RESPONSEOS_AUTHORIZED_EXECUTION_GATES",
+    );
+    expect(validateLiveDemoEnvironment(without("RESPONSEOS_PROVIDER_ATTESTATION_PUBLIC_KEY"))).toContain(
+      "RESPONSEOS_PROVIDER_ATTESTATION_PUBLIC_KEY is required when the live-communications gate is authorized",
+    );
+
+    const errors = validateLiveDemoEnvironment({ ...VALID, RESPONSEOS_LIVE_EMAIL_ENABLED: "true" });
+    expect(errors).toContain("RESEND_API_KEY is required when RESPONSEOS_LIVE_EMAIL_ENABLED is true");
+    expect(errors).toContain("EMAIL_FROM is required when RESPONSEOS_LIVE_EMAIL_ENABLED is true");
+
+    expect(
+      validateLiveDemoEnvironment({
+        ...VALID,
+        RESPONSEOS_LIVE_EMAIL_ENABLED: "true",
+        RESEND_API_KEY: "placeholder",
+        EMAIL_FROM: "assistant@example.test",
+      }),
+    ).toEqual([]);
   });
 
   test("rejects database drift between GitHub and Vercel", () => {

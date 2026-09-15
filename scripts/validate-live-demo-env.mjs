@@ -15,7 +15,12 @@ const REQUIRED = [
   "RESPONSEOS_DEMO_PHONE_E164",
   "TELNYX_PUBLIC_KEY",
   "HUBSPOT_ACCESS_TOKEN",
+  // Without it every supervised tenant silently degrades to the demo lane:
+  // no CRM write, no notification, demonstration wording on a client's call.
+  "RESPONSEOS_AUTHORIZED_EXECUTION_GATES",
 ];
+
+const LIVE_COMMUNICATIONS_GATE = "v0.3-live-communications";
 
 const FORBIDDEN = [
   "RESPONSEOS_DEV_SESSION",
@@ -69,6 +74,26 @@ export function validateLiveDemoEnvironment(env, expectedDatabaseEnv = undefined
   }
   if (env.RESPONSEOS_DEMO_PHONE_E164 !== "+17867560897") {
     errors.push("RESPONSEOS_DEMO_PHONE_E164 must equal the authorized demo number");
+  }
+  const gates = (env.RESPONSEOS_AUTHORIZED_EXECUTION_GATES ?? "")
+    .split(",")
+    .map((gate) => gate.trim())
+    .filter((gate) => gate.length > 0);
+  if (gates.includes(LIVE_COMMUNICATIONS_GATE)) {
+    if (!hasValue(env.RESPONSEOS_PROVIDER_ATTESTATION_PUBLIC_KEY)) {
+      errors.push(
+        "RESPONSEOS_PROVIDER_ATTESTATION_PUBLIC_KEY is required when the live-communications gate is authorized",
+      );
+    }
+  }
+  // Email stays optional; once switched on, both halves must be present or
+  // every supervised notification fails at dispatch.
+  if (env.RESPONSEOS_LIVE_EMAIL_ENABLED === "true") {
+    for (const name of ["RESEND_API_KEY", "EMAIL_FROM"]) {
+      if (!hasValue(env[name])) {
+        errors.push(`${name} is required when RESPONSEOS_LIVE_EMAIL_ENABLED is true`);
+      }
+    }
   }
   for (const name of FORBIDDEN) {
     if (hasValue(env[name])) errors.push(`Forbidden in live-demo staging: ${name}`);
