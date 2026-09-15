@@ -1653,3 +1653,105 @@ So the brief's generation instrumentation, retrieval instrumentation, evaluation
 - Prompt management has nothing to inventory: there are no prompt files in the tree, so no migration question exists yet.
 - The Telnyx ingest path above is corroborating evidence for the vendor-side-model shape, not a counterexample to it. What exists today is a signed webhook arriving *after* the vendor has run the conversation — which is what "webhook-ingest tracing rather than generation tracing" describes.
 - If the vendor-side-model shape described above holds, this ADR should be revisited before implementation begins, because what would be traced differs from what the brief assumed.
+
+---
+
+## ADR-0058 — Capability definition authority, publication, and runtime assignment
+
+**Status.** Proposed · 2026-09-13 · pending operator ratification; direction set by the operator on 2026-09-13. Extends **ADR-0001** (mock-first), **ADR-0017** (orchestration placement), **ADR-0046** (agent profiles), **ADR-0048** (prospect bootstrap), and **ADR-0051** (execution modes). **Authorizes no implementation** — no schema change, migration, table, authoring surface, execution engine, or provider activation. **Does not authorize v0.3** (doctrine D-1 stays open) and moves no item in doctrine §22.
+
+**Context.** An operator brief proposes an internal **Agent Capability Studio** for authoring, validating, simulating, versioning, publishing, and pinning governed revenue-agent behaviours. The repository-grounded assessment is [`product/responseos-agent-capability-studio-architecture-assessment.md`](./product/responseos-agent-capability-studio-architecture-assessment.md).
+
+The assessment established three things by reading the tree rather than the planning docs. **Most of the governance machinery the brief specifies already ships as working code** — `ExecutionPolicy` with `allowedTools` allowlists and a `resolveExecutionPolicy` that fails closed; `EXECUTION_MODE_ACTIVATION_GATES` binding each mode to a *named* gate so an approval for one cannot unlock another; `PROSPECT_RECEPTIONIST_TEMPLATE` with a SHA-256 checksum and preflight validation; `BootstrapPromotion` as a hash-pinned manifest with a forbidden-field scanner; real audit writers. **There is no generic step-execution engine** — no step walker, condition evaluator, or suspend/resume primitive anywhere in `lib/`. And **orchestration nonetheless exists, hardcoded**: `runCrmSyncForCall` (`lib/crm/syncFinalizedCall.ts`) sequences provider calls with idempotent state transitions, and `answerProfessionalQuestion` (`lib/professional/receptionist.ts`) classifies a turn then branches deterministically through `applyPolicy`. ADR-0017's "core RECOVER orchestration lives in code" is accurate; the gap is that orchestration is written per use case and is not recorded against any capability version.
+
+This ADR settles *where a capability definition lives and how it is identified, published, pinned, and reviewed*, because that is cheap to decide now and expensive to change once an authoring surface exists. It deliberately does **not** decide whether to build an execution engine.
+
+**Framing, stated so it is not misread later.** Git is not a stopgap here. It is the option with the strongest evidence in this repository, and the repository has already chosen it twice independently — `AgentProfile.system_policy_json` is compared *byte-identically* against a frozen Git constant in `lib/prospectBootstrap/service.ts`, and `BootstrapPromotionManifestSchema` pins `templateVersion` with `z.literal`. Equally, database-backed authoring is **not rejected forever**. The invariant that must survive any future change is narrower than "definitions live in Git":
+
+> **Published executable behaviour is immutable, reconstructable, reviewable, and version-controlled. Authoring UX may evolve without weakening that invariant.**
+
+A future Studio may persist mutable drafts in Postgres. Publication must then resolve those drafts into an exact immutable artifact before any runtime execution.
+
+---
+
+### The twelve questions
+
+**1. What is the source of truth for capability definitions?**
+Git. A capability definition is a typed, frozen TypeScript module reviewed through the normal PR process. It generalizes the existing `PROSPECT_RECEPTIONIST_TEMPLATE` pattern rather than introducing a competing one.
+
+**2. What is mutable versus immutable?**
+Immutable: a *published capability version* — its objective, trigger, required context, evidence requirements, execution policy, allowed tools, validation, output contract, and readiness gates, taken together. Mutable: tenant-specific configuration, release assignments, approval state, simulation runs, workflow runs, evidence, and business outcomes. A future draft record would be mutable; a published version never is.
+
+**3. What belongs in Git?**
+Typed capability definitions; deterministic policy and business rules; prompt and script components; validators; immutable checksummed published versions; the review history that produced them.
+
+**4. What belongs in Postgres?**
+Release and runtime assignments; tenant-specific configuration where appropriate; simulation runs; workflow runs; approval state; execution evidence; business outcomes. Postgres records *what happened and what is assigned*, never *what the behaviour is*.
+
+**5. How is a published capability identified?**
+By a triple: **slug + version label + content checksum**. All three already have precedent — `PROSPECT_AGENT_TEMPLATE_VERSION` is the human-readable label `"home-services-receptionist.v1"`, and `PROSPECT_RECEPTIONIST_TEMPLATE_CHECKSUM` is the SHA-256 over the frozen object. The checksum is authoritative; the label is for humans and must not be trusted for resolution, because a label can be reused by mistake and a checksum cannot.
+
+**6. How does runtime pin an exact version?**
+A release assignment names an exact checksum for an account. Runtime resolves that checksum or **fails closed**. `latest`, `current`, `head`, and `default` are never resolvable for behaviour-critical components. This mirrors `resolveExecutionPolicy`, which already degrades to the most restrictive policy rather than throwing when authorization is absent.
+
+**7. How are reusable component versions resolved?**
+Structurally, by containment: a checksum computed over a frozen object graph transitively pins every component that graph *contains*. `PROSPECT_RECEPTIONIST_TEMPLATE_CHECKSUM` is computed this way over the template's prompt text, dynamic variables, and tool list.
+
+**A limit on that evidence, recorded rather than assumed away.** `Object.freeze` is shallow, and two of the template's fields — `dynamicVariables` and `allowedTools` — are plain mutable arrays, while the checksum is computed once at module load. (`instructions` is `.join("\n")`ed into a string at construction, so it is an immutable primitive and is not part of this gap.) An importer mutating either array makes the executable template diverge from the checksum `validateProspectAssistantPreflight` accepts. So containment as *computed* is sound, but the template is not yet proof that containment is *enforced* — the freeze it relies on does not reach the arrays. Raised by Codex on PR #174. The defect pre-dates this decision and is not fixed by it; deep-freezing those arrays would make the template the immutable exemplar this ADR wants to generalize, and until that happens the containment rule should be read as the intended design rather than as already-proven repository evidence.
+
+**Containment is the rule, and Increment 1 does not yet satisfy it end to end.** The capability descriptor *references* the prospect template by version label rather than containing it, so `capabilityChecksum` covers descriptor fields only — editing the template's instructions changes the template's checksum but not the descriptor's. That is sound while the descriptor is metadata over a separately checksummed artifact whose own preflight enforces its hash, and it is recorded here rather than glossed because the single-identifier claim would otherwise be false. Unifying the two identifiers so one checksum pins both is Increment 5's runtime-assignment concern.
+
+No separate component-version registry is created; if components are later extracted into shared modules, the containing capability's checksum still changes whenever any contained component changes, which is the property that matters. A registry is warranted only if components must version independently of every capability that uses them, and no current use case requires that.
+
+**8. How does tenant-specific configuration relate to the global capability definition?**
+**Tenant configuration may only narrow. It may never widen.** This is not new policy; the repository implements it twice already. `AgentProfilePolicy` documents that it "can only narrow what the claim-authority matrix already permits — `escalate` categories can be made `refuse`, never `answer`", and `parseAgentProfilePolicy` falls back to the strict default on anything malformed so that "a malformed policy must never widen what the receptionist may say." Effective permissions are therefore the **intersection** of the capability's declared allowances, the tenant's configuration, and the resolved `ExecutionPolicy` for the tenant's execution mode. Intersection is structurally incapable of escalation.
+
+**9. How are permission changes reviewed?**
+Through the pull request, which is where a Git-defined capability's permission surface is visible as a diff.
+
+**A correction, recorded rather than quietly fixed.** An earlier draft of this ADR said `AGENTS.md` "already requires" independent review by an agent that did not author the change. It does not. `AGENTS.md`'s branch-and-PR policy requires feature-branch development, draft status until CI is green, scoped commit messages, and no direct or force pushes to `master` — it contains no independent-review rule. That requirement lives in the operator's governance policy, outside this repository. Raised by Codex on PR #174.
+
+The distinction matters because this ADR was leaning on the rule as *the* control for reviewing permission changes. The controls that are actually enforceable here are: the diff itself, CI, and **the human merge** — `AGENTS.md` does prohibit agents from merging, and that prohibition is real and in-repo. Independent review remains required by operator policy and should be treated as binding, but this ADR no longer attributes it to a file that does not carry it. Making it enforceable in-repo is available as a separate change and is not assumed here.
+
+Because permission broadening is easy to miss in a large diff, Increment 6 adds tooling that surfaces it explicitly — initially as CLI or test-report output, not a UI. **Publication approval is the existing human merge.** No in-app publication authority is created: an in-app "publish" that changed live behaviour would route around a control reserved to the human.
+
+**10. How do simulation and production execution preserve lineage?**
+Both record the capability slug and version checksum they executed. A simulation run and a workflow run differ in whether provider adapters are mock-resolved, not in how they are identified. **This is currently aspirational and must be stated as such:** `WorkflowRun` has no production writer — `recordWorkflowRun` and `finalizeWorkflowRun` are called only by integration tests and seed scripts — so evidence is captured (`Call`, `CallTranscript`, `QaLog` have verified writers) but is not attributable to a capability version. Until a writer exists on the post-call path, no document, dashboard, changelog entry, or customer-facing surface may describe ResponseOS as tracing outcomes to capability versions. Doctrine §20 governs that language.
+
+**11. What future conditions would justify database-backed authoring?**
+At least two of the following, demonstrated rather than anticipated: capability creation requires repeated boilerplate; non-engineering operators need to author capabilities; capability configuration changes materially more often than code releases; PR-based editing creates measurable operating friction; multiple tenants require controlled variations of the same capability; component reuse is substantial enough that structured authoring reduces errors; publication cadence is constrained by engineering availability. Recording this list is what keeps this ADR from ossifying into a permanent veto on the Studio.
+
+**12. What would constitute a deliberate migration away from Git-defined capabilities?**
+A superseding ADR that (a) cites which of question 11's conditions were met and with what evidence, (b) specifies how draft mutability is bounded, (c) specifies how publication resolves a draft into an exact immutable artifact before execution, (d) specifies how immutability is enforced in the database — update guards plus tests proving no mutation path — since it is no longer structural, and (e) states how the human merge gate is preserved or explicitly replaced with an equivalent control that the governance kernel accepts. Migration is additive: existing Git-defined capabilities keep resolving by checksum, so the two models can coexist during transition. Nothing about this decision requires a rewrite to reverse it.
+
+---
+
+### Decision
+
+1. **Git is the canonical definition-of-record for published ResponseOS capabilities at this stage.** The database does not become the authoritative source for executable capability definitions.
+
+2. **The separation is:** Git holds typed capability definitions, deterministic policy, immutable checksummed published versions, and PR/independent review. Postgres holds release and runtime assignments, tenant-specific configuration, simulation runs, workflow runs, approval state, execution evidence, and business outcomes.
+
+3. **Identification is slug + version label + checksum**, with the checksum authoritative for resolution.
+
+4. **Runtime pins an exact checksum and fails closed.** No behaviour-critical component ever resolves `latest`.
+
+5. **Tenant configuration narrows and never widens.** Effective permissions are the intersection of capability, tenant configuration, and execution-mode policy.
+
+6. **Publication approval is the existing human merge.** Activation for a tenant remains the existing operator approval-route pattern.
+
+7. **No Studio UI, step engine, component registry, semantic-diff UI, or AI-assisted authoring is authorized here.** The next problem is not the Studio UI; it is establishing the minimum generalized capability execution contract that can support capability N without turning ResponseOS into a generic workflow engine.
+
+8. **Generalize from two verified implementations, never from one implementation plus a research ontology.** Existing primitives are extended, not replaced.
+
+9. **Naming is reconciled before any capability module is written.** `app/(admin)/admin/playbooks/page.tsx` is a hardcoded three-element stub and `Automation` is an existing model with its own trigger enum; "capability", "playbook", "template", and "automation" must not become four names for overlapping ideas.
+
+10. **The `operator` role is not assumed to mean "capability author."** The distinct permissions — view, simulate, draft, review, publish, assign — are named here so they are not collapsed into an existing role by default. No RBAC matrix is implemented until an increment requires it.
+
+---
+
+**§21 checklist.** **Layer:** authoring and governance, above execution and below the product surface; this ADR places it and authorizes nothing in it. **Built/integrated/deferred:** definition format, identification, and pinning decided; engine and authoring surface deferred pending evidence. **Live pilot path:** no improvement, stated honestly — Missed Call Recovery's core action is blocked (`outboundEnabled: false` below `MANAGED_AUTONOMY`, itself behind `post-pilot-operator-authorization`) and booking needs `v0.3-live-communications` (D-1). **Evidence:** preserved; improved only once a `WorkflowRun` writer exists (question 10). **Verified outcomes:** supports, does not itself verify. **Proprietary learning:** yes — a governed library of service-business revenue procedures compounds, and this is the strongest argument for the programme. **Commodity to buy:** partly already owned — Git plus the PR process supply immutability, diff, review, approval, and audit; runtime pinning, permission-broadening detection, and simulation traces are genuinely new surface. **Duplicates CRM/FSM/telecom/workflow-platform:** no, provided step vocabulary stays domain-shaped; decision 7 and the brief's non-goals bind. **Vendor lock-in:** reduced — behaviour is pinned in our artifacts rather than a provider console. **Tenant isolation:** preserved; `account_id` derives from the authenticated server session, and any new table joins the tenant-isolation matrix test. **Attribution ambiguity:** reduced. **Public claims (§20):** the live risk, bounded by question 10's prohibition. **New human-approval control:** none — decision 6's point; a database-of-record model *would* have required one. **Compliance exposure:** slightly increased in the abstract since authored behaviour must not bypass disclosure or prohibited-advice rules, mitigated structurally by decision 5. **Required now:** the Studio is not; *this decision* is, because it is cheap before an authoring surface exists and expensive after.
+
+**Consequences.** The repository keeps one model for governed artifacts instead of two. Immutability costs nothing to enforce because it is structural, and the human merge remains the single publication authority, satisfying the governance kernel without a parallel in-app control. Existing primitives are extended rather than displaced.
+
+The cost is real and is not softened here: **capability authoring remains an engineering activity.** An operator who cannot open a pull request cannot author a capability. `UserRole` models a non-engineer `operator`, so the population may exist, but whether such staff would author capabilities is **unverified and is an operator question** — decision 10 keeps it open rather than answering it by default. If the answer is that they must author, question 11's conditions are met sooner and database-backed authoring gets stronger, which is the intended behaviour of this ADR rather than a failure of it.
