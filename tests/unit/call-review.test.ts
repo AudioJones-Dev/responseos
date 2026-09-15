@@ -137,6 +137,17 @@ test("CRM failure does not suppress the approved email", async () => {
   expect(mocks.send).toHaveBeenCalledWith({ to: base.recipient, ...reviewMessage(payload, "call"), idempotencyKey: "review:review" });
 });
 
+test("a delivery-state write failure after provider acceptance records the acceptance, not a failure", async () => {
+  approved();
+  // update #1: crm_status; update #2: sending; update #3 (after send): accepted → fails
+  mocks.db.callReview.update.mockResolvedValueOnce({}).mockResolvedValueOnce({}).mockRejectedValueOnce(new Error("state_write_failed"));
+  await expect(dispatchCallReview("review")).rejects.toThrow("state_write_failed");
+  expect(mocks.send).toHaveBeenCalledTimes(1);
+  expect(mocks.db.callReview.updateMany).toHaveBeenCalledWith(expect.objectContaining({ data: { email_status: "accepted", email_message_id: "email-1" } }));
+  expect(mocks.db.callReview.updateMany).not.toHaveBeenCalledWith(expect.objectContaining({ data: { email_status: "failed" } }));
+  expect(mocks.db.auditLog.create).toHaveBeenLastCalledWith(expect.objectContaining({ data: expect.objectContaining({ action: "call_review_dispatch_outcome", metadata_json: expect.objectContaining({ outcome: "accepted", reconciliationRequired: true, providerMessageId: "email-1" }) }) }));
+});
+
 test("an abandoned dispatch claim is recovered after its TTL and audited as such", async () => {
   const abandonedAt = new Date(Date.now() - 20 * 60 * 1000);
   approved({ dispatch_at: abandonedAt });

@@ -199,6 +199,10 @@ export async function dispatchCallReview(id: string) {
     await tx.auditLog.create(auditEntry("call_review_dispatch_attempt", { revision: row.revision, ...(recoveringStaleClaim ? { recoveredStaleClaimFrom: row.dispatch_at!.toISOString() } : {}) }));
   });
   let crmStatus: string | null = null;
+  // Held outside the try so a failure after provider acceptance can still
+  // record the acceptance: a sent email is irreversible whatever the database
+  // did afterwards.
+  let sent: { providerMessageId: string } | null = null;
   try {
     const crm = await runCrmSyncForCall({ accountId: row.account_id, callId: row.call_id, requireLiveProvider: true, reviewId: id });
     crmStatus = crm.ok ? crm.data.status : "failed";
@@ -213,7 +217,7 @@ export async function dispatchCallReview(id: string) {
     if (provider.providerId !== "resend") throw new Error("live_email_disabled");
     await db.callReview.update({ where: { id, account_id: row.account_id }, data: { email_attempt_at: row.email_attempt_at ?? new Date(), email_status: "sending" } });
     const message = reviewMessage(value, row.call_id);
-    const sent = await provider.send({ to: row.recipient, ...message, idempotencyKey: `review:${id}` });
+    sent = await provider.send({ to: row.recipient, ...message, idempotencyKey: `review:${id}` });
     await db.callReview.update({ where: { id, account_id: row.account_id }, data: { email_status: "accepted", email_message_id: sent.providerMessageId } });
     await audit("call_review_dispatch_outcome", { revision: row.revision, outcome: "accepted" });
     return { status: "accepted" };
@@ -223,6 +227,14 @@ export async function dispatchCallReview(id: string) {
     // The CRM outcome is known once runCrmSyncForCall returned; if its status
     // write was the failure, try once more so the effect is not orphaned.
     if (crmStatus) await db.callReview.updateMany({ where: { id, account_id: row.account_id, crm_status: "pending" }, data: { crm_status: crmStatus } }).catch(() => null);
+    if (sent) {
+      // The provider accepted the message; the failure was the delivery-state
+      // write (or the audit after it). Record the acceptance and its id rather
+      // than a provider failure, so a retry reconciles instead of resending.
+      await db.callReview.updateMany({ where: { id, account_id: row.account_id, email_status: { not: "accepted" } }, data: { email_status: "accepted", email_message_id: sent.providerMessageId } }).catch(() => null);
+      await audit("call_review_dispatch_outcome", { revision: row.revision, outcome: "accepted", reconciliationRequired: true, providerMessageId: sent.providerMessageId, error: error instanceof Error ? error.message : "dispatch_failed" });
+      throw error;
+    }
     const downgraded = await db.callReview.updateMany({ where: { id, account_id: row.account_id, email_status: { not: "accepted" } }, data: { email_status: "failed" } });
     await audit("call_review_dispatch_outcome", { revision: row.revision, outcome: downgraded.count ? "failed" : "accepted", error: error instanceof Error ? error.message : "dispatch_failed" });
     throw error;

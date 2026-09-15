@@ -113,6 +113,25 @@ function holidayStatement(value: OperatingConfigurationValue<"operating_hours.ho
     .join("; ")}.`;
 }
 
+/**
+ * The configured refusal offer is an enum; the template speaks this value
+ * word for word, so it must be a sentence. Every branch offers a person and
+ * collects nothing: a callback goes to the number the caller is calling
+ * from, which the ledger already holds. A transfer is offered only when the
+ * policy actually enables the transfer tool.
+ */
+function refusalOfferStatement(
+  offer: OperatingConfigurationValue<"policy.consent">["refusal"]["offer"] | null,
+  transferEnabled: boolean,
+): string {
+  const callback = "A person will call you back at the number you are calling from.";
+  const transfer = "I can connect you with a person now.";
+  if (!offer) return "";
+  if (offer === "callback_only" || !transferEnabled) return callback;
+  if (offer === "transfer_only") return transfer;
+  return `${transfer} Or, if you prefer, a person will call you back at the number you are calling from. Which would you like?`;
+}
+
 function serviceAreaStatement(value: OperatingConfigurationValue<"service_area.coverage"> | null): string {
   if (!value) return "Service area is not configured; a person will confirm coverage.";
   const collect = value.collectFromCaller
@@ -168,7 +187,7 @@ export function buildSupervisedAgentContext(params: {
     recording_disclosure: recording?.disclosure ?? "",
     recording_continuation: recording?.continuationStatement ?? "",
     recording_refusal_acknowledgement: consent?.refusal.acknowledgement ?? "",
-    recording_refusal_offer: consent?.refusal.offer ?? "",
+    recording_refusal_offer: refusalOfferStatement(consent?.refusal.offer ?? null, params.policy.transferEnabled),
     service_area_statement: areaStatement,
     location_confirmation_required: coverage?.locationConfirmationRequired ? "true" : "false",
     operating_hours_statement: hoursStatement,

@@ -37,6 +37,10 @@ test("approved knowledge reaches the assistant while operational recipients rema
     fictionalScenarios: [{ reference: "DEMO-PROJECT-1", statement: "A fictional ramp project awaits a callback.", fictional: true }],
   } }]);
   const context = buildSupervisedAgentContext({ businessName: "Example", agentName: "Sam", memory, policy: EXECUTION_MODE_POLICIES.SUPERVISED_PILOT });
+  // The refusal offer is spoken word for word, so it must be a sentence, not the enum.
+  expect(context.recording_refusal_offer).not.toBe("transfer_or_callback");
+  expect(context.recording_refusal_offer).toMatch(/connect you with a person now/);
+  expect(context.recording_refusal_offer).toMatch(/call you back at the number you are calling from/);
   expect(context.approved_business_context).toContain("owner-approved-example");
   expect(context.approved_business_context).toContain("FICTIONAL DEMO RECORD [DEMO-PROJECT-1]");
   expect(context.approved_business_context).not.toContain("+15555550123");
@@ -358,6 +362,8 @@ describe("supervised assistant preflight", () => {
     expect(consentLine).toBeLessThan(collectionLine);
     expect(lines[consentLine]).toContain("{{recording_refusal_acknowledgement}}");
     expect(lines[consentLine]).toContain("{{recording_refusal_offer}}");
+    expect(lines[consentLine]).toContain("use the transfer tool");
+    expect(lines[consentLine]).toContain("hangup tool");
     expect(lines[consentLine]).toMatch(/Do not ask for or record any details after a refusal/);
     // Location collection defers to the configured service-area statement
     // rather than naming fields the operator may not have approved.
@@ -499,6 +505,7 @@ describe("supervised agent context", () => {
     });
     expect(context.recording_enabled).toBe("false");
     expect(context.recording_disclosure).toBe("");
-    expect(context.recording_refusal_offer).toBe("transfer_or_callback");
+    // Spoken wording, never the configured enum; the policy enables transfer, so both paths are offered.
+    expect(context.recording_refusal_offer).toMatch(/connect you with a person now.*call you back at the number you are calling from/);
   });
 });
