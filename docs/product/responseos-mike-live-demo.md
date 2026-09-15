@@ -36,6 +36,12 @@ Reuse candidate runtime, configuration, normalization, HubSpot and Resend work f
 - A separate dispatch action uses the approved content. Ordinary personalized prospect demos retain their CRM prohibition. Qualified-only task eligibility is retained; PR #175's unratified outcome allowlist is not adopted.
 - CRM and email statuses are independent. Provider acceptance is not inbox receipt. Retries reuse the frozen payload and email idempotency key; old ambiguous deliveries require reconciliation. No background scheduler or unattended retry is claimed.
 
+### Approved availability wording repair - 2026-09-15 (local implementation)
+
+The v4 supervised template and dynamic context distinguish 24/7 AI answering (including holidays) from human availability. Transfer is an attempt; callback is a request with no completion or timing promise. Refusal remains non-capturing: the witnessing operator handles any callback request manually and must not rely on a transcript-based review or email being created for a refused call. Shared policy is unchanged; commissioning must supply an approved tenant disclosure without a human-availability promise.
+
+Provider configuration must later match `supervised-receptionist.v4` and its computed checksum, followed by fresh evidence-backed attestation after provider verification. No provider update or attestation has occurred as part of this repair. CRM recovery remains frozen. Local validation passed: 34 focused tests, 823 unit tests, 198 PostgreSQL integration tests, lint, typecheck and production build. Owner diff approval and focused independent review remain pending before commissioning.
+
 ## Interfaces
 
 Updates to an enabled supervised profile require explicit reactivation with the complete approved configuration and fresh number preflight. Omitting activation cannot change an active tenant's policy. The call webhook records only metadata and rejects normalization when the supervised runtime is incomplete, degraded or outside `SUPERVISED_PILOT`. Existing notification retries use their stored recipient and message even if the latest configuration was revoked; the live email provider gate remains required for previously live attempts. These controls are repository behavior, not proof of provider activation or delivery.

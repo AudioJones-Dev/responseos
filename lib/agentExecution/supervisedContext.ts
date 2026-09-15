@@ -98,7 +98,7 @@ const DAY_ORDER = ["monday", "tuesday", "wednesday", "thursday", "friday", "satu
 
 function weeklyHoursStatement(value: OperatingConfigurationValue<"operating_hours.weekly"> | null): string {
   if (!value) return "Operating hours are not configured; a person will confirm them.";
-  if (value.type === "always_open") return "Open 24 hours a day, 7 days a week.";
+  if (value.type === "always_open") return "Our AI receptionist answers calls 24 hours a day, every day. Human availability varies.";
   const days = [...value.days].sort((left, right) => DAY_ORDER.indexOf(left.day) - DAY_ORDER.indexOf(right.day));
   return `Hours (${value.timezone}): ${days
     .map((day) => (day.closed ? `${day.day} closed` : `${day.day} ${day.opensAt}-${day.closesAt}`))
@@ -107,7 +107,7 @@ function weeklyHoursStatement(value: OperatingConfigurationValue<"operating_hour
 
 function holidayStatement(value: OperatingConfigurationValue<"operating_hours.holidays"> | null): string {
   if (!value) return "";
-  if (value.type === "always_open") return "Open on holidays.";
+  if (value.type === "always_open") return "Our AI receptionist also answers on holidays.";
   return `Holiday closures (${value.timezone}): ${value.closures
     .map((closure) => `${closure.date} ${closure.name}${closure.closed ? " closed" : " open"}`)
     .join("; ")}.`;
@@ -116,20 +116,19 @@ function holidayStatement(value: OperatingConfigurationValue<"operating_hours.ho
 /**
  * The configured refusal offer is an enum; the template speaks this value
  * word for word, so it must be a sentence. Every branch offers a person and
- * collects nothing: a callback goes to the number the caller is calling
- * from, which the ledger already holds. A transfer is offered only when the
- * policy actually enables the transfer tool.
+ * collects nothing: the supervising operator handles callback requests
+ * manually. Transfer permission authorizes an attempt, not a connection.
  */
 function refusalOfferStatement(
   offer: OperatingConfigurationValue<"policy.consent">["refusal"]["offer"] | null,
   transferEnabled: boolean,
 ): string {
-  const callback = "A person will call you back at the number you are calling from.";
-  const transfer = "I can connect you with a person now.";
+  const callback = "You can request a callback from the team. A callback time is not confirmed.";
+  const transfer = "I can try to connect you with a person.";
   if (!offer) return "";
   if (offer === "callback_only" || !transferEnabled) return callback;
   if (offer === "transfer_only") return transfer;
-  return `${transfer} Or, if you prefer, a person will call you back at the number you are calling from. Which would you like?`;
+  return "I can try to connect you with a person, or you can request a callback from the team. A callback time is not confirmed. Which would you prefer?";
 }
 
 function serviceAreaStatement(value: OperatingConfigurationValue<"service_area.coverage"> | null): string {
@@ -195,6 +194,6 @@ export function buildSupervisedAgentContext(params: {
     transfer_enabled: params.policy.transferEnabled ? "true" : "false",
     // Phase A closing only: thank the caller and set the follow-up expectation.
     // No satisfaction survey is asked on a live client call.
-    closing_statement: `Thank you for calling ${params.businessName}. A member of the team will follow up.`,
+    closing_statement: `Thank you for calling ${params.businessName}. Follow-up requests need review by the team.`,
   });
 }

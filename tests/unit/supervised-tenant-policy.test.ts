@@ -39,8 +39,8 @@ test("approved knowledge reaches the assistant while operational recipients rema
   const context = buildSupervisedAgentContext({ businessName: "Example", agentName: "Sam", memory, policy: EXECUTION_MODE_POLICIES.SUPERVISED_PILOT });
   // The refusal offer is spoken word for word, so it must be a sentence, not the enum.
   expect(context.recording_refusal_offer).not.toBe("transfer_or_callback");
-  expect(context.recording_refusal_offer).toMatch(/connect you with a person now/);
-  expect(context.recording_refusal_offer).toMatch(/call you back at the number you are calling from/);
+  expect(context.recording_refusal_offer).toMatch(/try to connect you with a person/);
+  expect(context.recording_refusal_offer).toMatch(/request a callback from the team/);
   expect(context.approved_business_context).toContain("owner-approved-example");
   expect(context.approved_business_context).toContain("FICTIONAL DEMO RECORD [DEMO-PROJECT-1]");
   expect(context.approved_business_context).not.toContain("+15555550123");
@@ -370,7 +370,7 @@ describe("supervised assistant preflight", () => {
     expect(SUPERVISED_RECEPTIONIST_TEMPLATE.instructions).not.toMatch(/city and postal code/);
     expect(lines.find((line) => line.startsWith("Never infer a service area"))).toContain("{{service_area_statement}}");
     expect(SUPERVISED_RECEPTIONIST_TEMPLATE.dynamicVariables).toContain("ai_disclosure");
-    expect(SUPERVISED_RECEPTIONIST_TEMPLATE_VERSION).toBe("supervised-receptionist.v3");
+    expect(SUPERVISED_RECEPTIONIST_TEMPLATE_VERSION).toBe("supervised-receptionist.v4");
   });
 
   test("accepts provider configuration that matches the resolved policy", () => {
@@ -506,6 +506,68 @@ describe("supervised agent context", () => {
     expect(context.recording_enabled).toBe("false");
     expect(context.recording_disclosure).toBe("");
     // Spoken wording, never the configured enum; the policy enables transfer, so both paths are offered.
-    expect(context.recording_refusal_offer).toMatch(/connect you with a person now.*call you back at the number you are calling from/);
+    expect(context.recording_refusal_offer).toMatch(/try to connect you with a person.*request a callback from the team/);
+  });
+});
+
+describe("supervised availability semantics", () => {
+  test("hours describe AI answering consistently without promising human availability", () => {
+    const context = buildSupervisedAgentContext({ businessName: "Example", agentName: "Sam", memory: snapshot(), policy: EXECUTION_MODE_POLICIES.SUPERVISED_PILOT });
+    const hours = "Our AI receptionist answers calls 24 hours a day, every day. Human availability varies. Our AI receptionist also answers on holidays.";
+    expect(context.operating_hours_statement).toBe(hours);
+    expect(context.approved_business_context).toContain(hours);
+    expect(context.approved_business_context.match(/Human availability varies/g)).toHaveLength(1);
+    expect(context.approved_business_context).not.toContain("Open 24 hours");
+    expect(context.ai_disclosure).toBe(CONSENT_RECORDING_OFF.aiDisclosure);
+    expect(context.ai_disclosure).not.toContain("at any time");
+    expect(context.closing_statement).toBe("Thank you for calling Example. Follow-up requests need review by the team.");
+    expect(SupervisedAgentContextSchema.safeParse(context).success).toBe(true);
+    expect(context.approved_business_context.length).toBeLessThanOrEqual(24_000);
+    expect(SupervisedAgentContextSchema.safeParse({ ...context, approved_business_context: "x".repeat(24_001) }).success).toBe(false);
+  });
+
+  test.each([
+    ["transfer_or_callback", true, "I can try to connect you with a person, or you can request a callback from the team. A callback time is not confirmed. Which would you prefer?"],
+    ["transfer_only", true, "I can try to connect you with a person."],
+    ["callback_only", true, "You can request a callback from the team. A callback time is not confirmed."],
+    ["transfer_or_callback", false, "You can request a callback from the team. A callback time is not confirmed."],
+    ["transfer_only", false, "You can request a callback from the team. A callback time is not confirmed."],
+    ["callback_only", false, "You can request a callback from the team. A callback time is not confirmed."],
+  ] as const)("%s with transfer enabled=%s offers no guaranteed effect", (offer, transferEnabled, expected) => {
+    const memory = snapshot(ENTRIES.map((entry) => entry.key === "policy.consent" ? {
+      ...entry, value: { ...CONSENT_RECORDING_OFF, refusal: { ...CONSENT_RECORDING_OFF.refusal, offer } },
+    } : entry));
+    const context = buildSupervisedAgentContext({ businessName: "Example", agentName: "Sam", memory, policy: { ...EXECUTION_MODE_POLICIES.SUPERVISED_PILOT, transferEnabled } });
+    expect(context.recording_refusal_offer).toBe(expected);
+    expect(context.recording_refusal_offer).not.toMatch(/person now|will call|scheduled|forwarded|booked/i);
+    expect(context.recording_refusal_acknowledgement).toBe(CONSENT_RECORDING_OFF.refusal.acknowledgement);
+    expect(context.recording_enabled).toBe("false");
+    expect(context.transfer_enabled).toBe(String(transferEnabled));
+  });
+
+  test("v4 preserves controls while rejecting v3 identity and callback guarantees", () => {
+    const template = SUPERVISED_RECEPTIONIST_TEMPLATE;
+    expect(template.instructions).not.toContain("confirm a person will call back");
+    expect(template.instructions).toContain("do not promise a callback or a callback time");
+    expect(template.instructions).toContain("A transfer is an attempt, not a guaranteed connection.");
+    expect(template.instructions).toContain("If the caller chooses to be connected and transfer_enabled is true, use the transfer tool");
+    expect(template.allowedTools).toEqual(["hangup", "transfer"]);
+    expect(template.providerMemoryEnabled).toBe(false);
+    expect(template.outboundEnabled).toBe(false);
+    expect(EXECUTION_MODE_POLICIES.SUPERVISED_PILOT.schedulingEnabled).toBe(false);
+    expect(EXECUTION_MODE_POLICIES.SUPERVISED_PILOT.recordingEnabled).toBe(false);
+    const metadata = {
+      assistantId: "assistant-1", templateVersion: SUPERVISED_RECEPTIONIST_TEMPLATE_VERSION,
+      templateChecksum: SUPERVISED_RECEPTIONIST_TEMPLATE_CHECKSUM,
+      initializationWebhookConfigured: true, recordingEnabled: false, numberRecordingEnabled: false,
+      providerMemoryEnabled: false, allowedTools: ["hangup", "transfer"],
+      insightGroupConfigured: true, messageHistoryUpdatesEnabled: true,
+      consentCaptureVerified: true, captureIntervalVerified: true, consentEvidenceRef: "test-proof",
+      transferDestinationE164: "+15555550123",
+    };
+    const expected = { recordingEnabled: false, allowedTools: ["hangup", "transfer"], transferDestination: "+15555550123" };
+    expect(validateSupervisedAssistantPreflight(metadata, expected).templateVersion).toBe("supervised-receptionist.v4");
+    expect(() => validateSupervisedAssistantPreflight({ ...metadata, templateVersion: "supervised-receptionist.v3" }, expected)).toThrow("assistant_template_version_mismatch");
+    expect(() => validateSupervisedAssistantPreflight({ ...metadata, templateChecksum: "35eb2c66e2e9ca6d8ef8938d70868851f8194d82990ba2353b02458bff1b300f" }, expected)).toThrow("assistant_template_checksum_mismatch");
   });
 });
