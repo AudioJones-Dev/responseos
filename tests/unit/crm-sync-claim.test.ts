@@ -24,12 +24,22 @@ beforeEach(() => {
   database.crmSyncOperation.findUnique.mockImplementation(async () => ({ ...row }));
   database.crmSyncOperation.upsert.mockImplementation(async () => ({ ...row, updated_at: new Date() }));
   database.crmSyncOperation.updateMany.mockImplementation(async ({ where, data }) => {
-    const claimable = where.OR.some((clause: { status: string | { in: string[] }; updated_at?: { lte: Date } }) =>
-      typeof clause.status === "string"
-        ? clause.status === row.status && (row.updated_at as Date) <= clause.updated_at!.lte
-        : clause.status.in.includes(row.status as string));
-    if ((where.account_id && where.account_id !== row.account_id) || !claimable) return { count: 0 };
-    row = { ...row, ...data, attempt_count: Number(row.attempt_count) + 1, updated_at: new Date() };
+    if (where.account_id && where.account_id !== row.account_id) return { count: 0 };
+    if (where.OR) {
+      // The claim: pending/retryable, or processing past the TTL.
+      const claimable = where.OR.some((clause: { status: string | { in: string[] }; updated_at?: { lte: Date } }) =>
+        typeof clause.status === "string"
+          ? clause.status === row.status && (row.updated_at as Date) <= clause.updated_at!.lte
+          : clause.status.in.includes(row.status as string));
+      if (!claimable) return { count: 0 };
+      row = { ...row, ...data, attempt_count: Number(row.attempt_count) + 1, updated_at: new Date() };
+      return { count: 1 };
+    }
+    // Generation-fenced writes: ownership check before provider effects and
+    // the failure release.
+    if (where.status && where.status !== row.status) return { count: 0 };
+    if (where.attempt_count !== undefined && where.attempt_count !== row.attempt_count) return { count: 0 };
+    row = { ...row, ...data, updated_at: new Date() };
     return { count: 1 };
   });
   database.crmSyncOperation.findUniqueOrThrow.mockImplementation(async ({ where }) => {
@@ -82,6 +92,25 @@ test("a claim abandoned past its TTL is reclaimed and continued, not repeated", 
   expect(activity).toHaveBeenCalledOnce();
   expect(row.attempt_count).toBe(1);
   expect(database.crmSyncOperation.upsert).not.toHaveBeenCalled();
+});
+
+test("a worker whose claim was superseded reaches no provider and writes no state", async () => {
+  // The generation read after claiming belongs to this worker; a later
+  // reclaim (simulated by bumping attempt_count) must fence it out before
+  // the first provider call and out of the failure write.
+  database.crmSyncOperation.findUniqueOrThrow.mockImplementationOnce(async () => {
+    const snapshot = { ...row };
+    row.attempt_count = Number(row.attempt_count) + 1;
+    return snapshot;
+  });
+  const provider = new MockCrmProvider();
+  const lookup = vi.spyOn(provider, "findContacts");
+  const activity = vi.spyOn(provider, "createCallActivity");
+  const result = await runCrmSyncForCall({ accountId: "account", callId: "call", providerOverride: provider });
+  expect(result.ok).toBe(false);
+  expect(lookup).not.toHaveBeenCalled();
+  expect(activity).not.toHaveBeenCalled();
+  expect(row.status).toBe("processing");
 });
 
 test("a failed contender cannot overwrite the current worker's state", async () => {

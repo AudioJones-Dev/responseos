@@ -5,7 +5,7 @@ import { errorResponse, respondWithResult, safeJson } from "@/lib/providers/webh
 const Input = z.strictObject({
   accountSlug: z.string().trim().min(1), businessName: z.string().trim().min(1),
   timezone: z.string().trim().min(1), agentName: z.string().trim().min(1),
-  industry: z.string().optional(), approvalRecordRef: z.string().trim().min(1),
+  industry: z.string().trim().min(1).optional(), approvalRecordRef: z.string().trim().min(1),
   executionMode: z.enum(["SUPERVISED_PILOT", "PRODUCTION_SUPERVISED", "MANAGED_AUTONOMY"]),
   configuration: z.array(z.strictObject({ key: z.string(), value: z.unknown() })),
   number: z.strictObject({ providerNumberId: z.string().min(1), e164: z.string().min(1), providerAttestation: z.unknown() }).optional(),

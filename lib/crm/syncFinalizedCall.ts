@@ -88,6 +88,7 @@ export async function runCrmSyncForCall(params: {
   const provider = params.providerOverride ?? getCrmProvider();
   const operationKey = `crm-call:${params.accountId}:${params.callId}`;
   let claimed = false;
+  let generation = 0;
 
   try {
     // Read before upserting: an upsert's empty update branch still touches
@@ -139,6 +140,10 @@ export async function runCrmSyncForCall(params: {
     }
     claimed = true;
     operation = await db.crmSyncOperation.findUniqueOrThrow({ where: { id: operation.id, account_id: params.accountId } });
+    // attempt_count moves only on a claim, and the claim above just refreshed
+    // updated_at, so no reclaim can occur inside the TTL: the count read here is
+    // this attempt's own generation and fences every write that must be ours.
+    generation = operation.attempt_count;
     if (operation.provider === "hubspot" && provider.providerId !== "hubspot") {
       operation = await db.crmSyncOperation.update({
         where: { id: operation.id, account_id: params.accountId },
@@ -209,6 +214,14 @@ export async function runCrmSyncForCall(params: {
         }
       : undefined;
 
+    // Verify ownership immediately before the first provider effect. A worker
+    // suspended past the claim TTL finds its generation superseded and stops;
+    // the write is harmless to a live owner and refreshes its claim.
+    const owned = await db.crmSyncOperation.updateMany({
+      where: { id: operation.id, account_id: params.accountId, status: "processing", attempt_count: generation },
+      data: { last_error_code: null },
+    });
+    if (owned.count === 0) throw new Error("crm_claim_lost");
     let providerContactId = operation.provider_contact_id;
     if (!providerContactId) {
       const verifiedEmail = !approved && contact?.email_verified
@@ -301,8 +314,10 @@ export async function runCrmSyncForCall(params: {
   } catch (error) {
     const safe = redactedError(error);
     if (!claimed) return err(safe.code, safe.message);
-    const updated = await db.crmSyncOperation.update({
-      where: { operation_key: operationKey, account_id: params.accountId },
+    // Fenced on the generation: a superseded worker must not overwrite the
+    // replacement's state with its own failure.
+    const released = await db.crmSyncOperation.updateMany({
+      where: { operation_key: operationKey, account_id: params.accountId, attempt_count: generation },
       data: {
         status: "retryable_failed",
         last_error_code: safe.code,
@@ -310,6 +325,8 @@ export async function runCrmSyncForCall(params: {
         next_attempt_at: new Date(Date.now() + 5 * 60 * 1000),
       },
     }).catch(() => null);
+    if (!released?.count) return err(safe.code, safe.message);
+    const updated = await db.crmSyncOperation.findUnique({ where: { operation_key: operationKey, account_id: params.accountId } }).catch(() => null);
     return updated ? ok(toView(updated)) : err(safe.code, safe.message);
   }
 }

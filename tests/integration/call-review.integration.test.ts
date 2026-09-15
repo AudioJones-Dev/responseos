@@ -40,7 +40,7 @@ test("signed initialization aliases recover both the tenant and canonical captur
 
 test("console limits calls after grouping revisions and loads each capture's consent", async () => {
   const row = (await queueCallReview(accountId, callId, { summary: value.summary }))!;
-  await prisma.callReview.createMany({ data: Array.from({ length: 60 }, (_, index) => ({ account_id: accountId, call_id: "newer-call", revision: index + 1, source_hash: `hash-${index}`, evidence_json: {}, payload_json: {}, recipient: "owner@example.test", created_at: new Date(now.getTime() + index + 1) })) });
+  await prisma.callReview.createMany({ data: Array.from({ length: 60 }, (_, index) => ({ account_id: accountId, call_id: "newer-call", revision: index + 1, source_hash: `hash-${index}`, evidence_json: {}, payload_json: {}, recipient: "owner@example.test", created_at: new Date(row.created_at.getTime() + index + 1) })) });
   await prisma.callConsentEvent.createMany({ data: Array.from({ length: 60 }, (_, index) => ({ account_id: accountId, provider_call_id: index ? "unrelated" : "provider-call", event_key: `event-${index}`, action: "grant", artifact: "transcript", disclosure_ref: "test", evidence_ref: "test", jurisdiction_basis: "test", source_channel: "call", actor_user_id: "operator", occurred_at: new Date(now.getTime() + index) })) });
   const consoleData = await loadCallReviewConsole();
   expect(consoleData.reviews.map((review) => review.id)).toContain(row.id);

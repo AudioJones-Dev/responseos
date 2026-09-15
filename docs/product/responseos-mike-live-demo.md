@@ -6,7 +6,7 @@ Status: local implementation under review; independent review and live activatio
 
 Problem: the merged baseline does not connect approved FRL context, a real call, operator-reviewed evidence, test CRM records, and an email Mike receives.
 
-Outcome: an isolated inbound demonstration covering every FRL intake path, with real approved business facts and clearly fictional customer/project scenarios. Audio approves the follow-up before CRM or email effects. Invite Mike only after two consecutive internal live rehearsals pass.
+Target outcome: an isolated inbound demonstration that will cover every FRL intake path, using real approved business facts and clearly fictional customer/project scenarios. It is pending independent review and live activation. Audio approves the follow-up before CRM or email effects. Invite Mike only after two consecutive internal live rehearsals pass.
 
 Success: Mike can choose a scenario and ask unscripted questions; the agent uses supported facts, handles unknowns honestly, and creates follow-up Mike considers useful. This establishes demonstration evidence, not autonomous readiness, production readiness, revenue recovery, or a guaranteed sale.
 

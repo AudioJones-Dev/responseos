@@ -50,6 +50,14 @@ describe("capture authorization", () => {
   test("withdrawal within capture invalidates a cumulative transcript, including after a regrant", () => {
     expect(consentAllowsCapture([{ action: "grant", occurred_at: time(0) }, { action: "withdraw", occurred_at: time(2) }, { action: "grant", occurred_at: time(3) }], time(1), time(4))).toBe(false);
   });
+  test("a withdrawal sharing a timestamp with a grant wins the tie, whatever order the rows arrive in", () => {
+    const grant = { action: "grant", occurred_at: time(0) };
+    const withdraw = { action: "withdraw", occurred_at: time(0) };
+    expect(consentAllowsCapture([grant, withdraw], time(1), time(3))).toBe(false);
+    expect(consentAllowsCapture([withdraw, grant], time(1), time(3))).toBe(false);
+    // A grant that is strictly later than the withdrawal still authorizes.
+    expect(consentAllowsCapture([withdraw, { action: "grant", occurred_at: time(0.001) }], time(1), time(3))).toBe(true);
+  });
   test("rejects invalid or reversed intervals", () => {
     expect(consentAllowsCapture([{ action: "grant", occurred_at: time(0) }], time(4), time(1))).toBe(false);
     expect(consentAllowsCapture([], new Date("invalid"), time(1))).toBe(false);
@@ -139,8 +147,8 @@ test("CRM failure does not suppress the approved email", async () => {
 
 test("a delivery-state write failure after provider acceptance records the acceptance, not a failure", async () => {
   approved();
-  // update #1: crm_status; update #2: sending; update #3 (after send): accepted → fails
-  mocks.db.callReview.update.mockResolvedValueOnce({}).mockResolvedValueOnce({}).mockRejectedValueOnce(new Error("state_write_failed"));
+  // update #1: crm_status; the fenced "sending" write is an updateMany; update #2 (after send): accepted → fails
+  mocks.db.callReview.update.mockResolvedValueOnce({}).mockRejectedValueOnce(new Error("state_write_failed"));
   await expect(dispatchCallReview("review")).rejects.toThrow("state_write_failed");
   expect(mocks.send).toHaveBeenCalledTimes(1);
   expect(mocks.db.callReview.updateMany).toHaveBeenCalledWith(expect.objectContaining({ data: { email_status: "accepted", email_message_id: "email-1" } }));
@@ -198,11 +206,10 @@ test("a revoked execution gate produces no effects", async () => {
 test("audit failure after provider acceptance cannot overwrite accepted delivery", async () => {
   approved();
   mocks.db.auditLog.create.mockResolvedValueOnce({}).mockRejectedValueOnce(new Error("audit_unavailable"));
-  // claim → CRM-status retry → email downgrade (no row, already accepted)
-  mocks.db.callReview.updateMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 }).mockResolvedValueOnce({ count: 0 });
   await expect(dispatchCallReview("review")).rejects.toThrow("audit_unavailable");
   expect(mocks.db.callReview.update).toHaveBeenCalledWith(expect.objectContaining({ data: { email_status: "accepted", email_message_id: "email-1" } }));
-  expect(mocks.db.callReview.updateMany).toHaveBeenLastCalledWith(expect.objectContaining({ where: expect.objectContaining({ email_status: { not: "accepted" } }) }));
+  expect(mocks.db.callReview.updateMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ email_status: { not: "accepted" } }), data: { email_status: "accepted", email_message_id: "email-1" } }));
+  expect(mocks.db.callReview.updateMany).not.toHaveBeenCalledWith(expect.objectContaining({ data: { email_status: "failed" } }));
   expect(mocks.db.auditLog.create).toHaveBeenLastCalledWith(expect.objectContaining({ data: expect.objectContaining({ action: "call_review_dispatch_outcome", metadata_json: expect.objectContaining({ outcome: "accepted", error: "audit_unavailable" }) }) }));
 });
 
@@ -234,5 +241,29 @@ test("a CRM claim still held by another worker stops dispatch before the email",
   expect(mocks.db.callReview.update).toHaveBeenCalledWith(expect.objectContaining({ data: { crm_status: "processing" } }));
   expect(mocks.send).not.toHaveBeenCalled();
   expect(mocks.db.auditLog.create).toHaveBeenLastCalledWith(expect.objectContaining({ data: expect.objectContaining({ action: "call_review_dispatch_outcome", metadata_json: expect.objectContaining({ error: "crm_claim_in_progress" }) }) }));
-  expect(mocks.db.callReview.update).toHaveBeenLastCalledWith(expect.objectContaining({ data: { dispatch_at: null } }));
+  expect(mocks.db.callReview.updateMany).toHaveBeenLastCalledWith(expect.objectContaining({ where: expect.objectContaining({ dispatch_at: expect.any(Date) }), data: { dispatch_at: null } }));
+});
+
+test("a worker whose dispatch claim was reclaimed sends nothing and touches no other attempt's state", async () => {
+  approved();
+  // claim succeeds; the fenced "sending" write finds another attempt's dispatch_at
+  mocks.db.callReview.updateMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 });
+  await expect(dispatchCallReview("review")).rejects.toThrow("dispatch_claim_lost");
+  expect(mocks.send).not.toHaveBeenCalled();
+  // Every write after the claim that could belong to another attempt (the
+  // sending write, the failure downgrade, the release) carries the fence; the
+  // call-wide crm_status write is the only one that does not need it.
+  const fenced = mocks.db.callReview.updateMany.mock.calls.slice(1).map((call) => call[0]).filter((call) => !("crm_status" in call.where));
+  expect(fenced).toHaveLength(3);
+  for (const call of fenced) expect(call.where).toEqual(expect.objectContaining({ dispatch_at: expect.any(Date) }));
+});
+
+test("evidence that arrived while a dispatch was suspended stops the send", async () => {
+  approved();
+  // latest-revision check inside the claim passes; the pre-send recheck sees a newer revision
+  mocks.db.callReview.findFirst.mockReset();
+  mocks.db.callReview.findFirst.mockResolvedValueOnce({ ...base, status: "approved" }).mockResolvedValueOnce(null).mockResolvedValueOnce({ id: "newer" });
+  await expect(dispatchCallReview("review")).rejects.toThrow("stale_review");
+  expect(mocks.crm).toHaveBeenCalledOnce();
+  expect(mocks.send).not.toHaveBeenCalled();
 });

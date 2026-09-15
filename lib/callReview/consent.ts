@@ -16,9 +16,18 @@ export function metadataOnly(event: TelnyxWebhookEnvelope): TelnyxWebhookEnvelop
   return { data: { id: event.data.id, event_type: event.data.event_type, occurred_at: event.data.occurred_at, payload } };
 }
 
+// occurred_at is the only ordering key the record carries, and two actions
+// written in one serialized turn can share a millisecond. Row order is not a
+// tie-breaker the database promises, so ties resolve fail closed: a non-grant
+// sharing a timestamp with a grant is treated as the later action.
+export function orderConsentEvents<T extends { action: string; occurred_at: Date }>(events: readonly T[]): T[] {
+  const rank = (event: T) => (event.action === "grant" ? 0 : 1);
+  return [...events].sort((a, b) => a.occurred_at.getTime() - b.occurred_at.getTime() || rank(a) - rank(b));
+}
+
 export function consentAllowsCapture(events: { action: string; occurred_at: Date }[], startedAt: Date, endedAt: Date): boolean {
   if (!Number.isFinite(startedAt.getTime()) || !Number.isFinite(endedAt.getTime()) || endedAt < startedAt) return false;
-  const ordered = [...events].sort((a, b) => a.occurred_at.getTime() - b.occurred_at.getTime());
+  const ordered = orderConsentEvents(events);
   const before = ordered.filter((event) => event.occurred_at <= startedAt);
   return before.at(-1)?.action === "grant" && !ordered.some((event) => event.action !== "grant" && event.occurred_at >= startedAt && event.occurred_at <= endedAt);
 }
@@ -36,7 +45,7 @@ export async function canRetainCallContent(accountId: string, providerCallId: st
   if (typeof start !== "string" || typeof end !== "string") return false;
   if (new Date(end).getTime() > Date.now()) return false;
   const events = await client.callConsentEvent.findMany({ where: { account_id: accountId, provider_call_id: providerCallId, artifact: "transcript" }, orderBy: { occurred_at: "asc" } });
-  if (events.at(-1)?.action !== "grant") return false;
+  if (orderConsentEvents(events).at(-1)?.action !== "grant") return false;
   return consentAllowsCapture(events, new Date(start), new Date(end));
 }
 

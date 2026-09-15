@@ -168,6 +168,10 @@ export async function dispatchCallReview(id: string) {
   // Parsed before the claim: a payload this dispatch cannot read must not leave
   // the row claimed.
   const value = ReviewPayloadSchema.parse(row.payload_json);
+  // The claim timestamp doubles as the dispatch token: every later write that
+  // must belong to this attempt is fenced on it, so a worker suspended past
+  // the TTL and reclaimed cannot resume into another attempt's effects.
+  const claimedAt = new Date();
   // Claiming under the queue's lock keeps a revision created by late evidence
   // from slipping in between the latest-revision check and the claim. The
   // attempt is audited inside the same transaction, so a failed audit rolls the
@@ -193,7 +197,7 @@ export async function dispatchCallReview(id: string) {
     const recoveringStaleClaim = row.dispatch_at !== null && row.dispatch_at <= staleBefore;
     const claim = await tx.callReview.updateMany({
       where: { id, account_id: row.account_id, status: "approved", OR: [{ dispatch_at: null }, { dispatch_at: { lte: staleBefore } }] },
-      data: { dispatch_at: new Date() },
+      data: { dispatch_at: claimedAt },
     });
     if (!claim.count) throw new Error("dispatch_in_progress_or_uncertain");
     await tx.auditLog.create(auditEntry("call_review_dispatch_attempt", { revision: row.revision, ...(recoveringStaleClaim ? { recoveredStaleClaimFrom: row.dispatch_at!.toISOString() } : {}) }));
@@ -220,7 +224,15 @@ export async function dispatchCallReview(id: string) {
     if (!(await supervisedExecutionAuthorized(row.account_id))) throw new Error("execution_gate_not_authorized");
     const provider = getEmailProvider();
     if (provider.providerId !== "resend") throw new Error("live_email_disabled");
-    await db.callReview.update({ where: { id, account_id: row.account_id }, data: { email_attempt_at: row.email_attempt_at ?? new Date(), email_status: "sending" } });
+    // Fenced on the claim: a reclaimed row no longer carries this attempt's
+    // dispatch_at, so a resumed stale worker stops here instead of sending.
+    // The latest-revision check repeats for the same reason: evidence that
+    // arrived while this worker was suspended must not be undercut by the
+    // payload it parsed earlier.
+    const latestNow = await db.callReview.findFirst({ where: { account_id: row.account_id, call_id: row.call_id }, orderBy: { revision: "desc" }, select: { id: true } });
+    if (latestNow?.id !== id) throw new Error("stale_review");
+    const fenced = await db.callReview.updateMany({ where: { id, account_id: row.account_id, status: "approved", dispatch_at: claimedAt }, data: { email_attempt_at: row.email_attempt_at ?? new Date(), email_status: "sending" } });
+    if (!fenced.count) throw new Error("dispatch_claim_lost");
     const message = reviewMessage(value, row.call_id);
     sent = await provider.send({ to: row.recipient, ...message, idempotencyKey: `review:${id}` });
     await db.callReview.update({ where: { id, account_id: row.account_id }, data: { email_status: "accepted", email_message_id: sent.providerMessageId } });
@@ -240,10 +252,11 @@ export async function dispatchCallReview(id: string) {
       await audit("call_review_dispatch_outcome", { revision: row.revision, outcome: "accepted", reconciliationRequired: true, providerMessageId: sent.providerMessageId, error: error instanceof Error ? error.message : "dispatch_failed" });
       throw error;
     }
-    const downgraded = await db.callReview.updateMany({ where: { id, account_id: row.account_id, email_status: { not: "accepted" } }, data: { email_status: "failed" } });
+    const downgraded = await db.callReview.updateMany({ where: { id, account_id: row.account_id, email_status: { not: "accepted" }, dispatch_at: claimedAt }, data: { email_status: "failed" } });
     await audit("call_review_dispatch_outcome", { revision: row.revision, outcome: downgraded.count ? "failed" : "accepted", error: error instanceof Error ? error.message : "dispatch_failed" });
     throw error;
   } finally {
-    await db.callReview.update({ where: { id, account_id: row.account_id }, data: { dispatch_at: null } });
+    // Release only this attempt's claim; a reclaimed row belongs to someone else.
+    await db.callReview.updateMany({ where: { id, account_id: row.account_id, dispatch_at: claimedAt }, data: { dispatch_at: null } });
   }
 }
