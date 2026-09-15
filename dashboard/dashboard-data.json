@@ -1250,7 +1250,7 @@
       "progress": 80,
       "priority": "High",
       "blocked": true,
-      "blockedReason": "Review closure: CRM ownership checks before each provider write repaired; exact-head CI and CodeRabbit coverage remain required. Live consent transport, approved FRL configuration, isolated activation and rehearsal remain unverified."
+      "blockedReason": "CodeRabbit closure review found a remaining CRM check-to-effect race requiring a dispatch recovery/idempotency decision. Migration pause wording aligned; exact-head validation remains required. Live consent transport, approved FRL configuration, isolated activation and rehearsal remain unverified."
     }
   ],
   "liveIssues": [
