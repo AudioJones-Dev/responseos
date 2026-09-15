@@ -4,7 +4,7 @@ import { after, NextResponse } from "next/server";
 import { runCrmSyncForCall } from "@/lib/crm/syncFinalizedCall";
 import {
   backfillWebhookEvent,
-  findAgentTargetForProviderCall,
+  findCallCorrelation,
   findInitializedProviderCallId,
   getWebhookProcessingState,
   recordWebhookEvent,
@@ -73,20 +73,24 @@ export async function POST(req: Request) {
 
   let providerCallId = getTelnyxCallId(event.data.payload);
   const directTarget = getTelnyxAgentTarget(event.data.payload);
-  const correlatedTarget = directTarget
+  const correlation = directTarget
     ? null
-    : await findAgentTargetForProviderCall({
+    : await findCallCorrelation({
         provider: "telnyx",
         providerCallIds: getTelnyxCallIds(event.data.payload),
       });
-  const target = directTarget ?? correlatedTarget;
+  const target = directTarget ?? correlation?.target ?? null;
   const occurredAt = getTelnyxOccurredAt(event);
   const receivedAt = new Date();
+  // Tenant resolution is by the call's own time. A direct event carries it; a
+  // correlated post-call event (insights arrive minutes after hangup with no
+  // number) is anchored to the initialization that bound the call to the
+  // number, because the number may have changed hands since. Receipt time is
+  // never a substitute: a retried event from a number's previous tenant would
+  // otherwise resolve to whoever holds the number now.
+  const resolutionTime = directTarget ? occurredAt : (correlation?.anchoredAt ?? null);
 
-  // Tenant resolution is by event time only. Receipt time is not a substitute:
-  // a retried event from a number's previous tenant would otherwise resolve to
-  // whoever holds the number now.
-  const supervised = target && occurredAt ? await resolveSupervisedTenantForNumber(target, occurredAt) : null;
+  const supervised = target && resolutionTime ? await resolveSupervisedTenantForNumber(target, resolutionTime) : null;
   if (supervised && target) {
     providerCallId = await findInitializedProviderCallId({ provider: "telnyx", providerCallIds: getTelnyxCallIds(event.data.payload), target }) ?? providerCallId;
   }
@@ -97,7 +101,7 @@ export async function POST(req: Request) {
   // it would be stored unscoped and never retried.
   const owner = supervised
     ? { accountId: supervised.accountId, assignmentId: supervised.assignmentId }
-    : target ? await findSupervisedNumberOwner(target, occurredAt ?? receivedAt) : null;
+    : target ? await findSupervisedNumberOwner(target, resolutionTime ?? receivedAt) : null;
   const supervisedOwned = owner !== null;
 
   let resolved = !supervisedOwned &&
@@ -131,7 +135,7 @@ export async function POST(req: Request) {
   // An owned number's event without a trustworthy time can never be attributed
   // to an assignment interval, so it is retained unscoped and ages out like
   // prospect data; only routing (never the prospect lane) uses the ownership.
-  const attributable = supervisedOwned && occurredAt !== null;
+  const attributable = supervisedOwned && resolutionTime !== null;
   const retainPayload = attributable || (!personalized && Boolean(resolved));
   const payloadExpiresAt = retainPayload ? null : new Date((occurredAt ?? receivedAt).getTime() + PROSPECT_CONTENT_RETENTION_DAYS * 24 * 60 * 60 * 1000);
   // Retained content is the exact signed bytes, so the stored body matches the
@@ -171,11 +175,11 @@ export async function POST(req: Request) {
     // (permanent — never retried), or the runtime could not be resolved
     // (profile, snapshot, or snapshot JSON missing or invalid — retryable: a
     // redelivery after repair is picked up by the duplicate handler below).
-    await setWebhookProcessStatus({ id: ledger.data.id, process_status: "rejected", process_error: occurredAt ? "supervised_runtime_unresolved" : "missing_occurred_at" });
+    await setWebhookProcessStatus({ id: ledger.data.id, process_status: "rejected", process_error: resolutionTime ? "supervised_runtime_unresolved" : "missing_occurred_at" });
     // The retryable case answers 503 so the provider redelivers after repair
     // and the duplicate handler can normalize the retained event; acknowledging
     // it would leave recovery to a manual redelivery nobody is prompted to make.
-    if (occurredAt) return errorResponse(503, { code: "supervised_runtime_unresolved", message: "The supervised runtime for this number is not resolvable yet; redeliver this signed event." });
+    if (resolutionTime) return errorResponse(503, { code: "supervised_runtime_unresolved", message: "The supervised runtime for this number is not resolvable yet; redeliver this signed event." });
     return NextResponse.json({ ok: true, data: { accepted: true, normalized: false } }, { status: 202 });
   }
 

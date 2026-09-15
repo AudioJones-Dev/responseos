@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
   recordWebhookEvent: vi.fn(),
   backfillWebhookEvent: vi.fn(),
   setWebhookProcessStatus: vi.fn(),
-  findAgentTargetForProviderCall: vi.fn(),
+  findCallCorrelation: vi.fn(),
   findInitializedProviderCallId: vi.fn(),
   getWebhookProcessingState: vi.fn(),
   resolveTelnyxEventAssignment: vi.fn(),
@@ -33,7 +33,7 @@ vi.mock("@/lib/data/webhookEvents", () => ({
   recordWebhookEvent: mocks.recordWebhookEvent,
   backfillWebhookEvent: mocks.backfillWebhookEvent,
   setWebhookProcessStatus: mocks.setWebhookProcessStatus,
-  findAgentTargetForProviderCall: mocks.findAgentTargetForProviderCall,
+  findCallCorrelation: mocks.findCallCorrelation,
   findInitializedProviderCallId: mocks.findInitializedProviderCallId,
   getWebhookProcessingState: mocks.getWebhookProcessingState,
 }));
@@ -115,7 +115,7 @@ describe("supervised Telnyx call lane", () => {
     delete process.env.RESPONSEOS_DEMO_PHONE_E164;
     mocks.recordWebhookEvent.mockResolvedValue({ ok: true, data: { id: "ledger-1", process_status: "received" } });
     mocks.setWebhookProcessStatus.mockResolvedValue(undefined);
-    mocks.findAgentTargetForProviderCall.mockResolvedValue(null);
+    mocks.findCallCorrelation.mockResolvedValue(null);
     mocks.findInitializedProviderCallId.mockResolvedValue(null);
     mocks.getWebhookProcessingState.mockResolvedValue(null);
     mocks.resolveTelnyxEventAssignment.mockResolvedValue(null);
@@ -132,7 +132,7 @@ describe("supervised Telnyx call lane", () => {
     expect((await POST(request.clone())).status).toBe(503);
     expect(mocks.recordWebhookEvent.mock.calls[0][0].raw_body).not.toContain("private call");
     expect(mocks.normalizeTelnyxEvent).not.toHaveBeenCalled();
-    mocks.findAgentTargetForProviderCall.mockResolvedValue(TENANT_NUMBER);
+    mocks.findCallCorrelation.mockResolvedValue({ target: TENANT_NUMBER, anchoredAt: new Date() });
     mocks.resolveSupervisedTenantForNumber.mockResolvedValue(supervisedTenant());
     mocks.recordWebhookEvent.mockResolvedValue({ ok: true, data: { id: "ledger-1", process_status: "duplicate" } });
     mocks.getWebhookProcessingState.mockResolvedValue({ process_status: "rejected", process_error: "awaiting_call_correlation", received_at: new Date() });
@@ -168,7 +168,7 @@ describe("supervised Telnyx call lane", () => {
   });
 
   test("normalizes an alias-only event using its initialized capture identity", async () => {
-    mocks.findAgentTargetForProviderCall.mockResolvedValue(TENANT_NUMBER);
+    mocks.findCallCorrelation.mockResolvedValue({ target: TENANT_NUMBER, anchoredAt: new Date() });
     mocks.findInitializedProviderCallId.mockResolvedValue("original-control");
     mocks.resolveSupervisedTenantForNumber.mockResolvedValue(supervisedTenant());
     const { POST } = await import("@/app/api/webhooks/telnyx/calls/route");
@@ -247,6 +247,19 @@ describe("supervised Telnyx call lane", () => {
     expect(mocks.recordWebhookEvent.mock.calls[0][0]).toHaveProperty("payload_expires_at");
   });
 
+  test("a numberless post-call event resolves at the initialization's time, not its own", async () => {
+    const callStartedAt = new Date(Date.now() - 2 * 60 * 60 * 1000);
+    mocks.findCallCorrelation.mockResolvedValue({ target: TENANT_NUMBER, anchoredAt: callStartedAt });
+    mocks.resolveSupervisedTenantForNumber.mockResolvedValue(supervisedTenant());
+    const { POST } = await import("@/app/api/webhooks/telnyx/calls/route");
+    await POST(signedEvent({ call_control_id: "call-late-insights", transcript: "caller: I need a ramp" }));
+    await settle();
+    // Resolved at the call's start, so a number released or reassigned since
+    // still routes this evidence to the tenant that actually took the call.
+    expect(mocks.resolveSupervisedTenantForNumber).toHaveBeenCalledWith(TENANT_NUMBER, callStartedAt);
+    expect(mocks.normalizeTelnyxEvent).toHaveBeenCalledOnce();
+  });
+
   test("an owned number whose runtime cannot resolve is retained as retryable, never handed to the prospect lane", async () => {
     mocks.resolveSupervisedTenantForNumber.mockResolvedValue(null);
     mocks.findSupervisedNumberOwner.mockResolvedValue({ accountId: supervisedTenant().accountId, assignmentId: "assignment-owned" });
@@ -297,13 +310,13 @@ describe("supervised Telnyx call lane", () => {
   });
 
   test("recovers the tenant for an insight event that carries no called number", async () => {
-    mocks.findAgentTargetForProviderCall.mockResolvedValue(TENANT_NUMBER);
+    mocks.findCallCorrelation.mockResolvedValue({ target: TENANT_NUMBER, anchoredAt: new Date() });
     mocks.resolveSupervisedTenantForNumber.mockResolvedValue(supervisedTenant());
     const { POST } = await import("@/app/api/webhooks/telnyx/calls/route");
     await POST(signedEvent({ call_control_id: "call-c", call_session_id: "session-c", results: [] }));
     await settle();
 
-    expect(mocks.findAgentTargetForProviderCall).toHaveBeenCalledWith({
+    expect(mocks.findCallCorrelation).toHaveBeenCalledWith({
       provider: "telnyx",
       providerCallIds: ["call-c", "session-c"],
     });

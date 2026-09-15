@@ -168,30 +168,56 @@ export async function recordWebhookEvent(entry: {
  * end), so the ledger is the authority for which tenant the call belongs to.
  * Reads only rows this provider already recorded; never guesses.
  */
-export async function findAgentTargetForProviderCall(params: {
+export interface CallCorrelation {
+  target: string;
+  /**
+   * The moment the call reached the number, taken from the earliest signed
+   * event that carried it (the initialization). A later post-call event must
+   * be resolved at this time, not its own: the number may have been released
+   * or reassigned in between, and the call belongs to whoever held it then.
+   */
+  anchoredAt: Date;
+}
+
+function occurredAtFromRawBody(rawBody: string): Date | null {
+  try {
+    const value = (JSON.parse(rawBody) as { data?: { occurred_at?: unknown } }).data?.occurred_at;
+    if (typeof value !== "string") return null;
+    const parsed = new Date(value);
+    return Number.isFinite(parsed.getTime()) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function findCallCorrelation(params: {
   provider: string;
   providerCallIds: readonly string[];
-}): Promise<string | null> {
+}): Promise<CallCorrelation | null> {
   if (db === null) return null;
   const providerCallIds = params.providerCallIds.filter((value) => typeof value === "string" && value.length > 0);
   if (providerCallIds.length === 0) return null;
-  const row = await db.webhookEvent.findFirst({
+  const rows = await db.webhookEvent.findMany({
     where: {
       provider: params.provider,
       OR: [{ provider_call_id: { in: [...providerCallIds] } }, { provider_call_ids: { hasSome: [...providerCallIds] } }],
       agent_target: { not: null },
       signature_valid: true,
     },
-    orderBy: { received_at: "desc" },
-    select: { agent_target: true },
+    orderBy: { received_at: "asc" },
+    select: { agent_target: true, raw_body: true, received_at: true },
   });
-  if (!row?.agent_target) return null;
-  const conflict = await db.webhookEvent.findFirst({
-    where: { provider: params.provider, signature_valid: true, agent_target: { not: row.agent_target },
-      OR: [{ provider_call_id: { in: [...providerCallIds] } }, { provider_call_ids: { hasSome: [...providerCallIds] } }],
-    }, select: { id: true },
-  });
-  return conflict ? null : row.agent_target;
+  const earliest = rows[0];
+  if (!earliest?.agent_target) return null;
+  if (rows.some((row) => row.agent_target !== earliest.agent_target)) return null;
+  return { target: earliest.agent_target, anchoredAt: occurredAtFromRawBody(earliest.raw_body) ?? earliest.received_at };
+}
+
+export async function findAgentTargetForProviderCall(params: {
+  provider: string;
+  providerCallIds: readonly string[];
+}): Promise<string | null> {
+  return (await findCallCorrelation(params))?.target ?? null;
 }
 
 export async function findInitializedProviderCallId(params: { provider: string; providerCallIds: readonly string[]; target: string }): Promise<string | null> {
