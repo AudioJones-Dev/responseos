@@ -534,6 +534,19 @@
       "due": "2026-08-15"
     },
     {
+      "id": "L-05",
+      "phase": "Launch / Demo Deploy",
+      "title": "Wire canonical ResponseOS logo and favicon assets",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-08-16",
+      "due": "2026-08-16",
+      "blocked": false,
+      "blockedReason": "Implementation and asset/browser validation complete; local integration runner did not terminate despite idle database clients, so CI integration remains the merge authority"
+    },
+    {
       "id": "L-04",
       "phase": "Launch / Demo Deploy",
       "title": "Demo surface hardening and P0 screenshot fixes",

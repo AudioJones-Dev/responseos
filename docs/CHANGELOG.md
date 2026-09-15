@@ -4,6 +4,13 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — fix: serve canonical ResponseOS brand assets
+
+- Replaced the reconstructed inline RO mark and plain-text header treatment with the canonical `/brand/responseos-mark.svg` and `/brand/responseos-wordmark.svg` files. Marketing headers and footers now use the primary wordmark; compact demo/sidebar placements use the RO mark per ADR-0025.
+- Kept the existing favicon set unchanged after verifying the rendered metadata references `/favicon.svg`, `/favicon.ico`, `/apple-touch-icon.png`, and `/site.webmanifest`; the manifest continues to reference the 192px and 512px RO app icons.
+- Verified both canonical logo URLs and all favicon/manifest URLs return `200` with the expected MIME types. Desktop and 390px mobile browser checks render the wordmark without layout collisions, the compact demo mark loads directly, and the browser console is clean.
+- Validation: lint, typecheck, 228 unit tests, zero high-severity npm audit findings, production build, Prisma migration diff/deploy, and DB-backed production build passed. The local integration runner did not terminate within two bounded four-minute attempts despite idle PostgreSQL clients and no reported assertion output; CI integration remains required before merge. A repeat seed also reproduced the existing seed-idempotency defect tracked by issue/dashboard item 26.
+
 ## Unreleased — feat: internal demo account + professional receptionist (ADR-0046)
 
 - Added `Account.account_type` (`customer` / `internal` / `internal_demo` / `sandbox`) plus the `AgentProfile` and `ProfessionalOpportunity` tables in migration `0009`. Purely additive; `account_type` defaults to `customer`, so no existing row needed backfill.
