@@ -156,6 +156,8 @@ async function normalizeMetadata(event: CallControlEvent, capture: { account_id:
 async function recordTranscriptRevision(event: CallControlEvent, capture: NonNullable<Awaited<ReturnType<typeof captureForEvent>>>, webhookEventId: string, numberE164: string, client: Prisma.TransactionClient) {
   const terminalReconciliation = ["FINALIZING", "EVIDENCE_FROZEN"].includes(capture.control_state) && capture.capture_ended_at !== null;
   if (!capture.assignment_id || !capture.conversation_id || !capture.capture_started_at || (capture.content_admission_closed_at && !terminalReconciliation)) return "rejected" as const;
+  const eventOccurredAt = new Date(event.data.occurred_at);
+  if (eventOccurredAt < capture.capture_started_at || (capture.capture_ended_at && eventOccurredAt > capture.capture_ended_at)) return "rejected" as const;
   const latestConsent = await client.callConsentEvent.findFirst({ where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, artifact: "transcript" }, orderBy: [{ occurred_at: "desc" }, { id: "desc" }] });
   if (latestConsent?.action !== "grant") return "rejected" as const;
   const start = await client.telnyxCallCommand.findFirst({ where: { capture_session_id: capture.id, command_type: "ai_assistant_start", generation: capture.generation, status: "succeeded", conversation_id: capture.conversation_id } });
@@ -285,7 +287,9 @@ export async function ingestCallControlEvent(params: { event: CallControlEvent; 
       ]);
       const activeAdmission = current?.content_admission_closed_at === null && ["START_PENDING", "AI_ACTIVE"].includes(current.control_state);
       const terminalReconciliation = Boolean(current && ["FINALIZING", "EVIDENCE_FROZEN"].includes(current.control_state) && current.capture_ended_at !== null);
-      const admitted = Boolean(current && latestConsent?.action === "grant" && start?.provider_date_at && start.conversation_id && (activeAdmission || terminalReconciliation) && (!event.data.payload.conversation_id || event.data.payload.conversation_id === start.conversation_id));
+      const captureStart = current?.capture_started_at ?? start?.provider_date_at ?? null;
+      const withinCaptureInterval = Boolean(captureStart && occurredAt >= captureStart && (!current?.capture_ended_at || occurredAt <= current.capture_ended_at));
+      const admitted = Boolean(current && latestConsent?.action === "grant" && start?.provider_date_at && start.conversation_id && withinCaptureInterval && (activeAdmission || terminalReconciliation) && (!event.data.payload.conversation_id || event.data.payload.conversation_id === start.conversation_id));
       const ledger = await record(admitted ? params.rawBody : JSON.stringify(persistedEvent), client);
       if (ledger.duplicate) return { duplicate: true as const };
       if (!admitted || !current || !start?.provider_date_at || !start.conversation_id) {

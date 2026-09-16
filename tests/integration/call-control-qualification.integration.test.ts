@@ -296,6 +296,31 @@ describe("FRL Call Control qualification", () => {
     expect(await prisma.callReview.count()).toBe(2);
   });
 
+  test("post-boundary history is retained as metadata only and cannot supersede frozen evidence", async () => {
+    await setupQualification();
+    await ingest(event("call.initiated", "cc-post-boundary-init", { to: NUMBER }, 1_000));
+    const capture = await prisma.callCaptureSession.findFirstOrThrow();
+    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "AI_ACTIVE", dtmf_decision: "affirmative", conversation_id: "conversation-1", capture_started_at: new Date(NOW.getTime() + 4_000) } });
+    await prisma.callConsentEvent.create({ data: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, event_key: "grant-post-boundary", action: "grant", artifact: "transcript", disclosure_ref: "approved:v1", evidence_ref: "witness:test", jurisdiction_basis: "commissioning:test", source_channel: "call", actor_user_id: "user_operator_mock", occurred_at: new Date(NOW.getTime() + 3_000) } });
+    await prisma.telnyxCallCommand.create({ data: { account_id: capture.account_id, capture_session_id: capture.id, assignment_id: capture.assignment_id!, command_type: "ai_assistant_start", generation: 1, command_id: "command-start-post-boundary", provider_resource: capture.provider_call_id, request_json: {}, status: "succeeded", provider_responded_at: new Date(NOW.getTime() + 4_000), provider_response_status: 200, provider_date_at: new Date(NOW.getTime() + 4_000), conversation_id: "conversation-1" } });
+    const initial = { conversation_id: "conversation-1", client_state: state(capture.id), message_history: [{ role: "assistant", content: "How can I help?" }] };
+    await ingest(event("call.ai_gather.message_history_updated", "cc-post-boundary-history-1", initial, 5_000));
+    await ingest(event("call.conversation.ended", "cc-post-boundary-ended", { conversation_id: "conversation-1", client_state: state(capture.id) }, 7_000));
+    const hangup = event("call.hangup", "cc-post-boundary-hangup", { conversation_id: "conversation-1" }, 8_000);
+    await expect(ingest(hangup)).rejects.toThrow("awaiting_final_history_settlement");
+    await matureTerminalEvidence(capture.provider_call_id);
+    await ingest(hangup);
+
+    const protectedText = "Protected content after the capture boundary";
+    await ingest(event("call.ai_gather.message_history_updated", "cc-post-boundary-history-2", { ...initial, message_history: [...initial.message_history, { role: "user", content: protectedText }] }, 9_000));
+
+    expect(await prisma.callTranscriptRevision.count({ where: { capture_session_id: capture.id } })).toBe(1);
+    expect(await prisma.callReview.count()).toBe(1);
+    const ledger = await prisma.webhookEvent.findFirstOrThrow({ where: { provider_event_id: "cc-post-boundary-history-2" } });
+    expect(ledger).toMatchObject({ process_status: "rejected", process_error: "protected_content_not_admitted" });
+    expect(ledger.raw_body).not.toContain(protectedText);
+  });
+
   test("a reconciled uncertain stop resumes terminal evidence finalization", async () => {
     await setupQualification();
     await ingest(event("call.initiated", "cc-stop-init", { to: NUMBER }, 1_000));
