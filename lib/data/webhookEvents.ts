@@ -1,7 +1,7 @@
 import "@/lib/serverOnlyGuard";
 import { createHash } from "node:crypto";
 import { Prisma } from "@prisma/client";
-import { db } from "@/lib/db/client";
+import { db, db as database } from "@/lib/db/client";
 import { err, errFromThrown, ok, type Result } from "./result";
 import { requireRole } from "@/lib/auth/session";
 
@@ -88,6 +88,7 @@ export function computeDedupeHash(
  * return process_status = "duplicate" and do not insert again.
  */
 export async function recordWebhookEvent(entry: {
+  client?: Prisma.TransactionClient;
   account_id?: string;
   provider: string;
   provider_event_id: string;
@@ -96,7 +97,11 @@ export async function recordWebhookEvent(entry: {
   signature_header?: string;
   signature_valid?: boolean;
   payload_expires_at?: Date;
+  provider_call_id?: string;
+  provider_call_ids?: readonly string[];
+  agent_target?: string;
 }): Promise<Result<{ id: string; process_status: WebhookProcessStatus }>> {
+  const db = entry.client ?? database;
   if (db === null) {
     return err(
       "no_database",
@@ -107,16 +112,11 @@ export async function recordWebhookEvent(entry: {
   const dedupe_hash = computeDedupeHash(entry.provider, entry.provider_event_id);
 
   try {
-    const existing = await db.webhookEvent.findUnique({
-      where: { dedupe_hash },
-      select: { id: true },
-    });
-    if (existing) {
-      return ok({ id: existing.id, process_status: "duplicate" });
-    }
-
-    const created = await db.webhookEvent.create({
-      data: {
+    // createMany(skipDuplicates) compiles to ON CONFLICT DO NOTHING on
+    // PostgreSQL. Unlike catching a unique-constraint error, it leaves an
+    // enclosing capture-lock transaction usable for the authoritative lookup.
+    const inserted = await db.webhookEvent.createMany({
+      data: [{
         account_id: entry.account_id ?? null,
         provider: entry.provider,
         provider_event_id: entry.provider_event_id,
@@ -127,28 +127,117 @@ export async function recordWebhookEvent(entry: {
         dedupe_hash,
         process_status: "received",
         payload_expires_at: entry.payload_expires_at ?? null,
-      },
+        provider_call_id: entry.provider_call_id ?? null,
+        provider_call_ids: [...new Set([...(entry.provider_call_ids ?? []), ...(entry.provider_call_id ? [entry.provider_call_id] : [])])],
+        agent_target: entry.agent_target ?? null,
+      }],
+      skipDuplicates: true,
+    });
+    const row = await db.webhookEvent.findUnique({
+      where: { dedupe_hash },
       select: { id: true, process_status: true },
     });
+    if (!row) return err("webhook_event_not_recorded", "Webhook event insert did not produce a readable ledger row.");
     return ok({
-      id: created.id,
-      process_status: created.process_status as WebhookProcessStatus,
+      id: row.id,
+      process_status: inserted.count === 1 ? row.process_status as WebhookProcessStatus : "duplicate",
     });
   } catch (e) {
-    if (
-      e instanceof Prisma.PrismaClientKnownRequestError &&
-      e.code === "P2002"
-    ) {
-      const existing = await db.webhookEvent.findUnique({
-        where: { dedupe_hash },
-        select: { id: true },
-      });
-      if (existing) return ok({ id: existing.id, process_status: "duplicate" });
-    }
-    return errFromThrown<{ id: string; process_status: WebhookProcessStatus }>(
-      e,
-    );
+    return errFromThrown<{ id: string; process_status: WebhookProcessStatus }>(e);
   }
+}
+
+/**
+ * Recovers the called number for a provider event that omits it.
+ *
+ * Telnyx sends conversation-insight events with call-control identifiers only:
+ * no `to`, no `telnyx_agent_target`. The number arrived on an earlier signed
+ * event for the same call (the assistant initialization, and the conversation
+ * end), so the ledger is the authority for which tenant the call belongs to.
+ * Reads only rows this provider already recorded; never guesses.
+ */
+export interface CallCorrelation {
+  target: string;
+  /**
+   * The moment the call reached the number: the signed `occurred_at` of the
+   * assistant initialization that bound the call to it. A later post-call
+   * event must be resolved at this time, not its own: the number may have been
+   * released or reassigned in between, and the call belongs to whoever held it
+   * then. Only the initialization is trusted as the anchor. A direct call
+   * event can be delivered before it, so receipt order cannot pick the start.
+   */
+  anchoredAt: Date;
+}
+
+const CALL_START_EVENT_TYPE = "assistant.initialization";
+
+function occurredAtFromRawBody(rawBody: string): Date | null {
+  try {
+    const value = (JSON.parse(rawBody) as { data?: { occurred_at?: unknown } }).data?.occurred_at;
+    if (typeof value !== "string") return null;
+    const parsed = new Date(value);
+    return Number.isFinite(parsed.getTime()) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function findCallCorrelation(params: {
+  provider: string;
+  providerCallIds: readonly string[];
+}): Promise<CallCorrelation | null> {
+  if (db === null) return null;
+  const providerCallIds = params.providerCallIds.filter((value) => typeof value === "string" && value.length > 0);
+  if (providerCallIds.length === 0) return null;
+  const rows = await db.webhookEvent.findMany({
+    where: {
+      provider: params.provider,
+      OR: [{ provider_call_id: { in: [...providerCallIds] } }, { provider_call_ids: { hasSome: [...providerCallIds] } }],
+      agent_target: { not: null },
+      signature_valid: true,
+    },
+    orderBy: { received_at: "asc" },
+    select: { agent_target: true, raw_body: true, event_type: true },
+  });
+  // Fail closed without a call-start anchor. Any other row for this call
+  // (a direct call event delivered before the initialization, or a
+  // conversation-end event) proves the number, but not when the call reached
+  // it, and the tenant must be resolved at that moment.
+  const start = rows.find((row) => row.event_type === CALL_START_EVENT_TYPE);
+  if (!start?.agent_target) return null;
+  if (rows.some((row) => row.agent_target !== start.agent_target)) return null;
+  const anchoredAt = occurredAtFromRawBody(start.raw_body);
+  if (!anchoredAt) return null;
+  return { target: start.agent_target, anchoredAt };
+}
+
+export async function findAgentTargetForProviderCall(params: {
+  provider: string;
+  providerCallIds: readonly string[];
+}): Promise<string | null> {
+  return (await findCallCorrelation(params))?.target ?? null;
+}
+
+export async function findInitializedProviderCallId(params: { provider: string; providerCallIds: readonly string[]; target: string }): Promise<string | null> {
+  if (!db || params.providerCallIds.length === 0) return null;
+  const exact = await db.webhookEvent.findFirst({
+    where: { provider: params.provider, event_type: "assistant.initialization", signature_valid: true, agent_target: params.target, provider_call_id: { in: [...params.providerCallIds] } },
+    select: { provider_call_id: true },
+  });
+  if (exact?.provider_call_id) return exact.provider_call_id;
+  const row = await db.webhookEvent.findFirst({
+    where: { provider: params.provider, event_type: "assistant.initialization", signature_valid: true, agent_target: params.target,
+      OR: [{ provider_call_id: { in: [...params.providerCallIds] } }, { provider_call_ids: { hasSome: [...params.providerCallIds] } }],
+    },
+    orderBy: { received_at: "asc" }, select: { provider_call_id: true },
+  });
+  if (!row?.provider_call_id) return null;
+  const conflict = await db.webhookEvent.findFirst({
+    where: { provider: params.provider, event_type: "assistant.initialization", signature_valid: true, agent_target: params.target,
+      provider_call_id: { not: row.provider_call_id }, provider_call_ids: { hasSome: [...params.providerCallIds] },
+    }, select: { id: true },
+  });
+  return conflict ? null : row.provider_call_id;
 }
 
 export async function purgeExpiredWebhookPayloads(now = new Date()): Promise<Result<{ purged: number }>> {
@@ -173,10 +262,12 @@ export async function purgeExpiredWebhookPayloads(now = new Date()): Promise<Res
 }
 
 export async function setWebhookProcessStatus(params: {
+  client?: Prisma.TransactionClient;
   id: string;
   process_status: "processed" | "rejected" | "error";
   process_error?: string;
 }): Promise<void> {
+  const db = params.client ?? database;
   if (db === null) return;
   await db.webhookEvent.update({
     where: { id: params.id },
@@ -188,18 +279,54 @@ export async function setWebhookProcessStatus(params: {
   });
 }
 
+/**
+ * Scopes a ledger row that was recorded before its call could be correlated.
+ *
+ * The first delivery of an uncorrelated event is stored unscoped and on the
+ * prospect expiry clock. Once a redelivery resolves the tenant, the row must
+ * carry that tenant, its retention policy, and the body that policy permits
+ * before it is normalized — otherwise supervised evidence sits unscoped and
+ * scheduled for purge.
+ */
+export async function backfillWebhookEvent(entry: {
+  client?: Prisma.TransactionClient;
+  id: string;
+  account_id: string;
+  raw_body: string;
+  payload_expires_at: Date | null;
+  provider_call_id?: string;
+  provider_call_ids?: readonly string[];
+  agent_target?: string;
+}): Promise<void> {
+  const client = entry.client ?? db;
+  if (client === null) return;
+  const current = await client.webhookEvent.findUnique({ where: { id: entry.id }, select: { provider_call_ids: true } });
+  await client.webhookEvent.update({
+    where: { id: entry.id },
+    data: {
+      account_id: entry.account_id,
+      raw_body: entry.raw_body,
+      payload_expires_at: entry.payload_expires_at,
+      provider_call_id: entry.provider_call_id ?? undefined,
+      provider_call_ids: [...new Set([...(current?.provider_call_ids ?? []), ...(entry.provider_call_ids ?? []), ...(entry.provider_call_id ? [entry.provider_call_id] : [])])],
+      agent_target: entry.agent_target ?? undefined,
+    },
+  });
+}
+
 export async function getWebhookProcessingState(id: string): Promise<
-  | { process_status: WebhookProcessStatus; received_at: Date }
+  | { process_status: WebhookProcessStatus; process_error: string | null; received_at: Date }
   | null
 > {
   if (db === null) return null;
   const event = await db.webhookEvent.findUnique({
     where: { id },
-    select: { process_status: true, received_at: true },
+    select: { process_status: true, process_error: true, received_at: true },
   });
   return event
     ? {
         process_status: event.process_status as WebhookProcessStatus,
+        process_error: event.process_error,
         received_at: event.received_at,
       }
     : null;

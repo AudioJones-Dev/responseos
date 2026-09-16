@@ -43,7 +43,11 @@ export function statusForCode(code: string): number {
     case "tenant_scope_denied":
       return 403;
     case "not_found":
+    case "qualification_assignment_not_found":
       return 404;
+    case "number_assignment_conflict":
+    case "qualification_assignment_conflict":
+      return 409;
     case "invalid_json":
       return 400;
     case "validation_failed":

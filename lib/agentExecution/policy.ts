@@ -67,6 +67,21 @@ export const SUPERVISED_PILOT_POLICY: ExecutionPolicy = Object.freeze({
 });
 
 /**
+ * Provider qualification uses the supervised caller contract while keeping
+ * every business effect disabled. It is an assignment lifecycle state, not an
+ * execution mode, and therefore cannot be selected through an activation gate.
+ */
+export const SUPERVISED_QUALIFICATION_POLICY: ExecutionPolicy = Object.freeze({
+  ...SUPERVISED_PILOT_POLICY,
+  executionMode: "SUPERVISED_QUALIFICATION",
+  crmSyncEnabled: false,
+  schedulingEnabled: false,
+  paymentEnabled: false,
+  outboundEnabled: false,
+  providerMemoryEnabled: false,
+});
+
+/**
  * Production-supervised: normal traffic handled by the agent, exceptions
  * routed to humans, QA sampled. Adds scheduling. Payment and outbound remain
  * closed at every tier.
