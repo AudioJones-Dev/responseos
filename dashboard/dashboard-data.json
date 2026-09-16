@@ -1247,10 +1247,10 @@
       "title": "Supervised FRL demonstration: approved knowledge, consent, review, CRM and email",
       "owner": "Codex",
       "status": "Review",
-      "progress": 80,
+      "progress": 84,
       "priority": "High",
       "blocked": true,
-      "blockedReason": "CRM recovery closed and frozen. Approved v4 availability wording repair locally validated; owner diff approval and focused independent review pending. Live configuration, consent proof and rehearsal remain separate gates."
+      "blockedReason": "CRM recovery and v4 semantics are frozen. A commissioning qualification-assignment repair is in validation/review so real consent evidence can be collected before final attestation. Deployment, provider routing, calls, attestation and rehearsal remain separate gates."
     }
   ],
   "liveIssues": [

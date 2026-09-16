@@ -95,7 +95,7 @@ export async function POST(req: Request) {
     providerCallId = await findInitializedProviderCallId({ provider: "telnyx", providerCallIds: getTelnyxCallIds(event.data.payload), target }) ?? providerCallId;
   }
   const supervisedReady = supervised?.readiness.ready === true &&
-    supervised.resolved.degraded === null && supervised.resolved.mode === "SUPERVISED_PILOT";
+    supervised.providerEvidenceAuthorized;
   // Ownership is independent of whether the runtime resolves right now. An
   // owned number's event must never fall through to the prospect lane, where
   // it would be stored unscoped and never retried.

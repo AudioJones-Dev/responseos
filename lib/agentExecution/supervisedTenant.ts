@@ -164,6 +164,9 @@ export async function configureSupervisedTenant(
     const readiness = evaluateOperatingConfiguration(built.memory, input.executionMode);
 
     const existingAccount = await db.account.findUnique({ where: { slug: input.accountSlug } });
+    if (existingAccount && await db.telephonyNumberAssignment.findFirst({
+      where: { account_id: existingAccount.id, bootstrap_id: null, status: "qualification", unassigned_at: null },
+    })) stops.push("qualification_assignment_requires_end");
     const enabledProfile = existingAccount && await db.agentProfile.findFirst({
       where: { account_id: existingAccount.id, type: "supervised_receptionist", enabled: true },
     });
@@ -192,7 +195,7 @@ export async function configureSupervisedTenant(
           where: {
             telephony_number_id: numberRow.id,
             unassigned_at: null,
-            status: { in: ["assigned", "active"] },
+            status: { in: ["assigned", "qualification", "active"] },
             NOT: existingAccount ? { account_id: existingAccount.id } : {},
           },
         });
@@ -280,6 +283,10 @@ export async function configureSupervisedTenant(
         },
         update: { name: input.businessName, timezone: input.timezone, ...(input.industry ? { industry: input.industry } : {}) },
       });
+
+      if (await tx.telephonyNumberAssignment.findFirst({
+        where: { account_id: account.id, bootstrap_id: null, status: "qualification", unassigned_at: null },
+      })) throw new Error("qualification_assignment_requires_end");
 
       if (input.activate !== true && await tx.agentProfile.findFirst({
         where: { account_id: account.id, type: "supervised_receptionist", enabled: true },

@@ -1,6 +1,6 @@
 import { generateKeyPairSync, sign } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { EXECUTION_MODE_POLICIES } from "@/lib/agentExecution/policy";
+import { EXECUTION_MODE_POLICIES, SUPERVISED_QUALIFICATION_POLICY } from "@/lib/agentExecution/policy";
 import { PROSPECT_DEMO_POLICY } from "@/lib/prospectBootstrap/policy";
 
 const mocks = vi.hoisted(() => ({
@@ -89,6 +89,9 @@ function supervisedTenant(policy = EXECUTION_MODE_POLICIES.SUPERVISED_PILOT) {
     agentName: "Sam",
     profileId: "profile-1",
     memory: { generatedAt: "2026-09-11T12:00:00.000Z" },
+    assignmentStatus: "active",
+    contextPolicy: policy,
+    providerEvidenceAuthorized: policy.executionMode === "SUPERVISED_PILOT",
     resolved: { mode: policy.executionMode, declaredMode: "SUPERVISED_PILOT", policy, recordingSource: "policy_default", degraded: null },
     readiness: { ready: true, missing: [], conflicts: [] },
   };
@@ -153,8 +156,14 @@ describe("supervised Telnyx call lane", () => {
   test.each(["incomplete", "degraded", "out-of-scope"])("rejects %s supervised calls before retaining content or queuing review", async (reason) => {
     const runtime = supervisedTenant();
     if (reason === "incomplete") runtime.readiness.ready = false;
-    if (reason === "degraded") Object.assign(runtime.resolved, { degraded: "gate_not_authorized" });
-    if (reason === "out-of-scope") runtime.resolved.mode = "PRODUCTION_SUPERVISED";
+    if (reason === "degraded") {
+      Object.assign(runtime.resolved, { degraded: "gate_not_authorized" });
+      runtime.providerEvidenceAuthorized = false;
+    }
+    if (reason === "out-of-scope") {
+      runtime.resolved.mode = "PRODUCTION_SUPERVISED";
+      runtime.providerEvidenceAuthorized = false;
+    }
     mocks.resolveSupervisedTenantForNumber.mockResolvedValue(runtime);
     const { POST } = await import("@/app/api/webhooks/telnyx/calls/route");
     const response = await POST(signedEvent({ call_control_id: "call-a", to: TENANT_NUMBER, transcript: "private caller text" }));
@@ -197,6 +206,26 @@ describe("supervised Telnyx call lane", () => {
     expect(mocks.dispatchCompletedInteractionNotification).not.toHaveBeenCalled();
     expect(mocks.queueCallReview).toHaveBeenCalled();
     expect(mocks.touchSupervisedAssignment).toHaveBeenCalled();
+  });
+
+  test("qualification normalizes consented evidence without CRM or email effects", async () => {
+    mocks.resolveSupervisedTenantForNumber.mockResolvedValue({
+      ...supervisedTenant(),
+      assignmentStatus: "qualification",
+      contextPolicy: SUPERVISED_QUALIFICATION_POLICY,
+      providerEvidenceAuthorized: true,
+      resolved: { mode: "PROSPECT_DEMO", declaredMode: "SUPERVISED_PILOT", policy: PROSPECT_DEMO_POLICY, recordingSource: "policy_default", degraded: "gate_not_authorized" },
+    });
+    const { POST } = await import("@/app/api/webhooks/telnyx/calls/route");
+    await POST(signedEvent({ call_control_id: "qualification-call", to: TENANT_NUMBER }));
+    await settle();
+    expect(mocks.normalizeTelnyxEvent).toHaveBeenCalledWith(expect.objectContaining({
+      accountId: "account-supervised",
+      options: { captureCallerIdentity: true, createQuoteRequest: false, reviewRequired: true },
+    }));
+    expect(mocks.queueCallReview).toHaveBeenCalled();
+    expect(mocks.runCrmSyncForCall).not.toHaveBeenCalled();
+    expect(mocks.dispatchCompletedInteractionNotification).not.toHaveBeenCalled();
   });
 
   test("a consented hangup completes the call but queues no review until the final analysis arrives", async () => {

@@ -1,4 +1,5 @@
 import "@/lib/serverOnlyGuard";
+import type { TelephonyNumberAssignmentStatus } from "@prisma/client";
 import { db } from "@/lib/db/client";
 import { BusinessMemorySnapshotSchema, type BusinessMemorySnapshot } from "@/lib/prospectBootstrap/contracts";
 import { normalizeE164 } from "@/lib/validation/common";
@@ -9,9 +10,14 @@ import {
 } from "./operatingConfiguration";
 import {
   authorizedExecutionGates,
+  executionModeFromProfilePolicy,
   resolveTenantExecutionPolicy,
   type ResolvedTenantPolicy,
 } from "./tenantPolicy";
+import {
+  SUPERVISED_QUALIFICATION_POLICY,
+  type ExecutionPolicy,
+} from "./policy";
 
 /**
  * Resolves which supervised tenant owns an inbound number, and what its agent
@@ -32,6 +38,9 @@ export interface SupervisedTenantRuntime {
   snapshotId: string;
   memory: BusinessMemorySnapshot;
   resolved: ResolvedTenantPolicy;
+  assignmentStatus: TelephonyNumberAssignmentStatus;
+  contextPolicy: ExecutionPolicy;
+  providerEvidenceAuthorized: boolean;
   readiness: OperatingConfigurationReadiness;
 }
 
@@ -65,18 +74,26 @@ export async function resolveSupervisedTenantForNumber(
     where: {
       telephony_number_id: number.id,
       bootstrap_id: null,
-      status: { in: ["active", "quarantined", "released"] },
-      activated_at: { lte: now },
-      OR: [{ unassigned_at: null }, { unassigned_at: { gte: now } }],
+      AND: [
+        { OR: [
+          { status: "qualification", assigned_at: { lte: now } },
+          { status: { in: ["active", "quarantined", "released"] }, activated_at: { lte: now } },
+        ] },
+        { OR: [{ unassigned_at: null }, { unassigned_at: { gte: now } }] },
+      ],
     },
-    orderBy: { activated_at: "desc" },
+    orderBy: { assigned_at: "desc" },
   });
   if (!assignment) return null;
 
   const [account, profile, snapshot] = await Promise.all([
     db.account.findUnique({ where: { id: assignment.account_id } }),
     db.agentProfile.findFirst({
-      where: { account_id: assignment.account_id, type: "supervised_receptionist", enabled: true },
+      where: {
+        account_id: assignment.account_id,
+        type: "supervised_receptionist",
+        ...(assignment.status === "qualification" ? {} : { enabled: true }),
+      },
       orderBy: { created_at: "asc" },
     }),
     db.businessMemorySnapshot.findFirst({
@@ -95,6 +112,11 @@ export async function resolveSupervisedTenantForNumber(
     memory,
     authorizedGates: authorizedExecutionGates(),
   });
+  const qualification = assignment.status === "qualification";
+  const qualificationAuthorized = qualification &&
+    profile.enabled === false &&
+    executionModeFromProfilePolicy(profile.system_policy_json) === "SUPERVISED_PILOT";
+  const contextPolicy = qualificationAuthorized ? SUPERVISED_QUALIFICATION_POLICY : resolved.policy;
 
   return {
     accountId: account.id,
@@ -106,10 +128,20 @@ export async function resolveSupervisedTenantForNumber(
     snapshotId: snapshot.id,
     memory,
     resolved,
+    assignmentStatus: assignment.status,
+    contextPolicy,
+    providerEvidenceAuthorized: qualification
+      ? qualificationAuthorized
+      : resolved.degraded === null && resolved.mode === "SUPERVISED_PILOT",
     readiness: (() => {
-      const result = evaluateOperatingConfiguration(memory, resolved.mode);
+      const result = evaluateOperatingConfiguration(memory, qualification ? "SUPERVISED_PILOT" : resolved.mode);
       if (!readOperatingConfigurationValue(memory, "business.knowledge")) result.missing.push("business.knowledge");
       if (!readOperatingConfigurationValue(memory, "notification.completed_interaction.recipient")?.enabled) result.missing.push("notification.completed_interaction.recipient");
+      if (qualification) {
+        const consent = readOperatingConfigurationValue(memory, "policy.consent");
+        if (consent?.transcription.enabled !== true) result.missing.push("policy.consent.transcription");
+        if (consent?.recording.enabled !== false) result.missing.push("policy.consent.recording_off");
+      }
       result.ready = result.ready && result.missing.length === 0;
       return result;
     })(),
@@ -135,11 +167,15 @@ export async function findSupervisedNumberOwner(
     where: {
       telephony_number_id: number.id,
       bootstrap_id: null,
-      status: { in: ["active", "quarantined", "released"] },
-      activated_at: { lte: now },
-      OR: [{ unassigned_at: null }, { unassigned_at: { gte: now } }],
+      AND: [
+        { OR: [
+          { status: "qualification", assigned_at: { lte: now } },
+          { status: { in: ["active", "quarantined", "released"] }, activated_at: { lte: now } },
+        ] },
+        { OR: [{ unassigned_at: null }, { unassigned_at: { gte: now } }] },
+      ],
     },
-    orderBy: { activated_at: "desc" },
+    orderBy: { assigned_at: "desc" },
     select: { id: true, account_id: true },
   });
   return assignment ? { accountId: assignment.account_id, assignmentId: assignment.id } : null;
@@ -152,8 +188,9 @@ export async function findSupervisedNumberOwner(
  * fails closed when it is revoked, so an external effect approved before the
  * revocation must not be allowed to bypass it afterwards.
  */
-export async function supervisedExecutionAuthorized(accountId: string): Promise<boolean> {
+export async function supervisedExecutionAuthorized(accountId: string, callId?: string): Promise<boolean> {
   if (!db) return false;
+  if (callId && await supervisedCallWasQualification(accountId, callId)) return false;
   const profile = await db.agentProfile.findFirst({
     where: { account_id: accountId, type: "supervised_receptionist", enabled: true },
     orderBy: { created_at: "asc" },
@@ -164,6 +201,34 @@ export async function supervisedExecutionAuthorized(accountId: string): Promise<
     authorizedGates: authorizedExecutionGates(),
   });
   return resolved.degraded === null && resolved.mode === "SUPERVISED_PILOT";
+}
+
+/** Qualification evidence can never become a business-effect input later. */
+export async function supervisedCallWasQualification(accountId: string, callId: string): Promise<boolean> {
+  if (!db) return false;
+  const call = await db.call.findFirst({
+    where: { id: callId, account_id: accountId },
+    select: { to_number: true, started_at: true },
+  });
+  if (!call) return false;
+  const e164 = normalizeE164(call.to_number);
+  if (!e164) return false;
+  const number = await db.telephonyNumber.findUnique({
+    where: { provider_e164: { provider: "telnyx", e164 } },
+    select: { id: true },
+  });
+  if (!number) return false;
+  return Boolean(await db.telephonyNumberAssignment.findFirst({
+    where: {
+      account_id: accountId,
+      telephony_number_id: number.id,
+      bootstrap_id: null,
+      status: "qualification",
+      assigned_at: { lte: call.started_at },
+      OR: [{ unassigned_at: null }, { unassigned_at: { gte: call.started_at } }],
+    },
+    select: { id: true },
+  }));
 }
 
 /**

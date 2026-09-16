@@ -1684,6 +1684,14 @@ For supervised FRL, a **new email requires durable CRM success** for every requi
 
 Supported claim after implementation and validation: ResponseOS prevents automatic duplicate retries when CRM delivery becomes uncertain and surfaces those cases for reconciliation. Prohibited claims: exactly-once external delivery/contact creation, guaranteed deduplication, universal automatic recovery, or guaranteed absence after negative readback. Provider-native unique identities and broader production recovery remain deferred. Provider activation and human merge gates are unchanged.
 
+### Ratified commissioning qualification amendment — 2026-09-15
+
+Final provider attestation depends on observed consent and capture evidence, while a normal supervised assignment depends on that final attestation. The commissioning path therefore has a distinct `qualification` number-assignment state. It may resolve the approved FRL snapshot, create a real `CallCaptureSession`, accept signed Telnyx evidence, apply the ordinary consent lock, and normalize finalized evidence. It is not an execution mode or activation state and does not authorize `v0.3-live-communications`.
+
+Qualification requires a disabled profile whose stored policy is exactly `SUPERVISED_PILOT`, a complete approved operating snapshot, transcription enabled, and recording disabled. Its generated provider context identifies `SUPERVISED_QUALIFICATION` and disables CRM, scheduling, payment, outbound, and provider memory. The profile remains disabled, no final attestation is created, and normal configuration or activation is blocked until the qualification assignment ends. Historical assignment intervals remain resolvable for delayed signed events.
+
+Calls originating inside a qualification interval remain permanently ineligible for CRM or email dispatch, including after later normal activation. Ending qualification clears number exclusivity and returns the local inventory number to available without deleting evidence. Final activation still requires the signed provider attestation, verified consent/capture fields, exact execution gate, enabled profile, and existing readiness checks. Migration 0016 adds only the explicit enum value; it changes no existing assignment state.
+
 ## ADR-0058 — Capability definition authority, publication, and runtime assignment
 
 **Status.** Proposed · 2026-09-13 · pending operator ratification; direction set by the operator on 2026-09-13. Extends **ADR-0001** (mock-first), **ADR-0017** (orchestration placement), **ADR-0046** (agent profiles), **ADR-0048** (prospect bootstrap), and **ADR-0051** (execution modes). **Authorizes no implementation** — no schema change, migration, table, authoring surface, execution engine, or provider activation. **Does not authorize v0.3** (doctrine D-1 stays open) and moves no item in doctrine §22.

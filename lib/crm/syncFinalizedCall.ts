@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { Prisma, type UserRole } from "@prisma/client";
 import { contentHash } from "@/lib/prospectBootstrap/memory";
-import { supervisedExecutionAuthorized } from "@/lib/agentExecution/supervisedRuntime";
+import { supervisedCallWasQualification, supervisedExecutionAuthorized } from "@/lib/agentExecution/supervisedRuntime";
 import type { CrmEffect, CrmReadback } from "@/lib/providers/crm/types";
 import { ReviewPayloadSchema } from "@/lib/callReview/contracts";
 import "@/lib/serverOnlyGuard";
@@ -104,6 +104,9 @@ export async function runCrmSyncForCall(params: {
   requireLiveProvider?: boolean; structuredActivity?: boolean; reviewId?: string;
 }): Promise<Result<CrmSyncOperationView>> {
   if (!db) return err("no_database", "CRM synchronization requires a database connection.");
+  if (await supervisedCallWasQualification(params.accountId, params.callId)) {
+    return err("qualification_business_effects_forbidden", "Qualification evidence cannot create or dispatch CRM operations.");
+  }
   const client = db;
   const provider = params.providerOverride ?? getCrmProvider();
   const where = { operation_key: `crm-call:${params.accountId}:${params.callId}`, account_id: params.accountId };
@@ -180,7 +183,7 @@ export async function runCrmSyncForCall(params: {
     const owned = () => ({ ...where, attempt_count: generation!, status: "processing" as const, last_error_code: operation!.last_error_code, last_error_redacted: operation!.last_error_redacted });
     const transition = async (code: CrmPhaseCode, data: Prisma.CrmSyncOperationUpdateManyMutationInput = {}, action = "crm_phase") => {
       const current = operation!;
-      if (review && !(await supervisedExecutionAuthorized(params.accountId))) throw new Error("execution_gate_not_authorized");
+      if (review && !(await supervisedExecutionAuthorized(params.accountId, params.callId))) throw new Error("execution_gate_not_authorized");
       await client.$transaction(async (tx) => {
         if (review) {
           const original = await tx.callReview.findFirst({ where: { id: review.id, account_id: params.accountId, call_id: params.callId, status: "approved" } });
@@ -277,7 +280,7 @@ export async function reconcileCrmOperation(params: {
   }
   if (row.status !== "review_required" || params.generation !== row.attempt_count || !params.reason?.trim() || !params.evidence?.trim()) throw new Error("crm_resolution_conflict");
   if (params.action === "adopt" && (!params.priorWorkerStopped || readback.outcome !== "verified_match" || readback.providerId !== params.expectedProviderId || phase?.mode !== "reconcile" || phase.effect === "done")) throw new Error("crm_evidence_insufficient");
-  if (params.action === "adopt" && !(await supervisedExecutionAuthorized(params.accountId))) throw new Error("execution_gate_not_authorized");
+  if (params.action === "adopt" && !(await supervisedExecutionAuthorized(params.accountId, params.callId))) throw new Error("execution_gate_not_authorized");
   const next = params.action === "adopt" ? nextPhase(phase!.effect as CrmEffect, value.qualification === "qualified") : null;
   await client.$transaction(async (tx) => {
     const original = await tx.callReview.findFirst({ where: { id: review.id, account_id: params.accountId, call_id: params.callId, status: "approved" } });

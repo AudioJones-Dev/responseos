@@ -77,8 +77,7 @@ export async function POST(req: Request) {
   const supervisedReady =
     supervised !== null &&
     supervised.readiness.ready &&
-    supervised.resolved.degraded === null &&
-    supervised.resolved.mode === "SUPERVISED_PILOT";
+    supervised.providerEvidenceAuthorized;
 
   // Ownership is resolved separately from readiness: a supervised number whose
   // runtime fails closed still belongs to that tenant and never falls through
@@ -167,13 +166,13 @@ export async function POST(req: Request) {
         businessName: supervised.accountName,
         agentName: supervised.agentName,
         memory: pinned.data,
-        policy: supervised.resolved.policy,
+        policy: supervised.contextPolicy,
       }),
       conversation: {
         metadata: {
           responseos_account_id: supervised.accountId,
           responseos_assignment_id: supervised.assignmentId,
-          execution_mode: supervised.resolved.mode,
+          execution_mode: supervised.contextPolicy.executionMode,
         },
       },
     });

@@ -4,13 +4,16 @@ import { runCrmSyncForCall, reconcileCrmOperation } from "@/lib/crm/syncFinalize
 import { MockCrmProvider } from "@/lib/providers/crm/mock";
 import { ReviewPayloadSchema } from "@/lib/callReview/contracts";
 
-const mocks = vi.hoisted(() => ({ gate: vi.fn(), db: {
+const mocks = vi.hoisted(() => ({ gate: vi.fn(), qualification: vi.fn(), db: {
   $transaction: vi.fn(), crmSyncOperation: { findUnique: vi.fn(), findUniqueOrThrow: vi.fn(), upsert: vi.fn(), updateMany: vi.fn() },
   call: { findFirst: vi.fn() }, callReview: { findFirst: vi.fn(), updateMany: vi.fn() }, contact: { findFirst: vi.fn() }, leadEvent: { findFirst: vi.fn() }, leadQualification: { findUnique: vi.fn() }, quoteRequest: { findUnique: vi.fn() }, auditLog: { create: vi.fn() },
 } }));
 vi.mock("@/lib/db/client", () => ({ db: mocks.db }));
 vi.mock("@/lib/auth/session", () => ({ requireRole: vi.fn() }));
-vi.mock("@/lib/agentExecution/supervisedRuntime", () => ({ supervisedExecutionAuthorized: mocks.gate }));
+vi.mock("@/lib/agentExecution/supervisedRuntime", () => ({
+  supervisedExecutionAuthorized: mocks.gate,
+  supervisedCallWasQualification: mocks.qualification,
+}));
 const payload = ReviewPayloadSchema.parse({ caller: "Fictional caller", phone: "+15555550199", interaction: "new_sales", product: "ramp", location: "Example city", summary: "Ramp evaluation", qualification: "qualified", outcome: "QUALIFIED_FREE_EVALUATION", urgency: "medium", callbackWindow: "Tomorrow", nextAction: "Call back", flags: [] });
 let row: CrmSyncOperation;
 let provider: MockCrmProvider;
@@ -24,6 +27,7 @@ beforeEach(() => {
   row = { id: "op", account_id: "account", operation_key: "crm-call:account:call", provider: "mock", call_id: "call", status: "pending", attempt_count: 0, last_error_code: "crm_ready:contact_create", last_error_redacted: null, provider_contact_id: null, provider_activity_id: null, provider_task_id: null, source_webhook_id: null, next_attempt_at: null, completed_at: null, created_at: now, updated_at: now };
   provider = new MockCrmProvider();
   mocks.gate.mockResolvedValue(true);
+  mocks.qualification.mockResolvedValue(false);
   mocks.db.crmSyncOperation.findUnique.mockImplementation(async ({ where }) => where.account_id === row.account_id ? clone() : null);
   mocks.db.crmSyncOperation.findUniqueOrThrow.mockImplementation(async () => clone());
   mocks.db.crmSyncOperation.upsert.mockImplementation(async () => clone());
@@ -51,6 +55,15 @@ test("concurrent claims atomically acquire distinct ownership and produce one ef
   await Promise.all([runCrmSyncForCall(params()), runCrmSyncForCall(params())]);
   expect(row.status).toBe("succeeded"); expect(row.attempt_count).toBe(1); expect(create).toHaveBeenCalledOnce();
   expect(mocks.db.crmSyncOperation.findUniqueOrThrow.mock.calls.length).toBeLessThanOrEqual(2);
+});
+
+test("qualification calls create no CRM operation and reach no provider", async () => {
+  mocks.qualification.mockResolvedValue(true);
+  const create = vi.spyOn(provider, "createContact");
+  expect(await runCrmSyncForCall(params())).toMatchObject({ ok: false, error: { code: "qualification_business_effects_forbidden" } });
+  expect(mocks.db.crmSyncOperation.findUnique).not.toHaveBeenCalled();
+  expect(mocks.db.crmSyncOperation.upsert).not.toHaveBeenCalled();
+  expect(create).not.toHaveBeenCalled();
 });
 
 test("durably pre-effect stale claim is reclaimable", async () => {

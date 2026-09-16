@@ -6,7 +6,11 @@ import {
   SUPERVISED_RECEPTIONIST_TEMPLATE_VERSION,
 } from "@/lib/agentExecution/supervisedTemplate";
 import { configureSupervisedTenant } from "@/lib/agentExecution/supervisedTenant";
-import { resolveSupervisedTenantForNumber } from "@/lib/agentExecution/supervisedRuntime";
+import {
+  endSupervisedQualification,
+  startSupervisedQualification,
+} from "@/lib/agentExecution/supervisedQualification";
+import { resolveSupervisedTenantForNumber, supervisedExecutionAuthorized } from "@/lib/agentExecution/supervisedRuntime";
 import { resolveTelnyxEventAssignment } from "@/lib/prospectBootstrap/service";
 import { disconnectTestDb, prisma, resetAndSeedTestDb, setDevSession } from "./setup";
 
@@ -139,6 +143,101 @@ describe("supervised tenant configuration", () => {
     if (!second.ok) return;
     expect(second.data.configuration).toMatchObject({ version: 1, unchanged: true });
     expect(await prisma.businessMemorySnapshot.count({ where: { account_id: account!.id } })).toBe(1);
+  });
+
+  test("opens an effects-disabled qualification assignment without attestation or activation", async () => {
+    delete process.env.RESPONSEOS_AUTHORIZED_EXECUTION_GATES;
+    expect((await configureSupervisedTenant(input(), now)).ok).toBe(true);
+    const started = await startSupervisedQualification({
+      accountSlug: "example-supervised",
+      providerNumberId: PROVIDER_NUMBER_ID,
+      e164: NUMBER,
+      providerAssistantId: "assistant-qualification",
+      approvalRecordRef: "commissioning:qualification-1",
+    }, now);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+
+    const assignment = await prisma.telephonyNumberAssignment.findUniqueOrThrow({ where: { id: started.data.assignmentId } });
+    const profile = await prisma.agentProfile.findFirstOrThrow({ where: { account_id: started.data.accountId } });
+    expect(assignment).toMatchObject({ status: "qualification", activated_at: null, unassigned_at: null });
+    expect(profile.enabled).toBe(false);
+    expect((await prisma.telephonyNumber.findUniqueOrThrow({ where: { provider_e164: { provider: "telnyx", e164: NUMBER } } })).capabilities_json).toEqual({ voice: true });
+
+    const runtime = await resolveSupervisedTenantForNumber(NUMBER, new Date(now.getTime() + 1_000));
+    expect(runtime).toMatchObject({
+      assignmentStatus: "qualification",
+      providerEvidenceAuthorized: true,
+      contextPolicy: { executionMode: "SUPERVISED_QUALIFICATION", crmSyncEnabled: false, recordingEnabled: false },
+      readiness: { ready: true },
+    });
+    expect(runtime?.resolved).toMatchObject({ mode: "PROSPECT_DEMO", degraded: "gate_not_authorized" });
+    expect(await supervisedExecutionAuthorized(started.data.accountId)).toBe(false);
+  });
+
+  test("qualification is exclusive, blocks normal configuration, and preserves its historical interval after ending", async () => {
+    expect((await configureSupervisedTenant(input(), now)).ok).toBe(true);
+    const started = await startSupervisedQualification({
+      accountSlug: "example-supervised",
+      providerNumberId: PROVIDER_NUMBER_ID,
+      e164: NUMBER,
+      providerAssistantId: "assistant-qualification",
+      approvalRecordRef: "commissioning:qualification-2",
+    }, now);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+
+    const activation = await configureSupervisedTenant(input({
+      activate: true,
+      number: { providerNumberId: PROVIDER_NUMBER_ID, e164: NUMBER, providerAttestation: attestation() },
+    }), new Date(now.getTime() + 1_000));
+    expect(activation).toMatchObject({ ok: false, error: { details: { stops: expect.arrayContaining(["qualification_assignment_requires_end"]) } } });
+
+    expect((await configureSupervisedTenant(input({ accountSlug: "other-qualification", businessName: "Other" }), now)).ok).toBe(true);
+    const conflict = await startSupervisedQualification({ accountSlug: "other-qualification", providerNumberId: PROVIDER_NUMBER_ID, e164: NUMBER, providerAssistantId: "other", approvalRecordRef: "other" }, now);
+    expect(conflict).toMatchObject({ ok: false, error: { code: "number_assignment_conflict" } });
+
+    const endedAt = new Date(now.getTime() + 60_000);
+    const ended = await endSupervisedQualification({ accountSlug: "example-supervised", e164: NUMBER, reason: "Qualification evidence collected." }, endedAt);
+    expect(ended.ok).toBe(true);
+    expect(await resolveSupervisedTenantForNumber(NUMBER, new Date(now.getTime() + 30_000))).not.toBeNull();
+    expect(await resolveSupervisedTenantForNumber(NUMBER, new Date(now.getTime() + 90_000))).toBeNull();
+    expect(await prisma.telephonyNumber.findUniqueOrThrow({ where: { provider_e164: { provider: "telnyx", e164: NUMBER } } })).toMatchObject({ status: "available" });
+    expect(await prisma.auditLog.count({ where: { action: { in: ["supervised_qualification.started", "supervised_qualification.ended"] } } })).toBe(2);
+  });
+
+  test("a call captured during qualification remains ineligible for business effects after normal activation", async () => {
+    expect((await configureSupervisedTenant(input(), now)).ok).toBe(true);
+    const started = await startSupervisedQualification({
+      accountSlug: "example-supervised",
+      providerNumberId: PROVIDER_NUMBER_ID,
+      e164: NUMBER,
+      providerAssistantId: "assistant-qualification",
+      approvalRecordRef: "commissioning:qualification-3",
+    }, now);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    const call = await prisma.call.create({
+      data: {
+        account_id: started.data.accountId,
+        provider: "telnyx",
+        provider_call_id: "qualification-call",
+        direction: "inbound",
+        status: "completed",
+        from_number: "+15555550199",
+        to_number: NUMBER,
+        started_at: new Date(now.getTime() + 10_000),
+        review_required: true,
+      },
+    });
+    await endSupervisedQualification({ accountSlug: "example-supervised", e164: NUMBER, reason: "End controlled qualification." }, new Date(now.getTime() + 20_000));
+    const activated = await configureSupervisedTenant(input({
+      activate: true,
+      number: { providerNumberId: PROVIDER_NUMBER_ID, e164: NUMBER, providerAttestation: attestation() },
+    }), new Date(now.getTime() + 30_000));
+    expect(activated.ok).toBe(true);
+    expect(await supervisedExecutionAuthorized(started.data.accountId)).toBe(true);
+    expect(await supervisedExecutionAuthorized(started.data.accountId, call.id)).toBe(false);
   });
 
   test("revokes the previous snapshot when the configuration changes", async () => {

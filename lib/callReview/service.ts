@@ -156,7 +156,7 @@ export async function dispatchCallReview(id: string) {
   // The execution gate can be revoked between approval and dispatch. Assistant
   // initialization fails closed on it, so this path must too before it writes
   // to a CRM or sends mail.
-  if (!(await supervisedExecutionAuthorized(row.account_id))) throw new Error("execution_gate_not_authorized");
+  if (!(await supervisedExecutionAuthorized(row.account_id, row.call_id))) throw new Error("execution_gate_not_authorized");
   const auditEntry = (action: string, metadata: Prisma.InputJsonValue): Prisma.AuditLogCreateArgs => ({ data: { account_id: row.account_id, actor_type: "user", actor_user_id: operator.user.id, actor_role: operator.user.role, action, category: "workflow", target_type: "CallReview", target_id: id, metadata_json: metadata } });
   const audit = (action: string, metadata: Prisma.InputJsonValue) => db!.auditLog.create(auditEntry(action, metadata));
   // Parsed before the claim: a payload this dispatch cannot read must not leave
@@ -225,7 +225,7 @@ export async function dispatchCallReview(id: string) {
     // Required CRM effects must all be durably acknowledged before new email.
     if (crmStatus !== "succeeded") throw new Error("crm_incomplete");
     if (row.email_attempt_at && Date.now() - row.email_attempt_at.getTime() >= 23 * 60 * 60 * 1000) throw new Error("email_delivery_requires_reconciliation");
-    if (!(await supervisedExecutionAuthorized(row.account_id))) throw new Error("execution_gate_not_authorized");
+    if (!(await supervisedExecutionAuthorized(row.account_id, row.call_id))) throw new Error("execution_gate_not_authorized");
     const provider = getEmailProvider();
     if (provider.providerId !== "resend") throw new Error("live_email_disabled");
     // Fenced on the claim: a reclaimed row no longer carries this attempt's

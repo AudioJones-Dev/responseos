@@ -1,5 +1,7 @@
 import { generateKeyPairSync, sign } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { PROSPECT_BOOTSTRAP_SCHEMA_VERSION } from "@/lib/prospectBootstrap/contracts";
+import { SUPERVISED_QUALIFICATION_POLICY } from "@/lib/agentExecution/policy";
 
 const mocks = vi.hoisted(() => ({
   recordWebhookEvent: vi.fn(),
@@ -7,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   resolveActiveProspectAgentContext: vi.fn(),
   resolveSupervisedTenantForNumber: vi.fn(),
   findSupervisedNumberOwner: vi.fn(),
+  capture: vi.fn(),
 }));
 
 vi.mock("@/lib/data/webhookEvents", () => ({
@@ -20,18 +23,19 @@ vi.mock("@/lib/agentExecution/supervisedRuntime", () => ({
   resolveSupervisedTenantForNumber: mocks.resolveSupervisedTenantForNumber,
   findSupervisedNumberOwner: mocks.findSupervisedNumberOwner,
 }));
+vi.mock("@/lib/db/client", () => ({ db: { callCaptureSession: { upsert: mocks.capture } } }));
 
 const originalEnv = { ...process.env };
 const keys = generateKeyPairSync("ed25519");
 const publicKey = keys.publicKey.export({ type: "spki", format: "pem" }).toString();
 
-function signedRequest(target = "+13055550101", mutateSignature = false) {
+function signedRequest(target = "+13055550101", mutateSignature = false, providerCallId?: string) {
   const rawBody = JSON.stringify({
     data: {
       id: "init-event-1",
       event_type: "assistant.initialization",
       occurred_at: new Date().toISOString(),
-      payload: { telnyx_agent_target: target },
+      payload: { telnyx_agent_target: target, ...(providerCallId ? { call_control_id: providerCallId } : {}) },
     },
   });
   const timestamp = String(Math.floor(Date.now() / 1000));
@@ -59,6 +63,7 @@ describe("signed Telnyx assistant initialization", () => {
     mocks.recordWebhookEvent.mockResolvedValue({ ok: true, data: { id: "ledger-1", process_status: "received" } });
     mocks.setWebhookProcessStatus.mockResolvedValue({ ok: true, data: undefined });
     mocks.resolveSupervisedTenantForNumber.mockResolvedValue(null);
+    mocks.capture.mockImplementation(async ({ create }) => create);
   });
   afterEach(() => { process.env = { ...originalEnv }; });
 
@@ -153,6 +158,8 @@ describe("signed Telnyx assistant initialization", () => {
       snapshotId: "snapshot-1",
       memory: {},
       readiness: { ready: true, missing: [] },
+      providerEvidenceAuthorized: true,
+      contextPolicy: { executionMode: "SUPERVISED_PILOT", recordingEnabled: false },
       resolved: { mode: "SUPERVISED_PILOT", degraded: null, policy: { recordingEnabled: false } },
     });
     const { POST } = await import("@/app/api/webhooks/telnyx/assistant-initialization/route");
@@ -173,12 +180,49 @@ describe("signed Telnyx assistant initialization", () => {
       snapshotId: "snapshot-1",
       memory: { not: "a valid snapshot" },
       readiness: { ready: true, missing: [] },
+      providerEvidenceAuthorized: true,
+      contextPolicy: { executionMode: "SUPERVISED_PILOT", recordingEnabled: false },
       resolved: { mode: "SUPERVISED_PILOT", degraded: null, policy: { recordingEnabled: false } },
     });
     const { POST } = await import("@/app/api/webhooks/telnyx/assistant-initialization/route");
     const response = await POST(signedRequest("+13055550188"));
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ dynamic_variables: { supervised_available: "false" } });
+  });
+
+  test("qualification initialization pins the FRL snapshot without granting normal activation", async () => {
+    const memory = {
+      schemaVersion: PROSPECT_BOOTSTRAP_SCHEMA_VERSION,
+      bootstrapId: null,
+      accountId: "supervised-account",
+      generatedAt: "2026-09-15T12:00:00.000Z",
+      businessProfile: [], services: [], locations: [], operatingHours: [], serviceAreas: [],
+      faqs: [], policies: [], contactPaths: [], brandVoice: [], unknowns: [], conflicts: [],
+      agentBoundaries: [], sourceManifest: [],
+    };
+    mocks.resolveSupervisedTenantForNumber.mockResolvedValue({
+      accountId: "supervised-account",
+      assignmentId: "qualification-assignment",
+      accountName: "Florida Ramp & Lift",
+      agentName: "Sam",
+      snapshotId: "snapshot-1",
+      memory,
+      readiness: { ready: true, missing: [], conflicts: [] },
+      assignmentStatus: "qualification",
+      providerEvidenceAuthorized: true,
+      contextPolicy: SUPERVISED_QUALIFICATION_POLICY,
+      resolved: { mode: "PROSPECT_DEMO", declaredMode: "SUPERVISED_PILOT", degraded: "gate_not_authorized" },
+    });
+    const { POST } = await import("@/app/api/webhooks/telnyx/assistant-initialization/route");
+    const response = await POST(signedRequest("+19548720843", false, "qualification-call"));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      dynamic_variables: { supervised_available: "true", execution_mode: "SUPERVISED_QUALIFICATION", recording_enabled: "false" },
+      conversation: { metadata: { responseos_assignment_id: "qualification-assignment", execution_mode: "SUPERVISED_QUALIFICATION" } },
+    });
+    expect(mocks.capture).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({ account_id: "supervised-account", provider_call_id: "qualification-call", snapshot_id: "snapshot-1" }),
+    }));
   });
 
   test("uses the generic unavailable context when no assignment resolves", async () => {
