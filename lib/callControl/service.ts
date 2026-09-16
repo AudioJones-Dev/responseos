@@ -281,17 +281,26 @@ export async function ingestCallControlEvent(params: { event: CallControlEvent; 
   if (event.data.event_type === "call.ai_gather.message_history_updated") {
     const historyResult = await withCaptureLock(capture.account_id, capture.provider_call_id, async (client) => {
       const current = await client.callCaptureSession.findUnique({ where: { id: capture.id } });
-      const [latestConsent, start] = await Promise.all([
+      const [latestConsent, start, conversationEndedLedger] = await Promise.all([
         client.callConsentEvent.findFirst({ where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, artifact: "transcript" }, orderBy: [{ occurred_at: "desc" }, { id: "desc" }] }),
         client.telnyxCallCommand.findFirst({ where: { capture_session_id: capture.id, command_type: "ai_assistant_start", generation: capture.generation, status: "succeeded" } }),
+        client.webhookEvent.findFirst({ where: { account_id: capture.account_id, provider: "telnyx", provider_call_id: capture.provider_call_id, event_type: "call.conversation.ended", signature_valid: true }, orderBy: { received_at: "asc" }, select: { raw_body: true } }),
       ]);
       const activeAdmission = current?.content_admission_closed_at === null && ["START_PENDING", "AI_ACTIVE"].includes(current.control_state);
-      const terminalReconciliation = Boolean(current && ["FINALIZING", "EVIDENCE_FROZEN"].includes(current.control_state) && current.capture_ended_at !== null);
+      const conversationEndedEvent = conversationEndedLedger ? parseCallControlEvent(conversationEndedLedger.raw_body) : null;
+      const conversationEndedAt = conversationEndedEvent ? new Date(conversationEndedEvent.data.occurred_at) : null;
+      const terminalState = Boolean(current && ["FINALIZING", "EVIDENCE_FROZEN"].includes(current.control_state) && current.capture_ended_at !== null);
+      const terminalReconciliation = terminalState && conversationEndedAt !== null;
+      const awaitingConversationBoundary = terminalState && conversationEndedAt === null;
       const captureStart = current?.capture_started_at ?? start?.provider_date_at ?? null;
-      const withinCaptureInterval = Boolean(captureStart && occurredAt >= captureStart && (!current?.capture_ended_at || occurredAt <= current.capture_ended_at));
+      const withinCaptureInterval = Boolean(captureStart && occurredAt >= captureStart && (!conversationEndedAt || occurredAt <= conversationEndedAt));
       const admitted = Boolean(current && latestConsent?.action === "grant" && start?.provider_date_at && start.conversation_id && withinCaptureInterval && (activeAdmission || terminalReconciliation) && (!event.data.payload.conversation_id || event.data.payload.conversation_id === start.conversation_id));
       const ledger = await record(admitted ? params.rawBody : JSON.stringify(persistedEvent), client);
       if (ledger.duplicate) return { duplicate: true as const };
+      if (awaitingConversationBoundary) {
+        await setWebhookProcessStatus({ client, id: ledger.id, process_status: "error", process_error: "awaiting_conversation_boundary" });
+        return { processingError: new Error("awaiting_conversation_boundary") };
+      }
       if (!admitted || !current || !start?.provider_date_at || !start.conversation_id) {
         await setWebhookProcessStatus({ client, id: ledger.id, process_status: "rejected", process_error: "protected_content_not_admitted" });
         return { duplicate: false as const, captureId: capture.id };
