@@ -85,7 +85,7 @@ async function executeCommand(params: {
     request: params.request,
   });
   if (intent.status === "succeeded") return intent;
-  if (intent.status !== "intent_recorded" && intent.status !== "uncertain") throw new Error("telnyx_command_not_executable");
+  if (!["intent_recorded", "uncertain", "failed"].includes(intent.status)) throw new Error("telnyx_command_not_executable");
   const body = { ...params.request, command_id: intent.command_id };
   const result = await sendTelnyxCallCommand({ callControlId: params.capture.provider_call_id, action: params.action, body });
   return db.telnyxCallCommand.update({
@@ -153,7 +153,8 @@ async function normalizeMetadata(event: CallControlEvent, capture: { account_id:
 }
 
 async function recordTranscriptRevision(event: CallControlEvent, capture: NonNullable<Awaited<ReturnType<typeof captureForEvent>>>, webhookEventId: string, numberE164: string, client: Prisma.TransactionClient) {
-  if (!capture.assignment_id || !capture.conversation_id || !capture.capture_started_at || capture.content_admission_closed_at) return "rejected" as const;
+  const terminalReconciliation = capture.control_state === "FINALIZING" && capture.capture_ended_at !== null;
+  if (!capture.assignment_id || !capture.conversation_id || !capture.capture_started_at || (capture.content_admission_closed_at && !terminalReconciliation)) return "rejected" as const;
   const latestConsent = await client.callConsentEvent.findFirst({ where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, artifact: "transcript" }, orderBy: [{ occurred_at: "desc" }, { id: "desc" }] });
   if (latestConsent?.action !== "grant") return "rejected" as const;
   const start = await client.telnyxCallCommand.findFirst({ where: { capture_session_id: capture.id, command_type: "ai_assistant_start", generation: capture.generation, status: "succeeded", conversation_id: capture.conversation_id } });
@@ -191,18 +192,23 @@ async function recordTranscriptRevision(event: CallControlEvent, capture: NonNul
   return "admitted" as const;
 }
 
-async function freezeEvidence(event: CallControlEvent, capture: NonNullable<Awaited<ReturnType<typeof captureForEvent>>>) {
-  if (!db || !capture.conversation_id) return;
-  const endedAt = new Date(event.data.occurred_at);
+async function freezeEvidence(captureId: string) {
+  if (!db) return;
+  const capture = await db.callCaptureSession.findUnique({ where: { id: captureId } });
+  if (!capture?.conversation_id || !capture.capture_ended_at) return;
+  const [conversationEnded, callHangup] = await Promise.all([
+    db.webhookEvent.findFirst({ where: { account_id: capture.account_id, provider: "telnyx", provider_call_id: capture.provider_call_id, event_type: "call.conversation.ended", signature_valid: true }, select: { id: true } }),
+    db.webhookEvent.findFirst({ where: { account_id: capture.account_id, provider: "telnyx", provider_call_id: capture.provider_call_id, event_type: "call.hangup", signature_valid: true }, select: { id: true } }),
+  ]);
+  if (!conversationEnded || !callHangup) return;
   const withdrawal = await db.callConsentEvent.findFirst({ where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, action: "withdraw", artifact: "transcript" }, orderBy: { occurred_at: "desc" } });
-  const endBoundary = withdrawal?.occurred_at ?? endedAt;
+  const endBoundary = withdrawal?.occurred_at ?? capture.capture_ended_at;
   const stop = withdrawal ? await db.telnyxCallCommand.findFirst({ where: { capture_session_id: capture.id, command_type: "ai_assistant_stop", generation: capture.generation, status: "succeeded" } }) : null;
   if (withdrawal && !stop) return;
   const transferState = ["TRANSFER_PENDING", "TRANSFERRED"].includes(capture.control_state);
-  await db.callCaptureSession.update({ where: { id: capture.id }, data: { capture_ended_at: endBoundary, content_admission_closed_at: capture.content_admission_closed_at ?? endBoundary, control_state: transferState ? capture.control_state : "FINALIZING" } });
   const revision = await db.callTranscriptRevision.findFirst({ where: { capture_session_id: capture.id }, orderBy: { revision: "desc" } });
   if (!revision) return;
-  const frozen = await db.callTranscriptRevision.update({ where: { id: revision.id }, data: { capture_ended_at: endBoundary, frozen_at: new Date() } });
+  const frozen = revision.frozen_at ? revision : await db.callTranscriptRevision.update({ where: { id: revision.id }, data: { capture_ended_at: endBoundary, frozen_at: new Date() } });
   const analysis = await conservativePostCallAnalysis.analyze({ transcript: frozen.inline_text });
   await db.callPostCallAnalysis.upsert({ where: { transcript_revision_id: frozen.id }, update: {}, create: {
     account_id: frozen.account_id,
@@ -269,7 +275,9 @@ export async function ingestCallControlEvent(params: { event: CallControlEvent; 
         client.callConsentEvent.findFirst({ where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, artifact: "transcript" }, orderBy: [{ occurred_at: "desc" }, { id: "desc" }] }),
         client.telnyxCallCommand.findFirst({ where: { capture_session_id: capture.id, command_type: "ai_assistant_start", generation: capture.generation, status: "succeeded" } }),
       ]);
-      const admitted = Boolean(current && latestConsent?.action === "grant" && start?.provider_date_at && start.conversation_id && current.content_admission_closed_at === null && ["START_PENDING", "AI_ACTIVE"].includes(current.control_state) && (!event.data.payload.conversation_id || event.data.payload.conversation_id === start.conversation_id));
+      const activeAdmission = current?.content_admission_closed_at === null && ["START_PENDING", "AI_ACTIVE"].includes(current.control_state);
+      const terminalReconciliation = current?.control_state === "FINALIZING" && current.capture_ended_at !== null;
+      const admitted = Boolean(current && latestConsent?.action === "grant" && start?.provider_date_at && start.conversation_id && (activeAdmission || terminalReconciliation) && (!event.data.payload.conversation_id || event.data.payload.conversation_id === start.conversation_id));
       const ledger = await record(admitted ? params.rawBody : JSON.stringify(persistedEvent), client);
       if (ledger.duplicate) return { duplicate: true as const };
       if (!admitted || !current || !start?.provider_date_at || !start.conversation_id) {
@@ -291,6 +299,7 @@ export async function ingestCallControlEvent(params: { event: CallControlEvent; 
       }
     });
     if ("processingError" in historyResult) throw historyResult.processingError;
+    await freezeEvidence(capture.id);
     return historyResult;
   }
 
@@ -298,41 +307,70 @@ export async function ingestCallControlEvent(params: { event: CallControlEvent; 
   if (ledger.duplicate) return { duplicate: true };
   try {
     if (event.data.event_type === "call.initiated") {
-      if (initial) {
-        await normalizeMetadata(event, capture, ledger.id, numberE164);
-        await executeCommand({ capture, commandType: "answer", action: "answer", request: { client_state: clientState(capture.id, capture.generation) } });
-      } else {
-        await setWebhookProcessStatus({ id: ledger.id, process_status: "processed" });
+      await normalizeMetadata(event, capture, ledger.id, numberE164);
+      if (capture.control_state === "CALL_RECEIVED") {
+        const result = await executeCommand({ capture, commandType: "answer", action: "answer", request: { client_state: clientState(capture.id, capture.generation) } });
+        if (result.status !== "succeeded") throw new Error(result.error_code ?? "telnyx_answer_unconfirmed");
       }
     } else if (event.data.event_type === "call.answered") {
-      if (capture.control_state === "CALL_RECEIVED") {
+      if (["CALL_RECEIVED", "DISCLOSURE_PLAYING"].includes(capture.control_state)) {
         if (!runtime) throw new Error("qualification_runtime_unavailable");
         const context = buildSupervisedAgentContext({ businessName: runtime.accountName, agentName: runtime.agentName, memory: runtime.memory, policy: runtime.contextPolicy });
         await db.callCaptureSession.updateMany({ where: { id: capture.id, control_state: "CALL_RECEIVED" }, data: { control_state: "DISCLOSURE_PLAYING" } });
-        await executeCommand({ capture, commandType: "disclosure", action: "speak", request: { payload: context.ai_disclosure + DISCLOSURE_PROMPT, voice: "female", service_level: "basic", language: "en-US", client_state: clientState(capture.id, capture.generation) } });
+        const result = await executeCommand({ capture, commandType: "disclosure", action: "speak", request: { payload: context.ai_disclosure + DISCLOSURE_PROMPT, voice: "female", service_level: "basic", language: "en-US", client_state: clientState(capture.id, capture.generation) } });
+        if (result.status !== "succeeded") throw new Error(result.error_code ?? "telnyx_disclosure_unconfirmed");
       } else {
         await setWebhookProcessStatus({ id: ledger.id, process_status: "processed" });
       }
     } else if (event.data.event_type === "call.speak.ended") {
       const moved = await db.callCaptureSession.updateMany({ where: { id: capture.id, control_state: "DISCLOSURE_PLAYING", generation: capture.generation }, data: { control_state: "AWAITING_DTMF", disclosure_completed_at: occurredAt } });
-      if (moved.count) await executeCommand({ capture, commandType: "consent_gather", action: "gather_using_speak", request: { payload: GATHER_PROMPT, voice: "female", service_level: "basic", language: "en-US", maximum_digits: 1, maximum_tries: 1, timeout_millis: 10_000, valid_digits: "12", client_state: clientState(capture.id, capture.generation) } });
-      if (!moved.count && ["REFUSED", "AMBIGUOUS"].includes(capture.control_state)) await executeCommand({ capture, commandType: "hangup", action: "hangup", request: { client_state: clientState(capture.id, capture.generation) } });
+      if (moved.count || capture.control_state === "AWAITING_DTMF") {
+        const result = await executeCommand({ capture, commandType: "consent_gather", action: "gather_using_speak", request: { payload: GATHER_PROMPT, voice: "female", service_level: "basic", language: "en-US", maximum_digits: 1, maximum_tries: 1, timeout_millis: 10_000, valid_digits: "12", client_state: clientState(capture.id, capture.generation) } });
+        if (result.status !== "succeeded") throw new Error(result.error_code ?? "telnyx_gather_unconfirmed");
+      } else if (["REFUSED", "AMBIGUOUS"].includes(capture.control_state)) {
+        const result = await executeCommand({ capture, commandType: "hangup", action: "hangup", request: { client_state: clientState(capture.id, capture.generation) } });
+        if (result.status !== "succeeded") throw new Error(result.error_code ?? "telnyx_hangup_unconfirmed");
+      }
     } else if (event.data.event_type === "call.gather.ended") {
       const decision = event.data.payload.status === "valid" && event.data.payload.digits === "1" ? "affirmative" : event.data.payload.status === "valid" && event.data.payload.digits === "2" ? "refused" : "ambiguous";
       const moved = await db.callCaptureSession.updateMany({ where: { id: capture.id, control_state: "AWAITING_DTMF", generation: capture.generation }, data: { control_state: decision === "ambiguous" ? "AMBIGUOUS" : "CONSENT_PENDING_OPERATOR", dtmf_decision: decision, dtmf_event_id: event.data.id } });
-      if (!moved.count) throw new Error("stale_capture_state");
-      if (decision === "ambiguous") await executeCommand({ capture: { ...capture, generation: capture.generation }, commandType: "ambiguous_end", action: "speak", request: { payload: "I did not receive clear permission, so I will not collect any details. Please contact the team directly for help.", voice: "female", service_level: "basic", language: "en-US", client_state: clientState(capture.id, capture.generation) } });
+      const expectedState = decision === "ambiguous" ? "AMBIGUOUS" : "CONSENT_PENDING_OPERATOR";
+      if (!moved.count && (capture.control_state !== expectedState || capture.dtmf_decision !== decision)) throw new Error("stale_capture_state");
+      if (decision === "ambiguous") {
+        const result = await executeCommand({ capture: { ...capture, generation: capture.generation }, commandType: "ambiguous_end", action: "speak", request: { payload: "I did not receive clear permission, so I will not collect any details. Please contact the team directly for help.", voice: "female", service_level: "basic", language: "en-US", client_state: clientState(capture.id, capture.generation) } });
+        if (result.status !== "succeeded") throw new Error(result.error_code ?? "telnyx_ambiguous_end_unconfirmed");
+      }
       await setWebhookProcessStatus({ id: ledger.id, process_status: "processed" });
     } else if (event.data.event_type === "call.conversation.ended") {
       await normalizeMetadata(event, capture, ledger.id, numberE164);
-      await freezeEvidence(event, await db.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } }));
+      await withCaptureLock(capture.account_id, capture.provider_call_id, async (client) => {
+        const current = await client.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } });
+        const withdrawal = await client.callConsentEvent.findFirst({ where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, action: "withdraw", artifact: "transcript" }, orderBy: { occurred_at: "desc" } });
+        const transferState = ["TRANSFER_PENDING", "TRANSFERRED"].includes(current.control_state);
+        await client.callCaptureSession.update({ where: { id: capture.id }, data: {
+          capture_ended_at: withdrawal?.occurred_at ?? occurredAt,
+          content_admission_closed_at: current.content_admission_closed_at ?? withdrawal?.occurred_at ?? occurredAt,
+          control_state: transferState ? current.control_state : withdrawal ? "STOP_PENDING" : "FINALIZING",
+        } });
+      });
+      await freezeEvidence(capture.id);
     } else if (event.data.event_type === "call.bridged") {
       const moved = await db.callCaptureSession.updateMany({ where: { id: capture.id, control_state: "TRANSFER_PENDING", generation: capture.generation }, data: { control_state: "TRANSFERRED" } });
       if (!moved.count) throw new Error("stale_capture_state");
       await setWebhookProcessStatus({ id: ledger.id, process_status: "processed" });
     } else if (event.data.event_type === "call.hangup") {
-      await db.callCaptureSession.updateMany({ where: { id: capture.id, control_state: { notIn: ["REFUSED", "AMBIGUOUS", "STOPPED", "TRANSFERRED", "EVIDENCE_FROZEN"] } }, data: { control_state: "SAFE_FALLBACK", content_admission_closed_at: occurredAt } });
       await normalizeMetadata(event, capture, ledger.id, numberE164);
+      await withCaptureLock(capture.account_id, capture.provider_call_id, async (client) => {
+        const current = await client.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } });
+        if (["REFUSED", "AMBIGUOUS", "STOPPED", "TRANSFERRED", "EVIDENCE_FROZEN"].includes(current.control_state)) return;
+        const terminalConversation = ["START_PENDING", "AI_ACTIVE", "STOP_PENDING", "FINALIZING"].includes(current.control_state);
+        await client.callCaptureSession.update({ where: { id: capture.id }, data: {
+          control_state: terminalConversation ? current.control_state === "STOP_PENDING" ? "STOP_PENDING" : "FINALIZING" : "SAFE_FALLBACK",
+          content_admission_closed_at: current.content_admission_closed_at ?? occurredAt,
+          capture_ended_at: current.capture_ended_at ?? occurredAt,
+        } });
+      });
+      await freezeEvidence(capture.id);
     } else {
       await setWebhookProcessStatus({ id: ledger.id, process_status: "processed" });
     }
@@ -368,6 +406,7 @@ export async function runOperatorConsentEffect(params: { captureId: string; acti
   const generation = capture.generation;
   const result = await executeCommand({ capture, commandType: "ai_assistant_stop", action: "ai_assistant_stop", request: { client_state: clientState(capture.id, generation) } });
   if (result.status !== "succeeded") throw new Error(result.error_code ?? "telnyx_stop_unconfirmed");
+  await freezeEvidence(capture.id);
 }
 
 export async function requestQualifiedTransfer(params: { captureId: string; destination: string }) {

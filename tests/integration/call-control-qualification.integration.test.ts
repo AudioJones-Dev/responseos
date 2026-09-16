@@ -92,6 +92,33 @@ describe("FRL Call Control qualification", () => {
     expect(start.intended_at.getTime()).toBeLessThanOrEqual(start.provider_responded_at!.getTime());
   });
 
+  test("an uncertain disclosure command is retried with the same command identity", async () => {
+    await setupQualification();
+    await ingest(event("call.initiated", "cc-redrive-init", { to: NUMBER }, 1_000));
+    const capture = await prisma.callCaptureSession.findFirstOrThrow();
+    sendCommand.mockResolvedValueOnce({ status: 0, providerDate: null, conversationId: null, ok: false, errorCode: "telnyx_response_uncertain" });
+    const answered = event("call.answered", "cc-redrive-answered", { to: NUMBER }, 2_000);
+    await expect(ingest(answered)).rejects.toThrow("telnyx_response_uncertain");
+    const uncertain = await prisma.telnyxCallCommand.findFirstOrThrow({ where: { capture_session_id: capture.id, command_type: "disclosure" } });
+    expect(uncertain.status).toBe("uncertain");
+    sendCommand.mockResolvedValueOnce({ status: 200, providerDate: new Date(NOW.getTime() + 2_500), conversationId: null, ok: true, errorCode: null });
+    await expect(ingest(answered)).resolves.toEqual({ duplicate: false, captureId: capture.id });
+    const succeeded = await prisma.telnyxCallCommand.findUniqueOrThrow({ where: { id: uncertain.id } });
+    expect(succeeded).toMatchObject({ status: "succeeded", command_id: uncertain.command_id });
+  });
+
+  test("a redelivered initiation re-drives answer after capture creation", async () => {
+    await setupQualification();
+    sendCommand.mockResolvedValueOnce({ status: 0, providerDate: null, conversationId: null, ok: false, errorCode: "telnyx_response_uncertain" });
+    const initiated = event("call.initiated", "cc-redrive-initiation", { to: NUMBER }, 1_000);
+    await expect(ingest(initiated)).rejects.toThrow("telnyx_response_uncertain");
+    const capture = await prisma.callCaptureSession.findFirstOrThrow();
+    const uncertain = await prisma.telnyxCallCommand.findFirstOrThrow({ where: { capture_session_id: capture.id, command_type: "answer" } });
+    sendCommand.mockResolvedValueOnce({ status: 200, providerDate: new Date(NOW.getTime() + 1_500), conversationId: null, ok: true, errorCode: null });
+    await expect(ingest(initiated)).resolves.toEqual({ duplicate: false, captureId: capture.id });
+    expect((await prisma.telnyxCallCommand.findUniqueOrThrow({ where: { id: uncertain.id } }))).toMatchObject({ status: "succeeded", command_id: uncertain.command_id });
+  });
+
   test.each([
     ["valid", "2", "refused"],
     ["timeout", "", "ambiguous"],
@@ -173,6 +200,7 @@ describe("FRL Call Control qualification", () => {
     const payload = { conversation_id: "conversation-1", client_state: state(capture.id), message_history: [{ role: "assistant", content: "How can I help?" }, { role: "user", content: "I need a VPL evaluation." }] };
     await ingest(event("call.ai_gather.message_history_updated", "cc-final-history", payload, 5_000));
     await ingest(event("call.conversation.ended", "cc-final-ended", { conversation_id: "conversation-1", client_state: state(capture.id) }, 6_000));
+    await ingest(event("call.hangup", "cc-final-hangup", { conversation_id: "conversation-1" }, 7_000));
 
     const finalCapture = await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } });
     const revision = await prisma.callTranscriptRevision.findFirstOrThrow({ where: { capture_session_id: capture.id } });
@@ -181,6 +209,48 @@ describe("FRL Call Control qualification", () => {
     expect(revision.frozen_at).not.toBeNull();
     expect(analysis).toMatchObject({ transcript_hash: revision.source_hash, provider: "responseos", schema_version: "frl-post-call.v1", completeness: "unavailable" });
     expect(await prisma.callReview.count({ where: { account_id: capture.account_id, call_id: revision.call_id } })).toBe(1);
+  });
+
+  test("terminal events wait for delayed cumulative history before freezing evidence", async () => {
+    await setupQualification();
+    await ingest(event("call.initiated", "cc-late-init", { to: NUMBER }, 1_000));
+    const capture = await prisma.callCaptureSession.findFirstOrThrow();
+    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "AI_ACTIVE", dtmf_decision: "affirmative", conversation_id: "conversation-1", capture_started_at: new Date(NOW.getTime() + 4_000) } });
+    await prisma.callConsentEvent.create({ data: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, event_key: "grant-late", action: "grant", artifact: "transcript", disclosure_ref: "approved:v1", evidence_ref: "witness:test", jurisdiction_basis: "commissioning:test", source_channel: "call", actor_user_id: "user_operator_mock", occurred_at: new Date(NOW.getTime() + 3_000) } });
+    await prisma.telnyxCallCommand.create({ data: { account_id: capture.account_id, capture_session_id: capture.id, assignment_id: capture.assignment_id!, command_type: "ai_assistant_start", generation: 1, command_id: "command-start-late", provider_resource: capture.provider_call_id, request_json: {}, status: "succeeded", provider_responded_at: new Date(NOW.getTime() + 4_000), provider_response_status: 200, provider_date_at: new Date(NOW.getTime() + 4_000), conversation_id: "conversation-1" } });
+    await ingest(event("call.conversation.ended", "cc-late-ended", { conversation_id: "conversation-1", client_state: state(capture.id) }, 7_000));
+    await ingest(event("call.hangup", "cc-late-hangup", { conversation_id: "conversation-1" }, 8_000));
+    expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } })).control_state).toBe("FINALIZING");
+    expect(await prisma.callReview.count()).toBe(0);
+    const payload = { conversation_id: "conversation-1", client_state: state(capture.id), message_history: [{ role: "assistant", content: "How can I help?" }, { role: "user", content: "I need a VPL evaluation." }] };
+    await ingest(event("call.ai_gather.message_history_updated", "cc-late-history", payload, 6_000));
+    expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } })).control_state).toBe("EVIDENCE_FROZEN");
+    expect(await prisma.callReview.count()).toBe(1);
+  });
+
+  test("a reconciled uncertain stop resumes terminal evidence finalization", async () => {
+    await setupQualification();
+    await ingest(event("call.initiated", "cc-stop-init", { to: NUMBER }, 1_000));
+    const capture = await prisma.callCaptureSession.findFirstOrThrow();
+    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "START_PENDING", dtmf_decision: "affirmative", conversation_id: "conversation-1" } });
+    await prisma.callConsentEvent.create({ data: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, event_key: "grant-stop", action: "grant", artifact: "transcript", disclosure_ref: "approved:v1", evidence_ref: "witness:test", jurisdiction_basis: "commissioning:test", source_channel: "call", actor_user_id: "user_operator_mock", occurred_at: new Date(NOW.getTime() + 3_000) } });
+    await prisma.telnyxCallCommand.create({ data: { account_id: capture.account_id, capture_session_id: capture.id, assignment_id: capture.assignment_id!, command_type: "ai_assistant_start", generation: 1, command_id: "command-start-stop", provider_resource: capture.provider_call_id, request_json: {}, status: "succeeded", provider_responded_at: new Date(NOW.getTime() + 4_000), provider_response_status: 200, provider_date_at: new Date(NOW.getTime() + 4_000), conversation_id: "conversation-1" } });
+    const payload = { conversation_id: "conversation-1", client_state: state(capture.id), message_history: [{ role: "assistant", content: "How can I help?" }, { role: "user", content: "I need a VPL evaluation." }] };
+    await ingest(event("call.ai_gather.message_history_updated", "cc-stop-history", payload, 5_000));
+    const route = await import("@/app/api/admin/call-capture/[id]/consent/route");
+    const request = () => new Request("https://example.test", { method: "POST", body: JSON.stringify({ action: "withdraw", disclosureRef: "approved:v1", evidenceRef: "witness:withdraw", jurisdictionBasis: "commissioning:test", eventKey: "00000000-0000-4000-8000-000000000003" }) });
+    sendCommand.mockResolvedValueOnce({ status: 0, providerDate: null, conversationId: null, ok: false, errorCode: "telnyx_response_uncertain" });
+    expect((await route.POST(request(), { params: Promise.resolve({ id: capture.id }) })).status).toBe(503);
+    const uncertain = await prisma.telnyxCallCommand.findFirstOrThrow({ where: { capture_session_id: capture.id, command_type: "ai_assistant_stop" } });
+    expect(uncertain.status).toBe("uncertain");
+    await ingest(event("call.conversation.ended", "cc-stop-ended", { conversation_id: "conversation-1", client_state: state(capture.id) }, 7_000));
+    await ingest(event("call.hangup", "cc-stop-hangup", { conversation_id: "conversation-1" }, 8_000));
+    expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } })).control_state).toBe("STOP_PENDING");
+    sendCommand.mockResolvedValueOnce({ status: 200, providerDate: new Date(NOW.getTime() + 9_000), conversationId: null, ok: true, errorCode: null });
+    expect((await route.POST(request(), { params: Promise.resolve({ id: capture.id }) })).status).toBe(200);
+    expect((await prisma.telnyxCallCommand.findUniqueOrThrow({ where: { id: uncertain.id } }))).toMatchObject({ status: "succeeded", command_id: uncertain.command_id });
+    expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } })).control_state).toBe("STOPPED");
+    expect(await prisma.callReview.count()).toBe(1);
   });
 
   test("stale generations and arbitrary transfer destinations fail closed", async () => {

@@ -48,7 +48,7 @@ export function parseCallControlEvent(rawBody: string): CallControlEvent | null 
     if (data.event_type === "call.gather.ended" && (typeof payload.status !== "string" || (payload.digits !== undefined && typeof payload.digits !== "string"))) return null;
     if (data.event_type === "call.ai_gather.message_history_updated") {
       if (!Array.isArray(payload.message_history) || !payload.message_history.every((item) => item && typeof item === "object" && typeof (item as Record<string, unknown>).role === "string" && typeof (item as Record<string, unknown>).content === "string")) return null;
-    }
+    } else if (payload.message_history !== undefined) return null;
     const text = (key: string) => typeof payload[key] === "string" ? payload[key] as string : undefined;
     return {
       data: {

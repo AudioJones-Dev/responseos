@@ -16,5 +16,6 @@ describe("Telnyx Call Control contract", () => {
     expect(parseCallControlEvent("CallStatus=completed&CallSid=abc")).toBeNull();
     expect(parseCallControlEvent(envelope("call.recording.saved", { call_control_id: "control", call_session_id: "session" }))).toBeNull();
     expect(parseCallControlEvent(envelope("call.ai_gather.message_history_updated", { call_control_id: "control", call_session_id: "session", message_history: [{ role: "user" }] }))).toBeNull();
+    expect(parseCallControlEvent(envelope("call.hangup", { call_control_id: "control", call_session_id: "session", message_history: [{ role: "user", content: "protected" }] }))).toBeNull();
   });
 });
