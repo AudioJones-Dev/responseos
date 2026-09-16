@@ -382,7 +382,7 @@ describe("FRL Call Control qualification", () => {
     await prisma.callConsentEvent.create({ data: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, event_key: "grant-hangup-first", action: "grant", artifact: "transcript", disclosure_ref: "approved:v1", evidence_ref: "witness:test", jurisdiction_basis: "commissioning:test", source_channel: "call", actor_user_id: "user_operator_mock", occurred_at: new Date(NOW.getTime() + 3_000) } });
     await prisma.telnyxCallCommand.create({ data: { account_id: capture.account_id, capture_session_id: capture.id, assignment_id: capture.assignment_id!, command_type: "ai_assistant_start", generation: 1, command_id: "command-start-hangup-first", provider_resource: capture.provider_call_id, request_json: {}, status: "succeeded", provider_responded_at: new Date(NOW.getTime() + 4_000), provider_response_status: 200, provider_date_at: new Date(NOW.getTime() + 4_000), conversation_id: "conversation-1" } });
     const hangup = event("call.hangup", "cc-hangup-first-hangup", { conversation_id: "conversation-1" }, 9_000);
-    await expect(ingest(hangup)).rejects.toThrow("awaiting_final_history_settlement");
+    await expect(ingest(hangup)).resolves.toEqual({ duplicate: false, captureId: capture.id });
     const protectedText = "Content after the actual conversation boundary";
     const history = event("call.ai_gather.message_history_updated", "cc-hangup-first-history", { conversation_id: "conversation-1", client_state: state(capture.id), message_history: [{ role: "user", content: protectedText }] }, 8_000);
     await expect(ingest(history)).rejects.toThrow("awaiting_conversation_boundary");
