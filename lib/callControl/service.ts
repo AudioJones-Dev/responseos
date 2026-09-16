@@ -197,44 +197,55 @@ async function recordTranscriptRevision(event: CallControlEvent, capture: NonNul
 
 async function freezeEvidence(captureId: string) {
   if (!db) return "not_ready" as const;
-  const capture = await db.callCaptureSession.findUnique({ where: { id: captureId } });
-  if (!capture?.conversation_id || !capture.capture_ended_at) return "not_ready" as const;
-  const [conversationEnded, callHangup, latestHistory] = await Promise.all([
-    db.webhookEvent.findFirst({ where: { account_id: capture.account_id, provider: "telnyx", provider_call_id: capture.provider_call_id, event_type: "call.conversation.ended", signature_valid: true }, select: { id: true, received_at: true } }),
-    db.webhookEvent.findFirst({ where: { account_id: capture.account_id, provider: "telnyx", provider_call_id: capture.provider_call_id, event_type: "call.hangup", signature_valid: true }, select: { id: true, received_at: true } }),
-    db.webhookEvent.findFirst({ where: { account_id: capture.account_id, provider: "telnyx", provider_call_id: capture.provider_call_id, event_type: "call.ai_gather.message_history_updated", signature_valid: true, process_status: "processed" }, orderBy: { received_at: "desc" }, select: { provider_event_id: true, received_at: true, raw_body: true } }),
-  ]);
-  if (!conversationEnded || !callHangup) return "not_ready" as const;
-  const withdrawal = await db.callConsentEvent.findFirst({ where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, action: "withdraw", artifact: "transcript" }, orderBy: { occurred_at: "desc" } });
-  const endBoundary = withdrawal?.occurred_at ?? capture.capture_ended_at;
-  const stop = withdrawal ? await db.telnyxCallCommand.findFirst({ where: { capture_session_id: capture.id, command_type: "ai_assistant_stop", generation: capture.generation, status: "succeeded" } }) : null;
-  if (withdrawal && !stop) return "pending" as const;
-  const transferState = ["TRANSFER_PENDING", "TRANSFERRED"].includes(capture.control_state);
-  const revision = await db.callTranscriptRevision.findFirst({ where: { capture_session_id: capture.id }, orderBy: { revision: "desc" } });
-  const latestHistoryEvent = latestHistory ? parseCallControlEvent(latestHistory.raw_body) : null;
-  const latestHistoryTranscript = latestHistoryEvent ? extractTelnyxTranscript(latestHistoryEvent.data.payload) : null;
-  const latestHistoryCovered = Boolean(revision && latestHistory && (revision.source_event_ids.includes(latestHistory.provider_event_id) || (latestHistoryTranscript?.text && hash(latestHistoryTranscript.text) === revision.source_hash)));
-  if (!revision || !latestHistory || !latestHistoryCovered) return "pending" as const;
-  const lastEvidenceReceipt = Math.max(conversationEnded.received_at.getTime(), callHangup.received_at.getTime(), latestHistory.received_at.getTime());
-  if (Date.now() < lastEvidenceReceipt + FINAL_HISTORY_SETTLEMENT_MS) return "pending" as const;
-  const frozen = revision.frozen_at ? revision : await db.callTranscriptRevision.update({ where: { id: revision.id }, data: { capture_ended_at: endBoundary, frozen_at: new Date() } });
+  const located = await db.callCaptureSession.findUnique({ where: { id: captureId }, select: { account_id: true, provider_call_id: true } });
+  if (!located) return "not_ready" as const;
+  const selected = await withCaptureLock(located.account_id, located.provider_call_id, async (client) => {
+    const capture = await client.callCaptureSession.findUnique({ where: { id: captureId } });
+    if (!capture?.conversation_id || !capture.capture_ended_at) return { status: "not_ready" as const };
+    const [conversationEnded, callHangup, latestHistory] = await Promise.all([
+      client.webhookEvent.findFirst({ where: { account_id: capture.account_id, provider: "telnyx", provider_call_id: capture.provider_call_id, event_type: "call.conversation.ended", signature_valid: true }, select: { id: true, received_at: true } }),
+      client.webhookEvent.findFirst({ where: { account_id: capture.account_id, provider: "telnyx", provider_call_id: capture.provider_call_id, event_type: "call.hangup", signature_valid: true }, select: { id: true, received_at: true } }),
+      client.webhookEvent.findFirst({ where: { account_id: capture.account_id, provider: "telnyx", provider_call_id: capture.provider_call_id, event_type: "call.ai_gather.message_history_updated", signature_valid: true, process_status: "processed" }, orderBy: { received_at: "desc" }, select: { provider_event_id: true, received_at: true, raw_body: true } }),
+    ]);
+    if (!conversationEnded || !callHangup) return { status: "not_ready" as const };
+    const withdrawal = await client.callConsentEvent.findFirst({ where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, action: "withdraw", artifact: "transcript" }, orderBy: { occurred_at: "desc" } });
+    const endBoundary = withdrawal?.occurred_at ?? capture.capture_ended_at;
+    const stop = withdrawal ? await client.telnyxCallCommand.findFirst({ where: { capture_session_id: capture.id, command_type: "ai_assistant_stop", generation: capture.generation, status: "succeeded" } }) : null;
+    if (withdrawal && !stop) return { status: "pending" as const };
+    const revision = await client.callTranscriptRevision.findFirst({ where: { capture_session_id: capture.id }, orderBy: { revision: "desc" } });
+    const latestHistoryEvent = latestHistory ? parseCallControlEvent(latestHistory.raw_body) : null;
+    const latestHistoryTranscript = latestHistoryEvent ? extractTelnyxTranscript(latestHistoryEvent.data.payload) : null;
+    const latestHistoryCovered = Boolean(revision && latestHistory && (revision.source_event_ids.includes(latestHistory.provider_event_id) || (latestHistoryTranscript?.text && hash(latestHistoryTranscript.text) === revision.source_hash)));
+    if (!revision || !latestHistory || !latestHistoryCovered) return { status: "pending" as const };
+    const lastEvidenceReceipt = Math.max(conversationEnded.received_at.getTime(), callHangup.received_at.getTime(), latestHistory.received_at.getTime());
+    if (Date.now() < lastEvidenceReceipt + FINAL_HISTORY_SETTLEMENT_MS) return { status: "pending" as const };
+    const frozen = revision.frozen_at ? revision : await client.callTranscriptRevision.update({ where: { id: revision.id }, data: { capture_ended_at: endBoundary, frozen_at: new Date() } });
+    const transferState = ["TRANSFER_PENDING", "TRANSFERRED"].includes(capture.control_state);
+    if (!transferState) await client.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: withdrawal ? "STOPPED" : "EVIDENCE_FROZEN" } });
+    return { status: "frozen" as const, frozen };
+  });
+  if (selected.status !== "frozen") return selected.status;
+  const frozen = selected.frozen;
   const analysis = await conservativePostCallAnalysis.analyze({ transcript: frozen.inline_text });
-  await db.callPostCallAnalysis.upsert({ where: { transcript_revision_id: frozen.id }, update: {}, create: {
-    account_id: frozen.account_id,
-    call_id: frozen.call_id,
-    transcript_revision_id: frozen.id,
-    transcript_hash: frozen.source_hash,
-    provider: analysis.provider,
-    model: analysis.model,
-    prompt_version: POST_CALL_ANALYSIS_PROMPT_VERSION,
-    schema_version: POST_CALL_ANALYSIS_SCHEMA_VERSION,
-    result_json: asJson(analysis.result),
-    completeness: analysis.completeness,
-    uncertainty_json: asJson(analysis.uncertainty),
-  } });
-  await queueCallReview(frozen.account_id, frozen.call_id, analysis.result);
-  if (!transferState) await db.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: withdrawal ? "STOPPED" : "EVIDENCE_FROZEN" } });
-  return "frozen" as const;
+  return withCaptureLock(located.account_id, located.provider_call_id, async (client) => {
+    const latest = await client.callTranscriptRevision.findFirst({ where: { capture_session_id: captureId }, orderBy: { revision: "desc" } });
+    if (latest?.id !== frozen.id || !latest.frozen_at) return "pending" as const;
+    await client.callPostCallAnalysis.upsert({ where: { transcript_revision_id: frozen.id }, update: {}, create: {
+      account_id: frozen.account_id,
+      call_id: frozen.call_id,
+      transcript_revision_id: frozen.id,
+      transcript_hash: frozen.source_hash,
+      provider: analysis.provider,
+      model: analysis.model,
+      prompt_version: POST_CALL_ANALYSIS_PROMPT_VERSION,
+      schema_version: POST_CALL_ANALYSIS_SCHEMA_VERSION,
+      result_json: asJson(analysis.result),
+      completeness: analysis.completeness,
+      uncertainty_json: asJson(analysis.uncertainty),
+    } });
+    await queueCallReview(frozen.account_id, frozen.call_id, analysis.result, client);
+    return "frozen" as const;
+  });
 }
 
 export async function ingestCallControlEvent(params: { event: CallControlEvent; rawBody: string; signature: string; timestamp?: string }) {

@@ -1,6 +1,7 @@
 import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
 import { configureSupervisedTenant } from "@/lib/agentExecution/supervisedTenant";
 import { startSupervisedQualification } from "@/lib/agentExecution/supervisedQualification";
+import { conservativePostCallAnalysis } from "@/lib/callControl/analysis";
 import { ingestCallControlEvent, requestQualifiedTransfer } from "@/lib/callControl/service";
 import { withCaptureLock } from "@/lib/callReview/consent";
 import type { CallControlEvent } from "@/lib/providers/telnyx/callControl";
@@ -296,6 +297,56 @@ describe("FRL Call Control qualification", () => {
     expect(revisions[1]).toMatchObject({ revision: 2, frozen_at: expect.any(Date) });
     expect(revisions[1].inline_text).toContain("I need a VPL evaluation.");
     expect(await prisma.callReview.count()).toBe(2);
+  });
+
+  test("late history cannot race post-call analysis into a stale review", async () => {
+    await setupQualification();
+    await ingest(event("call.initiated", "cc-analysis-race-init", { to: NUMBER }, 1_000));
+    const capture = await prisma.callCaptureSession.findFirstOrThrow();
+    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "AI_ACTIVE", dtmf_decision: "affirmative", conversation_id: "conversation-1", capture_started_at: new Date(NOW.getTime() + 4_000) } });
+    await prisma.callConsentEvent.create({ data: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, event_key: "grant-analysis-race", action: "grant", artifact: "transcript", disclosure_ref: "approved:v1", evidence_ref: "witness:test", jurisdiction_basis: "commissioning:test", source_channel: "call", actor_user_id: "user_operator_mock", occurred_at: new Date(NOW.getTime() + 3_000) } });
+    await prisma.telnyxCallCommand.create({ data: { account_id: capture.account_id, capture_session_id: capture.id, assignment_id: capture.assignment_id!, command_type: "ai_assistant_start", generation: 1, command_id: "command-start-analysis-race", provider_resource: capture.provider_call_id, request_json: {}, status: "succeeded", provider_responded_at: new Date(NOW.getTime() + 4_000), provider_response_status: 200, provider_date_at: new Date(NOW.getTime() + 4_000), conversation_id: "conversation-1" } });
+    const initial = { conversation_id: "conversation-1", client_state: state(capture.id), message_history: [{ role: "assistant", content: "How can I help?" }] };
+    await ingest(event("call.ai_gather.message_history_updated", "cc-analysis-race-history-1", initial, 5_000));
+    await ingest(event("call.conversation.ended", "cc-analysis-race-ended", { conversation_id: "conversation-1", client_state: state(capture.id) }, 7_000));
+    const hangup = event("call.hangup", "cc-analysis-race-hangup", { conversation_id: "conversation-1" }, 8_000);
+    await expect(ingest(hangup)).rejects.toThrow("awaiting_final_history_settlement");
+    await matureTerminalEvidence(capture.provider_call_id);
+
+    let releaseAnalysis!: () => void;
+    let analysisStarted!: () => void;
+    const release = new Promise<void>((resolve) => { releaseAnalysis = resolve; });
+    const started = new Promise<void>((resolve) => { analysisStarted = resolve; });
+    const originalAnalyze = conservativePostCallAnalysis.analyze.bind(conservativePostCallAnalysis);
+    const analysisSpy = vi.spyOn(conservativePostCallAnalysis, "analyze")
+      .mockImplementationOnce(async (input) => {
+        analysisStarted();
+        await release;
+        return originalAnalyze(input);
+      })
+      .mockImplementation(originalAnalyze);
+
+    try {
+      const staleFinalization = ingest(hangup);
+      await started;
+      const late = event("call.ai_gather.message_history_updated", "cc-analysis-race-history-2", { ...initial, message_history: [...initial.message_history, { role: "user", content: "I need a VPL evaluation." }] }, 6_000);
+      await expect(ingest(late)).rejects.toThrow("awaiting_final_history_settlement");
+      releaseAnalysis();
+      await expect(staleFinalization).rejects.toThrow("awaiting_final_history_settlement");
+      expect(await prisma.callTranscriptRevision.count({ where: { capture_session_id: capture.id } })).toBe(2);
+      expect(await prisma.callReview.count()).toBe(0);
+
+      await matureTerminalEvidence(capture.provider_call_id);
+      await ingest(late);
+      const latest = await prisma.callTranscriptRevision.findFirstOrThrow({ where: { capture_session_id: capture.id }, orderBy: { revision: "desc" } });
+      expect(latest).toMatchObject({ revision: 2, frozen_at: expect.any(Date) });
+      expect(latest.inline_text).toContain("I need a VPL evaluation.");
+      expect(await prisma.callPostCallAnalysis.findUnique({ where: { transcript_revision_id: latest.id } })).not.toBeNull();
+      expect(await prisma.callReview.count()).toBe(1);
+    } finally {
+      releaseAnalysis();
+      analysisSpy.mockRestore();
+    }
   });
 
   test("post-boundary history is retained as metadata only and cannot supersede frozen evidence", async () => {
