@@ -53,10 +53,8 @@ async function persistCommandIntent(params: {
   request: Record<string, unknown>;
 }) {
   if (!db) throw new Error("database_unavailable");
-  return db.telnyxCallCommand.upsert({
-    where: { capture_session_id_command_type_generation: { capture_session_id: params.captureId, command_type: params.commandType, generation: params.generation } },
-    update: {},
-    create: {
+  await db.telnyxCallCommand.createMany({
+    data: [{
       account_id: params.accountId,
       capture_session_id: params.captureId,
       assignment_id: params.assignmentId,
@@ -65,8 +63,10 @@ async function persistCommandIntent(params: {
       command_id: randomUUID(),
       provider_resource: params.providerResource,
       request_json: asJson(params.request),
-    },
+    }],
+    skipDuplicates: true,
   });
+  return db.telnyxCallCommand.findUniqueOrThrow({ where: { capture_session_id_command_type_generation: { capture_session_id: params.captureId, command_type: params.commandType, generation: params.generation } } });
 }
 
 async function executeCommand(params: {
