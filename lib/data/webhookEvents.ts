@@ -112,14 +112,6 @@ export async function recordWebhookEvent(entry: {
   const dedupe_hash = computeDedupeHash(entry.provider, entry.provider_event_id);
 
   try {
-    const existing = await db.webhookEvent.findUnique({
-      where: { dedupe_hash },
-      select: { id: true },
-    });
-    if (existing) {
-      return ok({ id: existing.id, process_status: "duplicate" });
-    }
-
     const created = await db.webhookEvent.create({
       data: {
         account_id: entry.account_id ?? null,
@@ -147,6 +139,9 @@ export async function recordWebhookEvent(entry: {
       e instanceof Prisma.PrismaClientKnownRequestError &&
       e.code === "P2002"
     ) {
+      // The unique constraint is the concurrency authority. New deliveries use
+      // one write; only an actual replay pays for the lookup needed to return
+      // the existing ledger identity.
       const existing = await db.webhookEvent.findUnique({
         where: { dedupe_hash },
         select: { id: true },

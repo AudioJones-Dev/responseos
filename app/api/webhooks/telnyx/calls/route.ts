@@ -63,6 +63,13 @@ export async function POST(req: Request) {
     });
   }
 
+  if (!req.headers.get("content-type")?.toLowerCase().startsWith("application/json")) {
+    return errorResponse(415, {
+      code: "unsupported_telnyx_event_content_type",
+      message: "This endpoint accepts Telnyx JSON AI events only.",
+    });
+  }
+
   const event = parseTelnyxWebhook(rawBody);
   if (!event) {
     return errorResponse(422, {

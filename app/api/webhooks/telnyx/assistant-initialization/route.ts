@@ -2,7 +2,7 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
 import { metadataOnly } from "@/lib/callReview/consent";
 import { BusinessMemorySnapshotSchema } from "@/lib/prospectBootstrap/contracts";
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { recordWebhookEvent, setWebhookProcessStatus } from "@/lib/data/webhookEvents";
 import { errorResponse } from "@/lib/providers/webhook-helpers";
 import {
@@ -57,6 +57,13 @@ export async function POST(req: Request) {
     return errorResponse(401, {
       code: `telnyx_signature_${verified.reason}`,
       message: "Telnyx webhook signature is invalid or stale.",
+    });
+  }
+
+  if (!req.headers.get("content-type")?.toLowerCase().startsWith("application/json")) {
+    return errorResponse(415, {
+      code: "unsupported_telnyx_initialization_content_type",
+      message: "Telnyx assistant initialization requires application/json.",
     });
   }
 
@@ -124,27 +131,11 @@ export async function POST(req: Request) {
   // identifies it: without a call id there is no capture to pin the approved
   // snapshot to, and the response below falls back to the unavailable context.
   // Recording that outcome as processed would contradict what the caller got.
-  const supervisedAnswered = supervisedReady && providerCallId !== null;
-  await setWebhookProcessStatus({
-    id: ledger.data.id,
-    process_status: supervisedAnswered || prospect ? "processed" : "rejected",
-    process_error: supervisedAnswered || prospect
-      ? undefined
-      : supervised
-        ? supervisedReady
-          ? "missing_provider_call_id"
-          : supervised.readiness.ready
-          ? "supervised_tenant_not_authorized"
-          : "supervised_configuration_incomplete"
-        : supervisedOwned
-          ? occurredAt ? "supervised_runtime_unresolved" : "missing_occurred_at"
-          : target
-          ? "inactive_destination"
-          : "missing_destination",
-  });
-
   if (supervisedReady && supervised) {
-    if (!providerCallId || !db) return NextResponse.json({ dynamic_variables: SUPERVISED_UNAVAILABLE_CONTEXT });
+    if (!providerCallId || !db) {
+      await setWebhookProcessStatus({ id: ledger.data.id, process_status: "rejected", process_error: "missing_provider_call_id" });
+      return NextResponse.json({ dynamic_variables: SUPERVISED_UNAVAILABLE_CONTEXT });
+    }
     const capture = await db.callCaptureSession.upsert({
       where: { account_id_provider_call_id: { account_id: supervised.accountId, provider_call_id: providerCallId } },
       create: {
@@ -168,6 +159,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ dynamic_variables: SUPERVISED_UNAVAILABLE_CONTEXT });
     }
 
+    after(() => setWebhookProcessStatus({ id: ledger.data.id, process_status: "processed" }));
+
     return NextResponse.json({
       dynamic_variables: buildSupervisedAgentContext({
         businessName: supervised.accountName,
@@ -186,9 +179,29 @@ export async function POST(req: Request) {
   }
 
   if (supervisedOwned) {
+    await setWebhookProcessStatus({
+      id: ledger.data.id,
+      process_status: "rejected",
+      process_error: supervised
+        ? supervised.readiness.ready
+          ? "supervised_tenant_not_authorized"
+          : "supervised_configuration_incomplete"
+        : occurredAt ? "supervised_runtime_unresolved" : "missing_occurred_at",
+    });
     return NextResponse.json({
       dynamic_variables: SUPERVISED_UNAVAILABLE_CONTEXT,
       conversation: { metadata: { execution_mode: "SUPERVISED_UNAVAILABLE" } },
+    });
+  }
+
+
+  if (prospect) {
+    after(() => setWebhookProcessStatus({ id: ledger.data.id, process_status: "processed" }));
+  } else {
+    await setWebhookProcessStatus({
+      id: ledger.data.id,
+      process_status: "rejected",
+      process_error: target ? "inactive_destination" : "missing_destination",
     });
   }
 

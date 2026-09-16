@@ -1250,7 +1250,7 @@
       "progress": 84,
       "priority": "High",
       "blocked": true,
-      "blockedReason": "CRM recovery and v4 semantics are frozen. A commissioning qualification-assignment repair is in validation/review so real consent evidence can be collected before final attestation. Deployment, provider routing, calls, attestation and rehearsal remain separate gates."
+      "blockedReason": "CRM recovery, v4 semantics, and qualification isolation are frozen. The first live qualification call preserved effect isolation but failed consent evidence: the no-code Telnyx/TeXML lane supplied no trustworthy post-consent start or withdrawal-stop boundary. A provider-mode/capture-control decision is required before Scenario A can be retried."
     }
   ],
   "liveIssues": [

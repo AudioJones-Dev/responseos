@@ -4,12 +4,18 @@ import { PROSPECT_BOOTSTRAP_SCHEMA_VERSION } from "@/lib/prospectBootstrap/contr
 import { SUPERVISED_QUALIFICATION_POLICY } from "@/lib/agentExecution/policy";
 
 const mocks = vi.hoisted(() => ({
+  after: vi.fn((callback: () => unknown) => callback()),
   recordWebhookEvent: vi.fn(),
   setWebhookProcessStatus: vi.fn(),
   resolveActiveProspectAgentContext: vi.fn(),
   resolveSupervisedTenantForNumber: vi.fn(),
   findSupervisedNumberOwner: vi.fn(),
   capture: vi.fn(),
+}));
+
+vi.mock("next/server", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/server")>()),
+  after: mocks.after,
 }));
 
 vi.mock("@/lib/data/webhookEvents", () => ({
@@ -55,6 +61,7 @@ describe("signed Telnyx assistant initialization", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    mocks.after.mockImplementation((callback: () => unknown) => callback());
     mocks.findSupervisedNumberOwner.mockResolvedValue(null);
     process.env = { ...originalEnv };
     process.env.TELNYX_PUBLIC_KEY = publicKey;
@@ -98,6 +105,19 @@ describe("signed Telnyx assistant initialization", () => {
     const { POST } = await import("@/app/api/webhooks/telnyx/assistant-initialization/route");
     expect((await POST(signedRequest("+13055550101", true))).status).toBe(401);
     expect(mocks.resolveActiveProspectAgentContext).not.toHaveBeenCalled();
+    expect(mocks.recordWebhookEvent).not.toHaveBeenCalled();
+  });
+
+  test("rejects a signed non-JSON initialization as a different Telnyx contract", async () => {
+    const request = signedRequest();
+    const response = await (await import("@/app/api/webhooks/telnyx/assistant-initialization/route")).POST(
+      new Request(request.url, {
+        method: "POST",
+        headers: { ...Object.fromEntries(request.headers), "content-type": "application/x-www-form-urlencoded" },
+        body: await request.text(),
+      }),
+    );
+    expect(response.status).toBe(415);
     expect(mocks.recordWebhookEvent).not.toHaveBeenCalled();
   });
 

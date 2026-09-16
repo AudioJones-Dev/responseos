@@ -129,6 +129,19 @@ describe("supervised Telnyx call lane", () => {
   });
   afterEach(() => { process.env = { ...originalEnv }; });
 
+  test("rejects signed TeXML form callbacks instead of treating them as JSON AI evidence", async () => {
+    const rawBody = "CallStatus=completed&CallSid=v3%3Atest&To=%2B15555550188";
+    const timestamp = String(Math.floor(Date.now() / 1000));
+    const signature = sign(null, Buffer.from(`${timestamp}|${rawBody}`), keys.privateKey).toString("base64");
+    const response = await (await import("@/app/api/webhooks/telnyx/calls/route")).POST(new Request(
+      "https://responseos.example/api/webhooks/telnyx/calls",
+      { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded", "telnyx-timestamp": timestamp, "telnyx-signature-ed25519": signature }, body: rawBody },
+    ));
+    expect(response.status).toBe(415);
+    expect(mocks.recordWebhookEvent).not.toHaveBeenCalled();
+    expect(mocks.normalizeTelnyxEvent).not.toHaveBeenCalled();
+  });
+
   test("retries a signed redelivery after its missing call correlation becomes available", async () => {
     const request = signedEvent({ call_control_id: "call-correlation", transcript: "private call" });
     const { POST } = await import("@/app/api/webhooks/telnyx/calls/route");
