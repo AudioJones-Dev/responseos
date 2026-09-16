@@ -1,4 +1,5 @@
 import { generateKeyPairSync, sign } from "node:crypto";
+import type { Prisma } from "@prisma/client";
 import { afterAll, beforeEach, describe, expect, test } from "vitest";
 import { canonicalProviderAttestationPayload } from "@/lib/prospectBootstrap/attestation";
 import {
@@ -12,7 +13,6 @@ import {
 } from "@/lib/agentExecution/supervisedQualification";
 import { resolveSupervisedTenantForNumber, supervisedExecutionAuthorized } from "@/lib/agentExecution/supervisedRuntime";
 import { resolveTelnyxEventAssignment } from "@/lib/prospectBootstrap/service";
-import { recordWebhookEvent } from "@/lib/data/webhookEvents";
 import { disconnectTestDb, prisma, resetAndSeedTestDb, setDevSession } from "./setup";
 
 const GATE = "v0.3-live-communications";
@@ -234,17 +234,18 @@ describe("supervised tenant configuration", () => {
     expect(started.ok).toBe(true);
     if (!started.ok) return;
     const anchoredAt = new Date(now.getTime() + 10_000);
-    expect((await recordWebhookEvent({
-      account_id: started.data.accountId,
-      provider: "telnyx",
-      provider_event_id: "qualification-initialization",
-      event_type: "assistant.initialization",
-      raw_body: JSON.stringify({ data: { occurred_at: anchoredAt.toISOString() } }),
-      signature_valid: true,
-      provider_call_id: "qualification-call",
-      provider_call_ids: ["qualification-call"],
-      agent_target: NUMBER,
-    })).ok).toBe(true);
+    const snapshot = await prisma.businessMemorySnapshot.findFirstOrThrow({
+      where: { account_id: started.data.accountId, status: "approved" },
+    });
+    await prisma.callCaptureSession.create({
+      data: {
+        account_id: started.data.accountId,
+        provider_call_id: "qualification-call",
+        assignment_id: started.data.assignmentId,
+        snapshot_id: snapshot.id,
+        snapshot_json: snapshot.memory_json as Prisma.InputJsonValue,
+      },
+    });
     const call = await prisma.call.create({
       data: {
         account_id: started.data.accountId,

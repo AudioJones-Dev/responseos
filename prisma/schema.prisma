@@ -319,6 +319,7 @@ model CallCaptureSession {
   id               String   @id @default(cuid())
   account_id       String
   provider_call_id String
+  assignment_id    String?
   snapshot_id      String
   snapshot_json    Json
   created_at       DateTime @default(now())

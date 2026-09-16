@@ -221,7 +221,12 @@ describe("signed Telnyx assistant initialization", () => {
       conversation: { metadata: { responseos_assignment_id: "qualification-assignment", execution_mode: "SUPERVISED_QUALIFICATION" } },
     });
     expect(mocks.capture).toHaveBeenCalledWith(expect.objectContaining({
-      create: expect.objectContaining({ account_id: "supervised-account", provider_call_id: "qualification-call", snapshot_id: "snapshot-1" }),
+      create: expect.objectContaining({
+        account_id: "supervised-account",
+        provider_call_id: "qualification-call",
+        assignment_id: "qualification-assignment",
+        snapshot_id: "snapshot-1",
+      }),
     }));
   });
 

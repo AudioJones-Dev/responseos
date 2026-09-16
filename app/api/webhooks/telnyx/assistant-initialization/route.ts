@@ -147,7 +147,14 @@ export async function POST(req: Request) {
     if (!providerCallId || !db) return NextResponse.json({ dynamic_variables: SUPERVISED_UNAVAILABLE_CONTEXT });
     const capture = await db.callCaptureSession.upsert({
       where: { account_id_provider_call_id: { account_id: supervised.accountId, provider_call_id: providerCallId } },
-      create: { account_id: supervised.accountId, provider_call_id: providerCallId, snapshot_id: supervised.snapshotId, snapshot_json: supervised.memory as Prisma.InputJsonValue }, update: {},
+      create: {
+        account_id: supervised.accountId,
+        provider_call_id: providerCallId,
+        assignment_id: supervised.assignmentId,
+        snapshot_id: supervised.snapshotId,
+        snapshot_json: supervised.memory as Prisma.InputJsonValue,
+      },
+      update: {},
     });
 
     // The pinned snapshot is whatever the first delivery stored, so a schema

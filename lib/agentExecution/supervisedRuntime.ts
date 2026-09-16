@@ -228,6 +228,29 @@ export async function supervisedCallWasQualification(accountId: string, callId: 
     select: { id: true },
   });
   if (!number) return false;
+  if (call.provider_call_id) {
+    const capture = await db.callCaptureSession.findUnique({
+      where: {
+        account_id_provider_call_id: {
+          account_id: accountId,
+          provider_call_id: call.provider_call_id,
+        },
+      },
+      select: { assignment_id: true },
+    });
+    if (capture?.assignment_id) {
+      return Boolean(await db.telephonyNumberAssignment.findFirst({
+        where: {
+          id: capture.assignment_id,
+          account_id: accountId,
+          telephony_number_id: number.id,
+          bootstrap_id: null,
+          status: "qualification",
+        },
+        select: { id: true },
+      }));
+    }
+  }
   const correlation = call.provider_call_id
     ? await findCallCorrelation({ provider: "telnyx", providerCallIds: [call.provider_call_id] })
     : null;
