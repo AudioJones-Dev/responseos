@@ -2,6 +2,7 @@ import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
 import { configureSupervisedTenant } from "@/lib/agentExecution/supervisedTenant";
 import { startSupervisedQualification } from "@/lib/agentExecution/supervisedQualification";
 import { ingestCallControlEvent, requestQualifiedTransfer } from "@/lib/callControl/service";
+import { withCaptureLock } from "@/lib/callReview/consent";
 import type { CallControlEvent } from "@/lib/providers/telnyx/callControl";
 import { disconnectTestDb, prisma, resetAndSeedTestDb, setDevSession } from "./setup";
 
@@ -129,6 +130,35 @@ describe("FRL Call Control qualification", () => {
     await ingest(event("call.ai_gather.message_history_updated", "cc-history-after", { ...payload, message_history: [...payload.message_history, { role: "user", content: "Protected after withdrawal" }] }, 7_000));
     expect(await prisma.callTranscriptRevision.count()).toBe(1);
     expect((await prisma.webhookEvent.findUniqueOrThrow({ where: { provider_provider_event_id: { provider: "telnyx", provider_event_id: "cc-history-after" } } })).process_status).toBe("rejected");
+  });
+
+  test("a concurrent withdrawal wins the capture lock before protected history is persisted", async () => {
+    await setupQualification();
+    await ingest(event("call.initiated", "cc-race-init", { to: NUMBER }, 1_000));
+    const capture = await prisma.callCaptureSession.findFirstOrThrow();
+    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "AI_ACTIVE", dtmf_decision: "affirmative", conversation_id: "conversation-1", capture_started_at: new Date(NOW.getTime() + 4_000) } });
+    await prisma.callConsentEvent.create({ data: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, event_key: "grant-race", action: "grant", artifact: "transcript", disclosure_ref: "approved:v1", evidence_ref: "witness:test", jurisdiction_basis: "commissioning:test", source_channel: "call", actor_user_id: "user_operator_mock", occurred_at: new Date(NOW.getTime() + 3_000) } });
+    await prisma.telnyxCallCommand.create({ data: { account_id: capture.account_id, capture_session_id: capture.id, assignment_id: capture.assignment_id!, command_type: "ai_assistant_start", generation: 1, command_id: "command-start-race", provider_resource: capture.provider_call_id, request_json: {}, status: "succeeded", provider_responded_at: new Date(NOW.getTime() + 4_000), provider_response_status: 200, provider_date_at: new Date(NOW.getTime() + 4_000), conversation_id: "conversation-1" } });
+    let release!: () => void;
+    let locked!: () => void;
+    const releaseGate = new Promise<void>((resolve) => { release = resolve; });
+    const lockAcquired = new Promise<void>((resolve) => { locked = resolve; });
+    const withdrawal = withCaptureLock(capture.account_id, capture.provider_call_id, async (client) => {
+      await client.callConsentEvent.create({ data: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, event_key: "withdraw-race", action: "withdraw", artifact: "transcript", disclosure_ref: "approved:v1", evidence_ref: "witness:withdraw", jurisdiction_basis: "commissioning:test", source_channel: "call", actor_user_id: "user_operator_mock", occurred_at: new Date(NOW.getTime() + 5_000) } });
+      await client.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "STOP_PENDING", content_admission_closed_at: new Date(NOW.getTime() + 5_000) } });
+      locked();
+      await releaseGate;
+    });
+    await lockAcquired;
+    const protectedText = "Protected content must remain metadata-only";
+    const history = ingest(event("call.ai_gather.message_history_updated", "cc-history-race", { conversation_id: "conversation-1", client_state: state(capture.id), message_history: [{ role: "user", content: protectedText }] }, 6_000));
+    release();
+    await withdrawal;
+    await history;
+    const ledger = await prisma.webhookEvent.findUniqueOrThrow({ where: { provider_provider_event_id: { provider: "telnyx", provider_event_id: "cc-history-race" } } });
+    expect(ledger.process_status).toBe("rejected");
+    expect(ledger.raw_body).not.toContain(protectedText);
+    expect(await prisma.callTranscriptRevision.count({ where: { capture_session_id: capture.id } })).toBe(0);
   });
 
   test("signed conversation end freezes evidence and creates a provider-independent review result", async () => {

@@ -40,7 +40,7 @@ CREATE TABLE "TelnyxCallCommand" (
   CONSTRAINT "TelnyxCallCommand_pkey" PRIMARY KEY ("id")
 );
 CREATE UNIQUE INDEX "TelnyxCallCommand_command_id_key" ON "TelnyxCallCommand"("command_id");
-CREATE UNIQUE INDEX "TelnyxCallCommand_capture_session_id_command_type_generation_key" ON "TelnyxCallCommand"("capture_session_id", "command_type", "generation");
+CREATE UNIQUE INDEX "TelnyxCallCommand_capture_type_generation_key" ON "TelnyxCallCommand"("capture_session_id", "command_type", "generation");
 CREATE INDEX "TelnyxCallCommand_account_id_capture_session_id_idx" ON "TelnyxCallCommand"("account_id", "capture_session_id");
 CREATE INDEX "TelnyxCallCommand_status_intended_at_idx" ON "TelnyxCallCommand"("status", "intended_at");
 
@@ -62,8 +62,8 @@ CREATE TABLE "CallTranscriptRevision" (
   "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT "CallTranscriptRevision_pkey" PRIMARY KEY ("id")
 );
-CREATE UNIQUE INDEX "CallTranscriptRevision_account_id_call_id_revision_key" ON "CallTranscriptRevision"("account_id", "call_id", "revision");
-CREATE UNIQUE INDEX "CallTranscriptRevision_capture_session_id_source_hash_key" ON "CallTranscriptRevision"("capture_session_id", "source_hash");
+CREATE UNIQUE INDEX "CallTranscriptRevision_account_call_revision_key" ON "CallTranscriptRevision"("account_id", "call_id", "revision");
+CREATE UNIQUE INDEX "CallTranscriptRevision_capture_hash_key" ON "CallTranscriptRevision"("capture_session_id", "source_hash");
 CREATE INDEX "CallTranscriptRevision_account_id_call_id_idx" ON "CallTranscriptRevision"("account_id", "call_id");
 
 CREATE TABLE "CallPostCallAnalysis" (

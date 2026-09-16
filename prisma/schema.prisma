@@ -740,7 +740,7 @@ model TelnyxCallCommand {
   created_at               DateTime                @default(now())
   updated_at               DateTime                @updatedAt
 
-  @@unique([capture_session_id, command_type, generation])
+  @@unique([capture_session_id, command_type, generation], map: "TelnyxCallCommand_capture_type_generation_key")
   @@index([account_id, capture_session_id])
   @@index([status, intended_at])
 }
@@ -762,8 +762,8 @@ model CallTranscriptRevision {
   frozen_at          DateTime?
   created_at         DateTime  @default(now())
 
-  @@unique([account_id, call_id, revision])
-  @@unique([capture_session_id, source_hash])
+  @@unique([account_id, call_id, revision], map: "CallTranscriptRevision_account_call_revision_key")
+  @@unique([capture_session_id, source_hash], map: "CallTranscriptRevision_capture_hash_key")
   @@index([account_id, call_id])
 }
 
