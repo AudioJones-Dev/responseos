@@ -47,3 +47,29 @@ test.each([
   expect(mocks.start).not.toHaveBeenCalled();
   expect(mocks.end).not.toHaveBeenCalled();
 });
+
+test.each([
+  ["number_assignment_conflict", 409],
+  ["qualification_assignment_conflict", 409],
+  ["qualification_assignment_not_found", 404],
+] as const)("maps %s to HTTP %i", async (code, status) => {
+  mocks.start.mockResolvedValue({ ok: false, error: { code, message: code } });
+  mocks.end.mockResolvedValue({ ok: false, error: { code, message: code } });
+  const start = await POST(new Request("https://example.test/qualification", {
+    method: "POST",
+    body: JSON.stringify({
+      action: "start",
+      accountSlug: "frl",
+      providerNumberId: "number-1",
+      e164: "+19548720843",
+      providerAssistantId: "assistant-1",
+      approvalRecordRef: "owner:packet-3",
+    }),
+  }));
+  const end = await POST(new Request("https://example.test/qualification", {
+    method: "POST",
+    body: JSON.stringify({ action: "end", accountSlug: "frl", e164: "+19548720843", reason: "Done." }),
+  }));
+  expect(start.status).toBe(status);
+  expect(end.status).toBe(status);
+});

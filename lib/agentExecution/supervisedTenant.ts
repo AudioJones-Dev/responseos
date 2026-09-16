@@ -34,6 +34,10 @@ import { buildSupervisedAgentContext } from "./supervisedContext";
 const DAY_MS = 24 * 60 * 60 * 1000;
 export const SUPERVISED_AGENT_PROFILE_SLUG = "supervised-receptionist";
 
+function supervisedTenantError(code: string) {
+  return Object.assign(new Error(code), { code });
+}
+
 export type SupervisedExecutionMode = Exclude<ExecutionMode, "PROSPECT_DEMO">;
 
 export interface SupervisedTenantNumberInput {
@@ -286,7 +290,7 @@ export async function configureSupervisedTenant(
 
       if (await tx.telephonyNumberAssignment.findFirst({
         where: { account_id: account.id, bootstrap_id: null, status: "qualification", unassigned_at: null },
-      })) throw new Error("qualification_assignment_requires_end");
+      })) throw supervisedTenantError("qualification_assignment_requires_end");
 
       if (input.activate !== true && await tx.agentProfile.findFirst({
         where: { account_id: account.id, type: "supervised_receptionist", enabled: true },

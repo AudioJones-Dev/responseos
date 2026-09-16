@@ -88,14 +88,23 @@ export async function resolveSupervisedTenantForNumber(
 
   const [account, profile, snapshot] = await Promise.all([
     db.account.findUnique({ where: { id: assignment.account_id } }),
-    db.agentProfile.findFirst({
-      where: {
-        account_id: assignment.account_id,
-        type: "supervised_receptionist",
-        ...(assignment.status === "qualification" ? {} : { enabled: true }),
-      },
-      orderBy: { created_at: "asc" },
-    }),
+    assignment.status === "qualification"
+      ? db.agentProfile.findUnique({
+          where: {
+            account_id_slug: {
+              account_id: assignment.account_id,
+              slug: "supervised-receptionist",
+            },
+          },
+        })
+      : db.agentProfile.findFirst({
+          where: {
+            account_id: assignment.account_id,
+            type: "supervised_receptionist",
+            enabled: true,
+          },
+          orderBy: { created_at: "asc" },
+        }),
     db.businessMemorySnapshot.findFirst({
       where: { account_id: assignment.account_id, bootstrap_id: null, status: "approved" },
       orderBy: { version: "desc" },

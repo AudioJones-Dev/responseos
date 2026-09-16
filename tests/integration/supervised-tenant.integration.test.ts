@@ -148,6 +148,20 @@ describe("supervised tenant configuration", () => {
   test("opens an effects-disabled qualification assignment without attestation or activation", async () => {
     delete process.env.RESPONSEOS_AUTHORIZED_EXECUTION_GATES;
     expect((await configureSupervisedTenant(input(), now)).ok).toBe(true);
+    const configuredAccount = await prisma.account.findUniqueOrThrow({ where: { slug: "example-supervised" } });
+    await prisma.agentProfile.create({
+      data: {
+        account_id: configuredAccount.id,
+        name: "Legacy receptionist",
+        slug: "legacy-supervised-receptionist",
+        type: "supervised_receptionist",
+        enabled: false,
+        is_default: false,
+        system_policy_json: { executionMode: "PROSPECT_DEMO" },
+        metadata_json: {},
+        created_at: new Date(now.getTime() - 60_000),
+      },
+    });
     const started = await startSupervisedQualification({
       accountSlug: "example-supervised",
       providerNumberId: PROVIDER_NUMBER_ID,
@@ -170,6 +184,7 @@ describe("supervised tenant configuration", () => {
       providerEvidenceAuthorized: true,
       contextPolicy: { executionMode: "SUPERVISED_QUALIFICATION", crmSyncEnabled: false, recordingEnabled: false },
       readiness: { ready: true },
+      agentName: "Sam",
     });
     expect(runtime?.resolved).toMatchObject({ mode: "PROSPECT_DEMO", degraded: "gate_not_authorized" });
     expect(await supervisedExecutionAuthorized(started.data.accountId)).toBe(false);
