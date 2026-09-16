@@ -12,6 +12,7 @@ import {
 } from "@/lib/agentExecution/supervisedQualification";
 import { resolveSupervisedTenantForNumber, supervisedExecutionAuthorized } from "@/lib/agentExecution/supervisedRuntime";
 import { resolveTelnyxEventAssignment } from "@/lib/prospectBootstrap/service";
+import { recordWebhookEvent } from "@/lib/data/webhookEvents";
 import { disconnectTestDb, prisma, resetAndSeedTestDb, setDevSession } from "./setup";
 
 const GATE = "v0.3-live-communications";
@@ -232,6 +233,18 @@ describe("supervised tenant configuration", () => {
     }, now);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
+    const anchoredAt = new Date(now.getTime() + 10_000);
+    expect((await recordWebhookEvent({
+      account_id: started.data.accountId,
+      provider: "telnyx",
+      provider_event_id: "qualification-initialization",
+      event_type: "assistant.initialization",
+      raw_body: JSON.stringify({ data: { occurred_at: anchoredAt.toISOString() } }),
+      signature_valid: true,
+      provider_call_id: "qualification-call",
+      provider_call_ids: ["qualification-call"],
+      agent_target: NUMBER,
+    })).ok).toBe(true);
     const call = await prisma.call.create({
       data: {
         account_id: started.data.accountId,
@@ -241,7 +254,9 @@ describe("supervised tenant configuration", () => {
         status: "completed",
         from_number: "+15555550199",
         to_number: NUMBER,
-        started_at: new Date(now.getTime() + 10_000),
+        // Model a finalized event with no provider start_time: normalization
+        // falls back to the later event time, after qualification has ended.
+        started_at: new Date(now.getTime() + 90_000),
         review_required: true,
       },
     });
@@ -251,6 +266,10 @@ describe("supervised tenant configuration", () => {
       number: { providerNumberId: PROVIDER_NUMBER_ID, e164: NUMBER, providerAttestation: attestation() },
     }), new Date(now.getTime() + 30_000));
     expect(activated.ok).toBe(true);
+    expect(await resolveSupervisedTenantForNumber(NUMBER, anchoredAt)).toMatchObject({
+      assignmentStatus: "qualification",
+      providerEvidenceAuthorized: true,
+    });
     expect(await supervisedExecutionAuthorized(started.data.accountId)).toBe(true);
     expect(await supervisedExecutionAuthorized(started.data.accountId, call.id)).toBe(false);
   });

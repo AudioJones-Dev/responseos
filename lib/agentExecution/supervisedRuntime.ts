@@ -1,6 +1,7 @@
 import "@/lib/serverOnlyGuard";
 import type { TelephonyNumberAssignmentStatus } from "@prisma/client";
 import { db } from "@/lib/db/client";
+import { findCallCorrelation } from "@/lib/data/webhookEvents";
 import { BusinessMemorySnapshotSchema, type BusinessMemorySnapshot } from "@/lib/prospectBootstrap/contracts";
 import { normalizeE164 } from "@/lib/validation/common";
 import {
@@ -123,7 +124,7 @@ export async function resolveSupervisedTenantForNumber(
   });
   const qualification = assignment.status === "qualification";
   const qualificationAuthorized = qualification &&
-    profile.enabled === false &&
+    (assignment.unassigned_at !== null || profile.enabled === false) &&
     executionModeFromProfilePolicy(profile.system_policy_json) === "SUPERVISED_PILOT";
   const contextPolicy = qualificationAuthorized ? SUPERVISED_QUALIFICATION_POLICY : resolved.policy;
 
@@ -217,7 +218,7 @@ export async function supervisedCallWasQualification(accountId: string, callId: 
   if (!db) return false;
   const call = await db.call.findFirst({
     where: { id: callId, account_id: accountId },
-    select: { to_number: true, started_at: true },
+    select: { to_number: true, started_at: true, provider_call_id: true },
   });
   if (!call) return false;
   const e164 = normalizeE164(call.to_number);
@@ -227,14 +228,21 @@ export async function supervisedCallWasQualification(accountId: string, callId: 
     select: { id: true },
   });
   if (!number) return false;
+  const correlation = call.provider_call_id
+    ? await findCallCorrelation({ provider: "telnyx", providerCallIds: [call.provider_call_id] })
+    : null;
+  const correlationTarget = correlation ? normalizeE164(correlation.target) : null;
+  const assignmentTime = correlation && correlationTarget === e164
+    ? correlation.anchoredAt
+    : call.started_at;
   return Boolean(await db.telephonyNumberAssignment.findFirst({
     where: {
       account_id: accountId,
       telephony_number_id: number.id,
       bootstrap_id: null,
       status: "qualification",
-      assigned_at: { lte: call.started_at },
-      OR: [{ unassigned_at: null }, { unassigned_at: { gte: call.started_at } }],
+      assigned_at: { lte: assignmentTime },
+      OR: [{ unassigned_at: null }, { unassigned_at: { gte: assignmentTime } }],
     },
     select: { id: true },
   }));
