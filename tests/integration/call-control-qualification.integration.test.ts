@@ -52,6 +52,13 @@ async function setupQualification() {
   return started.data;
 }
 
+async function matureTerminalEvidence(providerCallId: string) {
+  await prisma.webhookEvent.updateMany({
+    where: { provider_call_id: providerCallId, event_type: { in: ["call.ai_gather.message_history_updated", "call.conversation.ended", "call.hangup"] } },
+    data: { received_at: new Date(Date.now() - 10_000) },
+  });
+}
+
 describe("FRL Call Control qualification", () => {
   beforeEach(async () => {
     await resetAndSeedTestDb();
@@ -204,7 +211,10 @@ describe("FRL Call Control qualification", () => {
     const payload = { conversation_id: "conversation-1", client_state: state(capture.id), message_history: [{ role: "assistant", content: "How can I help?" }, { role: "user", content: "I need a VPL evaluation." }] };
     await ingest(event("call.ai_gather.message_history_updated", "cc-final-history", payload, 5_000));
     await ingest(event("call.conversation.ended", "cc-final-ended", { conversation_id: "conversation-1", client_state: state(capture.id) }, 6_000));
-    await ingest(event("call.hangup", "cc-final-hangup", { conversation_id: "conversation-1" }, 7_000));
+    const hangup = event("call.hangup", "cc-final-hangup", { conversation_id: "conversation-1" }, 7_000);
+    await expect(ingest(hangup)).rejects.toThrow("awaiting_final_history_settlement");
+    await matureTerminalEvidence(capture.provider_call_id);
+    await ingest(hangup);
 
     const finalCapture = await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } });
     const revision = await prisma.callTranscriptRevision.findFirstOrThrow({ where: { capture_session_id: capture.id } });
@@ -223,13 +233,67 @@ describe("FRL Call Control qualification", () => {
     await prisma.callConsentEvent.create({ data: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, event_key: "grant-late", action: "grant", artifact: "transcript", disclosure_ref: "approved:v1", evidence_ref: "witness:test", jurisdiction_basis: "commissioning:test", source_channel: "call", actor_user_id: "user_operator_mock", occurred_at: new Date(NOW.getTime() + 3_000) } });
     await prisma.telnyxCallCommand.create({ data: { account_id: capture.account_id, capture_session_id: capture.id, assignment_id: capture.assignment_id!, command_type: "ai_assistant_start", generation: 1, command_id: "command-start-late", provider_resource: capture.provider_call_id, request_json: {}, status: "succeeded", provider_responded_at: new Date(NOW.getTime() + 4_000), provider_response_status: 200, provider_date_at: new Date(NOW.getTime() + 4_000), conversation_id: "conversation-1" } });
     await ingest(event("call.conversation.ended", "cc-late-ended", { conversation_id: "conversation-1", client_state: state(capture.id) }, 7_000));
-    await ingest(event("call.hangup", "cc-late-hangup", { conversation_id: "conversation-1" }, 8_000));
+    const hangup = event("call.hangup", "cc-late-hangup", { conversation_id: "conversation-1" }, 8_000);
+    await expect(ingest(hangup)).rejects.toThrow("awaiting_final_history_settlement");
     expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } })).control_state).toBe("FINALIZING");
     expect(await prisma.callReview.count()).toBe(0);
     const payload = { conversation_id: "conversation-1", client_state: state(capture.id), message_history: [{ role: "assistant", content: "How can I help?" }, { role: "user", content: "I need a VPL evaluation." }] };
     await ingest(event("call.ai_gather.message_history_updated", "cc-late-history", payload, 6_000));
+    await matureTerminalEvidence(capture.provider_call_id);
+    await ingest(hangup);
     expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } })).control_state).toBe("EVIDENCE_FROZEN");
     expect(await prisma.callReview.count()).toBe(1);
+  });
+
+  test("terminal settlement does not freeze an interim cumulative revision", async () => {
+    await setupQualification();
+    await ingest(event("call.initiated", "cc-interim-init", { to: NUMBER }, 1_000));
+    const capture = await prisma.callCaptureSession.findFirstOrThrow();
+    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "AI_ACTIVE", dtmf_decision: "affirmative", conversation_id: "conversation-1", capture_started_at: new Date(NOW.getTime() + 4_000) } });
+    await prisma.callConsentEvent.create({ data: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, event_key: "grant-interim", action: "grant", artifact: "transcript", disclosure_ref: "approved:v1", evidence_ref: "witness:test", jurisdiction_basis: "commissioning:test", source_channel: "call", actor_user_id: "user_operator_mock", occurred_at: new Date(NOW.getTime() + 3_000) } });
+    await prisma.telnyxCallCommand.create({ data: { account_id: capture.account_id, capture_session_id: capture.id, assignment_id: capture.assignment_id!, command_type: "ai_assistant_start", generation: 1, command_id: "command-start-interim", provider_resource: capture.provider_call_id, request_json: {}, status: "succeeded", provider_responded_at: new Date(NOW.getTime() + 4_000), provider_response_status: 200, provider_date_at: new Date(NOW.getTime() + 4_000), conversation_id: "conversation-1" } });
+    const interim = { conversation_id: "conversation-1", client_state: state(capture.id), message_history: [{ role: "assistant", content: "How can I help?" }] };
+    await ingest(event("call.ai_gather.message_history_updated", "cc-interim-history", interim, 5_000));
+    await ingest(event("call.conversation.ended", "cc-interim-ended", { conversation_id: "conversation-1", client_state: state(capture.id) }, 8_000));
+    const hangup = event("call.hangup", "cc-interim-hangup", { conversation_id: "conversation-1" }, 9_000);
+    await expect(ingest(hangup)).rejects.toThrow("awaiting_final_history_settlement");
+    expect((await prisma.callTranscriptRevision.findFirstOrThrow({ where: { capture_session_id: capture.id } })).frozen_at).toBeNull();
+    const final = { ...interim, message_history: [...interim.message_history, { role: "user", content: "I need a VPL evaluation." }] };
+    await ingest(event("call.ai_gather.message_history_updated", "cc-interim-final-history", final, 7_000));
+    await matureTerminalEvidence(capture.provider_call_id);
+    await ingest(hangup);
+    const frozen = await prisma.callTranscriptRevision.findFirstOrThrow({ where: { capture_session_id: capture.id }, orderBy: { revision: "desc" } });
+    expect(frozen).toMatchObject({ revision: 2, frozen_at: expect.any(Date) });
+    expect(frozen.inline_text).toContain("I need a VPL evaluation.");
+  });
+
+  test("signed cumulative history arriving after the first freeze creates a superseding review", async () => {
+    await setupQualification();
+    await ingest(event("call.initiated", "cc-post-freeze-init", { to: NUMBER }, 1_000));
+    const capture = await prisma.callCaptureSession.findFirstOrThrow();
+    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "AI_ACTIVE", dtmf_decision: "affirmative", conversation_id: "conversation-1", capture_started_at: new Date(NOW.getTime() + 4_000) } });
+    await prisma.callConsentEvent.create({ data: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, event_key: "grant-post-freeze", action: "grant", artifact: "transcript", disclosure_ref: "approved:v1", evidence_ref: "witness:test", jurisdiction_basis: "commissioning:test", source_channel: "call", actor_user_id: "user_operator_mock", occurred_at: new Date(NOW.getTime() + 3_000) } });
+    await prisma.telnyxCallCommand.create({ data: { account_id: capture.account_id, capture_session_id: capture.id, assignment_id: capture.assignment_id!, command_type: "ai_assistant_start", generation: 1, command_id: "command-start-post-freeze", provider_resource: capture.provider_call_id, request_json: {}, status: "succeeded", provider_responded_at: new Date(NOW.getTime() + 4_000), provider_response_status: 200, provider_date_at: new Date(NOW.getTime() + 4_000), conversation_id: "conversation-1" } });
+    const initial = { conversation_id: "conversation-1", client_state: state(capture.id), message_history: [{ role: "assistant", content: "How can I help?" }] };
+    await ingest(event("call.ai_gather.message_history_updated", "cc-post-freeze-history-1", initial, 5_000));
+    await ingest(event("call.conversation.ended", "cc-post-freeze-ended", { conversation_id: "conversation-1", client_state: state(capture.id) }, 7_000));
+    const hangup = event("call.hangup", "cc-post-freeze-hangup", { conversation_id: "conversation-1" }, 8_000);
+    await expect(ingest(hangup)).rejects.toThrow("awaiting_final_history_settlement");
+    await matureTerminalEvidence(capture.provider_call_id);
+    await ingest(hangup);
+    expect(await prisma.callReview.count()).toBe(1);
+
+    const late = event("call.ai_gather.message_history_updated", "cc-post-freeze-history-2", { ...initial, message_history: [...initial.message_history, { role: "user", content: "I need a VPL evaluation." }] }, 6_000);
+    await expect(ingest(late)).rejects.toThrow("awaiting_final_history_settlement");
+    expect(await prisma.callReview.count()).toBe(1);
+    await matureTerminalEvidence(capture.provider_call_id);
+    await ingest(late);
+
+    const revisions = await prisma.callTranscriptRevision.findMany({ where: { capture_session_id: capture.id }, orderBy: { revision: "asc" } });
+    expect(revisions).toHaveLength(2);
+    expect(revisions[1]).toMatchObject({ revision: 2, frozen_at: expect.any(Date) });
+    expect(revisions[1].inline_text).toContain("I need a VPL evaluation.");
+    expect(await prisma.callReview.count()).toBe(2);
   });
 
   test("a reconciled uncertain stop resumes terminal evidence finalization", async () => {
@@ -248,8 +312,10 @@ describe("FRL Call Control qualification", () => {
     const uncertain = await prisma.telnyxCallCommand.findFirstOrThrow({ where: { capture_session_id: capture.id, command_type: "ai_assistant_stop" } });
     expect(uncertain.status).toBe("uncertain");
     await ingest(event("call.conversation.ended", "cc-stop-ended", { conversation_id: "conversation-1", client_state: state(capture.id) }, 7_000));
-    await ingest(event("call.hangup", "cc-stop-hangup", { conversation_id: "conversation-1" }, 8_000));
+    const hangup = event("call.hangup", "cc-stop-hangup", { conversation_id: "conversation-1" }, 8_000);
+    await expect(ingest(hangup)).rejects.toThrow("awaiting_final_history_settlement");
     expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } })).control_state).toBe("STOP_PENDING");
+    await matureTerminalEvidence(capture.provider_call_id);
     sendCommand.mockResolvedValueOnce({ status: 200, providerDate: new Date(NOW.getTime() + 9_000), conversationId: null, ok: true, errorCode: null });
     expect((await route.POST(request(), { params: Promise.resolve({ id: capture.id }) })).status).toBe(200);
     expect((await prisma.telnyxCallCommand.findUniqueOrThrow({ where: { id: uncertain.id } }))).toMatchObject({ status: "succeeded", command_id: uncertain.command_id });
