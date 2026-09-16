@@ -316,13 +316,24 @@ model Call {
 }
 
 model CallCaptureSession {
-  id               String   @id @default(cuid())
-  account_id       String
-  provider_call_id String
-  assignment_id    String?
-  snapshot_id      String
-  snapshot_json    Json
-  created_at       DateTime @default(now())
+  id                          String            @id @default(cuid())
+  account_id                  String
+  provider_call_id            String
+  assignment_id               String?
+  snapshot_id                 String
+  snapshot_json               Json
+  control_state               CallControlState  @default(CALL_RECEIVED)
+  generation                  Int               @default(1)
+  call_session_id             String?
+  call_leg_id                 String?
+  conversation_id             String?
+  dtmf_decision               CallDtmfDecision?
+  dtmf_event_id               String?
+  disclosure_completed_at     DateTime?
+  content_admission_closed_at DateTime?
+  capture_started_at          DateTime?
+  capture_ended_at            DateTime?
+  created_at                  DateTime          @default(now())
   @@unique([account_id, provider_call_id])
   @@index([account_id])
 }
@@ -657,6 +668,121 @@ enum TelephonyNumberAssignmentStatus {
   active
   quarantined
   released
+}
+
+enum CallControlState {
+  CALL_RECEIVED
+  DISCLOSURE_PLAYING
+  AWAITING_DTMF
+  CONSENT_PENDING_OPERATOR
+  START_PENDING
+  AI_ACTIVE
+  REFUSED
+  AMBIGUOUS
+  STOP_PENDING
+  STOPPED
+  TRANSFER_PENDING
+  TRANSFERRED
+  SAFE_FALLBACK
+  FINALIZING
+  EVIDENCE_FROZEN
+}
+
+enum CallDtmfDecision {
+  affirmative
+  refused
+  ambiguous
+}
+
+enum TelnyxCallCommandType {
+  answer
+  disclosure
+  consent_gather
+  refusal_ack
+  ambiguous_end
+  ai_assistant_start
+  ai_assistant_stop
+  transfer
+  hangup
+}
+
+enum TelnyxCallCommandStatus {
+  intent_recorded
+  succeeded
+  failed
+  uncertain
+}
+
+enum PostCallAnalysisCompleteness {
+  complete
+  partial
+  unavailable
+}
+
+model TelnyxCallCommand {
+  id                       String                  @id @default(cuid())
+  account_id               String
+  capture_session_id       String
+  assignment_id            String
+  command_type             TelnyxCallCommandType
+  generation               Int
+  command_id               String                  @unique
+  provider_resource        String
+  request_json             Json
+  status                   TelnyxCallCommandStatus @default(intent_recorded)
+  intended_at              DateTime                @default(now())
+  provider_responded_at    DateTime?
+  provider_response_status Int?
+  provider_date_at         DateTime?
+  conversation_id          String?
+  error_code               String?
+  reconciliation_state     String?
+  created_at               DateTime                @default(now())
+  updated_at               DateTime                @updatedAt
+
+  @@unique([capture_session_id, command_type, generation])
+  @@index([account_id, capture_session_id])
+  @@index([status, intended_at])
+}
+
+model CallTranscriptRevision {
+  id                 String    @id @default(cuid())
+  account_id         String
+  call_id            String
+  capture_session_id String
+  assignment_id      String
+  snapshot_id        String
+  conversation_id    String
+  revision           Int
+  source_hash        String
+  inline_text        String
+  source_event_ids   String[]  @default([])
+  capture_started_at DateTime
+  capture_ended_at   DateTime?
+  frozen_at          DateTime?
+  created_at         DateTime  @default(now())
+
+  @@unique([account_id, call_id, revision])
+  @@unique([capture_session_id, source_hash])
+  @@index([account_id, call_id])
+}
+
+model CallPostCallAnalysis {
+  id                     String                       @id @default(cuid())
+  account_id             String
+  call_id                String
+  transcript_revision_id String                       @unique
+  transcript_hash        String
+  provider               String
+  model                  String
+  prompt_version         String
+  schema_version         String
+  result_json            Json
+  completeness           PostCallAnalysisCompleteness
+  uncertainty_json       Json
+  created_at             DateTime                     @default(now())
+
+  @@index([account_id, call_id])
 }
 
 enum BootstrapPromotionStatus {

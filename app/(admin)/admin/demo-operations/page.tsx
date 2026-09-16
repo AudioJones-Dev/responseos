@@ -53,7 +53,7 @@ export default async function DemoOperationsPage() {
       />
 
       <h2 className="mb-3 mt-8 font-display text-xl font-semibold text-ink">Capture consent</h2>
-      {captures.map((capture) => <div key={capture.id}><ConsentControls id={capture.id} callReference={capture.provider_call_id} /><p>Latest consent: {capture.consentAction ?? "No affirmative consent recorded"}</p></div>)}
+      {captures.map((capture) => <div key={capture.id}><ConsentControls id={capture.id} callReference={capture.provider_call_id} /><p>{capture.accountName} · {capture.call ? `${capture.call.from_number} → ${capture.call.to_number} · ${capture.call.started_at.toISOString()}` : "signaling metadata pending"}</p><p>Call Control state: {capture.control_state} · DTMF: {capture.dtmf_decision ?? "pending"} · Latest consent: {capture.consentAction ?? "none"}</p>{capture.commands.map((command) => <p key={`${command.command_type}:${command.intended_at.toISOString()}`}>{command.command_type}: {command.status}{command.error_code ? ` (${command.error_code})` : ""}</p>)}</div>)}
       <h2 className="mb-3 mt-8 font-display text-xl font-semibold text-ink">Supervised call review</h2>
       <p>Review each call before approving its CRM record and email. Email acceptance does not confirm inbox delivery.</p>
       {reviews.length === 0 && <EmptyState title="No calls awaiting review" description="A finalized call with consented evidence will appear here." />}

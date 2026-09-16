@@ -1,13 +1,14 @@
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { POST } from "@/app/api/admin/call-capture/[id]/consent/route";
 
-const mocks = vi.hoisted(() => ({ capture: vi.fn(), upsert: vi.fn() }));
+const mocks = vi.hoisted(() => ({ capture: vi.fn(), lockedCapture: vi.fn(), existing: vi.fn(), upsert: vi.fn(), update: vi.fn(), effect: vi.fn() }));
 vi.mock("@/lib/db/client", () => ({ db: { callCaptureSession: { findUnique: mocks.capture } } }));
 vi.mock("@/lib/callReview/service", () => ({ requireReviewOperator: async () => ({ user: { id: "operator" } }) }));
+vi.mock("@/lib/callControl/service", () => ({ runOperatorConsentEffect: mocks.effect }));
 vi.mock("@/lib/callReview/consent", () => ({
   withCaptureLock: async (_account: string, _call: string, run: (client: unknown) => Promise<unknown>) => {
     vi.setSystemTime(new Date("2026-09-13T12:00:10Z"));
-    return run({ callConsentEvent: { upsert: mocks.upsert } });
+    return run({ callCaptureSession: { findUnique: mocks.lockedCapture, update: mocks.update }, callConsentEvent: { findUnique: mocks.existing, upsert: mocks.upsert } });
   },
 }));
 
@@ -16,7 +17,11 @@ beforeEach(() => {
   vi.setSystemTime(new Date("2026-09-13T12:00:00Z"));
   vi.clearAllMocks();
   mocks.capture.mockResolvedValue({ id: "capture", account_id: "account", provider_call_id: "call" });
+  mocks.lockedCapture.mockResolvedValue({ id: "capture", account_id: "account", provider_call_id: "call", control_state: "AI_ACTIVE", dtmf_decision: "affirmative" });
+  mocks.existing.mockResolvedValue(null);
   mocks.upsert.mockImplementation(async ({ create }) => ({ id: "consent", ...create }));
+  mocks.update.mockResolvedValue({});
+  mocks.effect.mockResolvedValue(undefined);
 });
 afterEach(() => vi.useRealTimers());
 

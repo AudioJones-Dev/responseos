@@ -41,6 +41,7 @@ const unavailable = UnavailableAgentContextSchema.parse({
  * request is short, so it stays a small number of indexed reads.
  */
 export async function POST(req: Request) {
+  const startedAt = performance.now();
   const publicKey = process.env.TELNYX_PUBLIC_KEY;
   if (process.env.RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED !== "true" || !publicKey) {
     return errorResponse(503, {
@@ -80,7 +81,9 @@ export async function POST(req: Request) {
   // initialization for a number released and reassigned since must reach the
   // tenant that held the number when the call began, never the current holder.
   const occurredAt = getTelnyxOccurredAt(event);
+  const resolutionStartedAt = performance.now();
   const supervised = target && occurredAt ? await resolveSupervisedTenantForNumber(target, occurredAt) : null;
+  const resolutionDuration = performance.now() - resolutionStartedAt;
   const supervisedReady =
     supervised !== null &&
     supervised.readiness.ready &&
@@ -136,6 +139,7 @@ export async function POST(req: Request) {
       await setWebhookProcessStatus({ id: ledger.data.id, process_status: "rejected", process_error: "missing_provider_call_id" });
       return NextResponse.json({ dynamic_variables: SUPERVISED_UNAVAILABLE_CONTEXT });
     }
+    const captureStartedAt = performance.now();
     const capture = await db.callCaptureSession.upsert({
       where: { account_id_provider_call_id: { account_id: supervised.accountId, provider_call_id: providerCallId } },
       create: {
@@ -147,6 +151,7 @@ export async function POST(req: Request) {
       },
       update: {},
     });
+    const captureDuration = performance.now() - captureStartedAt;
 
     // The pinned snapshot is whatever the first delivery stored, so a schema
     // that has moved since would make a strict parse throw and return a 500
@@ -161,7 +166,8 @@ export async function POST(req: Request) {
 
     after(() => setWebhookProcessStatus({ id: ledger.data.id, process_status: "processed" }));
 
-    return NextResponse.json({
+    const renderStartedAt = performance.now();
+    const response = NextResponse.json({
       dynamic_variables: buildSupervisedAgentContext({
         businessName: supervised.accountName,
         agentName: supervised.agentName,
@@ -176,6 +182,11 @@ export async function POST(req: Request) {
         },
       },
     });
+    const renderDuration = performance.now() - renderStartedAt;
+    const totalDuration = performance.now() - startedAt;
+    response.headers.set("server-timing", `resolve;dur=${resolutionDuration.toFixed(1)}, capture;dur=${captureDuration.toFixed(1)}, render;dur=${renderDuration.toFixed(1)}, total;dur=${totalDuration.toFixed(1)}`);
+    console.info(JSON.stringify({ event: "telnyx_initialization_timing", lane: supervised.assignmentStatus, total_ms: Math.round(totalDuration), resolution_ms: Math.round(resolutionDuration), capture_ms: Math.round(captureDuration), render_ms: Math.round(renderDuration) }));
+    return response;
   }
 
   if (supervisedOwned) {

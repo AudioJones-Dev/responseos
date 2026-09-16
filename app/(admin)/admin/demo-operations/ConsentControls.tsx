@@ -22,7 +22,7 @@ export function ConsentControls({ id, callReference }: { id: string; callReferen
   }
   return <details className="my-3 rounded border p-4">
     <summary>Capture consent · {callReference}</summary>
-    <p className="my-2">Record only a response you witnessed after the approved disclosure. These controls record evidence; the verified provider capture controls must also be operated. Recording remains off.</p>
+    <p className="my-2">Record only the DTMF decision you witnessed for this exact active call after the approved disclosure. Grant starts the governed AI command; refusal starts no AI; withdrawal closes content admission before provider stop. Recording remains off.</p>
     <label className="block">Disclosure version/reference<input className="m-2 rounded border p-2" value={disclosure} onChange={(event) => setDisclosure(event.target.value)} /></label>
     <label className="block">Evidence reference<input className="m-2 rounded border p-2" value={evidence} onChange={(event) => setEvidence(event.target.value)} /></label>
     <label className="block">Jurisdiction basis<input className="m-2 rounded border p-2" value={jurisdiction} onChange={(event) => setJurisdiction(event.target.value)} /></label>

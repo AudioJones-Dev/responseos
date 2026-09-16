@@ -10,7 +10,7 @@ The schema mirrors `types/*.ts` and `prisma/schema.prisma`. Conventions:
 
 ## Current implementation snapshot
 
-The source of truth for exact fields, enum values, relations, and indexes is `prisma/schema.prisma`. The current migration chain runs from `0001_v0_2_foundation` through `0015_supervised_call_review`. Migrations `0011`–`0013` carry the GTM demo and prospect-bootstrap foundations; `0014` and `0015` carry the supervised demonstration substrate described below and are **neither deployed nor activated** — `0015` additionally carries a deployment requirement recorded in [`DEPLOYMENT.md`](./DEPLOYMENT.md).
+The source of truth for exact fields, enum values, relations, and indexes is `prisma/schema.prisma`. The current migration chain runs from `0001_v0_2_foundation` through `0017_call_control_qualification`. Migrations `0011`–`0013` carry the GTM demo and prospect-bootstrap foundations; `0014`–`0017` carry the supervised demonstration and qualification substrate described below and are deployment-gated — `0015` additionally carries a deployment requirement recorded in [`DEPLOYMENT.md`](./DEPLOYMENT.md).
 
 Current Prisma models:
 
@@ -36,6 +36,9 @@ Current Prisma models:
 | `SmsMessage` | Per-message row under a conversation. |
 | `CallSegment` | Turn-level call transcript segment. |
 | `CallTranscript` | Full transcript artifact and retention lane. |
+| `CallTranscriptRevision` | Immutable admitted cumulative-history revision and capture-boundary binding. |
+| `TelnyxCallCommand` | Idempotent Call Control command intent, provider acknowledgement and reconciliation state. |
+| `CallPostCallAnalysis` | Structured interpretation provenance bound to a frozen transcript hash. |
 | `QaLog` | QA review / scoring record. |
 | `WorkflowRun` | n8n/internal workflow execution log. |
 
@@ -58,6 +61,8 @@ Current migration history:
 | `0013_prospect_bootstrap_review_controls` | Adds prospect bootstrap review controls. |
 | `0014_supervised_tenant_runtime` | Adds the supervised tenant runtime substrate. Not deployed or activated. |
 | `0015_supervised_call_review` | Adds supervised call review, capture and consent evidence. Not deployed or activated; carries the index deployment requirement in [`DEPLOYMENT.md`](./DEPLOYMENT.md). |
+| `0016_supervised_qualification_assignment` | Adds the temporary, effects-disabled qualification assignment and durable capture assignment pin. |
+| `0017_call_control_qualification` | Adds Call Control state, idempotent provider-command evidence, immutable transcript revisions and post-call interpretation provenance. |
 
 The sections below retain historical v0.1/v0.2 design context. If they conflict with `prisma/schema.prisma`, the Prisma schema wins until this document is fully rewritten from the live schema.
 
@@ -344,5 +349,7 @@ Codes are `crm_ready:<effect>`, `crm_intent:<effect>`, `crm_reconcile:<effect>` 
 Additive candidate runtime fields are followed by CallCaptureSession (pinned approved snapshot and resolved assignment identity per tenant/provider call), CallConsentEvent (append-only per-call artifact authority carrying the ADR-0055 minimum record: disclosure, action, timestamp, jurisdiction basis, and a server-owned source channel), and CallReview (immutable evidence and approved payload revision with independent CRM/email state). The assignment pin lets business-effect authorization distinguish qualification evidence from later active traffic even when a delayed provider event lacks a usable initialization timestamp. New supervised calls carry review_required; legacy calls default false. See [implementation brief](./product/responseos-mike-live-demo.md). These repository migrations remain deployment-gated and do not claim live activation.
 
 Migration 0016 adds `qualification` to `TelephonyNumberAssignmentStatus` and the nullable `CallCaptureSession.assignment_id` pin. A qualification assignment is temporary and exclusive, with `assigned_at` and a nullable `unassigned_at`; it never receives `activated_at`. The status remains `qualification` after closure so delayed events can resolve the historical interval and business-effect authorization can permanently reject calls captured inside it. `number_exclusivity_key` is cleared on closure. Existing rows and assignment states are unchanged.
+
+Migration 0017 adds the bounded Call Control qualification evidence model. `CallCaptureSession` owns the explicit call-control state, generation, provider aliases, DTMF decision, admission fence and qualified capture bounds. `TelnyxCallCommand` is the authoritative idempotent command-intent/result ledger; it records no provider credential. `CallTranscriptRevision` stores immutable cumulative-history revisions with a source hash, signed event IDs, pinned assignment/snapshot/conversation and consent interval. `CallPostCallAnalysis` binds a replaceable analysis result to one frozen transcript hash and records provider/model/prompt/schema/completeness/uncertainty. Audit rows may explain these transitions but are not reconstructed as machine state.
 
 Migration 0015 also adds `WebhookEvent.provider_call_ids`, an empty-by-default array with a GIN index for signed provider aliases. That `CREATE INDEX` blocks `WebhookEvent` writes for the duration of the build, so 0015 carries a deployment requirement: apply it to a ledger verified empty, or after an ingress-wide pause and drain with every `WebhookEvent` writer stopped for the entire migration, including Clerk, normalization, and payload-purge paths. Disabling Telnyx ingest alone is insufficient. A populated live ledger requires the concurrent-index procedure in [`DEPLOYMENT.md`](./DEPLOYMENT.md#migration-deployment-requirements) instead. "Pre-production" is not by itself evidence that the lock is harmless. The original primary identifier remains available for older rows. Correlation resolves the initialized capture identity before applying its consent lock; conflicting tenant targets do not authorize retention.

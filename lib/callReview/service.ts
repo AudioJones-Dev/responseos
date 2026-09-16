@@ -25,13 +25,22 @@ export async function loadCallReviewConsole() {
   await requireReviewOperator();
   if (!db) return { captures: [], reviews: [] };
   const captures = await db.callCaptureSession.findMany({ orderBy: { created_at: "desc" }, take: 20 });
-  const withConsent = await Promise.all(captures.map(async (capture) => ({
-    ...capture,
-    consentAction: (await db!.callConsentEvent.findFirst({
+  const withConsent = await Promise.all(captures.map(async (capture) => {
+    const [consent, commands, call, account] = await Promise.all([
+      db!.callConsentEvent.findFirst({
       where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, artifact: "transcript" },
       orderBy: [{ occurred_at: "desc" }, { id: "desc" }], select: { action: true },
-    }))?.action ?? null,
-  })));
+      }),
+      db!.telnyxCallCommand.findMany({
+      where: { capture_session_id: capture.id },
+      orderBy: { intended_at: "asc" },
+      select: { command_type: true, status: true, error_code: true, intended_at: true, provider_responded_at: true },
+      }),
+      db!.call.findFirst({ where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id }, select: { from_number: true, to_number: true, started_at: true } }),
+      db!.account.findUnique({ where: { id: capture.account_id }, select: { name: true } }),
+    ]);
+    return { ...capture, consentAction: consent?.action ?? null, commands, call, accountName: account?.name ?? capture.account_id };
+  }));
   const latest = await db.callReview.groupBy({
     by: ["account_id", "call_id"], _max: { revision: true, created_at: true },
     orderBy: { _max: { created_at: "desc" } }, take: 50,

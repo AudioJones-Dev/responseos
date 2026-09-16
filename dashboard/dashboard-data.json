@@ -1247,10 +1247,10 @@
       "title": "Supervised FRL demonstration: approved knowledge, consent, review, CRM and email",
       "owner": "Codex",
       "status": "Review",
-      "progress": 84,
+      "progress": 90,
       "priority": "High",
       "blocked": true,
-      "blockedReason": "CRM recovery, v4 semantics, and qualification isolation are frozen. The first live qualification call preserved effect isolation but failed consent evidence: the no-code Telnyx/TeXML lane supplied no trustworthy post-consent start or withdrawal-stop boundary. A provider-mode/capture-control decision is required before Scenario A can be retried."
+      "blockedReason": "Call Control qualification implementation is in progress on PR #177. Deployment, migration 0017, provider routing, hosted latency evidence, Scenario A retest, attestation and activation remain separately gated."
     }
   ],
   "liveIssues": [
