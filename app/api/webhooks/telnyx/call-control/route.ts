@@ -6,7 +6,7 @@ import { verifyTelnyxWebhook } from "@/lib/providers/telnyx/webhook";
 export async function POST(req: Request) {
   const publicKey = process.env.TELNYX_PUBLIC_KEY;
   if (process.env.RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED !== "true" || !publicKey) return errorResponse(503, { code: "telnyx_ingest_disabled", message: "Telnyx Call Control ingestion is disabled." });
-  if (!req.headers.get("content-type")?.toLowerCase().startsWith("application/json")) return errorResponse(415, { code: "unsupported_telnyx_event_content_type", message: "Call Control accepts signed JSON only." });
+  if (!/^application\/json(?:\s*;.*)?$/i.test(req.headers.get("content-type") ?? "")) return errorResponse(415, { code: "unsupported_telnyx_event_content_type", message: "Call Control accepts signed JSON only." });
   const rawBody = await req.text();
   const signature = req.headers.get("telnyx-signature-ed25519");
   const verified = verifyTelnyxWebhook({ rawBody, signature, timestamp: req.headers.get("telnyx-timestamp"), publicKey });

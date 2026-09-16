@@ -2,7 +2,7 @@ import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
 import { configureSupervisedTenant } from "@/lib/agentExecution/supervisedTenant";
 import { startSupervisedQualification } from "@/lib/agentExecution/supervisedQualification";
 import { conservativePostCallAnalysis } from "@/lib/callControl/analysis";
-import { ingestCallControlEvent, requestQualifiedTransfer } from "@/lib/callControl/service";
+import { ingestCallControlEvent, requestQualifiedTransfer, runOperatorConsentEffect } from "@/lib/callControl/service";
 import { withCaptureLock } from "@/lib/callReview/consent";
 import type { CallControlEvent } from "@/lib/providers/telnyx/callControl";
 import { disconnectTestDb, prisma, resetAndSeedTestDb, setDevSession } from "./setup";
@@ -117,6 +117,43 @@ describe("FRL Call Control qualification", () => {
     await expect(ingest(answered)).resolves.toEqual({ duplicate: false, captureId: capture.id });
     const succeeded = await prisma.telnyxCallCommand.findUniqueOrThrow({ where: { id: uncertain.id } });
     expect(succeeded).toMatchObject({ status: "succeeded", command_id: uncertain.command_id });
+  });
+
+  test("a late uncertain command response cannot overwrite an earlier success", async () => {
+    await setupQualification();
+    await ingest(event("call.initiated", "cc-command-race-init", { to: NUMBER }, 1_000));
+    const capture = await prisma.callCaptureSession.findFirstOrThrow();
+    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "START_PENDING", dtmf_decision: "affirmative" } });
+
+    let resolveFirst!: (value: unknown) => void;
+    let resolveSecond!: (value: unknown) => void;
+    const first = new Promise((resolve) => { resolveFirst = resolve; });
+    const second = new Promise((resolve) => { resolveSecond = resolve; });
+    sendCommand.mockReset()
+      .mockImplementationOnce(() => first)
+      .mockImplementationOnce(() => second);
+
+    const firstAttempt = runOperatorConsentEffect({ captureId: capture.id, action: "grant" });
+    const secondAttempt = runOperatorConsentEffect({ captureId: capture.id, action: "grant" });
+    await vi.waitFor(() => expect(sendCommand).toHaveBeenCalledTimes(2));
+    resolveFirst({ status: 200, providerDate: new Date(NOW.getTime() + 4_000), conversationId: "conversation-1", ok: true, errorCode: null });
+    await firstAttempt;
+    resolveSecond({ status: 0, providerDate: null, conversationId: null, ok: false, errorCode: "telnyx_response_uncertain" });
+    await secondAttempt;
+
+    expect(await prisma.telnyxCallCommand.findFirstOrThrow({ where: { capture_session_id: capture.id, command_type: "ai_assistant_start" } })).toMatchObject({ status: "succeeded", conversation_id: "conversation-1" });
+  });
+
+  test("AI start remains uncertain without a provider response timestamp", async () => {
+    await setupQualification();
+    await ingest(event("call.initiated", "cc-start-time-init", { to: NUMBER }, 1_000));
+    const capture = await prisma.callCaptureSession.findFirstOrThrow();
+    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "START_PENDING", dtmf_decision: "affirmative" } });
+    sendCommand.mockResolvedValueOnce({ status: 200, providerDate: null, conversationId: "conversation-1", ok: true, errorCode: null });
+
+    await expect(runOperatorConsentEffect({ captureId: capture.id, action: "grant" })).rejects.toThrow("telnyx_start_time_unconfirmed");
+    expect(await prisma.telnyxCallCommand.findFirstOrThrow({ where: { capture_session_id: capture.id, command_type: "ai_assistant_start" } })).toMatchObject({ status: "uncertain", error_code: "telnyx_start_time_unconfirmed" });
+    expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } })).conversation_id).toBeNull();
   });
 
   test("a redelivered initiation re-drives answer after capture creation", async () => {
@@ -383,6 +420,9 @@ describe("FRL Call Control qualification", () => {
     await prisma.telnyxCallCommand.create({ data: { account_id: capture.account_id, capture_session_id: capture.id, assignment_id: capture.assignment_id!, command_type: "ai_assistant_start", generation: 1, command_id: "command-start-hangup-first", provider_resource: capture.provider_call_id, request_json: {}, status: "succeeded", provider_responded_at: new Date(NOW.getTime() + 4_000), provider_response_status: 200, provider_date_at: new Date(NOW.getTime() + 4_000), conversation_id: "conversation-1" } });
     const hangup = event("call.hangup", "cc-hangup-first-hangup", { conversation_id: "conversation-1" }, 9_000);
     await expect(ingest(hangup)).resolves.toEqual({ duplicate: false, captureId: capture.id });
+    const admittedText = "Content generated before the actual conversation boundary";
+    const admittedHistory = event("call.ai_gather.message_history_updated", "cc-hangup-first-admitted-history", { conversation_id: "conversation-1", client_state: state(capture.id), message_history: [{ role: "user", content: admittedText }] }, 6_000);
+    await expect(ingest(admittedHistory)).rejects.toThrow("awaiting_conversation_boundary");
     const protectedText = "Content after the actual conversation boundary";
     const history = event("call.ai_gather.message_history_updated", "cc-hangup-first-history", { conversation_id: "conversation-1", client_state: state(capture.id), message_history: [{ role: "user", content: protectedText }] }, 8_000);
     await expect(ingest(history)).rejects.toThrow("awaiting_conversation_boundary");
@@ -391,11 +431,15 @@ describe("FRL Call Control qualification", () => {
     expect(await prisma.callTranscriptRevision.count({ where: { capture_session_id: capture.id } })).toBe(0);
 
     await expect(ingest(event("call.conversation.ended", "cc-hangup-first-ended", { conversation_id: "conversation-1", client_state: state(capture.id) }, 7_000))).rejects.toThrow("awaiting_final_history_settlement");
+    await expect(ingest(admittedHistory)).rejects.toThrow("awaiting_final_history_settlement");
+    const admittedLedger = await prisma.webhookEvent.findFirstOrThrow({ where: { provider_event_id: "cc-hangup-first-admitted-history" } });
+    expect(admittedLedger.raw_body).toContain(admittedText);
+    expect(await prisma.callTranscriptRevision.count({ where: { capture_session_id: capture.id } })).toBe(1);
     await expect(ingest(history)).rejects.toThrow("awaiting_final_history_settlement");
     ledger = await prisma.webhookEvent.findFirstOrThrow({ where: { provider_event_id: "cc-hangup-first-history" } });
     expect(ledger).toMatchObject({ process_status: "rejected", process_error: "protected_content_not_admitted" });
     expect(ledger.raw_body).not.toContain(protectedText);
-    expect(await prisma.callTranscriptRevision.count({ where: { capture_session_id: capture.id } })).toBe(0);
+    expect(await prisma.callTranscriptRevision.count({ where: { capture_session_id: capture.id } })).toBe(1);
   });
 
   test("a reconciled uncertain stop resumes terminal evidence finalization", async () => {

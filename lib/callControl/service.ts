@@ -89,18 +89,20 @@ async function executeCommand(params: {
   if (!["intent_recorded", "uncertain", "failed"].includes(intent.status)) throw new Error("telnyx_command_not_executable");
   const body = { ...params.request, command_id: intent.command_id };
   const result = await sendTelnyxCallCommand({ callControlId: params.capture.provider_call_id, action: params.action, body });
-  return db.telnyxCallCommand.update({
-    where: { id: intent.id },
+  const missingStartTime = params.commandType === "ai_assistant_start" && result.ok && !result.providerDate;
+  await db.telnyxCallCommand.updateMany({
+    where: { id: intent.id, status: { not: "succeeded" } },
     data: {
-      status: result.ok ? "succeeded" : result.errorCode === "telnyx_response_uncertain" ? "uncertain" : "failed",
+      status: missingStartTime ? "uncertain" : result.ok ? "succeeded" : result.errorCode === "telnyx_response_uncertain" ? "uncertain" : "failed",
       provider_responded_at: result.status > 0 ? new Date() : null,
       provider_response_status: result.status,
       provider_date_at: result.providerDate,
       conversation_id: result.conversationId,
-      error_code: result.errorCode,
-      reconciliation_state: result.ok ? null : "operator_review_required",
+      error_code: missingStartTime ? "telnyx_start_time_unconfirmed" : result.errorCode,
+      reconciliation_state: result.ok && !missingStartTime ? null : "operator_review_required",
     },
   });
+  return db.telnyxCallCommand.findUniqueOrThrow({ where: { id: intent.id } });
 }
 
 async function createQualificationCapture(event: CallControlEvent) {
@@ -154,7 +156,7 @@ async function normalizeMetadata(event: CallControlEvent, capture: { account_id:
 }
 
 async function recordTranscriptRevision(event: CallControlEvent, capture: NonNullable<Awaited<ReturnType<typeof captureForEvent>>>, webhookEventId: string, numberE164: string, client: Prisma.TransactionClient) {
-  const terminalReconciliation = ["FINALIZING", "EVIDENCE_FROZEN"].includes(capture.control_state) && capture.capture_ended_at !== null;
+  const terminalReconciliation = ["FINALIZING", "EVIDENCE_FROZEN", "TRANSFER_PENDING", "TRANSFERRED"].includes(capture.control_state) && capture.capture_ended_at !== null;
   if (!capture.assignment_id || !capture.conversation_id || !capture.capture_started_at || (capture.content_admission_closed_at && !terminalReconciliation)) return "rejected" as const;
   const eventOccurredAt = new Date(event.data.occurred_at);
   if (eventOccurredAt < capture.capture_started_at || (capture.capture_ended_at && eventOccurredAt > capture.capture_ended_at)) return "rejected" as const;
@@ -292,17 +294,18 @@ export async function ingestCallControlEvent(params: { event: CallControlEvent; 
   if (event.data.event_type === "call.ai_gather.message_history_updated") {
     const historyResult = await withCaptureLock(capture.account_id, capture.provider_call_id, async (client) => {
       const current = await client.callCaptureSession.findUnique({ where: { id: capture.id } });
-      const [latestConsent, start, conversationEndedLedger] = await Promise.all([
+      const [latestConsent, start, conversationEndedLedger, hangupLedger] = await Promise.all([
         client.callConsentEvent.findFirst({ where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, artifact: "transcript" }, orderBy: [{ occurred_at: "desc" }, { id: "desc" }] }),
         client.telnyxCallCommand.findFirst({ where: { capture_session_id: capture.id, command_type: "ai_assistant_start", generation: capture.generation, status: "succeeded" } }),
         client.webhookEvent.findFirst({ where: { account_id: capture.account_id, provider: "telnyx", provider_call_id: capture.provider_call_id, event_type: "call.conversation.ended", signature_valid: true }, orderBy: { received_at: "asc" }, select: { raw_body: true } }),
+        client.webhookEvent.findFirst({ where: { account_id: capture.account_id, provider: "telnyx", provider_call_id: capture.provider_call_id, event_type: "call.hangup", signature_valid: true }, orderBy: { received_at: "asc" }, select: { id: true } }),
       ]);
       const activeAdmission = current?.content_admission_closed_at === null && ["START_PENDING", "AI_ACTIVE"].includes(current.control_state);
       const conversationEndedEvent = conversationEndedLedger ? parseCallControlEvent(conversationEndedLedger.raw_body) : null;
       const conversationEndedAt = conversationEndedEvent ? new Date(conversationEndedEvent.data.occurred_at) : null;
-      const terminalState = Boolean(current && ["FINALIZING", "EVIDENCE_FROZEN"].includes(current.control_state) && current.capture_ended_at !== null);
+      const terminalState = Boolean(current && (["FINALIZING", "EVIDENCE_FROZEN", "TRANSFER_PENDING", "TRANSFERRED"].includes(current.control_state) || hangupLedger) && current.capture_ended_at !== null);
       const terminalReconciliation = terminalState && conversationEndedAt !== null;
-      const awaitingConversationBoundary = terminalState && conversationEndedAt === null;
+      const awaitingConversationBoundary = Boolean((terminalState || hangupLedger) && conversationEndedAt === null);
       const captureStart = current?.capture_started_at ?? start?.provider_date_at ?? null;
       const withinCaptureInterval = Boolean(captureStart && occurredAt >= captureStart && (!conversationEndedAt || occurredAt <= conversationEndedAt));
       const admitted = Boolean(current && latestConsent?.action === "grant" && start?.provider_date_at && start.conversation_id && withinCaptureInterval && (activeAdmission || terminalReconciliation) && (!event.data.payload.conversation_id || event.data.payload.conversation_id === start.conversation_id));
@@ -317,6 +320,7 @@ export async function ingestCallControlEvent(params: { event: CallControlEvent; 
         return { duplicate: false as const, captureId: capture.id };
       }
       try {
+        await client.webhookEvent.update({ where: { id: ledger.id }, data: { raw_body: params.rawBody } });
         if (!current.capture_started_at) {
           await client.callCaptureSession.updateMany({ where: { id: capture.id, control_state: "START_PENDING", generation: capture.generation, content_admission_closed_at: null }, data: { control_state: "AI_ACTIVE", capture_started_at: start.provider_date_at, conversation_id: start.conversation_id } });
         }
@@ -422,7 +426,7 @@ export async function runOperatorConsentEffect(params: { captureId: string; acti
   if (!capture?.assignment_id) throw new Error("qualification_capture_not_found");
   if (params.action === "grant") {
     const completed = await db.telnyxCallCommand.findFirst({ where: { capture_session_id: capture.id, command_type: "ai_assistant_start", generation: capture.generation, status: "succeeded" } });
-    if (completed?.conversation_id) {
+    if (completed?.conversation_id && completed.provider_date_at) {
       if (!capture.conversation_id) await db.callCaptureSession.update({ where: { id: capture.id }, data: { conversation_id: completed.conversation_id } });
       return;
     }
@@ -430,8 +434,8 @@ export async function runOperatorConsentEffect(params: { captureId: string; acti
     const assignment = await db.telephonyNumberAssignment.findUnique({ where: { id: capture.assignment_id } });
     if (!assignment || assignment.status !== "qualification") throw new Error("qualification_assignment_mismatch");
     const result = await executeCommand({ capture, commandType: "ai_assistant_start", action: "ai_assistant_start", request: { assistant: { id: assignment.provider_assistant_id }, send_message_history_updates: true, client_state: clientState(capture.id, capture.generation) } });
-    if (result.status === "succeeded" && result.conversation_id) await db.callCaptureSession.update({ where: { id: capture.id }, data: { conversation_id: result.conversation_id } });
-    if (result.status !== "succeeded" || !result.conversation_id) throw new Error(result.error_code ?? "telnyx_start_unconfirmed");
+    if (result.status === "succeeded" && result.conversation_id && result.provider_date_at) await db.callCaptureSession.update({ where: { id: capture.id }, data: { conversation_id: result.conversation_id } });
+    if (result.status !== "succeeded" || !result.conversation_id || !result.provider_date_at) throw new Error(result.error_code ?? "telnyx_start_unconfirmed");
     return;
   }
   if (params.action === "refuse") {

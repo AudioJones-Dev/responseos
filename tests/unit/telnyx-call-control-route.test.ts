@@ -48,4 +48,16 @@ describe("Telnyx Call Control route", () => {
     expect(response.status).toBe(415);
     expect(mocks.ingest).not.toHaveBeenCalled();
   });
+
+  test("rejects prefix-only JSON media types", async () => {
+    const { POST } = await import("@/app/api/webhooks/telnyx/call-control/route");
+    const response = await POST(new Request("https://responseos.example/api/webhooks/telnyx/call-control", {
+      method: "POST",
+      headers: { "content-type": "application/jsonx" },
+      body,
+    }));
+    expect(response.status).toBe(415);
+    expect(mocks.verify).not.toHaveBeenCalled();
+    expect(mocks.ingest).not.toHaveBeenCalled();
+  });
 });
