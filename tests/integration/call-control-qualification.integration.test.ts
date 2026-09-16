@@ -117,6 +117,8 @@ describe("FRL Call Control qualification", () => {
     await ingest(event("call.ai_gather.message_history_updated", "cc-history-1", payload, 5_000));
     expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } }))).toMatchObject({ control_state: "AI_ACTIVE", capture_started_at: new Date(NOW.getTime() + 4_000) });
     expect(await prisma.callTranscriptRevision.count()).toBe(1);
+    await expect(ingest(event("call.ai_gather.message_history_updated", "cc-history-1", payload, 5_000))).resolves.toEqual({ duplicate: true });
+    expect(await prisma.callTranscriptRevision.count()).toBe(1);
     await ingest(event("call.ai_gather.message_history_updated", "cc-history-2", payload, 6_000));
     expect(await prisma.callTranscriptRevision.count()).toBe(1);
     await ingest(event("call.ai_gather.message_history_updated", "cc-history-conflict", { ...payload, message_history: [{ role: "user", content: "Conflicting shorter history" }] }, 6_500));

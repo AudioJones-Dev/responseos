@@ -112,8 +112,11 @@ export async function recordWebhookEvent(entry: {
   const dedupe_hash = computeDedupeHash(entry.provider, entry.provider_event_id);
 
   try {
-    const created = await db.webhookEvent.create({
-      data: {
+    // createMany(skipDuplicates) compiles to ON CONFLICT DO NOTHING on
+    // PostgreSQL. Unlike catching a unique-constraint error, it leaves an
+    // enclosing capture-lock transaction usable for the authoritative lookup.
+    const inserted = await db.webhookEvent.createMany({
+      data: [{
         account_id: entry.account_id ?? null,
         provider: entry.provider,
         provider_event_id: entry.provider_event_id,
@@ -127,30 +130,20 @@ export async function recordWebhookEvent(entry: {
         provider_call_id: entry.provider_call_id ?? null,
         provider_call_ids: [...new Set([...(entry.provider_call_ids ?? []), ...(entry.provider_call_id ? [entry.provider_call_id] : [])])],
         agent_target: entry.agent_target ?? null,
-      },
+      }],
+      skipDuplicates: true,
+    });
+    const row = await db.webhookEvent.findUnique({
+      where: { dedupe_hash },
       select: { id: true, process_status: true },
     });
+    if (!row) return err("webhook_event_not_recorded", "Webhook event insert did not produce a readable ledger row.");
     return ok({
-      id: created.id,
-      process_status: created.process_status as WebhookProcessStatus,
+      id: row.id,
+      process_status: inserted.count === 1 ? row.process_status as WebhookProcessStatus : "duplicate",
     });
   } catch (e) {
-    if (
-      e instanceof Prisma.PrismaClientKnownRequestError &&
-      e.code === "P2002"
-    ) {
-      // The unique constraint is the concurrency authority. New deliveries use
-      // one write; only an actual replay pays for the lookup needed to return
-      // the existing ledger identity.
-      const existing = await db.webhookEvent.findUnique({
-        where: { dedupe_hash },
-        select: { id: true },
-      });
-      if (existing) return ok({ id: existing.id, process_status: "duplicate" });
-    }
-    return errFromThrown<{ id: string; process_status: WebhookProcessStatus }>(
-      e,
-    );
+    return errFromThrown<{ id: string; process_status: WebhookProcessStatus }>(e);
   }
 }
 
