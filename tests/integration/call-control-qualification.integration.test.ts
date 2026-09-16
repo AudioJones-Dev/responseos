@@ -84,12 +84,16 @@ describe("FRL Call Control qualification", () => {
     expect(await prisma.telnyxCallCommand.findFirst({ where: { command_type: "ai_assistant_start" } })).toBeNull();
 
     const route = await import("@/app/api/admin/call-capture/[id]/consent/route");
-    const response = await route.POST(new Request("https://example.test", { method: "POST", body: JSON.stringify({ action: "grant", disclosureRef: "approved:v1", evidenceRef: "witness:test", jurisdictionBasis: "commissioning:test", eventKey: "00000000-0000-4000-8000-000000000001" }) }), { params: Promise.resolve({ id: capture.id }) });
+    const grantRequest = () => new Request("https://example.test", { method: "POST", body: JSON.stringify({ action: "grant", disclosureRef: "approved:v1", evidenceRef: "witness:test", jurisdictionBasis: "commissioning:test", eventKey: "00000000-0000-4000-8000-000000000001" }) });
+    const response = await route.POST(grantRequest(), { params: Promise.resolve({ id: capture.id }) });
     expect(response.status).toBe(200);
     const start = await prisma.telnyxCallCommand.findFirstOrThrow({ where: { command_type: "ai_assistant_start" } });
     expect(start.status).toBe("succeeded");
     expect(start.conversation_id).toBe("conversation-1");
     expect(start.intended_at.getTime()).toBeLessThanOrEqual(start.provider_responded_at!.getTime());
+    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "AI_ACTIVE", capture_started_at: start.provider_date_at } });
+    expect((await route.POST(grantRequest(), { params: Promise.resolve({ id: capture.id }) })).status).toBe(200);
+    expect(await prisma.telnyxCallCommand.count({ where: { capture_session_id: capture.id, command_type: "ai_assistant_start" } })).toBe(1);
   });
 
   test("an uncertain disclosure command is retried with the same command identity", async () => {
@@ -251,6 +255,8 @@ describe("FRL Call Control qualification", () => {
     expect((await prisma.telnyxCallCommand.findUniqueOrThrow({ where: { id: uncertain.id } }))).toMatchObject({ status: "succeeded", command_id: uncertain.command_id });
     expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } })).control_state).toBe("STOPPED");
     expect(await prisma.callReview.count()).toBe(1);
+    expect((await route.POST(request(), { params: Promise.resolve({ id: capture.id }) })).status).toBe(200);
+    expect(await prisma.telnyxCallCommand.count({ where: { capture_session_id: capture.id, command_type: "ai_assistant_stop" } })).toBe(1);
   });
 
   test("stale generations and arbitrary transfer destinations fail closed", async () => {

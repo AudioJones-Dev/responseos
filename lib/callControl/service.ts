@@ -386,6 +386,11 @@ export async function runOperatorConsentEffect(params: { captureId: string; acti
   const capture = await db.callCaptureSession.findUnique({ where: { id: params.captureId } });
   if (!capture?.assignment_id) throw new Error("qualification_capture_not_found");
   if (params.action === "grant") {
+    const completed = await db.telnyxCallCommand.findFirst({ where: { capture_session_id: capture.id, command_type: "ai_assistant_start", generation: capture.generation, status: "succeeded" } });
+    if (completed?.conversation_id) {
+      if (!capture.conversation_id) await db.callCaptureSession.update({ where: { id: capture.id }, data: { conversation_id: completed.conversation_id } });
+      return;
+    }
     if (capture.control_state !== "START_PENDING" || capture.dtmf_decision !== "affirmative") throw new Error("affirmative_dtmf_required");
     const assignment = await db.telephonyNumberAssignment.findUnique({ where: { id: capture.assignment_id } });
     if (!assignment || assignment.status !== "qualification") throw new Error("qualification_assignment_mismatch");
@@ -395,11 +400,18 @@ export async function runOperatorConsentEffect(params: { captureId: string; acti
     return;
   }
   if (params.action === "refuse") {
+    const completed = await db.telnyxCallCommand.findFirst({ where: { capture_session_id: capture.id, command_type: "refusal_ack", generation: capture.generation, status: "succeeded" } });
+    if (completed) return;
     if (capture.control_state !== "REFUSED" || capture.dtmf_decision !== "refused") throw new Error("refusal_dtmf_required");
     const memory = BusinessMemorySnapshotSchema.parse(capture.snapshot_json);
     const configured = readOperatingConfigurationValue(memory, "policy.consent")?.refusal.acknowledgement;
     const result = await executeCommand({ capture, commandType: "refusal_ack", action: "speak", request: { payload: configured || "No problem. I won't collect any more details.", voice: "female", service_level: "basic", language: "en-US", client_state: clientState(capture.id, capture.generation) } });
     if (result.status !== "succeeded") throw new Error(result.error_code ?? "telnyx_refusal_ack_unconfirmed");
+    return;
+  }
+  const completed = await db.telnyxCallCommand.findFirst({ where: { capture_session_id: capture.id, command_type: "ai_assistant_stop", generation: capture.generation, status: "succeeded" } });
+  if (completed) {
+    await freezeEvidence(capture.id);
     return;
   }
   if (capture.control_state !== "STOP_PENDING") throw new Error("active_capture_required");
