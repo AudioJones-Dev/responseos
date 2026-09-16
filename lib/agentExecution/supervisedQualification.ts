@@ -16,6 +16,10 @@ import { SUPERVISED_AGENT_PROFILE_SLUG } from "./supervisedTenant";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+function qualificationError(code: string) {
+  return Object.assign(new Error(code), { code });
+}
+
 export interface StartSupervisedQualificationInput {
   accountSlug: string;
   providerNumberId: string;
@@ -143,12 +147,12 @@ export async function startSupervisedQualification(
         }),
       ]);
       if (!currentProfile || currentProfile.enabled || executionModeFromProfilePolicy(currentProfile.system_policy_json) !== "SUPERVISED_PILOT") {
-        throw new Error("qualification_profile_invalid");
+        throw qualificationError("qualification_profile_invalid");
       }
-      if (!currentAccount || !currentSnapshot) throw new Error("qualification_snapshot_missing");
+      if (!currentAccount || !currentSnapshot) throw qualificationError("qualification_snapshot_missing");
       const currentMemory = BusinessMemorySnapshotSchema.safeParse(currentSnapshot.memory_json);
-      if (!currentMemory.success) throw new Error("qualification_snapshot_invalid");
-      if (!qualificationReadiness(currentMemory.data).ready) throw new Error("qualification_configuration_incomplete");
+      if (!currentMemory.success) throw qualificationError("qualification_snapshot_invalid");
+      if (!qualificationReadiness(currentMemory.data).ready) throw qualificationError("qualification_configuration_incomplete");
       buildSupervisedAgentContext({
         businessName: currentAccount.name,
         agentName: currentProfile.name,
@@ -158,7 +162,7 @@ export async function startSupervisedQualification(
 
       let number = await tx.telephonyNumber.findUnique({ where: { provider_e164: { provider: "telnyx", e164 } } });
       if (number && (number.provider_number_id !== input.providerNumberId || number.evergreen)) {
-        throw new Error(number.evergreen ? "evergreen_number_forbidden" : "provider_number_mismatch");
+        throw qualificationError(number.evergreen ? "evergreen_number_forbidden" : "provider_number_mismatch");
       }
       if (number) {
         const current = await tx.telephonyNumberAssignment.findFirst({
@@ -173,15 +177,15 @@ export async function startSupervisedQualification(
           ) {
             return { assignment: current, created: false };
           }
-          throw new Error("number_assignment_conflict");
+          throw qualificationError("number_assignment_conflict");
         }
-        if (number.status !== "available") throw new Error("number_not_available");
+        if (number.status !== "available") throw qualificationError("number_not_available");
       }
 
       const otherQualification = await tx.telephonyNumberAssignment.findFirst({
         where: { account_id: account.id, bootstrap_id: null, status: "qualification", unassigned_at: null },
       });
-      if (otherQualification) throw new Error("qualification_assignment_conflict");
+      if (otherQualification) throw qualificationError("qualification_assignment_conflict");
 
       number = number
         ? await tx.telephonyNumber.update({ where: { id: number.id }, data: { status: "assigned" } })
@@ -257,7 +261,7 @@ export async function endSupervisedQualification(
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${"supervised-qualification:" + e164}))`;
       const account = await tx.account.findUnique({ where: { slug: input.accountSlug } });
       const number = await tx.telephonyNumber.findUnique({ where: { provider_e164: { provider: "telnyx", e164 } } });
-      if (!account || !number) throw new Error("qualification_assignment_not_found");
+      if (!account || !number) throw qualificationError("qualification_assignment_not_found");
       const assignment = await tx.telephonyNumberAssignment.findFirst({
         where: {
           account_id: account.id,
@@ -267,7 +271,7 @@ export async function endSupervisedQualification(
           unassigned_at: null,
         },
       });
-      if (!assignment) throw new Error("qualification_assignment_not_found");
+      if (!assignment) throw qualificationError("qualification_assignment_not_found");
       const ended = await tx.telephonyNumberAssignment.update({
         where: { id: assignment.id },
         data: { unassigned_at: now, number_exclusivity_key: null },
