@@ -36,13 +36,15 @@
       "phase": "Tech Debt & Hardening",
       "title": "Apply owner-approved copy redlines (claims, naming, CTA)",
       "owner": "Claude Code",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "High",
       "start": "2026-09-11",
       "due": "2026-09-11",
       "ref": 163,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/163"
     },
     {
       "id": "G-15",
@@ -60,26 +62,30 @@
       "phase": "Tech Debt & Hardening",
       "title": "Adopt supplied logo pack, rebuild favicons, UI and label cleanup",
       "owner": "Claude Code",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "Med",
       "start": "2026-09-11",
       "due": "2026-09-11",
       "ref": 162,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/162"
     },
     {
       "id": "ADR-0056-COMMIT-TITLE-NOTE",
       "phase": "Tech Debt & Hardening",
       "title": "Record that #169's commit subject says ADR-0054 but contains ADR-0056",
       "owner": "Claude Code",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "Low",
       "start": "2026-09-14",
       "due": "2026-09-14",
       "ref": 178,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/178"
     },
     {
       "id": "CONVERGE-TRANSPORT",
@@ -88,11 +94,13 @@
       "phase": "Tech Debt & Hardening",
       "title": "Preserve bounded prospect HTTPS transport and metadata validation",
       "owner": "Codex",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "High",
       "start": "2026-09-12",
-      "blocked": false
+      "blocked": false,
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/167"
     },
     {
       "id": "CONVERGE-CRM-CLAIM",
@@ -101,11 +109,13 @@
       "phase": "Tech Debt & Hardening",
       "title": "Preserve tenant-scoped atomic CRM retry ownership",
       "owner": "Codex",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "High",
       "start": "2026-09-12",
-      "blocked": false
+      "blocked": false,
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/168"
     },
     {
       "id": "F-01",
@@ -234,7 +244,7 @@
       "phase": "Tech Debt & Hardening",
       "title": "CRM-1 connection and provider registry PRD (planning only)",
       "owner": "Codex",
-      "status": "Review",
+      "status": "Done",
       "progress": 100,
       "priority": "High",
       "start": "2026-08-23",
@@ -243,7 +253,7 @@
       "blockedReason": "PR #140 is planning review only; CRM-1 runtime requires a separately approved exact-scope implementation task and must not begin automatically",
       "ref": 140,
       "refType": "pull",
-      "refState": "draft",
+      "refState": "merged",
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/140"
     },
     {
@@ -294,46 +304,54 @@
       "start": "2026-09-10",
       "due": "2026-09-12",
       "ref": 149,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/149"
     },
     {
       "id": "V-07",
       "phase": "v0.3 · Demo Scope",
       "title": "Operating-configuration contract + fact authority ranking (FRL pilot PR 1)",
       "owner": "Claude Code",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "High",
       "start": "2026-09-10",
       "due": "2026-09-12",
       "ref": 152,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/152"
     },
     {
       "id": "V-08",
       "phase": "v0.3 · Demo Scope",
       "title": "FRL operating-configuration skeleton (unknowns only, no invented facts)",
       "owner": "Claude Code",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "High",
       "start": "2026-09-11",
       "due": "2026-09-16",
       "ref": 154,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/154"
     },
     {
       "id": "R-02",
       "phase": "v0.3 · Demo Scope",
       "title": "Client-activation current-state reconciliation",
       "owner": "Claude Code",
-      "status": "Review",
+      "status": "Done",
       "progress": 100,
       "priority": "High",
       "start": "2026-09-10",
       "due": "2026-09-10",
       "ref": 149,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/149"
     },
     {
       "id": "R-01",
@@ -537,26 +555,30 @@
       "phase": "Tech Debt & Hardening",
       "title": "Repo-pruner detection tooling and first Measure evidence run",
       "owner": "Claude Code",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "Med",
       "start": "2026-08-31",
       "due": "2026-08-31",
       "ref": 143,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/143"
     },
     {
       "id": "G-09",
       "phase": "Tech Debt & Hardening",
       "title": "DMAIC component registry for pruner classification",
       "owner": "Claude Code",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "Med",
       "start": "2026-08-31",
       "due": "2026-08-31",
       "ref": 144,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/144"
     },
     {
       "id": "14",
@@ -756,7 +778,9 @@
       "start": "2026-09-10",
       "due": "2026-09-10",
       "ref": 151,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/151"
     },
     {
       "id": "V-10",
@@ -769,7 +793,9 @@
       "start": "2026-09-11",
       "due": "2026-09-11",
       "ref": 153,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/153"
     },
     {
       "id": "V-11",
@@ -782,7 +808,9 @@
       "start": "2026-09-11",
       "due": "2026-09-11",
       "ref": 156,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/156"
     },
     {
       "id": "V-12",
@@ -795,7 +823,9 @@
       "start": "2026-09-11",
       "due": "2026-09-11",
       "ref": 157,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/157"
     },
     {
       "id": "V-13",
@@ -808,7 +838,9 @@
       "start": "2026-09-11",
       "due": "2026-09-11",
       "ref": 158,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/158"
     },
     {
       "id": "V-14",
@@ -821,7 +853,9 @@
       "start": "2026-09-11",
       "due": "2026-09-11",
       "ref": 159,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/159"
     },
     {
       "id": "V-15",
@@ -834,46 +868,54 @@
       "start": "2026-09-11",
       "due": "2026-09-11",
       "ref": 160,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/160"
     },
     {
       "id": "V-17",
       "phase": "v0.3 · Demo Scope",
       "title": "Demo route for the receptionist (read-only question surface)",
       "owner": "Claude Code",
-      "status": "Review",
+      "status": "Done",
       "progress": 100,
       "priority": "High",
       "start": "2026-09-11",
       "due": "2026-09-11",
       "ref": 161,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/161"
     },
     {
       "id": "V-18",
       "phase": "v0.3 · Demo Scope",
       "title": "Public demo surface honours the tenant's stored disclosure policy",
       "owner": "Claude Code",
-      "status": "Review",
+      "status": "Done",
       "progress": 100,
       "priority": "High",
       "start": "2026-09-12",
       "due": "2026-09-12",
       "ref": 164,
-      "refType": "issue"
+      "refType": "issue",
+      "refState": "closed",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/issues/164"
     },
     {
       "id": "C-01",
       "phase": "Tech Debt & Hardening",
       "title": "Capability contract + governance validator (ADR-0058, Increment 1)",
       "owner": "Claude Code",
-      "status": "Review",
+      "status": "Done",
       "progress": 100,
       "priority": "Med",
       "start": "2026-09-13",
       "due": "2026-09-13",
       "ref": 174,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/174"
     },
     {
       "id": "V-19",
@@ -891,39 +933,45 @@
       "phase": "v0.3 · Demo Scope",
       "title": "FRL inbound intake & routing policy (canonical source for the supervised pilot)",
       "owner": "Claude Code",
-      "status": "Review",
+      "status": "Done",
       "progress": 100,
       "priority": "High",
       "start": "2026-09-12",
       "due": "2026-09-12",
       "ref": 171,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/171"
     },
     {
       "id": "V-21",
       "phase": "v0.3 · Demo Scope",
       "title": "FRL policy: qualified-only CRM task trigger + auditable consent-evidence prerequisite",
       "owner": "Claude Code",
-      "status": "Review",
+      "status": "Done",
       "progress": 100,
       "priority": "High",
       "start": "2026-09-13",
       "due": "2026-09-13",
       "refType": "pull",
-      "ref": 175
+      "ref": 175,
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/175"
     },
     {
       "id": "V-16",
       "phase": "v0.3 · Demo Scope",
       "title": "Consolidate normalizeE164 into one shared helper (caller-resolution prerequisite)",
       "owner": "Claude Code",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "Med",
       "start": "2026-09-11",
       "due": "2026-09-12",
       "ref": 155,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/155"
     },
     {
       "id": "Q-01",
@@ -969,13 +1017,15 @@
       "phase": "Testing & QA",
       "title": "Prospect Demos input labels and placeholder contrast",
       "owner": "Codex",
-      "status": "Review",
+      "status": "Done",
       "progress": 100,
       "priority": "Med",
       "start": "2026-08-24",
       "due": "2026-08-24",
       "ref": 141,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/141"
     },
     {
       "id": "L-02",
@@ -1148,8 +1198,8 @@
       "phase": "Launch / Demo Deploy",
       "title": "Certify hosted anonymous browser auth without redeployment",
       "owner": "Codex",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "High",
       "start": "2026-08-23",
       "due": "2026-08-23",
@@ -1157,7 +1207,7 @@
       "blockedReason": "PR #137 is under review. Deployment #2 remains retained and unchanged; read-only hosted certification requires a separate exact-SHA authorization after review/merge.",
       "ref": 137,
       "refType": "pull",
-      "refState": "open",
+      "refState": "merged",
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/137"
     },
     {
@@ -1165,7 +1215,7 @@
       "phase": "Launch / Demo Deploy",
       "title": "Keep Clerk control organization outside tenant provisioning",
       "owner": "Codex",
-      "status": "Review",
+      "status": "Done",
       "progress": 100,
       "priority": "High",
       "start": "2026-08-25",
@@ -1174,7 +1224,7 @@
       "blockedReason": "The narrow control-organization webhook exclusion is locally validated and awaits PR review, exact-head CI, merge, guarded staging identity reconciliation, and governed redeployment.",
       "ref": 142,
       "refType": "pull",
-      "refState": "open",
+      "refState": "merged",
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/142"
     },
     {
@@ -1232,15 +1282,35 @@
       "phase": "Integrations",
       "title": "Disconnect cached application client before test schema resets",
       "owner": "Codex",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "ref": 170,
       "refType": "pull",
       "priority": "High",
-      "blocked": false
+      "blocked": false,
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/170"
     }
   ],
   "liveIssues": [
+    {
+      "number": 183,
+      "title": "Decide 400 vs 422 for validation_failed on POST /api/leads/:id/qualify",
+      "url": "https://github.com/AudioJones-Dev/responseos/issues/183",
+      "state": "open",
+      "labels": [
+        "tech-debt"
+      ]
+    },
+    {
+      "number": 145,
+      "title": "Extract shared dashboard presentation from client and demo routes",
+      "url": "https://github.com/AudioJones-Dev/responseos/issues/145",
+      "state": "open",
+      "labels": [
+        "tech-debt"
+      ]
+    },
     {
       "number": 26,
       "title": "Make prisma/seed.ts genuinely idempotent (or document create-only)",
@@ -1251,5 +1321,5 @@
       ]
     }
   ],
-  "generatedAt": "2026-08-21T00:51:44.624Z"
+  "generatedAt": "2026-09-19T16:11:18.426Z"
 }
