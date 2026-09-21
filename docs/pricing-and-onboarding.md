@@ -22,8 +22,6 @@ Billing implementation remains v0.5-gated under ADR-0010. Provider activation, c
 The original material below is retained for provenance and earlier cross-references. Its prices, tier names, credit rules, standard outcome-fee options, usage allowances, markups, and default quotes must not be used for current proposals. The commercial doctrine above controls where they conflict.
 
 
-# Pricing and Onboarding
-
 > **Commercial status:** The amounts, legacy Recovery-tier names, included
 > usage, overages, pilot terms, and default quote in this document are
 > provisional planning material—not newly validated or approved public pricing.
