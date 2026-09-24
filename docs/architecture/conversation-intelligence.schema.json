@@ -1,0 +1,603 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Proposed Call Intelligence extraction payload v1",
+  "description": "Documentation-only proposal. Server binds identity, provenance, lifecycle and authorization; model emits evidence-backed observations only.",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "enum": [
+        "call-intelligence.v1"
+      ]
+    },
+    "caller": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/textFact"
+        },
+        "phone": {
+          "$ref": "#/$defs/textFact"
+        },
+        "email": {
+          "$ref": "#/$defs/textFact"
+        },
+        "city": {
+          "$ref": "#/$defs/textFact"
+        },
+        "zip": {
+          "$ref": "#/$defs/textFact"
+        }
+      },
+      "required": [
+        "name",
+        "phone",
+        "email",
+        "city",
+        "zip"
+      ],
+      "additionalProperties": false
+    },
+    "classification": {
+      "type": "object",
+      "properties": {
+        "intent": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "enum": [
+                "sales_inquiry",
+                "quote_request",
+                "site_evaluation_request",
+                "existing_customer_service",
+                "vendor_call",
+                "other",
+                null
+              ]
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "asserted",
+                "inferred",
+                "unknown",
+                "conflicted"
+              ]
+            },
+            "confidence": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 1
+            },
+            "evidence": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "segmentId": {
+                    "type": "string"
+                  },
+                  "startMs": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
+                  "endMs": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "segmentId",
+                  "startMs",
+                  "endMs"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "value",
+            "status",
+            "confidence",
+            "evidence"
+          ],
+          "additionalProperties": false
+        },
+        "serviceType": {
+          "$ref": "#/$defs/textFact"
+        },
+        "customerType": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "enum": [
+                "homeowner",
+                "caregiver",
+                "builder_gc",
+                "commercial",
+                "existing_customer",
+                "other",
+                null
+              ]
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "asserted",
+                "inferred",
+                "unknown",
+                "conflicted"
+              ]
+            },
+            "confidence": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 1
+            },
+            "evidence": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "segmentId": {
+                    "type": "string"
+                  },
+                  "startMs": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
+                  "endMs": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "segmentId",
+                  "startMs",
+                  "endMs"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "value",
+            "status",
+            "confidence",
+            "evidence"
+          ],
+          "additionalProperties": false
+        },
+        "urgency": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "enum": [
+                "same_day",
+                "this_week",
+                "within_30_days",
+                "later",
+                "unspecified",
+                null
+              ]
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "asserted",
+                "inferred",
+                "unknown",
+                "conflicted"
+              ]
+            },
+            "confidence": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 1
+            },
+            "evidence": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "segmentId": {
+                    "type": "string"
+                  },
+                  "startMs": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
+                  "endMs": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "segmentId",
+                  "startMs",
+                  "endMs"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "value",
+            "status",
+            "confidence",
+            "evidence"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "intent",
+        "serviceType",
+        "customerType",
+        "urgency"
+      ],
+      "additionalProperties": false
+    },
+    "project": {
+      "type": "object",
+      "properties": {
+        "propertyType": {
+          "$ref": "#/$defs/textFact"
+        },
+        "installationAddress": {
+          "$ref": "#/$defs/textFact"
+        },
+        "liftHeight": {
+          "$ref": "#/$defs/textFact"
+        },
+        "timeline": {
+          "$ref": "#/$defs/textFact"
+        },
+        "photosAvailable": {
+          "$ref": "#/$defs/booleanFact"
+        }
+      },
+      "required": [
+        "propertyType",
+        "installationAddress",
+        "liftHeight",
+        "timeline",
+        "photosAvailable"
+      ],
+      "additionalProperties": false
+    },
+    "opportunity": {
+      "type": "object",
+      "properties": {
+        "quoteRequested": {
+          "$ref": "#/$defs/booleanFact"
+        },
+        "evaluationRequested": {
+          "$ref": "#/$defs/booleanFact"
+        },
+        "budgetMentioned": {
+          "$ref": "#/$defs/booleanFact"
+        }
+      },
+      "required": [
+        "quoteRequested",
+        "evaluationRequested",
+        "budgetMentioned"
+      ],
+      "additionalProperties": false
+    },
+    "commitments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "actor": {
+            "type": "string",
+            "enum": [
+              "customer",
+              "operator",
+              "company",
+              "unknown"
+            ]
+          },
+          "action": {
+            "type": "string"
+          },
+          "dueAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "confidence": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 1
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "segmentId": {
+                  "type": "string"
+                },
+                "startMs": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "endMs": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "segmentId",
+                "startMs",
+                "endMs"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "actor",
+          "action",
+          "dueAt",
+          "confidence",
+          "evidence"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "missingInformation": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "name",
+          "phone",
+          "email",
+          "city",
+          "zip",
+          "installation_address",
+          "property_type",
+          "lift_height",
+          "timeline",
+          "photos",
+          "other"
+        ]
+      }
+    },
+    "conflicts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "segmentId": {
+                  "type": "string"
+                },
+                "startMs": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "endMs": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "segmentId",
+                "startMs",
+                "endMs"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "field",
+          "description",
+          "evidence"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "caller",
+    "classification",
+    "project",
+    "opportunity",
+    "commitments",
+    "missingInformation",
+    "conflicts"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "textFact": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "asserted",
+            "inferred",
+            "unknown",
+            "conflicted"
+          ]
+        },
+        "confidence": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "segmentId": {
+                "type": "string"
+              },
+              "startMs": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "endMs": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "segmentId",
+              "startMs",
+              "endMs"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "value",
+        "status",
+        "confidence",
+        "evidence"
+      ],
+      "additionalProperties": false
+    },
+    "booleanFact": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "asserted",
+            "inferred",
+            "unknown",
+            "conflicted"
+          ]
+        },
+        "confidence": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "segmentId": {
+                "type": "string"
+              },
+              "startMs": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "endMs": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "segmentId",
+              "startMs",
+              "endMs"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "value",
+        "status",
+        "confidence",
+        "evidence"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

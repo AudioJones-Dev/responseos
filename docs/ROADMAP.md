@@ -122,6 +122,20 @@ Architectural placement: [`architecture.md`](./architecture.md) § Future Knowle
 
 ## Hard constraints across all versions
 
+### Proposed Conversation Intelligence sequence — documentation only
+
+The [architecture review](./architecture/conversation-intelligence-review.md)
+defines a proposed human-handled-call capability: mock capture/persistence,
+separately authorized provider qualification, post-call intelligence,
+dataset/evaluations, human-reviewed workflow recommendations, bounded execution,
+then realtime copilot. This is **DOCUMENTED_ONLY**, not a scheduled release or
+v0.3 authorization. No implementation has started. Recording remains disabled
+under ADR-0051; the scoped exception, retention policy and reconciliation with
+the open supervised-call foundation must be resolved before live capture.
+The [draft ADRs](./architecture/conversation-intelligence-adrs.md) remain proposed.
+
+### Existing constraints
+
 - No Firebase.
 - No real secrets in the repo.
 - No production deploys from this repo until v0.3 readiness gates clear, except the public read-only demo surface (ADR-0053): the marketing pages and `/demo/receptionist`, on mock adapters, operator-authorized and deployed by hand. Not v0.3 authorization.

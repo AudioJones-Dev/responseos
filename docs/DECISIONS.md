@@ -2,6 +2,17 @@
 
 This file records the load-bearing decisions that constrain how ResponseOS is built. Each ADR is short by design: context, decision, consequences. If a decision is reversed, mark the entry **Superseded by ADR-XXX** rather than deleting it.
 
+## Proposed Conversation Intelligence decisions — not ratified
+
+The [architecture review](./architecture/conversation-intelligence-review.md) and
+[draft ADR packet CI-A through CI-D](./architecture/conversation-intelligence-adrs.md)
+propose scoped human-call capture, versioned evidence, deterministic action
+authorization and a deferred realtime-host evaluation. These temporary identifiers
+avoid collisions with concurrent ADR branches. They authorize no implementation,
+recording, provider work, deployment or external effects. ADR-0051's recording
+prohibition and all existing FRL/demo restrictions remain in force. Assign numbered
+ADRs only after operator decisions and dependency reconciliation.
+
 ## ADR-0001 — Mock-first development; no live integrations until v0.3
 
 **Status:** Accepted. Carried from v0.1 foundation.
