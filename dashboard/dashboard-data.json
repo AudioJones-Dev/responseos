@@ -34,13 +34,13 @@
     {
       "id": "CI-ARCH-01",
       "phase": "v0.3 · Demo Scope",
-      "title": "Review proposed human-call Conversation Intelligence architecture (documentation only)",
+      "title": "Review Conversation Intelligence architecture and consent/capture authorization (documentation only)",
       "owner": "Codex",
       "status": "Review",
       "progress": 90,
       "priority": "High",
       "blocked": true,
-      "blockedReason": "Independent review and owner design decisions pending; implementation and recording activation are not authorized."
+      "blockedReason": "Exact-head independent architecture review and owner approval pending. Phase 1A stays paused until architecture and canonical consent foundation merge to master; live recording needs separate ratification."
     },
     {
       "id": "G-14",

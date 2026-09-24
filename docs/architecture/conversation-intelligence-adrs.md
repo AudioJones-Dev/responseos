@@ -10,6 +10,13 @@ No decision in this packet is ratified. Numbered ADR IDs will be assigned after 
 
 ADR-0051 and execution policy keep recording disabled at every tier. ADR-0047 excludes recording and outbound dialing from the existing demo; ADR-0048 preserves a recording-off prospect posture. ADR-0055 defines artifact-specific immutable consent authority. The open #177 implementation provides related capture machinery but still does not authorize recording.
 
+ADR-0055 is already accepted on master at 724a3e5; it is not waiting for #177
+to establish authority. PR #177 at c851940 carries a call-specific implementation.
+Conversation Intelligence consumes and extends that one canonical consent stream;
+it MUST NOT create a second ConsentEvent model, stream or authorization service.
+The review's [consent reconciliation](./conversation-intelligence-review.md#consent-reconciliation--adr-0055)
+maps authority fields, capture evidence, disclosures and withdrawal enforcement.
+
 The requested human-call topology includes dialing an operator leg. Classifying the inbound business interaction does not eliminate that outbound provider operation.
 
 ### Proposed decision
@@ -70,6 +77,14 @@ Cross-tenant parent-link rejection; revision/hash determinism; no fabricated con
 ### Amendments required if accepted
 
 Extend ADR-0034/0055 and data-schema/event contracts. Reconcile #177 model names and dependencies before migration. v0.4 knowledge/RAG and cross-client benchmark gates stay unchanged.
+
+ConsentEvent in this packet is the ADR-0055 domain concept, not a proposed new
+table. CallConsentEvent is #177's call-specific implementation name. Retain its
+identity and extend the shared contract after foundation reconciliation; do not
+dual-write into a Conversation Intelligence consent ledger. Consent-related
+CallEvidenceEvent notifications carry only canonical event references and cannot
+grant or revoke permission independently. Per-contact state and capture admission
+are derived projections, never competing consent authority.
 
 ## CI-C — Deterministic policy owns action authority; adapters own bounded execution
 

@@ -124,6 +124,8 @@ Architectural placement: [`architecture.md`](./architecture.md) § Future Knowle
 
 ### Proposed Conversation Intelligence sequence — documentation only
 
+The [consent A–I specification](./architecture/conversation-intelligence-consent.md) is part of this architecture. Phase 1A will model consent authorization and cancellation with mocks; the recommended later branch is `feat/conversation-intelligence-consent-capture`. No new branch or production implementation is authorized now.
+
 The [architecture review](./architecture/conversation-intelligence-review.md)
 defines a proposed human-handled-call capability: mock capture/persistence,
 separately authorized provider qualification, post-call intelligence,
@@ -133,6 +135,11 @@ v0.3 authorization. No implementation has started. Recording remains disabled
 under ADR-0051; the scoped exception, retention policy and reconciliation with
 the open supervised-call foundation must be resolved before live capture.
 The [draft ADRs](./architecture/conversation-intelligence-adrs.md) remain proposed.
+Phase 1A is paused pending exact-head independent architecture review, owner
+approval, human merge of this documentation and merge of the relevant canonical
+consent foundation. Its feature branch must start from updated master, never
+from PR #177 or the architecture branch. ADR-0055 already governs the consent
+contract on master; the unmerged foundation concerns implementation.
 
 ### Existing constraints
 

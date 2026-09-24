@@ -4,6 +4,8 @@ Status: **DOCUMENTED_ONLY / Proposed, not ratified**. Date: 2026-09-24.
 Authoring agent: Codex. Independent review: pending; this report is not independent review of its own proposed changes.
 Scope: human-handled commercial inbound calls. No runtime, migration, provider, credential, deployment, or client-data change is authorized by this packet.
 
+Consent is a first-class authorization boundary specified in the [A–I consent architecture](./conversation-intelligence-consent.md), part of this same branch and packet. It extends the canonical consent reconciliation below; no second consent authority is proposed.
+
 ## Decision and task specification
 
 Recommend a bounded human-call capture capability within ResponseOS, followed by post-call evidence processing. Reuse the operational substrate and reconcile the open supervised-call work before implementation. Do not build a second receptionist, general CRM, or general workflow designer.
@@ -15,7 +17,7 @@ Recommend a bounded human-call capture capability within ResponseOS, followed by
 - **Out of scope now:** production behavior, live calls, provider configuration, migrations, capture activation, STT/model requests, CRM writes, emails, SMS, binding quotes, realtime gateway, cross-tenant datasets and RAG.
 - **Constraints:** existing recording prohibition; tenant isolation; independent review/human merge; FRL path non-interference; mock-first startup; existing ADRs win until expressly amended.
 - **Existing assets:** code and schema listed in A; ADR-0013/0017/0030/0034/0047/0050/0051/0055/0056/0058; PR #177 is an unmerged dependency candidate.
-- **Plan:** approve the scoped design and resolve dependencies; build Phase 1A contracts and synthetic persistence; separately authorize a provider proof for Phase 1B; only then activate bounded capture and advance phases.
+- **Plan:** publish and independently review this exact architecture head; reconcile findings, obtain owner approval and human-merge documentation; land the relevant canonical consent foundation on master; only then separately authorize Phase 1A on a fresh master-based branch. No implementation now.
 - **Risks:** consent-to-media timing, mixed/unmapped channels, stale approvals, ambiguous external effects, sensitive-data retention, duplicate subsystems.
 - **Open questions:** owner-approved recording amendment; human transfer exception; exact Phase 1 dependency baseline; approved retention/deletion policy; evidence sufficient to prove capture start/stop; operator fallback when consent is refused.
 
@@ -95,11 +97,13 @@ Terminal or suspended branches: `declined`, `expired`, `failed`, `withdrawn`, `r
 
 Disclosure playback completion is not consent. Use a deterministic DTMF response for the caller, and explicit operator acknowledgment for the operator leg; do not start STT to detect the pre-consent "yes." Bind grants to participant, call, disclosure version, artifact class and capture generation. No response, unsupported digit or conflict is denial.
 
-Bridge only to a server-allowlisted operator endpoint. A dialed operator leg is a provider outbound operation even though the commercial call is inbound; scope that exception explicitly. On refusal, support an unrecorded human continuation if the operator approves that design, otherwise a safe unrecorded termination path. No automatic voicemail recording or outbound callback.
+Bridge only to a server-allowlisted operator endpoint. A dialed operator leg is a provider outbound operation even though the commercial call is inbound; scope that exception explicitly. On decline, allow unrecorded human continuation with recording, transcription, media streaming and AI analysis disabled. Human routing must not depend on granting consent. No automatic voicemail recording or outbound callback.
 
 Record after both relevant participants have granted and the bridge/leg mapping is verified. This leaves an intentional uncaptured initial interval; never reconstruct it from unauthorized buffers. Transfers, conference joins and operator changes stop admission until the participant map and consent are revalidated. Phase 1 supports only a verified two-party topology.
 
 ## C. Data model and lineage
+
+The [consent contract B](./conversation-intelligence-consent.md#b-revised-data-model) specifies all ConsentEvent fields, four states, distinct permissions, disclosure assets and presentation evidence as extensions of the canonical authority.
 
 Every new tenant object has account_id, id, created_at and a stable parent reference. Application authorization and composite tenant-parent constraints must both prevent cross-account linkage. Provider aliases are scoped by provider connection/application, environment, account and leg; caller-supplied account identifiers grant nothing.
 
@@ -107,7 +111,7 @@ Every new tenant object has account_id, id, created_at and a stable parent refer
 |---|---|
 | Call | Reuse Call; add explicit capability/source discriminator and canonical-evidence pointer only when needed. One logical interaction, multiple provider legs; do not overload provider_call_id with every leg |
 | CallParticipant | New; call_id, role (caller/operator/system/unknown), participant identity reference, provider leg, join/leave interval, channel-map version; phone presence is not verified identity |
-| ConsentEvent | Reconcile to PR #177 CallConsentEvent; immutable grant/refusal/withdrawal, artifact and purpose, participant, disclosure_ref/version, source_channel, jurisdiction_basis, effective and received times, evidence_ref, actor and generation |
+| ConsentEvent (canonical concept, not a new table) | Consume/extend ADR-0055 through the reconciled CallConsentEvent implementation from #177; immutable decision, artifact/purpose, participant/source, pinned disclosure and evidence. Capture generation/bounds are linked session evidence, not a second source of consent authority. See section I reconciliation |
 | Recording | New CallRecording; call/capture IDs, provider recording ID, channel count/map, capture interval, command/evidence refs, hash, private object ref, format, retention expiry, admission and deletion states |
 | Transcript | Retain CallTranscript as compatibility projection; reuse/reconcile CallTranscriptRevision from #177 as authority. Add source recording IDs, channel-map version, STT/model/config version, completeness, language, hash and expiry |
 | TranscriptSegment | New revision-bound segment identity; transcript_revision_id, sequence, participant_id or unknown, channel, offsets, text/redacted text, optional provider confidence. Existing CallSegment can remain a read projection |
@@ -159,6 +163,8 @@ Policy calculates evaluationRequired, SLA, owner assignment and candidate action
 
 ## E. Event model
 
+The [consent event sequence D](./conversation-intelligence-consent.md#d-event-sequence-and-audit-evidence) adds pending/disclosure/start-request/stop-request and unconfirmed-stop facts. Domain notifications reference canonical consent IDs; they never independently grant authority.
+
 Extend the existing canonical envelope rather than invent an incompatible bus. Proposed durable CallEvidenceEvent provides the first narrow persisted domain-event implementation, scoped to this capability; do not implement a general event platform.
 
 Preserve id/type/account_id/occurred_at/received_at/source/dedupe_key/correlation_id/schema_version/actor/payload/raw_ref. Add causation reference and capture generation where required. signature_valid is meaningful for verified provider events, not a fabricated property of internal facts. Payloads contain minimized metadata and private references, not full transcript copies.
@@ -166,7 +172,7 @@ Preserve id/type/account_id/occurred_at/received_at/source/dedupe_key/correlatio
 | Event group | Proposed canonical facts |
 |---|---|
 | Call/participants | call.received, call.answered, call.participant_joined, call.participant_left, call.ended |
-| Consent/capture | call.disclosure_completed, call.consent_granted, call.consent_refused, call.consent_withdrawn, call.capture_started, call.capture_stopped, call.capture_failed |
+| Consent/capture | call.disclosure_completed, call.consent_granted, call.consent_declined, call.consent_withdrawn, call.capture_started, call.capture_stopped, call.capture_failed |
 | Recording | call.recording_available, call.recording_admitted, call.recording_rejected, call.recording_deleted |
 | Interpretation | call.transcript_finalized, call.extraction_completed, call.extraction_rejected, call.review_completed, call.correction_recorded |
 | Workflow | workflow.candidate_created, workflow.action_approved, workflow.action_revoked, workflow.run_started/completed/failed, workflow.reconciliation_required |
@@ -261,6 +267,177 @@ Deletion propagates through recording copies, channel derivatives, transcript/ex
 
 Payment handling must prevent capture, not merely redact after recording. Phase 1 excludes payment collection; use a separately approved secure payment channel. If payment-card speech begins unexpectedly, stop capture and quarantine the affected artifact under the incident policy. Medical/health details are minimized; no HIPAA claim or regulated workflow authorization follows.
 
+
+### Consent reconciliation — ADR-0055
+
+Rechecked 2026-09-24 against master 724a3e5bb221ccbb7ab9a6f8e64a29ed06174746
+and open PR #177 head c851940899e9758bfdc9b52758b1b80cc7407646.
+**ADR-0055 is already canonical on master.** The dependency on #177 is its
+unmerged call-specific runtime/schema implementation, not consent-domain
+authority. This section clarifies the earlier e72959b proposal; it does not ratify
+new processing permissions.
+
+**One domain, one authority:** ConsentEvent denotes ADR-0055's cross-channel
+domain concept. CallConsentEvent is the implementation name used by #177.
+There is no proposed second Conversation Intelligence ConsentEvent table or
+independent consent service. Preserve event identity when extending the shared
+contract; do not mirror grants into another authoritative stream. Generalizing
+the current call-specific implementation for other channels is a separate
+foundation decision, not a prerequisite to invent a new subsystem here.
+
+#### A. Fields on or alongside the canonical consent model
+
+All additions below are proposed extensions, not fields claimed to exist.
+
+| Field / relationship | Existing #177 evidence | Proposed placement and meaning |
+|---|---|---|
+| Identity and tenant | id, account_id, event_key | Preserve canonical event identity, immutable dedupe and account scoping |
+| Decision and artifact | action, artifact | Existing grant/withdrawal vocabulary remains authoritative; recording and persisted transcript are independent permissions |
+| Source interaction/channel | provider_call_id, source_channel | Preserve source channel; add validated internal call/participant links alongside provider aliases when available, without reinterpreting unrelated channel grants |
+| Disclosure actually presented | disclosure_ref | Resolve to an immutable disclosure revision, including approved text and purpose scope; never resolve to an editable latest version |
+| Jurisdiction/evidence/actor | jurisdiction_basis, evidence_ref, actor_user_id | Retain authoritative provenance. Event actor is the recorder/witness; participant identity specifies whose consent it records |
+| Time | occurred_at | Define this as the claimed effective event time; add received_at and evidence/source timing where needed. Receipt time alone cannot prove provider capture bounds |
+| Purpose | No purpose field in the inspected model | Proposed closed, versioned classification for operational processing and evaluation use; no implicit backfill of permission |
+| Artifact/call linkage | provider_call_id + artifact | Add tenant-scoped linkage to internal call and intended artifact class before capture; associate later-created artifacts through immutable evidence links to the same consent event |
+| Consent ordering | Query over immutable events; denial wins timestamp ties | Extend the shared evaluator only; no separate Conversation Intelligence boolean or ordering rule |
+| Per-contact summary | Canonical contract requires derived state | Projection only; never substitutes for the call/artifact authorizing events |
+
+A grant can precede a recording's existence. Bind it to the call, participant,
+purpose and artifact class first. A later recording-to-event link identifies the
+specific object without mutating the historical grant. Cross-account links are
+invalid. Stale or unknown links deny admission.
+
+#### B. Capture/session evidence is not consent authority
+
+CallCaptureSession owns generation, assignment/snapshot, call_session_id,
+call_leg_id, conversation_id, disclosure playback completion, DTMF observation,
+local admission closure and observed capture bounds. Recording owns channel
+mapping, provider recording identity, object hashes and media intervals.
+Command intent/acknowledgment and stop confirmation are provider-control evidence.
+
+A DTMF event supplies evidence for a canonical consent event; it is not a second
+grant record. A derived admission decision references the relevant canonical
+event IDs, participant set, policy version and capture generation. Recompute it
+under the shared lock/transaction before admission and processing. An "enabled"
+flag or successful provider command does not grant permission.
+
+Consent-related CallEvidenceEvent entries in section E are notifications
+referencing canonical consent event IDs, not another store of authority.
+Recording/transcript/extraction artifacts and jobs reference those same IDs.
+CallFact, CallIntent and CallCommitment remain extraction JSON projections,
+not mandatory new tables. WorkflowRun and CrmSyncOperation retain their existing
+execution roles; no competing state owner is introduced.
+
+#### C. Automated analysis and media processing
+
+**Recommendation requiring owner ratification:** distinguish artifact from
+purpose in the canonical contract. Recording is an audio artifact permission;
+persisted transcript is a text artifact permission. Automated analysis is a
+processing purpose applied to authorized source artifacts, and model-generated
+analysis is a separately governed derived artifact. Evaluation/dataset reuse is
+a separate purpose; operational analysis permission must not imply it.
+
+Use explicit versioned classifications such as operational_analysis and
+evaluation_dataset in the shared consent/policy contract, with media_streaming
+as an explicit processing operation. Exact vocabulary is finalized in the
+foundation extension, not assumed present in #177's string artifact field.
+A single affirmative interaction may produce multiple explicitly disclosed scoped
+events; it must never expand an older recording or transcript grant silently.
+Absence of affirmative scope is refusal under the proposed conservative policy.
+
+Consent to analysis is necessary but not sufficient: approved model destination,
+tenant policy, source retention and minimum-context rules must also pass.
+Dataset permission does not authorize training, cross-client pooling or RAG.
+This is a proposed product control, not a claim that ADR-0055 already mandates
+these new categories or that legal authorization has been resolved.
+
+#### D. Disclosure version and audio asset identity
+
+Keep disclosure_ref as the canonical event's immutable reference. Its referenced
+disclosure revision should contain disclosureVersion, exact approved text/hash,
+language, purpose/artifact coverage and policy version. For prerecorded playback,
+disclosureAudioAssetId identifies an immutable approved asset with content hash;
+capture playback evidence records the actual asset ID and provider completion
+event. These may live in a Git-versioned disclosure manifest plus existing
+evidence records; a new Disclosure table is not required for Phase 1A.
+
+The consent event pins the revision; actual playback evidence links the same
+revision and asset. A mismatch, missing completion or unverified asset denies
+capture. An audio asset ID alone proves neither playback nor consent. For
+non-audio channels it is null/not applicable and channel-appropriate evidence
+is required; do not make audio fields mandatory for all canonical consent events.
+Changing wording or audio creates a new revision and never rewrites past grants.
+
+#### E. Withdrawal across all processing stages
+
+1. Append a withdrawal to the canonical stream with explicit scope, participant,
+   effective time, source and evidence. Never edit/delete a historical grant to
+   represent withdrawal. For a general "stop recording/listening/analyzing"
+   request, close all associated recording, transcription, streaming and
+   analysis scopes; ambiguity closes admission pending clarification.
+2. In the same local transaction/lock, advance the admission fence, close capture,
+   cancel queued processing and supersede unexecuted candidates/approvals derived
+   from affected evidence. Per-contact summaries update as projections.
+3. Persist stop intents for recording, transcription and media streaming; stop
+   forwarding frames, close STT connections and clear unauthorized buffers.
+   Correlate provider acknowledgments and effective stop evidence; do not claim
+   a local flag stopped remote capture. Use the approved terminate-media/call
+   fail-safe if stopping cannot be verified.
+4. Workers recheck consent at dequeue, before provider submission, at result
+   admission and before persistence. In-flight model requests may not be
+   recallable; request cancellation where supported, reject late results and
+   track provider retention/deletion obligations. Never promise processing
+   already performed has been undone.
+5. Replayed or late callbacks cannot reopen the withdrawn generation. Phase 1
+   permits no regrant after decline/withdrawal during the same call; any future
+   regrant feature needs a new approved interval contract and cannot legalize a gap.
+   Previously authorized retained evidence follows the approved retention/
+   deletion policy; withdrawal is not itself proof that erasure completed.
+6. Stop future effects; do not silently reverse already completed CRM/email
+   actions. Those require separate reconciliation. This capability still has
+   no authority to dispatch them.
+
+The inspected #177 consent helper gates transcript retention and serializes by
+capture identity; it is not evidence that the proposed recording/streaming/model
+stop sequence is implemented. That work remains future and separately gated.
+
+#### F. Required recording-policy amendment
+
+CI-A must explicitly amend ADR-0051 for a named human-call capability, without
+turning recording on at all supervision tiers. Before live capture the ratified
+amendment must specify:
+
+- allowed account/environment/number, two-party topology and operator bridge
+  allowlist; a bounded exception for dialing that human leg;
+- required artifact/purpose grants for every participant, immutable disclosure
+  identity, provider start/stop evidence and no pre-consent recording/streaming;
+- refusal, timeout, transfer, withdrawal and unconfirmed-stop behavior;
+- approved retention periods, provider/local deletion, access controls and
+  payment/sensitive-data handling;
+- exact-head review/validation, provider qualification, separate activation
+  authority and a rollback/disable procedure.
+
+FRL G-11 and ADR-0057 remain recording-off unless a separate explicit amendment
+names that path. ADR-0047/0048 demo exclusions are not implicitly broadened.
+Mock-only tests may model the proposed exception without activating it.
+
+#### Reconciliation disposition
+
+No extraction schema change is needed: the model payload contains observations,
+not consent or authorization. Scope/purpose, disclosure references, admission
+fences and approvals belong to the server-owned canonical contract and evidence
+envelope. This prevents model output from becoming consent authority.
+
+Capture emits internal facts only; it must not call #177 or legacy CRM dispatch.
+CallActionCandidate is non-executable until policy and revision-bound approval,
+and external execution remains separately gated. The literal generic name
+ConsentEvent in the initial entity list is now explicitly a conceptual mapping,
+not a request for a duplicate migration.
+
+Remaining design decisions: ratify the new purpose/operation vocabulary and
+disclosure representation, settle live recording conditions/retention, and
+review the relevant shared foundation. No choice here authorizes Phase 1A.
+
 ## J. Dataset and evaluation architecture
 
 An evaluation case references a permitted recording/transcript revision, immutable model prediction, schema/prompt/model versions, independent human labels, correction history, reviewer/adjudicator, scenario labels, permissions/expiry, and observed outcomes. A correction is a reviewer assertion until adjudicated; do not name every edit ground truth automatically.
@@ -283,11 +460,13 @@ The proposed 25–50 discovery calls and 50–100 initial labels are planning he
 
 ## K. Failure modes and recovery
 
+The [consent failure contract E](./conversation-intelligence-consent.md#e-failure-recovery-and-privacy) additionally governs withdrawal/start races, processing cancellation, late results and unproven provider cessation.
+
 | Failure | Required behavior |
 |---|---|
 | Invalid/stale signature; unknown or reused number assignment | Reject before mutation; no protected-content logging; ambiguous tenant cannot receive evidence |
 | Duplicate/out-of-order webhook | Durable dedupe, generation check and monotonic state; conflicting duplicate quarantined as minimized metadata |
-| Consent absent/refused/withdrawn; participant changes | Close admission; no STT or recording; safe human-only path if approved |
+| Consent absent/refused/withdrawn; participant changes | Close admission; no STT or recording; required human-only continuation after decline; withdrawal fences processing and requires confirmed remote cessation |
 | Crash around bridge/record command | Persist command ID/intent first, correlate authenticated response and signed lifecycle evidence; unknown outcome reconciled rather than issuing another command |
 | Operator busy/no answer/voicemail | No unauthorized voicemail capture; approved unrecorded fallback, mark human connection failed |
 | Recording missing, mono or uncertain channel map | Mark incomplete/review-needed; do not assert two known speakers |
@@ -306,7 +485,7 @@ Durable job retries are allowed only within consent, retention and pinned revisi
 
 ## L. Required ADRs
 
-Full draft decisions are in [conversation-intelligence-adrs.md](./conversation-intelligence-adrs.md), indexed from DECISIONS.md. Temporary CI-A through CI-D identifiers avoid colliding with ADR numbers on concurrent branches. All remain proposed.
+Full draft decisions are in [conversation-intelligence-adrs.md](./conversation-intelligence-adrs.md), indexed from DECISIONS.md. Temporary CI-A through CI-F identifiers avoid colliding with ADR numbers on concurrent branches. All remain proposed.
 
 - **CI-A:** isolated human-call capture and a narrow recording/bridge exception to ADR-0051 and relevant demo exclusions; no global recording toggle.
 - **CI-B:** versioned recording/transcript/extraction/correction lineage and canonical selection; extend ADR-0034/0055 and reconcile #177.
@@ -316,6 +495,8 @@ Full draft decisions are in [conversation-intelligence-adrs.md](./conversation-i
 No change to default AI voice provider, no RAG authorization and no general CRM/FSM engine.
 
 ## M. Implementation phases and exit gates
+
+Phase 1A includes the four-state consent contract, DTMF 1/2, immutable disclosure/presentation evidence, separate permissions, mandatory human continuation and mocked stop/cancellation fences. Streaming and training use remain disabled. Phase 1B additionally requires approved stop-latency limits and provider cancellation evidence; a mock test cannot establish them.
 
 | Phase | Deliverable | Exit gate |
 |---|---|---|
@@ -328,16 +509,24 @@ No change to default AI voice provider, no RAG authorization and no general CRM/
 | 5 — bounded execution | Individually approved low-risk action classes and provider adapters | Action-specific risk thresholds, destination authorization, idempotency/reconciliation and rollback runbook |
 | 6 — realtime copilot | Streaming admission, channel-aware provisional state, missing-fields/question UI | Hosting ADR and load/latency/cost evidence; provisional/canonical divergence evaluated; no live-state authority |
 
-Phases do not silently grant each other permission. Phase 1A is the next recommended engineering slice after design approval; live Phase 1B is not implied by a mock-only implementation prompt.
+Phases do not silently grant each other permission. **Phase 1A remains blocked.**
+Required sequence: publish architecture → independent review at the exact pushed
+SHA → resolve reconciliation findings → owner design approval → human merge of
+architecture → resolve and human-merge the relevant canonical consent foundation
+→ fresh feature branch from updated master → separately authorized Phase 1A.
+Do not branch from #177 or this architecture branch. An approved extraction plan
+alone is insufficient: its canonical foundation must land on master first.
+Mock-only Phase 1A does not require live recording permission to be operational;
+live Phase 1B still requires the separately ratified recording exception.
 
 ## N. Exact files/modules proposed for later implementation
 
-Paths below are a proposed plan, not files claimed to exist.
+Paths below are a proposed plan, not files claimed to exist. The [consent file map G](./conversation-intelligence-consent.md#g-exact-implementation-filesmodules) supplies the exact Phase 1A additions and shared-authority reconciliation.
 
 | Phase | Introduce | Modify/reconcile |
 |---|---|---|
 | 1A | lib/conversationIntelligence/capture/contracts.ts; state.ts; service.ts; events.ts; lib/conversationIntelligence/jobs.ts; lib/data/callRecordings.ts; callParticipants.ts; lib/providers/callCapture/types.ts; mock.ts; index.ts; app/api/webhooks/telnyx/human-calls/route.ts | prisma/schema.prisma + one next available migration including bounded event/job persistence; types/index.ts as appropriate; lib/providers/telnyx/webhook.ts only for shared verified parsing; prisma/seed.ts; reuse session helpers |
-| 1A dependency | Reuse lib/callReview/consent.ts and capture/revision model names if #177 has landed | Otherwise stop for an approved shared-foundation extraction plan; never recreate competing CallConsentEvent/CallCaptureSession definitions |
+| 1A dependency | Reuse the relevant shared consent/capture foundation after it lands on master from #177 or a separately reviewed foundation PR | Otherwise stop; an extraction plan alone does not unblock Phase 1A. Never branch from #177 or recreate competing CallConsentEvent/CallCaptureSession definitions |
 | 1A tests | tests/unit/conversation-intelligence-capture.test.ts; tests/integration/conversation-intelligence-capture.integration.test.ts; tests/factories/callRecordings.ts; callParticipants.ts | Existing tenant-matrix and seed-parity tests; regression test proving human-call events cannot reach legacy CRM orchestration |
 | 1B | lib/providers/callCapture/telnyx.ts; lib/providers/evidenceStorage/types.ts; mock.ts; r2.ts; lib/conversationIntelligence/artifacts.ts; scripts/process-conversation-intelligence.ts | Extend Phase 1A jobs for authorized artifact ingestion; dependency/runtime/config files only in separately approved provider task; retention runner |
 | 2 | lib/conversationIntelligence/extraction/contracts.ts; service.ts; evidence.ts; lib/providers/transcription/types.ts; mock.ts; openai.ts; app/(admin)/admin/conversation-intelligence/page.tsx; app/api/conversation-intelligence/[callId]/route.ts | Reconcile #177 transcript revisions and post-call analysis; schema JSON promoted from docs only after compatibility validation; transcript accessors and redacted review DTOs |
@@ -356,7 +545,7 @@ Migration sequence numbers must be selected from the then-current master; do not
 
 **Safe now:** documentation review, synthetic examples and local schema checks. Architecture approval does not authorize implementation, provider work, merge, deployment or external actions.
 
-**Design blockers before Phase 1:** choose the #177 dependency baseline; ratify the proposed capture semantics or revise them; approve the exact mock-only slice. #177 references and schemas are unmerged; a PR number or green check would not itself authorize reuse or merge.
+**Design blockers before Phase 1:** exact-head independent architecture review, resolved findings, owner design approval and human merge of architecture; then merge the relevant canonical consent foundation into master and approve the exact mock-only slice. ADR-0055 is already canonical; #177 implementation remains unmerged. A PR number, extraction plan or green check alone does not authorize implementation.
 
 **Conflicts to avoid:**
 
@@ -394,61 +583,13 @@ Migration sequence numbers must be selected from the then-current master; do not
 
 Use **architecture/conversation-intelligence** in the isolated worktree, based on 724a3e5. The remote branch already existed empty of unique commits; this review does not reset or rewrite it.
 
-Recommended later implementation branch: **feat/conversation-intelligence-capture-persistence**, created from then-current master after the approved foundation dependency is available.
+Recommended later implementation branch: **feat/conversation-intelligence-consent-capture**, created from then-current master after the approved foundation dependency is available.
 
 This packet is Codex-authored and requires Claude or CodeRabbit independent review of the final changes before human merge. If another authoring harness contributes, apply the existing eligibility matrix; mixed Codex/Claude authorship requires CodeRabbit. Review outcome, exact head and evidence link remain pending, not inferred from checks. No agent merge or auto-merge.
 
 ## Q. Exact next Phase 1 implementation prompt
 
-Paste into a **new Codex implementation task in C:/dev/responseos** only after the owner approves this design and mock-only implementation scope:
-
-```text
-Review/Diagnosis owner: Codex
-Actionable AI Assistant Task owner: Codex
-Execution location/tool: isolated ResponseOS Git worktree
-Human/operator role: approve scope; independently review through eligible reviewer; perform merge
-Copy/paste destination: new Codex repo implementation task
-
-Implement Phase 1A only of the approved Conversation Intelligence architecture.
-Read AGENTS.md, doctrine, PRD, ROADMAP, DECISIONS, SECURITY, data-schema, api-spec,
-docs/architecture/conversation-intelligence-review.md and its proposed ADRs.
-Confirm which decisions were actually ratified; this prompt is not ratification.
-
-Verify remote, latest master, exact SHA, clean ownership and related PR state.
-Create feat/conversation-intelligence-capture-persistence in an isolated worktree.
-If PR #177's consent/capture foundation is not merged or an approved replacement
-foundation plan is missing, stop dependent implementation and report the precise
-dependency; do not cherry-pick or duplicate its models.
-
-Implement a mock-only human-call capture capability:
-- reuse Call and the approved shared capture/consent identities;
-- add only participant/leg mapping, recording metadata, bounded domain-event
-  and durable processing-intent persistence required for this slice;
-- build a deterministic disclosure/affirmative-consent/bridge/record/stop state
-  machine, with artifact-specific permission, generation fencing and withdrawal;
-- use a narrow mock CallCaptureProvider; no Telnyx HTTP, STT, R2, LLM or n8n calls;
-- add an isolated signed human-call ingress boundary disabled by default,
-  with synthetic fixtures and server-owned tenant/assignment resolution;
-- persist metadata only before authorization; deny content on uncertain bounds;
-- keep human-call events out of existing legacy normalization/CRM dispatch;
-- preserve every current FRL policy and recordingEnabled=false runtime setting;
-- record no real audio and introduce no external side effects.
-
-Prove tenant isolation, all-participant consent, denial/timeout/withdrawal,
-duplicate/out-of-order delivery, ambiguous leg mapping, stale generations,
-crash recovery and zero CRM/email/SMS/quote effects with meaningful tests.
-Use deterministic synthetic fixtures, no secrets and no real client records.
-Read relevant installed Next.js guides before changing routes.
-Add the next available migration only; preserve existing consumers and mock parity.
-Update phase docs, canonical event catalog and dashboard in the same change.
-
-Run lint, typecheck, unit tests, build and Postgres 16 integration checks.
-Report exact commands/results and any unavailable validation honestly.
-Open a draft PR when the scoped change is ready; do not mark merge-ready without
-required checks and eligible independent review on the current head.
-No merge, live provider activation, secrets/configuration work, production deploy,
-real-call capture or outbound customer action. Phase 1B requires separate authority.
-```
+The authoritative copy/paste prompt is [consent architecture I](./conversation-intelligence-consent.md#i-exact-phase-1-implementation-prompt). It replaces the earlier capture-persistence prompt with the consent/capture slice and branch `feat/conversation-intelligence-consent-capture`. Use only after independent architecture review, owner acceptance, human merge to master and the approved shared foundation. No implementation branch is created by this architecture update.
 
 ## Review sources and verification limits
 
@@ -471,3 +612,10 @@ migrations changed; lint, typecheck, application tests, build, integration tests
 provider schema acceptance and live capture were not run. The isolated worktree
 has no installed node_modules. Standard local/CI gates and eligible independent
 review remain required before a merge recommendation.
+
+Reconciliation validation on 2026-09-24 also passed: unchanged extraction schema;
+two valid synthetic payloads and seven rejected malformed/authority-bearing
+payloads; balanced Markdown fences; local file links; A–Q completeness; dashboard
+integrity; and the exact six-file architecture-only diff against master. The
+three extra model-output fields checked were consent, approval and actions.
+No runtime suite or provider validation was run for this documentation amendment.
