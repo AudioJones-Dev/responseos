@@ -2,7 +2,7 @@
 
 Status: **Proposed / DOCUMENTED_ONLY**. Author: Codex. Date: 2026-09-24.
 Companion: [architecture review](./conversation-intelligence-review.md).
-No decision in this packet is ratified. Numbered ADR IDs will be assigned after reconciling concurrent branches; CI-A through CI-D are draft identifiers, not new canonical numbering.
+No decision in this packet is ratified. Numbered ADR IDs will be assigned after reconciling concurrent branches; CI-A through CI-F are draft identifiers, not new canonical numbering.
 
 ## CI-A — Human-call capture requires a scoped recording authorization
 
@@ -25,7 +25,7 @@ Introduce a separately assigned human-call-capture capability. Do not change rec
 
 A future ratified amendment would allow only the named isolated environment/account/number and server-allowlisted operator bridge destination. Existing prospect, FRL and AI-receptionist paths remain recording-off unless separately amended. Consent for recording, transcript processing and secondary evaluation use remains independently represented.
 
-The state machine requires completed disclosure, deterministic affirmative response and operator-leg acknowledgment before recording. No speech recognition to obtain pre-consent agreement. Admission is bound to a capture generation and proven source interval. Refusal/timeout denies capture. Participant changes suspend it. Withdrawal closes local admission first and requires remote stop confirmation or the approved fail-safe termination path.
+The state machine requires completed disclosure, DTMF 1 and operator-leg acknowledgment before capture. Consent gates recording, transcription, media streaming and AI analysis independently. DTMF 2 declines; human-only continuation must remain available. Pending, granted, declined and withdrawn are explicit states. No speech recognition to obtain pre-consent agreement. Admission is bound to a capture generation and proven source interval. Participant changes suspend capture. Withdrawal fences local admission and processing immediately and requires qualified remote cessation evidence. Emergency termination is only a last resort for uncontrolled capture, never the ordinary decline path.
 
 Phase 1A models these controls with synthetic inputs and mock commands. Phase 1B may only follow a ratified exception, retention policy, exact-head validation and separately authorized provider qualification.
 
@@ -140,6 +140,30 @@ Selecting a new host now adds configuration and operational cost before realtime
 
 If a non-Node design is selected, a ratified successor must explicitly amend ADR-0013/0014/0030, including Redis state ownership, with runtime/region/cost/retention constraints and failure/recovery evidence. This draft changes no host, domain, DNS, credential or deployment configuration.
 
+## CI-E — Versioned disclosure and scope-specific consent authority
+
+**Context.** ADR-0055 requires immutable consent provenance. A mutable script URL or single Boolean cannot prove what a participant authorized on a historical call.
+
+**Proposed decision.** Adopt [consent architecture B–D](./conversation-intelligence-consent.md): all requested ConsentEvent fields as extensions of the canonical shared authority, immutable text/audio versions, presentation evidence, DTMF 1/2 and distinct recording/transcription/analysis/streaming/retention/training permissions. Grant only explicitly disclosed scopes after playback completion; deny on uncertainty. Training/quality use stays false in Phase 1. Caller and operator evidence are separate. No second consent table, evaluator or authority stream.
+
+**Alternatives and consequences.** One Boolean is simpler but loses scope and historical evidence. Versioned events require tenant-parent constraints, protected phone metadata and retention policy. Git-versioned disclosure manifests may satisfy immutability without a new table. Preserve canonical identity and never fabricate legacy consent.
+
+**Acceptance.** Test missing/changed assets, early and replayed digits, withheld numbers, scope expansion, cross-tenant links and participant changes. Reconcile the foundation before selecting physical models.
+
+**Amendment if accepted.** Extend ADR-0055 and canonical data/event/security contracts. This does not ratify a recording exception or establish legal sufficiency of a script.
+
+## CI-F — Withdrawal fences processing and requires remote cessation evidence
+
+**Context.** A local flag cannot stop remote recording or recall already performed inference. Command intent, acknowledgment, effective cessation and deletion are different facts.
+
+**Proposed decision.** Adopt [consent architecture D–E](./conversation-intelligence-consent.md). Revoke local admission immediately, advance authorization revision, cancel jobs and active processing, persist durable stop intents and reject late results. Confirm each active recorder, stream and processor separately; unknown outcomes remain reconciliation-required. Qualify provider stopping/cancellation and approved latency limits before activation. Preserve the human bridge where capture can be isolated. No automatic same-call regrant in Phase 1.
+
+**Alternatives and consequences.** Start-only permission checks are smaller but admit withdrawal races. Durable fences add operational work and can reduce capture availability. Require approved TTLs, withdrawal disposition, deletion propagation, audit retention and backup treatment; prior processing cannot be undone. Providers unable to meet the contract remain disabled.
+
+**Acceptance.** Test withdrawal racing start/result commit, DB failure, unconfirmed stops, late evidence, deletion and retry resurrection. Mock success is not live provider proof.
+
+**Amendment if accepted.** Extend CI-A/CI-B and ADR-0055. ADR-0051 remains binding until a separately scoped exception is ratified. No live command, credential or deployment authorization follows.
+
 ## Operator decision record — unfilled
 
 | Decision | State |
@@ -148,6 +172,8 @@ If a non-Node design is selected, a ratified successor must explicitly amend ADR
 | CI-B evidence and privacy contract | Proposed |
 | CI-C future effect authority | Proposed; external execution remains blocked |
 | CI-D host evaluation | Deferred; no infrastructure selected |
+| CI-E disclosure and scope-specific consent | Proposed; review and acceptance pending |
+| CI-F withdrawal, cessation and privacy | Proposed; latency limits and retention policy unset |
 | #177 dependency/reconciliation approach | Awaiting explicit implementation baseline |
 | Retention, deletion and secondary-use policy | Unset; blocks live capture |
 | Exact Phase 1A implementation scope | Defined in review Q; not started |

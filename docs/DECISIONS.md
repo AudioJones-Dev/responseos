@@ -5,13 +5,15 @@ This file records the load-bearing decisions that constrain how ResponseOS is bu
 ## Proposed Conversation Intelligence decisions — not ratified
 
 The [architecture review](./architecture/conversation-intelligence-review.md) and
-[draft ADR packet CI-A through CI-D](./architecture/conversation-intelligence-adrs.md)
+[draft ADR packet CI-A through CI-F](./architecture/conversation-intelligence-adrs.md)
 propose scoped human-call capture, versioned evidence, deterministic action
 authorization and a deferred realtime-host evaluation. These temporary identifiers
 avoid collisions with concurrent ADR branches. They authorize no implementation,
 recording, provider work, deployment or external effects. ADR-0051's recording
 prohibition and all existing FRL/demo restrictions remain in force. Assign numbered
 ADRs only after operator decisions and dependency reconciliation.
+
+The [consent/capture specification](./architecture/conversation-intelligence-consent.md) adds explicit consent states, versioned disclosures, separate permissions and withdrawal/cessation evidence within the same architecture packet. CI-E and CI-F are proposed extensions, not accepted policy.
 
 ## ADR-0001 — Mock-first development; no live integrations until v0.3
 
@@ -306,7 +308,7 @@ CRM remains pluggable per tenant: HubSpot is the default, GoHighLevel and others
 
 ## ADR-0020 — Provider credential encryption: app-layer, env-managed key, opaque ciphertext (v0.2 substrate)
 
-**Status:** Accepted (2026-05-29). Resolves Q1 of [`docs/product/RESPONSEOS_V0_2_REMAINING_MODELS_IMPLEMENTATION_PLAN.md`](../product/RESPONSEOS_V0_2_REMAINING_MODELS_IMPLEMENTATION_PLAN.md). Precondition for v0.2 closeout step 2.3 PR 31A (`provider_connections`).
+**Status:** Accepted (2026-05-29). Resolves Q1 of [`docs/product/RESPONSEOS_V0_2_REMAINING_MODELS_IMPLEMENTATION_PLAN.md`](./product/RESPONSEOS_V0_2_REMAINING_MODELS_IMPLEMENTATION_PLAN.md). Precondition for v0.2 closeout step 2.3 PR 31A (`provider_connections`).
 
 **Context.** The v0.2 step 2.3 planning artifact identifies `provider_connections` as a new model holding per-tenant credentials for Twilio, Grok, OpenAI, HubSpot, Google Calendar, Cal.com, Stripe, etc. `RESPONSEOS_DATA_MODEL.md` §4.4 states credentials are "encrypted at rest, decrypted at request time" but does not pick a mechanism. The planning artifact flagged this as Q1 and said an ADR was needed before 31A. The choice space is bounded by three constraints already in force:
 

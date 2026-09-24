@@ -491,6 +491,8 @@ Full draft decisions are in [conversation-intelligence-adrs.md](./conversation-i
 - **CI-B:** versioned recording/transcript/extraction/correction lineage and canonical selection; extend ADR-0034/0055 and reconcile #177.
 - **CI-C:** candidate/approval/dispatch contract under ADR-0017/0050/0058, including uncertain effects and n8n receipts.
 - **CI-D:** deferred realtime-host evaluation; selecting Durable Objects would amend ADR-0013/0014/0030, including Redis state ownership, not merely add a dependency.
+- **CI-E:** immutable disclosure assets, DTMF states and distinct permissions extending canonical consent authority.
+- **CI-F:** withdrawal fences, provider cessation evidence and retention/privacy requirements.
 
 No change to default AI voice provider, no RAG authorization and no general CRM/FSM engine.
 
@@ -597,25 +599,71 @@ Primary public documentation was checked on 2026-09-24 and linked beside the rel
 
 This packet contains an architectural self-check, not an independent implementation review or deployment readiness assessment.
 
-### Local packet validation
+### Recovery, provenance and validation contract
 
-On 2026-09-24: JSON Schema Draft 2020-12 meta-validation passed; synthetic
-unknown-value and evidence-bearing payloads validated; five malformed payloads
-(extra authority field, out-of-range confidence, missing required field, invalid
-intent, and string instead of boolean) were rejected. Local review links and
-A–Q section coverage passed. Dashboard JSON parsed, task IDs/phases were valid,
-existing tasks were preserved, and generatedAt/liveIssues were unchanged.
-git diff --check passed.
+The 2026-09-24 forward-fix retains the complete [consent companion](./conversation-intelligence-consent.md).
+The overview/reconciliation here, detailed A–I contract there, and proposed ADRs
+form one packet. Section Q delegates only to that committed companion. CI-A
+through CI-F remain Proposed / DOCUMENTED_ONLY; no accepted ADR is superseded.
 
-These checks validate the documentation artifacts only. No runtime files or
-migrations changed; lint, typecheck, application tests, build, integration tests,
-provider schema acceptance and live capture were not run. The isolated worktree
-has no installed node_modules. Standard local/CI gates and eligible independent
-review remain required before a merge recommendation.
+**Historical validation correction.** Checks performed before 4b964ac described
+working-tree state, not a self-contained committed packet. That public commit
+contained references to the uncommitted companion and was NOT READY for review.
+Earlier schema-fixture checks did not prove document completeness. Preserve both
+e72959b and 4b964ac and repair forward; do not revert or amend their valid work.
 
-Reconciliation validation on 2026-09-24 also passed: unchanged extraction schema;
-two valid synthetic payloads and seven rejected malformed/authority-bearing
-payloads; balanced Markdown fences; local file links; A–Q completeness; dashboard
-integrity; and the exact six-file architecture-only diff against master. The
-three extra model-output fields checked were consent, approval and actions.
-No runtime suite or provider validation was run for this documentation amendment.
+| Authoring task (both Codex) | File contributions |
+|---|---|
+| Design Telnyx Conversation Layer | Initial e72959b: dashboard, DECISIONS, ROADMAP, architecture review, ADR packet and observation schema. Reconciliation in 4b964ac: canonical ADR-0055 explanation, authority/evidence separation, recording amendment and CRM boundaries in review/ADRs; Phase 1A dependency sequencing in ROADMAP/dashboard |
+| Add Consent to Conversation AI | Concurrently incorporated into 4b964ac: review links/refinements/Phase 1 prompt relocation and branch name, ROADMAP companion link, dashboard title. Uncommitted at recovery: complete consent companion, CI-E/CI-F and CI-A refinement in ADR packet, DECISIONS index/link, review CI-E/CI-F index. This task is the designated consolidation writer |
+
+Git account names do not establish authoring harness. Attribution above combines
+both task histories and diffs; 4b964ac is a mixed-task Codex commit, not proof of
+independent review. Neither authoring task qualifies as its own independent
+reviewer. Claude or CodeRabbit must review the final exact head.
+
+| Uncommitted file/hunks at recovery | Classification and disposition |
+|---|---|
+| DECISIONS: CI-A–F index and companion link | A: valid architecture addition; retain |
+| ADR packet: CI-A consent refinement, CI-E/F decisions and status rows | A: valid additions; retain as proposals |
+| Review: CI-E/F list | A: valid index addition; retain |
+| Consent companion: A–I contract, file map and gated prompt | A: valid detail; retain complete document |
+| Companion's repeated canonical authority and phase gates | B: intentional supporting restatement; point to the same ADR-0055/shared implementation, never create another authority |
+| Companion's old validation paragraph deferring a broken DECISIONS link | C: conflicts with the complete-packet link gate; replace with this committed-tree validation contract and repair the historical link |
+| Other uncommitted work | No D (unrelated contamination) or E (runtime/implementation) content found in the preserved four-file snapshot |
+
+Recovery preserved byte copies, SHA-256 manifests, unstaged and staged patches
+outside the repository before edits. The other task was idle and instructed to
+remain read-only; the designated writer alone consolidates, stages explicit files,
+commits and normally pushes. No history rewrite, discard or broad staging.
+
+**Writer rule for this effort:** one authoring task, one branch, one isolated
+worktree. Other tasks may review read-only; ownership transfers require an explicit
+handoff. Do not run concurrent writers against this physical worktree.
+
+Validation must read the committed tree, then repeat against the pushed SHA:
+
+- exact seven-file inventory against master: dashboard, DECISIONS, ROADMAP,
+  review, ADR packet, consent companion and extraction schema;
+- all relative Markdown file and heading links in those documents resolve;
+- balanced fences, A–Q review sections and A–I consent sections;
+- Draft 2020-12 schema validity, positive fixtures and negative malformed/authority
+  fixtures; observation schema unchanged from e72959b;
+- dashboard JSON, task IDs/phases and unchanged unrelated tasks/generated fields;
+- CI-A–F proposed status, canonical ADR-0055, recording prohibition, CRM isolation
+  and consistent blocked Phase 1A sequencing;
+- git diff --check and no runtime, migration, provider, environment or credential
+  changes. Record commands, exact SHA and results in the handoff evidence.
+
+Documentation checks are author self-validation, not independent architecture
+review. Application lint/typecheck/tests/build/integration and live-provider tests
+are not claimed by this documentation recovery. Required validation and eligible
+independent review still govern any later merge recommendation.
+
+**Disposition:** Phase 1A remains BLOCKED until independent architecture review,
+owner acceptance, human merge of this packet and the relevant shared canonical
+implementation foundation on master, followed by explicit implementation scope
+authorization. Recording additionally needs the narrow ADR-0051 amendment,
+retention policy and separately authorized provider qualification/activation.
+Capture remains unable to inherit CRM/email/SMS/quote dispatch. A model observation,
+including a free-text assertion of consent, confers zero authority.
