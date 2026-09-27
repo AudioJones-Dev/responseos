@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
   db: {
     $transaction: vi.fn(), $executeRaw: vi.fn(),
     callReview: { findUnique: vi.fn(), findFirst: vi.fn(), updateMany: vi.fn(), update: vi.fn(), create: vi.fn() },
-    call: { findFirst: vi.fn() }, auditLog: { create: vi.fn() }, callCaptureSession: { findUnique: vi.fn() }, crmSyncOperation: { findUnique: vi.fn() },
+    call: { findFirst: vi.fn() }, auditLog: { create: vi.fn() }, callCaptureSession: { findUnique: vi.fn() }, crmSyncOperation: { findUnique: vi.fn() }, webhookEvent: { count: vi.fn() },
   },
 }));
 vi.mock("@/lib/db/client", () => ({ db: mocks.db }));
@@ -30,6 +30,7 @@ beforeEach(() => {
   mocks.db.callReview.findFirst.mockResolvedValue({ ...base });
   mocks.db.callReview.updateMany.mockResolvedValue({ count: 1 });
   mocks.db.call.findFirst.mockResolvedValue({ provider_call_id: "pc", transcript: "caller: I need a ramp", summary: "summary" });
+  mocks.db.webhookEvent.count.mockResolvedValue(0);
   mocks.gate.mockResolvedValue(true);
   mocks.crm.mockResolvedValue({ ok: true, data: { status: "succeeded" } });
   mocks.send.mockResolvedValue({ providerMessageId: "email-1" });
@@ -178,6 +179,15 @@ test("an abandoned dispatch claim is recovered after its TTL and audited as such
   expect(claim.where.OR[1].dispatch_at.lte.getTime()).toBeGreaterThan(abandonedAt.getTime());
   expect(mocks.db.auditLog.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ action: "call_review_dispatch_attempt", metadata_json: expect.objectContaining({ recoveredStaleClaimFrom: abandonedAt.toISOString() }) }) }));
   expect(mocks.send).toHaveBeenCalledTimes(1);
+});
+
+test("evidence acknowledged but not yet normalized holds off the dispatch claim", async () => {
+  approved(); mocks.db.webhookEvent.count.mockResolvedValue(1);
+  await expect(dispatchCallReview("review")).rejects.toThrow("evidence_in_flight");
+  const inFlight = mocks.db.webhookEvent.count.mock.calls[0][0].where;
+  expect(inFlight).toMatchObject({ account_id: "account", provider: "telnyx", process_status: "received", OR: [{ provider_call_id: "pc" }, { provider_call_ids: { has: "pc" } }] });
+  expect(mocks.db.callReview.updateMany).not.toHaveBeenCalledWith(expect.objectContaining({ data: { dispatch_at: expect.any(Date) } }));
+  expect(mocks.crm).not.toHaveBeenCalled(); expect(mocks.send).not.toHaveBeenCalled();
 });
 
 test("a lost dispatch claim produces no effects", async () => {

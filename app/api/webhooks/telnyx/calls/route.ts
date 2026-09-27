@@ -1,5 +1,5 @@
 import { canRetainCallContent, metadataOnly, withCaptureLock } from "@/lib/callReview/consent";
-import { hasQueuedReview, queueCallReview } from "@/lib/callReview/service";
+import { hasActiveDispatchClaim, hasQueuedReview, queueCallReview } from "@/lib/callReview/service";
 import { after, NextResponse } from "next/server";
 import { runCrmSyncForCall } from "@/lib/crm/syncFinalizedCall";
 import {
@@ -223,6 +223,15 @@ export async function POST(req: Request) {
     : resolved!;
   const supervisedTenant = supervised;
 
+  // A live dispatch claim refuses this evidence's review revision, and after a
+  // 202 nothing would redeliver it. Refuse before the ack instead, so the
+  // provider redelivers once the claim is released.
+  const deferForDispatch = async () => {
+    if (!supervisedTenant || !providerCallId || !(await hasActiveDispatchClaim(assignment.accountId, providerCallId))) return null;
+    await setWebhookProcessStatus({ id: ledger.data.id, process_status: "rejected", process_error: "review_dispatch_in_progress" });
+    return errorResponse(503, { code: "review_dispatch_in_progress", message: "A review dispatch is in progress for this call; redeliver this signed event." });
+  };
+
   const normalizeAfterAck = () => after(async () => {
     try {
       const normalize = async (client?: import("@prisma/client").Prisma.TransactionClient) => {
@@ -308,12 +317,17 @@ export async function POST(req: Request) {
         await scope(Boolean(resolved));
       }
     }
-    if (state?.process_status === "error" || abandonedReceived || awaitingCorrelation) {
+    const deferredForDispatch = state?.process_status === "rejected" && state.process_error === "review_dispatch_in_progress";
+    if (state?.process_status === "error" || abandonedReceived || awaitingCorrelation || deferredForDispatch) {
+      const deferred = await deferForDispatch();
+      if (deferred) return deferred;
       normalizeAfterAck();
     }
     return NextResponse.json({ ok: true, data: { accepted: true, duplicate: true } });
   }
 
+  const deferred = await deferForDispatch();
+  if (deferred) return deferred;
   normalizeAfterAck();
 
   return NextResponse.json(

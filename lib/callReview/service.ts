@@ -89,6 +89,23 @@ export async function hasQueuedReview(accountId: string, callId: string, client?
   return (await reader.callReview.count({ where: { account_id: accountId, call_id: callId } })) > 0;
 }
 
+// Matches the calls route's abandoned-receipt window: a row still `received`
+// after this long is no longer being processed and is redelivered instead.
+const EVIDENCE_IN_FLIGHT_MS = 30_000;
+
+/**
+ * Whether a live dispatch claim would refuse a new revision for this call. The
+ * calls route checks this before acknowledging, so late evidence is answered
+ * with a redeliverable 503 instead of being dropped after a 202.
+ */
+export async function hasActiveDispatchClaim(accountId: string, providerCallId: string): Promise<boolean> {
+  if (!db) return false;
+  const call = await db.call.findFirst({ where: { account_id: accountId, provider: "telnyx", provider_call_id: providerCallId }, select: { id: true } });
+  if (!call) return false;
+  const claimed = await db.callReview.count({ where: { account_id: accountId, call_id: call.id, dispatch_at: { gt: new Date(Date.now() - DISPATCH_CLAIM_TTL_MS) } } });
+  return claimed > 0;
+}
+
 /**
  * Creates the next review revision from canonical evidence.
  *
@@ -199,6 +216,17 @@ export async function dispatchCallReview(id: string) {
       const earlier = await tx.callReview.findFirst({ where: { account_id: row.account_id, call_id: row.call_id, id: { not: id } }, select: { id: true } });
       const recorded = await tx.callReview.findFirst({ where: { account_id: row.account_id, call_id: row.call_id, crm_status: { not: "pending" } }, select: { id: true } });
       if (earlier && !recorded) throw new Error("prior_revision_requires_reconciliation");
+    }
+    // Evidence acknowledged before the claim but not yet normalized would hit
+    // this claim and be refused after its 202; wait for it instead.
+    const call = await tx.call.findFirst({ where: { id: row.call_id, account_id: row.account_id }, select: { provider_call_id: true } });
+    if (call?.provider_call_id) {
+      const inFlight = await tx.webhookEvent.count({ where: {
+        account_id: row.account_id, provider: "telnyx", process_status: "received",
+        received_at: { gt: new Date(Date.now() - EVIDENCE_IN_FLIGHT_MS) },
+        OR: [{ provider_call_id: call.provider_call_id }, { provider_call_ids: { has: call.provider_call_id } }],
+      } });
+      if (inFlight) throw new Error("evidence_in_flight");
     }
     const staleBefore = new Date(Date.now() - DISPATCH_CLAIM_TTL_MS);
     const recoveringStaleClaim = row.dispatch_at !== null && row.dispatch_at <= staleBefore;

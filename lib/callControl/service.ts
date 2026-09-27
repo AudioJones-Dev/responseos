@@ -425,17 +425,24 @@ export async function runOperatorConsentEffect(params: { captureId: string; acti
   const capture = await db.callCaptureSession.findUnique({ where: { id: params.captureId } });
   if (!capture?.assignment_id) throw new Error("qualification_capture_not_found");
   if (params.action === "grant") {
-    const completed = await db.telnyxCallCommand.findFirst({ where: { capture_session_id: capture.id, command_type: "ai_assistant_start", generation: capture.generation, status: "succeeded" } });
-    if (completed?.conversation_id && completed.provider_date_at) {
-      if (!capture.conversation_id) await db.callCaptureSession.update({ where: { id: capture.id }, data: { conversation_id: completed.conversation_id } });
-      return;
-    }
-    if (capture.control_state !== "START_PENDING" || capture.dtmf_decision !== "affirmative") throw new Error("affirmative_dtmf_required");
-    const assignment = await db.telephonyNumberAssignment.findUnique({ where: { id: capture.assignment_id } });
-    if (!assignment || assignment.status !== "qualification") throw new Error("qualification_assignment_mismatch");
-    const result = await executeCommand({ capture, commandType: "ai_assistant_start", action: "ai_assistant_start", request: { assistant: { id: assignment.provider_assistant_id }, send_message_history_updates: true, client_state: clientState(capture.id, capture.generation) } });
-    if (result.status === "succeeded" && result.conversation_id && result.provider_date_at) await db.callCaptureSession.update({ where: { id: capture.id }, data: { conversation_id: result.conversation_id } });
-    if (result.status !== "succeeded" || !result.conversation_id || !result.provider_date_at) throw new Error(result.error_code ?? "telnyx_start_unconfirmed");
+    // The start is checked and sent under the capture lock that withdrawal
+    // takes: a withdrawal either commits first and is seen here, or waits
+    // until the start settles and its stop follows it. The command's 8s
+    // abort keeps this inside the lock transaction's timeout.
+    await withCaptureLock(capture.account_id, capture.provider_call_id, async (client) => {
+      const current = await client.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } });
+      const completed = await client.telnyxCallCommand.findFirst({ where: { capture_session_id: current.id, command_type: "ai_assistant_start", generation: current.generation, status: "succeeded" } });
+      if (completed?.conversation_id && completed.provider_date_at) {
+        if (!current.conversation_id) await client.callCaptureSession.update({ where: { id: current.id }, data: { conversation_id: completed.conversation_id } });
+        return;
+      }
+      if (current.control_state !== "START_PENDING" || current.dtmf_decision !== "affirmative") throw new Error("affirmative_dtmf_required");
+      const assignment = await client.telephonyNumberAssignment.findUnique({ where: { id: capture.assignment_id! } });
+      if (!assignment || assignment.status !== "qualification") throw new Error("qualification_assignment_mismatch");
+      const result = await executeCommand({ capture: current, commandType: "ai_assistant_start", action: "ai_assistant_start", request: { assistant: { id: assignment.provider_assistant_id }, send_message_history_updates: true, client_state: clientState(current.id, current.generation) } });
+      if (result.status !== "succeeded" || !result.conversation_id || !result.provider_date_at) throw new Error(result.error_code ?? "telnyx_start_unconfirmed");
+      await client.callCaptureSession.update({ where: { id: current.id }, data: { conversation_id: result.conversation_id } });
+    });
     return;
   }
   if (params.action === "refuse") {

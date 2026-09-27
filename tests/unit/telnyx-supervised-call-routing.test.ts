@@ -20,6 +20,7 @@ const mocks = vi.hoisted(() => ({
   canRetainCallContent: vi.fn(),
   queueCallReview: vi.fn(),
   hasQueuedReview: vi.fn(),
+  hasActiveDispatchClaim: vi.fn(),
   pending: [] as Promise<unknown>[],
 }));
 
@@ -51,7 +52,7 @@ vi.mock("@/lib/notifications/completedInteraction", () => ({
   dispatchCompletedInteractionNotification: mocks.dispatchCompletedInteractionNotification,
 }));
 
-vi.mock("@/lib/callReview/service", () => ({ queueCallReview: mocks.queueCallReview, hasQueuedReview: mocks.hasQueuedReview }));
+vi.mock("@/lib/callReview/service", () => ({ queueCallReview: mocks.queueCallReview, hasQueuedReview: mocks.hasQueuedReview, hasActiveDispatchClaim: mocks.hasActiveDispatchClaim }));
 vi.mock("@/lib/callReview/consent", async (original) => ({ ...await original<typeof import("@/lib/callReview/consent")>(), canRetainCallContent: mocks.canRetainCallContent, withCaptureLock: (_account: string, _provider: string, run: () => Promise<unknown>) => run() }));
 const originalEnv = { ...process.env };
 const keys = generateKeyPairSync("ed25519");
@@ -110,6 +111,7 @@ describe("supervised Telnyx call lane", () => {
     mocks.canRetainCallContent.mockResolvedValue(true);
     mocks.findSupervisedNumberOwner.mockResolvedValue(null);
     mocks.hasQueuedReview.mockResolvedValue(false);
+    mocks.hasActiveDispatchClaim.mockResolvedValue(false);
     process.env = { ...originalEnv };
     process.env.TELNYX_PUBLIC_KEY = publicKey;
     process.env.RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED = "true";
@@ -329,6 +331,44 @@ describe("supervised Telnyx call lane", () => {
     // The verified assignment scopes the evidence to its tenant even now.
     expect(mocks.recordWebhookEvent.mock.calls[0][0].account_id).toBe(supervisedTenant().accountId);
     expect(mocks.setWebhookProcessStatus).toHaveBeenCalledWith(expect.objectContaining({ process_status: "rejected", process_error: "supervised_runtime_unresolved" }));
+  });
+
+  test("evidence arriving during a live dispatch claim is refused before the ack for redelivery", async () => {
+    mocks.resolveSupervisedTenantForNumber.mockResolvedValue(supervisedTenant());
+    mocks.hasActiveDispatchClaim.mockResolvedValue(true);
+    const { POST } = await import("@/app/api/webhooks/telnyx/calls/route");
+    const response = await POST(signedEvent({ call_control_id: "call-claimed", to: TENANT_NUMBER }));
+    await settle();
+    expect(response.status).toBe(503);
+    expect(mocks.hasActiveDispatchClaim).toHaveBeenCalledWith("account-supervised", "call-claimed");
+    expect(mocks.setWebhookProcessStatus).toHaveBeenCalledWith({ id: "ledger-1", process_status: "rejected", process_error: "review_dispatch_in_progress" });
+    expect(mocks.normalizeTelnyxEvent).not.toHaveBeenCalled();
+    expect(mocks.queueCallReview).not.toHaveBeenCalled();
+  });
+
+  test("a redelivery after the dispatch claim is released normalizes the deferred event", async () => {
+    mocks.resolveSupervisedTenantForNumber.mockResolvedValue(supervisedTenant());
+    mocks.recordWebhookEvent.mockResolvedValue({ ok: true, data: { id: "ledger-deferred", process_status: "duplicate" } });
+    mocks.getWebhookProcessingState.mockResolvedValue({ process_status: "rejected", process_error: "review_dispatch_in_progress", received_at: new Date() });
+    const { POST } = await import("@/app/api/webhooks/telnyx/calls/route");
+    const response = await POST(signedEvent({ call_control_id: "call-claimed", to: TENANT_NUMBER }));
+    await settle();
+    expect(response.status).toBe(200);
+    expect(mocks.backfillWebhookEvent).not.toHaveBeenCalled();
+    expect(mocks.normalizeTelnyxEvent).toHaveBeenCalledOnce();
+  });
+
+  test("a duplicate of processed evidence is not deferred by a live claim", async () => {
+    mocks.resolveSupervisedTenantForNumber.mockResolvedValue(supervisedTenant());
+    mocks.hasActiveDispatchClaim.mockResolvedValue(true);
+    mocks.recordWebhookEvent.mockResolvedValue({ ok: true, data: { id: "ledger-done", process_status: "duplicate" } });
+    mocks.getWebhookProcessingState.mockResolvedValue({ process_status: "processed", process_error: null, received_at: new Date() });
+    const { POST } = await import("@/app/api/webhooks/telnyx/calls/route");
+    const response = await POST(signedEvent({ call_control_id: "call-claimed", to: TENANT_NUMBER }));
+    await settle();
+    expect(response.status).toBe(200);
+    expect(mocks.setWebhookProcessStatus).not.toHaveBeenCalled();
+    expect(mocks.normalizeTelnyxEvent).not.toHaveBeenCalled();
   });
 
   test("a redelivery after the runtime is repaired backfills and normalizes the retained event", async () => {

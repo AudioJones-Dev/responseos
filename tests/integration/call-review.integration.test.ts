@@ -4,7 +4,7 @@ import { Prisma } from "@prisma/client";
 import { disconnectTestDb, prisma, resetAndSeedTestDb, setDevSession } from "./setup";
 import { buildOperatingConfigurationSnapshot } from "@/lib/agentExecution/operatingConfigurationSnapshot";
 import { canRetainCallContent } from "@/lib/callReview/consent";
-import { decideCallReview, queueCallReview, loadCallReviewConsole } from "@/lib/callReview/service";
+import { decideCallReview, hasActiveDispatchClaim, queueCallReview, loadCallReviewConsole } from "@/lib/callReview/service";
 import { runCrmSyncForCall, prepareCrmSyncRetry } from "@/lib/crm/syncFinalizedCall";
 import { dispatchCompletedInteractionNotification } from "@/lib/notifications/completedInteraction";
 import { MockCrmProvider } from "@/lib/providers/crm";
@@ -87,6 +87,16 @@ test("late evidence creates a new review and invalidates an earlier approval req
   expect(second?.revision).toBe(2);
   expect((first?.evidence_json as { transcript: string }).transcript).toContain("ramp evaluation");
   await expect(decideCallReview(first!.id, 1, "approve", value)).rejects.toThrow("stale_review");
+});
+
+test("the pre-ack dispatch-claim check follows the claim's lifetime", async () => {
+  const first = await queueCallReview(accountId, callId, { summary: value.summary });
+  expect(await hasActiveDispatchClaim(accountId, "provider-call")).toBe(false);
+  await prisma.callReview.update({ where: { id: first!.id }, data: { dispatch_at: new Date() } });
+  expect(await hasActiveDispatchClaim(accountId, "provider-call")).toBe(true);
+  expect(await hasActiveDispatchClaim("another-account", "provider-call")).toBe(false);
+  await prisma.callReview.update({ where: { id: first!.id }, data: { dispatch_at: new Date(Date.now() - 16 * 60 * 1000) } });
+  expect(await hasActiveDispatchClaim(accountId, "provider-call")).toBe(false);
 });
 
 test("late evidence cannot supersede a dispatch claim and can be retried after release", async () => {
