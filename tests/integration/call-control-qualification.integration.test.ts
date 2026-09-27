@@ -133,13 +133,17 @@ describe("FRL Call Control qualification", () => {
       .mockImplementationOnce(() => first)
       .mockImplementationOnce(() => second);
 
-    const firstAttempt = runOperatorConsentEffect({ captureId: capture.id, action: "grant" });
-    const secondAttempt = runOperatorConsentEffect({ captureId: capture.id, action: "grant" });
+    // Either attempt may reach the provider first, so the test orders the
+    // responses, not the attempts: success lands, then the late uncertainty.
+    const attempts = Promise.all([
+      runOperatorConsentEffect({ captureId: capture.id, action: "grant" }),
+      runOperatorConsentEffect({ captureId: capture.id, action: "grant" }),
+    ]);
     await vi.waitFor(() => expect(sendCommand).toHaveBeenCalledTimes(2));
     resolveFirst({ status: 200, providerDate: new Date(NOW.getTime() + 4_000), conversationId: "conversation-1", ok: true, errorCode: null });
-    await firstAttempt;
+    await vi.waitFor(async () => expect((await prisma.telnyxCallCommand.findFirstOrThrow({ where: { capture_session_id: capture.id, command_type: "ai_assistant_start" } })).status).toBe("succeeded"));
     resolveSecond({ status: 0, providerDate: null, conversationId: null, ok: false, errorCode: "telnyx_response_uncertain" });
-    await secondAttempt;
+    await attempts;
 
     expect(await prisma.telnyxCallCommand.findFirstOrThrow({ where: { capture_session_id: capture.id, command_type: "ai_assistant_start" } })).toMatchObject({ status: "succeeded", conversation_id: "conversation-1" });
   });
