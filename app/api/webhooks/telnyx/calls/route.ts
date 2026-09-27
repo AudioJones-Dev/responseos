@@ -63,7 +63,7 @@ export async function POST(req: Request) {
     });
   }
 
-  if (!req.headers.get("content-type")?.toLowerCase().startsWith("application/json")) {
+  if (!/^application\/json(?:\s*;.*)?$/i.test(req.headers.get("content-type") ?? "")) {
     return errorResponse(415, {
       code: "unsupported_telnyx_event_content_type",
       message: "This endpoint accepts Telnyx JSON AI events only.",

@@ -463,12 +463,16 @@ export async function runOperatorConsentEffect(params: { captureId: string; acti
 export async function requestQualifiedTransfer(params: { captureId: string; destination: string }) {
   if (!db) throw new Error("database_unavailable");
   const capture = await db.callCaptureSession.findUnique({ where: { id: params.captureId } });
-  if (!capture?.assignment_id || capture.control_state !== "AI_ACTIVE") throw new Error("active_capture_required");
+  // TRANSFER_PENDING is a resume state: a failed or uncertain stop/transfer is
+  // re-driven with the same command identity for this generation.
+  if (!capture?.assignment_id || !["AI_ACTIVE", "TRANSFER_PENDING"].includes(capture.control_state)) throw new Error("active_capture_required");
   const memory = BusinessMemorySnapshotSchema.safeParse(capture.snapshot_json);
   const allowed = memory.success ? readOperatingConfigurationValue(memory.data, "contact.escalation.primary")?.phone : null;
   if (!allowed || params.destination !== allowed) throw new Error("transfer_destination_denied");
-  const moved = await db.callCaptureSession.updateMany({ where: { id: capture.id, generation: capture.generation, control_state: "AI_ACTIVE" }, data: { control_state: "TRANSFER_PENDING", content_admission_closed_at: new Date() } });
-  if (!moved.count) throw new Error("stale_capture_state");
+  if (capture.control_state === "AI_ACTIVE") {
+    const moved = await db.callCaptureSession.updateMany({ where: { id: capture.id, generation: capture.generation, control_state: "AI_ACTIVE" }, data: { control_state: "TRANSFER_PENDING", content_admission_closed_at: new Date() } });
+    if (!moved.count) throw new Error("stale_capture_state");
+  }
   const stopped = await executeCommand({ capture, commandType: "ai_assistant_stop", action: "ai_assistant_stop", request: { client_state: clientState(capture.id, capture.generation) } });
   if (stopped.status !== "succeeded") throw new Error(stopped.error_code ?? "telnyx_stop_unconfirmed");
   const result = await executeCommand({ capture, commandType: "transfer", action: "transfer", request: { to: allowed, client_state: clientState(capture.id, capture.generation) } });

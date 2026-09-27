@@ -108,12 +108,12 @@ describe("signed Telnyx assistant initialization", () => {
     expect(mocks.recordWebhookEvent).not.toHaveBeenCalled();
   });
 
-  test("rejects a signed non-JSON initialization as a different Telnyx contract", async () => {
+  test.each(["application/x-www-form-urlencoded", "application/jsonp", "application/json-seq"])("rejects a signed %s initialization as a different Telnyx contract", async (contentType) => {
     const request = signedRequest();
     const response = await (await import("@/app/api/webhooks/telnyx/assistant-initialization/route")).POST(
       new Request(request.url, {
         method: "POST",
-        headers: { ...Object.fromEntries(request.headers), "content-type": "application/x-www-form-urlencoded" },
+        headers: { ...Object.fromEntries(request.headers), "content-type": contentType },
         body: await request.text(),
       }),
     );

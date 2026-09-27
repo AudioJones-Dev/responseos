@@ -46,8 +46,11 @@ export async function loadCallReviewConsole() {
     orderBy: { _max: { created_at: "desc" } }, take: 50,
   });
   const reviews = latest.length ? await db.callReview.findMany({
-    where: { OR: [{ status: "approved" }, ...latest.map((row) => ({ account_id: row.account_id, call_id: row.call_id, revision: row._max.revision! }))] },
-    orderBy: { created_at: "desc" }, take: 50,
+    where: { OR: latest.flatMap((row) => [
+      { account_id: row.account_id, call_id: row.call_id, revision: row._max.revision! },
+      { account_id: row.account_id, call_id: row.call_id, status: "approved" as const },
+    ]) },
+    orderBy: { created_at: "desc" },
   }) : [];
   return { captures: withConsent, reviews };
 }

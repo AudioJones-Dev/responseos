@@ -142,6 +142,18 @@ describe("supervised Telnyx call lane", () => {
     expect(mocks.normalizeTelnyxEvent).not.toHaveBeenCalled();
   });
 
+  test("rejects JSON-prefixed media types that are not application/json", async () => {
+    const rawBody = JSON.stringify({ data: { event_type: "call.conversation.ended" } });
+    const timestamp = String(Math.floor(Date.now() / 1000));
+    const signature = sign(null, Buffer.from(`${timestamp}|${rawBody}`), keys.privateKey).toString("base64");
+    const response = await (await import("@/app/api/webhooks/telnyx/calls/route")).POST(new Request(
+      "https://responseos.example/api/webhooks/telnyx/calls",
+      { method: "POST", headers: { "content-type": "application/jsonp", "telnyx-timestamp": timestamp, "telnyx-signature-ed25519": signature }, body: rawBody },
+    ));
+    expect(response.status).toBe(415);
+    expect(mocks.recordWebhookEvent).not.toHaveBeenCalled();
+  });
+
   test("retries a signed redelivery after its missing call correlation becomes available", async () => {
     const request = signedEvent({ call_control_id: "call-correlation", transcript: "private call" });
     const { POST } = await import("@/app/api/webhooks/telnyx/calls/route");

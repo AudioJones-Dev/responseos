@@ -72,7 +72,7 @@ The GitHub `staging` Environment also requires a least-privilege `NEON_API_KEY` 
 - `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME` — call recordings + quote photos.
 
 ### Telephony / AI Voice / Email / Billing / Workflows / CRM / Scheduling / Observability
-- **Telnyx post-call ingest:** `TELNYX_PUBLIC_KEY` verifies Ed25519 webhooks; `RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED=true`, `RESPONSEOS_DEMO_ACCOUNT_ID`, and `RESPONSEOS_DEMO_PHONE_E164` are all required before ingestion accepts traffic. `TELNYX_API_KEY` alone activates nothing, and `CarrierProvider` remains mock-only because ResponseOS does not control realtime audio in this slice.
+- **Telnyx post-call ingest:** `TELNYX_PUBLIC_KEY` verifies Ed25519 webhooks; `RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED=true`, `RESPONSEOS_DEMO_ACCOUNT_ID`, and `RESPONSEOS_DEMO_PHONE_E164` are all required before ingestion accepts traffic. `TELNYX_API_KEY` alone activates nothing, and `CarrierProvider` remains mock-only because ResponseOS does not control realtime audio in this slice. Call Control qualification commands are the one caller: they send only when `TELNYX_API_KEY` is set **and** `RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED=true`, so the live-demo preflight permits the key while mock-only staging still forbids it.
 - **AI Voice:** `RETELL_API_KEY`, `VAPI_API_KEY`, `BLAND_API_KEY`.
 - **Email (Resend):** `RESEND_API_KEY`, `EMAIL_FROM`.
 - **Billing (Stripe):** `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`.

@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+
+type Action = "grant" | "refuse" | "withdraw";
 
 export function ConsentControls({ id, callReference }: { id: string; callReference: string }) {
   const [disclosure, setDisclosure] = useState("");
@@ -9,15 +11,28 @@ export function ConsentControls({ id, callReference }: { id: string; callReferen
   const [jurisdiction, setJurisdiction] = useState("");
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
+  // A decision keeps its key until it completes, so a retry reaches the
+  // server's idempotent branch instead of attempting a second event.
+  const pending = useRef<{ action: Action; eventKey: string } | null>(null);
   const router = useRouter();
-  async function record(action: "grant" | "refuse" | "withdraw") {
+  async function record(action: Action) {
     setBusy(true);
+    if (pending.current?.action !== action) pending.current = { action, eventKey: crypto.randomUUID() };
+    const { eventKey } = pending.current;
     try {
-      const response = await fetch(`/api/admin/call-capture/${id}/consent`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action, disclosureRef: disclosure, evidenceRef: evidence, jurisdictionBasis: jurisdiction, eventKey: crypto.randomUUID() }) });
+      const response = await fetch(`/api/admin/call-capture/${id}/consent`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action, disclosureRef: disclosure, evidenceRef: evidence, jurisdictionBasis: jurisdiction, eventKey }) });
       const result = await response.json();
-      setStatus(result.ok ? `Recorded ${result.data.action} at ${result.data.occurredAt}.` : "Consent event was not recorded.");
+      if (result.ok) {
+        pending.current = null;
+        setStatus(`Recorded ${result.data.action} at ${result.data.occurredAt}.`);
+      } else if (result.error === "consent_effect_incomplete") {
+        setStatus(`Recorded ${result.data.action} at ${result.data.occurredAt}, but the provider command did not complete. Record ${action} again to retry it.`);
+      } else {
+        pending.current = null;
+        setStatus(result.error === "idempotency_conflict" ? "This decision was already recorded with different references." : "Consent event was not recorded.");
+      }
       router.refresh();
-    } catch { setStatus("Result uncertain. Inspect the consent event history before retrying."); }
+    } catch { setStatus(`Result uncertain. Record ${action} again to retry the same decision safely.`); }
     finally { setBusy(false); }
   }
   return <details className="my-3 rounded border p-4">

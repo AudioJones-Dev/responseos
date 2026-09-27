@@ -454,8 +454,11 @@ describe("FRL Call Control qualification", () => {
     const route = await import("@/app/api/admin/call-capture/[id]/consent/route");
     const request = () => new Request("https://example.test", { method: "POST", body: JSON.stringify({ action: "withdraw", disclosureRef: "approved:v1", evidenceRef: "witness:withdraw", jurisdictionBasis: "commissioning:test", eventKey: "00000000-0000-4000-8000-000000000003" }) });
     sendCommand.mockResolvedValueOnce({ status: 0, providerDate: null, conversationId: null, ok: false, errorCode: "telnyx_response_uncertain" });
-    expect((await route.POST(request(), { params: Promise.resolve({ id: capture.id }) })).status).toBe(503);
-    const uncertain = await prisma.telnyxCallCommand.findFirstOrThrow({ where: { capture_session_id: capture.id, command_type: "ai_assistant_stop" } });
+    const incomplete = await route.POST(request(), { params: Promise.resolve({ id: capture.id }) });
+    expect(incomplete.status).toBe(409);
+    expect(await incomplete.json()).toMatchObject({ ok: false, error: "consent_effect_incomplete", data: { action: "withdraw" } });
+    expect(await prisma.callConsentEvent.count({ where: { provider_call_id: capture.provider_call_id, action: "withdraw" } })).toBe(1);
+    const uncertain =await prisma.telnyxCallCommand.findFirstOrThrow({ where: { capture_session_id: capture.id, command_type: "ai_assistant_stop" } });
     expect(uncertain.status).toBe("uncertain");
     await ingest(event("call.conversation.ended", "cc-stop-ended", { conversation_id: "conversation-1", client_state: state(capture.id) }, 7_000));
     const hangup = event("call.hangup", "cc-stop-hangup", { conversation_id: "conversation-1" }, 8_000);
@@ -483,6 +486,27 @@ describe("FRL Call Control qualification", () => {
     expect(await prisma.telnyxCallCommand.findFirst({ where: { command_type: "transfer", status: "succeeded" } })).not.toBeNull();
     await ingest(event("call.bridged", "cc-transfer-bridged", { client_state: state(capture.id) }, 4_000));
     expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } })).control_state).toBe("TRANSFERRED");
+  });
+
+  test("an uncertain transfer resumes from TRANSFER_PENDING with the same command identities", async () => {
+    await setupQualification();
+    await ingest(event("call.initiated", "cc-resume-init", { to: NUMBER }, 1_000));
+    const capture = await prisma.callCaptureSession.findFirstOrThrow();
+    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "AI_ACTIVE", conversation_id: "conversation-1", capture_started_at: new Date(NOW.getTime() + 3_000) } });
+    sendCommand.mockImplementation(async ({ action }: { action: string }) => action === "transfer"
+      ? { status: 0, providerDate: null, conversationId: null, ok: false, errorCode: "telnyx_response_uncertain" }
+      : { status: 200, providerDate: new Date(NOW.getTime() + 4_000), conversationId: null, ok: true, errorCode: null });
+    await expect(requestQualifiedTransfer({ captureId: capture.id, destination: "+15555550123" })).rejects.toThrow("telnyx_response_uncertain");
+    expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } })).control_state).toBe("TRANSFER_PENDING");
+    const uncertain = await prisma.telnyxCallCommand.findFirstOrThrow({ where: { capture_session_id: capture.id, command_type: "transfer" } });
+    expect(uncertain.status).toBe("uncertain");
+
+    sendCommand.mockResolvedValue({ status: 200, providerDate: new Date(NOW.getTime() + 5_000), conversationId: null, ok: true, errorCode: null });
+    await expect(requestQualifiedTransfer({ captureId: capture.id, destination: "+15555550999" })).rejects.toThrow("transfer_destination_denied");
+    await expect(requestQualifiedTransfer({ captureId: capture.id, destination: "+15555550123" })).resolves.toEqual({ attempted: true, connected: false });
+    expect(await prisma.telnyxCallCommand.findUniqueOrThrow({ where: { id: uncertain.id } })).toMatchObject({ status: "succeeded", command_id: uncertain.command_id });
+    expect(await prisma.telnyxCallCommand.count({ where: { capture_session_id: capture.id, command_type: { in: ["ai_assistant_stop", "transfer"] } } })).toBe(2);
+    expect(sendCommand.mock.calls.filter(([params]) => params.action === "ai_assistant_stop")).toHaveLength(1);
   });
 
   test("qualification origin remains permanently ineligible for CRM and email effects", async () => {

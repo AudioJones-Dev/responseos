@@ -101,6 +101,7 @@ export async function sendTelnyxCallCommand(params: {
       headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
       body: JSON.stringify(params.body),
       cache: "no-store",
+      signal: AbortSignal.timeout(8_000),
     });
     const value = await response.json().catch(() => null) as { data?: { conversation_id?: unknown }; errors?: Array<{ code?: unknown }> } | null;
     const date = response.headers.get("date");

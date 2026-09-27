@@ -47,6 +47,13 @@ export function statusForCode(code: string): number {
       return 404;
     case "number_assignment_conflict":
     case "qualification_assignment_conflict":
+    case "number_not_available":
+    case "evergreen_number_forbidden":
+    case "provider_number_mismatch":
+    case "qualification_profile_invalid":
+    case "qualification_snapshot_missing":
+    case "qualification_snapshot_invalid":
+    case "qualification_configuration_incomplete":
       return 409;
     case "invalid_json":
       return 400;

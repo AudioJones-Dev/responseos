@@ -26,6 +26,10 @@ describe("live-demo environment contract", () => {
     expect(validateLiveDemoEnvironment(VALID)).toEqual([]);
   });
 
+  test("permits the Telnyx API key that Call Control qualification commands require", () => {
+    expect(validateLiveDemoEnvironment({ ...VALID, TELNYX_API_KEY: "secret-placeholder" })).toEqual([]);
+  });
+
   test("rejects a gate list that does not authorize live communications", () => {
     // A non-empty but unrelated value passed the required-variable check while
     // every supervised tenant would degrade to the demo lane at runtime.

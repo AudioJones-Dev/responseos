@@ -49,6 +49,13 @@ test("console limits calls after grouping revisions and loads each capture's con
   expect(consoleData.captures.find((capture) => capture.provider_call_id === "provider-call")?.consentAction).toBe("grant");
 });
 
+test("approved revisions cannot crowd a pending latest revision out of the console", async () => {
+  const row = (await queueCallReview(accountId, callId, { summary: value.summary }))!;
+  await prisma.callReview.createMany({ data: Array.from({ length: 60 }, (_, index) => ({ account_id: accountId, call_id: "approved-call", revision: index + 1, status: "approved" as const, source_hash: `approved-${index}`, evidence_json: {}, payload_json: {}, recipient: "owner@example.test", created_at: new Date(row.created_at.getTime() + index + 1) })) });
+  const consoleData = await loadCallReviewConsole();
+  expect(consoleData.reviews.map((review) => review.id)).toContain(row.id);
+});
+
 test.each(["pending", "succeeded"] as const)("live CRM cannot reuse a %s mock operation", async (status) => {
   await prisma.crmSyncOperation.create({ data: { account_id: accountId, call_id: callId, operation_key: `crm-call:${accountId}:${callId}`, provider: "mock", status } });
   const provider = new MockCrmProvider();

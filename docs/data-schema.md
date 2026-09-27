@@ -61,8 +61,8 @@ Current migration history:
 | `0013_prospect_bootstrap_review_controls` | Adds prospect bootstrap review controls. |
 | `0014_supervised_tenant_runtime` | Adds the supervised tenant runtime substrate. Not deployed or activated. |
 | `0015_supervised_call_review` | Adds supervised call review, capture and consent evidence. Not deployed or activated; carries the index deployment requirement in [`DEPLOYMENT.md`](./DEPLOYMENT.md). |
-| `0016_supervised_qualification_assignment` | Adds the temporary, effects-disabled qualification assignment and durable capture assignment pin. |
-| `0017_call_control_qualification` | Adds Call Control state, idempotent provider-command evidence, immutable transcript revisions and post-call interpretation provenance. |
+| `0016_supervised_qualification_assignment` | Adds the temporary, effects-disabled qualification assignment and durable capture assignment pin. Not deployed or activated. |
+| `0017_call_control_qualification` | Adds Call Control state, idempotent provider-command evidence, immutable transcript revisions and post-call interpretation provenance. Not deployed or activated. |
 
 The sections below retain historical v0.1/v0.2 design context. If they conflict with `prisma/schema.prisma`, the Prisma schema wins until this document is fully rewritten from the live schema.
 
@@ -340,7 +340,7 @@ Architectural placement and product framing are documented in `architecture.md` 
 - No third-party knowledge integrations (Obsidian, Notion, Confluence, etc.) are committed to.
 - No additional general-knowledge Prisma models, retrieval runtime, or provider integration ships from this roadmap entry.
 
-### Supervised demonstration evidence (0014–0016, in review)
+### Supervised demonstration evidence (0014–0017, in review)
 
 CRM recovery amendment (ADR-0057, ratified 2026-09-15; repository implementation in review): no schema migration. `CrmSyncOperation.status` owns lifecycle; typed `last_error_code` owns the next effect or unresolved intent. `last_error_redacted` stores a versioned, non-content JSON binding (original review ID, frozen payload hash, provider destination), not raw provider errors or caller data. `attempt_count` is the CAS generation. Provider ID fields contain acknowledged or explicitly reconciled objects. Phase advancement acknowledges associations separately. Malformed/legacy state fails closed. AuditLog records transactional intent, acknowledgment and operator evidence; execution never scans audit metadata to reconstruct state. Frozen `CallReview.payload_json` remains authoritative; `crm_status` projects CRM state and cannot authorize email independently.
 

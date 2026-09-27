@@ -22,9 +22,11 @@ const REQUIRED = [
 
 const LIVE_COMMUNICATIONS_GATE = "v0.3-live-communications";
 
+// TELNYX_API_KEY is permitted here (owner decision 2026-09-27): Call Control
+// qualification sends provider commands with it. It stays forbidden in the
+// mock-only staging lane.
 const FORBIDDEN = [
   "RESPONSEOS_DEV_SESSION",
-  "TELNYX_API_KEY",
   "TWILIO_ACCOUNT_SID",
   "TWILIO_AUTH_TOKEN",
   "TWILIO_PHONE_NUMBER",

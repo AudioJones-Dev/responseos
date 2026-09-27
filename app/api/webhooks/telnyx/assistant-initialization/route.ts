@@ -61,7 +61,7 @@ export async function POST(req: Request) {
     });
   }
 
-  if (!req.headers.get("content-type")?.toLowerCase().startsWith("application/json")) {
+  if (!/^application\/json(?:\s*;.*)?$/i.test(req.headers.get("content-type") ?? "")) {
     return errorResponse(415, {
       code: "unsupported_telnyx_initialization_content_type",
       message: "Telnyx assistant initialization requires application/json.",

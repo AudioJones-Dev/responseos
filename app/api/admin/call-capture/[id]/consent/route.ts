@@ -46,8 +46,15 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
       return event;
     });
     if (data.action !== value.action || data.disclosure_ref !== value.disclosureRef || data.evidence_ref !== value.evidenceRef || data.jurisdiction_basis !== value.jurisdictionBasis) return Response.json({ ok: false, error: "idempotency_conflict" }, { status: 409 });
-    await runOperatorConsentEffect({ captureId: capture.id, action: value.action });
-    return Response.json({ ok: true, data: { id: data.id, action: data.action, occurredAt: data.occurred_at } });
+    const recorded = { id: data.id, action: data.action, occurredAt: data.occurred_at };
+    try {
+      await runOperatorConsentEffect({ captureId: capture.id, action: value.action });
+    } catch {
+      // The event and control state are already committed; retrying with the
+      // same eventKey reaches the idempotent branch and re-drives the effect.
+      return Response.json({ ok: false, error: "consent_effect_incomplete", data: recorded }, { status: 409 });
+    }
+    return Response.json({ ok: true, data: recorded });
   } catch (error) {
     const denied = error instanceof Error && error.message === "operator_required";
     return Response.json({ ok: false, error: denied ? "operator_required" : "consent_not_recorded" }, { status: denied ? 403 : 503 });
