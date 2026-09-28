@@ -8,7 +8,7 @@ export const metadata = {
 };
 
 const LAST_UPDATED = "September 28, 2026";
-const CONTACT_EMAIL = "privacy@responseos.ai";
+const CONTACT_EMAIL = "privacy@ajdigital.app";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
