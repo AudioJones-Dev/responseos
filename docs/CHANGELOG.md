@@ -4,6 +4,15 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: publish a privacy policy written from what the code collects
+
+- **New `/privacy` page**, linked from the marketing footer and from the assessment form's submit line. It is written from a code check of every personal-data path, not a template, and covers: browsing (no analytics, tracking cookies, or third-party scripts; Vercel request logs; the receptionist demo's question sits in the URL), assessment requests (fields, operator-only access, 90-day expiry), demo phone calls (Telnyx AI assistant, transcribed not recorded, 30-day expiry for personalized calls, HubSpot copy for general-demo calls only), accounts (what Clerk shares), sharing, requests by email, security, sensitive data and children, and changes.
+- **Gaps are stated, not hidden.** Automatic deletion isn't built, so the policy says expired submissions and call content are removed by hand. General-demo calls have no automatic expiry. There is no self-service export or deletion tool, so requests go to `privacy@responseos.ai` and are handled by hand within 30 days. Removing a login keeps the user's name and email on their records.
+- **The assessment form no longer says "Mock capture — no data leaves this demo."** That was wrong in both modes: with public intake off the form errors, and with it on the submission is stored. It now says the details are used to review the request and links the policy.
+- **`/privacy` is a public route.** It is added to `PUBLIC_EXACT` in `lib/auth/route-protection.ts`, with tests, so it stays readable when Clerk sign-in is enforced.
+- **Trust page:** "Privacy policy and terms" moves from *Planned* to *Partial* — the policy is published; terms of service are not.
+- Owner action before deploy: create the `privacy@responseos.ai` alias and have counsel review the policy.
+
 ## Unreleased — feat: label every Trust-page control by what is actually built (TRUST-001, TRUST-002)
 
 - **`/trust` is now a trust center, not a card grid.** Controls are grouped into Security, Data, Payments, and Privacy, and each carries one of four labels, explained in a legend at the top: **Implemented** (built, in use, tested), **Partial** (some of it built; the rest named), **Planned** (designed, not built), and **Not claimed** (we don't hold it and don't imply it). These map onto doctrine §2.1's `SHIPPED`, `PARTIALLY_SHIPPED`, `DOCUMENTED_ONLY`/`ROADMAP`, and `PROHIBITED_CLAIM`. The report suggested "Implemented / In validation / Not claimed", but export/deletion and the payment boundary are not being validated; they are not built, so "Planned" is the honest label.

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useState } from "react";
 import { Button, Card } from "@/components/ui";
 
@@ -184,7 +185,11 @@ export function AuditRequestForm() {
           <p className="text-sm text-danger">{error}</p>
         ) : (
           <p className="text-xs text-ink-muted">
-            Mock capture — no data leaves this demo.
+            We use these details to review your request. See our{" "}
+            <Link href="/privacy" className="underline underline-offset-2">
+              privacy policy
+            </Link>
+            .
           </p>
         )}
       </div>
