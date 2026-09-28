@@ -244,7 +244,7 @@ The report's IDs and priorities, with current status. **P0 = do first. "Current"
 | DEMO-003 | Demo | Multiple compact scenarios (HVAC after-hours, plumbing emergency, estimate) | Near term | P1 | Open |
 | DEMO-004 | Demo | Instrumentation: starts, completion, hotspots, CTA outcomes | Near term | P1 | Open — no analytics package or tracking calls exist |
 | DEMO-005 | Demo | Evaluate Navattic/Storylane once UI stabilizes | Near term | P2 | Open |
-| PRICE-001 | Pricing | Make assessment deliverables visible, plus "what happens next" | Current | P0 | Partly — `/audit` lists three steps and the leak surface; no deliverable preview |
+| PRICE-001 | Pricing | Make assessment deliverables visible, plus "what happens next" | Current | P0 | **Built on `/audit`** — the eight-part packet and both after-paths; `/pricing` still links there rather than repeating it |
 | PRICE-002 | Pricing | Name the setup + monthly scale variables | Current | P0 | Open |
 | PRICE-003 | Pricing | Bound outcome-fee claims to verified measurement and contract | Current | P0 | Open — owner decision (see §3) |
 | PRICE-004 | Pricing | Explain why not per-seat / per-minute | Current | P1 | Partly — "no seat licenses" is stated |
@@ -260,7 +260,7 @@ The report's IDs and priorities, with current status. **P0 = do first. "Current"
 | CRO-001 | Sitewide | CTA hierarchy: explore workflow / get assessment / talk implementation | Current | P0 | Partly — two tiers exist |
 | CRO-002 | Sitewide | Product-state label standard: simulated, supervised, live, planned | Current | P0 | Open — doctrine §2.1 is the internal vocabulary |
 | CRO-003 | Sitewide | "How deployment works" implementation-confidence page | Near term | P1 | Open |
-| CRO-004 | Sitewide | Assessment landing page: method, deliverables, fit/not-fit, credit policy | Current | P0 | Partly — `/audit` exists |
+| CRO-004 | Sitewide | Assessment landing page: method, deliverables, fit/not-fit, credit policy | Current | P0 | **Built** — `/audit` now carries price and credit, deliverables, method, fit signals and no-fit reasons, and what happens after. No duration is stated because none is defined |
 | CRO-005 | Sitewide | Fair alternative-comparison pages | Near term | P2 | Open |
 | SEO-001 | Resources | Problem-led content cluster | Near term | P1 | Open |
 | SEO-002 | Tools | Range-based missed-demand calculator | Near term | P2 | Open |

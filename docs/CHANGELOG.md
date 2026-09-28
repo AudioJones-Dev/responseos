@@ -4,6 +4,15 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: make the assessment page show what the $1,000 buys (PRICE-001, CRO-004)
+
+- **`/audit` now answers the report's first pricing question, "what is purchased for $1,000?"** The hero states the price and the credit term (full fee toward implementation if the client signs within 30 days). A new "What you walk away with" section lists the eight-part written packet: Readiness Score, Revenue Leak Estimate, Fit / No-Fit Diagnosis, Current Workflow Map, Recommended Workflow, Implementation Scope, Projected ROI, and Pricing Proposal. The leak estimate and ROI are labeled as an estimate and a projection.
+- **Nothing on the page is new commercial canon.** The packet is the deliverable list in `pricing-and-onboarding.md`, matching the `AssessmentReport` fields in the schema one to one. The fit signals are that doc's qualification gates, shown as "signals we look for, not hard cutoffs" because the doc calls them evidence prompts, not pass/fail gates. The no-fit reasons are doctrine §7.1. The verticals to avoid for first pilots come from the same pricing doc.
+- **Both after-paths are shown.** Fit leads to a Pricing Proposal and the 30-day credit. No-fit stops the engagement, and the client keeps the workflow map, leak estimate, and diagnosis. A one-line product-status note says live provider integrations are still being validated, so implementation scope reflects what is available at the time.
+- **The packet intro no longer overpromises on a no-fit.** It first said "you keep it whether or not you go ahead", implying all eight parts on any outcome. A no-fit gets no Pricing Proposal and, per `pricing-and-onboarding.md`, keeps the workflow map, leak estimate, and diagnosis, so the intro now says exactly that. Raised by Codex on PR #187.
+- **Step 01 was retitled** from "Connect your call log + CRM" to "Share your call log and CRM exports": the assessment runs from exports the client shares (owner-confirmed 2026-09-11), and "connect" implied a live integration.
+- **Deliberately left out:** the verbatim positioning paragraph the copy spec (§6.5) asks for, because it says "we install ResponseOS to … report recovered revenue monthly", a present-tense recovered-revenue claim that doctrine §20 prohibits. Also no assessment duration, because none is defined anywhere in the repo.
+
 ## Unreleased — feat: add the Recovery Record to the homepage (HOME-001)
 
 - **The homepage now shows one record end to end**, directly after the hero, under "The call ends. The opportunity shouldn't." This is HOME-001 from the website executive findings: the report's highest-value missing visual, a single seeded record in place of more feature cards.
