@@ -4,6 +4,13 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — fix: redact the CRM next action and disclose stored Clerk events (#190 follow-up)
+
+- **The HubSpot next action is now redacted.** `runCrmSyncForCall` passed `lead.notes` (the Telnyx-generated next action) to HubSpot verbatim as the call-activity and follow-up-task "Next action", so a phone number or email repeated there left unredacted, contrary to what `/privacy` said. It now goes through `sanitizeCrmText`, like the summary. An integration test seeds a next action containing both and asserts the redacted text reaches both provider calls; it fails without the fix.
+- **`/privacy` discloses stored Clerk events.** Every Clerk webhook body is kept in `WebhookEvent` with no expiry (`lib/auth/clerk-sync.ts`). The Accounts section now says so and that an erasure request covers them. Giving them an expiry is left to a retention decision.
+- **`/privacy` names the next step** among what may be copied to HubSpot for general-demo calls.
+- Both found by Codex on #190 after merge.
+
 ## Unreleased — feat: publish a privacy policy written from what the code collects
 
 - **New `/privacy` page**, linked from the marketing footer and from the assessment form's submit line. It is written from a code check of every personal-data path, not a template, and covers: browsing (no analytics, tracking cookies, or third-party scripts; Vercel request logs; the receptionist demo's question sits in the URL), assessment requests (fields, operator-only access, 90-day expiry), demo phone calls (Telnyx AI assistant, transcribed not recorded, 30-day expiry for personalized calls, HubSpot copy for general-demo calls only), accounts (what Clerk shares), sharing, requests by email, security, sensitive data and children, and changes.

@@ -108,7 +108,7 @@ export default function PrivacyPage() {
             "Calls are transcribed, not recorded.",
             "Please use fictional details on demo calls. They aren't set up to handle anything sensitive.",
             "Personalized demo calls, which are set up for one specific business, are marked to expire after 30 days, and expired call content is removed by hand until automatic deletion is built. Calls to our general demo number don't expire automatically yet; ask us and we'll delete them.",
-            "For calls to our general demo number, we may copy your phone number, name, verified email, and a call summary with contact details removed into our CRM, HubSpot, so we can follow up. Personalized demo calls are never sent to a CRM.",
+            "For calls to our general demo number, we may copy your phone number, name, and verified email, plus a call summary and suggested next step with any phone numbers and email addresses removed, into our CRM, HubSpot, so we can follow up. Personalized demo calls are never sent to a CRM.",
           ]}
         />
       </Section>
@@ -118,9 +118,11 @@ export default function PrivacyPage() {
           If we give you a login to the operator console or client dashboard,
           sign-in is handled by Clerk. Clerk shares your email address, name,
           and organization name with us, and sets the cookies it needs to keep
-          you signed in. If your login is removed, we keep your name and email
-          on the records you created so their history stays accurate; you can
-          ask us to erase them.
+          you signed in. We also keep each account update Clerk sends us, as
+          received; these don&apos;t expire automatically yet. If your login
+          is removed, we keep your name and email on the records you created so
+          their history stays accurate. You can ask us to erase all of it,
+          including those stored updates.
         </p>
       </Section>
 
