@@ -230,7 +230,7 @@ The report's IDs and priorities, with current status. **P0 = do first. "Current"
 |---|---|---|---|---|---|
 | HOME-001 | Home | Connected, permanently labeled Recovery Record visual | Current | P0 | **Built** — homepage section after the hero, reusing the DemoLift walkthrough scenario (`app/(marketing)/_components/RecoveryRecord.tsx`) |
 | HOME-002 | Home | Sharpen hero category phrasing ("revenue-recovery workflow" + "missed demand") | Current | P0 | Partly — hero now leads with missed calls |
-| HOME-003 | Home | "Not just an AI receptionist" contrast: answering service / CRM / ResponseOS | Current | P0 | Open |
+| HOME-003 | Home | "Not just an AI receptionist" contrast: answering service / CRM / ResponseOS | Current | P0 | **Built** — homepage section after the RECOVER loop; category cards, not a feature-checkmark grid |
 | HOME-004 | Home | Two conversion paths (explore vs. assess) | Current | P0 | **Addressed** (ADR-0035, #163) |
 | HOME-005 | Home | Structured "What you are seeing" product-status disclosure near UI | Current | P0 | Open |
 | HOME-006 | Home | Tie each RECOVER stage to an event in the Recovery Record | Current | P1 | Open — HOME-001 is now built |

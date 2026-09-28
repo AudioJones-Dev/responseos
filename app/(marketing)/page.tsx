@@ -52,6 +52,30 @@ const OFFER = [
   },
 ];
 
+// HOME-003: category contrast. Describes what each category is for and where
+// it stops — not feature gaps we haven't verified per vendor.
+const COMPARISON = [
+  {
+    name: "Answering service",
+    kind: "Human or AI receptionist",
+    forWhat: "Picks up the call, takes a message, and may book a basic appointment.",
+    stops: "Usually at the call. Qualification, who follows up, and whether it became a job live somewhere else — or nowhere.",
+  },
+  {
+    name: "CRM or FSM",
+    kind: "Your contact, job, and pipeline system",
+    forWhat: "Holds contacts, jobs, and pipeline once someone enters them.",
+    stops: "Usually at what reached a person. The missed call nobody logged rarely becomes a record.",
+  },
+  {
+    name: "ResponseOS",
+    kind: "In development — see the record above",
+    forWhat: "Designed to keep the record going once demand is at risk: capture the event, qualify it, hand it to a named person, and track whether it became booked work.",
+    stops: "Designed to sit alongside your phones and CRM rather than replace them. No CRM connection is live yet; compatibility with yours is checked in the assessment.",
+    highlight: true,
+  },
+];
+
 export default function MarketingHome() {
   return (
     <main className="flex-1">
@@ -137,6 +161,42 @@ export default function MarketingHome() {
             </Card>
           ))}
         </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6">
+        <p className="text-xs font-semibold uppercase tracking-widest text-ink-muted">
+          Not just an AI receptionist
+        </p>
+        <h2 className="mt-2 font-display text-2xl font-semibold text-ink">
+          Answering the call is one step
+        </h2>
+        <p className="mt-2 max-w-2xl text-sm text-ink-secondary">
+          An answering service covers the phone. A CRM stores what reaches
+          your team. ResponseOS is designed for the gap between them.
+        </p>
+        <div className="mt-8 grid gap-4 lg:grid-cols-3">
+          {COMPARISON.map((c) => (
+            <Card
+              key={c.name}
+              className={c.highlight ? "border-accent/30" : undefined}
+            >
+              <h3 className="text-lg font-semibold text-ink">{c.name}</h3>
+              <p className="mt-0.5 text-xs text-ink-muted">{c.kind}</p>
+              <p className="mt-4 text-xs uppercase tracking-wide text-ink-muted">
+                What it&apos;s for
+              </p>
+              <p className="mt-1 text-sm text-ink-secondary">{c.forWhat}</p>
+              <p className="mt-4 text-xs uppercase tracking-wide text-ink-muted">
+                {c.highlight ? "How it fits" : "Where it stops"}
+              </p>
+              <p className="mt-1 text-sm text-ink-secondary">{c.stops}</p>
+            </Card>
+          ))}
+        </div>
+        <p className="mt-6 max-w-2xl text-sm text-ink-secondary">
+          If you only need someone to pick up the phone, an answering service
+          may be all you need. The assessment will tell you.
+        </p>
       </section>
 
       <section className="relative isolate mx-auto w-full max-w-6xl overflow-hidden px-4 py-16 sm:px-6">

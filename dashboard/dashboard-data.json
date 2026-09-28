@@ -1243,6 +1243,19 @@
       "refType": "pull"
     },
     {
+      "id": "L-10",
+      "phase": "Launch / Demo Deploy",
+      "title": "Homepage comparison: answering service vs CRM vs ResponseOS (HOME-003)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-09-28",
+      "due": "2026-09-28",
+      "ref": 188,
+      "refType": "pull"
+    },
+    {
       "id": "G-16",
       "phase": "Tech Debt & Hardening",
       "title": "Vendor web fonts so next build makes no network requests",
