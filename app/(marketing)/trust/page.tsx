@@ -75,8 +75,8 @@ const GROUPS: { name: string; controls: Control[] }[] = [
       },
       {
         title: "Privacy policy and terms",
-        status: "Planned",
-        body: "Not published yet.",
+        status: "Partial",
+        body: "The privacy policy is published at /privacy and describes what the current build collects. Terms of service aren't published yet.",
       },
     ],
   },

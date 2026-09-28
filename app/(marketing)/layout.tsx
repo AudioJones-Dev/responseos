@@ -72,6 +72,9 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
               <Link href="/trust" className="hover:text-ink-secondary">
                 Trust
               </Link>
+              <Link href="/privacy" className="hover:text-ink-secondary">
+                Privacy
+              </Link>
             </div>
             <SocialLinks />
           </div>

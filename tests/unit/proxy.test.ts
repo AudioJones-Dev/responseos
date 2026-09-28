@@ -83,7 +83,7 @@ describe("proxy.ts route protection", () => {
   test("Clerk absent + RESPONSEOS_REQUIRE_AUTH → public routes stay reachable", async () => {
     process.env.RESPONSEOS_REQUIRE_AUTH = "1";
     const { default: proxy } = await loadProxy();
-    for (const pathname of ["/", "/pricing", "/audit", "/trust", "/demo/walkthrough"]) {
+    for (const pathname of ["/", "/pricing", "/audit", "/trust", "/privacy", "/demo/walkthrough"]) {
       const req = {
         nextUrl: { pathname },
         url: `https://demo.example${pathname}`,

@@ -12,12 +12,13 @@
 // Exact public paths. `/audit` and `/trust` are prospect-facing marketing
 // pages linked from the marketing nav alongside `/`, `/demo`, and `/pricing`;
 // `/audit` is the lead-capture form, so gating it behind sign-in would break
-// the top of the funnel.
+// the top of the funnel. `/privacy` must be readable before anyone submits it.
 const PUBLIC_EXACT = new Set<string>([
   "/",
   "/pricing",
   "/audit",
   "/trust",
+  "/privacy",
   "/api/health",
 ]);
 
