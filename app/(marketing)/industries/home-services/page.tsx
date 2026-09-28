@@ -17,7 +17,7 @@ const POINTS = [
   },
   {
     title: "Qualify urgency, then book",
-    body: "Service area, job type, and urgency are scored, and qualified demand is designed to route straight to a booked estimate.",
+    body: "Service area, job type, and urgency are designed to be scored, and qualified demand is designed to route straight to a booked estimate.",
   },
 ];
 

@@ -14,7 +14,7 @@ const CONTROLS = [
   },
   {
     title: "Audit trail",
-    body: "Some security and intake actions — removing a user, requesting an escalation, setting up a demo — are written once to an audit log, and every verified call-event and identity webhook is recorded on receipt. Covering every account-access change, call, lead, booking, quote, and admin action — and locking the trail at the database level — is planned, not built.",
+    body: "Some security and workflow actions — removing a user, reviewing an assessment request, setting up a demo — are written once to an audit log, and every verified call-event and identity webhook is recorded on receipt. Covering every account-access change, call, lead, booking, quote, and admin action — and locking the trail at the database level — is planned, not built.",
   },
   {
     title: "Webhook signatures verified",
