@@ -1,21 +1,25 @@
 import type { Metadata } from "next";
-import { Syne, Inter, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-const syne = Syne({
+// Vendored latin-subset variable fonts (SIL OFL, licenses in ./fonts), so the
+// build never fetches from Google Fonts.
+const syne = localFont({
   variable: "--font-syne",
-  subsets: ["latin"],
-  weight: ["600", "700", "800"],
+  src: "./fonts/syne.woff2",
+  weight: "600 800",
 });
 
-const inter = Inter({
+const inter = localFont({
   variable: "--font-inter",
-  subsets: ["latin"],
+  src: "./fonts/inter.woff2",
+  weight: "100 900",
 });
 
-const jetbrainsMono = JetBrains_Mono({
+const jetbrainsMono = localFont({
   variable: "--font-jetbrains-mono",
-  subsets: ["latin"],
+  src: "./fonts/jetbrains-mono.woff2",
+  weight: "100 800",
 });
 
 const SITE_NAME = "ResponseOS";

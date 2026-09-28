@@ -186,7 +186,7 @@ The canonical `RESPONSEOS_*` set, by directory:
 [`RESPONSEOS_POSITIONING.md`](../brand/RESPONSEOS_POSITIONING.md) · [`RESPONSEOS_BRAND_VOICE.md`](../brand/RESPONSEOS_BRAND_VOICE.md) · [`RESPONSEOS_SALES_NARRATIVE.md`](../brand/RESPONSEOS_SALES_NARRATIVE.md) · [`RESPONSEOS_WEBSITE_COPY_SPEC.md`](../brand/RESPONSEOS_WEBSITE_COPY_SPEC.md)
 
 ### `docs/research/`
-[`RESPONSEOS_MARKET_RESEARCH.md`](../research/RESPONSEOS_MARKET_RESEARCH.md) · [`RESPONSEOS_NAMING_RISK_RESEARCH.md`](../research/RESPONSEOS_NAMING_RISK_RESEARCH.md) · [`RESPONSEOS_COMPETITOR_RESEARCH.md`](../research/RESPONSEOS_COMPETITOR_RESEARCH.md)
+[`RESPONSEOS_MARKET_RESEARCH.md`](../research/RESPONSEOS_MARKET_RESEARCH.md) · [`RESPONSEOS_NAMING_RISK_RESEARCH.md`](../research/RESPONSEOS_NAMING_RISK_RESEARCH.md) · [`RESPONSEOS_COMPETITOR_RESEARCH.md`](../research/RESPONSEOS_COMPETITOR_RESEARCH.md) · [`RESPONSEOS_WEBSITE_EXECUTIVE_FINDINGS.md`](../research/RESPONSEOS_WEBSITE_EXECUTIVE_FINDINGS.md)
 
 ### Pre-existing canonical docs (still authoritative where not restated)
 [`../PRD.md`](../PRD.md) · [`../ROADMAP.md`](../ROADMAP.md) · [`../DECISIONS.md`](../DECISIONS.md) · [`../architecture.md`](../architecture.md) · [`../data-schema.md`](../data-schema.md) · [`../api-spec.md`](../api-spec.md) · [`../SECURITY.md`](../SECURITY.md) · [`../DEPLOYMENT.md`](../DEPLOYMENT.md) · [`../DESIGN.md`](../DESIGN.md) · [`../automation-flows.md`](../automation-flows.md)
