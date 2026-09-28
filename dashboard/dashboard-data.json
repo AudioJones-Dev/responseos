@@ -1217,6 +1217,17 @@
       "refType": "pull"
     },
     {
+      "id": "L-08",
+      "phase": "Launch / Demo Deploy",
+      "title": "Add the Recovery Record to the homepage (HOME-001)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-09-28",
+      "due": "2026-09-28"
+    },
+    {
       "id": "G-16",
       "phase": "Tech Debt & Hardening",
       "title": "Vendor web fonts so next build makes no network requests",

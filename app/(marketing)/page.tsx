@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ButtonLink, Card } from "@/components/ui";
 import { AtmosphereBackground } from "@/components/layout/AtmosphereBackground";
+import { RecoveryRecord } from "./_components/RecoveryRecord";
 
 const PILLARS = [
   {
@@ -90,6 +91,28 @@ export default function MarketingHome() {
               </div>
             ))}
           </dl>
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6">
+        <p className="text-xs font-semibold uppercase tracking-widest text-ink-muted">
+          What happens after the call
+        </p>
+        <h2 className="mt-2 font-display text-2xl font-semibold text-ink">
+          The call ends. The opportunity shouldn&apos;t.
+        </h2>
+        <p className="mt-2 max-w-2xl text-sm text-ink-secondary">
+          One fictional record from the demo sandbox, followed from an
+          after-hours call to where it stands now — including the steps that
+          are still open.
+        </p>
+        <div className="mt-8">
+          <RecoveryRecord />
+        </div>
+        <div className="mt-6">
+          <ButtonLink href="/demo/walkthrough/call" variant="secondary">
+            Walk through this record
+          </ButtonLink>
         </div>
       </section>
 

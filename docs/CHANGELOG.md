@@ -4,6 +4,15 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: add the Recovery Record to the homepage (HOME-001)
+
+- **The homepage now shows one record end to end**, directly after the hero, under "The call ends. The opportunity shouldn't." This is HOME-001 from the website executive findings: the report's highest-value missing visual, a single seeded record in place of more feature cards.
+- **It reuses the existing demo scenario rather than inventing a new one.** Every fact (Maria Santos, DemoLift, the 21:47–21:50 trail, the score of 88, the callback owner, the $1,500–$4,500 estimate) is read from `app/(demo)/_data/scenario.ts`, so the homepage and `/demo/walkthrough` describe the same fictional record and cannot drift apart. It stays anchored on the General Home Services / DemoLift case that ADR-0035 chose.
+- **The open steps stay open.** Booking is shown as *Unresolved* (no calendar is connected in the demo), the CRM record as *Not connected* (HubSpot sync is mock-only), and the revenue state stops at *Estimated*, with Booked, Completed, and Collected shown as not reached. That follows ADR-0042's revenue states and doctrine §14.3: an estimate is not recovered revenue. The qualification score is shown with the criteria behind it and labeled illustrative, rather than as a bare 0–100 number.
+- **A permanent label sits on the record itself**, "Guided simulation — seeded scenario, not live customer data", instead of in the footer (the report's mock-data safeguard).
+- The timeline reads oldest-first, unlike the newest-first rule DESIGN.md sets for record-detail timelines, because here it tells a story in order rather than listing activity on a working record.
+- Static server component; no data fetching, provider call, or client JavaScript. Checked at 1280px and 390px with no horizontal overflow.
+
 ## Unreleased — docs: record the website executive findings and correct overstated public claims
 
 - **The operator's *A. Executive Findings* website research is recorded** as [`research/RESPONSEOS_WEBSITE_EXECUTIVE_FINDINGS.md`](./research/RESPONSEOS_WEBSITE_EXECUTIVE_FINDINGS.md). It keeps the report's thesis, positioning analysis, the canonical "Recovery Record" visual, demo, pricing, and trust strategy, the industry-page framework, the objection matrix, the claims risk register, and the ID'd site opportunity manifest (HOME-001 … OPS-001). It is research input, not a decision: no ADR, roadmap row, or build is authorized by it.
