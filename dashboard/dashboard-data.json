@@ -1238,6 +1238,19 @@
       "refType": "pull",
       "priority": "High",
       "blocked": false
+    },
+    {
+      "id": "FRL-MIKE-LIVE-DEMO",
+      "ref": 177,
+      "refType": "pull",
+      "phase": "Integrations",
+      "title": "Supervised FRL demonstration: approved knowledge, consent, review, CRM and email",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "blocked": true,
+      "blockedReason": "Call Control qualification implementation is in progress on PR #177. Deployment, migration 0017, provider routing, hosted latency evidence, Scenario A retest, attestation and activation remain separately gated."
     }
   ],
   "liveIssues": [

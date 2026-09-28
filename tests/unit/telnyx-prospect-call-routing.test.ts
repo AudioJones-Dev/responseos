@@ -4,16 +4,27 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   recordWebhookEvent: vi.fn(),
   setWebhookProcessStatus: vi.fn(),
+  findCallCorrelation: vi.fn(),
   resolveTelnyxEventAssignment: vi.fn(),
+  resolveSupervisedTenantForNumber: vi.fn(),
 }));
 
 vi.mock("@/lib/data/webhookEvents", () => ({
   recordWebhookEvent: mocks.recordWebhookEvent,
   setWebhookProcessStatus: mocks.setWebhookProcessStatus,
+  findCallCorrelation: mocks.findCallCorrelation,
   getWebhookProcessingState: vi.fn(),
 }));
 vi.mock("@/lib/prospectBootstrap/service", () => ({
   resolveTelnyxEventAssignment: mocks.resolveTelnyxEventAssignment,
+}));
+vi.mock("@/lib/agentExecution/supervisedRuntime", () => ({
+  resolveSupervisedTenantForNumber: mocks.resolveSupervisedTenantForNumber,
+  findSupervisedNumberOwner: vi.fn().mockResolvedValue(null),
+  touchSupervisedAssignment: vi.fn(),
+}));
+vi.mock("@/lib/notifications/completedInteraction", () => ({
+  dispatchCompletedInteractionNotification: vi.fn(),
 }));
 vi.mock("@/lib/crm/syncFinalizedCall", () => ({ runCrmSyncForCall: vi.fn() }));
 vi.mock("@/lib/providers/telnyx/normalize", () => ({ normalizeTelnyxEvent: vi.fn() }));
@@ -55,6 +66,8 @@ describe("personalized Telnyx call retention", () => {
     delete process.env.RESPONSEOS_DEMO_PHONE_E164;
     mocks.recordWebhookEvent.mockResolvedValue({ ok: true, data: { id: "ledger-1", process_status: "received" } });
     mocks.setWebhookProcessStatus.mockResolvedValue(undefined);
+    mocks.findCallCorrelation.mockResolvedValue(null);
+    mocks.resolveSupervisedTenantForNumber.mockResolvedValue(null);
   });
   afterEach(() => { process.env = { ...originalEnv }; });
 

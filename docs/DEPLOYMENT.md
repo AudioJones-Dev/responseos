@@ -162,6 +162,27 @@ Pipeline gates:
 | Booking success after slot selection | >98% |
 | Weekly report generation completion | >99% |
 
+## Migration deployment requirements
+
+Prisma applies each migration inside a transaction, so `CREATE INDEX CONCURRENTLY` cannot appear in a migration file. Any migration that creates an index on a table the runtime writes to therefore blocks those writes until the index is built. A migration carrying that hazard must record it here and in [`data-schema.md`](./data-schema.md) before it merges; the deploy step may not proceed on the assumption that the table is small.
+
+| Migration | Table / index | Requirement |
+|---|---|---|
+| `0015_supervised_call_review` | `WebhookEvent` — GIN on `provider_call_ids` | Apply only to a ledger verified empty (`SELECT count(*) FROM "WebhookEvent"` is `0`), or with **every** writer to this table stopped for the duration of `prisma migrate deploy`. A populated live ledger requires the concurrent procedure below instead. |
+| `0017_call_control_qualification` | `CallCaptureSession`, `TelnyxCallCommand`, `CallTranscriptRevision`, `CallPostCallAnalysis` | Apply before assigning the FRL number to the Voice API application. Keep Telnyx routing and all business-effect gates off during migration; the migration is additive and creates no provider effect. Verify the isolated database reports migrations through `0017` before the qualification route is enabled. |
+
+**`RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED` is not a table-wide pause, and must not be treated as one.** Only the Telnyx routes check it. `app/api/webhooks/clerk/route.ts` reaches `handleClerkEvent`, which creates and updates `WebhookEvent` rows regardless of that flag, and the normalization and payload-purge helpers update the table on their own paths. Unsetting the Telnyx flag therefore leaves writers running that `0015` would block. The safe condition is an ingress-wide pause and drain — every webhook route returning 503 or removed from the load balancer, and no purge or normalization job running — verified by observing no `WebhookEvent` writes for the drain window, not by the Telnyx flag alone.
+
+**Concurrent procedure (populated live ledger).** Not validated yet; must be rehearsed against a copy of the target database and its evidence attached to the deploy record before use.
+
+This is a **repository change, not a deploy-time edit**: Prisma checksums applied migrations, and CI's `prisma migrate diff --from-schema-datamodel --to-migrations` requires `schema.prisma` and the migration history to agree.
+
+1. In one reviewed commit, remove the `CREATE INDEX` statement from `0015` **and** remove `@@index([provider_call_ids], type: Gin)` from `WebhookEvent` in `schema.prisma`, so CI parity still holds. Valid only while `0015` is unapplied on every database that will receive it; a follow-on migration cannot help, because Prisma applies `0015` first, inside its own transaction.
+2. Deploy that commit: `prisma migrate deploy` creates `WebhookEvent.provider_call_ids` (the column the index needs) without building the index.
+3. Run `CREATE INDEX CONCURRENTLY "WebhookEvent_provider_call_ids_idx" ON "WebhookEvent" USING GIN ("provider_call_ids");` outside any transaction, as a separate operator-executed step. Prisma does not manage this index afterwards.
+4. Confirm `pg_index.indisvalid` is true for the index; a failed concurrent build leaves an invalid index that must be dropped and rebuilt.
+5. Record the index as operator-managed in this table; `findAgentTargetForProviderCall` depends on it for correlation performance, not correctness.
+
 ## Rollback plan
 
 - Revert prompt version to last known good.

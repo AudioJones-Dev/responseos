@@ -127,3 +127,7 @@ Architectural placement: [`architecture.md`](./architecture.md) § Future Knowle
 - No production deploys from this repo until v0.3 readiness gates clear, except the public read-only demo surface (ADR-0053): the marketing pages and `/demo/receptionist`, on mock adapters, operator-authorized and deployed by hand. Not v0.3 authorization.
 - Provider adapters fall back to mock when env vars are missing — the app must boot and run without live keys at every version.
 - ResponseOS is not HIPAA-certified or HIPAA-compliant out of the box. The HIPAA-ready lane is an architectural pattern, not a current product capability.
+
+## Mike supervised FRL demonstration
+
+Repository implementation in progress under the [approved brief](./product/responseos-mike-live-demo.md). Reuses the supervised runtime candidate; adds per-call capture authority, pinned approved knowledge, human-reviewed follow-up and operational email. No live activation or readiness gate is cleared.

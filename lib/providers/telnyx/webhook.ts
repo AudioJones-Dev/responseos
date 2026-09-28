@@ -69,13 +69,26 @@ export function parseTelnyxWebhook(rawBody: string): TelnyxWebhookEnvelope | nul
   }
 }
 
+const CALL_ID_KEYS = ["call_control_id", "call_session_id", "conversation_id", "call_leg_id"] as const;
+
 export function getTelnyxCallId(payload: Record<string, unknown>): string | null {
-  for (const key of ["call_control_id", "call_session_id", "conversation_id", "call_leg_id"]) {
+  for (const key of CALL_ID_KEYS) {
     if (typeof payload[key] === "string" && payload[key].length > 0) {
       return payload[key];
     }
   }
   return null;
+}
+
+/**
+ * Every call identifier the event carries. A post-call insight event names the
+ * call but not the number it reached, so correlating it with an earlier event
+ * has to match on any identifier the two share.
+ */
+export function getTelnyxCallIds(payload: Record<string, unknown>): string[] {
+  return CALL_ID_KEYS.flatMap((key) =>
+    typeof payload[key] === "string" && payload[key].length > 0 ? [payload[key] as string] : [],
+  );
 }
 
 function targetValue(value: unknown): string | null {

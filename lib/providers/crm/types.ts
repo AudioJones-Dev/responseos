@@ -1,5 +1,20 @@
 export type CrmProviderId = "mock" | "hubspot"
 
+export type CrmEffect = "contact_create" | "activity_create" | "activity_associate" | "task_create" | "task_associate"
+export type CrmReadback =
+  | { outcome: "verified_match"; providerId: string }
+  | { outcome: "ambiguous"; candidateIds: string[] }
+  | { outcome: "not_observed" }
+  | { outcome: "unavailable" }
+export interface CrmReadbackInput {
+  effect: CrmEffect
+  phone: string
+  evidenceReference: string
+  firstName?: string
+  contactId?: string
+  objectId?: string
+}
+
 export interface CrmContactUpsert {
   accountId: string
   externalId: string
@@ -50,6 +65,21 @@ export interface CrmContactCreate {
   lastName?: string
 }
 
+/**
+ * Structured detail for a supervised tenant's call activity (ADR-0052).
+ * Everything here is already sanitized. A transcript, a recording URL, and a
+ * provider payload are never part of it.
+ */
+export interface CrmCallActivityDetail {
+  caller?: string
+  relationship?: string
+  eventType?: string
+  service?: string
+  location?: string
+  quoteRequested?: boolean
+  photosRequested?: boolean
+}
+
 export interface CrmCallActivityCreate {
   contactId: string
   occurredAt: string
@@ -58,6 +88,7 @@ export interface CrmCallActivityCreate {
   qualification: string
   nextAction?: string
   evidenceReference: string
+  detail?: CrmCallActivityDetail
 }
 
 export interface CrmFollowUpTaskCreate {
@@ -70,6 +101,8 @@ export interface CrmFollowUpTaskCreate {
 
 export interface CrmProvider {
   readonly providerId: CrmProviderId
+  getDestination?(): Promise<string>
+  reconcileEffect?(input: CrmReadbackInput): Promise<CrmReadback>
   upsertContact(contact: CrmContactUpsert): Promise<CrmContact>
   recordEvent(event: CrmEvent): Promise<CrmEventResult>
   findContacts(lookup: CrmContactLookup): Promise<CrmContactMatch[]>

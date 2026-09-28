@@ -83,6 +83,30 @@ describe("Telnyx canonical normalization", () => {
     expect(lead?.status).toBe("qualified");
   });
 
+  test("a quote request carrying no qualification evidence stays an unscored lead", async () => {
+    // The caller asked for a quote and the provider returned no qualification
+    // block. That is an unscored lead, not a refused one, so it must not be
+    // recorded as unqualified.
+    const insights: TelnyxWebhookEnvelope = {
+      data: {
+        id: "telnyx-event-quote-only",
+        event_type: "call.conversation_insights.generated",
+        occurred_at: "2026-08-18T15:04:00.000Z",
+        payload: {
+          call_control_id: "telnyx-call-quote",
+          from: "+17865550103",
+          to: demoNumber,
+          summary: "Caller asked what a vertical platform lift would cost.",
+          quote_requested: true,
+        },
+      },
+    };
+    await normalizeTelnyxEvent({ accountId, demoNumber, webhookEventId: await ledger(insights), event: insights });
+    const call = await prisma.call.findFirstOrThrow({ where: { account_id: accountId, provider_call_id: "telnyx-call-quote" } });
+    const lead = await prisma.leadEvent.findFirstOrThrow({ where: { call_id: call.id } });
+    expect(lead).toMatchObject({ status: "new", event_type: "quote_request" });
+  });
+
   test("rejects a signed event for another destination without a call mutation", async () => {
     const event: TelnyxWebhookEnvelope = {
       data: {
