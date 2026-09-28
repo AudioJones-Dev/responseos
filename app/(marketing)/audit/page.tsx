@@ -120,8 +120,9 @@ export default function AuditPage() {
           What you walk away with
         </h2>
         <p className="mt-2 max-w-2xl text-sm text-ink-secondary">
-          A written packet in eight parts. You keep it whether or not you go
-          ahead.
+          A written packet in eight parts when the diagnosis is a fit. If it
+          isn&apos;t, you still keep the workflow map, the leak estimate, and
+          the diagnosis.
         </p>
         <ol className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {PACKET.map((item, i) => (
