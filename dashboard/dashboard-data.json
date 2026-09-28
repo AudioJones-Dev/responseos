@@ -1273,11 +1273,13 @@
       "phase": "Launch / Demo Deploy",
       "title": "Publish a privacy policy written from what the code collects",
       "owner": "Claude Code",
-      "status": "In Progress",
-      "progress": 80,
+      "status": "Review",
+      "progress": 90,
       "priority": "High",
       "start": "2026-09-28",
-      "due": "2026-09-28"
+      "due": "2026-09-28",
+      "ref": 190,
+      "refType": "pull"
     },
     {
       "id": "G-16",
