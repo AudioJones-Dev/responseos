@@ -14,7 +14,7 @@ const CONTROLS = [
   },
   {
     title: "Audit trail",
-    body: "Account-access changes and intake escalations are written once to an audit log, and every verified call-event and identity webhook is recorded on receipt. Extending the trail to every call, lead, booking, quote, and admin action — and locking it at the database level — is planned, not built.",
+    body: "Some security and intake actions — removing a user, requesting an escalation, setting up a demo — are written once to an audit log, and every verified call-event and identity webhook is recorded on receipt. Covering every account-access change, call, lead, booking, quote, and admin action — and locking the trail at the database level — is planned, not built.",
   },
   {
     title: "Webhook signatures verified",
@@ -26,7 +26,7 @@ const CONTROLS = [
   },
   {
     title: "Data minimization & retention",
-    body: "Call transcripts carry a retention lane — full, redacted, or metadata-only — and raw webhook payloads carry an expiry. Per-tenant retention settings and automatic enforcement of each lane are planned.",
+    body: "Call transcripts carry a retention lane — full, redacted, or metadata-only — and raw payloads from personalized-demo calls carry an expiry. Per-tenant retention settings, an expiry on every stored payload, and automatic enforcement of each lane are planned.",
   },
   {
     title: "Deletion & export",
