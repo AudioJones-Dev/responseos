@@ -4,7 +4,7 @@ import { AtmosphereBackground } from "@/components/layout/AtmosphereBackground";
 export const metadata = {
   title: "Trust & security",
   description:
-    "Every ResponseOS security, data, payment, and privacy control, labeled implemented, partial, planned, or not claimed — plus the certifications we don't hold and an honest read on where the build is today.",
+    "The key ResponseOS security, data, payment, and privacy controls, labeled implemented, partial, planned, or not claimed — plus the certifications we don't hold and an honest read on where the build is today.",
 };
 
 type Status = "Implemented" | "Partial" | "Planned" | "Not claimed";
@@ -129,8 +129,9 @@ export default function TrustPage() {
         </h1>
         <p className="mt-4 max-w-2xl text-lg text-ink-secondary">
           ResponseOS is designed to handle the calls, leads, and revenue at the
-          center of your business. Here is every control, labeled by what is
-          actually built — and an honest read on where the build is today.
+          center of your business. Here are the key controls, each labeled by
+          what is actually built — and an honest read on where the build is
+          today.
         </p>
       </section>
 
