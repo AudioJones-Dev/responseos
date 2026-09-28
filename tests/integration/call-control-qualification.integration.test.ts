@@ -497,6 +497,34 @@ describe("FRL Call Control qualification", () => {
     expect(await prisma.callTranscriptRevision.count({ where: { capture_session_id: capture.id } })).toBe(1);
   });
 
+  test("history racing a ledgered hangup's state transition is never stored unredacted", async () => {
+    await setupQualification();
+    await ingest(event("call.initiated", "cc-race-init", { to: NUMBER }, 1_000));
+    const capture = await prisma.callCaptureSession.findFirstOrThrow();
+    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "AI_ACTIVE", dtmf_decision: "affirmative", conversation_id: "conversation-1", capture_started_at: new Date(NOW.getTime() + 4_000) } });
+    await prisma.callConsentEvent.create({ data: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, event_key: "grant-race", action: "grant", artifact: "transcript", disclosure_ref: "approved:v1", evidence_ref: "witness:test", jurisdiction_basis: "commissioning:test", source_channel: "call", actor_user_id: "user_operator_mock", occurred_at: new Date(NOW.getTime() + 3_000) } });
+    await prisma.telnyxCallCommand.create({ data: { account_id: capture.account_id, capture_session_id: capture.id, assignment_id: capture.assignment_id!, command_type: "ai_assistant_start", generation: 1, command_id: "command-start-race", provider_resource: capture.provider_call_id, request_json: {}, status: "succeeded", provider_responded_at: new Date(NOW.getTime() + 4_000), provider_response_status: 200, provider_date_at: new Date(NOW.getTime() + 4_000), conversation_id: "conversation-1" } });
+    // The hangup is ledgered but its capture-state transition has not committed:
+    // admission is still open and the capture is still AI_ACTIVE.
+    const hangup = event("call.hangup", "cc-race-hangup", { conversation_id: "conversation-1" }, 9_000);
+    await prisma.webhookEvent.create({ data: { account_id: capture.account_id, provider: "telnyx", provider_event_id: hangup.data.id, event_type: "call.hangup", raw_body: JSON.stringify(hangup), signature_valid: true, dedupe_hash: "test-race-hangup", provider_call_id: capture.provider_call_id } });
+
+    const protectedText = "Content generated after the conversation boundary";
+    const history = event("call.ai_gather.message_history_updated", "cc-race-history", { conversation_id: "conversation-1", client_state: state(capture.id), message_history: [{ role: "user", content: protectedText }] }, 8_000);
+    await expect(ingest(history)).rejects.toThrow("awaiting_conversation_boundary");
+    let ledger = await prisma.webhookEvent.findFirstOrThrow({ where: { provider_event_id: "cc-race-history" } });
+    expect(ledger).toMatchObject({ process_status: "error", process_error: "awaiting_conversation_boundary" });
+    expect(ledger.raw_body).not.toContain(protectedText);
+
+    // The signed boundary lands before the history's occurrence, so the retry is rejected and stays redacted.
+    await expect(ingest(event("call.conversation.ended", "cc-race-ended", { conversation_id: "conversation-1", client_state: state(capture.id) }, 7_000))).rejects.toThrow("awaiting_final_history_settlement");
+    await expect(ingest(history)).rejects.toThrow("awaiting_final_history_settlement");
+    ledger = await prisma.webhookEvent.findFirstOrThrow({ where: { provider_event_id: "cc-race-history" } });
+    expect(ledger).toMatchObject({ process_status: "rejected", process_error: "protected_content_not_admitted" });
+    expect(ledger.raw_body).not.toContain(protectedText);
+    expect(await prisma.callTranscriptRevision.count({ where: { capture_session_id: capture.id } })).toBe(0);
+  });
+
   test("a reconciled uncertain stop resumes terminal evidence finalization", async () => {
     await setupQualification();
     await ingest(event("call.initiated", "cc-stop-init", { to: NUMBER }, 1_000));

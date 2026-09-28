@@ -308,7 +308,10 @@ export async function ingestCallControlEvent(params: { event: CallControlEvent; 
       const awaitingConversationBoundary = Boolean((terminalState || hangupLedger) && conversationEndedAt === null);
       const captureStart = current?.capture_started_at ?? start?.provider_date_at ?? null;
       const withinCaptureInterval = Boolean(captureStart && occurredAt >= captureStart && (!conversationEndedAt || occurredAt <= conversationEndedAt));
-      const admitted = Boolean(current && latestConsent?.action === "grant" && start?.provider_date_at && start.conversation_id && withinCaptureInterval && (activeAdmission || terminalReconciliation) && (!event.data.payload.conversation_id || event.data.payload.conversation_id === start.conversation_id));
+      // Awaiting the boundary is never admission: a ledgered hangup can precede
+      // its state transition, and a body stored now would not be re-redacted if
+      // the boundary later excludes it. The retry restores an admitted body.
+      const admitted = Boolean(current && !awaitingConversationBoundary && latestConsent?.action === "grant" && start?.provider_date_at && start.conversation_id && withinCaptureInterval && (activeAdmission || terminalReconciliation) && (!event.data.payload.conversation_id || event.data.payload.conversation_id === start.conversation_id));
       const ledger = await record(admitted ? params.rawBody : JSON.stringify(persistedEvent), client);
       if (ledger.duplicate) return { duplicate: true as const };
       if (awaitingConversationBoundary) {
