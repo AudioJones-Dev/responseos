@@ -11,7 +11,8 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - **New "What we don't claim" section:** HIPAA compliance, SOC 2 / ISO 27001 / PCI DSS, and an uptime commitment, each *Not claimed*. This is the report's "no certification theater" rule made visible.
 - **The "HIPAA-ready deployment lane" description is gone.** Even conditioned on independent review, it described a "HIPAA-ready" pattern, and doctrine §20.1 lists "ResponseOS is HIPAA-ready" as a prohibited claim. The HIPAA card now says only that ResponseOS is not HIPAA-certified or compliant and that regulated workflows are excluded from first pilots.
 - **Privacy is scoped to what is true.** "Fictional demo data" names the three surfaces that use fictional records and label them (walkthrough, operator console, client dashboard). It excludes `/demo/receptionist`, which answers from approved facts about its owner (ADR-0046). "Privacy policy and terms" is *Planned*, because none is published.
-- **The hero no longer says ResponseOS "handles" calls, leads, and revenue**; it says it is *designed to*.
+- **The hero no longer says ResponseOS "handles" calls, leads, and revenue**; it says it is *designed to*. It introduces "the key controls", not every control; authentication, credential encryption, and secrets management have no card yet.
+- **"Where the build is today" names the prospect-demo lane.** The old text said the whole app runs on mock adapters and that signature verification activates later. The gated Telnyx call lane already verifies signatures and stores calls, so the page now scopes mock adapters to the public site and walkthrough and says the demo lane is supervised, not a live customer service, and not approved for customer data.
 
 ## Unreleased — feat: add the "not just an AI receptionist" comparison to the homepage (HOME-003)
 

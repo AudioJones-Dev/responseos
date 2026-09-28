@@ -184,11 +184,14 @@ export default function TrustPage() {
         </h2>
         <Card className="mt-6">
           <p className="text-sm text-ink-secondary">
-            This is an internal-first product in active development. Live
-            provider integrations — and the signature verification that
-            secures each one — activate in a later release. Today the app runs
-            on mock adapters with no live customer data. We&apos;d rather tell
-            you that than imply otherwise.
+            This is an internal-first product in active development. The
+            public site and demo walkthrough run on mock adapters and
+            fictional records. A separate, supervised prospect-demo lane can
+            take calls on a designated demo number: those calls arrive
+            signature-verified and are stored, but it isn&apos;t a live
+            customer service and isn&apos;t approved for customer data. Other
+            provider integrations activate in a later release. We&apos;d
+            rather tell you that than imply otherwise.
           </p>
         </Card>
       </section>
