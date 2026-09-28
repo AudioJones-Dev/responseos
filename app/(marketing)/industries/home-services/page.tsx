@@ -12,12 +12,12 @@ const POINTS = [
     body: "Designed so after-hours and on-the-job calls get a response instead of voicemail.",
   },
   {
-    title: "Reply in under 60 seconds",
-    body: "An automated text opens the conversation before the homeowner dials the next contractor on their list.",
+    title: "Target a reply in under 60 seconds",
+    body: "An automated text is designed to open the conversation before the homeowner dials the next contractor on their list.",
   },
   {
     title: "Qualify urgency, then book",
-    body: "Service area, job type, and urgency are scored, and qualified demand is routed straight to a booked estimate.",
+    body: "Service area, job type, and urgency are scored, and qualified demand is designed to route straight to a booked estimate.",
   },
 ];
 
@@ -31,9 +31,10 @@ export default function HomeServicesPage() {
         Every missed call is a job that went to the next contractor.
       </h1>
       <p className="mt-4 max-w-2xl text-lg text-ink-secondary">
-        HVAC, roofing, plumbing, electrical, landscaping. ResponseOS captures
-        the missed call at 6:42pm, replies in seconds, qualifies the urgency,
-        and books the estimate before the homeowner moves on.
+        HVAC, roofing, plumbing, electrical, landscaping. ResponseOS is
+        designed to catch the missed call at 6:42pm, reply within a minute,
+        qualify the urgency, and book the estimate before the homeowner moves
+        on.
       </p>
       <div className="mt-8 flex flex-wrap gap-3">
         <ButtonLink href="/demo/walkthrough" glow>

@@ -3,17 +3,17 @@ import { ButtonLink, Card } from "@/components/ui";
 export const metadata = {
   title: "For contractors",
   description:
-    "ResponseOS for contractors — win the quote before it goes cold. Capture missed calls, qualify leads, and follow up automatically.",
+    "ResponseOS for contractors — win the quote before it goes cold. Designed to capture missed calls, qualify leads, and follow up automatically.",
 };
 
 const POINTS = [
   {
     title: "Route to the right estimator",
-    body: "Inbound lands with the estimator who owns the trade and territory — no front-desk triage, no missed handoffs.",
+    body: "Inbound is designed to land with the estimator who owns the trade and territory — no front-desk triage, no missed handoffs.",
   },
   {
     title: "Capture the scope on first contact",
-    body: "Job type, square footage, timeline, and budget signal are captured and scored before anyone schedules a site visit.",
+    body: "Job type, square footage, timeline, and budget signal are designed to be captured and scored before anyone schedules a site visit.",
   },
   {
     title: "Track quote-to-job, not spreadsheets",
@@ -31,9 +31,9 @@ export default function ContractorsPage() {
         Win the quote before it goes cold
       </h1>
       <p className="mt-4 max-w-2xl text-lg text-ink-secondary">
-        Remodelers, GCs, and specialty trades. ResponseOS routes inbound to the
-        right estimator, captures the scope, and tracks the quote-to-job funnel
-        without the spreadsheet sprawl.
+        Remodelers, GCs, and specialty trades. ResponseOS is designed to route
+        inbound to the right estimator, capture the scope, and track the
+        quote-to-job funnel without the spreadsheet sprawl.
       </p>
       <div className="mt-8 flex flex-wrap gap-3">
         <ButtonLink href="/demo/walkthrough" glow>

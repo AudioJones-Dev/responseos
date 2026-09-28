@@ -1204,6 +1204,17 @@
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/94"
     },
     {
+      "id": "L-07",
+      "phase": "Launch / Demo Deploy",
+      "title": "Record website executive findings and correct overstated public claims",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-09-28",
+      "due": "2026-09-28"
+    },
+    {
       "id": "G-12",
       "phase": "Tech Debt & Hardening",
       "title": "Clear npm audit failures blocking all CI",

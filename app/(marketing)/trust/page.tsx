@@ -4,33 +4,33 @@ import { AtmosphereBackground } from "@/components/layout/AtmosphereBackground";
 export const metadata = {
   title: "Trust & security",
   description:
-    "How ResponseOS is architected for tenant isolation, auditability, and a clean payment boundary — and an honest read on where the build is today.",
+    "How ResponseOS is architected for tenant isolation, auditability, and a clean payment boundary — which controls are in place, which are planned, and an honest read on where the build is today.",
 };
 
 const CONTROLS = [
   {
     title: "Tenant isolation by construction",
-    body: "Every read and write is scoped to your account, derived from the authenticated session — never from client input. One tenant can never reach another's data.",
+    body: "Every read and write your team makes is scoped to your account, derived from the authenticated session — never from client input. It's enforced in the data layer and covered by cross-tenant tests. One tenant can't reach another's data.",
   },
   {
-    title: "Immutable event ledger",
-    body: "Calls, leads, bookings, quotes, and admin actions are recorded as append-only events. It's the audit trail behind every recovered-revenue number we report.",
+    title: "Audit trail",
+    body: "Account-access changes and intake escalations are written once to an audit log, and every verified call-event and identity webhook is recorded on receipt. Extending the trail to every call, lead, booking, quote, and admin action — and locking it at the database level — is planned, not built.",
   },
   {
     title: "Webhook signatures verified",
-    body: "Every inbound provider webhook must pass signature validation before it can change anything in your account — the mandatory rule that goes live with each integration. An unverified event mutates nothing.",
+    body: "Every inbound provider webhook must pass signature validation before it can change anything in your account. That's enforced today on the call-event and identity webhooks; the other provider endpoints accept nothing until their integration ships with verification. An unverified event mutates nothing.",
   },
   {
     title: "Clean payment boundary",
-    body: "Card data is never stored. Billing runs through Stripe hosted pages and Payment Intents only — payment details never touch our systems.",
+    body: "Billing is designed to run through Stripe hosted pages and Payment Intents only, so card data never touches our systems. Billing isn't live yet, and no payment details are collected today.",
   },
   {
     title: "Data minimization & retention",
-    body: "Per-tenant retention modes — full, PII-scrubbed, or metadata-only. We store only what service, QA, and billing require, and nothing more.",
+    body: "Call transcripts carry a retention lane — full, redacted, or metadata-only — and raw webhook payloads carry an expiry. Per-tenant retention settings and automatic enforcement of each lane are planned.",
   },
   {
     title: "Deletion & export",
-    body: "Tenant-scoped deletion and export workflows. Your data stays yours — you can take it with you or have it removed.",
+    body: "Tenant-scoped export and deletion workflows are planned so your data stays yours — you can take it with you or have it removed. They aren't built yet.",
   },
 ];
 
@@ -95,12 +95,13 @@ export default function TrustPage() {
         </h2>
         <Card className="mt-6">
           <p className="text-sm text-ink-secondary">
-            This is an internal-first product in active development. The
-            isolation, audit-ledger, and payment-boundary foundations are in
-            place; live provider integrations — and the signature verification
-            that secures them — activate in a later release. Today the app runs
-            on mock adapters with no live customer data. We&apos;d rather tell
-            you that than imply otherwise.
+            This is an internal-first product in active development. Tenant
+            isolation is in place and tested; the audit trail is partial, and
+            the payment boundary is a design rule because billing isn&apos;t
+            live. Live provider integrations — and the signature verification
+            that secures each one — activate in a later release. Today the app
+            runs on mock adapters with no live customer data. We&apos;d rather
+            tell you that than imply otherwise.
           </p>
         </Card>
       </section>
