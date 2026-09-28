@@ -63,7 +63,7 @@ const COMPARISON = [
   },
   {
     name: "CRM or FSM",
-    kind: "HubSpot, ServiceTitan, Jobber, and similar",
+    kind: "Your contact, job, and pipeline system",
     forWhat: "Holds contacts, jobs, and pipeline once someone enters them.",
     stops: "Usually at what reached a person. The missed call nobody logged rarely becomes a record.",
   },
@@ -71,7 +71,7 @@ const COMPARISON = [
     name: "ResponseOS",
     kind: "In development — see the record above",
     forWhat: "Designed to keep the record going once demand is at risk: capture the event, qualify it, hand it to a named person, and track whether it became booked work.",
-    stops: "Designed to sit alongside your phones and CRM, and to feed your CRM rather than replace it.",
+    stops: "Designed to sit alongside your phones and CRM rather than replace them. No CRM connection is live yet; compatibility with yours is checked in the assessment.",
     highlight: true,
   },
 ];
