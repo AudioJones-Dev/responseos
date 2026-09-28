@@ -108,7 +108,7 @@ export default function PrivacyPage() {
             "Calls are transcribed, not recorded.",
             "Please use fictional details on demo calls. They aren't set up to handle anything sensitive.",
             "Personalized demo calls, which are set up for one specific business, are marked to expire after 30 days, and expired call content is removed by hand until automatic deletion is built. Calls to our general demo number don't expire automatically yet; ask us and we'll delete them.",
-            "For calls to our general demo number, we may copy your phone number, name, and verified email, plus a call summary and suggested next step with any phone numbers and email addresses removed, into our CRM, HubSpot, so we can follow up. Personalized demo calls are never sent to a CRM.",
+            "For calls to our general demo number, we may copy your phone number, name, and verified email, plus a call summary and suggested next step, into our CRM, HubSpot, so we can follow up. Before the summary and next step are copied, an automatic filter removes the email addresses and phone numbers it recognizes, such as US numbers and numbers written with a country code; it may miss unusual formats. Personalized demo calls are never sent to a CRM.",
           ]}
         />
       </Section>
