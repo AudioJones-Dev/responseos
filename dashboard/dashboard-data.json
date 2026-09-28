@@ -1256,6 +1256,19 @@
       "refType": "pull"
     },
     {
+      "id": "L-11",
+      "phase": "Launch / Demo Deploy",
+      "title": "Trust page labels every control by build status (TRUST-001, TRUST-002)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-09-28",
+      "due": "2026-09-28",
+      "ref": 189,
+      "refType": "pull"
+    },
+    {
       "id": "G-16",
       "phase": "Tech Debt & Hardening",
       "title": "Vendor web fonts so next build makes no network requests",

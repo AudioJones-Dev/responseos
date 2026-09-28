@@ -1,38 +1,116 @@
-import { Card } from "@/components/ui";
+import { Card, StatusBadge, type Tone } from "@/components/ui";
 import { AtmosphereBackground } from "@/components/layout/AtmosphereBackground";
 
 export const metadata = {
   title: "Trust & security",
   description:
-    "How ResponseOS is architected for tenant isolation, auditability, and a clean payment boundary — which controls are in place, which are planned, and an honest read on where the build is today.",
+    "The key ResponseOS security, data, payment, and privacy controls, labeled implemented, partial, planned, or not claimed — plus the certifications we don't hold and an honest read on where the build is today.",
 };
 
-const CONTROLS = [
+type Status = "Implemented" | "Partial" | "Planned" | "Not claimed";
+
+// Maps onto doctrine §2.1: SHIPPED / PARTIALLY_SHIPPED / DOCUMENTED_ONLY–ROADMAP / PROHIBITED_CLAIM.
+const STATUS: Record<Status, { tone: Tone; meaning: string }> = {
+  Implemented: { tone: "success", meaning: "Built, in use, and covered by tests." },
+  Partial: { tone: "warning", meaning: "Some of it is built; the rest is named below." },
+  Planned: { tone: "neutral", meaning: "Designed, not built. Don't rely on it yet." },
+  "Not claimed": { tone: "neutral", meaning: "We don't hold it and don't imply we do." },
+};
+
+type Control = { title: string; status: Status; body: string };
+
+const GROUPS: { name: string; controls: Control[] }[] = [
   {
-    title: "Tenant isolation by construction",
-    body: "Every read and write your team makes is scoped to your account, derived from the authenticated session — never from client input. It's enforced in the data layer and covered by cross-tenant tests. One tenant can't reach another's data.",
+    name: "Security",
+    controls: [
+      {
+        title: "Tenant isolation",
+        status: "Implemented",
+        body: "Every read and write your team makes is scoped to your account, derived from the authenticated session — never from client input. It's enforced in the data layer and covered by cross-tenant tests. One tenant can't reach another's data.",
+      },
+      {
+        title: "Webhook signature verification",
+        status: "Partial",
+        body: "Enforced today on the call-event and identity webhooks: an event that fails verification changes nothing. The other provider endpoints accept nothing until their integration ships with verification.",
+      },
+      {
+        title: "Audit trail",
+        status: "Partial",
+        body: "Some security and workflow actions — removing a user, reviewing an assessment request, setting up a demo — are written once to an audit log, and every verified call-event and identity webhook is recorded on receipt. Covering every account-access change, call, lead, booking, quote, and admin action, and locking the trail at the database level, is planned.",
+      },
+    ],
   },
   {
-    title: "Audit trail",
-    body: "Some security and workflow actions — removing a user, reviewing an assessment request, setting up a demo — are written once to an audit log, and every verified call-event and identity webhook is recorded on receipt. Covering every account-access change, call, lead, booking, quote, and admin action — and locking the trail at the database level — is planned, not built.",
+    name: "Data",
+    controls: [
+      {
+        title: "Retention",
+        status: "Partial",
+        body: "Call transcripts carry a retention lane — full, redacted, or metadata-only — and raw payloads from personalized-demo calls carry an expiry. Per-tenant retention settings, an expiry on every stored payload, and automatic enforcement of each lane are planned.",
+      },
+      {
+        title: "Export and deletion",
+        status: "Planned",
+        body: "Tenant-scoped export and deletion, so you can take your data with you or have it removed. Not built yet.",
+      },
+    ],
   },
   {
-    title: "Webhook signatures verified",
-    body: "Every inbound provider webhook must pass signature validation before it can change anything in your account. That's enforced today on the call-event and identity webhooks; the other provider endpoints accept nothing until their integration ships with verification. An unverified event mutates nothing.",
+    name: "Payments",
+    controls: [
+      {
+        title: "Payment boundary",
+        status: "Planned",
+        body: "Billing is designed to run through Stripe hosted pages and Payment Intents only, so card data never touches our systems. Billing isn't live, and no payment details are collected today.",
+      },
+    ],
   },
   {
-    title: "Clean payment boundary",
-    body: "Billing is designed to run through Stripe hosted pages and Payment Intents only, so card data never touches our systems. Billing isn't live yet, and no payment details are collected today.",
-  },
-  {
-    title: "Data minimization & retention",
-    body: "Call transcripts carry a retention lane — full, redacted, or metadata-only — and raw payloads from personalized-demo calls carry an expiry. Per-tenant retention settings, an expiry on every stored payload, and automatic enforcement of each lane are planned.",
-  },
-  {
-    title: "Deletion & export",
-    body: "Tenant-scoped export and deletion workflows are planned so your data stays yours — you can take it with you or have it removed. They aren't built yet.",
+    name: "Privacy",
+    controls: [
+      {
+        title: "Fictional demo data",
+        status: "Implemented",
+        body: "The demo walkthrough, operator console, and client dashboard run on fictional records, and each of those screens says so.",
+      },
+      {
+        title: "Privacy policy and terms",
+        status: "Planned",
+        body: "Not published yet.",
+      },
+    ],
   },
 ];
+
+const NOT_CLAIMED: Control[] = [
+  {
+    title: "HIPAA compliance",
+    status: "Not claimed",
+    body: "ResponseOS is not HIPAA-certified or HIPAA-compliant. Healthcare and other regulated workflows are excluded from first pilots.",
+  },
+  {
+    title: "SOC 2, ISO 27001, PCI DSS",
+    status: "Not claimed",
+    body: "We hold none of these certifications and don't display their badges.",
+  },
+  {
+    title: "Uptime commitment",
+    status: "Not claimed",
+    body: "ResponseOS doesn't yet run a live customer service, so there's no uptime figure or service-level agreement to offer.",
+  },
+];
+
+function ControlCard({ control }: { control: Control }) {
+  return (
+    <Card className="h-full">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-base font-semibold text-ink">{control.title}</h3>
+        <StatusBadge label={control.status} tone={STATUS[control.status].tone} />
+      </div>
+      <p className="mt-2 text-sm text-ink-secondary">{control.body}</p>
+    </Card>
+  );
+}
 
 export default function TrustPage() {
   return (
@@ -50,43 +128,54 @@ export default function TrustPage() {
           Built for trust before scale
         </h1>
         <p className="mt-4 max-w-2xl text-lg text-ink-secondary">
-          ResponseOS handles the calls, leads, and revenue at the center of your
-          business. The security model is foundational, not bolted on — here is
-          how it works, and an honest read on where the build is today.
+          ResponseOS is designed to handle the calls, leads, and revenue at the
+          center of your business. Here are the key controls, each labeled by
+          what is actually built — and an honest read on where the build is
+          today.
         </p>
       </section>
 
-      <section className="mt-14">
-        <h2 className="font-display text-2xl font-semibold text-ink">
-          How it&apos;s architected
-        </h2>
-        <div className="mt-8 grid gap-4 sm:grid-cols-2">
-          {CONTROLS.map((c) => (
-            <Card key={c.title} interactive>
-              <h3 className="text-lg font-semibold text-ink">{c.title}</h3>
-              <p className="mt-2 text-sm text-ink-secondary">{c.body}</p>
-            </Card>
+      <section className="mt-12">
+        <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {(Object.keys(STATUS) as Status[]).map((s) => (
+            <div key={s} className="rounded-lg border border-line bg-surface p-4">
+              <dt>
+                <StatusBadge label={s} tone={STATUS[s].tone} />
+              </dt>
+              <dd className="mt-2 text-sm text-ink-secondary">
+                {STATUS[s].meaning}
+              </dd>
+            </div>
           ))}
-        </div>
+        </dl>
       </section>
+
+      {GROUPS.map((group) => (
+        <section key={group.name} className="mt-14">
+          <h2 className="font-display text-2xl font-semibold text-ink">
+            {group.name}
+          </h2>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            {group.controls.map((c) => (
+              <ControlCard key={c.title} control={c} />
+            ))}
+          </div>
+        </section>
+      ))}
 
       <section className="mt-14">
         <h2 className="font-display text-2xl font-semibold text-ink">
-          On compliance — the straight version
+          What we don&apos;t claim
         </h2>
-        <Card className="mt-6 border-line-strong">
-          <p className="text-sm text-ink-secondary">
-            <span className="font-semibold text-ink">
-              ResponseOS is not HIPAA-certified or HIPAA-compliant out of the
-              box.
-            </span>{" "}
-            Compliance is a per-deployment property, not a product property. An
-            optional HIPAA-ready deployment lane (AWS-hosted, BAA-backed across
-            the vendor chain) is an architectural pattern available only after
-            independent compliance review and per-tenant BAA verification — it
-            is not a default and not implied by use of this product.
-          </p>
-        </Card>
+        <p className="mt-2 max-w-2xl text-sm text-ink-secondary">
+          Mature vendors show certification badges. We don&apos;t have them
+          yet, so we list them here instead of implying them.
+        </p>
+        <div className="mt-6 grid gap-4 lg:grid-cols-3">
+          {NOT_CLAIMED.map((c) => (
+            <ControlCard key={c.title} control={c} />
+          ))}
+        </div>
       </section>
 
       <section className="mt-14">
@@ -95,13 +184,14 @@ export default function TrustPage() {
         </h2>
         <Card className="mt-6">
           <p className="text-sm text-ink-secondary">
-            This is an internal-first product in active development. Tenant
-            isolation is in place and tested; the audit trail is partial, and
-            the payment boundary is a design rule because billing isn&apos;t
-            live. Live provider integrations — and the signature verification
-            that secures each one — activate in a later release. Today the app
-            runs on mock adapters with no live customer data. We&apos;d rather
-            tell you that than imply otherwise.
+            This is an internal-first product in active development. The
+            public site and demo walkthrough run on mock adapters and
+            fictional records. A separate, supervised prospect-demo lane can
+            take calls on a designated demo number: those calls arrive
+            signature-verified and are stored, but it isn&apos;t a live
+            customer service and isn&apos;t approved for customer data. Other
+            provider integrations activate in a later release. We&apos;d
+            rather tell you that than imply otherwise.
           </p>
         </Card>
       </section>

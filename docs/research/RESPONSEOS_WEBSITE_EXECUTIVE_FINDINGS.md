@@ -210,7 +210,7 @@ A vertical page is meaningful only if it changes the buyer's operational reality
 | "Card data is never stored" (Stripe hosted pages) | Yes only if payment implementation is live and reviewed | **Not present.** No Stripe SDK in `package.json`; `lib/providers/stripe/` is empty; the webhook route is a `TODO` stub. Reworded in this PR as a design rule, noting billing is not live | Trust page |
 | "Per-tenant retention modes" | Verify | **Partial.** `TranscriptRetentionLane { full, redacted_only, metadata_only }` exists on `CallTranscript` only; no per-account field and no enforcement job. `WebhookEvent.payload_expires_at` is set only by the Telnyx prospect-demo routes; Clerk payloads carry no expiry. Reworded in this PR | Trust page |
 | "Tenant-scoped deletion and export" | Only if it works as described | **Not present.** No `DELETE` handler under `app/api`; no tenant export or erasure function. The only deletion code is the operator-run prospect PII purge (`scripts/purge-prospect-pii.ts`, disabled in production). Reworded in this PR as planned | Trust page |
-| "HIPAA-ready deployment available" | Avoid as a promotional claim | ADR-0004 | Trust page frames it as conditional, not default |
+| "HIPAA-ready deployment available" | Avoid as a promotional claim | ADR-0004 | Removed from `/trust` (doctrine §20.1 prohibits "HIPAA-ready"); HIPAA now appears only under "What we don't claim" |
 | "HIPAA-certified / -compliant" | No | — | Trust page and footer disclaim it |
 | "No live customer data" | Yes, if true | Mock adapters by default; no live provider path is enabled | Footer, demo, trust |
 | "Assessment fee applies toward implementation within 30 days" | Yes if the policy is real | Owner confirmed on 2026-09-11 (#163) | Pricing |
@@ -249,8 +249,8 @@ The report's IDs and priorities, with current status. **P0 = do first. "Current"
 | PRICE-003 | Pricing | Bound outcome-fee claims to verified measurement and contract | Current | P0 | Open — owner decision (see §3) |
 | PRICE-004 | Pricing | Explain why not per-seat / per-minute | Current | P1 | Partly — "no seat licenses" is stated |
 | PRICE-005 | Pricing | Starting implementation ranges once stable | Future | P2 | Gated on D-2 |
-| TRUST-001 | Trust | Trust-center structure: security, data, payments, privacy, product status | Current | P0 | Open |
-| TRUST-002 | Trust | Implemented / In validation / Not claimed taxonomy | Current | P0 | Partly — control copy corrected in this PR (§12); taxonomy not yet applied |
+| TRUST-001 | Trust | Trust-center structure: security, data, payments, privacy, product status | Current | P0 | **Built** — `/trust` is grouped into Security, Data, Payments, and Privacy, plus "What we don't claim" and product status |
+| TRUST-002 | Trust | Implemented / In validation / Not claimed taxonomy | Current | P0 | **Built** — every control carries Implemented / Partial / Planned / Not claimed, mapped to doctrine §2.1 |
 | TRUST-003 | Trust | Data-lifecycle visualization (intake → retention → export/deletion) | Current | P1 | Open — the export and deletion stages it would show do not exist yet (§12) |
 | TRUST-004 | Trust | Formal trust artifacts only when real | Future | P2 | Gated |
 | INDUSTRY-001 | Industries | True vertical pages (start HVAC, plumbing, roofing/electrical) | Current | P0 | Open — see the ADR-0035 tension in §3 |
