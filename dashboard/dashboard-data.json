@@ -1230,6 +1230,17 @@
       "refType": "pull"
     },
     {
+      "id": "L-09",
+      "phase": "Launch / Demo Deploy",
+      "title": "Assessment page shows deliverables, fit, and what happens after (PRICE-001, CRO-004)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-09-28",
+      "due": "2026-09-28"
+    },
+    {
       "id": "G-16",
       "phase": "Tech Debt & Hardening",
       "title": "Vendor web fonts so next build makes no network requests",
