@@ -1308,6 +1308,17 @@
       "refType": "pull"
     },
     {
+      "id": "G-17",
+      "phase": "Tech Debt & Hardening",
+      "title": "Drop standalone output so Vercel's Next.js adapter build succeeds",
+      "owner": "Claude Code",
+      "status": "In Progress",
+      "progress": 80,
+      "priority": "High",
+      "start": "2026-09-29",
+      "due": "2026-09-29"
+    },
+    {
       "id": "G-12",
       "phase": "Tech Debt & Hardening",
       "title": "Clear npm audit failures blocking all CI",

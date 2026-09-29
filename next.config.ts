@@ -29,8 +29,6 @@ const nextConfig: NextConfig = {
   },
   // Don't advertise the framework.
   poweredByHeader: false,
-  // Self-contained server output for the hosted/containerized demo deploy.
-  output: "standalone",
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
