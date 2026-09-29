@@ -1312,11 +1312,13 @@
       "phase": "Tech Debt & Hardening",
       "title": "Drop standalone output so Vercel's Next.js adapter build succeeds",
       "owner": "Claude Code",
-      "status": "In Progress",
-      "progress": 80,
+      "status": "Review",
+      "progress": 90,
       "priority": "High",
       "start": "2026-09-29",
-      "due": "2026-09-29"
+      "due": "2026-09-29",
+      "ref": 192,
+      "refType": "pull"
     },
     {
       "id": "G-12",
