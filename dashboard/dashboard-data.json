@@ -1282,6 +1282,19 @@
       "refType": "pull"
     },
     {
+      "id": "L-13",
+      "phase": "Launch / Demo Deploy",
+      "title": "Redact CRM next actions and disclose stored Clerk events (privacy policy follow-up)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-09-28",
+      "due": "2026-09-28",
+      "ref": 191,
+      "refType": "pull"
+    },
+    {
       "id": "G-16",
       "phase": "Tech Debt & Hardening",
       "title": "Vendor web fonts so next build makes no network requests",

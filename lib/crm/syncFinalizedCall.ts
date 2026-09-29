@@ -141,6 +141,7 @@ export async function runCrmSyncForCall(params: {
       : null;
     const qualificationLabel = qualification?.qualification_status ?? "not_scored";
     const sanitizedSummary = sanitizeCrmText(call.summary);
+    const sanitizedNextAction = lead?.notes ? sanitizeCrmText(lead.notes) : undefined;
     const evidenceReference = `ResponseOS call ${call.id}`;
 
     let providerContactId = operation.provider_contact_id;
@@ -186,7 +187,7 @@ export async function runCrmSyncForCall(params: {
           durationSeconds: call.duration_seconds ?? undefined,
           sanitizedSummary,
           qualification: qualificationLabel,
-          nextAction: lead?.notes ?? undefined,
+          nextAction: sanitizedNextAction,
           evidenceReference,
         }));
       operation = await db.crmSyncOperation.update({
@@ -210,7 +211,7 @@ export async function runCrmSyncForCall(params: {
           contactId: providerContactId,
           dueAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
           sanitizedSummary,
-          nextAction: lead?.notes ?? "Review and contact the qualified caller.",
+          nextAction: sanitizedNextAction ?? "Review and contact the qualified caller.",
           evidenceReference,
         }));
       operation = await db.crmSyncOperation.update({

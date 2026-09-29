@@ -43,6 +43,25 @@ describe("durable CRM synchronization", () => {
     expect(operation.provider_task_id).toBeTruthy();
   });
 
+  test("redacts contact details from the next action sent to the CRM", async () => {
+    const provider = new MockCrmProvider();
+    const activity = vi.spyOn(provider, "createCallActivity");
+    const task = vi.spyOn(provider, "createFollowUpTask");
+    await prisma.leadEvent.updateMany({
+      where: { account_id: "org_responseos_demo", call_id: "call_responseos_demo" },
+      data: { notes: "Call sam@example.com at +1 (786) 555-0100 tomorrow." },
+    });
+    const result = await runCrmSyncForCall({
+      accountId: "org_responseos_demo",
+      callId: "call_responseos_demo",
+      providerOverride: provider,
+    });
+    expect(result.ok && result.data.status).toBe("succeeded");
+    const expected = "Call [email redacted] at [phone redacted] tomorrow.";
+    expect(activity.mock.calls[0]?.[0].nextAction).toBe(expected);
+    expect(task.mock.calls[0]?.[0].nextAction).toBe(expected);
+  });
+
   test("marks ambiguous contact matches for review without mutation", async () => {
     const provider = new MockCrmProvider();
     provider.findContacts = vi.fn().mockResolvedValue([
