@@ -4,6 +4,13 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — fix: drop `output: "standalone"` so the Vercel build succeeds
+
+- **Production builds on Vercel were failing.** Vercel's build servers now run Next.js through its adapter API (`NEXT_ENABLE_ADAPTER=1`, applied to Next ≥ 16.3). With `output: "standalone"` set, Next 16.3.4 doesn't write `.next/next-server.js.nft.json`, and the adapter's `onBuildComplete` step fails with `ENOENT` after the app has compiled and prerendered every page. The last successful Vercel build, on 2026-09-15, predates the Next 16.2 → 16.3 bump in #150.
+- **Reproduced and fixed locally.** `NEXT_ENABLE_ADAPTER=1 vercel build` (CLI 61.0.0) fails with the same `ENOENT` on master and completes once `output: "standalone"` is removed. Without the flag, both configurations build.
+- **Nothing used the standalone output.** There's no Dockerfile or container deploy in the repo, and both deploy workflows build on Vercel.
+- **Auth gate verified** on the rebuilt app with `RESPONSEOS_REQUIRE_AUTH=1`: `/admin`, `/client/dashboard`, and `/api/admin/prospect-intakes` redirect to `/`, while `/`, `/privacy`, `/trust`, `/audit`, `/demo/receptionist`, and `/favicon.ico` return 200. Dashboard task `G-17`.
+
 ## Unreleased — fix: redact the CRM next action and disclose stored Clerk events (#190 follow-up)
 
 - **The HubSpot next action is now redacted.** `runCrmSyncForCall` passed `lead.notes` (the Telnyx-generated next action) to HubSpot verbatim as the call-activity and follow-up-task "Next action", so a phone number or email repeated there left unredacted, contrary to what `/privacy` said. It now goes through `sanitizeCrmText`, like the summary. An integration test seeds a next action containing both and asserts the redacted text reaches both provider calls; it fails without the fix.
