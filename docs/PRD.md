@@ -4,7 +4,7 @@
 **Status:** Living document. Updated each minor version.
 **Companion docs:** [`strategy/responseos-platform-doctrine-v1.md`](./strategy/responseos-platform-doctrine-v1.md) (**platform doctrine** — product boundary, layered architecture, build-vs-buy, claims policy), [`product-spec.md`](./product-spec.md) (full positioning + framework detail), [`client-facing-offer.md`](./client-facing-offer.md) (buyer-facing summary), [`ROADMAP.md`](./ROADMAP.md) (what ships when), [`product/RESPONSEOS_PRD.md`](./product/RESPONSEOS_PRD.md) (expanded product definition).
 
-> **Positioning note.** "AI Revenue Recovery Platform" and "Managed Business Memory System" are adjacent stages of one progression, not competing brands: *business memory is the mechanism; recovered revenue is the proof; founder intelligence is the destination.* The buyer enters through revenue recovery (primary CTA "Revenue Recovery Demo", ADR-0035); the public pricing model is capacity-based memory tiers (ADR-0028). See ADR-0022 and the doctrine §4.1. What ResponseOS is **not** — CRM, FSM, carrier, voice-model provider, generic automation builder — is enumerated in the doctrine §5.2 and ADR-0040.
+> **Positioning note.** "AI Revenue Recovery Platform" and "Managed Business Memory System" are adjacent stages of one progression, not competing brands: *business memory is the mechanism; recovered revenue is the proof; founder intelligence is the destination.* The buyer enters through revenue recovery (primary CTA "Revenue Recovery Demo", ADR-0035); the current commercial model is managed revenue-response infrastructure, with complexity-based scope and separate provider usage (ADR-0054). See ADR-0022 and the doctrine §4.1. What ResponseOS is **not** — CRM, FSM, carrier, voice-model provider, generic automation builder — is enumerated in the doctrine §5.2 and ADR-0040.
 
 > This PRD is the short operational product source of truth for what ResponseOS is, who it's for, and what the current scope is. `product/RESPONSEOS_PRD.md` is the expanded product-definition companion. If the two conflict, this short PRD, `ROADMAP.md`, and `DECISIONS.md` win until the documentation governance canonicalization pass is approved.
 
@@ -36,10 +36,10 @@ It is **not** an AI receptionist clone. The receptionist is one input. ResponseO
 
 Sold in two phases:
 
-1. **Phase 1 — Readiness & Revenue Leak Assessment.** $1,000 flat ($750–$1,500 range). Paid diagnostic that determines AI-readiness, revenue leak size, and fit/no-fit before any implementation conversation.
-2. **Phase 2 — Implementation + Monthly Revenue Recovery Retainer.** Setup fee + monthly retainer in one of three tiers (Recovery Core / Recovery Pro / Recovery Performance), with optional outcome fees layered on top.
+1. **Fit review and assessment.** A free fit review determines whether a paid assessment is needed. The standard assessment is $1,500; complex assessments are $2,500–$5,000. A simple, already-bounded pilot does not require a paid assessment.
+2. **Implementation + Managed Operations + Transparent Provider Usage.** The Supervised Recovery Pilot is $8,500 implementation + $1,500/month with a 90-day minimum after go-live. Managed Core and Managed Operations are target offers with operationally provisional delivery assumptions. No standard revenue-share model applies.
 
-Qualification gates before Phase 2: ~$300+ average job value, ~20+ missed calls/month, clear booking or quote process, owner/staff buy-in, CRM/calendar access, low compliance risk, measurable ROI path. Full detail in [`pricing-and-onboarding.md`](./pricing-and-onboarding.md).
+Commercial authority is [Pricing & Commercial Doctrine v1.0](./strategy/responseos-pricing-commercial-doctrine-v1.md), recorded by ADR-0054. Its sections 13 and 21 govern ICP and qualification; section 27 contains the full price table. Validate economics, operations, technical dependencies, organizational ownership, and risk for each engagement. Commercial ratification does not clear provider, deployment, or capability-readiness gates. See [`pricing-and-onboarding.md`](./pricing-and-onboarding.md) for onboarding guidance.
 
 ## RECOVER framework (canonical operator mapping)
 
@@ -51,7 +51,7 @@ Qualification gates before Phase 2: ~$300+ average job value, ~20+ missed calls/
 | **Offer** | Present estimate, financing, self-scheduling, callback path | Faster conversion |
 | **Verify** | Confirm appointment, consent, payment intent, routing | Lower no-shows, fewer errors |
 | **Escalate** | Hand off edge cases, high-value jobs, compliance-sensitive calls | Better customer trust |
-| **Report** | Prove recovered leads, booked jobs, revenue by tenant and source | Outcome-based pricing |
+| **Report** | Prove recovered leads, booked jobs, revenue by tenant and source | Evidence-based revenue reporting |
 
 Buyer-facing version of the same 7 stages: Revenue Leak Detection · Engagement Automation · Call Capture System · Outcome-Based Booking · Verification + Qualification · Economic ROI Tracking · Reporting + Retention.
 
