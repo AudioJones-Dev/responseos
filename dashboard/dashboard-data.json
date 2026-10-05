@@ -171,6 +171,17 @@
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/140"
     },
     {
+      "id": "D-04",
+      "phase": "Tech Debt & Hardening",
+      "title": "Refresh ROADMAP current-state statements (factual only)",
+      "owner": "Claude Code",
+      "status": "In Progress",
+      "progress": 40,
+      "priority": "Med",
+      "start": "2026-09-11",
+      "due": "2026-09-12"
+    },
+    {
       "id": "27",
       "phase": "v0.3 · Demo Scope",
       "title": "Define authorized v0.3 demo scope",
