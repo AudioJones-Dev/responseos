@@ -32,6 +32,18 @@
   ],
   "tasks": [
     {
+      "id": "TELNYX-MCP-REFERENCE",
+      "phase": "Integrations",
+      "title": "Review Telnyx agent reference and MCP boundary; authenticated discovery pending",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 80,
+      "priority": "Med",
+      "start": "2026-09-24",
+      "blocked": true,
+      "blockedReason": "Public MCP discovery verified; authenticated endpoint/schema discovery needs an approved credential and enforced tool allowlist. See docs/ops/TELNYX_AGENT_REFERENCE.md."
+    },
+    {
       "id": "G-14",
       "phase": "Tech Debt & Hardening",
       "title": "Apply owner-approved copy redlines (claims, naming, CTA)",
