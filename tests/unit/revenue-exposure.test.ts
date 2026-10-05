@@ -1,5 +1,8 @@
 import { describe, expect, test } from "vitest";
-import { calculateMonthlyRevenueExposure } from "@/lib/revenue/calculateRevenueExposure";
+import {
+  calculateMonthlyRevenueExposure,
+  isRevenueExposureInputValid,
+} from "@/lib/revenue/calculateRevenueExposure";
 
 describe("calculateMonthlyRevenueExposure", () => {
   test("calculates and rounds a monthly planning estimate", () => {
@@ -28,6 +31,24 @@ describe("calculateMonthlyRevenueExposure", () => {
         closeRatePct: 30,
       }),
     ).toBe(0);
+  });
+
+  test("treats decimal close rates as valid planning inputs", () => {
+    expect(
+      isRevenueExposureInputValid({
+        monthlyMissedCalls: 12,
+        averageJobValueUsd: 850,
+        closeRatePct: 33.3,
+      }),
+    ).toBe(true);
+
+    expect(
+      calculateMonthlyRevenueExposure({
+        monthlyMissedCalls: 12,
+        averageJobValueUsd: 850,
+        closeRatePct: 33.3,
+      }),
+    ).toBe(3397);
   });
 
   test("rejects invalid inputs", () => {

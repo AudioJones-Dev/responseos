@@ -4,6 +4,24 @@ export interface RevenueExposureInput {
   closeRatePct: number;
 }
 
+export function isRevenueExposureInputValid({
+  monthlyMissedCalls,
+  averageJobValueUsd,
+  closeRatePct,
+}: RevenueExposureInput): boolean {
+  return (
+    Number.isInteger(monthlyMissedCalls) &&
+    monthlyMissedCalls >= 0 &&
+    monthlyMissedCalls <= 1_000_000 &&
+    Number.isFinite(averageJobValueUsd) &&
+    averageJobValueUsd >= 0 &&
+    averageJobValueUsd <= 10_000_000 &&
+    Number.isFinite(closeRatePct) &&
+    closeRatePct >= 0 &&
+    closeRatePct <= 100
+  );
+}
+
 export function calculateMonthlyRevenueExposure({
   monthlyMissedCalls,
   averageJobValueUsd,

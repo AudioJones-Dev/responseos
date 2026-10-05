@@ -3,7 +3,10 @@
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { recordMarketingEvent } from "@/lib/analytics/marketing";
-import { calculateMonthlyRevenueExposure } from "@/lib/revenue/calculateRevenueExposure";
+import {
+  calculateMonthlyRevenueExposure,
+  isRevenueExposureInputValid,
+} from "@/lib/revenue/calculateRevenueExposure";
 
 const inputClass =
   "mt-2 w-full rounded-lg border border-line bg-base/70 px-3 py-2.5 text-base text-ink placeholder:text-ink-muted focus:border-accent focus:outline-none";
@@ -31,17 +34,7 @@ export function RevenueExposureEstimator() {
   );
 
   const isComplete = missedCalls !== "" && jobValue !== "" && closeRate !== "";
-  const isValid =
-    isComplete &&
-    Number.isInteger(inputs.monthlyMissedCalls) &&
-    inputs.monthlyMissedCalls >= 0 &&
-    inputs.monthlyMissedCalls <= 1_000_000 &&
-    Number.isFinite(inputs.averageJobValueUsd) &&
-    inputs.averageJobValueUsd >= 0 &&
-    inputs.averageJobValueUsd <= 10_000_000 &&
-    Number.isFinite(inputs.closeRatePct) &&
-    inputs.closeRatePct >= 0 &&
-    inputs.closeRatePct <= 100;
+  const isValid = isComplete && isRevenueExposureInputValid(inputs);
 
   const estimate = isValid ? calculateMonthlyRevenueExposure(inputs) : null;
 
@@ -139,7 +132,7 @@ export function RevenueExposureEstimator() {
             name="close_rate_pct"
             min="0"
             max="100"
-            step="1"
+            step="0.1"
             inputMode="decimal"
             value={closeRate}
             onFocus={markStarted}
