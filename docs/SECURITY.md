@@ -10,6 +10,16 @@ The compliance posture is chosen **per tenant tier**, not hard-coded globally. S
 - **Payment boundary:** never store card data. Stripe hosted pages or Payment Intents only.
 - **Audit logging** on every admin action, prompt change, and data export.
 
+## Proposed Client Operations Portal disclosure boundary
+
+**Planning requirements — not implemented by this documentation change.** Proposed ADR-0059/0060 and the [portal PRD](./product/responseos-client-operations-portal-prd.md) require authenticated server-owned tenant context for all portal reads. ADR-0052's public-demo exception does not apply, and ADR-0053 authorizes no authenticated-portal deployment.
+
+- Approve a field-level client disclosure contract before Phase 1 implementation. Raw transcripts, recordings/URLs, webhook bodies, credentials/ciphertext and unrestricted provider information are excluded. Summary text also needs approved redaction/disclosure treatment; its field name is not evidence of safety.
+- Constrain every query/join to the authorized tenant, including qualification through its parent lead. Evidence links and cursors reauthorize; neither browser tenant IDs nor hostnames select authority. Operator preview requires explicit authorized tenant context.
+- Return selected safe fields rather than serializing broad internal accessors. Apply retention to every exposed representation; do not bypass it through duplicated transcript fields, caches or evidence URLs.
+- Fail closed on absent session/account; distinguish unavailable from empty and incomplete. No hosted fallback to a development account or fixtures. Avoid shared sensitive caches initially; any later caching must bind tenant and authorization/disclosure context and handle revocation.
+- Validate both client roles, foreign child IDs, pagination/cursors, evidence access, cache separation and excluded fields. Read-only attention grants no mutation authority. Branding/navigation visibility never substitutes for server authorization or ADR-0051 operating policy.
+
 ## Secrets management
 
 Local and runtime secrets are injected with **Doppler** as an **opt-in** layer (ADR-0038). It does not change any hard rule above and does not relax the mock-first / v0.3 live-wiring gates (ADR-0001, ADR-0019): with no secrets present the app still boots on mock adapters. Injecting a real key only activates that key's already-existing adapter path (e.g. `CLERK_SECRET_KEY`) — it authorizes no new live provider integration.

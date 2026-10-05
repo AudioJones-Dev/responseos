@@ -32,6 +32,10 @@ It is **not** an AI receptionist clone. The receptionist is one input. ResponseO
 | **Client Portal** — `app/(client)/` | Per-tenant `client_admin` / `client_viewer` | v0.1 mock + v0.2 DB-backed; tenant-scoped reads |
 | **Marketing site** — `app/(marketing)/` | Public | Static landing surface |
 
+### Proposed Client Operations Portal evolution
+
+The existing tenant-scoped client surface is the starting point for the proposed [Client Operations Portal PRD](./product/responseos-client-operations-portal-prd.md), supported by a [source review](./product/responseos-client-operations-portal-architecture-review.md) at `724a3e5`. Phase 0 is documentation only; proposed ADR-0059/0060 authorize no runtime implementation. The future portal interprets ResponseOS operational records while external CRMs retain explicitly designated commercial authority. Zero CRM is valid; rendering makes no external CRM requests. Phase 1 proposes bounded request-time reads, safe detail and read-only attention, with explicit provenance/completeness. Durable projections, branding storage, queue mutations and expanded ROI reporting remain separately gated. Existing operating configuration stays under ADR-0051. This proposal changes no demo acceptance criteria or v0.3 authorization.
+
 ## Commercial motion
 
 Sold in two phases:

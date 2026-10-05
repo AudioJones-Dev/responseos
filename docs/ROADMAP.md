@@ -4,6 +4,12 @@
 
 > **Strategy vs. shipping.** This roadmap tracks version milestones. The *capability phases* behind them — Communications → Verified Revenue Loop → Business Memory → Operational Intelligence → Benchmark Intelligence → Founder Intelligence → Trust Infrastructure — and their evidence-based exit gates live in [`strategy/responseos-platform-doctrine-v1.md`](./strategy/responseos-platform-doctrine-v1.md) §17–§18, which also maps the two axes onto each other. Where they disagree, **this roadmap governs shipping status and the doctrine governs sequencing rationale**. Phase 0 (architecture + internal console) is complete; Phase 1 (live pilot communications) is gated on explicit v0.3 authorization, not on engineering work.
 
+## Proposed Client Operations Portal track
+
+**DOCUMENTED_ONLY — Phase 0 authoring; architecture approval and independent review pending.** The [portal PRD](./product/responseos-client-operations-portal-prd.md#9-phases-and-gates) and [review](./product/responseos-client-operations-portal-architecture-review.md) describe evolution of the existing client surface under proposed ADR-0059/0060. Portal phase numbers are local to that PRD, not the platform strategic phases. No delivery date, implementation authorization or v0.3 gate changes here.
+
+Candidate sequence: documentation → separately authorized read-only identity/summary/feed/attention/detail slice → separately gated attention actions → presentation/briefing → client-safe CRM status and authorized CRM work → evidence-based outcomes and optional measured projections. Phase 1 uses bounded request-time canonical reads with zero CRM requests and zero-CRM operation; persistent projections are excluded. Disclosure and query contracts gate implementation. Durable presentation requires an ADR decision preserving ADR-0051; attention writes and serious ROI claims require their own authority/provenance gates. Author now; reconcile only material architectural deltas after Mike-demo closure. The demo gains no new acceptance criterion.
+
 ## Version table
 
 | Version | Theme | Status |

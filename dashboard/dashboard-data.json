@@ -32,6 +32,16 @@
   ],
   "tasks": [
     {
+      "id": "COP-00",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Client Operations Portal Phase 0 architecture docs (proposed; no runtime authorization)",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "Med",
+      "start": "2026-09-15"
+    },
+    {
       "id": "G-14",
       "phase": "Tech Debt & Hardening",
       "title": "Apply owner-approved copy redlines (claims, naming, CTA)",

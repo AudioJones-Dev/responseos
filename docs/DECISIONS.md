@@ -1755,3 +1755,50 @@ A superseding ADR that (a) cites which of question 11's conditions were met and 
 **Consequences.** The repository keeps one model for governed artifacts instead of two. Immutability costs nothing to enforce because it is structural, and the human merge remains the single publication authority, satisfying the governance kernel without a parallel in-app control. Existing primitives are extended rather than displaced.
 
 The cost is real and is not softened here: **capability authoring remains an engineering activity.** An operator who cannot open a pull request cannot author a capability. `UserRole` models a non-engineer `operator`, so the population may exist, but whether such staff would author capabilities is **unverified and is an operator question** — decision 10 keeps it open rather than answering it by default. If the answer is that they must author, question 11's conditions are met sooner and database-backed authoring gets stronger, which is the intended behaviour of this ADR rather than a failure of it.
+
+---
+
+## ADR-0059 — Client Operations Portal interprets canonical operational records through tenant-scoped request-time reads
+
+**Status:** Proposed · 2026-09-15 · pending architecture approval and independent review. Phase 0 documentation authoring is owner-authorized; this ADR authorizes no implementation. Number allocated after checking local and remote-master registry at `724a3e5`; recheck concurrent allocations before commit.
+
+**Relationships.** Extends ADR-0002, ADR-0033, ADR-0039 and ADR-0050; preserves ADR-0051 configuration authority and ADR-0047/0053 demo boundaries. Supersedes no accepted decision. [Evidence review](./product/responseos-client-operations-portal-architecture-review.md) and [PRD](./product/responseos-client-operations-portal-prd.md) define status, contracts, non-goals and gates.
+
+**Context.** Existing client pages and canonical records provide a foundation for a daily operational view. Broad accessors, stored revenue summaries and bounded CRM orchestration do not establish a client disclosure contract, continuously reconciled ROI, or generalized CRM interoperability. A new event system or persistent projection infrastructure has no demonstrated Phase 1 requirement.
+
+**Proposed decision.**
+
+1. ResponseOS retains the provider-independent operational/system-of-engagement architecture; generalized production provider independence remains unproven. External CRMs own only explicitly designated commercial domains/fields. The portal is the tenant-facing presentation and interpretation layer, not a CRM.
+2. Phase 1 uses purpose-built logical/request-time server reads over canonical records for account identity, daily summary, bounded chronological feed, deterministic read-only attention and safe call/lead detail. Every view carries its observation window/timezone, permitted provenance, completeness and data mode.
+3. Portal rendering performs zero external CRM requests. Zero connected CRMs is valid operation; no connection is distinct from mock, unavailable or failed synchronization. The portal does not use the process-global CRM factory or demo operator endpoint as its read path.
+4. Tenant context derives from authenticated server context; public-demo fixed-account exceptions do not apply. Selected client fields are narrower than broad internal accessors. Raw transcripts, recordings, webhook payloads, credentials and unrestricted provider details are excluded from Phase 1; even summary content requires an approved disclosure policy.
+5. `LeadEvent`, `WebhookEvent` and current ledger primitives are not a complete immutable event-sourcing/replay system. Current revenue summaries are not continuously reconciled ROI. CRM operation success is not independent verification of external or commercial outcome.
+6. Attention denotes evidence-backed operational exceptions/decisions. No acknowledgment, assignment, snooze, resolution or commercial mutation ships in Phase 1. Durable attention requires a separate lifecycle/authority decision.
+7. Persistent projections, workers, checkpoints and new event infrastructure are excluded from Phase 1. Measured requirements can open a separately approved scope amendment with recovery, retention, idempotency and rebuild obligations; they never silently expand this scope.
+8. Author documentation now on the isolated architecture branch. After Mike-demo closure, perform a focused delta review; do not import demo assumptions or make its closure a prerequisite for authoring.
+
+**Consequences.** Reuses existing records and client routes while establishing a safe interpretation boundary. Request-time reads cost database work; capacity must be measured with bounded queries. Richer attention, CRM behavior, branding and financial reporting remain gated. Architecture acceptance does not authorize schema, application code, APIs, providers, environment/credential work, deployments or external mutations, and does not change v0.3 authorization.
+
+**§21 review.** All fifteen answers are recorded in the [review checklist](./product/responseos-client-operations-portal-architecture-review.md#12-doctrine-21-checklist). This decision adds no demo acceptance criterion or public capability claim. Independent review must cover current changes; the human merges.
+
+---
+
+## ADR-0060 — Portal presentation cannot duplicate tenant operating configuration or grant authority
+
+**Status:** Proposed · 2026-09-15 · pending architecture approval and independent review. Number allocated after checking the registry at `724a3e5`. No storage, schema, branding UI, asset pipeline or runtime implementation is authorized.
+
+**Relationships.** Preserves ADR-0051 and the [Client Operating-Configuration Standard](./ops/client-delivery/RESPONSEOS_CLIENT_OPERATING_CONFIGURATION_STANDARD.md); complements proposed ADR-0059. Does not amend execution policy or the proposed capability-authority boundary in ADR-0058.
+
+**Context.** White-label presentation is a useful later concern, but a general `TenantSettings` or `ClientConfig` store would duplicate established identity, operating configuration and permission authorities.
+
+**Proposed decision.**
+
+1. Phase 1 derives account identity from `Account` and uses existing product styling. It does not require durable tenant presentation configuration.
+2. A later presentation contract may describe approved display labels, logo references, accessible theme tokens and navigation preferences only. It cannot redefine account identity, hours, service area, escalation contacts, consent, execution mode, credentials or commercial authority.
+3. Operating facts remain in approved memory snapshots under ADR-0051. Identity remains on `Account`. Presentation and feature visibility cannot grant permissions or widen execution policy; authorization is enforced independently on the server.
+4. Durable presentation storage remains an open decision. Before introducing it, an ADR amendment or separate approved ADR must specify the exact storage home, approval/version provenance, asset validation, fallback semantics and read/write permissions. No second general configuration authority or premature schema is approved here.
+5. Custom domains, upload/provisioning workflows and client-controlled branding edits remain outside Phase 1.
+
+**Consequences.** The client shell can evolve without duplicating operational configuration. Full white-label customization remains deferred until its storage and authority contract is decided. The tradeoff is limited initial customization in exchange for preserving a single source of operational authority.
+
+**§21 review.** Presentation layer; later bounded build, not CRM/identity replacement; no immediate live-demo improvement; approval provenance required; does not verify outcomes or produce proven proprietary learning; reuses identity/assets rather than buying a new platform; avoids CRM/FSM/workflow duplication; introduces no provider lock-in; preserves session tenant isolation; leaves attribution unchanged; creates no current white-label claim; later writes require named approval authority; asset/disclosure exposure requires validation; storage implementation is deferred because it is not required now. See also the shared [fifteen-question review](./product/responseos-client-operations-portal-architecture-review.md#12-doctrine-21-checklist).

@@ -11,6 +11,12 @@
 >
 > For the go-forward architecture see the `RESPONSEOS_*` set indexed by [`product/RESPONSEOS_BUILD_SOURCE.md`](./product/RESPONSEOS_BUILD_SOURCE.md); for the layered platform model (Communications → Business Memory → … → Trust Infrastructure) and per-layer implementation status see [`strategy/responseos-platform-doctrine-v1.md`](./strategy/responseos-platform-doctrine-v1.md) §8.
 
+## Client Operations Portal proposal and current-state limits
+
+The [portal review](./product/responseos-client-operations-portal-architecture-review.md) and [PRD](./product/responseos-client-operations-portal-prd.md) at `724a3e5` propose tenant-scoped request-time interpretation of existing operational records. Proposed ADR-0059/0060 are documentation only. No runtime, schema, projection worker or CRM behavior is authorized. Portal rendering performs zero external CRM requests; external commercial authority is explicit by domain/field, and zero-CRM operation remains valid under ADR-0050. ADR-0051 retains operating-configuration authority; presentation storage requires a later explicit decision.
+
+**Evidence qualification for the historical passages below:** event-ledger-first is the architectural principle, not proof of a complete immutable event-sourcing/replay implementation. `LeadEvent` is mutable; webhook evidence has processing/retention lifecycle. Stored `RevenueMetrics` and calculation helpers do not establish continuous recomputation or reconciled ROI. CRM operation success is not independently verified commercial outcome. Phase 1 proposes safe summaries/feed/detail and read-only attention with provenance/completeness; it excludes persistent projections and leaves broader intelligence behind separate gates.
+
 ## Stack
 
 - Next.js (App Router, route groups for marketing / admin / client).

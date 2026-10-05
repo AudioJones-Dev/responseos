@@ -4,6 +4,10 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: Client Operations Portal Phase 0 architecture proposal
+
+- Add the [source-grounded architecture review](./product/responseos-client-operations-portal-architecture-review.md) and [portal PRD](./product/responseos-client-operations-portal-prd.md) against `724a3e5`. Proposed ADR-0059/0060 define tenant-scoped request-time reads, zero-CRM operation, narrow client disclosure and presentation boundaries preserving ADR-0051. Phase 1 excludes durable projections; attention writes, branding storage, CRM resolution and outcome provenance remain separately gated. Documentation authoring is authorized; architecture acceptance, independent review and implementation authorization are not claimed. No runtime, schema, provider, environment, credential, deployment or external mutation; Mike-demo scope is unchanged.
+
 ## Unreleased — feat: capability contract and governance validator (ADR-0058, Increment 1)
 
 - **Assessed the proposed Agent Capability Studio against the repository rather than the planning docs**, and the headline finding reframed the work: there is **no generic step-execution engine** — no step walker, condition evaluator, or suspend/resume primitive in `lib/` — so the brief's ordered-step procedure model has no runtime. Hardcoded orchestration *does* exist (`runCrmSyncForCall`, `answerProfessionalQuestion` → `applyPolicy`), so ADR-0017's "core orchestration lives in code" holds and there is a concrete pipeline to generalize rather than a blank page. An earlier draft claimed ADR-0017 was `DOCUMENTED_ONLY` on the strength of the missing `WorkflowRun` writer; that conflated "nothing records runs" with "nothing orchestrates" and was corrected before review.
