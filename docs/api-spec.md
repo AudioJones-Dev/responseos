@@ -90,6 +90,13 @@ Mock-safe mutation routes may include a `mock: true` flag inside the success env
 - `GET /api/auth/session` — Clerk-backed session lookup via `lib/auth/session`
 
 ### Notifications
+- `GET /api/admin/qualified-handoffs` — AJ admin/operator only; server-bound FRL
+  account; returns preparation metadata, no message/recipient, with
+  `deliveryStatus: "not_sent"`.
+- `POST /api/admin/qualified-handoffs/:callId/retry` — AJ admin/operator only;
+  rechecks tenant-scoped finalized capture, retained qualification and pinned
+  approved policy. No client-supplied account or recipient. Prepares the outbox;
+  sends no email/SMS. See [handoff contract](./product/frl-qualified-call-handoff.md).
 - `GET /api/notifications`
 - `POST /api/notifications/send` — body: `{ channel, recipient, subject?, message }`
 

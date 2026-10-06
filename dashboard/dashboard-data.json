@@ -32,6 +32,18 @@
   ],
   "tasks": [
     {
+      "id": "FRL-01",
+      "phase": "Integrations",
+      "title": "Prepare qualified-only FRL CRM ownership and notification outbox",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-10-06",
+      "blocked": true,
+      "blockedReason": "Live delivery awaits approved tenant configuration, recipient, transport and commissioning."
+    },
+    {
       "id": "G-14",
       "phase": "Tech Debt & Hardening",
       "title": "Apply owner-approved copy redlines (claims, naming, CTA)",

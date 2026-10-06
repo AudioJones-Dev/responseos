@@ -191,6 +191,10 @@ Trigger-driven workflow definitions.
 ### notifications
 Outbound dispatch record.
 
+Qualified call handoff adds nullable unique `dedupe_key`. Existing notification
+rows remain compatible. A qualified outbox row is `queued`, never implicitly
+`sent`, and commits atomically with its `QualifiedCallHandoff.notification_id`.
+
 | field | type | notes |
 |---|---|---|
 | id, account_id | string | |
@@ -200,6 +204,16 @@ Outbound dispatch record.
 | subject, message | strings | |
 | status | enum | `queued` \| `sent` \| `failed` |
 | sent_at | timestamp? | |
+
+### qualified_call_handoff
+
+Tenant-filtered durable preparation record with unique account/call operation
+key; retained lead ID; provider; pinned approved snapshot/hash; separately
+persisted task and notification IDs; attempt count; redacted error code and
+queue time. Preparation states are `pending`, `processing`, `queued`,
+`retryable_failed` and `review_required`. No recipient or call content is stored
+on this record. `queued` proves outbox preparation only. See the
+[bounded contract](./product/frl-qualified-call-handoff.md).
 
 ### revenue_metrics
 Aggregated KPI facts per period per workspace.

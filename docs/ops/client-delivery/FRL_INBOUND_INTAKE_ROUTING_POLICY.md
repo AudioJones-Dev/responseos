@@ -1,5 +1,17 @@
 # Florida Ramp & Lift — Inbound Intake & Routing Policy
 
+**2026-10-06 operator amendment:** the current commissioning requirement is
+qualified-only human lead notification. The AI qualifies and captures inbound
+calls 24/7, retains all available CRM interaction context, and prepares the human
+owner action only when the retained classification is `qualified`. The earlier
+completed-interaction notification prescription in §§11–12 does not authorize
+alerts for incomplete, review-required, unqualified or spam callers. Such calls
+remain in the capture/review lane; emergency/manual escalation policy remains
+separate. The bounded task/outbox implementation is in review under
+[ADR-0059](../../DECISIONS.md#adr-0059--frl-qualified-calls-prepare-an-owned-task-and-durable-unsent-notification)
+and [its contract](../../product/frl-qualified-call-handoff.md). No delivery,
+activation, recording or consent gate is closed by this amendment.
+
 **Status:** `DOCUMENTED_ONLY`. Nothing in this document is built. It describes the intended
 behaviour of the FRL supervised-pilot receptionist so that schemas, call state, CRM mapping, and
 test fixtures can be designed against one source instead of placeholders.

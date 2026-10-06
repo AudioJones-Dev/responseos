@@ -1,5 +1,6 @@
 import { after, NextResponse } from "next/server";
-import { runCrmSyncForCall } from "@/lib/crm/syncFinalizedCall";
+import { syncFinalizedCallAndPrepareHandoff } from "@/lib/crm/qualifiedCallHandoff";
+import { isFrlHandoffEnabled } from "@/lib/crm/qualifiedHandoffPolicy";
 import {
   getWebhookProcessingState,
   recordWebhookEvent,
@@ -119,8 +120,8 @@ export async function POST(req: Request) {
           ? { transcriptExpiresAt: new Date(occurredAt.getTime() + PROSPECT_CONTENT_RETENTION_DAYS * 24 * 60 * 60 * 1000) }
           : {}),
       });
-      if (!personalized && normalized.finalized && normalized.callId) {
-        await runCrmSyncForCall({
+      if ((!personalized || isFrlHandoffEnabled(assignment.accountId)) && normalized.finalized && normalized.callId) {
+        await syncFinalizedCallAndPrepareHandoff({
           accountId: assignment.accountId,
           callId: normalized.callId,
           sourceWebhookId: ledger.data.id,
