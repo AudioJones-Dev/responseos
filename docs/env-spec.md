@@ -75,6 +75,12 @@ The GitHub `staging` Environment also requires a least-privilege `NEON_API_KEY` 
 - **Telnyx post-call ingest:** `TELNYX_PUBLIC_KEY` verifies Ed25519 webhooks; `RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED=true`, `RESPONSEOS_DEMO_ACCOUNT_ID`, and `RESPONSEOS_DEMO_PHONE_E164` are all required before ingestion accepts traffic. `TELNYX_API_KEY` alone activates nothing, and `CarrierProvider` remains mock-only because ResponseOS does not control realtime audio in this slice.
 - **AI Voice:** `RETELL_API_KEY`, `VAPI_API_KEY`, `BLAND_API_KEY`.
 - **Email (Resend):** `RESEND_API_KEY`, `EMAIL_FROM`.
+- **Qualified FRL email:** `RESPONSEOS_FRL_NOTIFICATION_DELIVERY_ENABLED=true`
+  and `RESPONSEOS_LIVE_RESEND_ENABLED=true` are separately required, with the
+  existing FRL account/snapshot/preparation gates and exact approved sender in
+  `EMAIL_FROM`. Missing values resolve mock; the worker refuses to consume real
+  outbox entries under mock transport. Recipient/owner are approved private
+  snapshot facts, never env values. No hosted schedule or activation is installed.
 - **Billing (Stripe):** `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`.
 - **Workflows (n8n):** `N8N_WEBHOOK_SECRET`, `N8N_BASE_URL`.
 - **CRM:** `GHL_API_KEY` (HighLevel); HubSpot execution requires both `HUBSPOT_ACCESS_TOKEN` and `RESPONSEOS_LIVE_HUBSPOT_ENABLED=true`. Missing configuration or a disabled flag resolves to the deterministic mock adapter.
@@ -83,7 +89,9 @@ The GitHub `staging` Environment also requires a least-privilege `NEON_API_KEY` 
 
 > Provider-group vars remain optional and mock-safe (ADR-0001). Telnyx post-call ingestion and the
 > HubSpot adapter are wired only behind their explicit enable flags and complete live-demo
-> configuration; every other provider listed here remains mock or unimplemented.
+> configuration. The qualified Resend adapter is offline-tested behind its
+> separate flags; no live delivery/activation is proved. Other listed providers
+> remain mock or unimplemented.
 
 ### Demo and GTM controls
 - `RESPONSEOS_DEPLOYMENT_LANE` — non-secret lane label. Supported operational values are `mock-staging` and `live-demo`; it never activates providers by itself.

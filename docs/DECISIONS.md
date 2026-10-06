@@ -1789,3 +1789,31 @@ outbound caller contact, recording or production deployment is introduced.
 
 The [implementation contract](./product/frl-qualified-call-handoff.md) answers
 all fifteen doctrine section 21 questions and lists remaining live acceptance.
+
+## ADR-0060 — Qualified FRL email preserves bounded idempotency and separate delivery proof
+
+**Status:** Operator-requested bounded offline implementation, 2026-10-06;
+repository review. Extends ADR-0059. No credential installation, live activation,
+hosted dispatcher schedule or production commissioning is authorized.
+
+**Decision.** Consume only the existing approved qualified-call email outbox.
+Recheck tenant references, qualification, approved recipient policy, successful
+HubSpot capture and owner readback. Resend is adapter-bound and mock-first;
+missing live configuration cannot consume a real queue. Fix the approved sender.
+
+A tenant-filtered delivery record retains lease/claim, payload hash, POST count,
+owner/task evidence, provider ID, redacted error and acceptance/delivery
+observations. Provider acceptance is not delivery; verified GET readback can
+establish `delivered`. Preparation views report `not_verified`.
+
+**Consequences.** Retained IDs are polled, never resent. Uncertain POSTs reuse
+identical request/key only within 23 hours, below the documented 24-hour provider
+retention. Older uncertainty requires operator reconciliation, not a fresh key.
+No unlimited exactly-once guarantee is claimed. Operator-only dispatch/retry
+supports recovery; automatic job hosting, SMS, caller contact, callback SLA,
+opportunities and dependency fixes are excluded.
+
+The [contract](./product/frl-qualified-notification-delivery.md) answers doctrine
+section 21 and defines offline and separately authorized live acceptance. The
+specified Monday–Friday 9–5 callback window does not itself approve the proposed
+15-minute/after-hours deadline rules.

@@ -94,7 +94,7 @@ test("CRM capture must finish before any handoff", async () => {
 test("qualified caller gets an owned task plus detailed, explicitly unsent notification", async () => {
   const task = vi.spyOn(provider, "createFollowUpTask");
   const result = await runQualifiedCallHandoff(params());
-  expect(result).toMatchObject({ ok: true, data: { status: "queued", provider: "mock", deliveryStatus: "not_sent" } });
+  expect(result).toMatchObject({ ok: true, data: { status: "queued", provider: "mock", deliveryStatus: "not_verified" } });
   expect(task).toHaveBeenCalledWith(expect.objectContaining({ ownerId: "12345", dueAt: "2026-10-06T12:00:00.000Z" }));
   const { create, where } = mocks.db.notification.upsert.mock.calls[0][0];
   expect(where).toEqual({ dedupe_key: row.operation_key, account_id: "synthetic-tenant" });

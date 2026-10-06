@@ -189,6 +189,15 @@ Trigger-driven workflow definitions.
 | config_json | jsonb | |
 
 ### notifications
+
+The delivery increment adds `QualifiedNotificationDelivery` (migration `0015`),
+with unique handoff/outbox IDs, tenant/call, frozen payload hash, claim lease,
+POST attempt count, first attempt, verified CRM task/owner, provider message ID,
+provider event, acceptance/delivery observations, check time and redacted error.
+Delivery status is distinct from `Notification.status`: `sent`/`sent_at` mean
+provider acceptance, not recipient delivery. No generic notifications are
+consumed by the qualified dispatcher.
+
 Outbound dispatch record.
 
 Qualified call handoff adds nullable unique `dedupe_key`. Existing notification

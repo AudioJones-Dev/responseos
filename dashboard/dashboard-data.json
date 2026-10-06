@@ -32,6 +32,20 @@
   ],
   "tasks": [
     {
+      "id": "FRL-02",
+      "phase": "Integrations",
+      "title": "Prepare qualified FRL email transport and delivery evidence",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-10-06",
+      "blocked": true,
+      "blockedReason": "Offline implementation; inherited audit failure, parent PR193, approved owner configuration and live commissioning remain gated.",
+      "ref": 194,
+      "refType": "pull"
+    },
+    {
       "id": "FRL-01",
       "phase": "Integrations",
       "title": "Prepare qualified-only FRL CRM ownership and notification outbox",

@@ -3,6 +3,12 @@
 Status: repository implementation for review, with mock-provider evidence only.
 Live delivery, tenant activation and production acceptance remain pending.
 
+The dependent [qualified email delivery increment](./frl-qualified-notification-delivery.md)
+adds offline-tested transport/evidence behind separate flags. Preparation views
+now return `deliveryStatus: "not_verified"`; their queue state cannot establish
+delivery after a separate worker runs. Original preparation boundaries below
+describe this increment's queue creation, which sends nothing by itself.
+
 The operator's 2026-10-06 instruction is: answer inbound calls 24/7, qualify and
 capture the caller, retain the interaction in CRM, and notify the configured
 human owner only when qualified. Answering hours do not promise human callback

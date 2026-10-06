@@ -19,7 +19,7 @@ export interface QualifiedCallHandoffView {
   provider: string;
   taskId: string | null;
   notificationId: string | null;
-  deliveryStatus: "not_sent";
+  deliveryStatus: "not_verified";
   attemptCount: number;
   errorCode: string | null;
 }
@@ -28,7 +28,7 @@ function toView(row: HandoffRow): QualifiedCallHandoffView {
   return {
     id: row.id, accountId: row.account_id, callId: row.call_id, status: row.status,
     provider: row.provider, taskId: row.provider_task_id, notificationId: row.notification_id,
-    deliveryStatus: "not_sent", attemptCount: row.attempt_count, errorCode: row.last_error_code,
+    deliveryStatus: "not_verified", attemptCount: row.attempt_count, errorCode: row.last_error_code,
   };
 }
 
