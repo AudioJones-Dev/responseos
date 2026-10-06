@@ -41,7 +41,9 @@
       "priority": "High",
       "start": "2026-10-06",
       "blocked": true,
-      "blockedReason": "Offline implementation; live owner identity, approved configuration and commissioning remain gated."
+      "blockedReason": "Offline implementation; inherited audit failure, parent PR193, approved owner configuration and live commissioning remain gated.",
+      "ref": 194,
+      "refType": "pull"
     },
     {
       "id": "FRL-01",
