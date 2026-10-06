@@ -25,6 +25,13 @@
 
 ## Current focus (June 2026)
 
+**2026-10-06 next FRL increment:** qualified email transport/evidence are in
+bounded offline implementation review, dependent on PR193. Resend HTTP is tested
+with synthetic providers only; both delivery and live adapter flags default off.
+No callback scheduler, hosted dispatcher schedule or sales engine is included.
+See [delivery contract](./product/frl-qualified-notification-delivery.md).
+Live acceptance and independent inherited security remediation remain open.
+
 **2026-10-06 bounded FRL increment:** qualified-only CRM ownership and durable
 notification outbox are in repository implementation review. The operator
 authorized local implementation; provider delivery, tenant activation and

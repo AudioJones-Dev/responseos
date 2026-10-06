@@ -92,12 +92,22 @@ Mock-safe mutation routes may include a `mock: true` flag inside the success env
 ### Notifications
 - `GET /api/admin/qualified-handoffs` — AJ admin/operator only; server-bound FRL
   account; returns preparation metadata, no message/recipient, with
-  `deliveryStatus: "not_sent"`.
+  `deliveryStatus: "not_verified"`; see separate delivery evidence below.
 - `POST /api/admin/qualified-handoffs/:callId/retry` — AJ admin/operator only;
   rechecks tenant-scoped finalized capture, retained qualification and pinned
   approved policy. No client-supplied account or recipient. Prepares the outbox;
   sends no email/SMS. See [handoff contract](./product/frl-qualified-call-handoff.md).
 - `GET /api/notifications`
+- `GET /api/admin/qualified-notifications` — AJ admin/operator only, server-bound
+  FRL metadata: call/handoff/outbox/task/message IDs, owner readback time, POST
+  attempt count, acceptance/delivery observations and redacted errors. No private
+  recipient, message or owner ID.
+- `POST /api/admin/qualified-notifications/dispatch` — operator-only bounded
+  dispatch/retry/poll of qualified email outbox. Defaults off; no scheduler.
+- `POST /api/admin/qualified-notifications/:callId/retry` — operator-only
+  revalidation/retry; uncertain POSTs older than 23 hours require reconciliation.
+  No client account, recipient, owner or idempotency override. See
+  [delivery contract](./product/frl-qualified-notification-delivery.md).
 - `POST /api/notifications/send` — body: `{ channel, recipient, subject?, message }`
 
 ### Reports

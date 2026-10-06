@@ -28,7 +28,7 @@ describe("qualified FRL handoff on isolated Postgres", () => {
     const params = { accountId, callId, providerOverride: provider };
     const first = await syncFinalizedCallAndPrepareHandoff(params);
     const again = await syncFinalizedCallAndPrepareHandoff(params);
-    expect(first).toMatchObject({ ok: true, data: { crm: { status: "succeeded" }, handoff: { status: "queued", deliveryStatus: "not_sent" } } });
+    expect(first).toMatchObject({ ok: true, data: { crm: { status: "succeeded" }, handoff: { status: "queued", deliveryStatus: "not_verified" } } });
     expect(again).toMatchObject({ ok: true, data: { handoff: { attemptCount: 1 } } });
     expect(task).toHaveBeenCalledOnce();
     expect(task.mock.calls[0][0].ownerId).toBe("12345");

@@ -6,6 +6,7 @@ import { resetFactoryCounters } from "../factories";
 export const prisma = new PrismaClient();
 
 const TABLES = [
+  "QualifiedNotificationDelivery",
   "QualifiedCallHandoff",
   "BootstrapPromotion",
   "TelephonyNumberAssignment",

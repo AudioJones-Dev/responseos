@@ -412,6 +412,35 @@ model QualifiedCallHandoff {
   @@index([account_id, call_id])
 }
 
+model QualifiedNotificationDelivery {
+  id                   String   @id @default(cuid())
+  account_id           String
+  call_id              String
+  handoff_id           String   @unique
+  notification_id      String   @unique
+  status               String   @default("pending")
+  provider             String   @default("resend")
+  payload_hash         String?
+  attempt_count        Int      @default(0)
+  first_attempt_at     DateTime?
+  claim_token          String?
+  lease_expires_at     DateTime?
+  provider_message_id  String?
+  provider_last_event  String?
+  provider_task_id     String?
+  verified_owner_id    String?
+  owner_verified_at    DateTime?
+  accepted_at          DateTime?
+  delivery_observed_at DateTime?
+  last_checked_at      DateTime?
+  last_error_code      String?
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+
+  @@index([account_id, status])
+  @@index([account_id, call_id])
+}
+
 model RevenueMetrics {
   id                          String   @id @default(cuid())
   account_id                  String
