@@ -41,7 +41,9 @@
       "priority": "High",
       "start": "2026-10-06",
       "blocked": true,
-      "blockedReason": "Live delivery awaits approved tenant configuration, recipient, transport and commissioning."
+      "blockedReason": "Live delivery awaits approved tenant configuration, recipient, transport and commissioning.",
+      "ref": 193,
+      "refType": "pull"
     },
     {
       "id": "G-14",
