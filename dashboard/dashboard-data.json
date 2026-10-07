@@ -42,7 +42,9 @@
       "start": "2026-10-07",
       "due": "2026-10-07",
       "blocked": true,
-      "blockedReason": "Implementation and local persistence checks complete; inherited npm audit findings block merge. G02-G07 remain open; no worker or live provider writes."
+      "blockedReason": "Implementation and local persistence checks complete; inherited npm audit findings block merge. G02-G07 remain open; no worker or live provider writes.",
+      "ref": 195,
+      "refType": "pull"
     },
     {
       "id": "G-14",

@@ -51,3 +51,6 @@ test could not find npx. Running that test through pnpm dlx npm@11.16.0 exec wit
 the same isolated database supplied npx and passed. No source fix was needed.
 Thus all 174 tests passed across those runs; this is not represented as a single
 clean invocation. The 17 new focused DB tests also passed independently.
+
+Review: [draft PR #195](https://github.com/AudioJones-Dev/responseos/pull/195).
+Do not merge while the inherited dependency audit gate fails.
