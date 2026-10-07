@@ -196,6 +196,7 @@ enum NotificationStatus {
 }
 
 model Account {
+  frl_inquiries FrlInquiry[]
   id            String        @id @default(cuid())
   name          String
   slug          String        @unique
@@ -213,6 +214,59 @@ model Account {
   clerk_org_id  String?       @unique
   created_at    DateTime      @default(now())
   updated_at    DateTime      @updatedAt
+}
+
+model FrlInquiry {
+  account_id String
+  inquiry_id String            @db.Uuid
+  pathway    String
+  revision   Int
+  created_at DateTime          @default(now())
+  updated_at DateTime          @updatedAt
+  account    Account           @relation(fields: [account_id], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  events     FrlInquiryEvent[]
+
+  @@id([account_id, inquiry_id])
+}
+
+model FrlInquiryEvent {
+  account_id      String
+  event_id        String               @db.Uuid
+  inquiry_id      String               @db.Uuid
+  schema_version  Int
+  event_type      String
+  revision        Int
+  source_channel  String
+  source_event_id String
+  correlation_id  String
+  actor_id        String
+  content_hash    String               @db.Char(64)
+  envelope        Json
+  occurred_at     DateTime
+  recorded_at     DateTime             @default(now())
+  inquiry         FrlInquiry           @relation(fields: [account_id, inquiry_id], references: [account_id, inquiry_id], onDelete: Restrict, onUpdate: Restrict)
+  outbox          FrlOutboxOperation[]
+
+  @@id([account_id, event_id])
+  @@unique([account_id, inquiry_id, revision])
+  @@unique([account_id, source_channel, source_event_id, event_type])
+  @@index([account_id, correlation_id])
+}
+
+model FrlOutboxOperation {
+  account_id     String
+  operation_id   String          @db.Uuid
+  event_id       String          @db.Uuid
+  operation_type String
+  schema_version Int
+  status         String          @default("blocked")
+  blocked_reason String
+  created_at     DateTime        @default(now())
+  event          FrlInquiryEvent @relation(fields: [account_id, event_id], references: [account_id, event_id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@id([account_id, operation_id])
+  @@unique([account_id, event_id, operation_type])
+  @@index([account_id, status])
 }
 
 model User {

@@ -127,3 +127,11 @@ Architectural placement: [`architecture.md`](./architecture.md) § Future Knowle
 - No production deploys from this repo until v0.3 readiness gates clear, except the public read-only demo surface (ADR-0053): the marketing pages and `/demo/receptionist`, on mock adapters, operator-authorized and deployed by hand. Not v0.3 authorization.
 - Provider adapters fall back to mock when env vars are missing — the app must boot and run without live keys at every version.
 - ResponseOS is not HIPAA-certified or HIPAA-compliant out of the box. The HIPAA-ready lane is an architectural pattern, not a current product capability.
+
+## FRL PR A — persistence foundation (October 7, 2026)
+
+In review: versioned inquiry events, immutable history and transactional blocked
+outbox intents. No live intake route or delivery worker. See
+[scope and acceptance](./product/frl-ledger-persistence-foundation.md).
+PR B owns leases, retries, attempt history and ambiguous-write recovery; PR C owns
+separately authorized CRM commissioning. G02-G07 retain their original criteria.
