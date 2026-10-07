@@ -1,5 +1,44 @@
 # FRL PR A validation
 
+## Security follow-up: patched dependencies
+
+October 7, 2026. The authorized security pass proved all original 11 package-level
+findings inherited from master, then cleared six with compatible patches.
+The full audit still fails with **5 high, 0 critical, 0 moderate** findings, all
+from the unpatched braces chain in Next ESLint tooling. Production-only audit
+returns zero findings, but does not replace the full required security gate.
+See the [complete dependency evidence ledger](../security/pr195-dependency-evidence.md)
+for advisory IDs, versions, resolved paths, reachability and remaining remediation.
+
+| Patched-tree check | Result |
+| --- | --- |
+| Fresh npm ci | Passed using npm 11.16.0 |
+| Prisma client generation | Passed, unchanged Prisma 6.19.3 |
+| Full ESLint / TypeScript no-emit | Passed |
+| Unit tests | 668 passed in 57 files |
+| Full PostgreSQL integration suite | 174 passed in 14 files in one clean invocation, including all 17 FRL persistence/migration tests |
+| Migration deploy / shadow-schema parity | No pending migration / no difference |
+| Empty rollback and reapply, populated rollback refusal, backup/restore | Passed within the integration suite |
+| No-database / database-backed application builds | Both passed on Next 16.3.6 |
+| Original HubSpot projections | 52 passed against patched dependencies using temporary exact copies from the unchanged commissioning checkout; copies removed after validation |
+| Repository environment contract / git diff check | Passed |
+| Full dependency audit | FAIL: 5 high findings; unchanged audit threshold |
+
+The integration command used `pnpm dlx npm@11.16.0 exec -- vitest run --config
+vitest.integration.config.ts` with command-local Git Bash/PostgreSQL PATH and the
+isolated loopback responseos_test database, supplying npx for the existing seed
+test. Local Node remains 24.19.0 versus CI's pinned 24.18.0. No persistence source,
+migration, projection, worker or CI policy was changed by remediation.
+
+Original-head CI run [37690513641](https://github.com/AudioJones-Dev/responseos/actions/runs/37690513641)
+completed: both jobs failed at the audit gate before test/build execution.
+Follow-up exact-head CI must be checked after pushing this patch; local passing
+checks are not CI approval. Its run and outcome will be recorded in the PR body.
+PR #195 remains draft, open and unmerged. G02-G07 remain open and PR B has not
+started. No live CRM writes, deployment or production database changes occurred.
+
+## Initial implementation validation (before remediation)
+
 October 7, 2026. Branch codex/frl-ledger-foundation, master baseline
 3252a6de9c8a40992b3edc655c05ffbe73459194. Local persistence validation only.
 
