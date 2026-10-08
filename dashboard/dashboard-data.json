@@ -1308,6 +1308,19 @@
       "refType": "pull"
     },
     {
+      "id": "L-15",
+      "phase": "Launch / Demo Deploy",
+      "title": "Replace unverifiable homepage stats and bound outcome-fee copy (owner decisions)",
+      "owner": "Claude Code",
+      "status": "In Progress",
+      "progress": 80,
+      "priority": "High",
+      "start": "2026-10-08",
+      "due": "2026-10-08",
+      "ref": 202,
+      "refType": "pull"
+    },
+    {
       "id": "G-16",
       "phase": "Tech Debt & Hardening",
       "title": "Vendor web fonts so next build makes no network requests",
