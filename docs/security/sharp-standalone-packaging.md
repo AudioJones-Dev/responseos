@@ -4,16 +4,17 @@ Status: Windows packaging candidate validated locally; FAIL / HOLD for cross-pla
 
 ## Change and evidence
 
-Next.js 16.3.4 standalone output omitted both Windows Sharp DLLs from the original PR #195 artifact. Its installed Sharp 0.35.5 tree produced a PNG; standalone failed with ERR_DLOPEN_FAILED. The native addon statically imports libvips-42.dll and libvips-cpp-8.18.7.dll.
+Next.js 16.3.8 Turbopack standalone output omitted both Windows Sharp DLLs from the original PR #195 artifact. Its installed Sharp 0.35.5 tree produced a PNG; standalone failed with ERR_DLOPEN_FAILED. The native addon statically imports libvips-42.dll and libvips-cpp-8.18.7.dll.
 
 The candidate adds a narrow outputFileTracingIncludes pattern for node_modules/@img/sharp-win32-*/lib/*.dll to all server route traces. Next.js's installed output configuration guide documents this mechanism for native assets. The build now includes both DLLs in 95 route traces and copies them into standalone output. No DLL was manually inserted. All three shipped native files match the installed package SHA-256 hashes on each tested snapshot.
 
-Direct bundled @vercel/nft tracing of the native package index includes both DLLs even before this change. Therefore the evidence does not support claiming that NFT cannot recognize Windows DLL dependencies. The precise omission inside Next.js aggregate tracing remains unresolved. Explicit inclusion is a supported configuration correction; its maintenance obligation is to revalidate native asset selection after Next.js or Sharp upgrades.
+Direct bundled @vercel/nft tracing of the native package index includes both DLLs even before this change. Therefore the evidence does not support claiming that NFT cannot recognize Windows DLL dependencies. The omission is now localized to the inspected Windows Turbopack path; see [tracing diagnosis](sharp-windows-tracing-diagnosis.md). Its deeper native tracer implementation cause remains unresolved. Explicit inclusion is a supported configuration correction; its maintenance obligation is to revalidate native asset selection after Next.js or Sharp upgrades.
 
 | Gate | Master candidate | PR #195 exact-lock local overlay |
 | --- | --- | --- |
 | Application source | 5ebe72339a66dbb1f9bdfd36228ae14ecd6b1a5c | 304f19ccd41e5d5d1356e4875834c0823c7fcf2f |
 | Base | 3252a6de9c8a40992b3edc655c05ffbe73459194 | 4e1f353117696658988bca171e4e0e51c0fb1b96 |
+| Next.js | 16.3.4 | 16.3.8 |
 | Sharp | 0.35.4 | 0.35.5 |
 | Fresh npm ci / generate / production build | PASS | PASS |
 | Shipped native hash closure / PNG operation | PASS | PASS |

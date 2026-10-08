@@ -1,0 +1,6 @@
+{
+  "file": "raw-evidence.tar.gz",
+  "bytes": 65608,
+  "sha256": "5dee306dfe3d4d8a2473b13288d17ac2a3f57adc9adfe61f5253e2de78875914",
+  "scope": "Pinned Windows tracing/bundler diagnostic; no application source changes or universal platform conclusion"
+}
