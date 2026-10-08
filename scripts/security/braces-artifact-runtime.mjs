@@ -4,7 +4,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import net from 'node:net';
 import {probeNative} from './braces-native-probe.mjs';
-import {tracedFiles,untracedLoads} from './braces-traced-runtime.mjs';
+import {tracedFiles,untracedLoads,classifyUntracedLoads} from './braces-traced-runtime.mjs';
 import {spawn,spawnSync} from 'node:child_process';
 const root=process.cwd(),evidence=path.join(root,'.security-evidence/artifact-verification');
 const build=JSON.parse(fs.readFileSync(path.join(evidence,'build-summary.json')));
@@ -51,9 +51,10 @@ const requests=[];let failure=null;
 try{
  let ready=false;
  const deadline=Date.now()+30000;
- // Next listens before it initializes and holds every request until initialization ends, so the first
- // public static file response marks the end of launcher loads without loading application route code.
- const warmup=traced&&fs.readdirSync(path.join(runtime,'public'),{withFileTypes:true}).find(item=>item.isFile())?.name;
+ // Next listens before it initializes and holds every request until initialization ends. A dotted public
+ // file bypasses proxy.ts, so its response ends the window in which named launcher files may load.
+ const warmup=traced&&fs.readdirSync(path.join(runtime,'public'),{withFileTypes:true}).find(item=>item.isFile()&&item.name.includes('.'))?.name;
+ if(traced&&!warmup)throw new Error('Traced runtime needs a dotted public file for its warm-up request');
  while(warmup&&Date.now()<deadline&&!exited){
   try{const response=await fetch(`http://127.0.0.1:${port}/${encodeURIComponent(warmup)}`,{redirect:'manual',signal:AbortSignal.timeout(2000)});await response.arrayBuffer();if(response.status===200)break;}catch{}
   await new Promise(resolve=>setTimeout(resolve,200));
@@ -77,8 +78,8 @@ const events=fs.readFileSync(runtimeLog,'utf8').trim().split('\n').filter(Boolea
 const targets=/eslint-config-next|@next[\\/]eslint-plugin-next|fast-glob|micromatch|(?:^|[\\/])braces(?:[\\/]|$)/;
 const nativeProbe=probeNative(runtime,baseEnv,evidence);
 const untraced=traced?untracedLoads(events,runtime,traced):[];
-const untracedRequestLoads=untraced.filter(item=>item.time>=firstRequestAt),untracedStartupLoads=untraced.filter(item=>item.time<firstRequestAt);
-const summary={nativeOperationSucceeded:nativeProbe.observation.nativeSucceeded===true&&nativeProbe.exit===0&&nativeProbe.escapes.length===0,nativeProbeExit:nativeProbe.exit,nativeProbeError:nativeProbe.observation.error||null,capturedAt:new Date().toISOString(),sourceCommit:build.sourceCommit,packaging:standalone?'standalone':'traced',tracedPackage:traced&&{traceFiles:traced.traceFiles,files:traced.files.length,links:traced.links},untracedStartupLoads:[...new Set(untracedStartupLoads.map(item=>item.file))].sort(),untracedRequestLoads:[...new Set(untracedRequestLoads.map(item=>item.file))].sort(),runtime,port,controlExit:control.status,controlEvents:controlEvents.length,requests,failure,exit,eventCount:events.length,affectedEvents:events.filter(item=>targets.test([item.request,item.file,item.specifier,item.url].filter(Boolean).join(' '))),escapes:events.filter(item=>item.kind==='escape-blocked'),resolutionFailures:events.filter(item=>item.kind==='cjs-failed'),changedOriginalFiles:changes,addedFiles:added,limitations:['Startup, public GETs, protected denials and public 404 only','Embedded code execution is not established by module load hooks',standalone?'Fresh Windows standalone artifact, not deployed Vercel artifact':'Traced package served by next start from the build checkout; untraced loads before the first public static file response belong to the next start launcher, which Vercel replaces; not the deployed Vercel artifact']};
+const {startup:untracedStartupLoads,request:untracedRequestLoads}=classifyUntracedLoads(untraced,firstRequestAt);
+const summary={nativeOperationSucceeded:nativeProbe.observation.nativeSucceeded===true&&nativeProbe.exit===0&&nativeProbe.escapes.length===0,nativeProbeExit:nativeProbe.exit,nativeProbeError:nativeProbe.observation.error||null,capturedAt:new Date().toISOString(),sourceCommit:build.sourceCommit,packaging:standalone?'standalone':'traced',tracedPackage:traced&&{traceFiles:traced.traceFiles,files:traced.files.length,links:traced.links},untracedStartupLoads:[...new Set(untracedStartupLoads.map(item=>item.file))].sort(),untracedRequestLoads:[...new Set(untracedRequestLoads.map(item=>item.file))].sort(),runtime,port,controlExit:control.status,controlEvents:controlEvents.length,requests,failure,exit,eventCount:events.length,affectedEvents:events.filter(item=>targets.test([item.request,item.file,item.specifier,item.url].filter(Boolean).join(' '))),escapes:events.filter(item=>item.kind==='escape-blocked'),resolutionFailures:events.filter(item=>item.kind==='cjs-failed'),changedOriginalFiles:changes,addedFiles:added,limitations:['Startup, public GETs, protected denials and public 404 only','Embedded code execution is not established by module load hooks',standalone?'Fresh Windows standalone artifact, not deployed Vercel artifact':'Traced package served by next start from the build checkout; only named next start launcher files may load untraced, and only before the warm-up response; Vercel replaces that launcher; not the deployed Vercel artifact']};
 for(const [name,value]of Object.entries({'runtime-before':before,'runtime-after':after,'runtime-summary':summary}))fs.writeFileSync(path.join(evidence,name+'.json'),JSON.stringify(value,null,2)+'\n');
 console.log(JSON.stringify({...summary,resolutionFailures:summary.resolutionFailures.slice(0,3)},null,2));
 if(!summary.nativeOperationSucceeded||failure||summary.escapes.length||changes.length||summary.untracedRequestLoads.length||requests.some(item=>item.route==='/demo/packaging-closure-missing'?item.status!==404:['/admin','/client/dashboard','/api/accounts','/api/auth/session'].includes(item.route)?item.status!==307||new URL(item.location,'http://127.0.0.1').pathname!=='/':item.status!==200)||requests[0]?.health?.build_sha!==build.sourceCommit)process.exitCode=1;

@@ -33,3 +33,15 @@ export function untracedLoads(events,runtime,traced){
   return allowed.has(relative)||relative.startsWith('.next/static/')||relative.startsWith('public/')?[]:[{time:item.time,file:relative}];
  });
 }
+
+// Files the `next start` launcher loads while initializing, outside the traced request path (Next 16.3.4).
+// Any other untraced load fails; these are excused only before the warm-up response. Recheck after Next upgrades.
+const launcherDirectories=/^node_modules\/(next\/dist\/(bin|cli|build|lib|compiled|trace|telemetry)\/|@next\/swc-[^/]+\/)/;
+const launcherFiles=new Set(['node_modules/next/dist/server/next.js','node_modules/next/dist/shared/lib/dset.js','node_modules/next/dist/shared/lib/errors/hard-deprecated-config-error.js','node_modules/next/dist/shared/lib/normalized-asset-prefix.js','node_modules/next/dist/shared/lib/zod.js']);
+export const launcherFile=file=>launcherDirectories.test(file)||launcherFiles.has(file);
+
+// Splits untraced loads into excused launcher loads (named launcher files before the warm-up response) and failing loads.
+export function classifyUntracedLoads(untraced,warmupDoneAt){
+ const excused=item=>item.time<warmupDoneAt&&launcherFile(item.file);
+ return {startup:untraced.filter(excused),request:untraced.filter(item=>!excused(item))};
+}

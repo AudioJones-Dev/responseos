@@ -43,7 +43,7 @@
       "priority": "High",
       "start": "2026-10-08",
       "blocked": true,
-      "blockedReason": "Merged into PR #197 via PR #199 (3fcb014). Linux-only local run against master 0ed7cf0. braces-closure-matrix traced mode added (116 rows on linux-x64, 84 UNKNOWN). Frozen linux-x64 traced identity for 0ed7cf0 committed before independent review (reproduced across two fresh builds). Windows, Linux/Postgres integration and independent review are pending. No hosted execution."
+      "blockedReason": "Merged into PR #197 via PR #199 (3fcb014). Linux-only local run against master 0ed7cf0. braces-closure-matrix traced mode added (116 rows on linux-x64, 84 UNKNOWN). Frozen linux-x64 traced identity for 0ed7cf0 committed before independent review (reproduced across two fresh builds). Codex/Greptile findings on #203 and #205 fixed: fresh-ledger row comparison, runtime-platform binding, launcher allowlist boundary, dotted warm-up, 23 new controls. Windows, Linux/Postgres integration and independent review are pending. No hosted execution."
     },
     {
       "id": "SEC-PACKAGING",
