@@ -17,8 +17,8 @@ if(process.argv[1]&&path.resolve(process.argv[1])===path.resolve(fileURLToPath(i
  const build=JSON.parse(fs.readFileSync(path.join(directory,'build-summary.json')));
  const rows=JSON.parse(fs.readFileSync(path.join(directory,'imports.json')));
  const runtime=JSON.parse(fs.readFileSync(path.join(directory,'runtime-summary.json')));
- const server=fs.readFileSync(path.join(build.checkout,'.next/standalone/server.js'),'utf8');
- const config=JSON.parse(/^const nextConfig = (.+)$/m.exec(server)[1]);
+ const standalone=path.join(build.checkout,'.next/standalone/server.js');
+ const config=fs.existsSync(standalone)?JSON.parse(/^const nextConfig = (.+)$/m.exec(fs.readFileSync(standalone,'utf8'))[1]):JSON.parse(fs.readFileSync(path.join(build.checkout,'.next/required-server-files.json'),'utf8')).config;
  const unresolved=rows.filter(row=>!row.literal||row.resolution==='unresolved-external');
  const ledger=unresolved.map((row,index)=>{
   const source=fs.readFileSync(path.join(build.checkout,row.file),'utf8');
