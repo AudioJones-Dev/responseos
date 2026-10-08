@@ -1,0 +1,111 @@
+name: Security packaging proposal
+on:
+  workflow_dispatch:
+    inputs:
+      application_sha:
+        description: Immutable application commit to inspect; no deployment
+        type: string
+        required: true
+        default: 4e1f353117696658988bca171e4e0e51c0fb1b96
+permissions:
+  contents: read
+concurrency:
+  group: security-packaging-${{ github.ref }}
+  cancel-in-progress: false
+env:
+  SECURITY_APPLICATION_SHA: ${{ inputs.application_sha }}
+  NEXT_TELEMETRY_DISABLED: '1'
+jobs:
+  artifacts:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.18.0
+      - run: |
+          [[ "$SECURITY_APPLICATION_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          git cat-file -e "$SECURITY_APPLICATION_SHA^{commit}"
+          npm install --global npm@11.16.0
+          echo "SECURITY_NPM_CLI=$(npm root -g)/npm/bin/npm-cli.js" >> "$GITHUB_ENV"
+          npm ci --include=dev --no-fund
+      - name: Collect diagnostics without treating audit findings as acceptance
+        run: node scripts/security/braces-ci.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-${{ matrix.os }}
+          path: .security-evidence/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+  integration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: responseos
+          POSTGRES_PASSWORD: responseos
+          POSTGRES_DB: responseos_test
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U responseos" --health-interval 10s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://responseos:responseos@localhost:5432/responseos_test
+      DIRECT_URL: postgresql://responseos:responseos@localhost:5432/responseos_test
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.18.0
+      - run: |
+          [[ "$SECURITY_APPLICATION_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          git cat-file -e "$SECURITY_APPLICATION_SHA^{commit}"
+          mkdir application
+          git archive "$SECURITY_APPLICATION_SHA" | tar -x -C application
+          npm install --global npm@11.16.0
+      - working-directory: application
+        run: |
+          npm ci --include=dev
+          npx prisma generate
+          PGPASSWORD=responseos psql -h localhost -U responseos -d responseos_test -c 'CREATE DATABASE responseos_shadow;'
+          npx prisma migrate diff --from-schema-datamodel prisma/schema.prisma --to-migrations prisma/migrations --shadow-database-url postgresql://responseos:responseos@localhost:5432/responseos_shadow --exit-code
+          npx prisma migrate deploy
+          npx prisma db seed
+          npm run test:integration
+          npm run build
+  acceptance:
+    if: always()
+    needs: [artifacts, integration]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.18.0
+      - uses: actions/download-artifact@v4
+        with:
+          path: downloaded-evidence
+          pattern: security-*
+      - name: Reject incomplete security or compatibility acceptance
+        env:
+          INTEGRATION_RESULT: ${{ needs.integration.result }}
+        run: node scripts/security/braces-ci-accept.mjs

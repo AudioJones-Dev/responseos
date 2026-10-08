@@ -1,0 +1,1041 @@
+{
+  "platform": "win32",
+  "node": "v24.18.0",
+  "baseline": "fast-glob@3.3.1",
+  "candidate": "brace-expansion@5.0.12 + picomatch@2.3.2 + fill-range@7.1.1 adapter",
+  "results": [
+    {
+      "expected": {
+        "paths": [
+          "<fixture>"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "<fixture>"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/site",
+      "expected": {
+        "paths": [
+          "apps/site"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "apps/site"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/site/",
+      "expected": {
+        "paths": [
+          "apps/site/"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "apps/site/"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/*",
+      "expected": {
+        "paths": [
+          "apps/${site,admin}",
+          "apps/01",
+          "apps/02",
+          "apps/03",
+          "apps/1",
+          "apps/2",
+          "apps/3",
+          "apps/Z",
+          "apps/[",
+          "apps/]",
+          "apps/a",
+          "apps/admin",
+          "apps/link",
+          "apps/other",
+          "apps/site",
+          "apps/site space",
+          "apps/{site,admin}"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "apps/${site,admin}",
+          "apps/01",
+          "apps/02",
+          "apps/03",
+          "apps/1",
+          "apps/2",
+          "apps/3",
+          "apps/Z",
+          "apps/[",
+          "apps/]",
+          "apps/a",
+          "apps/admin",
+          "apps/link",
+          "apps/other",
+          "apps/site",
+          "apps/site space",
+          "apps/{site,admin}"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/**",
+      "expected": {
+        "paths": [
+          "apps/${site,admin}",
+          "apps/01",
+          "apps/02",
+          "apps/03",
+          "apps/1",
+          "apps/2",
+          "apps/3",
+          "apps/Z",
+          "apps/[",
+          "apps/]",
+          "apps/]/nested",
+          "apps/a",
+          "apps/admin",
+          "apps/link",
+          "apps/link/nested",
+          "apps/link/nested/deeper",
+          "apps/other",
+          "apps/site",
+          "apps/site space",
+          "apps/site space/child",
+          "apps/site/nested",
+          "apps/site/nested/deeper",
+          "apps/{site,admin}"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "apps/${site,admin}",
+          "apps/01",
+          "apps/02",
+          "apps/03",
+          "apps/1",
+          "apps/2",
+          "apps/3",
+          "apps/Z",
+          "apps/[",
+          "apps/]",
+          "apps/]/nested",
+          "apps/a",
+          "apps/admin",
+          "apps/link",
+          "apps/link/nested",
+          "apps/link/nested/deeper",
+          "apps/other",
+          "apps/site",
+          "apps/site space",
+          "apps/site space/child",
+          "apps/site/nested",
+          "apps/site/nested/deeper",
+          "apps/{site,admin}"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/{site,admin}",
+      "expected": {
+        "paths": [
+          "apps/admin",
+          "apps/site"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "apps/admin",
+          "apps/site"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": [
+        "apps/site",
+        "apps/admin"
+      ],
+      "expected": {
+        "paths": [
+          "apps/admin",
+          "apps/site"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "apps/admin",
+          "apps/site"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/site space",
+      "expected": {
+        "paths": [
+          "apps/site space"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "apps/site space"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "missing",
+      "expected": {
+        "paths": []
+      },
+      "actual": {
+        "paths": []
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/.hidden",
+      "expected": {
+        "paths": [
+          "apps/.hidden"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "apps/.hidden"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "apps\\site",
+      "expected": {
+        "paths": [
+          "apps/site"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "apps/site"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-expanded-glob-P2INTB\\apps\\site",
+      "expected": {
+        "paths": [
+          "<fixture>/apps/site"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "<fixture>/apps/site"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/site/file.txt",
+      "expected": {
+        "paths": []
+      },
+      "actual": {
+        "paths": []
+      },
+      "pass": true
+    },
+    {
+      "input": ".",
+      "expected": {
+        "paths": [
+          "."
+        ]
+      },
+      "actual": {
+        "paths": [
+          "."
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "./",
+      "expected": {
+        "paths": [
+          "./"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "./"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "./apps/site",
+      "expected": {
+        "paths": [
+          "./apps/site"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "./apps/site"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "./apps/*",
+      "expected": {
+        "paths": [
+          "./apps/${site,admin}",
+          "./apps/01",
+          "./apps/02",
+          "./apps/03",
+          "./apps/1",
+          "./apps/2",
+          "./apps/3",
+          "./apps/Z",
+          "./apps/[",
+          "./apps/]",
+          "./apps/a",
+          "./apps/admin",
+          "./apps/link",
+          "./apps/other",
+          "./apps/site",
+          "./apps/site space",
+          "./apps/{site,admin}"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "./apps/${site,admin}",
+          "./apps/01",
+          "./apps/02",
+          "./apps/03",
+          "./apps/1",
+          "./apps/2",
+          "./apps/3",
+          "./apps/Z",
+          "./apps/[",
+          "./apps/]",
+          "./apps/a",
+          "./apps/admin",
+          "./apps/link",
+          "./apps/other",
+          "./apps/site",
+          "./apps/site space",
+          "./apps/{site,admin}"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "apps//site",
+      "expected": {
+        "paths": [
+          "apps/site"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "apps/site"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/**/",
+      "expected": {
+        "paths": [
+          "apps/${site,admin}",
+          "apps/01",
+          "apps/02",
+          "apps/03",
+          "apps/1",
+          "apps/2",
+          "apps/3",
+          "apps/Z",
+          "apps/[",
+          "apps/]",
+          "apps/]/nested",
+          "apps/a",
+          "apps/admin",
+          "apps/link",
+          "apps/link/nested",
+          "apps/link/nested/deeper",
+          "apps/other",
+          "apps/site",
+          "apps/site space",
+          "apps/site space/child",
+          "apps/site/nested",
+          "apps/site/nested/deeper",
+          "apps/{site,admin}"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "apps/${site,admin}",
+          "apps/01",
+          "apps/02",
+          "apps/03",
+          "apps/1",
+          "apps/2",
+          "apps/3",
+          "apps/Z",
+          "apps/[",
+          "apps/]",
+          "apps/]/nested",
+          "apps/a",
+          "apps/admin",
+          "apps/link",
+          "apps/link/nested",
+          "apps/link/nested/deeper",
+          "apps/other",
+          "apps/site",
+          "apps/site space",
+          "apps/site space/child",
+          "apps/site/nested",
+          "apps/site/nested/deeper",
+          "apps/{site,admin}"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/**/*",
+      "expected": {
+        "paths": [
+          "apps/${site,admin}",
+          "apps/01",
+          "apps/02",
+          "apps/03",
+          "apps/1",
+          "apps/2",
+          "apps/3",
+          "apps/Z",
+          "apps/[",
+          "apps/]",
+          "apps/]/nested",
+          "apps/a",
+          "apps/admin",
+          "apps/link",
+          "apps/link/nested",
+          "apps/link/nested/deeper",
+          "apps/other",
+          "apps/site",
+          "apps/site space",
+          "apps/site space/child",
+          "apps/site/nested",
+          "apps/site/nested/deeper",
+          "apps/{site,admin}"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "apps/${site,admin}",
+          "apps/01",
+          "apps/02",
+          "apps/03",
+          "apps/1",
+          "apps/2",
+          "apps/3",
+          "apps/Z",
+          "apps/[",
+          "apps/]",
+          "apps/]/nested",
+          "apps/a",
+          "apps/admin",
+          "apps/link",
+          "apps/link/nested",
+          "apps/link/nested/deeper",
+          "apps/other",
+          "apps/site",
+          "apps/site space",
+          "apps/site space/child",
+          "apps/site/nested",
+          "apps/site/nested/deeper",
+          "apps/{site,admin}"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/*/**",
+      "expected": {
+        "paths": [
+          "apps/${site,admin}",
+          "apps/01",
+          "apps/02",
+          "apps/03",
+          "apps/1",
+          "apps/2",
+          "apps/3",
+          "apps/Z",
+          "apps/[",
+          "apps/]",
+          "apps/]/nested",
+          "apps/a",
+          "apps/admin",
+          "apps/link",
+          "apps/link/nested",
+          "apps/link/nested/deeper",
+          "apps/other",
+          "apps/site",
+          "apps/site space",
+          "apps/site space/child",
+          "apps/site/nested",
+          "apps/site/nested/deeper",
+          "apps/{site,admin}"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "apps/${site,admin}",
+          "apps/01",
+          "apps/02",
+          "apps/03",
+          "apps/1",
+          "apps/2",
+          "apps/3",
+          "apps/Z",
+          "apps/[",
+          "apps/]",
+          "apps/]/nested",
+          "apps/a",
+          "apps/admin",
+          "apps/link",
+          "apps/link/nested",
+          "apps/link/nested/deeper",
+          "apps/other",
+          "apps/site",
+          "apps/site space",
+          "apps/site space/child",
+          "apps/site/nested",
+          "apps/site/nested/deeper",
+          "apps/{site,admin}"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/**/nested",
+      "expected": {
+        "paths": [
+          "apps/]/nested",
+          "apps/link/nested",
+          "apps/site/nested"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "apps/]/nested",
+          "apps/link/nested",
+          "apps/site/nested"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/**/nested/**",
+      "expected": {
+        "paths": [
+          "apps/]/nested",
+          "apps/link/nested",
+          "apps/link/nested/deeper",
+          "apps/site/nested",
+          "apps/site/nested/deeper"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "apps/]/nested",
+          "apps/link/nested",
+          "apps/link/nested/deeper",
+          "apps/site/nested",
+          "apps/site/nested/deeper"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/!(admin)",
+      "expected": {
+        "paths": [
+          "apps/${site,admin}",
+          "apps/.hidden",
+          "apps/01",
+          "apps/02",
+          "apps/03",
+          "apps/1",
+          "apps/2",
+          "apps/3",
+          "apps/Z",
+          "apps/[",
+          "apps/]",
+          "apps/a",
+          "apps/link",
+          "apps/other",
+          "apps/site",
+          "apps/site space",
+          "apps/{site,admin}"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "apps/${site,admin}",
+          "apps/.hidden",
+          "apps/01",
+          "apps/02",
+          "apps/03",
+          "apps/1",
+          "apps/2",
+          "apps/3",
+          "apps/Z",
+          "apps/[",
+          "apps/]",
+          "apps/a",
+          "apps/link",
+          "apps/other",
+          "apps/site",
+          "apps/site space",
+          "apps/{site,admin}"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/@(site|admin)",
+      "expected": {
+        "paths": [
+          "apps/admin",
+          "apps/site"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "apps/admin",
+          "apps/site"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/[sa]*",
+      "expected": {
+        "paths": [
+          "apps/a",
+          "apps/admin",
+          "apps/site",
+          "apps/site space"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "apps/a",
+          "apps/admin",
+          "apps/site",
+          "apps/site space"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/{1..3}",
+      "expected": {
+        "paths": [
+          "apps/1",
+          "apps/2",
+          "apps/3"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "apps/1",
+          "apps/2",
+          "apps/3"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/{01..03}",
+      "expected": {
+        "paths": [
+          "apps/01",
+          "apps/02",
+          "apps/03"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "apps/01",
+          "apps/02",
+          "apps/03"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/{3..1}",
+      "expected": {
+        "paths": [
+          "apps/1",
+          "apps/2",
+          "apps/3"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "apps/1",
+          "apps/2",
+          "apps/3"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/{1..3..2}",
+      "expected": {
+        "paths": [
+          "apps/1",
+          "apps/3"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "apps/1",
+          "apps/3"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/{site,{admin,other}}",
+      "expected": {
+        "paths": [
+          "apps/admin",
+          "apps/other",
+          "apps/site"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "apps/admin",
+          "apps/other",
+          "apps/site"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/{site,}",
+      "expected": {
+        "paths": [
+          "apps/",
+          "apps/site"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "apps/",
+          "apps/site"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/{,site}",
+      "expected": {
+        "paths": [
+          "apps/",
+          "apps/site"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "apps/",
+          "apps/site"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/{site,site}",
+      "expected": {
+        "paths": [
+          "apps/site"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "apps/site"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/{site}",
+      "expected": {
+        "paths": []
+      },
+      "actual": {
+        "paths": []
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/{}",
+      "expected": {
+        "paths": []
+      },
+      "actual": {
+        "paths": []
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/{{site,admin}}",
+      "expected": {
+        "paths": []
+      },
+      "actual": {
+        "paths": []
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/${site,admin}",
+      "expected": {
+        "paths": []
+      },
+      "actual": {
+        "paths": []
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/\"{site,admin}\"",
+      "expected": {
+        "paths": [
+          "apps/admin",
+          "apps/site"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "apps/admin",
+          "apps/site"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/{site,,admin}",
+      "expected": {
+        "paths": [
+          "apps/",
+          "apps/admin",
+          "apps/site"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "apps/",
+          "apps/admin",
+          "apps/site"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/{-2..2}",
+      "expected": {
+        "paths": [
+          "apps/1",
+          "apps/2"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "apps/1",
+          "apps/2"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/{a..Z}",
+      "expected": {
+        "paths": [
+          "apps/Z",
+          "apps/[",
+          "apps/]",
+          "apps/a"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "apps/Z",
+          "apps/[",
+          "apps/]",
+          "apps/a"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/{1..1001}",
+      "expected": {
+        "error": "RangeError",
+        "message": "expanded array length exceeds range limit. Use options.rangeLimit to increase or disable the limit."
+      },
+      "actual": {
+        "error": "RangeError",
+        "message": "expanded array length exceeds range limit. Use options.rangeLimit to increase or disable the limit."
+      },
+      "pass": true
+    },
+    {
+      "input": "!apps/site",
+      "expected": {
+        "paths": []
+      },
+      "actual": {
+        "paths": []
+      },
+      "pass": true
+    },
+    {
+      "input": [
+        "apps/site",
+        "apps/site"
+      ],
+      "expected": {
+        "paths": [
+          "apps/site",
+          "apps/site"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "apps/site",
+          "apps/site"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": [
+        "apps/site",
+        null,
+        42
+      ],
+      "expected": {
+        "paths": [
+          "apps/site"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "apps/site"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-expanded-glob-P2INTB\\apps\\*",
+      "expected": {
+        "paths": [
+          "<fixture>/apps/${site,admin}",
+          "<fixture>/apps/01",
+          "<fixture>/apps/02",
+          "<fixture>/apps/03",
+          "<fixture>/apps/1",
+          "<fixture>/apps/2",
+          "<fixture>/apps/3",
+          "<fixture>/apps/Z",
+          "<fixture>/apps/[",
+          "<fixture>/apps/]",
+          "<fixture>/apps/a",
+          "<fixture>/apps/admin",
+          "<fixture>/apps/link",
+          "<fixture>/apps/other",
+          "<fixture>/apps/site",
+          "<fixture>/apps/site space",
+          "<fixture>/apps/{site,admin}"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "<fixture>/apps/${site,admin}",
+          "<fixture>/apps/01",
+          "<fixture>/apps/02",
+          "<fixture>/apps/03",
+          "<fixture>/apps/1",
+          "<fixture>/apps/2",
+          "<fixture>/apps/3",
+          "<fixture>/apps/Z",
+          "<fixture>/apps/[",
+          "<fixture>/apps/]",
+          "<fixture>/apps/a",
+          "<fixture>/apps/admin",
+          "<fixture>/apps/link",
+          "<fixture>/apps/other",
+          "<fixture>/apps/site",
+          "<fixture>/apps/site space",
+          "<fixture>/apps/{site,admin}"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/link",
+      "expected": {
+        "paths": [
+          "apps/link"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "apps/link"
+        ]
+      },
+      "pass": true
+    },
+    {
+      "input": "apps/link/**",
+      "expected": {
+        "paths": [
+          "apps/link/nested",
+          "apps/link/nested/deeper"
+        ]
+      },
+      "actual": {
+        "paths": [
+          "apps/link/nested",
+          "apps/link/nested/deeper"
+        ]
+      },
+      "pass": true
+    }
+  ]
+}

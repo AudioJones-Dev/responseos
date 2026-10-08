@@ -1,0 +1,120 @@
+{
+  "startedAt": "2026-10-08T04:51:38.930Z",
+  "sourceCommit": "4e1f353117696658988bca171e4e0e51c0fb1b96",
+  "platform": "win32",
+  "node": "v24.18.0",
+  "scratch": "C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW",
+  "checkout": "C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\checkout",
+  "evidence": "C:\\Users\\AJDigital\\Documents\\ChatGPT\\RESPONSEOS-SECURITY-CI-PROPOSAL\\.security-evidence\\artifact-verification",
+  "env": {
+    "SystemRoot": "C:\\WINDOWS",
+    "WINDIR": "C:\\WINDOWS",
+    "COMSPEC": "C:\\WINDOWS\\system32\\cmd.exe",
+    "PATHEXT": ".COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.CPL",
+    "TEMP": "C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp",
+    "TMP": "C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp",
+    "USERPROFILE": "C:\\Users\\AJDigital",
+    "APPDATA": "C:\\Users\\AJDigital\\AppData\\Roaming",
+    "LOCALAPPDATA": "C:\\Users\\AJDigital\\AppData\\Local",
+    "PATH": "C:\\Users\\AJDigital\\Documents\\ChatGPT\\RESPONSEOS-SECURITY-REMEDIATION\\.security-tools\\node-v24.18.0-win-x64;C:/Program Files/Git/bin;C:/Users/AJDigital/Documents/ChatGPT/RESPONSEOS-SECURITY-REMEDIATION/.security-tools/node-v24.18.0-win-x64;C:/Program Files/Git/bin;C:\\Users\\AJDigital\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell;C:\\Users\\AJDigital\\.codex\\tmp\\arg0\\codex-arg0m7Pre5;C:\\Users\\AJDigital\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\libheif\\libheif\\bin;C:\\Users\\AJDigital\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\jxrlib\\jxrlib\\bin;C:\\Users\\AJDigital\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\poppler\\Library\\bin;C:\\Users\\AJDigital\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\bin\\override;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\;C:\\WINDOWS\\System32\\OpenSSH\\;C:\\Users\\AJDigital\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell;C:\\Users\\AJDigital\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\AJDigital\\AppData\\Local\\GitHubDesktop\\bin;C:\\Users\\AJDigital\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\bin\\fallback;C:\\Users\\AJDigital\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin;C:\\Users\\AJDigital\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\git\\cmd;C:\\Users\\AJDigital\\AppData\\Local\\OpenAI\\Codex\\bin\\f1e5e36960c35938;C:\\Users\\AJDigital\\AppData\\Local\\OpenAI\\Codex\\bin\\8aaf1547b825b104",
+    "NODE_ENV": "production",
+    "NEXT_TELEMETRY_DISABLED": "1",
+    "RESPONSEOS_BUILD_SHA": "4e1f353117696658988bca171e4e0e51c0fb1b96",
+    "RESPONSEOS_REQUIRE_AUTH": "true",
+    "NEXT_PUBLIC_APP_URL": "http://127.0.0.1:3187",
+    "npm_config_userconfig": "C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\empty.npmrc",
+    "npm_config_include": "dev"
+  },
+  "steps": [
+    {
+      "name": "export",
+      "exe": "C:/Program Files/Git/cmd/git.exe",
+      "args": [
+        "archive",
+        "--format=tar",
+        "--output=C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\source.tar",
+        "4e1f353117696658988bca171e4e0e51c0fb1b96"
+      ],
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "elapsedMs": 70
+    },
+    {
+      "name": "extract",
+      "exe": "C:\\WINDOWS\\System32\\tar.exe",
+      "args": [
+        "-xf",
+        "C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\source.tar",
+        "-C",
+        "C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\checkout"
+      ],
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "elapsedMs": 336
+    },
+    {
+      "name": "install",
+      "exe": "C:\\Users\\AJDigital\\Documents\\ChatGPT\\RESPONSEOS-SECURITY-REMEDIATION\\.security-tools\\node-v24.18.0-win-x64\\node.exe",
+      "args": [
+        "C:/Users/AJDigital/Documents/ChatGPT/RESPONSEOS-SECURITY-REMEDIATION/.security-tools/npm/node_modules/npm/bin/npm-cli.js",
+        "ci",
+        "--include=dev",
+        "--no-fund"
+      ],
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "elapsedMs": 30969
+    },
+    {
+      "name": "audit",
+      "exe": "C:\\Users\\AJDigital\\Documents\\ChatGPT\\RESPONSEOS-SECURITY-REMEDIATION\\.security-tools\\node-v24.18.0-win-x64\\node.exe",
+      "args": [
+        "C:/Users/AJDigital/Documents/ChatGPT/RESPONSEOS-SECURITY-REMEDIATION/.security-tools/npm/node_modules/npm/bin/npm-cli.js",
+        "audit",
+        "--json"
+      ],
+      "code": 1,
+      "signal": null,
+      "timedOut": false,
+      "elapsedMs": 674
+    },
+    {
+      "name": "prisma-generate",
+      "exe": "C:\\Users\\AJDigital\\Documents\\ChatGPT\\RESPONSEOS-SECURITY-REMEDIATION\\.security-tools\\node-v24.18.0-win-x64\\node.exe",
+      "args": [
+        "C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\checkout\\node_modules\\prisma\\build\\index.js",
+        "generate"
+      ],
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "elapsedMs": 3540
+    },
+    {
+      "name": "build",
+      "exe": "C:\\Users\\AJDigital\\Documents\\ChatGPT\\RESPONSEOS-SECURITY-REMEDIATION\\.security-tools\\node-v24.18.0-win-x64\\node.exe",
+      "args": [
+        "C:/Users/AJDigital/Documents/ChatGPT/RESPONSEOS-SECURITY-REMEDIATION/.security-tools/npm/node_modules/npm/bin/npm-cli.js",
+        "run",
+        "build"
+      ],
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "elapsedMs": 32099
+    }
+  ],
+  "buildSucceeded": true,
+  "sourceHashes": {
+    "package.json": "6bbb596d7c6eef119ae23bb3ec47a8e7caa4274adc422b024870f08553ef5357",
+    "package-lock.json": "eda48be9078f6a00480d683dd7f305ceebaa36cbc8a5f3a84038043b3fb26f2d",
+    "next.config.ts": "8d0048567f877374713215384b45c1600f874c4a2d6a1eb77fdaca71fc2f19bd",
+    "eslint.config.mjs": "ccc27a30982d3668b03a9701c726f769952c76e67cde76e9221a0e4150aa0fc9",
+    "proxy.ts": "4a175dbe83de1ae35f3cd60c300ca96988ee8d46b659a01e80929d39562a35c4"
+  },
+  "packageFilesUnchanged": true,
+  "finishedAt": "2026-10-08T04:52:46.659Z"
+}

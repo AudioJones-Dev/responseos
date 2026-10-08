@@ -1,0 +1,3543 @@
+{
+  "summary": {
+    "capturedAt": "2026-10-08T04:53:43.405Z",
+    "applicationSha": "4e1f353117696658988bca171e4e0e51c0fb1b96",
+    "occurrences": 140,
+    "groups": {
+      "platform-specific": 36,
+      "framework-alias": 27,
+      "optional": 7,
+      "dynamic": 70,
+      "missing": 0
+    },
+    "unknown": 140,
+    "missing": 0,
+    "packagingPass": false,
+    "selectedNativePackages": [
+      {
+        "file": ".next/standalone/node_modules/@img/colour/package.json",
+        "name": "@img/colour",
+        "version": "1.1.0",
+        "dependencies": {},
+        "affected": false
+      },
+      {
+        "file": ".next/standalone/node_modules/@img/sharp-win32-x64/package.json",
+        "name": "@img/sharp-win32-x64",
+        "version": "0.35.5",
+        "dependencies": {},
+        "affected": false
+      }
+    ],
+    "limitations": [
+      "Classification is not closure: all unproven branch mappings remain UNKNOWN",
+      "Public/protected-denial probes cannot establish successful authenticated production execution"
+    ]
+  },
+  "ledger": [
+    {
+      "id": 1,
+      "file": ".next/build/chunks/[root-of-the-server]__1kki86f._.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "3f635a6c1a7bd3d1c1eddd3ab6666b2a42dff3cef0711d28f60de2cddb4b43af",
+        "line": 86,
+        "containingFunction": "<anonymous>",
+        "context": "pluginFactory = require(/* turbopackIgnore: true */ pluginFactory)",
+        "guards": [
+          {
+            "kind": "if",
+            "expression": "typeof pluginFactory === 'string'"
+          },
+          {
+            "kind": "if",
+            "expression": "Array.isArray(plugin)"
+          }
+        ],
+        "input": "pluginFactory"
+      }
+    },
+    {
+      "id": 2,
+      "file": ".next/build/chunks/[turbopack]_runtime.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "f713526546830f70b3100240e905d8651a01a88d80ca0fedc4ad43b20ee6888e",
+        "line": 668,
+        "containingFunction": "externalImport",
+        "context": "await import(id)",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          }
+        ],
+        "input": "id"
+      }
+    },
+    {
+      "id": 3,
+      "file": ".next/build/chunks/[turbopack]_runtime.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "f713526546830f70b3100240e905d8651a01a88d80ca0fedc4ad43b20ee6888e",
+        "line": 787,
+        "containingFunction": "loadRuntimeChunkPath",
+        "context": "chunkModules = require(resolved)",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          }
+        ],
+        "input": "resolved"
+      }
+    },
+    {
+      "id": 4,
+      "file": ".next/build/chunks/[turbopack]_runtime.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "f713526546830f70b3100240e905d8651a01a88d80ca0fedc4ad43b20ee6888e",
+        "line": 816,
+        "containingFunction": "loadChunkAsync",
+        "context": "chunkModules = require(resolved)",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "entry === undefined"
+          }
+        ],
+        "input": "resolved"
+      }
+    },
+    {
+      "id": 5,
+      "file": ".next/server/chunks/[turbopack]_runtime.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "5713316b175983dffa2828678abd618f418611d5076da1ed4bb2cf6df551e39f",
+        "line": 549,
+        "containingFunction": "externalImport",
+        "context": "await import(id)",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          }
+        ],
+        "input": "id"
+      }
+    },
+    {
+      "id": 6,
+      "file": ".next/server/chunks/[turbopack]_runtime.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "5713316b175983dffa2828678abd618f418611d5076da1ed4bb2cf6df551e39f",
+        "line": 668,
+        "containingFunction": "loadRuntimeChunkPath",
+        "context": "chunkModules = require(resolved)",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          }
+        ],
+        "input": "resolved"
+      }
+    },
+    {
+      "id": 7,
+      "file": ".next/server/chunks/[turbopack]_runtime.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "5713316b175983dffa2828678abd618f418611d5076da1ed4bb2cf6df551e39f",
+        "line": 697,
+        "containingFunction": "loadChunkAsync",
+        "context": "chunkModules = require(resolved)",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "entry === undefined"
+          }
+        ],
+        "input": "resolved"
+      }
+    },
+    {
+      "id": 8,
+      "file": ".next/server/chunks/ssr/[turbopack]_runtime.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "fecc24d1f9639b12df3815314ef364d88371097c2c82b19a9d15bd016f761181",
+        "line": 549,
+        "containingFunction": "externalImport",
+        "context": "await import(id)",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          }
+        ],
+        "input": "id"
+      }
+    },
+    {
+      "id": 9,
+      "file": ".next/server/chunks/ssr/[turbopack]_runtime.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "fecc24d1f9639b12df3815314ef364d88371097c2c82b19a9d15bd016f761181",
+        "line": 668,
+        "containingFunction": "loadRuntimeChunkPath",
+        "context": "chunkModules = require(resolved)",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          }
+        ],
+        "input": "resolved"
+      }
+    },
+    {
+      "id": 10,
+      "file": ".next/server/chunks/ssr/[turbopack]_runtime.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "fecc24d1f9639b12df3815314ef364d88371097c2c82b19a9d15bd016f761181",
+        "line": 697,
+        "containingFunction": "loadChunkAsync",
+        "context": "chunkModules = require(resolved)",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "entry === undefined"
+          }
+        ],
+        "input": "resolved"
+      }
+    },
+    {
+      "id": 11,
+      "file": ".next/standalone/.next/server/chunks/[turbopack]_runtime.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "5713316b175983dffa2828678abd618f418611d5076da1ed4bb2cf6df551e39f",
+        "line": 549,
+        "containingFunction": "externalImport",
+        "context": "await import(id)",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          }
+        ],
+        "input": "id"
+      }
+    },
+    {
+      "id": 12,
+      "file": ".next/standalone/.next/server/chunks/[turbopack]_runtime.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "5713316b175983dffa2828678abd618f418611d5076da1ed4bb2cf6df551e39f",
+        "line": 668,
+        "containingFunction": "loadRuntimeChunkPath",
+        "context": "chunkModules = require(resolved)",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          }
+        ],
+        "input": "resolved"
+      }
+    },
+    {
+      "id": 13,
+      "file": ".next/standalone/.next/server/chunks/[turbopack]_runtime.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "5713316b175983dffa2828678abd618f418611d5076da1ed4bb2cf6df551e39f",
+        "line": 697,
+        "containingFunction": "loadChunkAsync",
+        "context": "chunkModules = require(resolved)",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "entry === undefined"
+          }
+        ],
+        "input": "resolved"
+      }
+    },
+    {
+      "id": 14,
+      "file": ".next/standalone/.next/server/chunks/ssr/[turbopack]_runtime.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "fecc24d1f9639b12df3815314ef364d88371097c2c82b19a9d15bd016f761181",
+        "line": 549,
+        "containingFunction": "externalImport",
+        "context": "await import(id)",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          }
+        ],
+        "input": "id"
+      }
+    },
+    {
+      "id": 15,
+      "file": ".next/standalone/.next/server/chunks/ssr/[turbopack]_runtime.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "fecc24d1f9639b12df3815314ef364d88371097c2c82b19a9d15bd016f761181",
+        "line": 668,
+        "containingFunction": "loadRuntimeChunkPath",
+        "context": "chunkModules = require(resolved)",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          }
+        ],
+        "input": "resolved"
+      }
+    },
+    {
+      "id": 16,
+      "file": ".next/standalone/.next/server/chunks/ssr/[turbopack]_runtime.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "fecc24d1f9639b12df3815314ef364d88371097c2c82b19a9d15bd016f761181",
+        "line": 697,
+        "containingFunction": "loadChunkAsync",
+        "context": "chunkModules = require(resolved)",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "entry === undefined"
+          }
+        ],
+        "input": "resolved"
+      }
+    },
+    {
+      "id": 17,
+      "file": ".next/standalone/node_modules/next/dist/build/next-config-ts/transpile-config.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "f0463f9a9ef30586a4c33d2e842e96c85f8c0565a565ad23706ccc0c277e4cfe",
+        "line": 74,
+        "containingFunction": "transpileConfig",
+        "context": "await import((0, _nodeurl.pathToFileURL)(nextConfigPath).href)",
+        "guards": [
+          {
+            "kind": "if",
+            "expression": "process.features.typescript"
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "process.env.__NEXT_NODE_NATIVE_TS_LOADER_ENABLED === 'true'"
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          }
+        ],
+        "input": "(0, _nodeurl.pathToFileURL)(nextConfigPath).href"
+      }
+    },
+    {
+      "id": 18,
+      "file": ".next/standalone/node_modules/next/dist/build/swc/index.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "fae785d84531429ba6515f1b80f3a9c3c184bb8f37412093f4291f3e7acd11bc",
+        "line": 940,
+        "containingFunction": "loadWasmRawBindings",
+        "context": "await import((0, _url.pathToFileURL)(_path.default.join(testWasmDir, 'wasm.js')).toString())",
+        "guards": [
+          {
+            "kind": "if",
+            "expression": "testWasmDir"
+          }
+        ],
+        "input": "(0, _url.pathToFileURL)(_path.default.join(testWasmDir, 'wasm.js')).toString()"
+      }
+    },
+    {
+      "id": 19,
+      "file": ".next/standalone/node_modules/next/dist/build/swc/index.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "fae785d84531429ba6515f1b80f3a9c3c184bb8f37412093f4291f3e7acd11bc",
+        "line": 954,
+        "containingFunction": "loadWasmRawBindings",
+        "context": "await import((0, _url.pathToFileURL)(pkgPath).toString())",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "testWasmDir"
+          }
+        ],
+        "input": "(0, _url.pathToFileURL)(pkgPath).toString()"
+      }
+    },
+    {
+      "id": 20,
+      "file": ".next/standalone/node_modules/next/dist/build/swc/index.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "fae785d84531429ba6515f1b80f3a9c3c184bb8f37412093f4291f3e7acd11bc",
+        "line": 1162,
+        "containingFunction": "loadNative",
+        "context": "customBindingsPath != null ? require(customBindingsPath) : null",
+        "guards": [],
+        "input": "customBindingsPath"
+      }
+    },
+    {
+      "id": 21,
+      "file": ".next/standalone/node_modules/next/dist/build/swc/index.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "fae785d84531429ba6515f1b80f3a9c3c184bb8f37412093f4291f3e7acd11bc",
+        "line": 1174,
+        "containingFunction": "loadNative",
+        "context": "bindings = require(bindingsPath)",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "NEXT_TEST_NATIVE_DIR"
+          }
+        ],
+        "input": "bindingsPath"
+      }
+    },
+    {
+      "id": 22,
+      "file": ".next/standalone/node_modules/next/dist/build/swc/index.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "fae785d84531429ba6515f1b80f3a9c3c184bb8f37412093f4291f3e7acd11bc",
+        "line": 1183,
+        "containingFunction": "loadNative",
+        "context": "bindings = require(normalBinding)",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "process.env.NEXT_TEST_NATIVE_IGNORE_LOCAL_INSTALL !== 'true'"
+          },
+          {
+            "kind": "if",
+            "expression": "NEXT_TEST_NATIVE_DIR"
+          }
+        ],
+        "input": "normalBinding"
+      }
+    },
+    {
+      "id": 23,
+      "file": ".next/standalone/node_modules/next/dist/build/swc/index.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "fae785d84531429ba6515f1b80f3a9c3c184bb8f37412093f4291f3e7acd11bc",
+        "line": 1197,
+        "containingFunction": "loadNative",
+        "context": "bindings = require(pkg)",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!bindings"
+          }
+        ],
+        "input": "pkg"
+      }
+    },
+    {
+      "id": 24,
+      "file": ".next/standalone/node_modules/next/dist/build/swc/index.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "fae785d84531429ba6515f1b80f3a9c3c184bb8f37412093f4291f3e7acd11bc",
+        "line": 1200,
+        "containingFunction": "loadNative",
+        "context": "checkVersionMismatch(require(`${pkg}/package.json`))",
+        "guards": [
+          {
+            "kind": "if",
+            "expression": "!importPath"
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!bindings"
+          }
+        ],
+        "input": "`${pkg}/package.json`"
+      }
+    },
+    {
+      "id": 25,
+      "file": ".next/standalone/node_modules/next/dist/client/components/router-reducer/fetch-server-response.js",
+      "category": "framework-alias",
+      "closure": "UNKNOWN",
+      "reason": "React renderer alias must be linked to the emitted rendering runtime; plain require.resolve is insufficient",
+      "evidence": {
+        "sourceHash": "24857f50a53fc1f8058a0af15b006b3586dc1c581c9feb04443f0f9d284621c5",
+        "line": 48,
+        "containingFunction": null,
+        "context": "_client = require(\"react-server-dom-webpack/client\")",
+        "guards": [],
+        "input": "react-server-dom-webpack/client"
+      }
+    },
+    {
+      "id": 26,
+      "file": ".next/standalone/node_modules/next/dist/client/components/router-reducer/reducers/server-action-reducer.js",
+      "category": "framework-alias",
+      "closure": "UNKNOWN",
+      "reason": "React renderer alias must be linked to the emitted rendering runtime; plain require.resolve is insufficient",
+      "evidence": {
+        "sourceHash": "6187a2db90d83a2b95a842e46efc7c89a2ba38ed559ee26a4955d8cb3fd89673",
+        "line": 16,
+        "containingFunction": null,
+        "context": "_client = require(\"react-server-dom-webpack/client\")",
+        "guards": [],
+        "input": "react-server-dom-webpack/client"
+      }
+    },
+    {
+      "id": 27,
+      "file": ".next/standalone/node_modules/next/dist/compiled/next-server/app-page-turbo-experimental.runtime.prod.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "6d97686ca2924b4353a013d3c15b5c9aedc2c30f964a7e52f2bb3e37b5932888",
+        "line": 182,
+        "containingFunction": "ok",
+        "context": "import(e).then",
+        "guards": [],
+        "input": "e"
+      }
+    },
+    {
+      "id": 28,
+      "file": ".next/standalone/node_modules/next/dist/compiled/next-server/app-page-turbo.runtime.prod.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "ca0f4655986a7c3af2028753e2bc74f3a49a0f1118810459f111f0c9a2f9cdfb",
+        "line": 182,
+        "containingFunction": "ok",
+        "context": "import(e).then",
+        "guards": [],
+        "input": "e"
+      }
+    },
+    {
+      "id": 29,
+      "file": ".next/standalone/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.prod.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "392d5e9bf1289871b5116385d98294761cfe8243af345a88961784870265b8b9",
+        "line": 1,
+        "containingFunction": "tC",
+        "context": "import(e).then",
+        "guards": [],
+        "input": "e"
+      }
+    },
+    {
+      "id": 30,
+      "file": ".next/standalone/node_modules/next/dist/compiled/next-server/pages-turbo.runtime.prod.js",
+      "category": "optional",
+      "closure": "UNKNOWN",
+      "reason": "Feature guard and optional failure handling must be verified for this occurrence",
+      "evidence": {
+        "sourceHash": "0677c6970fed659a28ea40ea93bc6a982ca9bc4254d8ff8935971ac71af454eb",
+        "line": 1,
+        "containingFunction": "critters",
+        "context": "e.exports=require(\"critters\")",
+        "guards": [],
+        "input": "critters"
+      }
+    },
+    {
+      "id": 31,
+      "file": ".next/standalone/node_modules/next/dist/compiled/next-server/pages-turbo.runtime.prod.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "0677c6970fed659a28ea40ea93bc6a982ca9bc4254d8ff8935971ac71af454eb",
+        "line": 1,
+        "containingFunction": "tF",
+        "context": "import(e).then",
+        "guards": [],
+        "input": "e"
+      }
+    },
+    {
+      "id": 32,
+      "file": ".next/standalone/node_modules/next/dist/export/helpers/create-incremental-cache.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "219632b84eee2a3d81a9cfe25c97ac20c3218e8d4a91a3d03d154ea3667d3849",
+        "line": 27,
+        "containingFunction": "createIncrementalCache",
+        "context": "import((0, _formatdynamicimportpath.formatDynamicImportPath)(dir, cacheHandler)).then",
+        "guards": [
+          {
+            "kind": "if",
+            "expression": "cacheHandler"
+          }
+        ],
+        "input": "(0, _formatdynamicimportpath.formatDynamicImportPath)(dir, cacheHandler)"
+      }
+    },
+    {
+      "id": 33,
+      "file": ".next/standalone/node_modules/next/dist/export/helpers/create-incremental-cache.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "219632b84eee2a3d81a9cfe25c97ac20c3218e8d4a91a3d03d154ea3667d3849",
+        "line": 32,
+        "containingFunction": "createIncrementalCache",
+        "context": "import((0, _formatdynamicimportpath.formatDynamicImportPath)(dir, handler)).then",
+        "guards": [
+          {
+            "kind": "if",
+            "expression": "cacheHandlers && (0, _handlers.initializeCacheHandlers)(cacheMaxMemorySize)"
+          }
+        ],
+        "input": "(0, _formatdynamicimportpath.formatDynamicImportPath)(dir, handler)"
+      }
+    },
+    {
+      "id": 34,
+      "file": ".next/standalone/node_modules/next/dist/lib/find-config.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "c47cc064ec1f5f09133a4a13c22ffd0bcc1aafd46a0d28b5fa6227a95586f71a",
+        "line": 77,
+        "containingFunction": "esmImport",
+        "context": "return import((0, _url.pathToFileURL)(path).toString());",
+        "guards": [
+          {
+            "kind": "if",
+            "expression": "process.platform === 'win32' && !process.env.JEST_WORKER_ID"
+          }
+        ],
+        "input": "(0, _url.pathToFileURL)(path).toString()"
+      }
+    },
+    {
+      "id": 35,
+      "file": ".next/standalone/node_modules/next/dist/lib/find-config.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "c47cc064ec1f5f09133a4a13c22ffd0bcc1aafd46a0d28b5fa6227a95586f71a",
+        "line": 79,
+        "containingFunction": "esmImport",
+        "context": "return import(path);",
+        "guards": [
+          {
+            "kind": "if",
+            "expression": "process.platform === 'win32' && !process.env.JEST_WORKER_ID"
+          }
+        ],
+        "input": "path"
+      }
+    },
+    {
+      "id": 36,
+      "file": ".next/standalone/node_modules/next/dist/lib/find-config.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "c47cc064ec1f5f09133a4a13c22ffd0bcc1aafd46a0d28b5fa6227a95586f71a",
+        "line": 87,
+        "containingFunction": "findConfig",
+        "context": "return require(filePath);",
+        "guards": [
+          {
+            "kind": "if",
+            "expression": "isESM"
+          },
+          {
+            "kind": "if",
+            "expression": "filePath.endsWith('.js')"
+          },
+          {
+            "kind": "if",
+            "expression": "filePath"
+          }
+        ],
+        "input": "filePath"
+      }
+    },
+    {
+      "id": 37,
+      "file": ".next/standalone/node_modules/next/dist/lib/find-config.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "c47cc064ec1f5f09133a4a13c22ffd0bcc1aafd46a0d28b5fa6227a95586f71a",
+        "line": 92,
+        "containingFunction": "findConfig",
+        "context": "return require(filePath);",
+        "guards": [
+          {
+            "kind": "if",
+            "expression": "filePath.endsWith('.cjs')"
+          },
+          {
+            "kind": "if",
+            "expression": "filePath.endsWith('.mjs')"
+          },
+          {
+            "kind": "if",
+            "expression": "filePath.endsWith('.js')"
+          },
+          {
+            "kind": "if",
+            "expression": "filePath"
+          }
+        ],
+        "input": "filePath"
+      }
+    },
+    {
+      "id": 38,
+      "file": ".next/standalone/node_modules/next/dist/lib/require-instrumentation-client.js",
+      "category": "optional",
+      "closure": "UNKNOWN",
+      "reason": "Feature guard and optional failure handling must be verified for this occurrence",
+      "evidence": {
+        "sourceHash": "7575e6efcd2407c6bd5493e1730f13ab77df890de08839dc358cc8d7371e30a8",
+        "line": 11,
+        "containingFunction": null,
+        "context": "instrumentationClient = require('private-next-instrumentation-client')",
+        "guards": [
+          {
+            "kind": "if",
+            "expression": "process.env.NODE_ENV === 'development'"
+          }
+        ],
+        "input": "private-next-instrumentation-client"
+      }
+    },
+    {
+      "id": 39,
+      "file": ".next/standalone/node_modules/next/dist/lib/require-instrumentation-client.js",
+      "category": "optional",
+      "closure": "UNKNOWN",
+      "reason": "Feature guard and optional failure handling must be verified for this occurrence",
+      "evidence": {
+        "sourceHash": "7575e6efcd2407c6bd5493e1730f13ab77df890de08839dc358cc8d7371e30a8",
+        "line": 26,
+        "containingFunction": null,
+        "context": "instrumentationClient = require('private-next-instrumentation-client')",
+        "guards": [
+          {
+            "kind": "if",
+            "expression": "process.env.NODE_ENV === 'development'"
+          }
+        ],
+        "input": "private-next-instrumentation-client"
+      }
+    },
+    {
+      "id": 40,
+      "file": ".next/standalone/node_modules/next/dist/lib/verify-partytown-setup.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "9f9c11fec1663a0c825af77ccc0c6df424500c80c690c83c8c796beee386baf5",
+        "line": 81,
+        "containingFunction": "copyPartytownStaticFiles",
+        "context": "Promise.resolve(require(_path.default.join(deps.resolved.get('@builder.io/partytown'), '../utils')))",
+        "guards": [],
+        "input": "_path.default.join(deps.resolved.get('@builder.io/partytown'), '../utils')"
+      }
+    },
+    {
+      "id": 41,
+      "file": ".next/standalone/node_modules/next/dist/lib/verify-typescript-setup.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "5b5dd09d64ceb9fdab76d75d99fc9646341cdd07290ac88756103e7b9fce3db9",
+        "line": 226,
+        "containingFunction": "verifyAndRunTypeScript",
+        "context": "Promise.resolve(require(typeScriptPath))",
+        "guards": [
+          {
+            "kind": "if",
+            "expression": "useTypeScriptCli"
+          },
+          {
+            "kind": "if",
+            "expression": "shouldRunTypeCheck"
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          }
+        ],
+        "input": "typeScriptPath"
+      }
+    },
+    {
+      "id": 42,
+      "file": ".next/standalone/node_modules/next/dist/server/app-render/collect-segment-data.js",
+      "category": "framework-alias",
+      "closure": "UNKNOWN",
+      "reason": "React renderer alias must be linked to the emitted rendering runtime; plain require.resolve is insufficient",
+      "evidence": {
+        "sourceHash": "43ca5a46c6baa8b441bc34f5a45ac33b34134b36e23f29ff91e0340824bd06e3",
+        "line": 25,
+        "containingFunction": null,
+        "context": "_client = require(\"react-server-dom-webpack/client\")",
+        "guards": [],
+        "input": "react-server-dom-webpack/client"
+      }
+    },
+    {
+      "id": 43,
+      "file": ".next/standalone/node_modules/next/dist/server/app-render/collect-segment-data.js",
+      "category": "framework-alias",
+      "closure": "UNKNOWN",
+      "reason": "React renderer alias must be linked to the emitted rendering runtime; plain require.resolve is insufficient",
+      "evidence": {
+        "sourceHash": "43ca5a46c6baa8b441bc34f5a45ac33b34134b36e23f29ff91e0340824bd06e3",
+        "line": 26,
+        "containingFunction": null,
+        "context": "_static = require(\"react-server-dom-webpack/static\")",
+        "guards": [],
+        "input": "react-server-dom-webpack/static"
+      }
+    },
+    {
+      "id": 44,
+      "file": ".next/standalone/node_modules/next/dist/server/app-render/collect-segment-data.js",
+      "category": "framework-alias",
+      "closure": "UNKNOWN",
+      "reason": "React renderer alias must be linked to the emitted rendering runtime; plain require.resolve is insufficient",
+      "evidence": {
+        "sourceHash": "43ca5a46c6baa8b441bc34f5a45ac33b34134b36e23f29ff91e0340824bd06e3",
+        "line": 27,
+        "containingFunction": null,
+        "context": "_server = require(\"react-server-dom-webpack/server\")",
+        "guards": [],
+        "input": "react-server-dom-webpack/server"
+      }
+    },
+    {
+      "id": 45,
+      "file": ".next/standalone/node_modules/next/dist/server/app-render/encryption.js",
+      "category": "framework-alias",
+      "closure": "UNKNOWN",
+      "reason": "React renderer alias must be linked to the emitted rendering runtime; plain require.resolve is insufficient",
+      "evidence": {
+        "sourceHash": "5e5e7438b6193445df7103ba7bfc45f09c049f0136308292aa2bdec97b15bf74",
+        "line": 24,
+        "containingFunction": null,
+        "context": "_server = require(\"react-server-dom-webpack/server\")",
+        "guards": [],
+        "input": "react-server-dom-webpack/server"
+      }
+    },
+    {
+      "id": 46,
+      "file": ".next/standalone/node_modules/next/dist/server/app-render/encryption.js",
+      "category": "framework-alias",
+      "closure": "UNKNOWN",
+      "reason": "React renderer alias must be linked to the emitted rendering runtime; plain require.resolve is insufficient",
+      "evidence": {
+        "sourceHash": "5e5e7438b6193445df7103ba7bfc45f09c049f0136308292aa2bdec97b15bf74",
+        "line": 25,
+        "containingFunction": null,
+        "context": "_client = require(\"react-server-dom-webpack/client\")",
+        "guards": [],
+        "input": "react-server-dom-webpack/client"
+      }
+    },
+    {
+      "id": 47,
+      "file": ".next/standalone/node_modules/next/dist/server/app-render/entry-base.js",
+      "category": "framework-alias",
+      "closure": "UNKNOWN",
+      "reason": "React renderer alias must be linked to the emitted rendering runtime; plain require.resolve is insufficient",
+      "evidence": {
+        "sourceHash": "38d5d0cc5183976e1cfafe017a8c4b19e5c250cc77a2d9014a16ea7a33829869",
+        "line": 160,
+        "containingFunction": null,
+        "context": "_server = require(\"react-server-dom-webpack/server\")",
+        "guards": [],
+        "input": "react-server-dom-webpack/server"
+      }
+    },
+    {
+      "id": 48,
+      "file": ".next/standalone/node_modules/next/dist/server/app-render/entry-base.js",
+      "category": "framework-alias",
+      "closure": "UNKNOWN",
+      "reason": "React renderer alias must be linked to the emitted rendering runtime; plain require.resolve is insufficient",
+      "evidence": {
+        "sourceHash": "38d5d0cc5183976e1cfafe017a8c4b19e5c250cc77a2d9014a16ea7a33829869",
+        "line": 161,
+        "containingFunction": null,
+        "context": "_static = require(\"react-server-dom-webpack/static\")",
+        "guards": [],
+        "input": "react-server-dom-webpack/static"
+      }
+    },
+    {
+      "id": 49,
+      "file": ".next/standalone/node_modules/next/dist/server/app-render/entry-base.js",
+      "category": "framework-alias",
+      "closure": "UNKNOWN",
+      "reason": "React renderer alias must be linked to the emitted rendering runtime; plain require.resolve is insufficient",
+      "evidence": {
+        "sourceHash": "38d5d0cc5183976e1cfafe017a8c4b19e5c250cc77a2d9014a16ea7a33829869",
+        "line": 230,
+        "containingFunction": null,
+        "context": "require('react-server-dom-webpack/server.node').renderToPipeableStream",
+        "guards": [
+          {
+            "kind": "if",
+            "expression": "process.env.__NEXT_USE_NODE_STREAMS"
+          }
+        ],
+        "input": "react-server-dom-webpack/server.node"
+      }
+    },
+    {
+      "id": 50,
+      "file": ".next/standalone/node_modules/next/dist/server/app-render/entry-base.js",
+      "category": "framework-alias",
+      "closure": "UNKNOWN",
+      "reason": "React renderer alias must be linked to the emitted rendering runtime; plain require.resolve is insufficient",
+      "evidence": {
+        "sourceHash": "38d5d0cc5183976e1cfafe017a8c4b19e5c250cc77a2d9014a16ea7a33829869",
+        "line": 231,
+        "containingFunction": null,
+        "context": "require('react-server-dom-webpack/static').prerenderToNodeStream",
+        "guards": [
+          {
+            "kind": "if",
+            "expression": "process.env.__NEXT_USE_NODE_STREAMS"
+          }
+        ],
+        "input": "react-server-dom-webpack/static"
+      }
+    },
+    {
+      "id": 51,
+      "file": ".next/standalone/node_modules/next/dist/server/app-render/instant-validation/instant-validation.js",
+      "category": "framework-alias",
+      "closure": "UNKNOWN",
+      "reason": "React renderer alias must be linked to the emitted rendering runtime; plain require.resolve is insufficient",
+      "evidence": {
+        "sourceHash": "5cf58b3391a8230036895997939a3ee46562e51279bcecf45ce84ca641a8c01b",
+        "line": 49,
+        "containingFunction": null,
+        "context": "_client = require(\"react-server-dom-webpack/client\")",
+        "guards": [],
+        "input": "react-server-dom-webpack/client"
+      }
+    },
+    {
+      "id": 52,
+      "file": ".next/standalone/node_modules/next/dist/server/app-render/react-server.node.js",
+      "category": "framework-alias",
+      "closure": "UNKNOWN",
+      "reason": "React renderer alias must be linked to the emitted rendering runtime; plain require.resolve is insufficient",
+      "evidence": {
+        "sourceHash": "dc284f03403f0e08d2d4ef0ec797a08cbe682cdf009971771f00e7528ac9fbd5",
+        "line": 37,
+        "containingFunction": null,
+        "context": "_servernode = require(\"react-server-dom-webpack/server.node\")",
+        "guards": [],
+        "input": "react-server-dom-webpack/server.node"
+      }
+    },
+    {
+      "id": 53,
+      "file": ".next/standalone/node_modules/next/dist/server/app-render/use-flight-response.js",
+      "category": "framework-alias",
+      "closure": "UNKNOWN",
+      "reason": "React renderer alias must be linked to the emitted rendering runtime; plain require.resolve is insufficient",
+      "evidence": {
+        "sourceHash": "391c824c655779711fba0130574ed00c5720b9c4e262d3b40d4af78daf973638",
+        "line": 53,
+        "containingFunction": "getFlightStream",
+        "context": "{ createFromReadableStream } = // eslint-disable-next-line import/no-extraneous-dependencies\n        require('react-server-dom-webpack/client')",
+        "guards": [
+          {
+            "kind": "if",
+            "expression": "flightStream instanceof ReadableStream"
+          }
+        ],
+        "input": "react-server-dom-webpack/client"
+      }
+    },
+    {
+      "id": 54,
+      "file": ".next/standalone/node_modules/next/dist/server/app-render/use-flight-response.js",
+      "category": "framework-alias",
+      "closure": "UNKNOWN",
+      "reason": "React renderer alias must be linked to the emitted rendering runtime; plain require.resolve is insufficient",
+      "evidence": {
+        "sourceHash": "391c824c655779711fba0130574ed00c5720b9c4e262d3b40d4af78daf973638",
+        "line": 89,
+        "containingFunction": "getFlightStream",
+        "context": "{ createFromNodeStream } = // eslint-disable-next-line import/no-extraneous-dependencies\n            require('react-server-dom-webpack/client')",
+        "guards": [
+          {
+            "kind": "if",
+            "expression": "process.env.NEXT_RUNTIME === 'edge'"
+          },
+          {
+            "kind": "if",
+            "expression": "flightStream instanceof ReadableStream"
+          }
+        ],
+        "input": "react-server-dom-webpack/client"
+      }
+    },
+    {
+      "id": 55,
+      "file": ".next/standalone/node_modules/next/dist/server/config.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "414ec6c117f8798db7ef983910e34a44da0822d850758279b2868e59dcd583b5",
+        "line": 1301,
+        "containingFunction": "applyModifyConfig",
+        "context": "await import((0, _url.pathToFileURL)(require.resolve(config.adapterPath)).href)",
+        "guards": [
+          {
+            "kind": "if",
+            "expression": "config.adapterPath"
+          }
+        ],
+        "input": "(0, _url.pathToFileURL)(require.resolve(config.adapterPath)).href"
+      }
+    },
+    {
+      "id": 56,
+      "file": ".next/standalone/node_modules/next/dist/server/config.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "414ec6c117f8798db7ef983910e34a44da0822d850758279b2868e59dcd583b5",
+        "line": 1446,
+        "containingFunction": "loadConfigImpl",
+        "context": "userConfigModule = require(path)",
+        "guards": [
+          {
+            "kind": "if",
+            "expression": "process.env.__NEXT_TEST_MODE === 'jest'"
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "path == null ? void 0 : path.length"
+          }
+        ],
+        "input": "path"
+      }
+    },
+    {
+      "id": 57,
+      "file": ".next/standalone/node_modules/next/dist/server/config.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "414ec6c117f8798db7ef983910e34a44da0822d850758279b2868e59dcd583b5",
+        "line": 1453,
+        "containingFunction": "loadConfigImpl",
+        "context": "await import((0, _url.pathToFileURL)(path).href)",
+        "guards": [
+          {
+            "kind": "if",
+            "expression": "configFileName === 'next.config.ts'"
+          },
+          {
+            "kind": "if",
+            "expression": "process.env.__NEXT_TEST_MODE === 'jest'"
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "path == null ? void 0 : path.length"
+          }
+        ],
+        "input": "(0, _url.pathToFileURL)(path).href"
+      }
+    },
+    {
+      "id": 58,
+      "file": ".next/standalone/node_modules/next/dist/server/dev/use-cache-probe-worker.js",
+      "category": "framework-alias",
+      "closure": "UNKNOWN",
+      "reason": "React renderer alias must be linked to the emitted rendering runtime; plain require.resolve is insufficient",
+      "evidence": {
+        "sourceHash": "75e82d1de04b8d7513d4bfcf3d254c6019daa6d080bcabc1d2742cca6a4ba08e",
+        "line": 21,
+        "containingFunction": null,
+        "context": "_server = require(\"react-server-dom-webpack/server\")",
+        "guards": [],
+        "input": "react-server-dom-webpack/server"
+      }
+    },
+    {
+      "id": 59,
+      "file": ".next/standalone/node_modules/next/dist/server/lib/module-loader/node-module-loader.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "ee6fc7a6240bab381d7140acca7fb062cf383fd1639898a368522e4728437c6c",
+        "line": 15,
+        "containingFunction": "load",
+        "context": "process.env.NEXT_MINIMAL ? __non_webpack_require__(id) : require(id)",
+        "guards": [
+          {
+            "kind": "if",
+            "expression": "process.env.NEXT_RUNTIME !== 'edge'"
+          }
+        ],
+        "input": "id"
+      }
+    },
+    {
+      "id": 60,
+      "file": ".next/standalone/node_modules/next/dist/server/lib/render-server.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "fce73f9a2b887b4a481a5f71fdcd80075f970d73c5e8332caa4dad9e525ceefe",
+        "line": 110,
+        "containingFunction": "initializeImpl",
+        "context": "await import((0, _formatdynamicimportpath.formatDynamicImportPath)(opts.dir, process.env.NEXT_PRIVATE_DEBUG_CACHE_ENTRY_HANDLERS))",
+        "guards": [
+          {
+            "kind": "if",
+            "expression": "process.env.__NEXT_TEST_MODE && process.env.NEXT_PRIVATE_DEBUG_CACHE_ENTRY_HANDLERS"
+          }
+        ],
+        "input": "(0, _formatdynamicimportpath.formatDynamicImportPath)(opts.dir, process.env.NEXT_PRIVATE_DEBUG_CACHE_ENTRY_HANDLERS)"
+      }
+    },
+    {
+      "id": 61,
+      "file": ".next/standalone/node_modules/next/dist/server/lib/router-utils/instrumentation-globals.external.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "e989508c9687f206db03311c8c5c4eab121d07887113fbeb2e28a7685b513c83",
+        "line": 43,
+        "containingFunction": "getInstrumentationModule",
+        "context": "await require(_nodepath.default.join(projectDir, distDir, 'server', `${_constants.INSTRUMENTATION_HOOK_FILENAME}.js`))",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          }
+        ],
+        "input": "_nodepath.default.join(projectDir, distDir, 'server', `${_constants.INSTRUMENTATION_HOOK_FILENAME}.js`)"
+      }
+    },
+    {
+      "id": 62,
+      "file": ".next/standalone/node_modules/next/dist/server/lib/router-utils/instrumentation-node-extensions.js",
+      "category": "optional",
+      "closure": "UNKNOWN",
+      "reason": "Feature guard and optional failure handling must be verified for this occurrence",
+      "evidence": {
+        "sourceHash": "df60ab75fe98c4ba2a14a7f104de691db1a32b1eac98b14a8f66405b729b0dfb",
+        "line": 45,
+        "containingFunction": "extendTracerProviderForCacheComponents",
+        "context": "api = require('@opentelemetry/api')",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          }
+        ],
+        "input": "@opentelemetry/api"
+      }
+    },
+    {
+      "id": 63,
+      "file": ".next/standalone/node_modules/next/dist/server/lib/trace/tracer.js",
+      "category": "optional",
+      "closure": "UNKNOWN",
+      "reason": "Feature guard and optional failure handling must be verified for this occurrence",
+      "evidence": {
+        "sourceHash": "aae768397615e6d77b938d43a1a30cb561fb66d14087e4b26632c3589946a50f",
+        "line": 55,
+        "containingFunction": null,
+        "context": "api = require('@opentelemetry/api')",
+        "guards": [
+          {
+            "kind": "if",
+            "expression": "process.env.NEXT_RUNTIME === 'edge'"
+          }
+        ],
+        "input": "@opentelemetry/api"
+      }
+    },
+    {
+      "id": 64,
+      "file": ".next/standalone/node_modules/next/dist/server/lib/trace/tracer.js",
+      "category": "optional",
+      "closure": "UNKNOWN",
+      "reason": "Feature guard and optional failure handling must be verified for this occurrence",
+      "evidence": {
+        "sourceHash": "aae768397615e6d77b938d43a1a30cb561fb66d14087e4b26632c3589946a50f",
+        "line": 58,
+        "containingFunction": null,
+        "context": "api = require('@opentelemetry/api')",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "process.env.NEXT_RUNTIME === 'edge'"
+          }
+        ],
+        "input": "@opentelemetry/api"
+      }
+    },
+    {
+      "id": 65,
+      "file": ".next/standalone/node_modules/next/dist/server/next-server.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "ea4ac481eecd1078ca634cc76ee494b3da6b661aa396148281b79609da675d1f",
+        "line": 131,
+        "containingFunction": "<anonymous>",
+        "context": "import(/* webpackIgnore: true */ id).then",
+        "guards": [],
+        "input": "id"
+      }
+    },
+    {
+      "id": 66,
+      "file": ".next/standalone/node_modules/next/dist/server/next-server.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "ea4ac481eecd1078ca634cc76ee494b3da6b661aa396148281b79609da675d1f",
+        "line": 131,
+        "containingFunction": "<anonymous>",
+        "context": "import(id).then",
+        "guards": [],
+        "input": "id"
+      }
+    },
+    {
+      "id": 67,
+      "file": ".next/standalone/node_modules/next/dist/server/next-server.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "ea4ac481eecd1078ca634cc76ee494b3da6b661aa396148281b79609da675d1f",
+        "line": 1005,
+        "containingFunction": "getMiddlewareManifest",
+        "context": "manifest = require(this.middlewareManifestPath)",
+        "guards": [
+          {
+            "kind": "if",
+            "expression": "this.minimalMode"
+          }
+        ],
+        "input": "this.middlewareManifestPath"
+      }
+    },
+    {
+      "id": 68,
+      "file": ".next/standalone/node_modules/next/dist/server/next-server.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "ea4ac481eecd1078ca634cc76ee494b3da6b661aa396148281b79609da675d1f",
+        "line": 1083,
+        "containingFunction": "loadNodeMiddleware",
+        "context": "this.dev ? {} : require((0, _path.join)(/* turbopackIgnore: true */ this.distDir, 'server', _constants.FUNCTIONS_CONFIG_MANIFEST))",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!process.env.NEXT_MINIMAL"
+          }
+        ],
+        "input": "(0, _path.join)(/* turbopackIgnore: true */ this.distDir, 'server', _constants.FUNCTIONS_CONFIG_MANIFEST)"
+      }
+    },
+    {
+      "id": 69,
+      "file": ".next/standalone/node_modules/next/dist/server/next-server.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "ea4ac481eecd1078ca634cc76ee494b3da6b661aa396148281b79609da675d1f",
+        "line": 1086,
+        "containingFunction": "loadNodeMiddleware",
+        "context": "return require((0, _path.join)(/* turbopackIgnore: true */ this.distDir, 'server', 'middleware.js'));",
+        "guards": [
+          {
+            "kind": "if",
+            "expression": "this.dev || (functionsConfig == null ? void 0 : (_functionsConfig_functions = functionsConfig.functions) == null ? void 0 : _functionsConfig_functions['/_middleware'])"
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!process.env.NEXT_MINIMAL"
+          }
+        ],
+        "input": "(0, _path.join)(/* turbopackIgnore: true */ this.distDir, 'server', 'middleware.js')"
+      }
+    },
+    {
+      "id": 70,
+      "file": ".next/standalone/node_modules/next/dist/server/next.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "7f5e6d550be3bfb73ca7f0668bf82dcf1130f63202c15e4d282ee5f130f75bc6",
+        "line": 227,
+        "containingFunction": "[SYMBOL_LOAD_CONFIG]",
+        "context": "require(/* turbopackIgnore: true */ _nodepath.default.join(/* turbopackIgnore: true */ dir, config.distDir, _constants1.SERVER_FILES_MANIFEST + '.json')).config",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!this.options.dev"
+          }
+        ],
+        "input": "_nodepath.default.join(/* turbopackIgnore: true */ dir, config.distDir, _constants1.SERVER_FILES_MANIFEST + '.json')"
+      }
+    },
+    {
+      "id": 71,
+      "file": ".next/standalone/node_modules/next/dist/server/og/cache-image-response.js",
+      "category": "framework-alias",
+      "closure": "UNKNOWN",
+      "reason": "React renderer alias must be linked to the emitted rendering runtime; plain require.resolve is insufficient",
+      "evidence": {
+        "sourceHash": "18b968097c563c4beffe68440d93c88f5ca4ff522753a1173f579ab14a6a3cd0",
+        "line": 19,
+        "containingFunction": null,
+        "context": "_static = require(\"react-server-dom-webpack/static\")",
+        "guards": [],
+        "input": "react-server-dom-webpack/static"
+      }
+    },
+    {
+      "id": 72,
+      "file": ".next/standalone/node_modules/next/dist/server/og/cache-image-response.js",
+      "category": "framework-alias",
+      "closure": "UNKNOWN",
+      "reason": "React renderer alias must be linked to the emitted rendering runtime; plain require.resolve is insufficient",
+      "evidence": {
+        "sourceHash": "18b968097c563c4beffe68440d93c88f5ca4ff522753a1173f579ab14a6a3cd0",
+        "line": 20,
+        "containingFunction": null,
+        "context": "_client = require(\"react-server-dom-webpack/client\")",
+        "guards": [],
+        "input": "react-server-dom-webpack/client"
+      }
+    },
+    {
+      "id": 73,
+      "file": ".next/standalone/node_modules/next/dist/server/og/image-response.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "c729bcd074f97eada3bd3f09366431ab236c2c9c8c38851a59df9ba705259a0d",
+        "line": 12,
+        "containingFunction": "importModule",
+        "context": "return import(process.env.NEXT_RUNTIME === 'edge' ? 'next/dist/compiled/@vercel/og/index.edge.js' : 'next/dist/compiled/@vercel/og/index.node.js');",
+        "guards": [],
+        "input": "process.env.NEXT_RUNTIME === 'edge' ? 'next/dist/compiled/@vercel/og/index.edge.js' : 'next/dist/compiled/@vercel/og/index.node.js'"
+      }
+    },
+    {
+      "id": 74,
+      "file": ".next/standalone/node_modules/next/dist/server/post-process.js",
+      "category": "optional",
+      "closure": "UNKNOWN",
+      "reason": "Feature guard and optional failure handling must be verified for this occurrence",
+      "evidence": {
+        "sourceHash": "8d4e89e6a039edd832843e9467a60cc219278336d8310a9769f9f31d3c563597",
+        "line": 16,
+        "containingFunction": "<anonymous>",
+        "context": "Critters = require('critters')",
+        "guards": [],
+        "input": "critters"
+      }
+    },
+    {
+      "id": 75,
+      "file": ".next/standalone/node_modules/next/dist/server/require.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "c4ea56c67a3f7a049f36c09d0a4ebc09ddf0ca30ea78885016033186410d3875",
+        "line": 105,
+        "containingFunction": "requirePage",
+        "context": "process.env.NEXT_MINIMAL ? __non_webpack_require__(pagePath) : require(/* turbopackIgnore: true */ pagePath)",
+        "guards": [],
+        "input": "pagePath"
+      }
+    },
+    {
+      "id": 76,
+      "file": ".next/standalone/node_modules/next/dist/server/route-matcher-providers/helpers/manifest-loaders/node-manifest-loader.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "85ac0ac32a9e15ff3d8f36b73d44365539d19f9dffa3d0ae91b5b12a23fe6277",
+        "line": 24,
+        "containingFunction": "require",
+        "context": "return require(id);",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          }
+        ],
+        "input": "id"
+      }
+    },
+    {
+      "id": 77,
+      "file": ".next/standalone/node_modules/next/dist/server/route-modules/app-page/vendored/rsc/entrypoints.js",
+      "category": "framework-alias",
+      "closure": "UNKNOWN",
+      "reason": "React renderer alias must be linked to the emitted rendering runtime; plain require.resolve is insufficient",
+      "evidence": {
+        "sourceHash": "51b1c04a718e6f5ff362a68c8506dc53680ddf48852d59db50fe7f747d0c982c",
+        "line": 117,
+        "containingFunction": null,
+        "context": "ReactServerDOMTurbopackServer = // @ts-expect-error -- TODO: Add types\n    // eslint-disable-next-line import/no-extraneous-dependencies\n    require('react-server-dom-turbopack/server')",
+        "guards": [
+          {
+            "kind": "if",
+            "expression": "process.env.TURBOPACK"
+          }
+        ],
+        "input": "react-server-dom-turbopack/server"
+      }
+    },
+    {
+      "id": 78,
+      "file": ".next/standalone/node_modules/next/dist/server/route-modules/app-page/vendored/rsc/entrypoints.js",
+      "category": "framework-alias",
+      "closure": "UNKNOWN",
+      "reason": "React renderer alias must be linked to the emitted rendering runtime; plain require.resolve is insufficient",
+      "evidence": {
+        "sourceHash": "51b1c04a718e6f5ff362a68c8506dc53680ddf48852d59db50fe7f747d0c982c",
+        "line": 123,
+        "containingFunction": null,
+        "context": "ReactServerDOMTurbopackStatic = // @ts-expect-error -- TODO: Add types\n    // eslint-disable-next-line import/no-extraneous-dependencies\n    require('react-server-dom-turbopack/static')",
+        "guards": [
+          {
+            "kind": "if",
+            "expression": "process.env.TURBOPACK"
+          }
+        ],
+        "input": "react-server-dom-turbopack/static"
+      }
+    },
+    {
+      "id": 79,
+      "file": ".next/standalone/node_modules/next/dist/server/route-modules/app-page/vendored/rsc/entrypoints.js",
+      "category": "framework-alias",
+      "closure": "UNKNOWN",
+      "reason": "React renderer alias must be linked to the emitted rendering runtime; plain require.resolve is insufficient",
+      "evidence": {
+        "sourceHash": "51b1c04a718e6f5ff362a68c8506dc53680ddf48852d59db50fe7f747d0c982c",
+        "line": 129,
+        "containingFunction": null,
+        "context": "ReactServerDOMWebpackServer = // eslint-disable-next-line import/no-extraneous-dependencies\n    require('react-server-dom-webpack/server')",
+        "guards": [
+          {
+            "kind": "if",
+            "expression": "process.env.TURBOPACK"
+          }
+        ],
+        "input": "react-server-dom-webpack/server"
+      }
+    },
+    {
+      "id": 80,
+      "file": ".next/standalone/node_modules/next/dist/server/route-modules/app-page/vendored/rsc/entrypoints.js",
+      "category": "framework-alias",
+      "closure": "UNKNOWN",
+      "reason": "React renderer alias must be linked to the emitted rendering runtime; plain require.resolve is insufficient",
+      "evidence": {
+        "sourceHash": "51b1c04a718e6f5ff362a68c8506dc53680ddf48852d59db50fe7f747d0c982c",
+        "line": 134,
+        "containingFunction": null,
+        "context": "ReactServerDOMWebpackStatic = // eslint-disable-next-line import/no-extraneous-dependencies\n    require('react-server-dom-webpack/static')",
+        "guards": [
+          {
+            "kind": "if",
+            "expression": "process.env.TURBOPACK"
+          }
+        ],
+        "input": "react-server-dom-webpack/static"
+      }
+    },
+    {
+      "id": 81,
+      "file": ".next/standalone/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/entrypoints.js",
+      "category": "framework-alias",
+      "closure": "UNKNOWN",
+      "reason": "React renderer alias must be linked to the emitted rendering runtime; plain require.resolve is insufficient",
+      "evidence": {
+        "sourceHash": "c93cb2d4e4e51a516404bbfc1404849aa049239d980bbb7221fd1ce10e13a4b2",
+        "line": 113,
+        "containingFunction": null,
+        "context": "ReactServerDOMTurbopackClient = // @ts-expect-error -- TODO: Add types\n    // eslint-disable-next-line import/no-extraneous-dependencies\n    require('react-server-dom-turbopack/client')",
+        "guards": [
+          {
+            "kind": "if",
+            "expression": "process.env.TURBOPACK"
+          }
+        ],
+        "input": "react-server-dom-turbopack/client"
+      }
+    },
+    {
+      "id": 82,
+      "file": ".next/standalone/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/entrypoints.js",
+      "category": "framework-alias",
+      "closure": "UNKNOWN",
+      "reason": "React renderer alias must be linked to the emitted rendering runtime; plain require.resolve is insufficient",
+      "evidence": {
+        "sourceHash": "c93cb2d4e4e51a516404bbfc1404849aa049239d980bbb7221fd1ce10e13a4b2",
+        "line": 119,
+        "containingFunction": null,
+        "context": "ReactServerDOMWebpackClient = // eslint-disable-next-line import/no-extraneous-dependencies\n    require('react-server-dom-webpack/client')",
+        "guards": [
+          {
+            "kind": "if",
+            "expression": "process.env.TURBOPACK"
+          }
+        ],
+        "input": "react-server-dom-webpack/client"
+      }
+    },
+    {
+      "id": 83,
+      "file": ".next/standalone/node_modules/next/dist/server/route-modules/route-module.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "649af4a92e4d2da56c5586a29ffc1efe1fc3128b2c20c7ee385bfef1eefb0878",
+        "line": 43,
+        "containingFunction": "dynamicImportEsmDefault",
+        "context": "import(/* webpackIgnore: true */ /* turbopackIgnore: true */ id).then",
+        "guards": [],
+        "input": "id"
+      }
+    },
+    {
+      "id": 84,
+      "file": ".next/standalone/node_modules/next/dist/server/use-cache/use-cache-wrapper.js",
+      "category": "framework-alias",
+      "closure": "UNKNOWN",
+      "reason": "React renderer alias must be linked to the emitted rendering runtime; plain require.resolve is insufficient",
+      "evidence": {
+        "sourceHash": "fcc4f9e8eb6461a476c085d231888df4b160277471a6c6224ba593f33a30e954",
+        "line": 11,
+        "containingFunction": null,
+        "context": "_server = require(\"react-server-dom-webpack/server\")",
+        "guards": [],
+        "input": "react-server-dom-webpack/server"
+      }
+    },
+    {
+      "id": 85,
+      "file": ".next/standalone/node_modules/next/dist/server/use-cache/use-cache-wrapper.js",
+      "category": "framework-alias",
+      "closure": "UNKNOWN",
+      "reason": "React renderer alias must be linked to the emitted rendering runtime; plain require.resolve is insufficient",
+      "evidence": {
+        "sourceHash": "fcc4f9e8eb6461a476c085d231888df4b160277471a6c6224ba593f33a30e954",
+        "line": 12,
+        "containingFunction": null,
+        "context": "_client = require(\"react-server-dom-webpack/client\")",
+        "guards": [],
+        "input": "react-server-dom-webpack/client"
+      }
+    },
+    {
+      "id": 86,
+      "file": ".next/standalone/node_modules/next/dist/server/use-cache/use-cache-wrapper.js",
+      "category": "framework-alias",
+      "closure": "UNKNOWN",
+      "reason": "React renderer alias must be linked to the emitted rendering runtime; plain require.resolve is insufficient",
+      "evidence": {
+        "sourceHash": "fcc4f9e8eb6461a476c085d231888df4b160277471a6c6224ba593f33a30e954",
+        "line": 13,
+        "containingFunction": null,
+        "context": "_static = require(\"react-server-dom-webpack/static\")",
+        "guards": [],
+        "input": "react-server-dom-webpack/static"
+      }
+    },
+    {
+      "id": 87,
+      "file": ".next/standalone/node_modules/next/dist/telemetry/events/plugins.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "5efcedcf6d819e862c0c54d2594d34de84e3757f518c260e8dbdb06de08aa17a",
+        "line": 26,
+        "containingFunction": "eventNextPlugins",
+        "context": "{ dependencies = {}, devDependencies = {} } = require(packageJsonPath)",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          }
+        ],
+        "input": "packageJsonPath"
+      }
+    },
+    {
+      "id": 88,
+      "file": ".next/standalone/node_modules/next/dist/telemetry/events/swc-load-failure.js",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "1d598187394fd8a76eb296941d13244e6df55c3379f86491a5247bc2a1ec0c71",
+        "line": 30,
+        "containingFunction": "eventSwcLoadFailure",
+        "context": "{ version } = require(`${pkg}/package.json`)",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          }
+        ],
+        "input": "`${pkg}/package.json`"
+      }
+    },
+    {
+      "id": 89,
+      "file": ".next/standalone/node_modules/sharp/dist/libvips.cjs",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "3419f6cb4303feaf4a76abe122ce1caf5dc755f9f17fa013afd5561827b61062",
+        "line": 54,
+        "containingFunction": "buildSharpLibvipsIncludeDir",
+        "context": "return require(`@img/sharp-libvips-dev-${buildPlatformArch()}/include`);",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          }
+        ],
+        "input": "`@img/sharp-libvips-dev-${buildPlatformArch()}/include`"
+      }
+    },
+    {
+      "id": 90,
+      "file": ".next/standalone/node_modules/sharp/dist/libvips.cjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "3419f6cb4303feaf4a76abe122ce1caf5dc755f9f17fa013afd5561827b61062",
+        "line": 57,
+        "containingFunction": "buildSharpLibvipsIncludeDir",
+        "context": "return require('@img/sharp-libvips-dev/include');",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          }
+        ],
+        "input": "@img/sharp-libvips-dev/include"
+      }
+    },
+    {
+      "id": 91,
+      "file": ".next/standalone/node_modules/sharp/dist/libvips.cjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "3419f6cb4303feaf4a76abe122ce1caf5dc755f9f17fa013afd5561827b61062",
+        "line": 65,
+        "containingFunction": "buildSharpLibvipsCPlusPlusDir",
+        "context": "return require('@img/sharp-libvips-dev/cplusplus');",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          }
+        ],
+        "input": "@img/sharp-libvips-dev/cplusplus"
+      }
+    },
+    {
+      "id": 92,
+      "file": ".next/standalone/node_modules/sharp/dist/libvips.cjs",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "3419f6cb4303feaf4a76abe122ce1caf5dc755f9f17fa013afd5561827b61062",
+        "line": 72,
+        "containingFunction": "buildSharpLibvipsLibDir",
+        "context": "return require(`@img/sharp-libvips-dev-${buildPlatformArch()}/lib`);",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          }
+        ],
+        "input": "`@img/sharp-libvips-dev-${buildPlatformArch()}/lib`"
+      }
+    },
+    {
+      "id": 93,
+      "file": ".next/standalone/node_modules/sharp/dist/libvips.cjs",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "3419f6cb4303feaf4a76abe122ce1caf5dc755f9f17fa013afd5561827b61062",
+        "line": 75,
+        "containingFunction": "buildSharpLibvipsLibDir",
+        "context": "return require(`@img/sharp-libvips-${buildPlatformArch()}/lib`);",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          }
+        ],
+        "input": "`@img/sharp-libvips-${buildPlatformArch()}/lib`"
+      }
+    },
+    {
+      "id": 94,
+      "file": ".next/standalone/node_modules/sharp/dist/libvips.mjs",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "d9984601b0aafe44c393b29ce4b0712b1c40890c3d740d4fda49842a4ea5873d",
+        "line": 54,
+        "containingFunction": "buildSharpLibvipsIncludeDir",
+        "context": "return require(`@img/sharp-libvips-dev-${buildPlatformArch()}/include`);",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          }
+        ],
+        "input": "`@img/sharp-libvips-dev-${buildPlatformArch()}/include`"
+      }
+    },
+    {
+      "id": 95,
+      "file": ".next/standalone/node_modules/sharp/dist/libvips.mjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "d9984601b0aafe44c393b29ce4b0712b1c40890c3d740d4fda49842a4ea5873d",
+        "line": 57,
+        "containingFunction": "buildSharpLibvipsIncludeDir",
+        "context": "return require('@img/sharp-libvips-dev/include');",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          }
+        ],
+        "input": "@img/sharp-libvips-dev/include"
+      }
+    },
+    {
+      "id": 96,
+      "file": ".next/standalone/node_modules/sharp/dist/libvips.mjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "d9984601b0aafe44c393b29ce4b0712b1c40890c3d740d4fda49842a4ea5873d",
+        "line": 65,
+        "containingFunction": "buildSharpLibvipsCPlusPlusDir",
+        "context": "return require('@img/sharp-libvips-dev/cplusplus');",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          }
+        ],
+        "input": "@img/sharp-libvips-dev/cplusplus"
+      }
+    },
+    {
+      "id": 97,
+      "file": ".next/standalone/node_modules/sharp/dist/libvips.mjs",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "d9984601b0aafe44c393b29ce4b0712b1c40890c3d740d4fda49842a4ea5873d",
+        "line": 72,
+        "containingFunction": "buildSharpLibvipsLibDir",
+        "context": "return require(`@img/sharp-libvips-dev-${buildPlatformArch()}/lib`);",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          }
+        ],
+        "input": "`@img/sharp-libvips-dev-${buildPlatformArch()}/lib`"
+      }
+    },
+    {
+      "id": 98,
+      "file": ".next/standalone/node_modules/sharp/dist/libvips.mjs",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "d9984601b0aafe44c393b29ce4b0712b1c40890c3d740d4fda49842a4ea5873d",
+        "line": 75,
+        "containingFunction": "buildSharpLibvipsLibDir",
+        "context": "return require(`@img/sharp-libvips-${buildPlatformArch()}/lib`);",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          }
+        ],
+        "input": "`@img/sharp-libvips-${buildPlatformArch()}/lib`"
+      }
+    },
+    {
+      "id": 99,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.cjs",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "76120d3971051fcc469c0bfa36e7b23d3c388b6a2f5785bf1491bbdb90ff0176",
+        "line": 25,
+        "containingFunction": null,
+        "context": "sharp = require(`../src/build/Release/sharp-${runtimePlatform}-${version}.node`)",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          }
+        ],
+        "input": "`../src/build/Release/sharp-${runtimePlatform}-${version}.node`"
+      }
+    },
+    {
+      "id": 100,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.cjs",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "76120d3971051fcc469c0bfa36e7b23d3c388b6a2f5785bf1491bbdb90ff0176",
+        "line": 31,
+        "containingFunction": null,
+        "context": "sharp = require(`../src/build/Release/sharp-wasm32-${version}.node`)",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!sharp"
+          }
+        ],
+        "input": "`../src/build/Release/sharp-wasm32-${version}.node`"
+      }
+    },
+    {
+      "id": 101,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.cjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "76120d3971051fcc469c0bfa36e7b23d3c388b6a2f5785bf1491bbdb90ff0176",
+        "line": 40,
+        "containingFunction": null,
+        "context": "sharp = require(\"@img/sharp-darwin-arm64/sharp.node\")",
+        "guards": [
+          {
+            "kind": "switch-case",
+            "expression": "\"darwin-arm64\""
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!sharp"
+          }
+        ],
+        "input": "@img/sharp-darwin-arm64/sharp.node"
+      }
+    },
+    {
+      "id": 102,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.cjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "76120d3971051fcc469c0bfa36e7b23d3c388b6a2f5785bf1491bbdb90ff0176",
+        "line": 43,
+        "containingFunction": null,
+        "context": "sharp = require(\"@img/sharp-darwin-x64/sharp.node\")",
+        "guards": [
+          {
+            "kind": "switch-case",
+            "expression": "\"darwin-x64\""
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!sharp"
+          }
+        ],
+        "input": "@img/sharp-darwin-x64/sharp.node"
+      }
+    },
+    {
+      "id": 103,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.cjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "76120d3971051fcc469c0bfa36e7b23d3c388b6a2f5785bf1491bbdb90ff0176",
+        "line": 46,
+        "containingFunction": null,
+        "context": "sharp = require(\"@img/sharp-linux-arm/sharp.node\")",
+        "guards": [
+          {
+            "kind": "switch-case",
+            "expression": "\"linux-arm\""
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!sharp"
+          }
+        ],
+        "input": "@img/sharp-linux-arm/sharp.node"
+      }
+    },
+    {
+      "id": 104,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.cjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "76120d3971051fcc469c0bfa36e7b23d3c388b6a2f5785bf1491bbdb90ff0176",
+        "line": 49,
+        "containingFunction": null,
+        "context": "sharp = require(\"@img/sharp-linux-arm64/sharp.node\")",
+        "guards": [
+          {
+            "kind": "switch-case",
+            "expression": "\"linux-arm64\""
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!sharp"
+          }
+        ],
+        "input": "@img/sharp-linux-arm64/sharp.node"
+      }
+    },
+    {
+      "id": 105,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.cjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "76120d3971051fcc469c0bfa36e7b23d3c388b6a2f5785bf1491bbdb90ff0176",
+        "line": 52,
+        "containingFunction": null,
+        "context": "sharp = require(\"@img/sharp-linux-ppc64/sharp.node\")",
+        "guards": [
+          {
+            "kind": "switch-case",
+            "expression": "\"linux-ppc64\""
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!sharp"
+          }
+        ],
+        "input": "@img/sharp-linux-ppc64/sharp.node"
+      }
+    },
+    {
+      "id": 106,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.cjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "76120d3971051fcc469c0bfa36e7b23d3c388b6a2f5785bf1491bbdb90ff0176",
+        "line": 55,
+        "containingFunction": null,
+        "context": "sharp = require(\"@img/sharp-linux-riscv64/sharp.node\")",
+        "guards": [
+          {
+            "kind": "switch-case",
+            "expression": "\"linux-riscv64\""
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!sharp"
+          }
+        ],
+        "input": "@img/sharp-linux-riscv64/sharp.node"
+      }
+    },
+    {
+      "id": 107,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.cjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "76120d3971051fcc469c0bfa36e7b23d3c388b6a2f5785bf1491bbdb90ff0176",
+        "line": 58,
+        "containingFunction": null,
+        "context": "sharp = require(\"@img/sharp-linux-s390x/sharp.node\")",
+        "guards": [
+          {
+            "kind": "switch-case",
+            "expression": "\"linux-s390x\""
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!sharp"
+          }
+        ],
+        "input": "@img/sharp-linux-s390x/sharp.node"
+      }
+    },
+    {
+      "id": 108,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.cjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "76120d3971051fcc469c0bfa36e7b23d3c388b6a2f5785bf1491bbdb90ff0176",
+        "line": 61,
+        "containingFunction": null,
+        "context": "sharp = require(\"@img/sharp-linux-x64/sharp.node\")",
+        "guards": [
+          {
+            "kind": "switch-case",
+            "expression": "\"linux-x64\""
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!sharp"
+          }
+        ],
+        "input": "@img/sharp-linux-x64/sharp.node"
+      }
+    },
+    {
+      "id": 109,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.cjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "76120d3971051fcc469c0bfa36e7b23d3c388b6a2f5785bf1491bbdb90ff0176",
+        "line": 64,
+        "containingFunction": null,
+        "context": "sharp = require(\"@img/sharp-linuxmusl-arm64/sharp.node\")",
+        "guards": [
+          {
+            "kind": "switch-case",
+            "expression": "\"linuxmusl-arm64\""
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!sharp"
+          }
+        ],
+        "input": "@img/sharp-linuxmusl-arm64/sharp.node"
+      }
+    },
+    {
+      "id": 110,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.cjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "76120d3971051fcc469c0bfa36e7b23d3c388b6a2f5785bf1491bbdb90ff0176",
+        "line": 67,
+        "containingFunction": null,
+        "context": "sharp = require(\"@img/sharp-linuxmusl-x64/sharp.node\")",
+        "guards": [
+          {
+            "kind": "switch-case",
+            "expression": "\"linuxmusl-x64\""
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!sharp"
+          }
+        ],
+        "input": "@img/sharp-linuxmusl-x64/sharp.node"
+      }
+    },
+    {
+      "id": 111,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.cjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "76120d3971051fcc469c0bfa36e7b23d3c388b6a2f5785bf1491bbdb90ff0176",
+        "line": 70,
+        "containingFunction": null,
+        "context": "sharp = require(\"@img/sharp-win32-arm64/sharp.node\")",
+        "guards": [
+          {
+            "kind": "switch-case",
+            "expression": "\"win32-arm64\""
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!sharp"
+          }
+        ],
+        "input": "@img/sharp-win32-arm64/sharp.node"
+      }
+    },
+    {
+      "id": 112,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.cjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "76120d3971051fcc469c0bfa36e7b23d3c388b6a2f5785bf1491bbdb90ff0176",
+        "line": 73,
+        "containingFunction": null,
+        "context": "sharp = require(\"@img/sharp-win32-ia32/sharp.node\")",
+        "guards": [
+          {
+            "kind": "switch-case",
+            "expression": "\"win32-ia32\""
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!sharp"
+          }
+        ],
+        "input": "@img/sharp-win32-ia32/sharp.node"
+      }
+    },
+    {
+      "id": 113,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.cjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "76120d3971051fcc469c0bfa36e7b23d3c388b6a2f5785bf1491bbdb90ff0176",
+        "line": 80,
+        "containingFunction": null,
+        "context": "sharp = require(\"@img/sharp-freebsd-wasm32/sharp.node\")",
+        "guards": [
+          {
+            "kind": "switch-case",
+            "expression": "\"freebsd-x64\""
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!sharp"
+          }
+        ],
+        "input": "@img/sharp-freebsd-wasm32/sharp.node"
+      }
+    },
+    {
+      "id": 114,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.cjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "76120d3971051fcc469c0bfa36e7b23d3c388b6a2f5785bf1491bbdb90ff0176",
+        "line": 83,
+        "containingFunction": null,
+        "context": "sharp = require(\"@img/sharp-webcontainers-wasm32/sharp.node\")",
+        "guards": [
+          {
+            "kind": "switch-case",
+            "expression": "\"linux-wasm32\""
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!sharp"
+          }
+        ],
+        "input": "@img/sharp-webcontainers-wasm32/sharp.node"
+      }
+    },
+    {
+      "id": 115,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.cjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "76120d3971051fcc469c0bfa36e7b23d3c388b6a2f5785bf1491bbdb90ff0176",
+        "line": 104,
+        "containingFunction": null,
+        "context": "sharp = require(\"@img/sharp-wasm32/sharp.node\")",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!sharp"
+          }
+        ],
+        "input": "@img/sharp-wasm32/sharp.node"
+      }
+    },
+    {
+      "id": 116,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.cjs",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "76120d3971051fcc469c0bfa36e7b23d3c388b6a2f5785bf1491bbdb90ff0176",
+        "line": 146,
+        "containingFunction": null,
+        "context": "{ config } = require(`@img/sharp-libvips-${runtimePlatform}/package`)",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "isLinux && /(symbol not found|CXXABI_)/i.test(messages)"
+          },
+          {
+            "kind": "if",
+            "expression": "!sharp"
+          }
+        ],
+        "input": "`@img/sharp-libvips-${runtimePlatform}/package`"
+      }
+    },
+    {
+      "id": 117,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.mjs",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "d0c3ce3837636a140e8363850823e3b8dc2b000928303664cc9fc1aa2ba326ee",
+        "line": 25,
+        "containingFunction": null,
+        "context": "sharp = require(`../src/build/Release/sharp-${runtimePlatform}-${version}.node`)",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          }
+        ],
+        "input": "`../src/build/Release/sharp-${runtimePlatform}-${version}.node`"
+      }
+    },
+    {
+      "id": 118,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.mjs",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "d0c3ce3837636a140e8363850823e3b8dc2b000928303664cc9fc1aa2ba326ee",
+        "line": 31,
+        "containingFunction": null,
+        "context": "sharp = require(`../src/build/Release/sharp-wasm32-${version}.node`)",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!sharp"
+          }
+        ],
+        "input": "`../src/build/Release/sharp-wasm32-${version}.node`"
+      }
+    },
+    {
+      "id": 119,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.mjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "d0c3ce3837636a140e8363850823e3b8dc2b000928303664cc9fc1aa2ba326ee",
+        "line": 40,
+        "containingFunction": null,
+        "context": "sharp = require(\"@img/sharp-darwin-arm64/sharp.node\")",
+        "guards": [
+          {
+            "kind": "switch-case",
+            "expression": "\"darwin-arm64\""
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!sharp"
+          }
+        ],
+        "input": "@img/sharp-darwin-arm64/sharp.node"
+      }
+    },
+    {
+      "id": 120,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.mjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "d0c3ce3837636a140e8363850823e3b8dc2b000928303664cc9fc1aa2ba326ee",
+        "line": 43,
+        "containingFunction": null,
+        "context": "sharp = require(\"@img/sharp-darwin-x64/sharp.node\")",
+        "guards": [
+          {
+            "kind": "switch-case",
+            "expression": "\"darwin-x64\""
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!sharp"
+          }
+        ],
+        "input": "@img/sharp-darwin-x64/sharp.node"
+      }
+    },
+    {
+      "id": 121,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.mjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "d0c3ce3837636a140e8363850823e3b8dc2b000928303664cc9fc1aa2ba326ee",
+        "line": 46,
+        "containingFunction": null,
+        "context": "sharp = require(\"@img/sharp-linux-arm/sharp.node\")",
+        "guards": [
+          {
+            "kind": "switch-case",
+            "expression": "\"linux-arm\""
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!sharp"
+          }
+        ],
+        "input": "@img/sharp-linux-arm/sharp.node"
+      }
+    },
+    {
+      "id": 122,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.mjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "d0c3ce3837636a140e8363850823e3b8dc2b000928303664cc9fc1aa2ba326ee",
+        "line": 49,
+        "containingFunction": null,
+        "context": "sharp = require(\"@img/sharp-linux-arm64/sharp.node\")",
+        "guards": [
+          {
+            "kind": "switch-case",
+            "expression": "\"linux-arm64\""
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!sharp"
+          }
+        ],
+        "input": "@img/sharp-linux-arm64/sharp.node"
+      }
+    },
+    {
+      "id": 123,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.mjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "d0c3ce3837636a140e8363850823e3b8dc2b000928303664cc9fc1aa2ba326ee",
+        "line": 52,
+        "containingFunction": null,
+        "context": "sharp = require(\"@img/sharp-linux-ppc64/sharp.node\")",
+        "guards": [
+          {
+            "kind": "switch-case",
+            "expression": "\"linux-ppc64\""
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!sharp"
+          }
+        ],
+        "input": "@img/sharp-linux-ppc64/sharp.node"
+      }
+    },
+    {
+      "id": 124,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.mjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "d0c3ce3837636a140e8363850823e3b8dc2b000928303664cc9fc1aa2ba326ee",
+        "line": 55,
+        "containingFunction": null,
+        "context": "sharp = require(\"@img/sharp-linux-riscv64/sharp.node\")",
+        "guards": [
+          {
+            "kind": "switch-case",
+            "expression": "\"linux-riscv64\""
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!sharp"
+          }
+        ],
+        "input": "@img/sharp-linux-riscv64/sharp.node"
+      }
+    },
+    {
+      "id": 125,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.mjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "d0c3ce3837636a140e8363850823e3b8dc2b000928303664cc9fc1aa2ba326ee",
+        "line": 58,
+        "containingFunction": null,
+        "context": "sharp = require(\"@img/sharp-linux-s390x/sharp.node\")",
+        "guards": [
+          {
+            "kind": "switch-case",
+            "expression": "\"linux-s390x\""
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!sharp"
+          }
+        ],
+        "input": "@img/sharp-linux-s390x/sharp.node"
+      }
+    },
+    {
+      "id": 126,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.mjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "d0c3ce3837636a140e8363850823e3b8dc2b000928303664cc9fc1aa2ba326ee",
+        "line": 61,
+        "containingFunction": null,
+        "context": "sharp = require(\"@img/sharp-linux-x64/sharp.node\")",
+        "guards": [
+          {
+            "kind": "switch-case",
+            "expression": "\"linux-x64\""
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!sharp"
+          }
+        ],
+        "input": "@img/sharp-linux-x64/sharp.node"
+      }
+    },
+    {
+      "id": 127,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.mjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "d0c3ce3837636a140e8363850823e3b8dc2b000928303664cc9fc1aa2ba326ee",
+        "line": 64,
+        "containingFunction": null,
+        "context": "sharp = require(\"@img/sharp-linuxmusl-arm64/sharp.node\")",
+        "guards": [
+          {
+            "kind": "switch-case",
+            "expression": "\"linuxmusl-arm64\""
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!sharp"
+          }
+        ],
+        "input": "@img/sharp-linuxmusl-arm64/sharp.node"
+      }
+    },
+    {
+      "id": 128,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.mjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "d0c3ce3837636a140e8363850823e3b8dc2b000928303664cc9fc1aa2ba326ee",
+        "line": 67,
+        "containingFunction": null,
+        "context": "sharp = require(\"@img/sharp-linuxmusl-x64/sharp.node\")",
+        "guards": [
+          {
+            "kind": "switch-case",
+            "expression": "\"linuxmusl-x64\""
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!sharp"
+          }
+        ],
+        "input": "@img/sharp-linuxmusl-x64/sharp.node"
+      }
+    },
+    {
+      "id": 129,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.mjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "d0c3ce3837636a140e8363850823e3b8dc2b000928303664cc9fc1aa2ba326ee",
+        "line": 70,
+        "containingFunction": null,
+        "context": "sharp = require(\"@img/sharp-win32-arm64/sharp.node\")",
+        "guards": [
+          {
+            "kind": "switch-case",
+            "expression": "\"win32-arm64\""
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!sharp"
+          }
+        ],
+        "input": "@img/sharp-win32-arm64/sharp.node"
+      }
+    },
+    {
+      "id": 130,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.mjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "d0c3ce3837636a140e8363850823e3b8dc2b000928303664cc9fc1aa2ba326ee",
+        "line": 73,
+        "containingFunction": null,
+        "context": "sharp = require(\"@img/sharp-win32-ia32/sharp.node\")",
+        "guards": [
+          {
+            "kind": "switch-case",
+            "expression": "\"win32-ia32\""
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!sharp"
+          }
+        ],
+        "input": "@img/sharp-win32-ia32/sharp.node"
+      }
+    },
+    {
+      "id": 131,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.mjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "d0c3ce3837636a140e8363850823e3b8dc2b000928303664cc9fc1aa2ba326ee",
+        "line": 80,
+        "containingFunction": null,
+        "context": "sharp = require(\"@img/sharp-freebsd-wasm32/sharp.node\")",
+        "guards": [
+          {
+            "kind": "switch-case",
+            "expression": "\"freebsd-x64\""
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!sharp"
+          }
+        ],
+        "input": "@img/sharp-freebsd-wasm32/sharp.node"
+      }
+    },
+    {
+      "id": 132,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.mjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "d0c3ce3837636a140e8363850823e3b8dc2b000928303664cc9fc1aa2ba326ee",
+        "line": 83,
+        "containingFunction": null,
+        "context": "sharp = require(\"@img/sharp-webcontainers-wasm32/sharp.node\")",
+        "guards": [
+          {
+            "kind": "switch-case",
+            "expression": "\"linux-wasm32\""
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!sharp"
+          }
+        ],
+        "input": "@img/sharp-webcontainers-wasm32/sharp.node"
+      }
+    },
+    {
+      "id": 133,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.mjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "d0c3ce3837636a140e8363850823e3b8dc2b000928303664cc9fc1aa2ba326ee",
+        "line": 104,
+        "containingFunction": null,
+        "context": "sharp = require(\"@img/sharp-wasm32/sharp.node\")",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!sharp"
+          }
+        ],
+        "input": "@img/sharp-wasm32/sharp.node"
+      }
+    },
+    {
+      "id": 134,
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.mjs",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "d0c3ce3837636a140e8363850823e3b8dc2b000928303664cc9fc1aa2ba326ee",
+        "line": 146,
+        "containingFunction": null,
+        "context": "{ config } = require(`@img/sharp-libvips-${runtimePlatform}/package`)",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "isLinux && /(symbol not found|CXXABI_)/i.test(messages)"
+          },
+          {
+            "kind": "if",
+            "expression": "!sharp"
+          }
+        ],
+        "input": "`@img/sharp-libvips-${runtimePlatform}/package`"
+      }
+    },
+    {
+      "id": 135,
+      "file": ".next/standalone/node_modules/sharp/dist/utility.cjs",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "0f7a14858dfa8ebd01b2c6c2272297f7a34c4af3d84f0c0b926146c49a2655b1",
+        "line": 68,
+        "containingFunction": null,
+        "context": "versions = require(`@img/sharp-${runtimePlatform}/versions`)",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!libvipsVersion.isWasm"
+          },
+          {
+            "kind": "if",
+            "expression": "!libvipsVersion.isGlobal"
+          }
+        ],
+        "input": "`@img/sharp-${runtimePlatform}/versions`"
+      }
+    },
+    {
+      "id": 136,
+      "file": ".next/standalone/node_modules/sharp/dist/utility.cjs",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "0f7a14858dfa8ebd01b2c6c2272297f7a34c4af3d84f0c0b926146c49a2655b1",
+        "line": 71,
+        "containingFunction": null,
+        "context": "versions = require(`@img/sharp-libvips-${runtimePlatform}/versions`)",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!libvipsVersion.isWasm"
+          },
+          {
+            "kind": "if",
+            "expression": "!libvipsVersion.isGlobal"
+          }
+        ],
+        "input": "`@img/sharp-libvips-${runtimePlatform}/versions`"
+      }
+    },
+    {
+      "id": 137,
+      "file": ".next/standalone/node_modules/sharp/dist/utility.cjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "0f7a14858dfa8ebd01b2c6c2272297f7a34c4af3d84f0c0b926146c49a2655b1",
+        "line": 76,
+        "containingFunction": null,
+        "context": "versions = require('@img/sharp-wasm32/versions')",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!libvipsVersion.isWasm"
+          },
+          {
+            "kind": "if",
+            "expression": "!libvipsVersion.isGlobal"
+          }
+        ],
+        "input": "@img/sharp-wasm32/versions"
+      }
+    },
+    {
+      "id": 138,
+      "file": ".next/standalone/node_modules/sharp/dist/utility.mjs",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "761566e165bc1fc90bc6dd67a3b560c1a63e6cfe98009b726d35288606d629b9",
+        "line": 68,
+        "containingFunction": null,
+        "context": "versions = require(`@img/sharp-${runtimePlatform}/versions`)",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!libvipsVersion.isWasm"
+          },
+          {
+            "kind": "if",
+            "expression": "!libvipsVersion.isGlobal"
+          }
+        ],
+        "input": "`@img/sharp-${runtimePlatform}/versions`"
+      }
+    },
+    {
+      "id": 139,
+      "file": ".next/standalone/node_modules/sharp/dist/utility.mjs",
+      "category": "dynamic",
+      "closure": "UNKNOWN",
+      "reason": "Computed target requires enumeration or a demonstrated inactive configuration guard",
+      "config": {
+        "cacheHandler": null,
+        "cacheHandlers": {},
+        "adapterPath": null
+      },
+      "evidence": {
+        "sourceHash": "761566e165bc1fc90bc6dd67a3b560c1a63e6cfe98009b726d35288606d629b9",
+        "line": 71,
+        "containingFunction": null,
+        "context": "versions = require(`@img/sharp-libvips-${runtimePlatform}/versions`)",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!libvipsVersion.isWasm"
+          },
+          {
+            "kind": "if",
+            "expression": "!libvipsVersion.isGlobal"
+          }
+        ],
+        "input": "`@img/sharp-libvips-${runtimePlatform}/versions`"
+      }
+    },
+    {
+      "id": 140,
+      "file": ".next/standalone/node_modules/sharp/dist/utility.mjs",
+      "category": "platform-specific",
+      "closure": "UNKNOWN",
+      "reason": "Sharp fallback/native alternatives require branch selection and installed native target evidence",
+      "platform": "win32",
+      "evidence": {
+        "sourceHash": "761566e165bc1fc90bc6dd67a3b560c1a63e6cfe98009b726d35288606d629b9",
+        "line": 76,
+        "containingFunction": null,
+        "context": "versions = require('@img/sharp-wasm32/versions')",
+        "guards": [
+          {
+            "kind": "try-catch",
+            "handled": true
+          },
+          {
+            "kind": "if",
+            "expression": "!libvipsVersion.isWasm"
+          },
+          {
+            "kind": "if",
+            "expression": "!libvipsVersion.isGlobal"
+          }
+        ],
+        "input": "@img/sharp-wasm32/versions"
+      }
+    }
+  ]
+}

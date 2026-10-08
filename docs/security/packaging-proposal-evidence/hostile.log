@@ -1,0 +1,86 @@
+{
+  "node": "v24.18.0",
+  "platform": "win32",
+  "timeoutMs": 5000,
+  "heapMiB": 128,
+  "results": [
+    {
+      "name": "ordinary alternatives",
+      "expectedRejection": false,
+      "rejected": false,
+      "count": 2,
+      "elapsedMs": 0.5927000000000007,
+      "exit": 0,
+      "pass": true
+    },
+    {
+      "name": "moderate nested braces",
+      "expectedRejection": false,
+      "rejected": false,
+      "count": 2,
+      "elapsedMs": 0.897000000000002,
+      "exit": 0,
+      "pass": true
+    },
+    {
+      "name": "deep nesting",
+      "expectedRejection": true,
+      "rejected": true,
+      "error": "RangeError",
+      "message": "Adapter nesting budget exceeded",
+      "elapsedMs": 0.4353999999999978,
+      "exit": 0,
+      "pass": true
+    },
+    {
+      "name": "Cartesian expansion",
+      "expectedRejection": true,
+      "rejected": true,
+      "error": "RangeError",
+      "message": "Adapter output budget exceeded",
+      "elapsedMs": 0.3462999999999994,
+      "exit": 0,
+      "pass": true
+    },
+    {
+      "name": "long sequence of alternatives",
+      "expectedRejection": true,
+      "rejected": true,
+      "error": "RangeError",
+      "message": "Adapter output budget exceeded",
+      "elapsedMs": 1.5490999999999993,
+      "exit": 0,
+      "pass": true
+    },
+    {
+      "name": "large reverse range",
+      "expectedRejection": true,
+      "rejected": true,
+      "error": "RangeError",
+      "message": "Adapter range budget exceeded",
+      "elapsedMs": 0.2173000000000016,
+      "exit": 0,
+      "pass": true
+    },
+    {
+      "name": "oversized input",
+      "expectedRejection": true,
+      "rejected": true,
+      "error": "SyntaxError",
+      "message": "Input length (70005), exceeds max characters (65536)",
+      "elapsedMs": 0.18040000000000234,
+      "exit": 0,
+      "pass": true
+    },
+    {
+      "name": "malformed rewrite chain",
+      "expectedRejection": true,
+      "rejected": true,
+      "error": "RangeError",
+      "message": "Adapter rewrite budget exceeded",
+      "elapsedMs": 1.5544000000000011,
+      "exit": 0,
+      "pass": true
+    }
+  ]
+}

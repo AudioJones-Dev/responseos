@@ -1,0 +1,29 @@
+{
+  "node": "v24.18.0",
+  "results": [
+    {
+      "name": "Affected package identifier detected",
+      "pass": true
+    },
+    {
+      "name": "Metadata identifier not sufficient implementation evidence",
+      "pass": true
+    },
+    {
+      "name": "Original expand walker detected without package name",
+      "pass": true
+    },
+    {
+      "name": "Original compile walker detected without package name",
+      "pass": true
+    },
+    {
+      "name": "Static and dynamic module syntax retained",
+      "pass": true
+    },
+    {
+      "name": "Out-of-package load is rejected by runtime hook",
+      "pass": true
+    }
+  ]
+}

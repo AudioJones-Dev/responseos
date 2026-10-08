@@ -1,0 +1,122 @@
+{
+  "toolHash": "f2185a400de25b22633f7009956c8853af4b16fb6d52e2fdb614c1d4b20873c5",
+  "platform": "win32",
+  "applicationSha": "4e1f353117696658988bca171e4e0e51c0fb1b96",
+  "auditSha": "4e1f353117696658988bca171e4e0e51c0fb1b96",
+  "compatibilitySha": "4e1f353117696658988bca171e4e0e51c0fb1b96",
+  "auditExit": 1,
+  "auditTotal": 5,
+  "compatibility": {
+    "original": {
+      "total": 49,
+      "pass": 49,
+      "exit": 0
+    },
+    "directory": {
+      "total": 441,
+      "pass": 441,
+      "exit": 0
+    },
+    "tasks": {
+      "total": 584,
+      "pass": 548,
+      "exit": 1
+    }
+  },
+  "candidateInstalled": false,
+  "closurePass": false,
+  "steps": [
+    {
+      "name": "artifact-build",
+      "exit": 0,
+      "error": null
+    },
+    {
+      "name": "inspect",
+      "exit": 0,
+      "error": null
+    },
+    {
+      "name": "runtime",
+      "exit": 0,
+      "error": null
+    },
+    {
+      "name": "controls",
+      "exit": 0,
+      "error": null
+    },
+    {
+      "name": "closure",
+      "exit": 0,
+      "error": null
+    },
+    {
+      "name": "application-lint",
+      "exit": 0,
+      "error": null
+    },
+    {
+      "name": "application-typecheck",
+      "exit": 0,
+      "error": null
+    },
+    {
+      "name": "application-test",
+      "exit": 0,
+      "error": null
+    },
+    {
+      "name": "synthetic-auth",
+      "exit": 0,
+      "error": null
+    },
+    {
+      "name": "matcher-install",
+      "exit": 0,
+      "error": null
+    },
+    {
+      "name": "compatibility-original",
+      "exit": 0,
+      "error": null
+    },
+    {
+      "name": "compatibility-directory",
+      "exit": 0,
+      "error": null
+    },
+    {
+      "name": "compatibility-tasks",
+      "exit": 1,
+      "error": null
+    },
+    {
+      "name": "hostile",
+      "exit": 0,
+      "error": null
+    },
+    {
+      "name": "gate-controls",
+      "exit": 0,
+      "error": null
+    }
+  ],
+  "jobs": {
+    "windows": "success",
+    "hostile": "success",
+    "diagnostics": "success",
+    "integration": "pending"
+  },
+  "acceptance": {
+    "pass": false,
+    "failures": [
+      "complete-dependency-security",
+      "compatibility-tasks",
+      "implementation-not-linked-to-audited-graph",
+      "packaging-closure",
+      "linux-evidence",
+      "integration-evidence"
+    ]
+  }
+}

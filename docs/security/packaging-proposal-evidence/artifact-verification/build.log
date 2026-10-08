@@ -1,0 +1,121 @@
+
+> responseos@0.2.0 build
+> next build
+
+▲ Next.js 16.3.8 (Turbopack)
+✓ Running next.config.ts took 604ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 8.3s
+  Running TypeScript ...
+  Finished TypeScript in 11.9s ...
+  Collecting page data using 19 workers ...
+  Generating static pages using 19 workers (0/69) ...
+  Generating static pages using 19 workers (17/69) 
+  Generating static pages using 19 workers (34/69) 
+  Generating static pages using 19 workers (51/69) 
+✓ Generating static pages using 19 workers (69/69) in 493ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /admin
+├ ○ /admin/automations
+├ ○ /admin/billing
+├ ○ /admin/calls
+├ ○ /admin/clients
+├ ƒ /admin/demo-operations
+├ ○ /admin/leads
+├ ○ /admin/playbooks
+├ ƒ /admin/prospect-bootstraps
+├ ƒ /admin/prospect-bootstraps/[id]
+├ ○ /admin/receptionist
+├ ○ /admin/reports
+├ ○ /admin/settings
+├ ○ /admin/workspaces
+├ ƒ /api/accounts
+├ ƒ /api/accounts/[id]
+├ ƒ /api/admin/bootstrap-promotions/[correlationId]/acknowledge
+├ ƒ /api/admin/bootstrap-promotions/import
+├ ƒ /api/admin/crm-sync-operations
+├ ƒ /api/admin/crm-sync-operations/[id]/retry
+├ ƒ /api/admin/prospect-bootstrap-facts/[id]
+├ ƒ /api/admin/prospect-bootstraps
+├ ƒ /api/admin/prospect-bootstraps/[id]/activate
+├ ƒ /api/admin/prospect-bootstraps/[id]/approve
+├ ƒ /api/admin/prospect-bootstraps/[id]/assign-number
+├ ƒ /api/admin/prospect-bootstraps/[id]/complete
+├ ƒ /api/admin/prospect-bootstraps/[id]/facts
+├ ƒ /api/admin/prospect-bootstraps/[id]/ingest
+├ ƒ /api/admin/prospect-bootstraps/[id]/promotion
+├ ƒ /api/admin/prospect-intakes
+├ ƒ /api/admin/prospect-intakes/[id]
+├ ƒ /api/admin/telephony-number-assignments/[id]/approve-reuse
+├ ƒ /api/admin/telephony-numbers
+├ ƒ /api/appointments
+├ ƒ /api/appointments/[id]
+├ ƒ /api/appointments/sync/calcom
+├ ƒ /api/appointments/sync/google
+├ ƒ /api/audit-requests
+├ ƒ /api/auth/session
+├ ƒ /api/automations
+├ ƒ /api/automations/[id]
+├ ƒ /api/automations/webhook/n8n
+├ ƒ /api/calls
+├ ƒ /api/calls/[id]
+├ ƒ /api/contacts
+├ ƒ /api/contacts/[id]
+├ ƒ /api/health
+├ ƒ /api/leads
+├ ƒ /api/leads/[id]
+├ ƒ /api/leads/[id]/qualify
+├ ƒ /api/leads/[id]/status
+├ ƒ /api/notifications
+├ ƒ /api/notifications/send
+├ ƒ /api/quotes
+├ ƒ /api/quotes/[id]
+├ ƒ /api/reports/client/[accountId]
+├ ƒ /api/reports/revenue
+├ ƒ /api/webhooks/clerk
+├ ƒ /api/webhooks/ghl
+├ ƒ /api/webhooks/n8n
+├ ƒ /api/webhooks/retell/call-ended
+├ ƒ /api/webhooks/stripe
+├ ƒ /api/webhooks/telnyx/assistant-initialization
+├ ƒ /api/webhooks/telnyx/calls
+├ ƒ /api/webhooks/twilio/call-status
+├ ƒ /api/webhooks/twilio/sms
+├ ƒ /api/webhooks/vapi/call-ended
+├ ○ /audit
+├ ○ /client/appointments
+├ ○ /client/calls
+├ ○ /client/dashboard
+├ ○ /client/leads
+├ ○ /client/quotes
+├ ○ /client/reports
+├ ○ /client/revenue
+├ ○ /client/settings
+├ ○ /demo
+├ ○ /demo/client-dashboard
+├ ƒ /demo/live-call
+├ ○ /demo/operator-console
+├ ƒ /demo/receptionist
+├ ○ /demo/walkthrough
+├ ○ /demo/walkthrough/call
+├ ○ /demo/walkthrough/follow-up
+├ ○ /demo/walkthrough/integrations
+├ ○ /demo/walkthrough/lead
+├ ○ /demo/walkthrough/memory
+├ ○ /industries/contractors
+├ ○ /industries/home-services
+├ ○ /pricing
+├ ○ /privacy
+└ ○ /trust
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
