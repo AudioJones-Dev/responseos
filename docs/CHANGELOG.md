@@ -10,6 +10,16 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - A unit test asserts the header on every request the fetcher makes (`tests/unit/prospect-bootstrap.test.ts`). It fails on the old value.
 - That was the only `responseos.ai` reference in the repository. Dashboard task `L-18`.
 
+## Unreleased — feat: one guarded retention purge command for expired data (#208)
+
+- **`npm run retention:purge` (ADR-0064)** runs eight sweeps in a fixed order: unqualified assessment requests (90 days), personalized-demo expiry, content purge, and cleanup, demo-number quarantine extension, expired webhook payloads, general demo call content (90 days, new), and Clerk payloads without an expiry (30 days, new). It is an operator-run command, not a scheduled job.
+- **Preview by default.** Without `--apply` it prints how many rows each sweep would change and writes nothing; integration tests hash every affected table before and after a preview to prove it. Applying needs `-- --apply` **and** `RESPONSEOS_RETENTION_PURGE_ENABLED=true`, and refuses `NODE_ENV=production` or `VERCEL_ENV=production`.
+- **Audited.** Each new sweep writes a system `AuditLog` row with its counts when it changes at least one row: `retention.intake_pii_purged`, `retention.webhook_payloads_scrubbed` (one row per affected account, `null` for events no tenant owns), `retention.demo_call_content_purged`, and `retention.clerk_payloads_scrubbed`. The bootstrap sweeps keep their existing per-bootstrap `prospect_bootstrap.*` rows. Audit rows expire after 365 days.
+- **New periods.** General demo webhook payloads are recorded with a 90-day expiry and Clerk webhook bodies with a 30-day expiry. General demo calls older than 90 days lose their caller number, transcript, summary, segments, lead and qualification, QA logs, and any contact no newer record uses; the call row stays as a content-free stub. Open CRM operations for those calls are cancelled; the HubSpot copy and succeeded CRM operations are untouched.
+- **Fixes.** Bootstrap cleanup now sets `payload_purged_at` when it scrubs an account's webhook payloads.
+- **Removed** `npm run prospects:purge`, `npm run prospect-bootstraps:reconcile`, their scripts, `lib/prospects/purgePolicy.ts`, and `RESPONSEOS_PROSPECT_PURGE_ENABLED`; the new command covers both. The reconcile script had no guard and no preview.
+- **Privacy policy** (last updated October 8, 2026) and the **trust page** Retention card (still *Partial*) describe the expiries and the operator-run purge. Neither says the purge has been run. Per-transcript `expires_at`, retention-lane enforcement, tenant export and erasure, a scheduler, and HubSpot deletion remain open. Dashboard task `L-17`.
+
 ## Unreleased — fix: drop the response-time figure from the home-services page (#204)
 
 - The home-services card "Target a reply in under 60 seconds" is now "Reply before they call the next contractor", and the intro's "reply within a minute" is now "reply by text". This applies the owner's homepage-stat rule from #202: no response-time figure until production telemetry exists. The findings doc rated the claim not publishable.

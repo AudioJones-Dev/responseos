@@ -329,7 +329,7 @@ describe("personalized prospect bootstrap persistence and isolation", () => {
     expect(await prisma.businessMemorySnapshot.count({ where: { account_id: prepared.account.id } })).toBe(0);
     expect(await prisma.knowledgeSource.findFirst({ where: { account_id: prepared.account.id } })).toMatchObject({ status: "purged", extracted_text: null });
     expect(await prisma.webhookEvent.findUnique({ where: { provider_provider_event_id: { provider: "telnyx", provider_event_id: "cleanup-event" } } }))
-      .toMatchObject({ raw_body: "<PURGED_PROSPECT_DEMO_PAYLOAD>", signature_header: null });
+      .toMatchObject({ raw_body: "<PURGED_PROSPECT_DEMO_PAYLOAD>", signature_header: null, payload_purged_at: new Date("2026-08-20T00:00:00.000Z") });
     expect(await prisma.telephonyNumber.findUnique({ where: { id: prepared.number.id } })).not.toBeNull();
   });
 

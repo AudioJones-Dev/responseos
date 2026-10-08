@@ -98,4 +98,31 @@ describe("Telnyx canonical normalization", () => {
     expect((await prisma.webhookEvent.findUnique({ where: { id: webhookEventId } }))?.process_status)
       .toBe("rejected");
   });
+
+  test("does not write caller content onto a call whose content was purged", async () => {
+    await prisma.call.create({ data: {
+      account_id: accountId, provider: "telnyx", provider_call_id: "purged-call", direction: "inbound",
+      status: "completed", from_number: "<PURGED>", to_number: demoNumber, started_at: new Date("2026-06-01T12:00:00.000Z"),
+    } });
+    const event: TelnyxWebhookEnvelope = {
+      data: {
+        id: "telnyx-late-insights",
+        event_type: "call.conversation_insights.generated",
+        payload: {
+          call_control_id: "purged-call",
+          from: "+17865550177",
+          to: demoNumber,
+          transcript: "Late transcript with caller details",
+        },
+      },
+    };
+    const webhookEventId = await ledger(event);
+    const result = await normalizeTelnyxEvent({ accountId, demoNumber, webhookEventId, event });
+    expect(result).toEqual({ callId: null, finalized: false });
+    expect(await prisma.call.findFirst({ where: { provider_call_id: "purged-call" } }))
+      .toMatchObject({ from_number: "<PURGED>", contact_id: null, transcript: null, summary: null });
+    expect(await prisma.contact.count({ where: { phone: "+17865550177" } })).toBe(0);
+    expect(await prisma.webhookEvent.findUnique({ where: { id: webhookEventId } }))
+      .toMatchObject({ process_status: "rejected", process_error: "call_content_purged" });
+  });
 });

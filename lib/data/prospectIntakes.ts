@@ -3,6 +3,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { requireRole } from "@/lib/auth/session";
 import { db } from "@/lib/db/client";
+import { retentionAuditData } from "@/lib/retention/audit";
 import type { AuditRequest } from "@/lib/validation/audit-request";
 import { err, errFromThrown, ok, type Result } from "./result";
 
@@ -253,22 +254,36 @@ export async function transitionProspectIntake(params: {
 export async function purgeExpiredUnqualifiedProspectPii(params: {
   accountId: string;
   now?: Date;
+  preview?: boolean;
 }): Promise<Result<{ purged: number }>> {
   if (db === null) return err("no_database", "Prospect purge requires a database connection.");
+  const now = params.now ?? new Date();
+  const where = {
+    account_id: params.accountId,
+    status: { not: "qualified" as const },
+    expires_at: { lte: now },
+    purged_at: null,
+  };
   try {
-    const result = await db.prospectIntake.updateMany({
-      where: {
-        account_id: params.accountId,
-        status: { not: "qualified" },
-        expires_at: { lte: params.now ?? new Date() },
-        purged_at: null,
-      },
-      data: {
-        request_json: Prisma.JsonNull,
-        purged_at: params.now ?? new Date(),
-      },
+    if (params.preview) return ok({ purged: await db.prospectIntake.count({ where }) });
+    const purged = await db.$transaction(async (tx) => {
+      const result = await tx.prospectIntake.updateMany({
+        where,
+        data: { request_json: Prisma.JsonNull, purged_at: now },
+      });
+      if (result.count > 0) {
+        await tx.auditLog.create({ data: retentionAuditData({
+          accountId: params.accountId,
+          action: "retention.intake_pii_purged",
+          targetType: "ProspectIntake",
+          reason: "Unqualified assessment requests reached their 90-day expiry.",
+          metadata: { purged: result.count },
+          now,
+        }) });
+      }
+      return result.count;
     });
-    return ok({ purged: result.count });
+    return ok({ purged });
   } catch (error) {
     return errFromThrown(error);
   }

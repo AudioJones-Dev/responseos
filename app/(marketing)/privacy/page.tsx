@@ -13,7 +13,7 @@ export const metadata = {
     "What ResponseOS collects, why, who it's shared with, how long it's kept, and how to ask us about it.",
 };
 
-const LAST_UPDATED = "September 28, 2026";
+const LAST_UPDATED = "October 8, 2026";
 
 export default function PrivacyPage() {
   return (
@@ -59,7 +59,7 @@ export default function PrivacyPage() {
           items={[
             "We use it to review your request and follow up about the assessment.",
             "Only AJ Digital staff with operator access can read the full submission.",
-            "Each submission is marked to expire 90 days after you send it. Automatic deletion isn't built yet, so expired submissions are removed by hand. If we go ahead with an assessment, we keep your request for as long as we're working on it together.",
+            "Each submission is marked to expire 90 days after you send it. After that, a purge that we run and review deletes what you sent, keeping only a reference number. The purge isn't on a schedule, so deletion can come some time after the 90 days. If we go ahead with an assessment, we keep your request for as long as we're working on it together.",
             "You can ask us to delete your request at any time.",
           ]}
         />
@@ -77,8 +77,8 @@ export default function PrivacyPage() {
           items={[
             "Calls are transcribed, not recorded.",
             "Please use fictional details on demo calls. They aren't set up to handle anything sensitive.",
-            "Personalized demo calls, which are set up for one specific business, are marked to expire after 30 days, and expired call content is removed by hand until automatic deletion is built. Calls to our general demo number don't expire automatically yet; ask us and we'll delete them.",
-            "For calls to our general demo number, we may copy your phone number, name, and verified email, plus a call summary and suggested next step, into our CRM, HubSpot, so we can follow up. Before the summary and next step are copied, an automatic filter removes the email addresses and phone numbers it recognizes, such as US numbers and numbers written with a country code; it may miss unusual formats. Personalized demo calls are never sent to a CRM.",
+            "Personalized demo calls, which are set up for one specific business, are marked to expire after 30 days, and calls to our general demo number after 90 days. After that, the same purge deletes the call content: your phone number, the transcript and summary, and the details you gave. A record that the call happened, with its time and length, stays. You can ask us to delete a call sooner.",
+            "For calls to our general demo number, we may copy your phone number, name, and verified email, plus a call summary and suggested next step, into our CRM, HubSpot, so we can follow up. Before the summary and next step are copied, an automatic filter removes the email addresses and phone numbers it recognizes, such as US numbers and numbers written with a country code; it may miss unusual formats. The purge doesn't delete this copy in HubSpot; ask us and we'll delete it there. Personalized demo calls are never sent to a CRM.",
           ]}
         />
       </LegalSection>
@@ -89,10 +89,10 @@ export default function PrivacyPage() {
           sign-in is handled by Clerk. Clerk shares your email address, name,
           and organization name with us, and sets the cookies it needs to keep
           you signed in. We also keep each account update Clerk sends us, as
-          received; these don&apos;t expire automatically yet. If your login
-          is removed, we keep your name and email on the records you created so
-          their history stays accurate. You can ask us to erase all of it,
-          including those stored updates.
+          received, for 30 days; after that, the same purge deletes the stored
+          copy. If your login is removed, we keep your name and email on the
+          records you created so their history stays accurate. You can ask us
+          to erase all of it, including those stored updates.
         </p>
       </LegalSection>
 

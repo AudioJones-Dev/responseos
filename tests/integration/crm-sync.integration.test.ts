@@ -79,4 +79,28 @@ describe("durable CRM synchronization", () => {
     expect(provider.createContact).not.toHaveBeenCalled();
     expect(provider.createCallActivity).not.toHaveBeenCalled();
   });
+
+  test("cancels instead of syncing a call whose content was purged", async () => {
+    await prisma.call.update({
+      where: { id: "call_responseos_demo" },
+      data: { from_number: "<PURGED>", contact_id: null, transcript: null, summary: null },
+    });
+    await prisma.crmSyncOperation.create({ data: {
+      account_id: "org_responseos_demo", call_id: "call_responseos_demo",
+      operation_key: "crm-call:org_responseos_demo:call_responseos_demo",
+      provider: "mock", status: "retryable_failed",
+    } });
+    const provider = new MockCrmProvider();
+    const find = vi.spyOn(provider, "findContacts");
+    const result = await runCrmSyncForCall({
+      accountId: "org_responseos_demo",
+      callId: "call_responseos_demo",
+      providerOverride: provider,
+    });
+    expect(result.ok && result.data.status).toBe("cancelled");
+    expect(find).not.toHaveBeenCalled();
+    expect(await prisma.crmSyncOperation.findFirstOrThrow()).toMatchObject({
+      status: "cancelled", last_error_code: "retention_purged", next_attempt_at: null,
+    });
+  });
 });

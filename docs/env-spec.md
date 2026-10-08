@@ -94,7 +94,7 @@ The GitHub `staging` Environment also requires a least-privilege `NEON_API_KEY` 
 - `RESPONSEOS_LIVE_CALL_DEMO_PUBLIC` — controls whether `/demo/live-call` and its server-rendered number are visible.
 - `RESPONSEOS_DEMO_PHONE_E164` — server-only E.164 demo number rendered only behind the visibility flag and used to reject events for other destinations.
 - `RESPONSEOS_DEMO_RESET` — explicit reset-command enable; the command additionally requires `RESPONSEOS_DEPLOYMENT_LANE=mock-staging` and refuses production.
-- `RESPONSEOS_PROSPECT_PURGE_ENABLED` — explicit non-production PII purge-command enable.
+- `RESPONSEOS_RETENTION_PURGE_ENABLED` — explicit enable for `npm run retention:purge -- --apply` (ADR-0064). Without it the command only previews; apply also refuses `NODE_ENV=production` and `VERCEL_ENV=production`. The intake and general-demo sweeps are scoped by `RESPONSEOS_INBOUND_ACCOUNT_ID` and `RESPONSEOS_DEMO_ACCOUNT_ID` and are skipped when those are unset.
 - `RESPONSEOS_PROSPECT_BOOTSTRAP_ENABLED` — exact activation gate for an already-reviewed, number-assigned personalized bootstrap. It does not acquire or purchase a number and is insufficient without signed Telnyx ingest, a current approved snapshot, and valid provider attestation.
 - `RESPONSEOS_PROVIDER_ATTESTATION_PUBLIC_KEY` — Ed25519 public key used only to verify short-lived provider-workflow readback attestations. The signing key and Telnyx API credential never enter the app runtime.
 - `RESPONSEOS_PROMOTION_IMPORT_ENABLED` — separate default-deny gate for importing an allowlisted promotion manifest into a new disabled customer tenant. It does not activate the imported tenant and is never required for demo operation.
