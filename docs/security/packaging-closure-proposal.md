@@ -64,3 +64,7 @@ This proposal automates necessary rejection conditions; it does not automate all
 6. Only after all automated and manual gates pass, export PR #195's then-current exact head into a disposable combined checkout, apply the reviewed fix, and repeat complete audits and acceptance against its exact dependency versions and lockfile. Human approval remains required for integration, merge or deployment.
 
 Maintenance owner: Codex prepares evidence; the repository maintainer approves the workflow and any eventual custom-code ownership. Keep pinned runtimes/fixtures deliberate, preserve failures, re-capture hashes after source changes, and treat incomplete artifacts as failure. Rollback of this proposal removes only its new manual workflow, tooling, fixtures, report and dashboard task; no application dependency rollback is involved.
+
+## Supplemental occurrence and infrastructure review
+
+The [closure and infrastructure review](closure-infrastructure-review.md) supersedes the packaging-closure assessment above: four source-file exclusions and 28 inactive Windows platform branches are supported, 108 occurrences remain UNKNOWN, and a contained Sharp image probe now fails on the inspected Windows standalone package. Two native DLLs are absent from that copy. Earlier HTTP and application test results remain scoped historical evidence, not proof of native image execution. Repeatable rejection controls are now committed; independent review and hosted validation remain pending.

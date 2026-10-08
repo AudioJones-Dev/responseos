@@ -1,5 +1,6 @@
 export function acceptance(evidence){
  const failures=[];
+ if(evidence.runtimeNativePass!==true)failures.push('native-packaging-evidence');
  if(evidence.auditExit!==0||evidence.auditTotal!==0)failures.push('complete-dependency-security');
  for(const [name,total]of Object.entries({original:49,directory:441,tasks:584})){
   const result=evidence.compatibility?.[name];if(!result||result.total!==total||result.pass!==total||result.exit!==0)failures.push('compatibility-'+name);

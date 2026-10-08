@@ -4,6 +4,7 @@ import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {createRequire} from 'node:module';
 import {acceptance} from './braces-acceptance.mjs';
+import {toolingHash} from './braces-ci-accept.mjs';
 const root=process.cwd(),evidence=path.resolve('.security-evidence');fs.mkdirSync(evidence,{recursive:true});
 const node=process.execPath,npm=process.env.SECURITY_NPM_CLI||process.env.npm_execpath;
 if(!npm)throw new Error('Pinned npm CLI required');
@@ -15,6 +16,7 @@ function run(name,args,cwd=root,env=process.env){
  steps.push({name,exit:result.status,error:result.error?.message||null});return result;
 }
 if(process.version!=='v24.18.0'||spawnSync(node,[npm,'--version'],{encoding:'utf8'}).stdout.trim()!=='11.16.0')throw new Error('Node/npm version mismatch');
+if(run('infrastructure-controls',['scripts/security/braces-infrastructure.test.mjs',path.join(evidence,'infrastructure-controls.json')]).status!==0)process.exit(1);
 const buildResult=run('artifact-build',['scripts/security/braces-artifact-build.mjs']);
 let build;
 try{build=JSON.parse(fs.readFileSync(path.join(evidence,'artifact-verification/build-summary.json')));}catch{}
@@ -33,13 +35,14 @@ for(const [name,args,total]of [['original',['scripts/security/braces-compatibili
  try{const parsed=JSON.parse(result.stdout);compatibility[name]={total:parsed.results.length,pass:parsed.results.filter(row=>row.pass).length,exit:result.status};if(parsed.results.length!==total)compatibility[name].exit=1;}catch{compatibility[name]={total:0,pass:0,exit:1};}
 }
 run('hostile',['scripts/security/braces-hostile-input.mjs']);run('gate-controls',['scripts/security/braces-gates.test.mjs']);
-let audit={},closure={},candidateInstalled=false;
+let audit={},closure={},runtime={},candidateInstalled=false;
 try{audit=JSON.parse(fs.readFileSync(path.join(evidence,'artifact-verification/audit.log')));}catch{}
 try{closure=JSON.parse(fs.readFileSync(path.join(evidence,'artifact-verification/closure-ledger.json'))).summary;}catch{}
+try{runtime=JSON.parse(fs.readFileSync(path.join(evidence,'artifact-verification/runtime-summary.json')));}catch{}
 try{candidateInstalled=fs.realpathSync(createRequire(path.join(build.checkout,'package.json')).resolve('micromatch'))===fs.realpathSync(path.resolve('scripts/security/braces-matcher-experiment.mjs'));}catch{}
 const status=name=>steps.find(step=>step.name===name)?.exit===0?'success':'failure';
-const toolHash=crypto.createHash('sha256').update(['scripts/security','docs/security/fixtures'].flatMap(dir=>fs.readdirSync(dir).filter(name=>dir.includes('fixtures')||name.endsWith('.mjs')).sort().map(name=>dir+'/'+name+'\n'+fs.readFileSync(dir+'/'+name,'utf8').replaceAll('\r\n','\n'))).join('\n')).digest('hex');
-const report={toolHash,platform:process.platform,applicationSha:build?.sourceCommit||process.env.SECURITY_APPLICATION_SHA,auditSha:build?.sourceCommit,compatibilitySha:build?.sourceCommit,auditExit:build?.steps.find(step=>step.name==='audit')?.code,auditTotal:audit.metadata?.vulnerabilities?.total,compatibility,candidateInstalled,closurePass:closure.packagingPass===true,steps,jobs:{[process.platform==='win32'?'windows':'linux']:steps.filter(step=>['artifact-build','inspect','runtime','controls','application-lint','application-typecheck','application-test','synthetic-auth','gate-controls'].includes(step.name)).length===9&&steps.filter(step=>['artifact-build','inspect','runtime','controls','application-lint','application-typecheck','application-test','synthetic-auth','gate-controls'].includes(step.name)).every(step=>step.exit===0)?'success':'failure',hostile:status('hostile'),diagnostics:'failure',integration:'pending'}};
+const toolHash=toolingHash();
+const report={runtimeNativePass:runtime.nativeOperationSucceeded===true,toolHash,platform:process.platform,applicationSha:build?.sourceCommit||process.env.SECURITY_APPLICATION_SHA,auditSha:build?.sourceCommit,compatibilitySha:build?.sourceCommit,auditExit:build?.steps.find(step=>step.name==='audit')?.code,auditTotal:audit.metadata?.vulnerabilities?.total,compatibility,candidateInstalled,closurePass:closure.packagingPass===true,steps,jobs:{[process.platform==='win32'?'windows':'linux']:steps.filter(step=>['infrastructure-controls','artifact-build','inspect','runtime','controls','application-lint','application-typecheck','application-test','synthetic-auth','gate-controls'].includes(step.name)).length===10&&steps.filter(step=>['infrastructure-controls','artifact-build','inspect','runtime','controls','application-lint','application-typecheck','application-test','synthetic-auth','gate-controls'].includes(step.name)).every(step=>step.exit===0)?'success':'failure',hostile:status('hostile'),diagnostics:'failure',integration:'pending'}};
 report.jobs.diagnostics=report.jobs[process.platform==='win32'?'windows':'linux'];
 report.acceptance=acceptance(report);
 fs.writeFileSync(path.join(evidence,'verification-report.json'),JSON.stringify(report,null,2)+'\n');

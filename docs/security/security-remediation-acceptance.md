@@ -22,3 +22,5 @@ Evidence must identify OS, Node/npm versions, base/candidate commits, dependency
 The failed experimental harness is intentionally excluded from ordinary application acceptance until a passing supported candidate exists. Wiring a known-failing prototype into CI is not enforcement of an accepted fix. Before a remediation is promoted, wire reproducible security and compatibility checks into CI in its reviewed change; this document alone does not provide that automation or branch protection.
 
 The separate packaging proposal automates necessary rejection conditions in a manual workflow. It deliberately rejects the current prototype and incomplete evidence. Provenance, diagnostic equivalence, independent review and other human obligations above remain required. See [packaging closure proposal](packaging-closure-proposal.md).
+
+Native packaging execution must pass under containment on each platform. A resolved .node path without successful native loading cannot qualify. Occurrence-level closure and author infrastructure findings are documented in [closure review](closure-infrastructure-review.md); neither is independent approval.

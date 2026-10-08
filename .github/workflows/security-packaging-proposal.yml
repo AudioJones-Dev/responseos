@@ -40,7 +40,7 @@ jobs:
           npm install --global npm@11.16.0
           echo "SECURITY_NPM_CLI=$(npm root -g)/npm/bin/npm-cli.js" >> "$GITHUB_ENV"
           npm ci --include=dev --no-fund
-      - name: Collect diagnostics without treating audit findings as acceptance
+      - name: Verify rejection controls, then collect diagnostics without accepting audit findings
         run: node scripts/security/braces-ci.mjs
       - uses: actions/upload-artifact@v4
         if: always()

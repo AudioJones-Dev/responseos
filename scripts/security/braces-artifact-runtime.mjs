@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import net from 'node:net';
+import {probeNative} from './braces-native-probe.mjs';
 import {spawn,spawnSync} from 'node:child_process';
 const root=process.cwd(),evidence=path.join(root,'.security-evidence/artifact-verification');
 const build=JSON.parse(fs.readFileSync(path.join(evidence,'build-summary.json')));
@@ -58,7 +59,8 @@ const changes=before.filter(item=>!byName.has(item.file)||item.sha256!==byName.g
 const added=after.filter(item=>!before.some(prior=>prior.file===item.file));
 const events=fs.readFileSync(runtimeLog,'utf8').trim().split('\n').filter(Boolean).map(line=>JSON.parse(line));
 const targets=/eslint-config-next|@next[\\/]eslint-plugin-next|fast-glob|micromatch|(?:^|[\\/])braces(?:[\\/]|$)/;
-const summary={capturedAt:new Date().toISOString(),sourceCommit:build.sourceCommit,runtime,port,controlExit:control.status,controlEvents:controlEvents.length,requests,failure,exit,eventCount:events.length,affectedEvents:events.filter(item=>targets.test([item.request,item.file,item.specifier,item.url].filter(Boolean).join(' '))),escapes:events.filter(item=>item.kind==='escape-blocked'),resolutionFailures:events.filter(item=>item.kind==='cjs-failed'),changedOriginalFiles:changes,addedFiles:added,limitations:['Startup, public GETs, protected denials and public 404 only','Embedded code execution is not established by module load hooks','Fresh Windows standalone artifact, not deployed Vercel artifact']};
+const nativeProbe=probeNative(runtime,baseEnv,evidence);
+const summary={nativeOperationSucceeded:nativeProbe.observation.nativeSucceeded===true&&nativeProbe.exit===0&&nativeProbe.escapes.length===0,nativeProbeExit:nativeProbe.exit,nativeProbeError:nativeProbe.observation.error||null,capturedAt:new Date().toISOString(),sourceCommit:build.sourceCommit,runtime,port,controlExit:control.status,controlEvents:controlEvents.length,requests,failure,exit,eventCount:events.length,affectedEvents:events.filter(item=>targets.test([item.request,item.file,item.specifier,item.url].filter(Boolean).join(' '))),escapes:events.filter(item=>item.kind==='escape-blocked'),resolutionFailures:events.filter(item=>item.kind==='cjs-failed'),changedOriginalFiles:changes,addedFiles:added,limitations:['Startup, public GETs, protected denials and public 404 only','Embedded code execution is not established by module load hooks','Fresh Windows standalone artifact, not deployed Vercel artifact']};
 for(const [name,value]of Object.entries({'runtime-before':before,'runtime-after':after,'runtime-summary':summary}))fs.writeFileSync(path.join(evidence,name+'.json'),JSON.stringify(value,null,2)+'\n');
 console.log(JSON.stringify({...summary,resolutionFailures:summary.resolutionFailures.slice(0,3)},null,2));
-if(failure||summary.escapes.length||changes.length||requests.some(item=>item.route==='/demo/packaging-closure-missing'?item.status!==404:['/admin','/client/dashboard','/api/accounts','/api/auth/session'].includes(item.route)?item.status!==307||new URL(item.location,'http://127.0.0.1').pathname!=='/':item.status!==200)||requests[0]?.health?.build_sha!==build.sourceCommit)process.exitCode=1;
+if(!summary.nativeOperationSucceeded||failure||summary.escapes.length||changes.length||requests.some(item=>item.route==='/demo/packaging-closure-missing'?item.status!==404:['/admin','/client/dashboard','/api/accounts','/api/auth/session'].includes(item.route)?item.status!==307||new URL(item.location,'http://127.0.0.1').pathname!=='/':item.status!==200)||requests[0]?.health?.build_sha!==build.sourceCommit)process.exitCode=1;

@@ -39,11 +39,11 @@
       "title": "Review isolated production packaging and joint security acceptance proposal",
       "owner": "Codex",
       "status": "Review",
-      "progress": 60,
+      "progress": 70,
       "priority": "High",
       "start": "2026-10-08",
       "blocked": true,
-      "blockedReason": "Five high audit findings, 36 task defects, 140 unknown import mappings; Linux and Postgres acceptance pending. PR #195 remains unchanged."
+      "blockedReason": "Five audit findings, 36 task defects, 108 unknown import mappings and a Windows native-load failure; Linux/Postgres and independent review pending. PR #195 unchanged."
     },
     {
       "id": "G-14",

@@ -1,0 +1,15 @@
+{
+  "node": "v24.18.0",
+  "applicationSha": "4e1f353117696658988bca171e4e0e51c0fb1b96",
+  "toolHash": "a7fe9db05328e0b870210096e788300bb322fab6503fe29464fa44422f46fa7e",
+  "controls": 29,
+  "matrixRows": 140,
+  "originalIdsPreserved": true,
+  "workflowBashBlocks": 5,
+  "workflowManualOnly": true,
+  "freshHttpChecks": 9,
+  "nativeGateRejected": true,
+  "scriptLint": "PASS",
+  "applicationRegression": "Historical pinned evidence; not rerun in this phase",
+  "hostedExecution": "NOT RUN"
+}
