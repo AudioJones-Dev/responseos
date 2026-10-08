@@ -32,7 +32,19 @@ Run with Node 24.18.0 and npm 11.16.0 against master `0ed7cf0` (Next 16.3.4), fr
 
 ## Traced closure matrix
 
-`braces-closure-matrix.mjs` selects traced mode from `runtime-summary.json` (`packaging: "traced"`). The standalone path keeps its frozen `4e1f353` / `win32` / 140-row identity and archive hash check. A traced run needs a frozen identity file as its fourth argument, `{applicationSha, platform, occurrences, ledgerSha256}`. Without one it stops, and it also stops if any field differs from the bundle or the ledger hash differs. No traced identity is committed yet.
+`braces-closure-matrix.mjs` selects traced mode from `runtime-summary.json` (`packaging: "traced"`). The standalone path keeps its frozen `4e1f353` / `win32` / 140-row identity and archive hash check. A traced run needs a frozen identity file as its fourth argument, `{applicationSha, platform, occurrences, ledger, ledgerSha256}`. `ledger` is a committed frozen closure ledger under `docs/security/`. The run stops if the file is missing, if the ledger path is outside `docs/security/`, if the ledger hash or application SHA differs, or if any field differs from the bundle. Like the standalone path, the matrix then matches every frozen row's source hash and AST position against the fresh build.
+
+## Frozen traced identity: linux-x64, master `0ed7cf0`
+
+`docs/security/traced-closure-evidence/linux-x64-0ed7cf0/` holds the frozen ledger (116 rows) and `frozen-identity.json`. They were committed on 2026-10-08 at the repository owner's direction, before independent review. This is an identity only. It isn't acceptance or closure, and it doesn't mean anyone reviewed the 116 rows or their decisions.
+
+Reproducibility: two separate full `braces-ci.mjs` runs on Linux (Node 24.18.0, npm 11.16.0), each with a fresh export, install and build in its own checkout, produced identical ledger rows. Their summaries differed only in `capturedAt`. The committed ledger is from the first run. Run against the second run's bundle, the matrix reproduces 4 `CLOSED_SOURCE_FILE_EXCLUDED`, 28 `CLOSED_INACTIVE_PLATFORM_BRANCH` and 84 UNKNOWN. These changes each stop the run: editing the committed ledger, an edited ledger with a matching hash (caught by the source/AST match) and a ledger path outside `docs/security/`.
+
+```sh
+node scripts/security/braces-closure-matrix.mjs .security-evidence .security-evidence/closure-review docs/security/traced-closure-evidence/linux-x64-0ed7cf0/frozen-identity.json
+```
+
+The evidence bundle itself isn't committed or archived; rerun `braces-ci.mjs` with `SECURITY_APPLICATION_SHA=0ed7cf0b41c309322408f104f68941ff47df2627` to recreate it. Windows and other platforms need their own frozen identities.
 
 ```sh
 node scripts/security/braces-closure-matrix.mjs .security-evidence .security-evidence/closure-review frozen-identity.json
@@ -53,7 +65,7 @@ PR #195's head `4e1f353` still builds standalone output, and it built from a fre
 ## Not done
 
 - Windows run, Linux/Postgres integration and hosted execution.
-- No traced frozen identity is committed. Its rows and closures need independent review before one is.
-- No traced evidence set is committed. An application SHA that the reviewer agrees on has to be chosen first.
+- The linux-x64 frozen identity for `0ed7cf0` was committed before independent review. Its 116 rows and their decisions still need that review.
+- No traced evidence bundle is archived, and there's no Windows traced identity.
 - `next start` from the build checkout isn't Vercel's launcher. `NEXT_ENABLE_ADAPTER=1 vercel build` output would be closer to the deployed package, but it adds the Vercel CLI to the trust boundary.
 - Audit findings and the braces disposition are unchanged.
