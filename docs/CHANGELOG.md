@@ -7,7 +7,7 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 ## Unreleased — fix: drop the response-time figure from the home-services page (#204)
 
 - The home-services card "Target a reply in under 60 seconds" is now "Reply before they call the next contractor", and the intro's "reply within a minute" is now "reply by text". This applies the owner's homepage-stat rule from #202: no response-time figure until production telemetry exists. The findings doc rated the claim not publishable.
-- No other public page states a response-time figure.
+- No other marketing page states a response-time figure. The demo client dashboard (`/demo/client-dashboard`) still shows an "Avg Response Time" figure from its mock data; that page labels its data as fictional, so it isn't a production claim.
 - `docs/research/RESPONSEOS_WEBSITE_EXECUTIVE_FINDINGS.md` is updated. Dashboard task `L-16`.
 
 ## Unreleased — fix: replace unverifiable homepage stats and bound outcome-fee copy (#202)
