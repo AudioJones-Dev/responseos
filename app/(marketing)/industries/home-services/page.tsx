@@ -12,7 +12,7 @@ const POINTS = [
     body: "Designed so after-hours and on-the-job calls get a response instead of voicemail.",
   },
   {
-    title: "Target a reply in under 60 seconds",
+    title: "Reply before they call the next contractor",
     body: "An automated text is designed to open the conversation before the homeowner dials the next contractor on their list.",
   },
   {
@@ -32,7 +32,7 @@ export default function HomeServicesPage() {
       </h1>
       <p className="mt-4 max-w-2xl text-lg text-ink-secondary">
         HVAC, roofing, plumbing, electrical, landscaping. ResponseOS is
-        designed to catch the missed call at 6:42pm, reply within a minute,
+        designed to catch the missed call at 6:42pm, reply by text,
         qualify the urgency, and book the estimate before the homeowner moves
         on.
       </p>

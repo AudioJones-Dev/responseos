@@ -1321,6 +1321,17 @@
       "refType": "pull"
     },
     {
+      "id": "L-16",
+      "phase": "Launch / Demo Deploy",
+      "title": "Drop the unverified response-time figure from the home-services page",
+      "owner": "Claude Code",
+      "status": "In Progress",
+      "progress": 80,
+      "priority": "Medium",
+      "start": "2026-10-08",
+      "due": "2026-10-08"
+    },
+    {
       "id": "G-16",
       "phase": "Tech Debt & Hardening",
       "title": "Vendor web fonts so next build makes no network requests",
