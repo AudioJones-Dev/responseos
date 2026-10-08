@@ -75,18 +75,23 @@ export async function POST(req: Request) {
     personalized = false;
   }
 
+  const payloadExpiresAt = daysAfter(
+    occurredAt ?? receivedAt,
+    personalized || !resolved ? PROSPECT_CONTENT_RETENTION_DAYS : DEMO_CALL_RETENTION_DAYS,
+  );
+  // An event that arrives after its call's retention window would write
+  // purged caller content back onto the retained call stub.
+  const pastRetention = payloadExpiresAt <= receivedAt;
   const ledger = await recordWebhookEvent({
     account_id: resolved?.accountId,
     provider: "telnyx",
     provider_event_id: event.data.id,
     event_type: event.data.event_type,
-    raw_body: rawBody,
-    signature_header: signature ?? undefined,
+    raw_body: pastRetention ? "<PURGED_WEBHOOK_PAYLOAD>" : rawBody,
+    signature_header: pastRetention ? undefined : signature ?? undefined,
     signature_valid: true,
-    payload_expires_at: daysAfter(
-      occurredAt ?? receivedAt,
-      personalized || !resolved ? PROSPECT_CONTENT_RETENTION_DAYS : DEMO_CALL_RETENTION_DAYS,
-    ),
+    payload_expires_at: payloadExpiresAt,
+    ...(pastRetention ? { payload_purged_at: receivedAt } : {}),
   });
   if (!ledger.ok) {
     return errorResponse(503, {
@@ -94,7 +99,7 @@ export async function POST(req: Request) {
       message: "Telnyx webhook ledger is unavailable.",
     });
   }
-  if (!target || !occurredAt || !resolved) {
+  if (!target || !occurredAt || !resolved || pastRetention) {
     await setWebhookProcessStatus({
       id: ledger.data.id,
       process_status: "rejected",
@@ -102,7 +107,9 @@ export async function POST(req: Request) {
         ? "missing_destination"
         : !occurredAt
           ? "missing_occurred_at"
-          : "unassigned_destination",
+          : !resolved
+            ? "unassigned_destination"
+            : "past_retention_window",
     });
     return NextResponse.json(
       { ok: true, data: { accepted: true, duplicate: ledger.data.process_status === "duplicate", normalized: false } },

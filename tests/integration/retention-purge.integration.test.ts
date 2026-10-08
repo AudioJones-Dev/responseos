@@ -136,6 +136,13 @@ async function seedDueData() {
   } });
   await demoCall("call_retention_old", { startedAt: longAgo, contactId: oneTimeCaller.id });
   await demoCall("call_retention_old_repeat", { startedAt: longAgo, contactId: repeatCaller.id });
+  const quotedCaller = await prisma.contact.create({ data: {
+    id: "contact_retention_quoted", account_id: DEMO_ACCOUNT_ID, phone: "+13055550152", source: "call",
+  } });
+  await demoCall("call_retention_old_quoted", { startedAt: longAgo, contactId: quotedCaller.id });
+  await prisma.quoteRequest.create({ data: {
+    account_id: DEMO_ACCOUNT_ID, contact_id: quotedCaller.id, service_type: "Water heater install",
+  } });
   await demoCall("call_retention_recent", { startedAt: lastWeek, contactId: repeatCaller.id });
   await demoCall("call_retention_manual", { provider: "manual", startedAt: longAgo });
   await prisma.callTranscript.create({ data: {
@@ -161,6 +168,10 @@ async function seedDueData() {
     account_id: DEMO_ACCOUNT_ID, operation_key: "crm-call:old-repeat", provider: "hubspot", call_id: "call_retention_old_repeat",
     status: "retryable_failed",
   } });
+  await prisma.crmSyncOperation.create({ data: {
+    account_id: DEMO_ACCOUNT_ID, operation_key: "crm-call:old-stuck", provider: "hubspot", call_id: "call_retention_old_quoted",
+    status: "processing",
+  } });
   await webhook("demo-old-unexpiring", { account_id: DEMO_ACCOUNT_ID, received_at: longAgo });
   await webhook("demo-recent-unexpiring", { account_id: DEMO_ACCOUNT_ID, received_at: lastWeek });
 
@@ -177,7 +188,7 @@ const EXPECTED_COUNTS = {
   bootstrap_cleanup: 1,
   number_quarantine: 1,
   webhook_payloads: 3,
-  demo_call_content: 2,
+  demo_call_content: 3,
   clerk_payloads: 1,
 };
 
@@ -243,7 +254,7 @@ describe("retention purge runner", () => {
         .toMatchObject({ raw_body: `raw caller payload ${id}`, payload_purged_at: null });
     }
 
-    for (const id of ["call_retention_old", "call_retention_old_repeat"]) {
+    for (const id of ["call_retention_old", "call_retention_old_repeat", "call_retention_old_quoted"]) {
       expect(await prisma.call.findUnique({ where: { id } })).toMatchObject({
         from_number: "<PURGED>", contact_id: null, transcript: null, summary: null,
       });
@@ -260,10 +271,13 @@ describe("retention purge runner", () => {
     expect(await prisma.leadQualification.count({ where: { service_needed: "Water heater" } })).toBe(0);
     expect(await prisma.contact.findUnique({ where: { id: "contact_retention_once" } })).toBeNull();
     expect(await prisma.contact.findUnique({ where: { id: "contact_retention_repeat" } })).not.toBeNull();
+    expect(await prisma.contact.findUnique({ where: { id: "contact_retention_quoted" } })).not.toBeNull();
     expect(await prisma.crmSyncOperation.findUnique({ where: { operation_key: "crm-call:old" } }))
       .toMatchObject({ status: "succeeded", provider_contact_id: "hubspot-contact-1" });
-    expect(await prisma.crmSyncOperation.findUnique({ where: { operation_key: "crm-call:old-repeat" } }))
-      .toMatchObject({ status: "cancelled", last_error_code: "retention_purged" });
+    for (const operation_key of ["crm-call:old-repeat", "crm-call:old-stuck"]) {
+      expect(await prisma.crmSyncOperation.findUnique({ where: { operation_key } }))
+        .toMatchObject({ status: "cancelled", last_error_code: "retention_purged" });
+    }
     expect(await prisma.call.findUnique({ where: { id: "call_responseos_demo" } }))
       .toMatchObject({ from_number: "+15555550811" });
 
@@ -284,8 +298,8 @@ describe("retention purge runner", () => {
     expect(audits.find(({ action, account_id }) => action === "retention.webhook_payloads_scrubbed" && account_id === null)?.metadata_json)
       .toEqual({ scrubbed: 2, byProvider: { telnyx: 1, clerk: 1 } });
     expect(audits.find(({ action }) => action === "retention.demo_call_content_purged")?.metadata_json).toMatchObject({
-      calls: 2, webhookPayloads: 1, segmentsDeleted: 1, transcriptsRedacted: 1, leadsDeleted: 1,
-      qualificationsDeleted: 1, contactsDeleted: 1, crmOperationsCancelled: 1, crmCopyDeleted: false,
+      calls: 3, webhookPayloads: 1, segmentsDeleted: 1, transcriptsRedacted: 1, leadsDeleted: 1,
+      qualificationsDeleted: 1, contactsDeleted: 1, crmOperationsCancelled: 2, crmCopyDeleted: false,
     });
     const bootstrapAudits = await prisma.auditLog.findMany({ where: { action: { startsWith: "prospect_bootstrap." } } });
     expect(bootstrapAudits.map(({ action }) => action).sort()).toEqual([

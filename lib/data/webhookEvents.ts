@@ -98,6 +98,7 @@ export async function recordWebhookEvent(entry: {
   signature_header?: string;
   signature_valid?: boolean;
   payload_expires_at?: Date;
+  payload_purged_at?: Date;
 }): Promise<Result<{ id: string; process_status: WebhookProcessStatus }>> {
   if (db === null) {
     return err(
@@ -129,6 +130,7 @@ export async function recordWebhookEvent(entry: {
         dedupe_hash,
         process_status: "received",
         payload_expires_at: entry.payload_expires_at ?? null,
+        payload_purged_at: entry.payload_purged_at ?? null,
       },
       select: { id: true, process_status: true },
     });

@@ -13,7 +13,9 @@ export type DemoCallPurgeCounts = { calls: number; webhookPayloads: number } & R
  * row stays as a content-free stub (timing, status, the demo number) so the
  * purge is idempotent and late webhooks for the same call still dedupe.
  * Succeeded CRM operations are kept: they are the only local pointer to the
- * HubSpot copy, which this purge does not delete.
+ * HubSpot copy, which this purge does not delete. Every other operation is
+ * cancelled, including `processing`: a call this old has no live sync, so a
+ * processing row is one a crashed worker left behind.
  */
 export async function purgeExpiredDemoCallContent(params: {
   accountId: string;
@@ -68,7 +70,7 @@ export async function purgeExpiredDemoCallContent(params: {
         data: { contact_id: null, from_number: PURGED_NUMBER, transcript: null, summary: null, recording_url: null },
       });
       const crmOperations = await tx.crmSyncOperation.updateMany({
-        where: { account_id: accountId, call_id: { in: callIds }, status: { in: ["pending", "retryable_failed", "review_required"] } },
+        where: { account_id: accountId, call_id: { in: callIds }, status: { in: ["pending", "processing", "retryable_failed", "review_required"] } },
         data: { status: "cancelled", last_error_code: "retention_purged", last_error_redacted: "retention_purged", next_attempt_at: null },
       });
 
@@ -79,6 +81,8 @@ export async function purgeExpiredDemoCallContent(params: {
           ...(await tx.leadEvent.findMany({ where: contactRef, select: { contact_id: true } })),
           ...(await tx.appointment.findMany({ where: contactRef, select: { contact_id: true } })),
           ...(await tx.conversation.findMany({ where: contactRef, select: { contact_id: true } })),
+          ...(await tx.quoteRequest.findMany({ where: contactRef, select: { contact_id: true } })),
+          ...(await tx.professionalOpportunity.findMany({ where: contactRef, select: { contact_id: true } })),
         ].map(({ contact_id }) => contact_id),
       );
       const contacts = await tx.contact.deleteMany({
