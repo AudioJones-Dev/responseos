@@ -161,6 +161,19 @@ describe("bounded public website acquisition", () => {
     expect(requested).toEqual(["/robots.txt", "/"]);
   });
 
+  test("identifies itself with a user agent that links to the live trust page", async () => {
+    const userAgents: (string | null)[] = [];
+    const fetchFn: typeof fetch = async (_input, init) => {
+      userAgents.push(new Headers(init?.headers).get("user-agent"));
+      return new Response("User-agent: *\nDisallow:", { headers: { "content-type": "text/plain" } });
+    };
+    await acquireProspectWebsite({ canonicalUrl: "https://prospect.example/", fetchFn, lookupFn: publicLookup, now });
+    expect(userAgents.length).toBeGreaterThan(0);
+    for (const userAgent of userAgents) {
+      expect(userAgent).toBe("ResponseOS-ProspectBootstrap/1.0 (+https://responseos.ajdigital.app/trust)");
+    }
+  });
+
   test("aborts an individual provider request after ten seconds", async () => {
     vi.useFakeTimers();
     try {

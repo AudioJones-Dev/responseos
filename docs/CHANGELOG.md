@@ -4,6 +4,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — fix: point the prospect website fetcher's user agent at the live trust page
+
+- `lib/prospectBootstrap/websiteAcquisition.ts` identified itself as `ResponseOS-ProspectBootstrap/1.0 (+https://responseos.ai/trust)`. `responseos.ai` is a parking page we don't control, so a site owner checking who fetched their pages landed somewhere unrelated. The user agent now links to `https://responseos.ajdigital.app/trust`.
+- A unit test asserts the header on every request the fetcher makes (`tests/unit/prospect-bootstrap.test.ts`). It fails on the old value.
+- That was the only `responseos.ai` reference in the repository. Dashboard task `L-18`.
+
 ## Unreleased — fix: drop the response-time figure from the home-services page (#204)
 
 - The home-services card "Target a reply in under 60 seconds" is now "Reply before they call the next contractor", and the intro's "reply within a minute" is now "reply by text". This applies the owner's homepage-stat rule from #202: no response-time figure until production telemetry exists. The findings doc rated the claim not publishable.
