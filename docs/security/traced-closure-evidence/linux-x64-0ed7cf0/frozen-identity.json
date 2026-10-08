@@ -1,0 +1,8 @@
+{
+  "applicationSha": "0ed7cf0b41c309322408f104f68941ff47df2627",
+  "platform": "linux",
+  "occurrences": 116,
+  "ledger": "docs/security/traced-closure-evidence/linux-x64-0ed7cf0/closure-ledger.json",
+  "ledgerSha256": "89fda45943eadc8e2ae1218601513aa714f2de1a8176036420ffbe0c17a1e3b9",
+  "scope": "Frozen occurrence identity for the traced linux-x64 package of master 0ed7cf0, Node 24.18.0 / npm 11.16.0. Identity only: not acceptance, not independent review, not closure."
+}

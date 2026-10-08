@@ -13,12 +13,13 @@ if(!traced){
  const archive='docs/security/packaging-proposal-evidence/raw-evidence.tar.gz',archiveManifest=JSON.parse(fs.readFileSync('docs/security/packaging-proposal-evidence/archive.json'));
  if(hash(fs.readFileSync(archive))!==archiveManifest.sha256)throw new Error('Preserved archive hash mismatch');
 }
-// Traced ledgers have no committed identity yet, so a frozen identity file is required: {applicationSha, platform, occurrences, ledgerSha256}.
+// Traced runs need a frozen identity file: {applicationSha, platform, occurrences, ledger, ledgerSha256}, where ledger is the committed frozen closure ledger.
 if(traced&&!process.argv[4])throw new Error('Traced packaging requires a frozen identity file argument');
 const frozen=traced?JSON.parse(fs.readFileSync(process.argv[4],'utf8')):{applicationSha:'4e1f353117696658988bca171e4e0e51c0fb1b96',platform:'win32',occurrences:140};
-const ledgerFile=traced?path.join(evidence,'artifact-verification/closure-ledger.json'):'docs/security/packaging-proposal-evidence/artifact-verification/closure-ledger.json';
+const ledgerFile=traced?frozen.ledger:'docs/security/packaging-proposal-evidence/artifact-verification/closure-ledger.json';
+if(traced&&(typeof ledgerFile!=='string'||!ledgerFile.startsWith('docs/security/')||ledgerFile.includes('..')))throw new Error('Frozen ledger must be committed under docs/security');
 const report=verifyBundle(evidence),build=read('artifact-verification/build-summary.json'),original=JSON.parse(fs.readFileSync(ledgerFile,'utf8')),inventory=read('artifact-verification/inventory.json'),before=read('artifact-verification/runtime-before.json');
-if(build.sourceCommit!==frozen.applicationSha||build.platform!==frozen.platform||process.version!==build.node||original.ledger.length!==frozen.occurrences||original.ledger.some((row,index)=>row.id!==index+1)||traced&&hash(fs.readFileSync(ledgerFile))!==frozen.ledgerSha256)throw new Error('Frozen occurrence identity mismatch');
+if(build.sourceCommit!==frozen.applicationSha||build.platform!==frozen.platform||process.version!==build.node||original.ledger.length!==frozen.occurrences||original.ledger.some((row,index)=>row.id!==index+1)||traced&&(hash(fs.readFileSync(ledgerFile))!==frozen.ledgerSha256||original.summary?.applicationSha!==frozen.applicationSha))throw new Error('Frozen occurrence identity mismatch');
 const checkout=build.checkout,ts=createRequire(path.join(checkout,'package.json'))('typescript');
 const inventoryMap=new Map(inventory.map(row=>[row.file,row])),runtimeMap=new Map(before.map(row=>[row.file,row]));
 const events=fs.readFileSync(path.join(evidence,'artifact-verification/runtime-loads.jsonl'),'utf8').split('\n').filter(Boolean).map(line=>JSON.parse(line));
