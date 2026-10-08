@@ -3,6 +3,7 @@ import { db } from "@/lib/db/client";
 import { recordWebhookEvent } from "@/lib/data/webhookEvents";
 import { recordAuditLog } from "@/lib/data/auditLogs";
 import { err, ok, type Result } from "@/lib/data/result";
+import { CLERK_PAYLOAD_RETENTION_DAYS, daysAfter } from "@/lib/retention/periods";
 
 /**
  * Clerk webhook reconciliation (32C, Path A in the alignment plan §4.8).
@@ -297,6 +298,7 @@ export async function handleClerkEvent(params: {
     event_type: params.event.type,
     raw_body: params.rawBody,
     signature_valid: true,
+    payload_expires_at: daysAfter(new Date(), CLERK_PAYLOAD_RETENTION_DAYS),
   });
   if (!ledger.ok) {
     return ledger;

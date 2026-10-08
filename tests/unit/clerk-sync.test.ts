@@ -213,6 +213,15 @@ describe("handleClerkEvent — ledger / replay safety", () => {
     });
   });
 
+  test("records the raw Clerk body with a 30-day payload expiry", async () => {
+    const before = Date.now();
+    await call("user.created", userPayload);
+    const entry = m.recordWebhookEvent.mock.calls[0][0] as { payload_expires_at: Date };
+    const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+    expect(entry.payload_expires_at.getTime()).toBeGreaterThanOrEqual(before + thirtyDays);
+    expect(entry.payload_expires_at.getTime()).toBeLessThanOrEqual(Date.now() + thirtyDays);
+  });
+
   test("an already-processed event short-circuits without dispatching", async () => {
     m.recordWebhookEvent.mockResolvedValue({
       ok: true,

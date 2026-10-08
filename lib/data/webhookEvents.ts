@@ -4,6 +4,8 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
 import { err, errFromThrown, ok, type Result } from "./result";
 import { requireRole } from "@/lib/auth/session";
+import { retentionAuditData } from "@/lib/retention/audit";
+import { CLERK_PAYLOAD_RETENTION_DAYS, daysAfter } from "@/lib/retention/periods";
 
 export type WebhookProcessStatus =
   | "received"
@@ -151,22 +153,95 @@ export async function recordWebhookEvent(entry: {
   }
 }
 
-export async function purgeExpiredWebhookPayloads(now = new Date()): Promise<Result<{ purged: number }>> {
+function scrubbedPayload(now: Date) {
+  return {
+    raw_body: "<PURGED_WEBHOOK_PAYLOAD>",
+    signature_header: null,
+    process_error: null,
+    payload_purged_at: now,
+  };
+}
+
+/**
+ * Scrubs every payload past its `payload_expires_at`. Audit rows are written
+ * per affected account (null for events no tenant owns, such as Clerk's), so
+ * each tenant's trail shows what was removed from it.
+ */
+export async function purgeExpiredWebhookPayloads(
+  now = new Date(),
+  options: { preview?: boolean } = {},
+): Promise<Result<{ purged: number }>> {
   if (db === null) return err("no_database", "Webhook payload purge requires DATABASE_URL.");
+  const where = { payload_expires_at: { lte: now }, payload_purged_at: null };
   try {
-    const result = await db.webhookEvent.updateMany({
-      where: {
-        payload_expires_at: { lte: now },
-        payload_purged_at: null,
-      },
-      data: {
-        raw_body: "<PURGED_WEBHOOK_PAYLOAD>",
-        signature_header: null,
-        process_error: null,
-        payload_purged_at: now,
-      },
+    if (options.preview) return ok({ purged: await db.webhookEvent.count({ where }) });
+    const purged = await db.$transaction(async (tx) => {
+      const groups = await tx.webhookEvent.groupBy({ by: ["account_id", "provider"], where });
+      const byAccount = new Map<string | null, Record<string, number>>();
+      for (const group of groups) {
+        const result = await tx.webhookEvent.updateMany({
+          where: { ...where, account_id: group.account_id, provider: group.provider },
+          data: scrubbedPayload(now),
+        });
+        if (result.count === 0) continue;
+        const byProvider = byAccount.get(group.account_id) ?? {};
+        byProvider[group.provider] = result.count;
+        byAccount.set(group.account_id, byProvider);
+      }
+      let total = 0;
+      for (const [accountId, byProvider] of byAccount) {
+        const scrubbed = Object.values(byProvider).reduce((sum, count) => sum + count, 0);
+        total += scrubbed;
+        await tx.auditLog.create({ data: retentionAuditData({
+          accountId,
+          action: "retention.webhook_payloads_scrubbed",
+          targetType: "WebhookEvent",
+          reason: "Raw webhook payloads reached their recorded expiry.",
+          metadata: { scrubbed, byProvider },
+          now,
+        }) });
+      }
+      return total;
     });
-    return ok({ purged: result.count });
+    return ok({ purged });
+  } catch (error) {
+    return errFromThrown(error);
+  }
+}
+
+/**
+ * Clerk events recorded before they carried an expiry have a null
+ * `payload_expires_at`; this covers them by receipt age. Newer Clerk events
+ * expire through `purgeExpiredWebhookPayloads`.
+ */
+export async function purgeUnexpiringClerkPayloads(
+  now = new Date(),
+  options: { preview?: boolean } = {},
+): Promise<Result<{ purged: number }>> {
+  if (db === null) return err("no_database", "Clerk payload purge requires DATABASE_URL.");
+  const where = {
+    provider: "clerk",
+    payload_expires_at: null,
+    payload_purged_at: null,
+    received_at: { lte: daysAfter(now, -CLERK_PAYLOAD_RETENTION_DAYS) },
+  };
+  try {
+    if (options.preview) return ok({ purged: await db.webhookEvent.count({ where }) });
+    const purged = await db.$transaction(async (tx) => {
+      const result = await tx.webhookEvent.updateMany({ where, data: scrubbedPayload(now) });
+      if (result.count > 0) {
+        await tx.auditLog.create({ data: retentionAuditData({
+          accountId: null,
+          action: "retention.clerk_payloads_scrubbed",
+          targetType: "WebhookEvent",
+          reason: `Raw Clerk account updates without an expiry were received more than ${CLERK_PAYLOAD_RETENTION_DAYS} days ago.`,
+          metadata: { scrubbed: result.count },
+          now,
+        }) });
+      }
+      return result.count;
+    });
+    return ok({ purged });
   } catch (error) {
     return errFromThrown(error);
   }

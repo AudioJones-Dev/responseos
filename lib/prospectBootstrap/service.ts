@@ -954,7 +954,7 @@ export async function shouldDispatchCrmForAccount(accountId: string): Promise<bo
   return account?.account_type === "customer";
 }
 
-export async function expireDueProspectBootstraps(now = new Date()) {
+export async function expireDueProspectBootstraps(now = new Date(), options: { preview?: boolean } = {}) {
   if (!db) return err("no_database", "Expiry requires DATABASE_URL.");
   try {
     const due = await db.prospectBootstrap.findMany({ where: { OR: [
@@ -967,6 +967,7 @@ export async function expireDueProspectBootstraps(now = new Date()) {
         expires_at: { lte: now },
       },
     ] } });
+    if (options.preview) return ok({ expired: due.length });
     let expired = 0;
     for (const bootstrap of due) {
       await db.$transaction(async (tx) => {
@@ -1016,7 +1017,7 @@ export async function expireDueProspectBootstraps(now = new Date()) {
   }
 }
 
-export async function purgeExpiredProspectContent(now = new Date()) {
+export async function purgeExpiredProspectContent(now = new Date(), options: { preview?: boolean } = {}) {
   if (!db) return err("no_database", "Prospect content purge requires DATABASE_URL.");
   try {
     const [sourceDue, contentDue] = await Promise.all([
@@ -1029,6 +1030,12 @@ export async function purgeExpiredProspectContent(now = new Date()) {
     const contentDueIds = new Set(contentDue.map(({ id }) => id));
     const dueIds = [...new Set([...sourceDue.map(({ bootstrap_id }) => bootstrap_id), ...contentDueIds])];
     const due = await db.prospectBootstrap.findMany({ where: { id: { in: dueIds } } });
+    if (options.preview) {
+      return ok({
+        bootstraps: due.length,
+        accountsPurged: due.filter(({ id }) => contentDueIds.has(id)).length,
+      });
+    }
     let accountsPurged = 0;
     let sourcesPurged = 0;
     let factsPurged = 0;
@@ -1115,17 +1122,18 @@ export async function purgeExpiredProspectContent(now = new Date()) {
       webhookPayloadsPurged += counts.webhooks;
       if (purgeAccountContent) accountsPurged += 1;
     }
-    return ok({ accountsPurged, sourcesPurged, factsPurged, webhookPayloadsPurged });
+    return ok({ bootstraps: due.length, accountsPurged, sourcesPurged, factsPurged, webhookPayloadsPurged });
   } catch (error) {
     return errFromThrown(error);
   }
 }
 
-export async function cleanupExpiredProspectBootstraps(now = new Date()) {
+export async function cleanupExpiredProspectBootstraps(now = new Date(), options: { preview?: boolean } = {}) {
   if (!db) return err("no_database", "Cleanup requires DATABASE_URL.");
   try {
     const cutoff = addDays(now, -PROSPECT_CONTENT_RETENTION_DAYS);
     const due = await db.prospectBootstrap.findMany({ where: { status: "expired", expires_at: { lte: cutoff } } });
+    if (options.preview) return ok({ cleaned: due.length });
     let cleaned = 0;
     for (const bootstrap of due) {
       await db.$transaction(async (tx) => {
@@ -1141,7 +1149,7 @@ export async function cleanupExpiredProspectBootstraps(now = new Date()) {
         await tx.leadEvent.deleteMany({ where: { account_id: bootstrap.account_id } });
         await tx.call.deleteMany({ where: { id: { in: callIds } } });
         await tx.contact.deleteMany({ where: { account_id: bootstrap.account_id } });
-        await tx.webhookEvent.updateMany({ where: { account_id: bootstrap.account_id }, data: { raw_body: "<PURGED_PROSPECT_DEMO_PAYLOAD>", signature_header: null, process_error: null } });
+        await tx.webhookEvent.updateMany({ where: { account_id: bootstrap.account_id, payload_purged_at: null }, data: { raw_body: "<PURGED_PROSPECT_DEMO_PAYLOAD>", signature_header: null, process_error: null, payload_purged_at: now } });
         await tx.knowledgeFact.deleteMany({ where: { account_id: bootstrap.account_id, bootstrap_id: bootstrap.id } });
         await tx.knowledgeSource.updateMany({ where: { account_id: bootstrap.account_id, bootstrap_id: bootstrap.id }, data: { status: "purged", extracted_text: null, purged_at: now } });
         await tx.businessMemorySnapshot.deleteMany({ where: { account_id: bootstrap.account_id, bootstrap_id: bootstrap.id } });
@@ -1180,7 +1188,7 @@ export async function cleanupExpiredProspectBootstraps(now = new Date()) {
   }
 }
 
-export async function releaseQuarantinedAssignments(now = new Date()) {
+export async function releaseQuarantinedAssignments(now = new Date(), options: { preview?: boolean } = {}) {
   if (!db) return err("no_database", "Reconciliation requires DATABASE_URL.");
   try {
     const due = await db.telephonyNumberAssignment.findMany({ where: { status: "quarantined", quarantine_until: { lte: now } } });
@@ -1189,7 +1197,7 @@ export async function releaseQuarantinedAssignments(now = new Date()) {
     for (const assignment of due) {
       const effectiveUntil = assignment.last_inbound_at ? addDays(assignment.last_inbound_at, PROSPECT_NUMBER_QUARANTINE_DAYS) : assignment.quarantine_until;
       if (effectiveUntil && effectiveUntil > now) {
-        await db.$transaction(async (tx) => {
+        if (!options.preview) await db.$transaction(async (tx) => {
           await tx.telephonyNumberAssignment.update({ where: { id: assignment.id }, data: { quarantine_until: effectiveUntil } });
           await tx.auditLog.create({ data: {
             account_id: assignment.account_id,

@@ -98,5 +98,10 @@ describe("ProspectIntake persistence", () => {
     const listed = await listProspectIntakes({ accountId: "org_mock_1" });
     expect(listed.ok && listed.data[0].request).toBeNull();
     expect(listed.ok && listed.data[0].reference).toMatch(/^audit_/);
+    expect(await prisma.auditLog.findFirst({ where: { action: "retention.intake_pii_purged" } })).toMatchObject({
+      account_id: "org_mock_1",
+      actor_type: "system",
+      metadata_json: { purged: 1 },
+    });
   });
 });

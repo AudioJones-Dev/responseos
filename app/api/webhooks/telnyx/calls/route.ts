@@ -11,6 +11,7 @@ import {
   resolveTelnyxEventAssignment,
 } from "@/lib/prospectBootstrap/service";
 import { PROSPECT_CONTENT_RETENTION_DAYS } from "@/lib/prospectBootstrap/contracts";
+import { DEMO_CALL_RETENTION_DAYS, daysAfter } from "@/lib/retention/periods";
 import {
   getTelnyxAgentTarget,
   getTelnyxOccurredAt,
@@ -82,9 +83,10 @@ export async function POST(req: Request) {
     raw_body: rawBody,
     signature_header: signature ?? undefined,
     signature_valid: true,
-    ...(personalized || !resolved
-      ? { payload_expires_at: new Date((occurredAt ?? receivedAt).getTime() + PROSPECT_CONTENT_RETENTION_DAYS * 24 * 60 * 60 * 1000) }
-      : {}),
+    payload_expires_at: daysAfter(
+      occurredAt ?? receivedAt,
+      personalized || !resolved ? PROSPECT_CONTENT_RETENTION_DAYS : DEMO_CALL_RETENTION_DAYS,
+    ),
   });
   if (!ledger.ok) {
     return errorResponse(503, {
