@@ -4,7 +4,7 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
-## Unreleased — fix: drop the response-time figure from the home-services page
+## Unreleased — fix: drop the response-time figure from the home-services page (#204)
 
 - The home-services card "Target a reply in under 60 seconds" is now "Reply before they call the next contractor", and the intro's "reply within a minute" is now "reply by text". This applies the owner's homepage-stat rule from #202: no response-time figure until production telemetry exists. The findings doc rated the claim not publishable.
 - No other public page states a response-time figure.
