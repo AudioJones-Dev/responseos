@@ -64,7 +64,7 @@ export function collectAcceptance(directory,applicationSha,expectedToolHash,inte
   for(const file of ['integration-report.json',...integrationCommands.flatMap(([name])=>[name+'-result.json',name+'.log'])])if(!names.has(file))throw Error('Missing integration raw evidence: '+file);
   const read=(name,json=true)=>json?JSON.parse(fs.readFileSync(path.join(dir,name))):fs.readFileSync(path.join(dir,name),'utf8');
   verifyIntegration(read('integration-report.json'),read,applicationSha,expectedToolHash,linux.sourceHashes);
-  for(const name of ['package.json','package-lock.json'])if(win.sourceHashes?.[name]!==linux.sourceHashes?.[name])throw Error('Platform exact-lock mismatch');
+  for(const name of ['package.json','package-lock.json','scripts/patch-minimatch-cjs-compat.mjs'])if(win.sourceHashes?.[name]!==linux.sourceHashes?.[name])throw Error('Platform exact-lock mismatch');
  }
  return {pass:results.every(row=>row.pass),results};
 }

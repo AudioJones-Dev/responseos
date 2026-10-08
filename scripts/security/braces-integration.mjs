@@ -4,7 +4,8 @@ import crypto from 'node:crypto';
 import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 export const integrationCommands=[
- ['install','npm',['ci','--include=dev','--no-fund']],
+ ['install','npm',['ci','--ignore-scripts','--include=dev','--no-fund']],
+ ['compatibility-patch','node',['scripts/patch-minimatch-cjs-compat.mjs']],
  ['generate','prisma',['generate']],
  ['server-version','psql',['-h','localhost','-U','responseos','-d','responseos_test','-Atc','SHOW server_version_num;']],
  ['shadow','psql',['-h','localhost','-U','responseos','-d','responseos_test','-c','CREATE DATABASE responseos_shadow;']],
@@ -16,7 +17,7 @@ export const integrationCommands=[
 ];
 export function verifyIntegration(report,read,applicationSha,toolHash,sourceHashes){
  if(report.applicationSha!==applicationSha||report.toolHash!==toolHash||report.platform!=='linux'||report.node!=='v24.18.0'||report.npm!=='11.16.0'||report.postgresMajor!==16||report.complete!==true)throw Error('Integration identity or completion mismatch');
- for(const name of ['package.json','package-lock.json'])if(!/^[0-9a-f]{64}$/.test(sourceHashes?.[name]||'')||report.sourceHashes?.[name]!==sourceHashes[name]||report.finalHashes?.[name]!==sourceHashes[name])throw Error('Integration exact-lock mismatch');
+ for(const name of ['package.json','package-lock.json','scripts/patch-minimatch-cjs-compat.mjs'])if(!/^[0-9a-f]{64}$/.test(sourceHashes?.[name]||'')||report.sourceHashes?.[name]!==sourceHashes[name]||report.finalHashes?.[name]!==sourceHashes[name])throw Error('Integration exact-lock mismatch');
  if(!Array.isArray(report.steps)||report.steps.length!==integrationCommands.length)throw Error('Integration command coverage incomplete');
  for(const [i,[name,tool,args]]of integrationCommands.entries()){
   const row=report.steps[i],raw=read(name+'-result.json');
@@ -37,7 +38,7 @@ async function runIntegration(){
   Object.assign(env,{NODE_ENV:'test',NEXT_TELEMETRY_DISABLED:'1',RESPONSEOS_REQUIRE_AUTH:'true',PGPASSWORD:'responseos',DATABASE_URL:'postgresql://responseos:responseos@localhost:5432/responseos_test',DIRECT_URL:'postgresql://responseos:responseos@localhost:5432/responseos_test',npm_config_userconfig:path.join(dir,'empty.npmrc')});fs.writeFileSync(env.npm_config_userconfig,'');
   report.npm=spawnSync(process.execPath,[npm,'--version'],{env,encoding:'utf8'}).stdout?.trim();if(report.npm!=='11.16.0')throw Error('npm mismatch');
   report.sourceHashes={};
-  for(const name of ['package.json','package-lock.json']){
+  for(const name of ['package.json','package-lock.json','scripts/patch-minimatch-cjs-compat.mjs']){
    const expected=spawnSync('git',['show',sha+':'+name],{cwd:root,env,maxBuffer:20000000});if(expected.status!==0)throw Error('Source blob unavailable');
    report.sourceHashes[name]=hash(expected.stdout);if(hash(fs.readFileSync(path.join(app,name)))!==report.sourceHashes[name])throw Error('Export differs from source');
   }
@@ -50,7 +51,7 @@ async function runIntegration(){
    if(result.status!==0||row.timedOut)throw Error('Integration command failed: '+name);
    if(name==='server-version'){if(!/^16\d{4}\s*$/.test(log.trim()))throw Error('Postgres 16 required');report.postgresMajor=16;}
   }
-  report.finalHashes=Object.fromEntries(['package.json','package-lock.json'].map(name=>[name,hash(fs.readFileSync(path.join(app,name)))]));report.complete=true;
+  report.finalHashes=Object.fromEntries(['package.json','package-lock.json','scripts/patch-minimatch-cjs-compat.mjs'].map(name=>[name,hash(fs.readFileSync(path.join(app,name)))]));report.complete=true;
   verifyIntegration(report,(name,json=true)=>json?JSON.parse(fs.readFileSync(path.join(dir,name))):fs.readFileSync(path.join(dir,name),'utf8'),sha,report.toolHash,report.sourceHashes);
  }catch(error){report.complete=false;report.error=error.message;console.error(error.message);process.exitCode=1;}
  save();fs.writeFileSync(path.join(dir,'evidence-index.json'),JSON.stringify(fs.readdirSync(dir).filter(name=>name!=='evidence-index.json').sort().map(file=>({file,sha256:hash(fs.readFileSync(path.join(dir,file)))})),null,2)+'\n');

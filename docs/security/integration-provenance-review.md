@@ -21,3 +21,5 @@ This closes those two call-site obligations only for the inspected Windows x64 p
 Installation scripts/npm bootstrap still require exact-source/integrity review and an accepted runner isolation design. Immutable action/image references have been added, but hosted runner labels remain mutable and the proposal is not a network sandbox. Artifact retention remains 14 days pending independent review. No hosted workflow was dispatched. Linux/Postgres and independent review remain unexecuted.
 
 Require an independent human reviewer before approving hosted execution. Do not treat these synthetic tests as real integration success. PR #195 remains unchanged; five high audit findings and 36 compatibility defects remain blocked. No merge, deployment, provider writes, workers or security exceptions occurred.
+
+Later installer update: [installer-execution-review.md](installer-execution-review.md) documents disabled automatic hooks, an explicit source-hashed compatibility patch, 44 synthetic controls and fresh Windows validation. The integration plan now has ten commands including that explicit patch. Independent review and Linux/Postgres remain pending.

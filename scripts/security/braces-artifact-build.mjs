@@ -42,12 +42,13 @@ async function step(name,exe,args,cwd=checkout,timeout=900000){
 const git=process.platform==='win32'?'C:/Program Files/Git/cmd/git.exe':'git';
 if(!await step('export',git,['archive','--format=tar','--output='+path.join(scratch,'source.tar'),sha],root)) process.exit(1);
 if(!await step('extract',process.platform==='win32'?path.join(process.env.SystemRoot,'System32/tar.exe'):'tar',['-xf',path.join(scratch,'source.tar'),'-C',checkout],root)) process.exit(1);
-summary.sourceHashes=Object.fromEntries(['package.json','package-lock.json','next.config.ts','eslint.config.mjs','proxy.ts'].map(file=>[file,hash(path.join(checkout,file))]));save();
-if(!await step('install',node,[npm,'ci','--include=dev','--no-fund'])) process.exit(1);
+summary.sourceHashes=Object.fromEntries(['package.json','package-lock.json','next.config.ts','eslint.config.mjs','proxy.ts','scripts/patch-minimatch-cjs-compat.mjs'].map(file=>[file,hash(path.join(checkout,file))]));save();
+if(!await step('install',node,[npm,'ci','--ignore-scripts','--include=dev','--no-fund'])) process.exit(1);
 await step('audit',node,[npm,'audit','--json']);
+if(!await step('compatibility-postinstall',node,[path.join(checkout,'scripts/patch-minimatch-cjs-compat.mjs')])) process.exit(1);
 if(!await step('prisma-generate',node,[path.join(checkout,'node_modules/prisma/build/index.js'),'generate'])) process.exit(1);
 if(!await step('build',node,[npm,'run','build'])) process.exit(1);
 summary.buildSucceeded=true;
-summary.packageFilesUnchanged=['package.json','package-lock.json','next.config.ts','eslint.config.mjs','proxy.ts'].every(file=>summary.sourceHashes[file]===hash(path.join(checkout,file)));
+summary.packageFilesUnchanged=['package.json','package-lock.json','next.config.ts','eslint.config.mjs','proxy.ts','scripts/patch-minimatch-cjs-compat.mjs'].every(file=>summary.sourceHashes[file]===hash(path.join(checkout,file)));
 summary.finishedAt=new Date().toISOString();save();
 console.log('Fresh build succeeded. Evidence: '+evidence);

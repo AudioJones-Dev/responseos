@@ -19,7 +19,7 @@ function bundle(dir,platform){
  const jobs={[platform==='win32'?'windows':'linux']:'success',diagnostics:'success',hostile:'success'};
  const report={platform,applicationSha:sha,auditSha:sha,compatibilitySha:sha,toolHash,auditExit:0,auditTotal:0,runtimeNativePass:true,candidateInstalled:true,closurePass:true,compatibility,jobs};
  write(dir,'verification-report.json',report);
- write(dir,'artifact-verification/build-summary.json',{sourceCommit:sha,platform,buildSucceeded:true,packageFilesUnchanged:true,sourceHashes:{'package.json':'3'.repeat(64),'package-lock.json':'4'.repeat(64)},steps:[{name:'audit',code:0}]});
+ write(dir,'artifact-verification/build-summary.json',{sourceCommit:sha,platform,buildSucceeded:true,packageFilesUnchanged:true,sourceHashes:{'package.json':'3'.repeat(64),'package-lock.json':'4'.repeat(64),'scripts/patch-minimatch-cjs-compat.mjs':'5'.repeat(64)},steps:[{name:'audit',code:0}]});
  write(dir,'artifact-verification/audit.log',{metadata:{vulnerabilities:{total:0}}});
  write(dir,'artifact-verification/closure-ledger.json',{summary:{applicationSha:sha,packagingPass:true,occurrences:1},ledger:[{closure:'PASS'}]});
  write(dir,'artifact-verification/runtime-summary.json',{sourceCommit:sha,nativeOperationSucceeded:true,nativeProbeExit:0,escapes:[]});
@@ -28,7 +28,7 @@ function bundle(dir,platform){
  write(dir,'hostile.log',{results:Array.from({length:8},()=>({pass:true}))});index(dir);
 }
 function integrationBundle(dir){
- const sourceHashes={'package.json':'3'.repeat(64),'package-lock.json':'4'.repeat(64)};
+ const sourceHashes={'package.json':'3'.repeat(64),'package-lock.json':'4'.repeat(64),'scripts/patch-minimatch-cjs-compat.mjs':'5'.repeat(64)};
  const steps=integrationCommands.map(([name,tool,args])=>({name,tool,args,startedAt:'2026-10-08T00:00:00Z',finishedAt:'2026-10-08T00:00:01Z',exit:0,signal:null,timedOut:false}));
  for(const row of steps){write(dir,row.name+'-result.json',row);fs.writeFileSync(path.join(dir,row.name+'.log'),row.name==='server-version'?'160010\n':'synthetic command output\n');}
  write(dir,'integration-report.json',{applicationSha:sha,toolHash,platform:'linux',node:'v24.18.0',npm:'11.16.0',postgresMajor:16,complete:true,sourceHashes,finalHashes:sourceHashes,steps});index(dir);
@@ -63,6 +63,11 @@ test('Hostile failure cannot claim success',({win})=>edit(win,'hostile.log',row=
 test('Native load failure cannot claim success',({win})=>edit(win,'artifact-verification/runtime-summary.json',row=>row.nativeOperationSucceeded=false));
 test('Missing native success evidence',({win})=>edit(win,'verification-report.json',row=>delete row.runtimeNativePass));
 test('Missing native raw evidence',({win})=>{fs.unlinkSync(path.join(win,'artifact-verification/native-summary.json'));index(win);});
+test('Automatic install hooks cannot be reenabled',({db})=>{
+ edit(db,'integration-report.json',row=>row.steps[0].args=['ci','--include=dev','--no-fund']);
+ edit(db,'install-result.json',row=>row.args=['ci','--include=dev','--no-fund']);
+});
+test('Compatibility patch source mismatch',({db})=>edit(db,'integration-report.json',row=>row.sourceHashes['scripts/patch-minimatch-cjs-compat.mjs']='8'.repeat(64)));
 test('Missing integration report',({db})=>{fs.unlinkSync(path.join(db,'integration-report.json'));index(db);});
 test('Duplicate integration reports',({dir,db})=>fs.cpSync(db,path.join(dir,'duplicate-integration'),{recursive:true}));
 test('Corrupt integration log',({db})=>fs.appendFileSync(path.join(db,'build.log'),'changed'));

@@ -37,9 +37,10 @@ jobs:
       - run: |
           [[ "$SECURITY_APPLICATION_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
           git cat-file -e "$SECURITY_APPLICATION_SHA^{commit}"
-          npm install --global npm@11.16.0
+          npm install --global --ignore-scripts --no-fund npm@11.16.0
           echo "SECURITY_NPM_CLI=$(npm root -g)/npm/bin/npm-cli.js" >> "$GITHUB_ENV"
-          npm ci --include=dev --no-fund
+          npm ci --ignore-scripts --include=dev --no-fund
+          node scripts/patch-minimatch-cjs-compat.mjs
       - name: Verify rejection controls, then collect diagnostics without accepting audit findings
         run: node scripts/security/braces-ci.mjs
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -79,7 +80,7 @@ jobs:
           git cat-file -e "$SECURITY_APPLICATION_SHA^{commit}"
           mkdir application
           git archive "$SECURITY_APPLICATION_SHA" | tar -x -C application
-          npm install --global npm@11.16.0
+          npm install --global --ignore-scripts --no-fund npm@11.16.0
       - name: Record exact-lock integration commands and raw evidence
         run: |
           export SECURITY_NPM_CLI="$(npm root -g)/npm/bin/npm-cli.js"
