@@ -12,7 +12,7 @@ The runner exports the immutable application commit into a fresh temporary check
 node scripts/security/braces-ci.mjs
 ```
 
-The application commit defaults to the pinned snapshot above; a reviewed full commit hash can be supplied through `SECURITY_APPLICATION_SHA`. Raw local evidence is under `.security-evidence/`. The committed snapshot is in [packaging-proposal-evidence](packaging-proposal-evidence/verification-report.json); its evidence-index records SHA-256 hashes. Absolute temporary paths in that snapshot document this run rather than portable paths. Never reuse an old report as evidence for a different application or tooling identity.
+The application commit defaults to the pinned snapshot above; a reviewed full commit hash can be supplied through `SECURITY_APPLICATION_SHA`. Raw local evidence is under `.security-evidence/`. The committed snapshot is in [packaging-proposal-evidence](packaging-proposal-evidence/verification-report.json); its readable report and closure summaries accompany `raw-evidence.tar.gz`, which preserves the complete raw evidence and its evidence-index SHA-256 inventory. Archive extraction and all inventory hashes were verified. Extract into an empty directory before validating the full inventory; only selected readable copies are beside the archive. `archive.json` records the archive hash. Absolute temporary paths in that snapshot document this run rather than portable paths. Never reuse an old report as evidence for a different application or tooling identity.
 
 ## Evidence matrix
 
