@@ -14,7 +14,7 @@ The unused braces-reachability.mjs was removed from active tooling. Its source r
 
 The generator rechecked the original archive and source/runtime hashes, retaining all 140 IDs. IDs 116 and 134 import a Linux libvips package only under isLinux && /(symbol not found|CXXABI_)/i.test(messages). Their source derives isLinux from ["linux", "darwin", "win32"].map((os) => runtimePlatform.startsWith(os)). The verified selector is win32-x64; isLinux is false. The supplemental proof records the exact source hash, guard and selector sources for each row.
 
-This closes those two call-site obligations only for the inspected Windows x64 package, even on its original native-load failure path. It does not close Linux behavior or other Sharp fallbacks. The original matrix remains unchanged; scoped totals are now 4 excluded build occurrences, 28 inactive platform cases, 2 inactive Linux guards and 106 UNKNOWN. The supplemental JSON links the original matrix hash and changed rows. Native packaging failure remains in the original artifact; PR #198 is a separate proposed repair.
+This closes those two call-site obligations only for the inspected Windows x64 package, even on its original native-load failure path. It does not close Linux behavior or other Sharp fallbacks. The original matrix remains unchanged; scoped totals are now 4 excluded build occurrences, 28 inactive platform cases, 2 inactive Linux guards and 106 UNKNOWN. The supplemental JSON links the original matrix hash and changed rows. Native packaging failure remains in the original artifact. PR #198 proposed a separate repair; it was closed unmerged on 2026-10-08 as superseded by #192, which removed standalone output from master.
 
 ## Remaining approval obligations
 

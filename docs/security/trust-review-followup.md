@@ -32,7 +32,7 @@ Root installation currently executes on the networked hosted runner before appli
 
 ## Separate Sharp candidate
 
-Draft PR #198 adds only a native tracing configuration plus documentation/evidence/dashboard records. Fresh Windows master and PR #195 exact-lock local overlay builds include matching Sharp native binaries, execute the PNG operation and pass nine HTTP probes. Lint/types/unit checks pass (660 master, 668 PR #195). PR #195's source/lockfile remain unchanged remotely. Audit still fails, and Linux/Postgres/independent acceptance is pending. The original native failure evidence remains immutable.
+Draft PR #198 added only a native tracing configuration plus documentation/evidence/dashboard records. It was closed unmerged on 2026-10-08 as superseded by #192, which removed standalone output from master; its diagnosis remains on the closed PR. Fresh Windows master and PR #195 exact-lock local overlay builds include matching Sharp native binaries, execute the PNG operation and pass nine HTTP probes. Lint/types/unit checks pass (660 master, 668 PR #195). PR #195's source/lockfile remain unchanged remotely. Audit still fails, and Linux/Postgres/independent acceptance is pending. The original native failure evidence remains immutable.
 
 The 29 synthetic infrastructure controls pass again after pinning the references; synthetic success tests gate logic only. Tool lint passes. No merge, deployment, worker activation, provider write, hosted workflow or advisory exception occurred.
 

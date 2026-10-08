@@ -43,7 +43,7 @@
       "priority": "High",
       "start": "2026-10-08",
       "blocked": true,
-      "blockedReason": "Five audit findings, 36 task defects and 106 unknown imports. Sharp repair proposed separately in PR #198. Integration evidence gates implemented but unexecuted on Linux. Automatic install hooks disabled; explicit command/download trust, Linux/Postgres and independent review pending. PR #195 unchanged."
+      "blockedReason": "Five audit findings, 36 task defects and 106 unknown imports. Sharp packaging PR #198 closed as superseded by #192 (no standalone output on master); these gates still require standalone output, and a traced mode is prototyped in draft PR #199. Integration evidence gates implemented but unexecuted on Linux. Automatic install hooks disabled; explicit command/download trust, Linux/Postgres and independent review pending. PR #195 unchanged."
     },
     {
       "id": "G-14",

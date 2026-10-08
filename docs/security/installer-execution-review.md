@@ -29,8 +29,8 @@ Executing a pinned CLI or build still executes dependency code. Disabling instal
 
 ## Fresh local validation
 
-A fresh archived local overlay of PR #195, 304f19ccd41e5d5d1356e4875834c0823c7fcf2f, retains PR #195's exact package/lock bytes and adds only PR #198's candidate tracing config. Under Node 24.18.0/npm 11.16.0: script-disabled ci, explicit patch, Prisma generate and production build all pass; lint/types and 668 tests pass; native PNG succeeds; nine HTTP probes pass without observed module escapes. Audit remains five high findings. No DLLs were copied into the package.
+A fresh archived local overlay of PR #195, 304f19ccd41e5d5d1356e4875834c0823c7fcf2f, retains PR #195's exact package/lock bytes and adds only PR #198's candidate tracing config (PR #198 has since been closed unmerged as superseded by #192). Under Node 24.18.0/npm 11.16.0: script-disabled ci, explicit patch, Prisma generate and production build all pass; lint/types and 668 tests pass; native PNG succeeds; nine HTTP probes pass without observed module escapes. Audit remains five high findings. No DLLs were copied into the package.
 
 Fresh source/dependency trees were used, but inherited workstation cache locations were not fully isolated. Cold-cache npm/Prisma acquisition and Linux/Postgres remain unverified. Evidence is curated in installer-review/raw-evidence.tar.gz with SHA-256 inventory; dependency trees, binary payloads and full builds are excluded.
 
-No hosted workflow, merge, deployment, live provider write, worker activation, advisory exception or PR #195 change occurred. PR #197 and #198 remain draft. Two scoped closure proofs from the preceding review leave 106 UNKNOWN imports; five high findings and 36 matching defects remain independent permanent-remediation blockers.
+No hosted workflow, merge, deployment, live provider write, worker activation, advisory exception or PR #195 change occurred. PR #197 remains draft; PR #198 was closed unmerged. Two scoped closure proofs from the preceding review leave 106 UNKNOWN imports; five high findings and 36 matching defects remain independent permanent-remediation blockers.
