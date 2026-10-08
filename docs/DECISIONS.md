@@ -1755,3 +1755,20 @@ A superseding ADR that (a) cites which of question 11's conditions were met and 
 **Consequences.** The repository keeps one model for governed artifacts instead of two. Immutability costs nothing to enforce because it is structural, and the human merge remains the single publication authority, satisfying the governance kernel without a parallel in-app control. Existing primitives are extended rather than displaced.
 
 The cost is real and is not softened here: **capability authoring remains an engineering activity.** An operator who cannot open a pull request cannot author a capability. `UserRole` models a non-engineer `operator`, so the population may exist, but whether such staff would author capabilities is **unverified and is an operator question** — decision 10 keeps it open rather than answering it by default. If the answer is that they must author, question 11's conditions are met sooner and database-backed authoring gets stronger, which is the intended behaviour of this ADR rather than a failure of it.
+
+## ADR-0063 — CI blocks on production-dependency advisories; the full audit reports until the dev-only `braces` advisory has a fix
+
+**Status.** Accepted · 2026-10-08 · Owner-authorized. Changes the CI audit gate only; no runtime, provider, or deploy behavior changes.
+
+**Context.** Both CI jobs ran `npm audit --audit-level=high` as a blocking step. On 2026-10-08 new advisories turned every PR and `master` red: a critical and several high findings in `next` 16.3.4, high findings in `sharp` 0.35.4 and `source-map-js`, a moderate one in `fast-uri`, and high GHSA-vfj7-8cjw-p6xm in `braces`. The production findings have patched releases. `braces` does not: the advisory covers every published version (≤3.0.3), and it reaches the tree only through dev tooling (`eslint-config-next` → `@next/eslint-plugin-next` → `fast-glob` → `micromatch` → `braces`). npm's only offered remedy is downgrading `eslint-config-next` to 14.x, which would mismatch Next 16. With the gate unchanged, no PR can go green until upstream ships a fix, while the code actually deployed is vulnerable now.
+
+**Decision.**
+
+1. **The blocking gate is `npm audit --omit=dev --audit-level=high`** in both `validate` and `integration`. A high or critical advisory in anything that ships still fails CI.
+2. **The full audit still runs** in `validate` as `npm audit --audit-level=high` with `continue-on-error: true`, so dev-tooling findings stay visible on every run without blocking.
+3. **No advisory is suppressed or excepted.** Nothing is added to an ignore list, and `braces` is not pinned to a fake version.
+4. **This is temporary.** When a patched `braces` (or a `micromatch`/`fast-glob` chain that avoids it) is published, restore the single blocking full audit and remove the report-only step. The work that removes it should cite this ADR.
+
+**§21 checklist.** Layer: delivery/CI governance; no product capability. Build vs. buy: unchanged (npm audit). It keeps evidence (the full report still runs on every PR) and touches no tenant data. Public claims: none. Required now: CI is red repo-wide and the deployed site runs the vulnerable `next`; the production fix cannot merge under the old gate.
+
+**Consequences.** A high dev-only advisory no longer blocks merges; it shows up as a failed non-blocking step that reviewers must read. That is a real loosening and is bounded by decision 4. The parallel audit-policy work in #197 can supersede this ADR.

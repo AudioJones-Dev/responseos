@@ -4,6 +4,13 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — fix: patch vulnerable production dependencies and gate CI on them
+
+- **Upgraded the packages new advisories flagged:** `next` and `eslint-config-next` 16.3.4 → **16.4.0** (critical GHSA-vcvr-r3jv-pc5j and six high Next.js advisories), `sharp` 0.35.4 → **0.35.5** (devDependency and override; GHSA-wq5f-xc86-pv6w), the `fast-uri` override 3.1.7 → **3.1.8** (moderate GHSA-hrr3-gc8f-f4qj), and `source-map-js` → **1.2.2** via `npm audit fix` (GHSA-68fv-2mgg-jv7q). Lockfile regenerated with npm 11.16.0.
+- **`npm audit --omit=dev` now reports 0 vulnerabilities.** Five high findings remain, all dev-only: `braces` GHSA-vfj7-8cjw-p6xm through `eslint-config-next`'s glob stack. The advisory covers every published `braces` version, so no upgrade clears it.
+- **CI gate (ADR-0063):** both jobs now block on `npm audit --omit=dev --audit-level=high`; `validate` also runs the full audit as a non-blocking report. Nothing is suppressed, and the full blocking audit returns once `braces` has a fix.
+- Verified on the upgraded tree: lint, typecheck, 660 unit tests, and `next build` on Next 16.4.0. Supersedes dependabot's #196, which bumped only `next` and stayed red on the remaining findings. Dashboard task `G-18`.
+
 ## Unreleased — fix: drop `output: "standalone"` so the Vercel build succeeds
 
 - **Production builds on Vercel were failing.** Vercel's build servers now run Next.js through its adapter API (`NEXT_ENABLE_ADAPTER=1`, applied to Next ≥ 16.3). With `output: "standalone"` set, Next 16.3.4 doesn't write `.next/next-server.js.nft.json`, and the adapter's `onBuildComplete` step fails with `ENOENT` after the app has compiled and prerendered every page. The last successful Vercel build, on 2026-09-15, predates the Next 16.2 → 16.3 bump in #150.

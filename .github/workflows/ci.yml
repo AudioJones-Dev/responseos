@@ -21,7 +21,11 @@ jobs:
           node-version: 24.18.0
           cache: npm
       - run: npm ci
-      - run: npm audit --audit-level=high
+      - name: Audit production dependencies (blocking, ADR-0063)
+        run: npm audit --omit=dev --audit-level=high
+      - name: Audit all dependencies (report only until GHSA-vfj7-8cjw-p6xm has a fix, ADR-0063)
+        run: npm audit --audit-level=high
+        continue-on-error: true
       - run: npx prisma generate
       - run: npm run lint
       - run: npm run typecheck
@@ -54,7 +58,8 @@ jobs:
           node-version: 24.18.0
           cache: npm
       - run: npm ci
-      - run: npm audit --audit-level=high
+      - name: Audit production dependencies (blocking, ADR-0063)
+        run: npm audit --omit=dev --audit-level=high
       - run: npx prisma generate
       - name: Provision dedicated Prisma shadow database
         run: |
