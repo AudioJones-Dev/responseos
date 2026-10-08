@@ -4,7 +4,7 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
-## Unreleased — feat: one guarded retention purge command for expired data
+## Unreleased — feat: one guarded retention purge command for expired data (#208)
 
 - **`npm run retention:purge` (ADR-0064)** runs eight sweeps in a fixed order: unqualified assessment requests (90 days), personalized-demo expiry, content purge, and cleanup, demo-number quarantine extension, expired webhook payloads, general demo call content (90 days, new), and Clerk payloads without an expiry (30 days, new). It is an operator-run command, not a scheduled job.
 - **Preview by default.** Without `--apply` it prints how many rows each sweep would change and writes nothing; integration tests hash every affected table before and after a preview to prove it. Applying needs `-- --apply` **and** `RESPONSEOS_RETENTION_PURGE_ENABLED=true`, and refuses `NODE_ENV=production` or `VERCEL_ENV=production`.
