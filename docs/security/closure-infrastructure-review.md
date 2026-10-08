@@ -55,7 +55,7 @@ node scripts/security/braces-gates.test.mjs
 node scripts/security/braces-closure-matrix.mjs .security-tools/archive-verification
 ```
 
-Use Node 24.18.0 and the preserved pinned source artifacts. The generator is intentionally snapshot-specific. If temporary artifacts are unavailable, recreate the pinned build with the existing build runner and explicitly supply its matching paths; mismatching hashes must stop regeneration rather than rewrite original IDs or expectations. A new build with different source hashes requires a new supplemental matrix, preserving the original IDs and mapping changes through review.
+Use Node 24.18.0 and the preserved pinned source artifacts. The generator is intentionally snapshot-specific. If temporary artifacts are unavailable, recreate the pinned build with the existing build runner and explicitly supply its matching paths; mismatching hashes must stop regeneration rather than rewrite original IDs or expectations. A new build with different source hashes requires a new supplemental matrix, preserving the original IDs and mapping changes through review. A traced (non-standalone) bundle requires its own frozen identity file; see [traced-packaging-retarget.md](traced-packaging-retarget.md).
 
 The committed repeatable controls cover a synthetic complete pair, absent reports/platforms, duplicates, malformed reports, missing inventory/raw records, corrupt evidence, traversal, links, raw/summary contradictions, native failure, integration terminal states and CLI failure status. AST fixtures cover true/false branches, conditional and short-circuit expressions, try/catch/finally, switch/default and shared case labels. Synthetic acceptance is a test of gate logic, not application evidence.
 
