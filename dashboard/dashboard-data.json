@@ -1321,6 +1321,19 @@
       "refType": "pull"
     },
     {
+      "id": "G-18",
+      "phase": "Tech Debt & Hardening",
+      "title": "Patch vulnerable production dependencies and gate CI on them (ADR-0063)",
+      "owner": "Claude Code",
+      "status": "In Progress",
+      "progress": 80,
+      "priority": "High",
+      "start": "2026-10-08",
+      "due": "2026-10-08",
+      "ref": 201,
+      "refType": "pull"
+    },
+    {
       "id": "G-12",
       "phase": "Tech Debt & Hardening",
       "title": "Clear npm audit failures blocking all CI",
