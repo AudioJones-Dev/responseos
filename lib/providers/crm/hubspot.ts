@@ -13,6 +13,7 @@ import type {
 
 interface HubSpotObject {
   id: string
+  properties?: Record<string, string | null>
 }
 
 interface HubSpotSearchResponse {
@@ -87,29 +88,38 @@ export class HubSpotCrmProvider implements CrmProvider {
     objectType: "calls" | "tasks",
     propertyName: "hs_call_title" | "hs_task_subject",
     evidenceReference: string,
-  ): Promise<string | null> {
+  ): Promise<HubSpotObject | null> {
     const response = await this.request<HubSpotSearchResponse>(
       `/crm/v3/objects/${objectType}/search`,
       {
         method: "POST",
         body: JSON.stringify({
           filterGroups: [{ filters: [{ propertyName, operator: "EQ", value: evidenceReference }] }],
-          properties: [propertyName],
+          properties: objectType === "tasks" ? [propertyName, "hubspot_owner_id"] : [propertyName],
           limit: 2,
         }),
       },
     )
-    return response.results?.[0]?.id ?? null
+    if ((response.total ?? response.results?.length ?? 0) > 1) throw new Error("ambiguous_activity_match")
+    return response.results?.[0] ?? null
   }
 
   async findCallActivity(evidenceReference: string) {
-    const id = await this.findActivity("calls", "hs_call_title", evidenceReference)
-    return id ? { providerActivityId: id } : null
+    const activity = await this.findActivity("calls", "hs_call_title", evidenceReference)
+    return activity ? { providerActivityId: activity.id } : null
   }
 
   async findFollowUpTask(evidenceReference: string) {
-    const id = await this.findActivity("tasks", "hs_task_subject", evidenceReference)
-    return id ? { providerTaskId: id } : null
+    const task = await this.findActivity("tasks", "hs_task_subject", evidenceReference)
+    return task ? { providerTaskId: task.id, ownerId: task.properties?.hubspot_owner_id ?? undefined } : null
+  }
+
+  async getFollowUpTaskOwner(taskId: string) {
+    const task = await this.request<HubSpotObject>(
+      `/crm/v3/objects/tasks/${encodeURIComponent(taskId)}?properties=hubspot_owner_id`,
+      { method: "GET" },
+    )
+    return task.properties?.hubspot_owner_id ?? null
   }
 
   async associateContact(
@@ -162,6 +172,7 @@ export class HubSpotCrmProvider implements CrmProvider {
           ].join("\n"),
           hs_task_status: "NOT_STARTED",
           hs_task_priority: "HIGH",
+          ...(task.ownerId ? { hubspot_owner_id: task.ownerId } : {}),
         },
       }),
     })

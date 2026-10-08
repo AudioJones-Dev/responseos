@@ -6,6 +6,7 @@ import type { CrmProvider } from "@/lib/providers/crm";
 import { err, errFromThrown, ok, type Result } from "@/lib/data/result";
 import { sanitizeCrmText } from "@/lib/crm/sanitization";
 import { normalizeE164 } from "@/lib/validation/common";
+import { isFrlHandoffAccount } from "@/lib/crm/qualifiedHandoffPolicy";
 
 export type CrmSyncStatus =
   | "pending"
@@ -203,6 +204,7 @@ export async function runCrmSyncForCall(params: {
 
     if (
       qualification?.qualification_status === "qualified" &&
+      !isFrlHandoffAccount(params.accountId) &&
       !operation.provider_task_id
     ) {
       const task =

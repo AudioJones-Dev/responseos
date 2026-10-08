@@ -1,8 +1,8 @@
 import { after, NextResponse } from "next/server";
 import {
   prepareCrmSyncRetry,
-  runCrmSyncForCall,
 } from "@/lib/crm/syncFinalizedCall";
+import { syncFinalizedCallAndPrepareHandoff } from "@/lib/crm/qualifiedCallHandoff";
 import { errorResponse } from "@/lib/providers/webhook-helpers";
 
 export async function POST(
@@ -25,7 +25,7 @@ export async function POST(
     );
   }
   after(() =>
-    runCrmSyncForCall({
+    syncFinalizedCallAndPrepareHandoff({
       accountId,
       callId: prepared.data.callId,
       sourceWebhookId: prepared.data.sourceWebhookId,

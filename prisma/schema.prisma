@@ -384,9 +384,32 @@ model Notification {
   status        NotificationStatus  @default(queued)
   sent_at       DateTime?
   created_at    DateTime            @default(now())
+  dedupe_key    String?             @unique
 
   @@index([account_id])
   @@index([lead_event_id])
+}
+
+model QualifiedCallHandoff {
+  id                  String   @id @default(cuid())
+  account_id          String
+  call_id             String
+  lead_event_id       String
+  operation_key       String   @unique
+  status              String   @default("pending")
+  provider            String
+  config_snapshot_id  String?
+  config_hash         String?
+  provider_task_id    String?
+  notification_id     String?
+  attempt_count       Int      @default(0)
+  last_error_code     String?
+  queued_at           DateTime?
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+
+  @@index([account_id, status])
+  @@index([account_id, call_id])
 }
 
 model RevenueMetrics {

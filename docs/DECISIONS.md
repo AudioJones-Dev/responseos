@@ -1755,3 +1755,37 @@ A superseding ADR that (a) cites which of question 11's conditions were met and 
 **Consequences.** The repository keeps one model for governed artifacts instead of two. Immutability costs nothing to enforce because it is structural, and the human merge remains the single publication authority, satisfying the governance kernel without a parallel in-app control. Existing primitives are extended rather than displaced.
 
 The cost is real and is not softened here: **capability authoring remains an engineering activity.** An operator who cannot open a pull request cannot author a capability. `UserRole` models a non-engineer `operator`, so the population may exist, but whether such staff would author capabilities is **unverified and is an operator question** — decision 10 keeps it open rather than answering it by default. If the answer is that they must author, question 11's conditions are met sooner and database-backed authoring gets stronger, which is the intended behaviour of this ADR rather than a failure of it.
+
+## ADR-0059 — FRL qualified calls prepare an owned task and durable unsent notification
+
+**Status:** Operator-authorized bounded repository implementation, 2026-10-06;
+implementation in review. No live provider activation or notification delivery
+is authorized by this ADR. Extends ADR-0047 and the approved-snapshot precedent
+of ADR-0051. Does not advance v0.3 or broaden CRM-1/ADR-0058.
+
+**Decision.** All finalized FRL calls retain contact/call-activity CRM capture.
+Only the retained `qualification_status === "qualified"` prepares an owned
+HIGH task and human notification. The server-bound FRL account bypasses the
+old generic unowned task. Incomplete, maybe, unqualified and spam calls receive
+no qualified owner task or lead alert. No proposed canonical-outcome allowlist
+or score threshold is adopted implicitly.
+
+Recipient, owner ID and CRM link configuration come from exactly one validated
+`policy.qualified_handoff` fact in a hash-verified, approved, unrevoked tenant
+snapshot. Actual operational values never enter source or environment variables.
+A durable account/call preparation claim persists the task separately; provider
+owner readback gates the real CRM path; queue upsert and preparation state
+commit together. Queueing is explicitly `not_sent`. Delivery transport,
+background retry and delivery evidence remain unimplemented and separately gated.
+Task due time expresses immediate handoff queue visibility, not a human SLA.
+
+**Consequences.** Partial retry does not duplicate persisted tasks or outbox
+entries. Configuration changes, ambiguous provider evidence and owner mismatch
+require review. A lost processing worker requires operator reconciliation, not
+an unverified automatic reset. The future dispatcher must recheck qualification
+and approved policy, implement provider idempotency and separate queue, provider
+acceptance and delivery evidence. No booking, pricing, Note, Ticket, Deal,
+outbound caller contact, recording or production deployment is introduced.
+
+The [implementation contract](./product/frl-qualified-call-handoff.md) answers
+all fifteen doctrine section 21 questions and lists remaining live acceptance.

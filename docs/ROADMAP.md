@@ -25,6 +25,13 @@
 
 ## Current focus (June 2026)
 
+**2026-10-06 bounded FRL increment:** qualified-only CRM ownership and durable
+notification outbox are in repository implementation review. The operator
+authorized local implementation; provider delivery, tenant activation and
+production acceptance remain gated. See
+[`product/frl-qualified-call-handoff.md`](./product/frl-qualified-call-handoff.md).
+This does not authorize CRM-1, a general workflow engine or v0.3 activation.
+
 **v0.2 closeout is complete.** The data-model expansion (provider_connections, conversations/sms_messages, call_segments/call_transcripts, workflow_runs, qa_logs, expanded audit_logs) shipped and is wired through the data-access layer and routes; the `Organization` → `Account` and `Booking` → `Appointment` renames landed; **Clerk** auth (identity schema, session derivation, webhook + `proxy.ts` route protection — ADR-0005, not Auth.js) is in force; and the UI was rebuilt against `DESIGN.md` tokens (#43). Tenant-isolation, seed-determinism, and mock-parity integration tests cover the new models.
 
 In parallel, a **GTM Phase 0.5** marketing surface shipped (#66/#67): a public conversion path (`/audit` → mock capture endpoint), a trust/security page, pricing clarity, per-page + Open Graph metadata, an expanded demo narrative, and the home OFFER section — all mock-safe, no live integrations.

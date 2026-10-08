@@ -62,6 +62,7 @@ export interface CrmCallActivityCreate {
 
 export interface CrmFollowUpTaskCreate {
   contactId: string
+  ownerId?: string
   dueAt: string
   sanitizedSummary: string
   nextAction: string
@@ -76,8 +77,9 @@ export interface CrmProvider {
   createContact(contact: CrmContactCreate): Promise<CrmContactMatch>
   findCallActivity(evidenceReference: string): Promise<{ providerActivityId: string } | null>
   createCallActivity(activity: CrmCallActivityCreate): Promise<{ providerActivityId: string }>
-  findFollowUpTask(evidenceReference: string): Promise<{ providerTaskId: string } | null>
+  findFollowUpTask(evidenceReference: string): Promise<{ providerTaskId: string; ownerId?: string } | null>
   createFollowUpTask(task: CrmFollowUpTaskCreate): Promise<{ providerTaskId: string }>
+  getFollowUpTaskOwner?(taskId: string): Promise<string | null>
   associateContact(
     objectType: "calls" | "tasks",
     objectId: string,

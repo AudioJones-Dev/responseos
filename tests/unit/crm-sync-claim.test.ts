@@ -1,4 +1,4 @@
-import { beforeEach, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { runCrmSyncForCall } from "@/lib/crm/syncFinalizedCall";
 import { MockCrmProvider } from "@/lib/providers/crm/mock";
 
@@ -39,6 +39,21 @@ beforeEach(() => {
   });
   database.leadEvent.findFirst.mockResolvedValue({ id: "lead", notes: "Call back" });
   database.leadQualification.findUnique.mockResolvedValue({ qualification_status: "qualified" });
+});
+afterEach(() => vi.unstubAllEnvs());
+
+test.each(["qualified", "maybe", "unqualified", "spam"])("FRL %s call persists CRM capture without an unowned generic task", async (status) => {
+  vi.stubEnv("RESPONSEOS_FRL_HANDOFF_ACCOUNT_ID", "account");
+  database.leadQualification.findUnique.mockResolvedValue({ qualification_status: status });
+  const provider = new MockCrmProvider();
+  const contact = vi.spyOn(provider, "createContact");
+  const activity = vi.spyOn(provider, "createCallActivity");
+  const task = vi.spyOn(provider, "createFollowUpTask");
+  await runCrmSyncForCall({ accountId: "account", callId: "call", providerOverride: provider });
+  expect(row.status).toBe("succeeded");
+  expect(contact).toHaveBeenCalledOnce();
+  expect(activity).toHaveBeenCalledOnce();
+  expect(task).not.toHaveBeenCalled();
 });
 
 test("concurrent retries produce only one set of external effects", async () => {
