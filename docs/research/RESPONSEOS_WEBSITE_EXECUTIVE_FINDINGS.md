@@ -44,10 +44,10 @@ What the screenshots showed, what `master` shows now, and where each item stands
 |---|---|---|
 | Hero "The revenue your service business already earned — recovered." | "Stop losing revenue to missed calls." with a "designed to" subhead — `app/(marketing)/page.tsx` | **Addressed by #163** |
 | Primary CTA "Run a revenue audit" everywhere (finding 6, CRO-001, HOME-004) | "Revenue Recovery Demo" is primary and the assessment is secondary, per ADR-0035 and #163 | **Addressed.** The report's three-tier hierarchy (explore / assess / talk implementation) is still open. |
-| Stat band "< 60s", "24/7", "1 ledger — Every event tied to recovered revenue" | "Under 60s — *Target* first response", "24/7 — *Designed* coverage", "9 KPIs — what the report is *designed* to track" | **Partly addressed.** The universal attribution claim is gone. "Under 60s" and "24/7" are hedged as targets, but §12 still rates them "not publishable" without production telemetry. **Owner decision.** |
+| Stat band "< 60s", "24/7", "1 ledger — Every event tied to recovered revenue" | "$1,000 — flat assessment", "30 days — to apply the fee toward implementation", "8 parts — in the written assessment packet when it's a fit" | **Addressed — owner decision 2026-10-08.** The band now quotes only commercial facts already published on `/pricing` and `/audit`. "Under 60s", "24/7", and "9 KPIs" return only with production telemetry and a shipped report. |
 | Pricing hero "Priced against the revenue we recover" | "Priced against the leak, not the hype." | **Addressed by #163** |
 | Pricing "Most popular" badge | "Default offer" | **Addressed by #163** |
-| Pricing "Earn-on-outcomes structure" / "earn on the revenue we recover" (PRICE-003) | Tier bullet "Earn-on-outcomes structure" and homepage OFFER card "Earn on Outcomes" remain; "the revenue we recover" is gone | **Open — owner decision.** Doctrine §14.3 already forbids charging outcome fees before the Revenue Gate. The report asks public copy to say so. |
+| Pricing "Earn-on-outcomes structure" / "earn on the revenue we recover" (PRICE-003) | Tier bullet is now "Outcome-aligned terms, once measurement is verified"; the Performance tier price is "Setup + monthly"; `/pricing` and the homepage OFFER cards say outcome-aligned terms come only once the workflow, source data, attribution rules, and production measurement are verified, with no outcome fees until then. The OFFER card titles keep the acronym | **Addressed — owner decision 2026-10-08**, per doctrine §14.3 and §18. |
 | Home-services "Reply in under 30 seconds" | Now "under 60 seconds" | **Addressed by #163** (figure). The present-tense framing was still live; see the next row. |
 | Home-services and contractors pages stated mock-backed capabilities in the present tense ("captures the missed call… replies in seconds… books the estimate", "routes inbound to the right estimator") | Reworded to "designed to…" | **Addressed in this PR.** These were leftovers from #163, whose stated intent was "designed rather than live" across the industry pages. |
 | Demo FAQ "Will I be locked into one phone or CRM vendor? No… built to route around any single provider" | "ResponseOS uses provider-adapter boundaries to reduce coupling. Actual portability still depends on…" | **Addressed.** Matches doctrine §20.1 and ADR-0043. |
@@ -196,8 +196,8 @@ A vertical page is meaningful only if it changes the buyer's operational reality
 | Claim | Report verdict | Repo evidence (`master` @ `724a3e5`) | Where it appears |
 |---|---|---|---|
 | "Captures missed calls" | Only as simulated/demo behavior | `PARTIALLY_SHIPPED`: a Telnyx post-call ingest path exists behind `RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED`; carrier, SMS, and voice adapters resolve to mocks (`lib/providers/resolve.ts`) | Home pillars ("land in one place"); industry pages (now "designed to") |
-| "Replies in under 30/60 seconds" | No — only as illustrative seeded scenario | No response-time telemetry exists | Home stat "Under 60s — Target…"; home-services card "Target a reply in under 60 seconds" |
-| "24/7 coverage" | No for live product | No live telephony | Home stat "24/7 — Designed coverage…" |
+| "Replies in under 30/60 seconds" | No — only as illustrative seeded scenario | No response-time telemetry exists | Home-services card "Target a reply in under 60 seconds"; removed from the home stat band (2026-10-08) |
+| "24/7 coverage" | No for live product | No live telephony | Removed from the home stat band (2026-10-08) |
 | "Books estimates / jobs" | Only as demo scenario / intended workflow | Scheduling is v0.3-gated; the walkthrough creates no appointment | Home subhead ("designed to… book the work") |
 | "Recovers revenue" | Use "designed to help recover opportunities" | Doctrine §20.1 `PROHIBITED_CLAIM` | Removed from public copy by #163 |
 | "Every event tied to recovered revenue" | No | — | Removed by #163 |
@@ -214,8 +214,8 @@ A vertical page is meaningful only if it changes the buyer's operational reality
 | "HIPAA-certified / -compliant" | No | — | Trust page and footer disclaim it |
 | "No live customer data" | Yes, if true | Mock adapters by default; no live provider path is enabled | Footer, demo, trust |
 | "Assessment fee applies toward implementation within 30 days" | Yes if the policy is real | Owner confirmed on 2026-09-11 (#163) | Pricing |
-| "Outcome fees" | Only as conditional / optional | Doctrine §14.3 and §18: not billable before the Revenue Gate | Pricing tier, home OFFER card |
-| "9 KPIs" the monthly report tracks | Not assessed by the report | `DOCUMENTED_ONLY`: the nine are defined only in `docs/brand/RESPONSEOS_SALES_NARRATIVE.md`; `RevenueMetrics` holds a superset that does not map one-to-one | Home stat, hedged as "designed to track" |
+| "Outcome fees" | Only as conditional / optional | Doctrine §14.3 and §18: not billable before the Revenue Gate | Pricing and home OFFER cards, bounded to verified measurement with no outcome fees until then (2026-10-08) |
+| "9 KPIs" the monthly report tracks | Not assessed by the report | `DOCUMENTED_ONLY`: the nine are defined only in `docs/brand/RESPONSEOS_SALES_NARRATIVE.md`; `RevenueMetrics` holds a superset that does not map one-to-one | Removed from the home stat band (2026-10-08) |
 | "Secure / enterprise-grade" | Avoid | — | Not used |
 | Customer ROI / recovered-revenue figures | No | No customer evidence exists | Not used; demo values labeled illustrative |
 | "Works with ServiceTitan / Jobber / GHL" | No unless individually verified | No such adapters | Not used |
@@ -246,7 +246,7 @@ The report's IDs and priorities, with current status. **P0 = do first. "Current"
 | DEMO-005 | Demo | Evaluate Navattic/Storylane once UI stabilizes | Near term | P2 | Open |
 | PRICE-001 | Pricing | Make assessment deliverables visible, plus "what happens next" | Current | P0 | **Built on `/audit`** — the eight-part packet and both after-paths; `/pricing` still links there rather than repeating it |
 | PRICE-002 | Pricing | Name the setup + monthly scale variables | Current | P0 | Open |
-| PRICE-003 | Pricing | Bound outcome-fee claims to verified measurement and contract | Current | P0 | Open — owner decision (see §3) |
+| PRICE-003 | Pricing | Bound outcome-fee claims to verified measurement and contract | Current | P0 | **Done** — owner decision 2026-10-08 (see §3) |
 | PRICE-004 | Pricing | Explain why not per-seat / per-minute | Current | P1 | Partly — "no seat licenses" is stated |
 | PRICE-005 | Pricing | Starting implementation ranges once stable | Future | P2 | Gated on D-2 |
 | TRUST-001 | Trust | Trust-center structure: security, data, payments, privacy, product status | Current | P0 | **Built** — `/trust` is grouped into Security, Data, Payments, and Privacy, plus "What we don't claim" and product status |

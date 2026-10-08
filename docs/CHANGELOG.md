@@ -4,6 +4,15 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — fix: replace unverifiable homepage stats and bound outcome-fee copy
+
+Owner decisions from 2026-10-08 on the two items the executive-findings reconciliation left open.
+
+- **Homepage stat band** now quotes only facts already published on `/pricing` and `/audit`: **$1,000** flat assessment, **30 days** to apply the fee toward implementation, and **8 parts** in the written packet when it's a fit. "Under 60s", "24/7", and "9 KPIs" are gone; the findings rated the first two not publishable without production telemetry, and the nine KPIs exist only in a sales doc.
+- **Outcome fees (PRICE-003).** `/pricing` and the homepage OFFER cards now say outcome-aligned terms come only once the workflow, source data, attribution rules, and production measurement are verified, with no outcome fees until then (doctrine §14.3 and §18). The Recovery Performance price reads "Setup + monthly", and its bullet is "Outcome-aligned terms, once measurement is verified". The OFFER card titles keep the acronym; "Outcomes First" and "ROI-Aligned Partnerships" no longer say pricing is anchored to verified results.
+- Tier names and structure are unchanged; the ADR-0028 pricing rework stays separate.
+- `docs/research/RESPONSEOS_WEBSITE_EXECUTIVE_FINDINGS.md` records both decisions. Dashboard task `L-15`.
+
 ## Unreleased — feat: publish terms of service for the site and demos (#200)
 
 - **New `/terms` page**, linked from the marketing footer and, with the privacy policy, from the demo walkthrough and receptionist demo footers. It covers the website and its demos only; a paid assessment or implementation is governed by the written agreement both sides sign, which wins if the two disagree.

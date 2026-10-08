@@ -33,11 +33,11 @@ const tiers = [
   },
   {
     name: "Recovery Performance",
-    price: "Setup + monthly + outcome",
-    summary: "For higher-volume operations, with optional fees tied to verified results.",
+    price: "Setup + monthly",
+    summary: "For higher-volume operations that want operator support, with outcome-aligned terms once measurement is verified.",
     bullets: [
       "Everything in Pro",
-      "Earn-on-outcomes structure",
+      "Outcome-aligned terms, once measurement is verified",
       "AJ Digital operator support",
       "Quarterly business reviews",
     ],
@@ -55,8 +55,8 @@ export default function PricingPage() {
       </h1>
       <p className="mt-4 max-w-2xl text-lg text-ink-secondary">
         Every engagement starts with a paid assessment that sizes the leak.
-        Then setup plus a monthly retainer, with optional fees tied to verified
-        results. No performance-only pricing.
+        Then setup plus a monthly retainer. Outcome-aligned terms come only
+        after measurement is verified, and never as performance-only pricing.
       </p>
 
       <section className="mt-10 grid gap-4 lg:grid-cols-[1.15fr_1fr]">
@@ -114,9 +114,11 @@ export default function PricingPage() {
             <li className="flex gap-2.5">
               <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
               <span>
-                Optional <span className="text-ink">outcome fees</span> are
-                upside only — tied to verified booked appointments or recovered
-                revenue.
+                <span className="text-ink">Outcome-aligned terms</span> are
+                considered only when the workflow, source data, attribution
+                rules, and production measurement are verified. Until then,
+                there are no outcome fees — just setup and the monthly
+                retainer.
               </span>
             </li>
             <li className="flex gap-2.5">

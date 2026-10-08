@@ -23,16 +23,16 @@ const PILLARS = [
 ];
 
 const PROOF = [
-  { value: "Under 60s", label: "Target first response to missed demand" },
-  { value: "24/7", label: "Designed coverage across calls, texts, and forms" },
-  { value: "9 KPIs", label: "What the monthly report is designed to track" },
+  { value: "$1,000", label: "Flat Readiness & Revenue Leak Assessment" },
+  { value: "30 days", label: "To apply the full fee toward implementation" },
+  { value: "8 parts", label: "In the written assessment packet when it's a fit" },
 ];
 
 // OFFER — the commercial philosophy (docs/README.md). RECOVER is the delivery loop.
 const OFFER = [
   {
     title: "Outcomes First",
-    body: "We price around verified outcomes and booked work — not AI features or seat licenses.",
+    body: "We scope the work around booked jobs and verified results — not AI features or seat licenses.",
   },
   {
     title: "Front the Work",
@@ -44,11 +44,11 @@ const OFFER = [
   },
   {
     title: "Earn on Outcomes",
-    body: "Optional outcome fees are upside, tied to verified results — never performance-only.",
+    body: "Outcome-aligned terms come only once the workflow, source data, attribution rules, and production measurement are verified. Until then it's setup and a monthly retainer — never performance-only.",
   },
   {
     title: "ROI-Aligned Partnerships",
-    body: "Pricing is anchored to verified results, so cost is judged against what it returns.",
+    body: "You judge the cost against what it returns, with estimated revenue kept separate from verified results.",
   },
 ];
 
