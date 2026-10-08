@@ -3,6 +3,56 @@
 October 7, 2026. PR remains draft and unmerged. This security follow-up is
 explicitly authorized; it adds no worker, provider execution or gate bypass.
 
+## Second-pass readback
+
+The original five remaining package findings are **one distinct advisory**,
+GHSA-vfj7-8cjw-p6xm, propagated through this exact installed chain:
+
+`eslint-config-next@16.3.4 → @next/eslint-plugin-next@16.3.4 → fast-glob@3.3.1 → micromatch@4.0.8 → braces@3.0.3`.
+
+All five lockfile entries have `dev: true`; `npm ls braces --all` confirms that
+single installed path. No application import was found in app/lib/scripts.
+The plugin's `dist/utils/get-root-dirs.js` invokes globSync for the ESLint
+`settings.next.rootDir` option; this repository does not configure it.
+Inspection of 193 existing local build trace files found no braces, micromatch
+or fast-glob package paths. These observations establish development-tooling
+placement in this tree, not a guarantee about every deployment artifact or
+future configuration. They do not waive the audit gate.
+
+Fresh registry readback again found braces latest 3.0.3 with no newer release,
+micromatch 4.0.8 depending on braces ^3.0.3, fast-glob 3.3.3 depending on
+micromatch ^4.0.8, and Next ESLint plugin 16.4.0 depending on fast-glob 3.3.1.
+Thus neither a braces override nor available compatible transitive upgrades
+provide a version outside the advisory's affected range. No alias, downgrade,
+suppression or audit-policy change is applied.
+
+The fresh audit also surfaced six additional advisory IDs on installed Next
+16.3.6, aggregated into one high package finding. The count temporarily became
+six high packages, including one production package. This is fresh registry
+evidence, not an additional dependency introduced by PR A. The
+[second-pass before audit](./pr195-second-pass-before.json) preserves exact ranges:
+
+| Next advisory | Audit severity | Patched version on current minor line |
+| --- | --- | --- |
+| [GHSA-3w37-wq28-93x7](https://github.com/advisories/GHSA-3w37-wq28-93x7) | moderate | 16.3.8 |
+| [GHSA-4jqv-mc3x-m676](https://github.com/advisories/GHSA-4jqv-mc3x-m676) | moderate | 16.3.8 |
+| [GHSA-39w2-rjm5-chcv](https://github.com/advisories/GHSA-39w2-rjm5-chcv) | low | 16.3.8 |
+| [GHSA-f87g-xv8r-7p7x](https://github.com/advisories/GHSA-f87g-xv8r-7p7x) | moderate | 16.3.8 |
+| [GHSA-mcj8-r9mp-w47p](https://github.com/advisories/GHSA-mcj8-r9mp-w47p) | moderate | 16.3.8 |
+| [GHSA-cjq9-62q9-8jv4](https://github.com/advisories/GHSA-cjq9-62q9-8jv4) | high | 16.3.8 |
+
+The direct production path is root → next. The high SSRF advisory requires an
+attacker-controlled allow-listed remote image URL; next.config.ts has no
+images.remotePatterns. This limits that specific trigger, not all six advisories.
+The verified 16.3.8 security patch is used instead of npm's broader 16.4.0 suggestion.
+The [fresh full audit](./pr195-recheck-after.json) confirms all six Next advisory
+IDs are absent and only the original five high packages remain. The
+[fresh production-only audit](./pr195-recheck-production-after.json) is clean.
+Neither result resolves the full security gate. A published vetted braces fix
+or a separately reviewed replacement of the affected tooling chain is still
+required. There is no demonstrated compatible override available today.
+Historical first-pass evidence follows; latest validation is in the readiness report.
+
 ## CI and inheritance proof
 
 Original PR head: `c42c848397f9ccc6973eb12cbc451ad0b63e01e3`.

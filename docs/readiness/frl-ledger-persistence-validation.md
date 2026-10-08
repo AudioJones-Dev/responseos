@@ -1,5 +1,26 @@
 # FRL PR A validation
 
+## Second security pass: Next 16.3.8
+
+October 7, 2026. Registry recheck exposed six additional Next advisory IDs on
+16.3.6. Updating only Next and required env/SWC companions to 16.3.8 cleared
+those IDs. Full audit still reports five high development-tooling packages
+from one braces advisory; production-only audit is clean. Exact paths, versions,
+reachability limits, rejected ineffective upgrades and before/after audits are
+in the [updated evidence ledger](../security/pr195-dependency-evidence.md).
+
+Lint, TypeScript, 668 unit tests, the original 52 projection tests against the
+patched tree, Prisma generation, migration deploy/parity, both builds and
+environment-contract validation passed. All 174 PostgreSQL tests passed in one
+invocation, including the 17 FRL persistence/rollback/restore tests.
+An initial migration check stopped before tests because the local
+server started on its default port; restarting the same isolated cluster on
+55432 corrected the local setup without source changes.
+
+The PR body records exact-head CI after this change is pushed. The unchanged
+full audit gate remains mandatory. No breaking dependency replacement, worker,
+CRM operation, acquisition activation, deployment or gate closure is included.
+
 ## Security follow-up: patched dependencies
 
 October 7, 2026. The authorized security pass proved all original 11 package-level

@@ -42,7 +42,7 @@
       "start": "2026-10-07",
       "due": "2026-10-07",
       "blocked": true,
-      "blockedReason": "Patched-tree local checks pass: 668 unit, 174 integration and 52 projection tests. Six inherited audit findings cleared; five high findings from unpatched braces still block merge. G02-G07 remain open; no worker or live provider writes.",
+      "blockedReason": "Next 16.3.8 clears newly surfaced Next advisories. Five high dev-only package findings represent one unpatched braces advisory and still block merge. G02-G07 remain open; no worker or live provider writes.",
       "ref": 195,
       "refType": "pull"
     },
