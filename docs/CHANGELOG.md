@@ -4,7 +4,7 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
-## Unreleased — fix: replace unverifiable homepage stats and bound outcome-fee copy
+## Unreleased — fix: replace unverifiable homepage stats and bound outcome-fee copy (#202)
 
 Owner decisions from 2026-10-08 on the two items the executive-findings reconciliation left open.
 
