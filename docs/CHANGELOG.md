@@ -4,7 +4,7 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
-## Unreleased — fix: point the prospect website fetcher's user agent at the live trust page
+## Unreleased — fix: point the prospect website fetcher's user agent at the live trust page (#207)
 
 - `lib/prospectBootstrap/websiteAcquisition.ts` identified itself as `ResponseOS-ProspectBootstrap/1.0 (+https://responseos.ai/trust)`. `responseos.ai` is a parking page we don't control, so a site owner checking who fetched their pages landed somewhere unrelated. The user agent now links to `https://responseos.ajdigital.app/trust`.
 - A unit test asserts the header on every request the fetcher makes (`tests/unit/prospect-bootstrap.test.ts`). It fails on the old value.
