@@ -4,6 +4,16 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: publish terms of service for the site and demos
+
+- **New `/terms` page**, linked from the marketing footer. It covers the website and its demos only; a paid assessment or implementation is governed by the written agreement both sides sign, which wins if the two disagree.
+- **Written to match what the site actually is.** Planned or "designed to" features aren't promises; demos use simulated or supervised test providers, mostly on fictional records (the receptionist demo answers from approved owner facts, ADR-0046); estimates and example figures aren't guaranteed recovered revenue (doctrine §20).
+- **Covers:** assessment requests (a form submission isn't an engagement), demo calls and the receptionist demo (automated answers can be wrong, no professional advice, not monitored for emergencies), acceptable use, ownership of site content, privacy (links `/privacy`), third-party links, no warranties (and not HIPAA-certified or compliant), a $100 liability cap for the site and demos only, changes, Florida governing law and courts, and contact at `privacy@ajdigital.app`.
+- **`/terms` is a public route** in `lib/auth/route-protection.ts`, with tests, so it stays readable when sign-in is enforced.
+- **Trust page:** "Privacy policy and terms" moves from *Partial* to *Implemented*.
+- **Shared layout:** the privacy and terms pages now use `app/(marketing)/_components/Legal.tsx` for the page shell, sections, lists, and contact link. The privacy page's text is unchanged.
+- Owner action before deploy: have counsel review the terms, especially the liability cap, the choice of Florida courts, and the absence of an arbitration clause or indemnity. Dashboard task `L-14`.
+
 ## Unreleased — fix: drop `output: "standalone"` so the Vercel build succeeds
 
 - **Production builds on Vercel were failing.** Vercel's build servers now run Next.js through its adapter API (`NEXT_ENABLE_ADAPTER=1`, applied to Next ≥ 16.3). With `output: "standalone"` set, Next 16.3.4 doesn't write `.next/next-server.js.nft.json`, and the adapter's `onBuildComplete` step fails with `ENOENT` after the app has compiled and prerendered every page. The last successful Vercel build, on 2026-09-15, predates the Next 16.2 → 16.3 bump in #150.

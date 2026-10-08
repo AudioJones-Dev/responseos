@@ -8,6 +8,7 @@ describe("isPublicPath", () => {
     "/audit",
     "/trust",
     "/privacy",
+    "/terms",
     "/demo",
     "/demo/walkthrough",
     "/demo/walkthrough/call",
