@@ -59,7 +59,7 @@ omit dev dependencies, use continue-on-error or blanket-ignore five package name
 | --- | --- |
 | Exception ID | PR195-BRACES-2026-10, proposed only |
 | Scope | Only this GHSA and its five exact dev-only nodes/versions in the reviewed lockfile; no additional advisory causes |
-| Risk owner | Human ResponseOS repository owner or appointed security owner; named individual and acceptance **UNASSIGNED** |
+| Risk owner | The human requester, self-identified sole owner of ResponseOS, is the accountable business and engineering risk owner. Personal/legal name not supplied; exception acceptance remains **PENDING**. Codex assists engineering but owns no risk or approval authority. |
 | Approval authority | Explicit designated human security approver; identity/delegation and approval reference **NOT RECORDED**. Codex is not the approver. |
 | Expiration | Proposed hard stop **2026-10-14T23:59:59Z**, or earlier upon patched upstream availability, dependency/path/config change or new exposure; no automatic renewal |
 | Enforcement | Fail closed on expiry, missing approval, unexpected audit schema/error, changed scope or any other normally blocking advisory; archive complete raw audit including the accepted finding |
@@ -71,3 +71,5 @@ jobs on the resulting exact application commit. Every downstream check must pass
 accepted risk must remain visible rather than reported as a clean raw audit.
 Persistence approval remains separate. PR B, live CRM, acquisition activation and
 G02-G07 remain deferred/open. This document grants no approval.
+
+Owner assignment and independent-review handoff: [review package](./pr195-independent-security-review.md).
