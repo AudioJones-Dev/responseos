@@ -4,7 +4,7 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
-## Unreleased — fix: patch vulnerable production dependencies and gate CI on them
+## Unreleased — fix: patch vulnerable production dependencies and gate CI on them (#201)
 
 - **Upgraded the packages new advisories flagged:** `next` and `eslint-config-next` 16.3.4 → **16.4.0** (critical GHSA-vcvr-r3jv-pc5j and six high Next.js advisories), `sharp` 0.35.4 → **0.35.5** (devDependency and override; GHSA-wq5f-xc86-pv6w), the `fast-uri` override 3.1.7 → **3.1.8** (moderate GHSA-hrr3-gc8f-f4qj), and `source-map-js` → **1.2.2** via `npm audit fix` (GHSA-68fv-2mgg-jv7q). Lockfile regenerated with npm 11.16.0.
 - **`npm audit --omit=dev` now reports 0 vulnerabilities.** Five high findings remain, all dev-only: `braces` GHSA-vfj7-8cjw-p6xm through `eslint-config-next`'s glob stack. The advisory covers every published `braces` version, so no upgrade clears it.
