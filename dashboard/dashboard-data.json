@@ -42,7 +42,7 @@
       "start": "2026-10-07",
       "due": "2026-10-07",
       "blocked": true,
-      "blockedReason": "Next 16.3.8 clears newly surfaced Next advisories. Five high dev-only package findings represent one unpatched braces advisory and still block merge. G02-G07 remain open; no worker or live provider writes.",
+      "blockedReason": "Braces security disposition documented: one advisory across five dev-only packages. Human risk owner/approver unassigned; no exception implemented. Audit still blocks merge. G02-G07 remain open; no worker or live provider writes.",
       "ref": 195,
       "refType": "pull"
     },

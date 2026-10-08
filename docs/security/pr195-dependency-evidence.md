@@ -3,6 +3,9 @@
 October 7, 2026. PR remains draft and unmerged. This security follow-up is
 explicitly authorized; it adds no worker, provider execution or gate bypass.
 
+Current decision: [security disposition](./pr195-braces-disposition.md).
+Risk acceptance is unapproved; the existing CI policy remains unchanged.
+
 ## Second-pass readback
 
 The original five remaining package findings are **one distinct advisory**,
