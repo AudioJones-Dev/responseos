@@ -33,6 +33,8 @@
   "tasks": [
     {
       "id": "SEC-PACKAGING",
+      "ref": 197,
+      "refType": "pull",
       "phase": "Tech Debt & Hardening",
       "title": "Review isolated production packaging and joint security acceptance proposal",
       "owner": "Codex",
