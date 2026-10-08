@@ -33,6 +33,8 @@
   "tasks": [
     {
       "id": "SHARP-STANDALONE",
+      "ref": 198,
+      "refType": "pull",
       "phase": "Tech Debt & Hardening",
       "title": "Validate reproducible Windows Sharp native packaging repair",
       "owner": "Codex",
