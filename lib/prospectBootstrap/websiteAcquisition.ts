@@ -9,7 +9,7 @@ export const MAX_PROSPECT_PAGES = 20;
 export const MAX_PROSPECT_PAGE_BYTES = 2 * 1024 * 1024;
 export const PROSPECT_FETCH_TIMEOUT_MS = 10_000;
 const MAX_REDIRECTS = 5;
-const USER_AGENT = "ResponseOS-ProspectBootstrap/1.0 (+https://responseos.ai/trust)";
+const USER_AGENT = "ResponseOS-ProspectBootstrap/1.0 (+https://responseos.ajdigital.app/trust)";
 
 export interface AcquiredWebsitePage {
   url: string;

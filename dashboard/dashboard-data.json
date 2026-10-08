@@ -1347,6 +1347,19 @@
       "refType": "pull"
     },
     {
+      "id": "L-18",
+      "phase": "Launch / Demo Deploy",
+      "title": "Point the prospect website fetcher's user agent at the live trust page",
+      "owner": "Claude Code",
+      "status": "In Progress",
+      "progress": 80,
+      "priority": "Low",
+      "start": "2026-10-08",
+      "due": "2026-10-08",
+      "ref": 207,
+      "refType": "pull"
+    },
+    {
       "id": "G-16",
       "phase": "Tech Debt & Hardening",
       "title": "Vendor web fonts so next build makes no network requests",
