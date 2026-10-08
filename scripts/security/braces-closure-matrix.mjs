@@ -6,6 +6,7 @@ import {probeNative} from './braces-native-probe.mjs';
 import {pathToFileURL} from 'node:url';
 import {references} from './braces-artifact-analysis.mjs';
 import {verifyBundle,toolingHash} from './braces-ci-accept.mjs';
+import {verifyFrozenIdentity,verifyFrozenRuntimePlatform,inactivePlatformBranch,inactiveLinuxGuard} from './braces-closure-rules.mjs';
 const evidence=path.resolve(process.argv[2]||'.security-tools/archive-verification'),output=path.resolve(process.argv[3]||'.security-evidence/closure-review');
 const read=name=>JSON.parse(fs.readFileSync(path.join(evidence,name),'utf8')),hash=data=>crypto.createHash('sha256').update(data).digest('hex');
 const runtime=read('artifact-verification/runtime-summary.json'),traced=runtime.packaging==='traced';
@@ -13,13 +14,13 @@ if(!traced){
  const archive='docs/security/packaging-proposal-evidence/raw-evidence.tar.gz',archiveManifest=JSON.parse(fs.readFileSync('docs/security/packaging-proposal-evidence/archive.json'));
  if(hash(fs.readFileSync(archive))!==archiveManifest.sha256)throw new Error('Preserved archive hash mismatch');
 }
-// Traced runs need a frozen identity file: {applicationSha, platform, occurrences, ledger, ledgerSha256}, where ledger is the committed frozen closure ledger.
+// Traced runs need a frozen identity file: {applicationSha, platform, runtimePlatform, occurrences, ledger, ledgerSha256}, where ledger is the committed frozen closure ledger.
 if(traced&&!process.argv[4])throw new Error('Traced packaging requires a frozen identity file argument');
 const frozen=traced?JSON.parse(fs.readFileSync(process.argv[4],'utf8')):{applicationSha:'4e1f353117696658988bca171e4e0e51c0fb1b96',platform:'win32',occurrences:140};
 const ledgerFile=traced?frozen.ledger:'docs/security/packaging-proposal-evidence/artifact-verification/closure-ledger.json';
 if(traced&&(typeof ledgerFile!=='string'||!ledgerFile.startsWith('docs/security/')||ledgerFile.includes('..')))throw new Error('Frozen ledger must be committed under docs/security');
-const report=verifyBundle(evidence),build=read('artifact-verification/build-summary.json'),original=JSON.parse(fs.readFileSync(ledgerFile,'utf8')),inventory=read('artifact-verification/inventory.json'),before=read('artifact-verification/runtime-before.json');
-if(build.sourceCommit!==frozen.applicationSha||build.platform!==frozen.platform||process.version!==build.node||original.ledger.length!==frozen.occurrences||original.ledger.some((row,index)=>row.id!==index+1)||traced&&(hash(fs.readFileSync(ledgerFile))!==frozen.ledgerSha256||original.summary?.applicationSha!==frozen.applicationSha))throw new Error('Frozen occurrence identity mismatch');
+const ledgerBytes=fs.readFileSync(ledgerFile),report=verifyBundle(evidence),build=read('artifact-verification/build-summary.json'),original=JSON.parse(ledgerBytes),inventory=read('artifact-verification/inventory.json'),before=read('artifact-verification/runtime-before.json');
+verifyFrozenIdentity({traced,frozen,ledgerFile,ledgerBytes,ledger:original,fresh:traced?read('artifact-verification/closure-ledger.json'):null,build,node:process.version});
 const checkout=build.checkout,ts=createRequire(path.join(checkout,'package.json'))('typescript');
 const inventoryMap=new Map(inventory.map(row=>[row.file,row])),runtimeMap=new Map(before.map(row=>[row.file,row]));
 const events=fs.readFileSync(path.join(evidence,'artifact-verification/runtime-loads.jsonl'),'utf8').split('\n').filter(Boolean).map(line=>JSON.parse(line));
@@ -27,6 +28,7 @@ fs.mkdirSync(output,{recursive:true});
 const native=probeNative(runtime.runtime,build.env,output),nativeProof=native.observation,nativeEvents=native.events;
 const installed=probeNative(build.checkout,build.env,output,'installed-native');
 const selected=nativeProof.runtimePlatform;
+verifyFrozenRuntimePlatform({traced,frozen,selected});
 if(nativeProof.platform!==build.platform||!/^[a-z0-9]+-[a-z0-9]+$/.test(selected||'')||!traced&&selected!=='win32-x64'||nativeEvents.some(row=>row.kind==='escape-blocked'))throw new Error('Unsupported native platform control');
 const files=dir=>fs.readdirSync(dir,{withFileTypes:true}).flatMap(item=>item.isDirectory()?files(path.join(dir,item.name)):[path.join(dir,item.name)]);
 const nativeFolders=['node_modules/@img/sharp-'+selected+'/lib','node_modules/@img/sharp-libvips-'+selected+'/lib'].filter(folder=>fs.existsSync(path.join(build.checkout,folder)));
@@ -46,7 +48,7 @@ function source(file){
   cache.set(file,{text,hash:item.sha256,refs:references(ts,file,text),used:new Set()});
  }return cache.get(file);
 }
-const escape=text=>text.replace(/[.*+?^${}()|[\]\\/]/g,'\\$&'),prefix=traced?'':'.next/standalone/',sharpSource=new RegExp('^'+escape(prefix)+'node_modules/sharp/dist/sharp\\.(cjs|mjs)$'),helperFiles=[prefix+'node_modules/sharp/dist/libvips.cjs',prefix+'node_modules/sharp/dist/libvips.mjs'];
+const prefix=traced?'':'.next/standalone/',helperFiles=[prefix+'node_modules/sharp/dist/libvips.cjs',prefix+'node_modules/sharp/dist/libvips.mjs'];
 const helperProof=helperFiles.map(file=>{const entry=source(file);return {file,sha256:entry.hash,supported:entry.text.includes('const runtimePlatformArch = () => '+String.fromCharCode(96)+'\u0024{process.platform}\u0024{runtimeLibc()}-\u0024{process.arch}'+String.fromCharCode(96)+';')};});
 if(helperProof.some(row=>!row.supported))throw new Error('Native selector source requires new review');
 const matrix=original.ledger.map(row=>{
@@ -64,14 +66,14 @@ const matrix=original.ledger.map(row=>{
   scope='BUILD_ONLY_OUTPUT';decision='CLOSED_SOURCE_FILE_EXCLUDED';obligation='Reassess if deployment packaging includes build output; embedded equivalents remain a separate obligation';
   proof.push({kind:'runtime-inventory-exclusion',file:relative,inventory:'artifact-verification/runtime-before.json',inventorySha256:hash(fs.readFileSync(path.join(evidence,'artifact-verification/runtime-before.json')))});
  }
- const platformGuard=ref.guards.find(guard=>guard.kind==='switch-case'&&guard.discriminant==='runtimePlatform');
- if(packaged&&sharpSource.test(row.file)&&entry.text.includes('const runtimePlatform = runtimePlatformArch();')&&new RegExp('case "'+escape(selected)+'":\\s*sharp = require\\("@img/sharp-'+escape(selected)+'/sharp\\.node"\\);\\s*break;').test(entry.text)&&platformGuard&&!platformGuard.labels.includes('"'+selected+'"')&&!platformGuard.labels.includes('default')){
+ const platformGuard=inactivePlatformBranch({file:row.file,text:entry.text,guards:ref.guards,packaged,prefix,selected});
+ if(platformGuard){
   decision=selected==='win32-x64'?'CLOSED_INACTIVE_WINDOWS_BRANCH':'CLOSED_INACTIVE_PLATFORM_BRANCH';obligation=selected==='win32-x64'?'Windows x64 selector only; Linux and other platforms require their own artifacts and selector proof':selected+' selector only; other platforms require their own artifacts and selector proof';
   proof.push({kind:'inactive-platform-case',selected:nativeProof.runtimePlatform,cases:platformGuard.labels,selectorSources:helperProof,nativeTargets:selectedNative});
  }
 
- const linuxGuard=ref.guards.find(guard=>guard.kind==='if'&&guard.branch==='true'&&guard.expression==='isLinux && /(symbol not found|CXXABI_)/i.test(messages)');
- if(packaged&&(traced||[116,134].includes(row.id))&&sharpSource.test(row.file)&&entry.text.includes('const runtimePlatform = runtimePlatformArch();')&&entry.text.includes('const [isLinux, isMacOs, isWindows] = ["linux", "darwin", "win32"].map((os) => runtimePlatform.startsWith(os));')&&linuxGuard&&(traced?!selected.startsWith('linux'):selected==='win32-x64')){
+ const linuxGuard=inactiveLinuxGuard({id:row.id,file:row.file,text:entry.text,guards:ref.guards,packaged,prefix,selected,traced});
+ if(linuxGuard){
   decision='CLOSED_INACTIVE_LINUX_GUARD';obligation=selected==='win32-x64'?'Windows x64 false-guard proof only; Linux requires independent selector and failure-path evidence':selected+' false-guard proof only; Linux requires independent selector and failure-path evidence';
   proof.push({kind:'inactive-linux-guard',selected:nativeProof.runtimePlatform,expression:linuxGuard.expression,isLinux:false,definition:'["linux", "darwin", "win32"].map((os) => runtimePlatform.startsWith(os))',selectorSources:helperProof});
  }
