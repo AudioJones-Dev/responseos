@@ -6,7 +6,7 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 ## Unreleased — feat: publish terms of service for the site and demos (#200)
 
-- **New `/terms` page**, linked from the marketing footer. It covers the website and its demos only; a paid assessment or implementation is governed by the written agreement both sides sign, which wins if the two disagree.
+- **New `/terms` page**, linked from the marketing footer and, with the privacy policy, from the demo walkthrough and receptionist demo footers. It covers the website and its demos only; a paid assessment or implementation is governed by the written agreement both sides sign, which wins if the two disagree.
 - **Written to match what the site actually is.** Planned or "designed to" features aren't promises; demos use simulated or supervised test providers, mostly on fictional records (the receptionist demo answers from approved owner facts, ADR-0046); estimates and example figures aren't guaranteed recovered revenue (doctrine §20).
 - **Covers:** assessment requests (a form submission isn't an engagement), demo calls and the receptionist demo (automated answers can be wrong, no professional advice, not monitored for emergencies), acceptable use, ownership of site content, privacy (links `/privacy`), third-party links, no warranties (and not HIPAA-certified or compliant), a $100 liability cap for the site and demos only, changes, Florida governing law and courts, and contact at `privacy@ajdigital.app`.
 - **`/terms` is a public route** in `lib/auth/route-protection.ts`, with tests, so it stays readable when sign-in is enforced.
