@@ -1594,6 +1594,28 @@ But a *deployment* is not a page. Vercel serves the whole app, and with `RESPONS
 
 ---
 
+## ADR-0054 — Managed revenue-response commercial doctrine supersedes legacy pricing models
+
+**Status:** Accepted commercial decision (2026-09-13), supplied and ratified by Audio; repository reconciliation by Codex. Commercial ratification; runtime capabilities and deployment remain separately governed.
+
+**Context.** The owner supplied Pricing & Commercial Doctrine v1.0 as the current commercial source of truth and authorized reconciliation. ADR-0028 and several companions still described capacity-based Business Memory tiers, open price points, optional outcome fees, or legacy Recovery offers. Those references cannot continue to govern current proposals.
+
+**Decision.**
+
+1. [Pricing & Commercial Doctrine v1.0](./strategy/responseos-pricing-commercial-doctrine-v1.md) governs commercial positioning, pricing, scope, qualification, terms, usage treatment, and attribution. ResponseOS is managed revenue-response infrastructure for founder-led service businesses.
+2. Assessment + Implementation + Managed Operations + Transparent Provider Usage replaces ADR-0028's commercial model. Business Memory remains a strategic layer, not the primary public pricing meter. Legacy Recovery and memory-tier names, automatic usage markups, and open-price statements are superseded commercially.
+3. The standard assessment is $1,500; the Supervised Recovery Pilot is $8,500 implementation + $1,500/month with a 90-day minimum after go-live. The doctrine's section 27 controls the full table. Managed Core and Managed Operations retain the readiness limitations in sections 5 and 20; Enterprise / Regulated remains future. Founding-client rates are constrained exceptions.
+4. Paid assessment is conditional on investigative need. A free fit review may establish a simple, already-bounded pilot. Fit/no-fit judgment remains mandatory; the diagnostic-first principle does not require a paid assessment in every case.
+5. Prefer client-owned provider accounts where practical; AJ Digital-operated usage passes through at cost unless a separate administration fee is expressly approved. No automatic percentage markup applies. This commercial preference does not modify platform credential ownership or activate a provider.
+6. No standard revenue-share model applies. Existing outcome-fee schema fields and historical offer language grant no billing authority. ADR-0042's evidence and dispute gates remain binding, and doctrine sections 11–12 govern attribution and any future consideration of revenue share.
+7. Commercial ratification does not verify operating hours, margins, market research, implementation readiness, or live results. Market-validation labels are owner-supplied; the underlying September 13 research was not independently audited in this reconciliation. Operational assumptions stay provisional.
+8. ADR-0010's v0.5 billing implementation gate and existing provider, security, customer-data, deployment, and human-only merge controls remain unchanged. A sellable supervised scope is not authorization to activate an unready runtime. Public starting-at language is defined by doctrine section 15; the owner-authorized pricing, homepage, navigation, and audit copy implementation is complete in PR #176. Publication and deployment remain separately gated.
+9. The owner-authorized September 13 doctrine section 15 supersedes item 1 of the July 28 opening posture (public prices remain unpublished pending evidence-backed economics). Publishing the ratified pricing language is a commercial judgment with operational economics still provisional, not evidence that the earlier economic-validation condition was met. This changes the publication posture for pricing copy; deployment still follows its separate authorization controls.
+
+**Consequences.** Current companion guidance links to the doctrine, and conflicting historical material is explicitly marked as superseded. [The reconciliation register](./strategy/responseos-pricing-reconciliation-2026-09-13.md) records completed public-copy implementation and the separate publication/deployment boundary. This decision changes commercial documentation, not architecture, schema, billing behavior, or milestone timing.
+
+---
+
 ## ADR-0055 — Consent evidence is an immutable event carrying its source channel; per-contact state is a derived summary, not the record of authority
 
 **Status:** Accepted (2026-09-13) for the *contract*. Documentation only — this ADR authorises no schema, no migration, no runtime, and no recording. Recording stays `false` at every supervision tier per ADR-0051, and G-11 of the FRL policy still requires a separate ratified amendment before any FRL recording at all.

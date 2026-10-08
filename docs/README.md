@@ -38,7 +38,7 @@ The authoritative provider-stack baseline is the decision log: Telnyx primary / 
 
 10. [`DESIGN.md`](./DESIGN.md) — visual system, UX spine, design maturity ladder.
 11. [`client-facing-offer.md`](./client-facing-offer.md) — buyer-facing summary.
-12. [`pricing-and-onboarding.md`](./pricing-and-onboarding.md) — provisional commercial strategy and qualification gates; numeric terms remain unvalidated for publication.
+12. [Pricing & Commercial Doctrine v1.0](./strategy/responseos-pricing-commercial-doctrine-v1.md) — current commercial source of truth for pricing, packaging, scope, provider usage, qualification, and attribution; delivery economics explicitly marked provisional. [`pricing-and-onboarding.md`](./pricing-and-onboarding.md) applies the doctrine and retains superseded planning material for provenance.
 13. [`ops/client-delivery/README.md`](./ops/client-delivery/README.md) — canonical future-client delivery standards, reconciliation, and reusable templates.
 
 ## Environment, deployment, security
