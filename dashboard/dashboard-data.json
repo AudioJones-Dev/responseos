@@ -35,13 +35,15 @@
       "id": "SEC-PACKAGING-TRACED",
       "phase": "Tech Debt & Hardening",
       "title": "Prototype traced (non-standalone) packaging mode for the PR #197 gates",
+      "ref": 197,
+      "refType": "pull",
       "owner": "Claude Code",
       "status": "Review",
-      "progress": 50,
+      "progress": 60,
       "priority": "High",
       "start": "2026-10-08",
       "blocked": true,
-      "blockedReason": "Linux-only local run against master 0ed7cf0. Windows, Linux/Postgres integration, braces-closure-matrix retargeting, a frozen traced evidence set and independent review are pending. No hosted execution."
+      "blockedReason": "Merged into PR #197 via PR #199 (3fcb014). Linux-only local run against master 0ed7cf0. Windows, Linux/Postgres integration, braces-closure-matrix retargeting, a frozen traced evidence set and independent review are pending. No hosted execution."
     },
     {
       "id": "SEC-PACKAGING",
@@ -55,7 +57,7 @@
       "priority": "High",
       "start": "2026-10-08",
       "blocked": true,
-      "blockedReason": "Five audit findings, 36 task defects and 106 unknown imports. Sharp packaging PR #198 closed as superseded by #192 (no standalone output on master); these gates still require standalone output, and a traced mode is prototyped in draft PR #199. Integration evidence gates implemented but unexecuted on Linux. Automatic install hooks disabled; explicit command/download trust, Linux/Postgres and independent review pending. PR #195 unchanged."
+      "blockedReason": "Five audit findings, 36 task defects and 106 unknown imports. Sharp packaging PR #198 closed as superseded by #192 (no standalone output on master); the gates now also run without standalone output through an experimental traced mode merged from PR #199 (Linux-only local validation). Integration evidence gates implemented but unexecuted on Linux. Automatic install hooks disabled; explicit command/download trust, Linux/Postgres and independent review pending. PR #195 unchanged."
     },
     {
       "id": "G-14",
