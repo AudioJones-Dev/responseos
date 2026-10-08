@@ -4,7 +4,7 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
-## Unreleased — feat: publish terms of service for the site and demos
+## Unreleased — feat: publish terms of service for the site and demos (#200)
 
 - **New `/terms` page**, linked from the marketing footer. It covers the website and its demos only; a paid assessment or implementation is governed by the written agreement both sides sign, which wins if the two disagree.
 - **Written to match what the site actually is.** Planned or "designed to" features aren't promises; demos use simulated or supervised test providers, mostly on fictional records (the receptionist demo answers from approved owner facts, ADR-0046); estimates and example figures aren't guaranteed recovered revenue (doctrine §20).
