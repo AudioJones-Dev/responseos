@@ -10,7 +10,7 @@ import {collectAcceptance,toolingHash} from './braces-ci-accept.mjs';
 import {references} from './braces-artifact-analysis.mjs';
 import {integrationCommands} from './braces-integration.mjs';
 import {verifyFrozenIdentity,verifyFrozenRuntimePlatform,inactivePlatformBranch,inactiveLinuxGuard} from './braces-closure-rules.mjs';
-import {launcherFile} from './braces-traced-runtime.mjs';
+import {launcherFile,classifyUntracedLoads} from './braces-traced-runtime.mjs';
 const root=process.cwd(),directory=fs.mkdtempSync(path.join(os.tmpdir(),'responseos-acceptance-controls-')),sha='1'.repeat(40),toolHash=toolingHash(root),results=[];
 const hash=data=>crypto.createHash('sha256').update(data).digest('hex');
 function files(dir){return fs.readdirSync(dir,{withFileTypes:true}).flatMap(item=>item.isDirectory()?files(path.join(dir,item.name)):[path.join(dir,item.name)]);}
@@ -122,6 +122,7 @@ control('Platform rule needs a packaged sharp source path',()=>{assert.equal(bra
 const linux=extra=>inactiveLinuxGuard({id:5,file:'node_modules/sharp/dist/sharp.cjs',text:sharpText,guards:guardsOf('linux-help'),packaged:true,prefix:'',selected:'win32-x64',traced:true,...extra});
 control('Linux guard closes only when the selected platform is not Linux',()=>{assert.ok(linux());assert.equal(linux({selected:'linux-x64'}),null);assert.equal(linux({selected:'linuxmusl-x64'}),null);});
 control('Standalone Linux guard stays pinned to the frozen Windows IDs',()=>{assert.equal(linux({traced:false,file:'.next/standalone/node_modules/sharp/dist/sharp.cjs',prefix:'.next/standalone/'}),null);assert.ok(linux({traced:false,id:116,file:'.next/standalone/node_modules/sharp/dist/sharp.cjs',prefix:'.next/standalone/'}));});
+control('Launcher files are excused only before the warm-up response',()=>{const boundary='2026-01-01T00:00:01.000Z',launcher='node_modules/next/dist/cli/next-start.js',other='node_modules/next/dist/server/base-server.js';const loads=[{time:'2026-01-01T00:00:00.000Z',file:launcher},{time:'2026-01-01T00:00:00.500Z',file:other},{time:boundary,file:launcher},{time:'2026-01-01T00:00:02.000Z',file:other}];const {startup,request}=classifyUntracedLoads(loads,boundary);assert.deepEqual(startup,[loads[0]]);assert.deepEqual(request,[loads[1],loads[2],loads[3]]);});
 control('Launcher allowlist names only next start launcher files',()=>{for(const file of ['node_modules/next/dist/bin/next','node_modules/next/dist/cli/next-start.js','node_modules/@next/swc-linux-x64-gnu/next-swc.linux-x64-gnu.node','node_modules/next/dist/server/next.js','node_modules/next/dist/shared/lib/zod.js'])assert.ok(launcherFile(file),file);for(const file of ['node_modules/next/dist/server/base-server.js','node_modules/next/dist/shared/lib/router/utils.js','node_modules/braces/index.js','.next/server/app/page.js','node_modules/nextx/dist/bin/next'])assert.equal(launcherFile(file),false,file);});
 const empty=path.join(directory,'empty');fs.mkdirSync(empty);
 const cli=spawnSync(process.execPath,[fileURLToPath(new URL('./braces-ci-accept.mjs',import.meta.url)),empty],{cwd:root,env:{PATH:process.env.PATH},encoding:'utf8',windowsHide:true,timeout:10000});assert.equal(cli.status,1);assert.match(cli.stdout,/missing-or-inconsistent-platform-evidence/);results.push({name:'CLI exits nonzero without reports',pass:true});

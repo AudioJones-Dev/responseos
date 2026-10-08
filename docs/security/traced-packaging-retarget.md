@@ -30,7 +30,7 @@ Run with Node 24.18.0 and npm 11.16.0 against master `0ed7cf0` (Next 16.3.4), fr
 - No untraced request loads. There were 88 untraced startup loads, all `next/dist/{bin,cli,build,lib,compiled,trace,telemetry,shared,server}` and `@next/swc-linux-x64-gnu`.
 - Inspect found no affected packages and no missing or affected trace entries. Name-only mentions appeared in `.next/server/chunks`, `@prisma/client` runtime, `next/dist` and `react/cjs`, with no implementation markers.
 - The closure ledger has 116 occurrences, all UNKNOWN, with none missing (36 platform-specific, 27 framework-alias, 5 optional, 48 dynamic), and `packagingPass` is false. This count doesn't compare with the frozen Windows `4e1f353` ledger's 140 IDs.
-- The infrastructure controls (44 at the time, 66 now), the gate controls and the artifact-analysis controls all pass.
+- The infrastructure controls (44 at the time, 67 now), the gate controls and the artifact-analysis controls all pass.
 
 ## Traced closure matrix
 
@@ -41,7 +41,7 @@ Run with Node 24.18.0 and npm 11.16.0 against master `0ed7cf0` (Next 16.3.4), fr
 - the native platform the probe selected isn't `runtimePlatform`, for example `linux-arm64` against a `linux-x64` identity
 - the fresh build's own ledger rows differ from the frozen rows in any way: added, removed or changed (both reviews on #205)
 
-Like the standalone path, the matrix then matches every frozen row's source hash and AST position against the fresh build. The identity check and both closure rules live in `braces-closure-rules.mjs`, and 22 infrastructure controls cover them: valid identity, outside or traversing path, hash, SHA, platform and count mismatches, added, removed, changed and missing fresh rows, runtime platform, plus active, inactive, shared-label, default and Linux-guard cases and the launcher allowlist. Seven deliberate breaks of these checks each fail the controls.
+Like the standalone path, the matrix then matches every frozen row's source hash and AST position against the fresh build. The identity check and both closure rules live in `braces-closure-rules.mjs`, and 23 infrastructure controls cover them: valid identity, outside or traversing path, hash, SHA, platform and count mismatches, added, removed, changed and missing fresh rows, runtime platform, plus active, inactive, shared-label, default and Linux-guard cases, the launcher allowlist, and allowlisted and other files on both sides of the warm-up boundary (`classifyUntracedLoads`, shared with the runtime script). Seven deliberate breaks of these checks each fail the controls.
 
 ## Frozen traced identity: linux-x64, master `0ed7cf0`
 
