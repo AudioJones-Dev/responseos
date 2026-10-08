@@ -100,17 +100,20 @@ export async function POST(req: Request) {
     });
   }
   if (!target || !occurredAt || !resolved || pastRetention) {
-    await setWebhookProcessStatus({
-      id: ledger.data.id,
-      process_status: "rejected",
-      process_error: !target
-        ? "missing_destination"
-        : !occurredAt
-          ? "missing_occurred_at"
-          : !resolved
-            ? "unassigned_destination"
-            : "past_retention_window",
-    });
+    // A duplicate keeps the status its first delivery earned.
+    if (ledger.data.process_status !== "duplicate") {
+      await setWebhookProcessStatus({
+        id: ledger.data.id,
+        process_status: "rejected",
+        process_error: !target
+          ? "missing_destination"
+          : !occurredAt
+            ? "missing_occurred_at"
+            : !resolved
+              ? "unassigned_destination"
+              : "past_retention_window",
+      });
+    }
     return NextResponse.json(
       { ok: true, data: { accepted: true, duplicate: ledger.data.process_status === "duplicate", normalized: false } },
       { status: 202 },

@@ -143,4 +143,33 @@ describe("personalized Telnyx call retention", () => {
     );
     expect(after).not.toHaveBeenCalled();
   });
+
+  test("leaves a duplicate's status alone when its replay arrives after the retention window", async () => {
+    process.env.RESPONSEOS_DEMO_ACCOUNT_ID = "demo-account";
+    process.env.RESPONSEOS_DEMO_PHONE_E164 = "+13055550199";
+    mocks.resolveTelnyxEventAssignment.mockResolvedValue(null);
+    mocks.recordWebhookEvent.mockResolvedValue({ ok: true, data: { id: "ledger-1", process_status: "duplicate" } });
+    const rawBody = JSON.stringify({
+      data: {
+        id: "replayed-general-demo-event",
+        event_type: "call.conversation.ended",
+        occurred_at: new Date(Date.now() - 91 * 24 * 60 * 60 * 1000).toISOString(),
+        payload: { telnyx_agent_target: "+13055550199", call_control_id: "call-4" },
+      },
+    });
+    const timestamp = String(Math.floor(Date.now() / 1000));
+    const signature = sign(null, Buffer.from(`${timestamp}|${rawBody}`), keys.privateKey).toString("base64");
+    const { POST } = await import("@/app/api/webhooks/telnyx/calls/route");
+    const response = await POST(new Request("https://responseos.example/api/webhooks/telnyx/calls", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "telnyx-timestamp": timestamp,
+        "telnyx-signature-ed25519": signature,
+      },
+      body: rawBody,
+    }));
+    expect(response.status).toBe(202);
+    expect(mocks.setWebhookProcessStatus).not.toHaveBeenCalled();
+  });
 });
