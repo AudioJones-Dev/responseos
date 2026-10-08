@@ -46,7 +46,7 @@ const GROUPS: { name: string; controls: Control[] }[] = [
       {
         title: "Retention",
         status: "Partial",
-        body: "Call transcripts carry a retention lane — full, redacted, or metadata-only — and raw payloads from personalized-demo calls carry an expiry. Per-tenant retention settings, an expiry on every stored payload, and automatic enforcement of each lane are planned.",
+        body: "Assessment requests, demo calls (personalized and general), and raw call-event and identity webhook payloads now carry an expiry. Expired data is removed by a purge we run by hand: it previews what it would delete, changes nothing without an explicit flag, and records what it removed in the audit log. Per-tenant retention settings, scheduled enforcement, and enforcing each transcript's retention lane are planned.",
       },
       {
         title: "Export and deletion",

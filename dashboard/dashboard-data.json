@@ -1334,6 +1334,19 @@
       "refType": "pull"
     },
     {
+      "id": "L-17",
+      "phase": "Launch / Demo Deploy",
+      "title": "One guarded, previewed, audited retention purge command for expired data",
+      "owner": "Claude Code",
+      "status": "In Progress",
+      "progress": 80,
+      "priority": "High",
+      "start": "2026-10-08",
+      "due": "2026-10-08",
+      "ref": 208,
+      "refType": "pull"
+    },
+    {
       "id": "G-16",
       "phase": "Tech Debt & Hardening",
       "title": "Vendor web fonts so next build makes no network requests",

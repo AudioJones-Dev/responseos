@@ -6,6 +6,7 @@ import type { CrmProvider } from "@/lib/providers/crm";
 import { err, errFromThrown, ok, type Result } from "@/lib/data/result";
 import { sanitizeCrmText } from "@/lib/crm/sanitization";
 import { normalizeE164 } from "@/lib/validation/common";
+import { PURGED_CALLER_NUMBER } from "@/lib/retention/periods";
 
 export type CrmSyncStatus =
   | "pending"
@@ -124,6 +125,18 @@ export async function runCrmSyncForCall(params: {
     const call = await db.call.findFirst({
       where: { id: params.callId, account_id: params.accountId },
     });
+    if (call?.from_number === PURGED_CALLER_NUMBER) {
+      operation = await db.crmSyncOperation.update({
+        where: { id: operation.id, account_id: params.accountId },
+        data: {
+          status: "cancelled",
+          last_error_code: "retention_purged",
+          last_error_redacted: "retention_purged",
+          next_attempt_at: null,
+        },
+      });
+      return ok(toView(operation));
+    }
     if (!call || call.status !== "completed") throw new Error("canonical_call_not_finalized");
     const contact = call.contact_id
       ? await db.contact.findFirst({
