@@ -10,6 +10,7 @@ const checkout=build.checkout;
 const load=createRequire(path.join(checkout,'package.json'));
 const ts=load('typescript');
 import {targets,signals,references} from './braces-artifact-analysis.mjs';
+import {tracedFiles} from './braces-traced-runtime.mjs';
 const sha=buffer=>crypto.createHash('sha256').update(buffer).digest('hex');
 function walk(directory){
  const files=[];
@@ -21,7 +22,9 @@ function walk(directory){
  return files;
 }
 const inventory=[],hits=[],traces=[],imports=[],packages=[],links=[];
-for(const item of walk(path.join(checkout,'.next')).sort((a,b)=>a.file.localeCompare(b.file))){
+const standalone=fs.existsSync(path.join(checkout,'.next/standalone'));
+const outsideNext=standalone?[]:tracedFiles(checkout).files.filter(file=>!file.startsWith('.next/')).map(file=>({file:path.join(checkout,file)}));
+for(const item of [...walk(path.join(checkout,'.next')),...outsideNext].sort((a,b)=>a.file.localeCompare(b.file))){
  const relative=path.relative(checkout,item.file).replaceAll('\\','/');
  if(relative.startsWith('.next/cache/')) continue;
  if(item.link){links.push({...item,file:relative});continue;}
@@ -52,6 +55,6 @@ for(const item of walk(path.join(checkout,'.next')).sort((a,b)=>a.file.localeCom
  }
 }
 const manifestFiles=inventory.filter(item=>/manifest|BUILD_ID|server\.js$|next-server\.js\.nft/.test(item.file));
-const result={capturedAt:new Date().toISOString(),sourceCommit:build.sourceCommit,scope:'fresh local Windows .next output, cache excluded; public source copied at runtime',inventoryCount:inventory.length,manifestFiles,hits,packages,links,traceEntries:traces.length,missingTraceEntries:traces.filter(item=>!item.exists),affectedTraceEntries:traces.filter(item=>item.affected),importCount:imports.length,computedImportCount:imports.filter(item=>!item.literal).length,unresolvedExternalCount:imports.filter(item=>item.resolution==='unresolved-external').length,limitations:['Name/fingerprint scans are heuristic, not exhaustive embedded-code recognition','AST scan covers require()/import() expressions; bundled custom loaders and aliases remain possible','Computed imports require review; no universal absence conclusion','Trace paths represent build checkout, not proof of standalone resolution']};
+const result={capturedAt:new Date().toISOString(),sourceCommit:build.sourceCommit,scope:standalone?'fresh local Windows .next output, cache excluded; public source copied at runtime':'fresh .next output plus traced files outside .next, cache excluded',inventoryCount:inventory.length,manifestFiles,hits,packages,links,traceEntries:traces.length,missingTraceEntries:traces.filter(item=>!item.exists),affectedTraceEntries:traces.filter(item=>item.affected),importCount:imports.length,computedImportCount:imports.filter(item=>!item.literal).length,unresolvedExternalCount:imports.filter(item=>item.resolution==='unresolved-external').length,limitations:['Name/fingerprint scans are heuristic, not exhaustive embedded-code recognition','AST scan covers require()/import() expressions; bundled custom loaders and aliases remain possible','Computed imports require review; no universal absence conclusion','Trace paths represent build checkout, not proof of standalone resolution']};
 for(const [name,value] of Object.entries({inventory,imports,traces,'inspection-summary':result})) fs.writeFileSync(path.join(evidence,name+'.json'),JSON.stringify(value,null,2)+'\n');
 console.log(JSON.stringify({inventoryCount:inventory.length,traceEntries:traces.length,hits:hits.slice(0,20),affectedPackages:packages.filter(item=>item.affected),affectedTraceEntries:result.affectedTraceEntries.length,missingTraceEntries:result.missingTraceEntries.length,computedImportCount:result.computedImportCount,unresolvedExternalCount:result.unresolvedExternalCount,links:links.length},null,2));

@@ -32,6 +32,18 @@
   ],
   "tasks": [
     {
+      "id": "SEC-PACKAGING-TRACED",
+      "phase": "Tech Debt & Hardening",
+      "title": "Prototype traced (non-standalone) packaging mode for the PR #197 gates",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 50,
+      "priority": "High",
+      "start": "2026-10-08",
+      "blocked": true,
+      "blockedReason": "Linux-only local run against master 0ed7cf0. Windows, Linux/Postgres integration, braces-closure-matrix retargeting, a frozen traced evidence set and independent review are pending. No hosted execution."
+    },
+    {
       "id": "SEC-PACKAGING",
       "ref": 197,
       "refType": "pull",
