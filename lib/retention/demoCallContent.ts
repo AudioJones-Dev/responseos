@@ -2,9 +2,7 @@ import "@/lib/serverOnlyGuard";
 import { db } from "@/lib/db/client";
 import { err, errFromThrown, ok, type Result } from "@/lib/data/result";
 import { retentionAuditData } from "./audit";
-import { DEMO_CALL_RETENTION_DAYS, daysAfter } from "./periods";
-
-const PURGED_NUMBER = "<PURGED>";
+import { DEMO_CALL_RETENTION_DAYS, PURGED_CALLER_NUMBER, daysAfter } from "./periods";
 
 export type DemoCallPurgeCounts = { calls: number; webhookPayloads: number } & Record<string, number>;
 
@@ -30,7 +28,7 @@ export async function purgeExpiredDemoCallContent(params: {
     account_id: accountId,
     provider: "telnyx" as const,
     started_at: { lte: cutoff },
-    from_number: { not: PURGED_NUMBER },
+    from_number: { not: PURGED_CALLER_NUMBER },
   };
   const webhookWhere = {
     account_id: accountId,
@@ -67,7 +65,7 @@ export async function purgeExpiredDemoCallContent(params: {
       });
       await tx.call.updateMany({
         where: { account_id: accountId, id: { in: callIds } },
-        data: { contact_id: null, from_number: PURGED_NUMBER, transcript: null, summary: null, recording_url: null },
+        data: { contact_id: null, from_number: PURGED_CALLER_NUMBER, transcript: null, summary: null, recording_url: null },
       });
       const crmOperations = await tx.crmSyncOperation.updateMany({
         where: { account_id: accountId, call_id: { in: callIds }, status: { in: ["pending", "processing", "retryable_failed", "review_required"] } },

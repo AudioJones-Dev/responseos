@@ -1,6 +1,7 @@
 import "@/lib/serverOnlyGuard";
 import { db } from "@/lib/db/client";
 import { setWebhookProcessStatus } from "@/lib/data/webhookEvents";
+import { PURGED_CALLER_NUMBER } from "@/lib/retention/periods";
 import {
   getTelnyxCallId,
   type TelnyxWebhookEnvelope,
@@ -105,6 +106,14 @@ export async function normalizeTelnyxEvent(params: {
       },
     },
   });
+  if (existing?.from_number === PURGED_CALLER_NUMBER) {
+    await setWebhookProcessStatus({
+      id: params.webhookEventId,
+      process_status: "rejected",
+      process_error: "call_content_purged",
+    });
+    return { callId: null, finalized: false };
+  }
   const fromNumber = stringValue(payload.from) ?? existing?.from_number ?? "unavailable";
   const toNumber = stringValue(payload.to) ?? existing?.to_number ?? params.demoNumber;
   if (toNumber !== "unavailable" && toNumber.replace(/\D/g, "") !== params.demoNumber.replace(/\D/g, "")) {
