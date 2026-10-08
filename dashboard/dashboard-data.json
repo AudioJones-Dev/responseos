@@ -32,6 +32,18 @@
   ],
   "tasks": [
     {
+      "id": "SHARP-STANDALONE",
+      "phase": "Tech Debt & Hardening",
+      "title": "Validate reproducible Windows Sharp native packaging repair",
+      "owner": "Codex",
+      "status": "In Progress",
+      "progress": 20,
+      "priority": "High",
+      "start": "2026-10-08",
+      "blocked": true,
+      "blockedReason": "Isolated packaging candidate; Linux/Postgres and independent review pending. No braces remediation or deployment approval."
+    },
+    {
       "id": "G-14",
       "phase": "Tech Debt & Hardening",
       "title": "Apply owner-approved copy redlines (claims, naming, CTA)",

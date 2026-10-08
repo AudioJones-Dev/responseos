@@ -31,6 +31,10 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // Self-contained server output for the hosted/containerized demo deploy.
   output: "standalone",
+  // Windows native DLL loads are outside JavaScript import tracing.
+  outputFileTracingIncludes: {
+    "/*": ["node_modules/@img/sharp-win32-*/lib/*.dll"],
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
