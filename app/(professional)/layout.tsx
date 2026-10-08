@@ -49,7 +49,14 @@ export default function ProfessionalLayout({ children }: { children: ReactNode }
           is not the fictional walkthrough scenario. What is simulated is the
           delivery: knowledge and scheduling resolve to mock adapters and no
           live provider is connected. © {new Date().getFullYear()} AJ Digital
-          LLC.
+          LLC.{" "}
+          <Link href="/privacy" className="underline underline-offset-2 hover:text-ink-secondary">
+            Privacy
+          </Link>{" "}
+          ·{" "}
+          <Link href="/terms" className="underline underline-offset-2 hover:text-ink-secondary">
+            Terms
+          </Link>
         </p>
       </footer>
     </div>

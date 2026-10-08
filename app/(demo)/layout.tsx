@@ -43,7 +43,14 @@ export default function DemoWalkthroughLayout({ children }: { children: ReactNod
       <footer className="border-t border-line">
         <p className="mx-auto w-full max-w-[1200px] px-4 py-5 text-xs text-ink-muted sm:px-6">
           Demo data only — fictional scenario, no real customer information, no live providers
-          connected. © {new Date().getFullYear()} AJ Digital LLC.
+          connected. © {new Date().getFullYear()} AJ Digital LLC.{" "}
+          <Link href="/privacy" className="underline underline-offset-2 hover:text-ink-secondary">
+            Privacy
+          </Link>{" "}
+          ·{" "}
+          <Link href="/terms" className="underline underline-offset-2 hover:text-ink-secondary">
+            Terms
+          </Link>
         </p>
       </footer>
     </div>

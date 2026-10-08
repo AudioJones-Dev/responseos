@@ -1295,6 +1295,19 @@
       "refType": "pull"
     },
     {
+      "id": "L-14",
+      "phase": "Launch / Demo Deploy",
+      "title": "Publish terms of service for the site and demos",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-10-08",
+      "due": "2026-10-08",
+      "ref": 200,
+      "refType": "pull"
+    },
+    {
       "id": "G-16",
       "phase": "Tech Debt & Hardening",
       "title": "Vendor web fonts so next build makes no network requests",
