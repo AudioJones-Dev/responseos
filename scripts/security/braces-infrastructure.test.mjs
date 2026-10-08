@@ -8,6 +8,7 @@ import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {collectAcceptance,toolingHash} from './braces-ci-accept.mjs';
 import {references} from './braces-artifact-analysis.mjs';
+import {integrationCommands} from './braces-integration.mjs';
 const root=process.cwd(),directory=fs.mkdtempSync(path.join(os.tmpdir(),'responseos-acceptance-controls-')),sha='1'.repeat(40),toolHash=toolingHash(root),results=[];
 const hash=data=>crypto.createHash('sha256').update(data).digest('hex');
 function files(dir){return fs.readdirSync(dir,{withFileTypes:true}).flatMap(item=>item.isDirectory()?files(path.join(dir,item.name)):[path.join(dir,item.name)]);}
@@ -18,7 +19,7 @@ function bundle(dir,platform){
  const jobs={[platform==='win32'?'windows':'linux']:'success',diagnostics:'success',hostile:'success'};
  const report={platform,applicationSha:sha,auditSha:sha,compatibilitySha:sha,toolHash,auditExit:0,auditTotal:0,runtimeNativePass:true,candidateInstalled:true,closurePass:true,compatibility,jobs};
  write(dir,'verification-report.json',report);
- write(dir,'artifact-verification/build-summary.json',{sourceCommit:sha,platform,buildSucceeded:true,packageFilesUnchanged:true,steps:[{name:'audit',code:0}]});
+ write(dir,'artifact-verification/build-summary.json',{sourceCommit:sha,platform,buildSucceeded:true,packageFilesUnchanged:true,sourceHashes:{'package.json':'3'.repeat(64),'package-lock.json':'4'.repeat(64)},steps:[{name:'audit',code:0}]});
  write(dir,'artifact-verification/audit.log',{metadata:{vulnerabilities:{total:0}}});
  write(dir,'artifact-verification/closure-ledger.json',{summary:{applicationSha:sha,packagingPass:true,occurrences:1},ledger:[{closure:'PASS'}]});
  write(dir,'artifact-verification/runtime-summary.json',{sourceCommit:sha,nativeOperationSucceeded:true,nativeProbeExit:0,escapes:[]});
@@ -26,10 +27,16 @@ function bundle(dir,platform){
  write(dir,'artifact-verification/native-summary.json',{exit:0,observation:{nativeSucceeded:true},escapes:[]});
  write(dir,'hostile.log',{results:Array.from({length:8},()=>({pass:true}))});index(dir);
 }
+function integrationBundle(dir){
+ const sourceHashes={'package.json':'3'.repeat(64),'package-lock.json':'4'.repeat(64)};
+ const steps=integrationCommands.map(([name,tool,args])=>({name,tool,args,startedAt:'2026-10-08T00:00:00Z',finishedAt:'2026-10-08T00:00:01Z',exit:0,signal:null,timedOut:false}));
+ for(const row of steps){write(dir,row.name+'-result.json',row);fs.writeFileSync(path.join(dir,row.name+'.log'),row.name==='server-version'?'160010\n':'synthetic command output\n');}
+ write(dir,'integration-report.json',{applicationSha:sha,toolHash,platform:'linux',node:'v24.18.0',npm:'11.16.0',postgresMajor:16,complete:true,sourceHashes,finalHashes:sourceHashes,steps});index(dir);
+}
 let sequence=0;
 function test(name,mutate,integration='success',expected=false){
  const dir=path.join(directory,String(sequence++)),win=path.join(dir,'windows'),linux=path.join(dir,'linux');
- bundle(win,'win32');bundle(linux,'linux');mutate({dir,win,linux});
+ bundle(win,'win32');bundle(linux,'linux');const db=path.join(dir,'integration');integrationBundle(db);mutate({dir,win,linux,db});
  let pass=false,error=null;try{pass=collectAcceptance(dir,sha,toolHash,integration).pass;}catch(failure){error=failure.message;}
  assert.equal(pass,expected,name);results.push({name,pass:true,observedAcceptance:pass,error});
 }
@@ -56,6 +63,19 @@ test('Hostile failure cannot claim success',({win})=>edit(win,'hostile.log',row=
 test('Native load failure cannot claim success',({win})=>edit(win,'artifact-verification/runtime-summary.json',row=>row.nativeOperationSucceeded=false));
 test('Missing native success evidence',({win})=>edit(win,'verification-report.json',row=>delete row.runtimeNativePass));
 test('Missing native raw evidence',({win})=>{fs.unlinkSync(path.join(win,'artifact-verification/native-summary.json'));index(win);});
+test('Missing integration report',({db})=>{fs.unlinkSync(path.join(db,'integration-report.json'));index(db);});
+test('Duplicate integration reports',({dir,db})=>fs.cpSync(db,path.join(dir,'duplicate-integration'),{recursive:true}));
+test('Corrupt integration log',({db})=>fs.appendFileSync(path.join(db,'build.log'),'changed'));
+test('Missing integration command log',({db})=>{fs.unlinkSync(path.join(db,'build.log'));index(db);});
+test('Incomplete integration commands',({db})=>edit(db,'integration-report.json',row=>row.steps.pop()));
+test('Integration source mismatch',({db})=>edit(db,'integration-report.json',row=>row.applicationSha='2'.repeat(40)));
+test('Integration lock mismatch',({db})=>edit(db,'integration-report.json',row=>row.sourceHashes['package-lock.json']='9'.repeat(64)));
+test('Integration lock modified during run',({db})=>edit(db,'integration-report.json',row=>row.finalHashes['package-lock.json']='9'.repeat(64)));
+test('Integration raw exit contradicts report',({db})=>edit(db,'build-result.json',row=>row.exit=1));
+test('Integration unsupported server',({db})=>{fs.writeFileSync(path.join(db,'server-version.log'),'170001\n');index(db);});
+test('Integration tool mismatch',({db})=>edit(db,'integration-report.json',row=>row.npm='11.17.0'));
+test('Integration arbitrary command',({db})=>edit(db,'integration-report.json',row=>row.steps[0].args=['install']));
+test('Windows and Linux lock mismatch',({win})=>edit(win,'artifact-verification/build-summary.json',row=>row.sourceHashes['package-lock.json']='8'.repeat(64)));
 test('Evidence links prohibited',({win,linux})=>fs.symlinkSync(linux,path.join(win,'linked'),process.platform==='win32'?'junction':'dir'));
 for(const status of ['failure','cancelled','skipped','pending',null])test('Integration '+String(status),()=>{},status);
 const ts=createRequire(path.resolve('package.json'))('typescript');

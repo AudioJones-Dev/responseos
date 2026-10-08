@@ -80,16 +80,18 @@ jobs:
           mkdir application
           git archive "$SECURITY_APPLICATION_SHA" | tar -x -C application
           npm install --global npm@11.16.0
-      - working-directory: application
+      - name: Record exact-lock integration commands and raw evidence
         run: |
-          npm ci --include=dev
-          npx prisma generate
-          PGPASSWORD=responseos psql -h localhost -U responseos -d responseos_test -c 'CREATE DATABASE responseos_shadow;'
-          npx prisma migrate diff --from-schema-datamodel prisma/schema.prisma --to-migrations prisma/migrations --shadow-database-url postgresql://responseos:responseos@localhost:5432/responseos_shadow --exit-code
-          npx prisma migrate deploy
-          npx prisma db seed
-          npm run test:integration
-          npm run build
+          export SECURITY_NPM_CLI="$(npm root -g)/npm/bin/npm-cli.js"
+          node scripts/security/braces-integration.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: security-integration
+          path: .security-integration/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
   acceptance:
     if: always()
     needs: [artifacts, integration]

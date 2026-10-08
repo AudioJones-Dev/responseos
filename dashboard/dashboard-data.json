@@ -43,7 +43,7 @@
       "priority": "High",
       "start": "2026-10-08",
       "blocked": true,
-      "blockedReason": "Five audit findings, 36 task defects and 108 unknown imports. Sharp repair proposed separately in PR #198. Installer trust, integration provenance, Linux/Postgres and independent review pending. PR #195 unchanged."
+      "blockedReason": "Five audit findings, 36 task defects and 106 unknown imports. Sharp repair proposed separately in PR #198. Integration evidence gates implemented but unexecuted on Linux. Installer trust, Linux/Postgres and independent review pending. PR #195 unchanged."
     },
     {
       "id": "G-14",

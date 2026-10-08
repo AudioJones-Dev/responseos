@@ -3,6 +3,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {acceptance} from './braces-acceptance.mjs';
+import {verifyIntegration,integrationCommands} from './braces-integration.mjs';
 const hash=data=>crypto.createHash('sha256').update(data).digest('hex');
 export function toolingHash(root=process.cwd()){
  return hash(['scripts/security','docs/security/fixtures'].flatMap(dir=>fs.readdirSync(path.join(root,dir)).filter(name=>dir.includes('fixtures')||name.endsWith('.mjs')).sort().map(name=>dir+'/'+name+'\n'+fs.readFileSync(path.join(root,dir,name),'utf8').replaceAll('\r\n','\n'))).join('\n')+'\n.github/workflows/security-packaging-proposal.yml\n'+fs.readFileSync(path.join(root,'.github/workflows/security-packaging-proposal.yml'),'utf8').replaceAll('\r\n','\n'));
@@ -14,9 +15,9 @@ function files(dir){
   return item.isDirectory()?files(path.join(dir,item.name)):[path.join(dir,item.name)];
  });
 }
-export function verifyBundle(dir){
+function verifyInventory(dir,reportName){
  const index=JSON.parse(fs.readFileSync(path.join(dir,'evidence-index.json'),'utf8'));
- if(!Array.isArray(index)||!index.some(row=>row.file==='verification-report.json'))throw new Error('Missing evidence inventory');
+ if(!Array.isArray(index)||!index.some(row=>row.file===reportName))throw new Error('Missing evidence inventory');
  const names=new Set(),base=fs.realpathSync(dir);
  for(const row of index){
   if(typeof row.file!=='string'||path.isAbsolute(row.file)||row.file.includes('\\')||row.file.includes(':')||row.file.split('/').some(part=>!part||part==='.'||part==='..')||names.has(row.file)||!/^[0-9a-f]{64}$/.test(row.sha256||''))throw new Error('Invalid evidence inventory entry');
@@ -24,6 +25,10 @@ export function verifyBundle(dir){
   if(!real.startsWith(base+path.sep)||hash(fs.readFileSync(target))!==row.sha256)throw new Error('Evidence hash mismatch');
  }
  for(const file of files(dir))if(file!==path.join(dir,'evidence-index.json')&&!names.has(path.relative(dir,file).replaceAll('\\','/')))throw new Error('Incomplete evidence inventory');
+ return names;
+}
+export function verifyBundle(dir){
+ const names=verifyInventory(dir,'verification-report.json');
  const required=['verification-report.json','artifact-verification/build-summary.json','artifact-verification/audit.log','artifact-verification/closure-ledger.json','artifact-verification/runtime-summary.json','compatibility-original.log','compatibility-directory.log','compatibility-tasks.log','hostile.log'];
  for(const name of required)if(!names.has(name))throw new Error('Missing required evidence: '+name);
  const read=name=>JSON.parse(fs.readFileSync(path.join(dir,name),'utf8')),report=read('verification-report.json'),build=read('artifact-verification/build-summary.json'),audit=read('artifact-verification/audit.log'),closure=read('artifact-verification/closure-ledger.json'),runtime=read('artifact-verification/runtime-summary.json');
@@ -43,6 +48,7 @@ export function verifyBundle(dir){
  }
  const hostile=read('hostile.log');
  if(report.jobs?.hostile==='success'&&(!Array.isArray(hostile.results)||hostile.results.length!==8||hostile.results.some(row=>row.pass!==true)))throw new Error('Hostile report mismatch');
+ report.sourceHashes=build.sourceHashes;
  return report;
 }
 export function collectAcceptance(directory,applicationSha,expectedToolHash,integrationResult){
@@ -50,6 +56,16 @@ export function collectAcceptance(directory,applicationSha,expectedToolHash,inte
  const win=reports.find(row=>row.platform==='win32'),linux=reports.find(row=>row.platform==='linux');
  const results=[win,linux].map(row=>acceptance({...row,jobs:{...row?.jobs,windows:win?.jobs.windows,linux:linux?.jobs.linux,integration:integrationResult}}));
  if(reports.length!==2||!win||!linux||win.toolHash!==expectedToolHash||win.applicationSha!==linux.applicationSha||win.applicationSha!==applicationSha||win.toolHash!==linux.toolHash)results.push({pass:false,failures:['missing-or-inconsistent-platform-evidence']});
+
+ if(win&&linux){
+  const integrationPaths=files(directory).filter(file=>path.basename(file)==='integration-report.json');
+  if(integrationPaths.length!==1)throw Error('Missing or duplicate integration provenance');
+  const dir=path.dirname(integrationPaths[0]),names=verifyInventory(dir,'integration-report.json');
+  for(const file of ['integration-report.json',...integrationCommands.flatMap(([name])=>[name+'-result.json',name+'.log'])])if(!names.has(file))throw Error('Missing integration raw evidence: '+file);
+  const read=(name,json=true)=>json?JSON.parse(fs.readFileSync(path.join(dir,name))):fs.readFileSync(path.join(dir,name),'utf8');
+  verifyIntegration(read('integration-report.json'),read,applicationSha,expectedToolHash,linux.sourceHashes);
+  for(const name of ['package.json','package-lock.json'])if(win.sourceHashes?.[name]!==linux.sourceHashes?.[name])throw Error('Platform exact-lock mismatch');
+ }
  return {pass:results.every(row=>row.pass),results};
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){

@@ -53,3 +53,4 @@ next-env.d.ts
 
 .security-tools/
 .security-evidence/
+.security-integration/
