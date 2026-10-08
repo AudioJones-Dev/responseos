@@ -1299,11 +1299,13 @@
       "phase": "Launch / Demo Deploy",
       "title": "Publish terms of service for the site and demos",
       "owner": "Claude Code",
-      "status": "In Progress",
-      "progress": 80,
+      "status": "Review",
+      "progress": 90,
       "priority": "High",
       "start": "2026-10-08",
-      "due": "2026-10-08"
+      "due": "2026-10-08",
+      "ref": 200,
+      "refType": "pull"
     },
     {
       "id": "G-16",
