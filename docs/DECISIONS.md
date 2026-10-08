@@ -1755,3 +1755,32 @@ A superseding ADR that (a) cites which of question 11's conditions were met and 
 **Consequences.** The repository keeps one model for governed artifacts instead of two. Immutability costs nothing to enforce because it is structural, and the human merge remains the single publication authority, satisfying the governance kernel without a parallel in-app control. Existing primitives are extended rather than displaced.
 
 The cost is real and is not softened here: **capability authoring remains an engineering activity.** An operator who cannot open a pull request cannot author a capability. `UserRole` models a non-engineer `operator`, so the population may exist, but whether such staff would author capabilities is **unverified and is an operator question** — decision 10 keeps it open rather than answering it by default. If the answer is that they must author, question 11's conditions are met sooner and database-backed authoring gets stronger, which is the intended behaviour of this ADR rather than a failure of it.
+
+## ADR-0062 — FRL persistence foundation precedes delivery execution
+
+**Status:** Local implementation for review, October 7, 2026. User authorized
+PR A only: versioned inquiry events and transactional outbox persistence.
+0059-0060 belong to unmerged handoff/notification work; 0061 to local CRM commissioning.
+
+**Decision:** Add a bounded frl.inquiry v2 persistence contract for inbound_received
+and context_recorded. Derive tenant and actor from an account-bound server session.
+Atomically update the inquiry revision, append immutable event history and create
+one blocked CRM projection intent. Scope identity, revisions and links by tenant;
+reject altered replay. Serialize intake under an Account row lock for correctness.
+
+All intents remain blocked by application policy and a database CHECK constraint.
+Acquisition is explicitly blocked. No worker, route, provider factory, new environment
+flag, notification dispatch or live provider write is introduced. Existing finalized-call
+and HubSpot projections remain unchanged. Versioned website ingress and complete
+qualification/consent/CRM projection integration are later increments.
+
+**Recovery:** Prefer code rollback with additive schema retained. Empty-only down SQL
+refuses populated history. Migration, rollback and backup/restore are tested against
+an isolated PostgreSQL database; these results cannot close production G05-G07.
+
+**Consequences:** At-least-once intake can return a stable original receipt. This is
+not exactly-once external delivery. The coarse tenant lock limits concurrent ingestion;
+worker leases, attempt history, backoff and uncertain-write reconciliation belong to
+PR B. Separate migration 0016 avoids 0014/0015 reserved by unmerged work. Full contract,
+acceptance split and all fifteen doctrine answers are in
+[PR A persistence foundation](./product/frl-ledger-persistence-foundation.md).

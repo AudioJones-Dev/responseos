@@ -329,3 +329,13 @@ Architectural placement and product framing are documented in `architecture.md` 
 - No file-upload schema is committed to. Uploads are gated on the `files` / `media` model already on the v0.2 roadmap above.
 - No third-party knowledge integrations (Obsidian, Notion, Confluence, etc.) are committed to.
 - No additional general-knowledge Prisma models, retrieval runtime, or provider integration ships from this roadmap entry.
+
+## FRL persistence addition — PR A
+
+Migration 0016 adds FrlInquiry, FrlInquiryEvent and FrlOutboxOperation. Composite
+tenant keys enforce event, revision and source uniqueness and relationship scope.
+Event history rejects UPDATE/DELETE. Outbox rows are constrained to blocked;
+no worker state/lease is implemented. See
+[the persistence contract and recovery runbook](./product/frl-ledger-persistence-foundation.md).
+Migrations 0014/0015 are reserved in unmerged notification/handoff branches;
+this increment does not import them or modify their interfaces.

@@ -1,0 +1,89 @@
+{
+  "applicationCommit": "41a0468c66b415214b300469d0cf255ae6b28d24",
+  "node": "v24.19.0",
+  "platform": "win32",
+  "commands": [
+    "node node_modules/eslint/bin/eslint.js",
+    "node node_modules/vitest/vitest.mjs run",
+    "node node_modules/next/dist/bin/next build"
+  ],
+  "method": "Set NODE_OPTIONS to --require=<probe path>, FRL_TRACE_FILE to a writable JSONL path, and FRL_TRACE_PHASE per command. Local observation only; not Linux CI coverage.",
+  "probe": "const Module = require('node:module');\nconst fs = require('node:fs');\nconst original = Module._load;\nconst seen = new Set();\nconst counts = {};\nModule._load = function(id, parent, main) {\n  const result = original.apply(this, arguments);\n  let file;\n  try { file = Module._resolveFilename(id, parent); } catch { return result; }\n  if (!/[\\\\/]node_modules[\\\\/](braces|fast-glob)[\\\\/]/.test(file)) return result;\n  seen.add(file);\n  if (result && (typeof result === 'function' || typeof result === 'object')) {\n    for (const key of ['parse', 'compile', 'expand', 'globSync', 'sync']) {\n      if (typeof result[key] !== 'function' || result[key].__observed) continue;\n      const fn = result[key];\n      const wrapped = function() { const k = file + ':' + key; counts[k]=(counts[k]||0)+1; return fn.apply(this, arguments); };\n      wrapped.__observed = true;\n      result[key] = wrapped;\n    }\n  }\n  return result;\n};\nprocess.on('exit', () => fs.appendFileSync(process.env.FRL_TRACE_FILE, JSON.stringify({phase:process.env.FRL_TRACE_PHASE,pid:process.pid,loaded:[...seen],calls:counts})+'\\n'));\r\n",
+  "phases": [
+    {
+      "phase": "lint",
+      "processes": 1,
+      "loaded": [
+        "<checkout>/node_modules/fast-glob/out/utils/array.js",
+        "<checkout>/node_modules/fast-glob/out/utils/errno.js",
+        "<checkout>/node_modules/fast-glob/out/utils/fs.js",
+        "<checkout>/node_modules/fast-glob/out/utils/path.js",
+        "<checkout>/node_modules/fast-glob/node_modules/glob-parent/index.js",
+        "<checkout>/node_modules/braces/lib/utils.js",
+        "<checkout>/node_modules/braces/lib/stringify.js",
+        "<checkout>/node_modules/braces/lib/compile.js",
+        "<checkout>/node_modules/braces/lib/expand.js",
+        "<checkout>/node_modules/braces/lib/constants.js",
+        "<checkout>/node_modules/braces/lib/parse.js",
+        "<checkout>/node_modules/braces/index.js",
+        "<checkout>/node_modules/fast-glob/out/utils/pattern.js",
+        "<checkout>/node_modules/fast-glob/out/utils/stream.js",
+        "<checkout>/node_modules/fast-glob/out/utils/string.js",
+        "<checkout>/node_modules/fast-glob/out/utils/index.js",
+        "<checkout>/node_modules/fast-glob/out/managers/tasks.js",
+        "<checkout>/node_modules/fast-glob/out/readers/reader.js",
+        "<checkout>/node_modules/fast-glob/out/readers/stream.js",
+        "<checkout>/node_modules/fast-glob/out/readers/async.js",
+        "<checkout>/node_modules/fast-glob/out/providers/matchers/matcher.js",
+        "<checkout>/node_modules/fast-glob/out/providers/matchers/partial.js",
+        "<checkout>/node_modules/fast-glob/out/providers/filters/deep.js",
+        "<checkout>/node_modules/fast-glob/out/providers/filters/entry.js",
+        "<checkout>/node_modules/fast-glob/out/providers/filters/error.js",
+        "<checkout>/node_modules/fast-glob/out/providers/transformers/entry.js",
+        "<checkout>/node_modules/fast-glob/out/providers/provider.js",
+        "<checkout>/node_modules/fast-glob/out/providers/async.js",
+        "<checkout>/node_modules/fast-glob/out/providers/stream.js",
+        "<checkout>/node_modules/fast-glob/out/readers/sync.js",
+        "<checkout>/node_modules/fast-glob/out/providers/sync.js",
+        "<checkout>/node_modules/fast-glob/out/settings.js",
+        "<checkout>/node_modules/fast-glob/out/index.js"
+      ],
+      "calls": []
+    },
+    {
+      "phase": "unit",
+      "processes": 8,
+      "loaded": [],
+      "calls": []
+    },
+    {
+      "phase": "build",
+      "processes": 5,
+      "loaded": [],
+      "calls": []
+    },
+    {
+      "phase": "positive-control",
+      "processes": 2,
+      "loaded": [
+        "<checkout>/node_modules/braces/lib/utils.js",
+        "<checkout>/node_modules/braces/lib/stringify.js",
+        "<checkout>/node_modules/braces/lib/compile.js",
+        "<checkout>/node_modules/braces/lib/expand.js",
+        "<checkout>/node_modules/braces/lib/constants.js",
+        "<checkout>/node_modules/braces/lib/parse.js",
+        "<checkout>/node_modules/braces/index.js"
+      ],
+      "calls": [
+        {
+          "entry": "<checkout>/node_modules/braces/index.js:compile",
+          "count": 1
+        },
+        {
+          "entry": "<checkout>/node_modules/braces/index.js:parse",
+          "count": 1
+        }
+      ]
+    }
+  ]
+}

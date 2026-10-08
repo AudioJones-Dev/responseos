@@ -32,6 +32,21 @@
   ],
   "tasks": [
     {
+      "id": "FRL-LEDGER-PR-A",
+      "phase": "Integrations",
+      "title": "FRL versioned inquiry events and transactional blocked outbox",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-10-07",
+      "due": "2026-10-07",
+      "blocked": true,
+      "blockedReason": "Human ResponseOS owner assigned business/engineering risk ownership; independent security reviewer and exception acceptance pending. Review package prepared; no CI exception implemented. G02-G07 remain open; no worker or live provider writes.",
+      "ref": 195,
+      "refType": "pull"
+    },
+    {
       "id": "G-14",
       "phase": "Tech Debt & Hardening",
       "title": "Apply owner-approved copy redlines (claims, naming, CTA)",

@@ -1,0 +1,465 @@
+{
+  "capturedOn": "2026-10-07",
+  "masterCommit": "3252a6de9c8a40992b3edc655c05ffbe73459194",
+  "originalPrHead": "c42c848397f9ccc6973eb12cbc451ad0b63e01e3",
+  "manifestSha256": "8e7d15a1c70f3b1f224136738f0b26a970d5b6bff5e7a7a15b5c917f2caca451",
+  "lockSha256": "480c7faddd49a6c755361484191896b094a03c38264adad023cf08ed817b128e",
+  "prAndMasterManifestsByteIdentical": true,
+  "prAndMasterFindingObjectsEqual": true,
+  "counts": {
+    "info": 0,
+    "low": 0,
+    "moderate": 2,
+    "high": 8,
+    "critical": 1,
+    "total": 11
+  },
+  "findings": [
+    {
+      "name": "@next/eslint-plugin-next",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "fast-glob"
+      ],
+      "effects": [
+        "eslint-config-next"
+      ],
+      "range": ">=14.3.0-canary.0",
+      "nodes": [
+        "node_modules/@next/eslint-plugin-next"
+      ],
+      "fixAvailable": {
+        "name": "eslint-config-next",
+        "version": "14.2.35",
+        "isSemVerMajor": true
+      },
+      "occurrences": [
+        {
+          "lockPath": "node_modules/@next/eslint-plugin-next",
+          "version": "16.3.4",
+          "devOnly": true,
+          "dependencyPath": [
+            "eslint-config-next@16.3.4",
+            "@next/eslint-plugin-next@16.3.4"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ajv",
+      "severity": "moderate",
+      "isDirect": true,
+      "via": [
+        "fast-uri"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/ajv"
+      ],
+      "fixAvailable": true,
+      "occurrences": [
+        {
+          "lockPath": "node_modules/ajv",
+          "version": "8.20.0",
+          "devOnly": true,
+          "dependencyPath": [
+            "ajv@8.20.0"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "brace-expansion",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1240103,
+          "name": "brace-expansion",
+          "dependency": "brace-expansion",
+          "title": "brace-expansion: Quadratic-time expansion of the `{a},b}` rewrite causes CPU denial of service",
+          "url": "https://github.com/advisories/GHSA-q2hr-2g5m-vwhr",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-400",
+            "CWE-407"
+          ],
+          "cvss": {
+            "score": 5.3,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+          },
+          "range": ">=4.0.0 <5.0.12"
+        },
+        {
+          "source": 1240107,
+          "name": "brace-expansion",
+          "dependency": "brace-expansion",
+          "title": "brace-expansion: DoS via uncontrolled recursion on nested brace groups causing stack exhaustion",
+          "url": "https://github.com/advisories/GHSA-qhr7-859c-m2p7",
+          "severity": "high",
+          "cwe": [
+            "CWE-400",
+            "CWE-674"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": ">=4.0.0 <5.0.11"
+        },
+        {
+          "source": 1240111,
+          "name": "brace-expansion",
+          "dependency": "brace-expansion",
+          "title": "brace-expansion: DoS via uncontrolled recursion in parseCommaParts causing stack exhaustion",
+          "url": "https://github.com/advisories/GHSA-6j4f-fj2g-mc7p",
+          "severity": "high",
+          "cwe": [
+            "CWE-400",
+            "CWE-674"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": ">=4.0.0 <5.0.10"
+        }
+      ],
+      "effects": [],
+      "range": "4.0.0 - 5.0.11",
+      "nodes": [
+        "node_modules/brace-expansion"
+      ],
+      "fixAvailable": true,
+      "occurrences": [
+        {
+          "lockPath": "node_modules/brace-expansion",
+          "version": "5.0.9",
+          "devOnly": true,
+          "dependencyPath": [
+            "eslint@9.39.5",
+            "minimatch@10.2.5",
+            "brace-expansion@5.0.9"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "braces",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1240992,
+          "name": "braces",
+          "dependency": "braces",
+          "title": "braces vulnerable to stack-exhaustion denial of service through deeply nested patterns",
+          "url": "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm",
+          "severity": "high",
+          "cwe": [
+            "CWE-674"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": "<=3.0.3"
+        }
+      ],
+      "effects": [
+        "micromatch"
+      ],
+      "range": "*",
+      "nodes": [
+        "node_modules/braces"
+      ],
+      "fixAvailable": {
+        "name": "eslint-config-next",
+        "version": "14.2.35",
+        "isSemVerMajor": true
+      },
+      "occurrences": [
+        {
+          "lockPath": "node_modules/braces",
+          "version": "3.0.3",
+          "devOnly": true,
+          "dependencyPath": [
+            "eslint-config-next@16.3.4",
+            "@next/eslint-plugin-next@16.3.4",
+            "fast-glob@3.3.1",
+            "micromatch@4.0.8",
+            "braces@3.0.3"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "eslint-config-next",
+      "severity": "high",
+      "isDirect": true,
+      "via": [
+        "@next/eslint-plugin-next"
+      ],
+      "effects": [],
+      "range": ">=14.3.0-canary.0",
+      "nodes": [
+        "node_modules/eslint-config-next"
+      ],
+      "fixAvailable": {
+        "name": "eslint-config-next",
+        "version": "14.2.35",
+        "isSemVerMajor": true
+      },
+      "occurrences": [
+        {
+          "lockPath": "node_modules/eslint-config-next",
+          "version": "16.3.4",
+          "devOnly": true,
+          "dependencyPath": [
+            "eslint-config-next@16.3.4"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "fast-glob",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "micromatch"
+      ],
+      "effects": [
+        "@next/eslint-plugin-next"
+      ],
+      "range": "*",
+      "nodes": [
+        "node_modules/fast-glob"
+      ],
+      "fixAvailable": {
+        "name": "eslint-config-next",
+        "version": "14.2.35",
+        "isSemVerMajor": true
+      },
+      "occurrences": [
+        {
+          "lockPath": "node_modules/fast-glob",
+          "version": "3.3.1",
+          "devOnly": true,
+          "dependencyPath": [
+            "eslint-config-next@16.3.4",
+            "@next/eslint-plugin-next@16.3.4",
+            "fast-glob@3.3.1"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "fast-uri",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1240091,
+          "name": "fast-uri",
+          "dependency": "fast-uri",
+          "title": "fast-uri vulnerable to inconsistent host case normalization via percent-encoded octets",
+          "url": "https://github.com/advisories/GHSA-hrr3-gc8f-f4qj",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-178"
+          ],
+          "cvss": {
+            "score": 4.8,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:N"
+          },
+          "range": ">=3.0.0 <3.1.8"
+        }
+      ],
+      "effects": [
+        "ajv"
+      ],
+      "range": "3.0.0 - 3.1.7",
+      "nodes": [
+        "node_modules/fast-uri"
+      ],
+      "fixAvailable": true,
+      "occurrences": [
+        {
+          "lockPath": "node_modules/fast-uri",
+          "version": "3.1.7",
+          "devOnly": true,
+          "dependencyPath": [
+            "ajv@8.20.0",
+            "fast-uri@3.1.7"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "micromatch",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "braces"
+      ],
+      "effects": [
+        "fast-glob"
+      ],
+      "range": ">=0.2.0",
+      "nodes": [
+        "node_modules/micromatch"
+      ],
+      "fixAvailable": {
+        "name": "eslint-config-next",
+        "version": "14.2.35",
+        "isSemVerMajor": true
+      },
+      "occurrences": [
+        {
+          "lockPath": "node_modules/micromatch",
+          "version": "4.0.8",
+          "devOnly": true,
+          "dependencyPath": [
+            "eslint-config-next@16.3.4",
+            "@next/eslint-plugin-next@16.3.4",
+            "fast-glob@3.3.1",
+            "micromatch@4.0.8"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "next",
+      "severity": "critical",
+      "isDirect": true,
+      "via": [
+        {
+          "source": 1240609,
+          "name": "next",
+          "dependency": "next",
+          "title": "Next.js: Remote Code Execution in next/og ImageResponse",
+          "url": "https://github.com/advisories/GHSA-vcvr-r3jv-pc5j",
+          "severity": "critical",
+          "cwe": [
+            "CWE-1395"
+          ],
+          "cvss": {
+            "score": 0,
+            "vectorString": null
+          },
+          "range": ">=16.2.0 <16.3.6"
+        },
+        "sharp"
+      ],
+      "effects": [],
+      "range": "9.5.6-canary.0 - 10.0.7 || 14.3.0-canary.0 - 15.5.23 || 15.6.0-canary.0 - 16.3.5",
+      "nodes": [
+        "node_modules/next"
+      ],
+      "fixAvailable": {
+        "name": "next",
+        "version": "16.4.0",
+        "isSemVerMajor": false
+      },
+      "occurrences": [
+        {
+          "lockPath": "node_modules/next",
+          "version": "16.3.4",
+          "devOnly": false,
+          "dependencyPath": [
+            "next@16.3.4"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "sharp",
+      "severity": "high",
+      "isDirect": true,
+      "via": [
+        {
+          "source": 1241331,
+          "name": "sharp",
+          "dependency": "sharp",
+          "title": "sharp : Vulnerability in librsvg dependency CVE-2026-96889",
+          "url": "https://github.com/advisories/GHSA-wq5f-xc86-pv6w",
+          "severity": "high",
+          "cwe": [
+            "CWE-416",
+            "CWE-1395"
+          ],
+          "cvss": {
+            "score": 0,
+            "vectorString": null
+          },
+          "range": "<0.35.5"
+        }
+      ],
+      "effects": [
+        "next"
+      ],
+      "range": "<0.35.5",
+      "nodes": [
+        "node_modules/sharp"
+      ],
+      "fixAvailable": {
+        "name": "next",
+        "version": "16.4.0",
+        "isSemVerMajor": false
+      },
+      "occurrences": [
+        {
+          "lockPath": "node_modules/sharp",
+          "version": "0.35.4",
+          "devOnly": false,
+          "dependencyPath": [
+            "sharp@0.35.4"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "source-map-js",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1241209,
+          "name": "source-map-js",
+          "dependency": "source-map-js",
+          "title": "source-map-js allows event-loop denial of service through indexed source-map section offsets",
+          "url": "https://github.com/advisories/GHSA-68fv-2mgg-jv7q",
+          "severity": "high",
+          "cwe": [
+            "CWE-1284"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": ">=1.0.0 <1.2.2"
+        }
+      ],
+      "effects": [],
+      "range": "1.0.0 - 1.2.1",
+      "nodes": [
+        "node_modules/source-map-js"
+      ],
+      "fixAvailable": true,
+      "occurrences": [
+        {
+          "lockPath": "node_modules/source-map-js",
+          "version": "1.2.1",
+          "devOnly": false,
+          "dependencyPath": [
+            "next@16.3.4",
+            "postcss@8.5.23",
+            "source-map-js@1.2.1"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -6,6 +6,9 @@ import { resetFactoryCounters } from "../factories";
 export const prisma = new PrismaClient();
 
 const TABLES = [
+  "FrlOutboxOperation",
+  "FrlInquiryEvent",
+  "FrlInquiry",
   "BootstrapPromotion",
   "TelephonyNumberAssignment",
   "TelephonyNumber",
@@ -45,6 +48,10 @@ const TABLES = [
 export async function connectTestDb(): Promise<PrismaClient> {
   if (!process.env.DATABASE_URL) {
     throw new Error("DATABASE_URL is required for integration tests.");
+  }
+  const target = new URL(process.env.DATABASE_URL);
+  if (!["localhost", "127.0.0.1", "[::1]"].includes(target.hostname) || target.pathname !== "/responseos_test") {
+    throw new Error("Integration tests require a local disposable responseos_test database.");
   }
   await prisma.$connect();
   return prisma;
