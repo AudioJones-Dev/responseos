@@ -1,0 +1,24 @@
+{
+ "previews": {"generation": "off"},
+ "services": [{
+  "type": "worker", "name": "responseos-routing-staging", "runtime": "node",
+  "repo": "https://github.com/AudioJones-Dev/responseos", "branch": "feat/frl-hosted-routing-phase1",
+  "region": "oregon", "plan": "0.5c-512mb", "numInstances": 1,
+  "autoDeployTrigger": "off", "maxShutdownDelaySeconds": 90,
+  "buildCommand": "npm ci --include=dev && npx prisma generate",
+  "startCommand": "node --import tsx scripts/routing-worker.ts",
+  "envVars": [
+   {"key": "NODE_VERSION", "value": "24.18.0"},
+   {"key": "NPM_VERSION", "value": "11.16.0"},
+   {"key": "NODE_ENV", "value": "production"},
+   {"key": "DATABASE_URL", "sync": false},
+   {"key": "RESPONSEOS_ROUTING_ACCOUNT_ID", "sync": false},
+   {"key": "RESPONSEOS_ROUTING_ENVIRONMENT", "value": "test"},
+   {"key": "RESPONSEOS_ROUTING_DELIVERY_MODE", "value": "simulated"},
+   {"key": "RESPONSEOS_ROUTING_WORKER_ENABLED", "value": "false"},
+   {"key": "RESPONSEOS_ROUTING_CONCURRENCY", "value": "2"},
+   {"key": "RESPONSEOS_ROUTING_POLL_MS", "value": "10000"},
+   {"key": "RESPONSEOS_ROUTING_COMPANY_BINDINGS", "value": "[]"}
+  ]
+ }]
+}

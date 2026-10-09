@@ -230,6 +230,8 @@ no HTTP endpoint is added. They do not call HubSpot or send notifications.
 
 ## Local FRL signed test intake (ADR-0067)
 
+Separate Phase 1 interface: POST /api/webhooks/frl/v1/intakes authenticates a versioned audience-bound signature and server credential registry; 202 means persisted/queued simulation, 200 existing receipt, 409 changed-payload conflict. Operator selected-tenant GET /api/admin/routing-deliveries/:reference returns redacted status. Operator POST reconciles only uncertain simulated rows with an evidence reference. No live provider or production intake is activated. See routing/phase1-hosting-and-contracts.md.
+
 POST /api/frl-test-intakes is disabled by default and always disabled in Production.
 Signed synthetic payloads return 201/new or 200/replay with a blocked mock receipt.
 No live provider delivery occurs. See product/frl-signed-test-ingress.md for protocol.

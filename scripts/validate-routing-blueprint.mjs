@@ -1,0 +1,15 @@
+import {readFileSync} from "node:fs";
+import {createHash} from "node:crypto";
+import Ajv from "ajv/dist/2020.js";
+const schemaText = readFileSync("infra/routing/render.schema.json", "utf8");
+const schema = JSON.parse(schemaText);
+const ajv = new Ajv({strict: false, allErrors: true});
+ajv.addFormat("uri", value => {try {new URL(value); return true;} catch {return false;}});
+const validate = ajv.compile(schema);
+const blueprint = JSON.parse(readFileSync("infra/routing/render.staging.yaml", "utf8"));
+if (!validate(blueprint)) throw new Error(JSON.stringify(validate.errors));
+const worker = blueprint.services[0];
+const target = JSON.parse(readFileSync("infra/routing/staging-target.json", "utf8"));
+if (worker.region !== "oregon" || target.renderRegion !== worker.region || target.projectId !== "patient-snow-16014934" || target.branchId !== "br-mute-boat-a6ylen11" || target.database !== "neondb" || target.endpointHost !== "ep-young-morning-a6oeu9vv.us-west-2.aws.neon.tech" || target.postgresVersion !== 18 || target.credentialConfigured || target.hostedConnectivityVerified || target.hostedRestoreVerified) throw new Error("staging_target_review_boundary_invalid");
+if (worker.type !== "worker" || worker.autoDeployTrigger !== "off" || blueprint.previews.generation !== "off" || worker.numInstances !== 1 || worker.preDeployCommand || blueprint.databases || worker.envVars.some(e => /DIRECT_URL|HUBSPOT|HOSTED_INTAKE_KEYS/.test(e.key)) || !worker.envVars.some(e => e.key === "RESPONSEOS_ROUTING_WORKER_ENABLED" && e.value === "false")) throw new Error("routing_blueprint_boundary_invalid");
+console.log(JSON.stringify({valid: true, schemaSource: "https://render.com/schema/render.yaml.json", schemaSha256: createHash("sha256").update(schemaText).digest("hex"), provisioned: false}));

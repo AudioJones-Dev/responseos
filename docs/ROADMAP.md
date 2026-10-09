@@ -132,6 +132,8 @@ Architectural placement: [`architecture.md`](./architecture.md) § Future Knowle
 
 ## FRL receipt increment — local validation
 
+Phase 1 hosted routing has a local review implementation: separate server credential boundary, existing intake ledger, additive delivery child, simulated Node poller, verified FRL projection/HubSpot request seam and operator evidence. See [hosting/contracts](routing/phase1-hosting-and-contracts.md). Provisioning, migrations, deployment, live provider selection/reconciliation and website acceptance remain unapproved; this does not advance live v0.3 gates.
+
 FRL website receipt persistence is implemented locally with delivery blocked.
 Dispatch/settlement, authenticated ingress, notification outbox and hosted acceptance
 remain future work. See product/frl-web-intake-receipts.md.
@@ -151,3 +153,7 @@ Live provider delivery remains unimplemented. See product/frl-mock-runner.md.
 FRL local expiry purge now preserves payloads with in-flight or uncertain mock
 operations. Live retention/reconciliation policy remains unapproved; this local
 recovery guard closes no hosted or privacy gate.
+
+Render architecture approved October 9; [staging specification](routing/render-staging-design.md), [local security/restore review](routing/security-and-restore-review.md) and [controlled acceptance plan](routing/controlled-staging-acceptance.md) prepared. Company, Notes/Tasks and internal notification queue local handling extended; external alert delivery and live provider runtime remain blocked. Fresh staging PostgreSQL 18 readback adds required CI coverage. PR #210 remains draft with all production gates unchanged.
+
+Final synthetic staging reconciliation prepared for Neon PostgreSQL18/Oregon and Render Oregon. Archived branch, scoped role/policies, hosted restore, network-risk acceptance and spending cap remain authorization gates; see [final specification](routing/final-staging-provisioning-spec.md). No hosting resource or database state changed.
