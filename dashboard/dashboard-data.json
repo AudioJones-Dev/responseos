@@ -1433,6 +1433,17 @@
       "refType": "pull",
       "priority": "High",
       "blocked": false
+    },
+    {
+      "id": "FRL-WEB-RECEIPT",
+      "phase": "Integrations",
+      "title": "Validate local FRL durable receipt foundation; delivery blocked",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 85,
+      "priority": "High",
+      "blocked": true,
+      "blockedReason": "Hosted ingress and durable dispatch adapter remain unimplemented"
     }
   ],
   "liveIssues": [

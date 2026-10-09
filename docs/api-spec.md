@@ -215,3 +215,11 @@ POST /api/appointments/availability
   { "start": "2026-05-08T13:00:00-04:00", "end": "2026-05-08T15:00:00-04:00" }
 ]}
 ```
+
+
+
+## FRL intake boundary (local increment)
+
+No HTTP route is added. persistFrlWebIntake and purgeExpiredFrlWebIntakePayloads
+require an authorized account-bound session. Website/server ingress and IntakeLedger
+claim/settlement contracts remain unimplemented.

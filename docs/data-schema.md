@@ -329,3 +329,11 @@ Architectural placement and product framing are documented in `architecture.md` 
 - No file-upload schema is committed to. Uploads are gated on the `files` / `media` model already on the v0.2 roadmap above.
 - No third-party knowledge integrations (Obsidian, Notion, Confluence, etc.) are committed to.
 - No additional general-knowledge Prisma models, retrieval runtime, or provider integration ships from this roadmap entry.
+
+
+
+## FRL web receipt model (local increment)
+
+FrlWebIntake in proposed migration 0017 stores scoped submission identity, canonical
+payload digest, nullable versioned payload, expiry, receipt reference and blocked
+delivery state. Account foreign key restricts deletion. No hosted migration applied.

@@ -127,3 +127,11 @@ Architectural placement: [`architecture.md`](./architecture.md) § Future Knowle
 - No production deploys from this repo until v0.3 readiness gates clear, except the public read-only demo surface (ADR-0053): the marketing pages and `/demo/receptionist`, on mock adapters, operator-authorized and deployed by hand. Not v0.3 authorization.
 - Provider adapters fall back to mock when env vars are missing — the app must boot and run without live keys at every version.
 - ResponseOS is not HIPAA-certified or HIPAA-compliant out of the box. The HIPAA-ready lane is an architectural pattern, not a current product capability.
+
+
+
+## FRL receipt increment — local validation
+
+FRL website receipt persistence is implemented locally with delivery blocked.
+Dispatch/settlement, authenticated ingress, notification outbox and hosted acceptance
+remain future work. See product/frl-web-intake-receipts.md.
