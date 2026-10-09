@@ -135,3 +135,7 @@ Architectural placement: [`architecture.md`](./architecture.md) § Future Knowle
 FRL website receipt persistence is implemented locally with delivery blocked.
 Dispatch/settlement, authenticated ingress, notification outbox and hosted acceptance
 remain future work. See product/frl-web-intake-receipts.md.
+
+FRL outbox state is implemented for local mock validation only. Live dispatch,
+notification retry scheduler, authenticated website ingress and hosted acceptance
+remain unimplemented; see product/frl-mock-delivery-state.md.

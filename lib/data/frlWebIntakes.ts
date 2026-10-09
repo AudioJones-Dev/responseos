@@ -88,6 +88,12 @@ export async function persistFrlWebIntake(input: {
             after_ref: { reference: row.reference, delivery_status: "blocked" },
           },
         });
+        await tx.frlMockDelivery.createMany({
+          data: (parsed.data.emailUpdates
+            ? ["crm", "notification", "marketing"]
+            : ["crm", "notification"]
+          ).map((kind) => ({ account_id: accountId, intake_id: row.id, kind })),
+        });
         return {
           reference: row.reference,
           status: "received" as const,

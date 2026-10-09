@@ -26,6 +26,8 @@ introduce another database. Numbers 0014-0016 are reserved by unmerged operation
 branches. Delivery is constrained to `blocked` in SQL and code. No worker, claim,
 dispatch, HubSpot request, marketing action, public ingress or enable flag exists.
 This is a durable receipt prerequisite, not the full retry coordinator adapter.
+The subsequent [mock delivery state increment](frl-mock-delivery-state.md) adds
+test-only outbox claims and settlement; the live-delivery statements here remain true.
 An authorized session/database is mandatory and there is no mock success fallback.
 
 Payload expiry is 90 days. The explicit session-scoped purge operation nulls only

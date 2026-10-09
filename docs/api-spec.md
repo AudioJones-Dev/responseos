@@ -223,3 +223,7 @@ POST /api/appointments/availability
 No HTTP route is added. persistFrlWebIntake and purgeExpiredFrlWebIntakePayloads
 require an authorized account-bound session. Website/server ingress and IntakeLedger
 claim/settlement contracts remain unimplemented.
+
+Local mock dispatch data functions claimFrlMockDelivery, settleFrlMockDelivery
+and requeueRejectedFrlMockDelivery are session-account-bound, test-only operations;
+no HTTP endpoint is added. They do not call HubSpot or send notifications.

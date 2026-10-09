@@ -1806,3 +1806,13 @@ environment-scoped FRL receipts; one transaction persists validated payload and 
 evidence. Delivery is blocked by SQL and code. No public ingress, provider dispatch,
 hosted activation or gate closure. See [the implementation boundary](product/frl-web-intake-receipts.md)
 for architecture review, retention and remaining adapter requirements.
+
+## ADR-0066 — Durable FRL outbox state validated in mock mode only
+
+Local mock-only increment. Receipt transactions also persist unique CRM/notice
+intents and consent-gated marketing intents. Account locks serialize fenced claims;
+expired or ambiguous dispatch becomes uncertain and cannot automatically resend.
+SQL mode is restricted to mock, and claims require test receipts and non-production
+runtime plus an explicit default-off local flag. Live adapters, ingress, provider
+reconciliation, scheduling and activation remain unimplemented. See
+[the boundary](product/frl-mock-delivery-state.md) for architecture review and gates.

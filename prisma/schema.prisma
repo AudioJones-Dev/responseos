@@ -217,23 +217,44 @@ model Account {
 }
 
 model FrlWebIntake {
-  id              String    @id @default(cuid())
+  operations      FrlMockDelivery[]
+  id              String            @id @default(cuid())
   account_id      String
-  account         Account   @relation(fields: [account_id], references: [id], onDelete: Restrict)
+  account         Account           @relation(fields: [account_id], references: [id], onDelete: Restrict)
   environment     String
   submission_id   String
-  reference       String    @unique
+  reference       String            @unique
   payload_hash    String
   request_json    Json?
-  delivery_status String    @default("blocked")
+  delivery_status String            @default("blocked")
   expires_at      DateTime
   purged_at       DateTime?
-  created_at      DateTime  @default(now())
-  updated_at      DateTime  @updatedAt
+  created_at      DateTime          @default(now())
+  updated_at      DateTime          @updatedAt
 
   @@unique([account_id, environment, submission_id])
+  @@unique([account_id, id])
   @@index([account_id, delivery_status])
   @@index([expires_at])
+}
+
+model FrlMockDelivery {
+  id             String       @id @default(cuid())
+  account_id     String
+  intake_id      String
+  intake         FrlWebIntake @relation(fields: [account_id, intake_id], references: [account_id, id], onDelete: Restrict)
+  kind           String
+  mode           String       @default("mock")
+  status         String       @default("blocked")
+  attempt_count  Int          @default(0)
+  dispatch_token String?
+  lease_until    DateTime?
+  receipt_id     String?
+  created_at     DateTime     @default(now())
+  updated_at     DateTime     @updatedAt
+
+  @@unique([account_id, intake_id, kind])
+  @@index([account_id, status])
 }
 
 model User {

@@ -337,3 +337,7 @@ Architectural placement and product framing are documented in `architecture.md` 
 FrlWebIntake in proposed migration 0017 stores scoped submission identity, canonical
 payload digest, nullable versioned payload, expiry, receipt reference and blocked
 delivery state. Account foreign key restricts deletion. No hosted migration applied.
+
+Migration 0018 proposes FrlMockDelivery: composite tenant/intake foreign key,
+unique operation kind, blocked/mock defaults, bounded attempts, fencing token,
+lease and mock receipt. SQL checks refuse live mode and inconsistent state.

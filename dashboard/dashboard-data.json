@@ -1444,6 +1444,17 @@
       "priority": "High",
       "blocked": true,
       "blockedReason": "Hosted ingress and durable dispatch adapter remain unimplemented"
+    },
+    {
+      "id": "FRL-MOCK-DELIVERY",
+      "phase": "Integrations",
+      "title": "Validate durable FRL dispatch states in local mock mode",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 85,
+      "priority": "High",
+      "blocked": true,
+      "blockedReason": "Live adapter, provider reconciliation and website ingress remain unimplemented"
     }
   ],
   "liveIssues": [
