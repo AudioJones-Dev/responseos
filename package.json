@@ -25,7 +25,10 @@
     "dev:doppler": "doppler run -- next dev",
     "build:doppler": "doppler run -- next build",
     "start:doppler": "doppler run -- next start",
-    "secrets:check": "doppler secrets --only-names"
+    "secrets:check": "doppler secrets --only-names",
+    "database:check": "node scripts/database-preflight.mjs",
+    "database:ready": "node scripts/database-readiness.mjs",
+    "database:evidence": "node scripts/database-evidence-check.mjs"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
