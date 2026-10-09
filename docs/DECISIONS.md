@@ -1816,3 +1816,10 @@ SQL mode is restricted to mock, and claims require test receipts and non-product
 runtime plus an explicit default-off local flag. Live adapters, ingress, provider
 reconciliation, scheduling and activation remain unimplemented. See
 [the boundary](product/frl-mock-delivery-state.md) for architecture review and gates.
+
+## ADR-0067 — Signed local FRL test ingress
+
+Add a default-off, non-production system ingress that verifies a server signature
+before persistence, binds one server-configured account and fixes environment to
+`test`. This bounded local test authority is distinct from session-based operator
+access and cannot dispatch live providers. See product/frl-signed-test-ingress.md.

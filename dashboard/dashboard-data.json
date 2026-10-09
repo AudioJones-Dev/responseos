@@ -1454,7 +1454,7 @@
       "progress": 85,
       "priority": "High",
       "blocked": true,
-      "blockedReason": "Live adapter, provider reconciliation and website ingress remain unimplemented"
+      "blockedReason": "Live adapters, hosted ingress and provider reconciliation remain unimplemented; signed local test ingress validated"
     }
   ],
   "liveIssues": [

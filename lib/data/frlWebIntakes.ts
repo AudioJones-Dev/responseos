@@ -4,6 +4,8 @@ import { Prisma } from "@prisma/client";
 import { requireRole } from "@/lib/auth/session";
 import { db } from "@/lib/db/client";
 import { FrlWebInquirySchema } from "@/lib/validation/frl-web-inquiry";
+import { verifyFrlTestRequest } from "@/lib/validation/frl-test-signature";
+import type { UserRole } from "@/types/user";
 
 export class FrlWebIntakeError extends Error {
   constructor(
@@ -18,13 +20,38 @@ export class FrlWebIntakeError extends Error {
   }
 }
 
-export async function persistFrlWebIntake(input: {
+type IntakeInput = {
   submissionId: string;
   environment: "test" | "preview" | "production";
   request: unknown;
-}) {
+};
+
+export async function persistFrlWebIntake(input: IntakeInput) {
   const session = await requireRole(["aj_admin", "operator", "client_admin"]);
   if (!session.account?.id) throw new FrlWebIntakeError("tenant_required");
+  return persistIntake(input, {
+    accountId: session.account.id,
+    actorId: session.user.id,
+    actorRole: session.user.role,
+  });
+}
+
+export async function persistSignedFrlTestIntake(request: Request) {
+  const verified = await verifyFrlTestRequest(request);
+  return persistIntake(
+    {
+      submissionId: verified.submissionId,
+      environment: "test",
+      request: verified.payload,
+    },
+    { accountId: verified.accountId },
+  );
+}
+
+async function persistIntake(
+  input: IntakeInput,
+  authority: { accountId: string; actorId?: string; actorRole?: UserRole },
+) {
   const parsed = FrlWebInquirySchema.safeParse(input.request);
   if (
     !parsed.success ||
@@ -36,7 +63,7 @@ export async function persistFrlWebIntake(input: {
     throw new FrlWebIntakeError("invalid_request");
   }
   if (!db) throw new FrlWebIntakeError("no_database");
-  const accountId = session.account.id;
+  const accountId = authority.accountId;
   const submissionId = input.submissionId.toLowerCase();
   const hash = createHash("sha256")
     .update(JSON.stringify(parsed.data))
@@ -78,9 +105,9 @@ export async function persistFrlWebIntake(input: {
         await tx.auditLog.create({
           data: {
             account_id: accountId,
-            actor_user_id: session.user.id,
-            actor_type: "user",
-            actor_role: session.user.role,
+            actor_user_id: authority.actorId,
+            actor_type: authority.actorId ? "user" : "system",
+            actor_role: authority.actorRole,
             action: "frl_web_intake.received",
             category: "workflow",
             target_type: "FrlWebIntake",

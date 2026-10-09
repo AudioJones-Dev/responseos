@@ -1,6 +1,7 @@
 # FRL website intake receipts
 
-Status: local foundation; not hosted or connected to the FRL website.
+Status: local foundation with a signed synthetic website connection under
+[ADR-0067](frl-signed-test-ingress.md). Not hosted; live delivery stays blocked.
 
 `persistFrlWebIntake` is an authenticated, account-bound data-layer operation.
 It validates a strict, versioned FRL payload and persists a blocked receipt and

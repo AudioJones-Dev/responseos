@@ -1,7 +1,8 @@
 # FRL durable delivery state validation
 
-Status: local mock-only state machine. No live provider adapter, HTTP ingress,
-scheduler, notification sender or website connection.
+Status: local mock-only state machine with signed synthetic HTTP ingress and a
+local website sender under [ADR-0067](frl-signed-test-ingress.md). No live provider
+adapter, scheduler, notification sender or hosted website connection.
 
 Receipt persistence now inserts two unique outbox intents (CRM and team notice)
 in its transaction. Marketing gets an intent only with explicit opt-in. All

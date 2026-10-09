@@ -139,3 +139,7 @@ remain future work. See product/frl-web-intake-receipts.md.
 FRL outbox state is implemented for local mock validation only. Live dispatch,
 notification retry scheduler, authenticated website ingress and hosted acceptance
 remain unimplemented; see product/frl-mock-delivery-state.md.
+
+FRL signed website ingress now exists for local synthetic test traffic only.
+It persists receipts and blocked mock intents; no live delivery or hosted activation.
+See product/frl-signed-test-ingress.md for authority and remaining release gates.

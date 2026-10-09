@@ -227,3 +227,9 @@ claim/settlement contracts remain unimplemented.
 Local mock dispatch data functions claimFrlMockDelivery, settleFrlMockDelivery
 and requeueRejectedFrlMockDelivery are session-account-bound, test-only operations;
 no HTTP endpoint is added. They do not call HubSpot or send notifications.
+
+## Local FRL signed test intake (ADR-0067)
+
+POST /api/frl-test-intakes is disabled by default and always disabled in Production.
+Signed synthetic payloads return 201/new or 200/replay with a blocked mock receipt.
+No live provider delivery occurs. See product/frl-signed-test-ingress.md for protocol.

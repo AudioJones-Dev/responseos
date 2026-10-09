@@ -145,3 +145,10 @@ Evidence retention: incident artifacts retained 1 year minimum (events, logs, de
 ## Disclosure language
 
 Call-recording disclosure and automated-calling rules vary by jurisdiction. Treat disclosure scripts, recording toggles, and outbound campaign permissions as **tenant policy objects**, not hard-coded defaults. Per-state (US) and per-country variants ship in v0.3.
+
+## Signed local FRL test boundary (ADR-0067)
+
+The FRL test ingress is a bounded system authority: verified HMAC, server-configured
+account, literal test environment and non-production runtime. No client-selected
+account is accepted. Operator receipt/purge functions still require sessions.
+See product/frl-signed-test-ingress.md; hosted activation is not implemented.
