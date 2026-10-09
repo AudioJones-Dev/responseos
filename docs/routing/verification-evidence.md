@@ -11,7 +11,7 @@ October 9, 2026. Only synthetic data and loopback PostgreSQL 16 were used. No ho
 | Prisma model versus applied local migrations | No difference detected |
 | Typecheck, ESLint, Next production build | Passed |
 | Production dependency audit | Zero vulnerabilities; existing development advisory policy unchanged |
-| Required hosted CI | Linux, Node 24.18.0, PostgreSQL 16 pending draft PR results |
+| Required hosted CI | Linux, Node 24.18.0, PostgreSQL 16 See [draft PR #210 checks](https://github.com/AudioJones-Dev/responseos/pull/210/checks) for the exact reviewed SHA |
 
 Local bundled Node is 24.19.0, so local results do not replace exact-runtime CI. Windows process termination is forced; the process test verifies the graceful SIGTERM path specifically on Linux CI.
 

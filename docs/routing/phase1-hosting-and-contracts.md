@@ -30,7 +30,7 @@ Recommend a Render background worker as the first deployment candidate because a
 
 | Concern | Design / operational consequence |
 |---|---|
-| Runtime | Long-lived Node 24 process, no public customer API; health/readiness only |
+| Runtime | Long-lived Node 24 process. Render background workers receive no incoming traffic: loopback health/readiness is for in-process/container diagnosis, while platform monitoring must use logs/process supervision. Choose a reviewed private service instead if network readiness probes are required |
 | Database | Existing Neon PostgreSQL over TLS, pooled runtime role, direct migration role; choose worker region near the selected existing DB; never place migration privileges in worker runtime |
 | Queue wakeup | One-second bounded polling; no dependence on LISTEN/NOTIFY over pooled connections |
 | Concurrency | Start one replica, two jobs per batch; configurable one to four per process. Independent replicas fence the same intent but total connection/API budget needs approval |

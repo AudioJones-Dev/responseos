@@ -4,7 +4,7 @@ Status: review-only implementation. Runnable worker is simulated-only; HubSpot H
 
 ## Start / stop / health
 
-Provisioning and deployment require authorization. After approved migration and synthetic tenant creation, inject DATABASE_URL, RESPONSEOS_ROUTING_WORKER_ENABLED=true, RESPONSEOS_ROUTING_ACCOUNT_ID, RESPONSEOS_ROUTING_ENVIRONMENT=test or preview, and RESPONSEOS_ROUTING_CONCURRENCY=2. Run `npm run routing:worker`. `/health` is process liveness; `/ready` requires tenant/database/schema and recent polling progress. Default bind is loopback; hosting must explicitly configure its private health binding. Never inject provider tokens into the simulated worker.
+Provisioning and deployment require authorization. After approved migration and synthetic tenant creation, inject DATABASE_URL, RESPONSEOS_ROUTING_WORKER_ENABLED=true, RESPONSEOS_ROUTING_ACCOUNT_ID, RESPONSEOS_ROUTING_ENVIRONMENT=test or preview, and RESPONSEOS_ROUTING_CONCURRENCY=2. Run `npm run routing:worker`. `/health` is process liveness; `/ready` requires tenant/database/schema and recent polling progress. Default bind is loopback. Render background workers do not receive incoming network traffic; their monitoring requires process supervision and log/heartbeat integration. A network readiness probe requires a separately reviewed private-service runtime. Never inject provider tokens into the simulated worker.
 
 SIGTERM/SIGINT stop new claims and drain the current batch. Forced termination, timeout or DB interruption can leave a committed claim. The next claim sweep moves expired claims to uncertain. It does not dispatch them again. Distinct confirmed intake replay returns the existing receipt/state, including after process/client restart.
 
