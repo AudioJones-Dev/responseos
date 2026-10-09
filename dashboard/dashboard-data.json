@@ -1436,6 +1436,8 @@
     },
     {
       "id": "FRL-WEB-RECEIPT",
+      "ref": 209,
+      "refType": "pull",
       "phase": "Integrations",
       "title": "Validate local FRL durable receipt foundation; delivery blocked",
       "owner": "Codex",
@@ -1447,6 +1449,8 @@
     },
     {
       "id": "FRL-MOCK-DELIVERY",
+      "ref": 209,
+      "refType": "pull",
       "phase": "Integrations",
       "title": "Validate FRL mock dispatch, runner and retention recovery guard",
       "owner": "Codex",
