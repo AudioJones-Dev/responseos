@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { validateDatabaseConnections, validateMigrationHistory, validateRestoreBindings } from "../../scripts/database-contract.mjs";
 
 const target = { host: "ep-synthetic.us-east-1.aws.neon.tech", database: "synthetic", runtimeRole: "app", migrationRole: "migrator" };
-const runtime = "postgresql://app:synthetic@ep-synthetic-pooler.us-east-1.aws.neon.tech/synthetic?sslmode=require";
-const migration = "postgresql://migrator:synthetic@ep-synthetic.us-east-1.aws.neon.tech/synthetic?sslmode=verify-full";
+const runtime = "postgresql://app:synthetic@ep-synthetic-pooler.us-east-1.aws.neon.tech/synthetic?sslmode=require&sslaccept=strict";
+const migration = "postgresql://migrator:synthetic@ep-synthetic.us-east-1.aws.neon.tech/synthetic?sslmode=require&sslaccept=strict";
 describe("database connection boundary", () => {
   it("accepts pooled runtime without migration credentials", () => expect(validateDatabaseConnections({DATABASE_URL:runtime},target)).toEqual([]));
   it("accepts a separate migration principal", () => expect(validateDatabaseConnections({DIRECT_URL:migration},target,"migration")).toEqual([]));
@@ -13,6 +13,7 @@ describe("database connection boundary", () => {
     runtime.replace("//app:", "//neondb_owner:"),
     runtime.replace("sslmode=require", "sslmode=disable"),
     runtime + "&sslaccept=accept_invalid_certs",
+    runtime.replace("&sslaccept=strict", ""),
     runtime + "&sslmode=disable",
     runtime + "&options=-c%20role%3Dneondb_owner",
     runtime.replace("postgresql:", "https:"),

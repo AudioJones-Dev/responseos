@@ -8,7 +8,7 @@ Scope: isolated local PostgreSQL 16.15 on loopback port 55463, synthetic data on
 | --- | --- |
 | Prisma generate | PASS; existing Prisma 6 datasource retained; no major upgrade |
 | lint / typecheck / diff whitespace | PASS |
-| Unit suite | 57 files, 694 tests PASS; includes 24 connection/history/restore guard cases |
+| Unit suite | 57 files, 695 tests PASS; includes 25 connection/history/restore guard cases |
 | Integration suite | 13 existing files, 163 tests PASS in a complete rerun; new database backend-loss/reconnect test separately PASS (164 total) |
 | Schema replay | 0001–0013 replayed on empty owned local DB; Prisma migration-to-schema shadow diff reports no difference |
 | Production build | PASS with synthetic DB; existing app/API/auth/provider code unchanged |

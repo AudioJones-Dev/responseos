@@ -14,8 +14,8 @@ export function validateDatabaseConnections(env, target, mode = "application") {
     const expectedHost = pooled ? target.host.replace(/^(ep-[^.]+)/, "$1-pooler") : target.host;
     if (!["postgres:", "postgresql:"].includes(url.protocol) || url.hostname !== expectedHost || decodeURIComponent(url.pathname.slice(1)) !== target.database || url.port && url.port !== "5432" || url.hash) errors.push(`${key}_target_mismatch`);
     if (decodeURIComponent(url.username) !== expectedRole || !url.password) errors.push(`${key}_role_or_password_invalid`);
-    if (!["require", "verify-full"].includes(url.searchParams.get("sslmode")) || url.searchParams.has("sslaccept") || url.searchParams.has("sslcert") || url.searchParams.has("sslidentity")) errors.push(`${key}_tls_invalid`);
-    const allowed = new Set(["sslmode", "channel_binding", "connection_limit", "pool_timeout", "connect_timeout", "application_name", "pgbouncer"]);
+    if (url.searchParams.get("sslmode") !== "require" || url.searchParams.get("sslaccept") !== "strict" || url.searchParams.has("sslcert") || url.searchParams.has("sslidentity")) errors.push(`${key}_tls_invalid`);
+    const allowed = new Set(["sslmode", "sslaccept", "channel_binding", "connection_limit", "pool_timeout", "connect_timeout", "application_name", "pgbouncer"]);
     const keys = [...url.searchParams.keys()];
     if (keys.some(k => !allowed.has(k)) || new Set(keys).size !== keys.length) errors.push(`${key}_connection_options_invalid`);
   };
