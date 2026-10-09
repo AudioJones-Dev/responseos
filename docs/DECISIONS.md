@@ -1798,3 +1798,40 @@ Deleting expired data deletes evidence, which doctrine §16.1 lists among action
 **§21 checklist.** (1) Layer: data and trust infrastructure; operator tooling over existing tables. (2) Built: it is a few `updateMany`/`deleteMany` calls over our own schema, with nothing to buy. (3) Live pilot path: indirectly. It makes the published expiries true before live demo traffic accumulates. (4) Evidence: it deliberately removes expired evidence, behind a preview and an explicit flag, and records counts of what it removed; call stubs and succeeded CRM operations are kept. (5) Verified outcomes: not affected. (6) Proprietary learning: none. (7) Commodity to buy: no; retention over our own ledger is not a product. (8) Duplicates CRM/FSM/telecom/workflow platforms: no. (9) Lock-in: none. (10) Tenant isolation: preserved. Account-scoped sweeps take their account from server-owned environment variables, never input, and every write filters by `account_id` or by a global expiry predicate. (11) Attribution ambiguity: lead events on purged general-demo calls are deleted, so those calls stop counting toward lead totals; the demo account is not a customer and has no attribution. (12) Public claims: the privacy policy and trust page describe an operator-run purge with a preview and audit trail, not automatic or scheduled deletion, and do not say it has been run (doctrine §20). (13) Human approval: yes. This is the control: preview, then a flagged apply by an operator. (14) Compliance exposure: lowered; less personal data is kept. (15) Required now: the privacy policy promised expiries the code did not enforce, and the unguarded reconcile script could delete without a preview.
 
 **Consequences.** Operators run `npm run retention:purge`, read the per-sweep table, and re-run with the flag to apply. Every apply that changes data leaves audit rows that say how much was removed and why. The privacy policy and trust page now describe expiries that a command can enforce. Until someone runs it, expired data is still present, which is why neither page says it has been deleted on any schedule.
+
+## ADR-0065 — Local FRL web intake receipts, blocked delivery
+
+Local implementation only. Reuse existing ResponseOS Postgres for session-tenant-bound,
+environment-scoped FRL receipts; one transaction persists validated payload and audit
+evidence. Delivery is blocked by SQL and code. No public ingress, provider dispatch,
+hosted activation or gate closure. See [the implementation boundary](product/frl-web-intake-receipts.md)
+for architecture review, retention and remaining adapter requirements.
+
+## ADR-0066 — Durable FRL outbox state validated in mock mode only
+
+Local mock-only increment. Receipt transactions also persist unique CRM/notice
+intents and consent-gated marketing intents. Account locks serialize fenced claims;
+expired or ambiguous dispatch becomes uncertain and cannot automatically resend.
+SQL mode is restricted to mock, and claims require test receipts and non-production
+runtime plus an explicit default-off local flag. Live adapters, ingress, provider
+reconciliation, scheduling and activation remain unimplemented. See
+[the boundary](product/frl-mock-delivery-state.md) for architecture review and gates.
+
+ADR-0066 retention follow-up: expiry purge now excludes receipts with dispatching
+or uncertain mock operations under the shared Account lock. Receipt identity and
+mock/audit evidence survive permitted purges. Uncertainty holds have no automatic
+release; bounded live retention/reconciliation policy remains a separate gate.
+
+## ADR-0067 — Signed local FRL test ingress
+
+Add a default-off, non-production system ingress that verifies a server signature
+before persistence, binds one server-configured account and fixes environment to
+`test`. This bounded local test authority is distinct from session-based operator
+access and cannot dispatch live providers. See product/frl-signed-test-ingress.md.
+
+## ADR-0068 — Explicit local mock dispatch runner
+
+Connect the existing tenant-bound claim and fenced settlement functions for one
+explicit synthetic outcome per call. No provider callback, network request,
+scheduler or automatic retry. Failed settlement reports uncertainty and leaves
+the committed claim intact. See product/frl-mock-runner.md for acceptance and gates.
