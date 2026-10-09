@@ -4,6 +4,9 @@ Status: local mock-only state machine with signed synthetic HTTP ingress and a
 local website sender under [ADR-0067](frl-signed-test-ingress.md). No live provider
 adapter, scheduler, notification sender or hosted website connection.
 
+The [local mock runner](frl-mock-runner.md) now connects claim and settlement for
+one explicit synthetic operation per call. No real provider side effect occurs.
+
 Receipt persistence now inserts two unique outbox intents (CRM and team notice)
 in its transaction. Marketing gets an intent only with explicit opt-in. All
 intents begin blocked, and replay cannot create another intent. Rows reference

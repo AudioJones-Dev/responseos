@@ -1823,3 +1823,10 @@ Add a default-off, non-production system ingress that verifies a server signatur
 before persistence, binds one server-configured account and fixes environment to
 `test`. This bounded local test authority is distinct from session-based operator
 access and cannot dispatch live providers. See product/frl-signed-test-ingress.md.
+
+## ADR-0068 — Explicit local mock dispatch runner
+
+Connect the existing tenant-bound claim and fenced settlement functions for one
+explicit synthetic outcome per call. No provider callback, network request,
+scheduler or automatic retry. Failed settlement reports uncertainty and leaves
+the committed claim intact. See product/frl-mock-runner.md for acceptance and gates.

@@ -143,3 +143,7 @@ remain unimplemented; see product/frl-mock-delivery-state.md.
 FRL signed website ingress now exists for local synthetic test traffic only.
 It persists receipts and blocked mock intents; no live delivery or hosted activation.
 See product/frl-signed-test-ingress.md for authority and remaining release gates.
+
+FRL explicit local mock dispatch runner now connects claim and settlement;
+confirmed replay and uncertain outcomes cannot authorize another attempt.
+Live provider delivery remains unimplemented. See product/frl-mock-runner.md.
