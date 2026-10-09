@@ -148,6 +148,8 @@ Call-recording disclosure and automated-calling rules vary by jurisdiction. Trea
 
 ## Signed local FRL test boundary (ADR-0067)
 
+The separate Phase 1 hosted route uses a different signing domain, key IDs, audience-bound signatures and server-resolved test/preview account/environment/retention. It caps actual bytes before parsing and rejects unknown canonical fields. It reuses ledger transactions; no client-selected tenant is accepted. Hosted credentials, rotation, infrastructure and security review remain pending. Live mode cannot execute in the simulated worker; uncertainty cannot auto-retry. See routing/phase1-hosting-and-contracts.md and routing/operations-and-acceptance.md.
+
 The FRL test ingress is a bounded system authority: verified HMAC, server-configured
 account, literal test environment and non-production runtime. No client-selected
 account is accepted. Operator receipt/purge functions still require sessions.

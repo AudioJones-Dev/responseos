@@ -1835,3 +1835,11 @@ Connect the existing tenant-bound claim and fenced settlement functions for one
 explicit synthetic outcome per call. No provider callback, network request,
 scheduler or automatic retry. Failed settlement reports uncertainty and leaves
 the committed claim intact. See product/frl-mock-runner.md for acceptance and gates.
+
+## ADR-0069 — Hosted routing implementation is isolated from live activation
+
+Status: Phase 1 local implementation authorized October 9, 2026; hosting recommendation and security design await review. No provisioning, hosted migration, deployment, provider write or merge authorization.
+
+Reuse FrlWebIntake for versioned hosted receipts; add a tenant-linked delivery child without weakening ADR-0065/0066 blocked/mock SQL constraints. A distinct hosted signing domain and server credential registry bind tenant, test/preview environment, audience and retention. The localhost protocol stays intact. A bounded standalone Node poller uses existing Postgres, commits fences/checkpoints before provider operations, quarantines expired/uncertain attempts and records redacted audit evidence. The runnable worker is simulated-only; its HubSpot request seam cannot be selected by this runtime. No LLM or customer-facing AI is introduced.
+
+See [hosting/contracts](routing/phase1-hosting-and-contracts.md) for section 21 review and [operations/acceptance](routing/operations-and-acceptance.md) for migration, recovery and release blockers. Provider-backed reconciliation, team notifications and website staging acceptance remain gated.

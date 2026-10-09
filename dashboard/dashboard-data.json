@@ -1459,6 +1459,17 @@
       "priority": "High",
       "blocked": true,
       "blockedReason": "Live adapters, hosted ingress and provider reconciliation remain unimplemented; signed local test ingress validated"
+    },
+    {
+      "id": "FRL-HOSTED-ROUTING-PHASE1",
+      "phase": "Integrations",
+      "title": "Implement isolated hosted routing simulation and reviewed FRL HubSpot contract",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 85,
+      "priority": "High",
+      "blocked": true,
+      "blockedReason": "Hosting/security review, live provider reconciliation and controlled acceptance remain gated"
     }
   ],
   "liveIssues": [

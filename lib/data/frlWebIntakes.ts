@@ -144,9 +144,11 @@ export async function purgeExpiredFrlWebIntakePayloads() {
   try {
     return await db.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM "Account" WHERE id = ${accountId} FOR UPDATE`;
+      const protectedHosted = await tx.$queryRaw<{intake_id: string}[]>`SELECT intake_id FROM "HostedRoutingDelivery" WHERE account_id = ${accountId} AND status IN ('queued', 'dispatching', 'uncertain')`;
       const result = await tx.frlWebIntake.updateMany({
         where: {
           account_id: accountId,
+          id: { notIn: protectedHosted.map(row => row.intake_id) },
           expires_at: { lte: new Date() },
           purged_at: null,
           delivery_status: "blocked",

@@ -334,6 +334,8 @@ Architectural placement and product framing are documented in `architecture.md` 
 
 ## FRL web receipt model (local increment)
 
+Phase 1 proposed migration 0019 adds HostedRoutingDelivery with tenant/intake composite linkage, unique intent, bounded attempts, next-attempt time, lease/fence, checkpoint JSON, manifest version and redacted state. FrlWebIntake remains the authoritative receipt/payload identity. Its blocked constraint and FrlMockDelivery's mock-only constraint are unchanged. No hosted migration applied; rollback keeps additive evidence. See routing/operations-and-acceptance.md.
+
 FrlWebIntake in proposed migration 0017 stores scoped submission identity, canonical
 payload digest, nullable versioned payload, expiry, receipt reference and blocked
 delivery state. Account foreign key restricts deletion. No hosted migration applied.

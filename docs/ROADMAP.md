@@ -132,6 +132,8 @@ Architectural placement: [`architecture.md`](./architecture.md) § Future Knowle
 
 ## FRL receipt increment — local validation
 
+Phase 1 hosted routing has a local review implementation: separate server credential boundary, existing intake ledger, additive delivery child, simulated Node poller, verified FRL projection/HubSpot request seam and operator evidence. See [hosting/contracts](routing/phase1-hosting-and-contracts.md). Provisioning, migrations, deployment, live provider selection/reconciliation and website acceptance remain unapproved; this does not advance live v0.3 gates.
+
 FRL website receipt persistence is implemented locally with delivery blocked.
 Dispatch/settlement, authenticated ingress, notification outbox and hosted acceptance
 remain future work. See product/frl-web-intake-receipts.md.
