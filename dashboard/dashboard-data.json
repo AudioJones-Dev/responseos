@@ -1452,7 +1452,7 @@
       "ref": 209,
       "refType": "pull",
       "phase": "Integrations",
-      "title": "Validate FRL mock dispatch, runner and retention recovery guard",
+      "title": "Validate FRL mock dispatch, runner, retention and receipt expiry recovery",
       "owner": "Codex",
       "status": "Review",
       "progress": 85,

@@ -1,6 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeEach, expect, test, vi } from "vitest";
-import { persistFrlWebIntake } from "@/lib/data/frlWebIntakes";
+import {
+  persistFrlWebIntake,
+  purgeExpiredFrlWebIntakePayloads,
+} from "@/lib/data/frlWebIntakes";
 import {
   claimFrlMockDelivery,
   settleFrlMockDelivery,
@@ -54,6 +57,72 @@ async function claim(
   if (result.status !== "claimed") throw new Error("Expected mock claim");
   return result;
 }
+
+test("expired receipt still records expired dispatch uncertainty once and retains recovery payload", async () => {
+  const intake = await receipt();
+  const current = await claim(intake.reference);
+  await prisma.frlWebIntake.updateMany({ data: { expires_at: new Date(0) } });
+  await prisma.frlMockDelivery.update({
+    where: { id: current.operationId },
+    data: { lease_until: new Date(0) },
+  });
+  expect(await claimFrlMockDelivery(intake.reference, "crm")).toEqual({
+    status: "uncertain",
+  });
+  expect(await claimFrlMockDelivery(intake.reference, "crm")).toEqual({
+    status: "uncertain",
+  });
+  expect(
+    await prisma.frlMockDelivery.findUnique({
+      where: { id: current.operationId },
+    }),
+  ).toMatchObject({
+    status: "uncertain",
+    dispatch_token: null,
+    lease_until: null,
+    attempt_count: 1,
+  });
+  expect(
+    await prisma.auditLog.count({
+      where: {
+        action: "frl_mock_delivery.lease_expired",
+        target_id: current.operationId,
+      },
+    }),
+  ).toBe(1);
+  expect(await purgeExpiredFrlWebIntakePayloads()).toEqual({ purged: 0 });
+  expect((await prisma.frlWebIntake.findFirst())?.request_json).not.toBeNull();
+});
+
+test("expired receipt cannot begin a fresh delivery attempt", async () => {
+  const intake = await receipt();
+  await prisma.frlWebIntake.updateMany({ data: { expires_at: new Date(0) } });
+  expect(await claimFrlMockDelivery(intake.reference, "crm")).toEqual({
+    status: "blocked",
+  });
+  expect(
+    await prisma.frlMockDelivery.count({ where: { attempt_count: { gt: 0 } } }),
+  ).toBe(0);
+  expect(
+    await prisma.auditLog.count({
+      where: { action: "frl_mock_delivery.claimed" },
+    }),
+  ).toBe(0);
+});
+
+test("expired receipt preserves a current dispatch lease without another claim", async () => {
+  const intake = await receipt();
+  const current = await claim(intake.reference);
+  await prisma.frlWebIntake.updateMany({ data: { expires_at: new Date(0) } });
+  expect(await claimFrlMockDelivery(intake.reference, "crm")).toEqual({
+    status: "dispatching",
+  });
+  expect(
+    await prisma.frlMockDelivery.findUnique({
+      where: { id: current.operationId },
+    }),
+  ).toMatchObject({ dispatch_token: current.token, attempt_count: 1 });
+});
 
 test("commits unique blocked intents with receipt, suppressing marketing without consent", async () => {
   const input = {

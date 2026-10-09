@@ -44,12 +44,7 @@ export async function claimFrlMockDelivery(
       const intake = await tx.frlWebIntake.findFirst({
         where: { reference, account_id: accountId },
       });
-      if (
-        !intake ||
-        intake.environment !== "test" ||
-        intake.purged_at ||
-        intake.expires_at <= new Date()
-      )
+      if (!intake || intake.environment !== "test" || intake.purged_at)
         return { status: "blocked" as const };
       const key = {
         account_id_intake_id_kind: {
@@ -96,6 +91,8 @@ export async function claimFrlMockDelivery(
         return {
           status: operation.status as "dispatching" | "uncertain" | "rejected",
         };
+      if (intake.expires_at <= new Date())
+        return { status: "blocked" as const };
       if (operation.status !== "blocked")
         throw new FrlWebIntakeError("conflict");
       if (operation.attempt_count >= 3) return { status: "rejected" as const };

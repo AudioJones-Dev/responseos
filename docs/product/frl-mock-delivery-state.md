@@ -18,10 +18,15 @@ delivery evidence, not a blind replay of intake history.
 
 Migration 0018 adds `FrlMockDelivery`. SQL accepts only `mode=mock`; production
 delivery cannot be enabled by flipping an environment flag. Intake delivery
-itself remains blocked under 0017. The mock claim additionally requires an
+itself remains blocked under 0017. A fresh mock dispatch claim requires an
 authorized selected-account session, a non-production runtime, a test-environment
 receipt, an unexpired/unpurged payload, and
 `RESPONSEOS_FRL_MOCK_DISPATCH_ENABLED=true`. The flag defaults off.
+
+Existing operation state and expired-lease transitions are processed before the
+intake expiry gate. An expired intake can therefore record uncertainty without
+starting a new attempt. Active leases retain their token, and repeated uncertainty
+readback neither increments attempts nor duplicates the expiry audit event.
 
 Claims serialize under the Account lock and commit a fresh token/60-second lease
 before any simulated effect. Only the matching token can settle a dispatching
