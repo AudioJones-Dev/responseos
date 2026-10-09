@@ -36,6 +36,7 @@ export type ObjectType = "contacts" | "companies" | "deals" | "tickets" | "notes
 export type Properties = Record<string, string>
 export type CrmObject = { id: string; properties: Properties }
 export type PortalMapping = {
+  taskPriority: string
   environment?: "test" | "preview"
   accountId: string; portalId: string; primaryOwnerId: string; backupOwnerId: string | null
   sales: { pipelineId: string; stageId: string }
@@ -97,7 +98,7 @@ export function planInquiry(raw: unknown, mapping: PortalMapping): Plan {
   if (objectType === "deals") Object.assign(properties, { dealname: key, pipeline: route!.pipelineId, dealstage: route!.stageId })
   if (inquiry.acquisition) Object.assign(properties, { frl_program_type: "equipment_acquisition", frl_financial_direction: "frl_pays_seller", frl_final_operator_decision: inquiry.acquisition.finalDecision, frl_seller_authority_confirmed: String(inquiry.acquisition.sellerAuthorityConfirmed), frl_equipment_category: inquiry.acquisition.equipmentCategory, ...(inquiry.acquisition.operatorReference ? { frl_operator_reference: inquiry.acquisition.operatorReference } : {}) })
   const plan = { mode: "dry-run" as const, accountId: mapping.accountId, portalId: mapping.portalId, key, inquiry, primaryOwnerId: mapping.primaryOwnerId, backupOwnerId: mapping.backupOwnerId, objectType, properties,
-    task: { hs_task_subject: key, hs_task_body: richText(`${summary}\nNext action: ${nextAction}`), hs_task_status: "NOT_STARTED", hs_task_priority: "NORMAL", hs_timestamp: inquiry.nextActionAt, hubspot_owner_id: mapping.primaryOwnerId },
+    task: { hs_task_subject: key, hs_task_body: richText(`${summary}\nNext action: ${nextAction}`), hs_task_status: "NOT_STARTED", hs_task_priority: mapping.taskPriority, hs_timestamp: inquiry.nextActionAt, hubspot_owner_id: mapping.primaryOwnerId },
     note: { hs_note_body: richText(`${key}\n${summary}\nQualification: ${inquiry.qualification}\nDisposition: ${inquiry.disposition}\nDecision: ${inquiry.decisionReference}`), hs_timestamp: inquiry.occurredAt }, notificationEligible: false as const }
   return { ...plan, fingerprint: digest(plan) }
 }

@@ -1838,7 +1838,7 @@ the committed claim intact. See product/frl-mock-runner.md for acceptance and ga
 
 ## ADR-0069 — Hosted routing implementation is isolated from live activation
 
-Status: Phase 1 local implementation authorized October 9, 2026; hosting recommendation and security design await review. No provisioning, hosted migration, deployment, provider write or merge authorization.
+Status: Phase 1 local implementation and Render architecture approved October 9, 2026. Local security review and restore evidence prepared; human hosted-security acceptance remains required. No provisioning, hosted migration, deployment, provider write or merge authorization. See [Render staging design](routing/render-staging-design.md), [security/restore review](routing/security-and-restore-review.md) and [controlled acceptance](routing/controlled-staging-acceptance.md).
 
 Reuse FrlWebIntake for versioned hosted receipts; add a tenant-linked delivery child without weakening ADR-0065/0066 blocked/mock SQL constraints. A distinct hosted signing domain and server credential registry bind tenant, test/preview environment, audience and retention. The localhost protocol stays intact. A bounded standalone Node poller uses existing Postgres, commits fences/checkpoints before provider operations, quarantines expired/uncertain attempts and records redacted audit evidence. The runnable worker is simulated-only; its HubSpot request seam cannot be selected by this runtime. No LLM or customer-facing AI is introduced.
 

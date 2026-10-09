@@ -153,3 +153,5 @@ Live provider delivery remains unimplemented. See product/frl-mock-runner.md.
 FRL local expiry purge now preserves payloads with in-flight or uncertain mock
 operations. Live retention/reconciliation policy remains unapproved; this local
 recovery guard closes no hosted or privacy gate.
+
+Render architecture approved October 9; [staging specification](routing/render-staging-design.md), [local security/restore review](routing/security-and-restore-review.md) and [controlled acceptance plan](routing/controlled-staging-acceptance.md) prepared. Company, Notes/Tasks and internal notification queue local handling extended; external alert delivery and live provider runtime remain blocked. Fresh staging PostgreSQL 18 readback adds required CI coverage. PR #210 remains draft with all production gates unchanged.

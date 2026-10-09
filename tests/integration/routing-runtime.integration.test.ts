@@ -23,7 +23,7 @@ test("isolated worker process becomes ready, stops and restarts with durable sim
   };
   try {
     for (let cycle = 0; cycle < 2; cycle++) {
-      child = spawn(process.execPath, ["--import", "tsx", "scripts/routing-worker.ts"], {env: {...process.env, RESPONSEOS_ROUTING_WORKER_ENABLED: "true", RESPONSEOS_ROUTING_ACCOUNT_ID: authority.accountId, RESPONSEOS_ROUTING_ENVIRONMENT: "test", RESPONSEOS_ROUTING_CONCURRENCY: "2", RESPONSEOS_WORKER_BIND_HOST: "127.0.0.1", PORT: String(port)}, stdio: ["ignore", "pipe", "pipe"]});
+      child = spawn(process.execPath, ["--import", "tsx", "scripts/routing-worker.ts"], {env: {...process.env, DIRECT_URL: "", RESPONSEOS_HOSTED_INTAKE_KEYS: "", RESPONSEOS_ROUTING_WORKER_ENABLED: "true", RESPONSEOS_ROUTING_ACCOUNT_ID: authority.accountId, RESPONSEOS_ROUTING_ENVIRONMENT: "test", RESPONSEOS_ROUTING_CONCURRENCY: "2", RESPONSEOS_WORKER_BIND_HOST: "127.0.0.1", PORT: String(port)}, stdio: ["ignore", "pipe", "pipe"]});
       child.stdout?.on("data", chunk => {logs += String(chunk);}); child.stderr?.on("data", chunk => {logs += String(chunk);});
       let ready = false;
       for (let attempt = 0; attempt < 100 && !ready; attempt++) {

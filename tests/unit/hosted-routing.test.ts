@@ -77,7 +77,11 @@ test.each([true, false])("read-only uncertain proof with record present %s never
     expect(method === "GET" || method === "POST" && path.endsWith("/search")).toBe(true);
     if (path.endsWith("/contacts/search")) return {status: 200, body: {total: 1, results: [{id: "123", properties: {email: canonical.inquiry.contact.email}}]}};
     if (path.endsWith("/deals/search")) return {status: 200, body: {total: present ? 1 : 0, results: present ? [{id: "456", properties: plan.properties}] : []}};
-    return {status: 200, body: {results: [{toObjectId: "123"}]}};
+    if (path.endsWith("/notes/search")) return {status: 200, body: {total: 1, results: [{id: "789", properties: plan.note}]}};
+    if (path.endsWith("/tasks/search")) return {status: 200, body: {total: 1, results: [{id: "987", properties: plan.task}]}};
+    if (path.startsWith("/crm/v3/objects/notes/")) return {status: 200, body: {id: "789", properties: plan.note}};
+    if (path.startsWith("/crm/v3/objects/tasks/")) return {status: 200, body: {id: "987", properties: plan.task}};
+    return {status: 200, body: {results: [{toObjectId: path.includes("/associations/deals") ? "456" : "123"}]}};
   });
   expect((await inspectUncertainHubspotDelivery(delivery, port)).status).toBe(present ? "ready_for_human_review" : "inconclusive");
 });

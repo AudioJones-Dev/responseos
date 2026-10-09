@@ -26,7 +26,7 @@ The governed staging contract is explicitly mock-only with provider credentials 
 
 Use an isolated ResponseOS-owned Node process and the existing PostgreSQL datastore. Keep Vercel responsible for web request/receipt handling; no browser request waits for CRM dispatch. PostgreSQL is the queue and checkpoint authority. No Redis, second database, competing ledger or LLM is introduced.
 
-Recommend a Render background worker as the first deployment candidate because a workspace is accessible and its fixed compute pricing is easy to review; Railway is an equivalent candidate if its account/region/operating requirements are preferable. Provider selection/provisioning is pending human infrastructure review, not implemented by this record.
+The user approved Render as the worker architecture on October 9. The [Render staging specification](render-staging-design.md) supersedes provider-selection recommendations here. Provisioning, migrations, deployments and activation remain separately gated.
 
 | Concern | Design / operational consequence |
 |---|---|

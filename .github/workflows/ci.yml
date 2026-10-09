@@ -37,7 +37,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        postgres: [16, 17]
+        postgres: [16, 17, 18]
     services:
       postgres:
         image: postgres:${{ matrix.postgres }}
@@ -72,5 +72,18 @@ jobs:
       - run: npx prisma migrate diff --from-schema-datamodel prisma/schema.prisma --to-migrations prisma/migrations --shadow-database-url "postgresql://responseos:responseos@localhost:5432/responseos_shadow" --exit-code
       - run: npx prisma migrate deploy
       - run: npx prisma db seed
+      - name: Validate inactive Render specification
+        run: node scripts/validate-routing-blueprint.mjs
       - run: npm run test:integration
+      - name: Synthetic PostgreSQL logical restore drill
+        env:
+          ROUTING_RESTORE_SYNTHETIC_ONLY: "true"
+          ROUTING_RESTORE_SNAPSHOT: ${{ runner.temp }}/routing-restore.json
+          PGPASSWORD: responseos
+        run: |
+          node --import tsx scripts/routing-restore-drill.ts prepare
+          docker exec ${{ job.services.postgres.id }} pg_dump -Fc -U responseos -d responseos_test > "$RUNNER_TEMP/routing.dump"
+          psql -h localhost -U responseos -d postgres -c 'CREATE DATABASE responseos_restore;'
+          docker exec -i ${{ job.services.postgres.id }} pg_restore --exit-on-error --no-owner -U responseos -d responseos_restore < "$RUNNER_TEMP/routing.dump"
+          DATABASE_URL=postgresql://responseos:responseos@localhost:5432/responseos_restore DIRECT_URL=postgresql://responseos:responseos@localhost:5432/responseos_restore node --import tsx scripts/routing-restore-drill.ts verify
       - run: npm run build

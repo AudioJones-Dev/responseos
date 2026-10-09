@@ -34,7 +34,7 @@
     "equipment_acquisition"
   ],
   "contactMatching": "Exact normalized email and phone; ambiguity blocks; existing context preserved; phone-only new contacts require review.",
-  "notificationPolicy": "Internal operator status only; outbound notifications require separate acceptance.",
+  "notificationPolicy": "Durable internal operator queue only; external channels disabled pending exact-recipient approval.",
   "requiredCustomProperties": {
     "contacts": [
       "frl_landing_page",
@@ -177,5 +177,8 @@
       "frl_utm_term",
       "frl_vetaccess_request"
     ]
-  }
+  },
+  "taskPriority": "MEDIUM",
+  "taskPriorityApproval": "User approved MEDIUM on 2026-10-09; provider enum readback verified.",
+  "activityContract": "note-task-company.v1"
 }

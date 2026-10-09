@@ -1,0 +1,13 @@
+import {readFileSync} from "node:fs";
+import {createHash} from "node:crypto";
+import Ajv from "ajv/dist/2020.js";
+const schemaText = readFileSync("infra/routing/render.schema.json", "utf8");
+const schema = JSON.parse(schemaText);
+const ajv = new Ajv({strict: false, allErrors: true});
+ajv.addFormat("uri", value => {try {new URL(value); return true;} catch {return false;}});
+const validate = ajv.compile(schema);
+const blueprint = JSON.parse(readFileSync("infra/routing/render.staging.yaml", "utf8"));
+if (!validate(blueprint)) throw new Error(JSON.stringify(validate.errors));
+const worker = blueprint.services[0];
+if (worker.type !== "worker" || worker.autoDeployTrigger !== "off" || blueprint.previews.generation !== "off" || worker.numInstances !== 1 || worker.preDeployCommand || blueprint.databases || worker.envVars.some(e => /DIRECT_URL|HUBSPOT|HOSTED_INTAKE_KEYS/.test(e.key)) || !worker.envVars.some(e => e.key === "RESPONSEOS_ROUTING_WORKER_ENABLED" && e.value === "false")) throw new Error("routing_blueprint_boundary_invalid");
+console.log(JSON.stringify({valid: true, schemaSource: "https://render.com/schema/render.yaml.json", schemaSha256: createHash("sha256").update(schemaText).digest("hex"), provisioned: false}));

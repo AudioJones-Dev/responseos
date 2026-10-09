@@ -1,9 +1,10 @@
 import manifest from "@/docs/routing/frl-hubspot-manifest.json";
 import readback from "@/docs/routing/frl-provider-readback.json";
 import commissioning from "@/docs/routing/frl-commissioning-readback.json";
+import activities from "@/docs/routing/frl-activity-readback.json";
 import { planInquiry, pathways, type Inquiry } from "./frlPlan";
 import { createHash } from "node:crypto";
-export const providerConfigurationHash = createHash("sha256").update(JSON.stringify({manifest, readback, commissioning})).digest("hex");
+export const providerConfigurationHash = createHash("sha256").update(JSON.stringify({manifest, readback, commissioning, activities})).digest("hex");
 
 export function routeInquiry(inquiry: Inquiry, environment: "test" | "preview" = "test") {
   if (manifest.schemaVersion !== "frl-hubspot.v1" || manifest.portalId !== "247150421" ||
@@ -21,6 +22,12 @@ export function routeInquiry(inquiry: Inquiry, environment: "test" | "preview" =
     if (definitions.propertiesNotFound.length || manifest.requiredCustomProperties[type].some(name => !definitions.results.some(p => p.name === name))) throw new Error("provider_properties_inconsistent");
   }
   const plan = planInquiry(inquiry, { ...manifest, accountId: inquiry.accountId, environment });
+  for (const [type, properties] of [["tasks", plan.task], ["notes", plan.note]] as const) {
+    for (const [name, value] of Object.entries(properties)) {
+      const definition = activities[type].results.find(p => p.name === name);
+      if (!definition || definition.type === "enumeration" && !definition.options.some(o => o.value === value)) throw new Error("activity_manifest_inconsistent");
+    }
+  }
   if (plan.objectType) {
     const definitions = readback[plan.objectType].results;
     for (const [name, value] of Object.entries(plan.properties)) {

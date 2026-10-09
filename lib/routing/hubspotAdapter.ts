@@ -1,9 +1,10 @@
 import "@/lib/serverOnlyGuard";
-import type { Inquiry, Plan, Properties } from "./frlPlan";
+import type { Inquiry, Plan, Properties, ObjectType } from "./frlPlan";
 import { ProviderFailure, type RoutingProvider } from "./provider";
 import { routeInquiry } from "./frlManifest";
 
 type ObjectRecord = {id: string; properties: Properties};
+const equals = (name: string, actual: string, expected: string) => ["frl_next_action_at", "hs_timestamp"].includes(name) ? Number(actual) === Date.parse(expected) || Date.parse(actual) === Date.parse(expected) : actual === expected;
 export type HubspotRequest = (method: "GET" | "POST" | "PUT", path: string, body?: unknown) => Promise<{status: number; body: unknown}>;
 export class HubspotRoutingAdapter implements RoutingProvider {
   readonly mode = "hubspot" as const;
@@ -36,7 +37,7 @@ export class HubspotRoutingAdapter implements RoutingProvider {
     let row: ObjectRecord;
     try { row = await this.call("GET", `/crm/v3/objects/${type}/${result.id}?properties=${encodeURIComponent(Object.keys(properties).join(","))}`) as ObjectRecord; }
     catch { throw new ProviderFailure("created_object_readback_uncertain", "uncertain"); }
-    if (row?.id !== result.id || !row.properties || Object.keys(properties).some(name => name === "frl_next_action_at" ? Number(row.properties[name]) !== Date.parse(properties[name]) && Date.parse(row.properties[name]) !== Date.parse(properties[name]) : row.properties[name] !== properties[name])) throw new ProviderFailure("created_object_readback_uncertain", "uncertain");
+    if (row?.id !== result.id || !row.properties || Object.keys(properties).some(name => !equals(name, row.properties[name], properties[name]))) throw new ProviderFailure("created_object_readback_uncertain", "uncertain");
     return result.id;
   }
   async createContact(inquiry: Inquiry) {
@@ -63,11 +64,34 @@ export class HubspotRoutingAdapter implements RoutingProvider {
     await this.call("PUT", `/crm/v4/objects/${plan.objectType}/${encodeURIComponent(inquiryId)}/associations/default/contacts/${encodeURIComponent(contactId)}`, undefined, true);
   }
   async verifyAssociation(plan: Plan, inquiryId: string, contactId: string) {
+    return this.verifyObjectAssociation(plan.objectType!, inquiryId, "contacts", contactId);
+  }
+  async readCompany(id: string) {
+    const row = await this.call("GET", `/crm/v3/objects/companies/${encodeURIComponent(id)}?properties=name`) as ObjectRecord & {archived: boolean};
+    return row?.id === id && row.archived === false && typeof row.properties?.name === "string" && row.properties.name.length > 0;
+  }
+  async findActivity(plan: Plan, type: "notes" | "tasks") {
+    const properties = type === "notes" ? plan.note : plan.task;
+    const marker = type === "notes" ? "hs_note_body" : "hs_task_subject";
+    const row = await this.search(type, marker, properties[marker], Object.keys(properties));
+    if (row && Object.keys(properties).some(name => !equals(name, row.properties[name], properties[name]))) throw new ProviderFailure("activity_readback_mismatch", "rejected");
+    return row?.id ?? null;
+  }
+  async createActivity(plan: Plan, type: "notes" | "tasks") {return this.create(type, type === "notes" ? plan.note : plan.task);}
+  async verifyActivity(plan: Plan, type: "notes" | "tasks", id: string) {
+    const properties = type === "notes" ? plan.note : plan.task;
+    const row = await this.call("GET", `/crm/v3/objects/${type}/${encodeURIComponent(id)}?properties=${encodeURIComponent(Object.keys(properties).join(","))}`) as ObjectRecord;
+    return row?.id === id && !!row.properties && Object.keys(properties).every(name => equals(name, row.properties[name], properties[name]));
+  }
+  async associateObjects(from: ObjectType, id: string, to: ObjectType, target: string) {
+    await this.call("PUT", `/crm/v4/objects/${from}/${encodeURIComponent(id)}/associations/default/${to}/${encodeURIComponent(target)}`, undefined, true);
+  }
+  async verifyObjectAssociation(from: ObjectType, id: string, to: ObjectType, target: string) {
     let after: string | undefined; const seen = new Set<string>();
     do {
-      const body = await this.call("GET", `/crm/v4/objects/${plan.objectType}/${encodeURIComponent(inquiryId)}/associations/contacts?limit=500${after ? `&after=${encodeURIComponent(after)}` : ""}`) as {results: {toObjectId: string | number}[]; paging?: {next?: {after: string}}};
+      const body = await this.call("GET", `/crm/v4/objects/${from}/${encodeURIComponent(id)}/associations/${to}?limit=500${after ? `&after=${encodeURIComponent(after)}` : ""}`) as {results: {toObjectId: string | number}[]; paging?: {next?: {after: string}}};
       if (!Array.isArray(body?.results)) throw new ProviderFailure("association_response_invalid", "uncertain");
-      if (body.results.some(r => String(r.toObjectId) === contactId)) return true;
+      if (body.results.some(r => String(r.toObjectId) === target)) return true;
       after = body.paging?.next?.after;
       if (after && seen.has(after)) throw new ProviderFailure("association_pagination_loop", "uncertain");
       if (after) seen.add(after);
