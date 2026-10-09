@@ -1448,7 +1448,7 @@
     {
       "id": "FRL-MOCK-DELIVERY",
       "phase": "Integrations",
-      "title": "Validate durable FRL dispatch states and explicit local mock runner",
+      "title": "Validate FRL mock dispatch, runner and retention recovery guard",
       "owner": "Codex",
       "status": "Review",
       "progress": 85,

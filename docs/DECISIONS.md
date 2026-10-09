@@ -1817,6 +1817,11 @@ runtime plus an explicit default-off local flag. Live adapters, ingress, provide
 reconciliation, scheduling and activation remain unimplemented. See
 [the boundary](product/frl-mock-delivery-state.md) for architecture review and gates.
 
+ADR-0066 retention follow-up: expiry purge now excludes receipts with dispatching
+or uncertain mock operations under the shared Account lock. Receipt identity and
+mock/audit evidence survive permitted purges. Uncertainty holds have no automatic
+release; bounded live retention/reconciliation policy remains a separate gate.
+
 ## ADR-0067 — Signed local FRL test ingress
 
 Add a default-off, non-production system ingress that verifies a server signature

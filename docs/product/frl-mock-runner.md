@@ -34,6 +34,7 @@ identity; 12 mock-only status; 13 existing activation gates; 14 synthetic local
 data only; 15 completes the existing claim/settle validation, no scheduler added.
 
 Open: reviewed live adapters, durable provider reconciliation, approved recipient
-policy, bounded notification retry scheduling, private retention during in-flight
-delivery, hosted authentication/database acceptance and controlled live readback.
+policy, bounded notification retry scheduling, approved live retention policy,
+hosted authentication/database acceptance and controlled live readback. The local
+purge preserves payloads with dispatching or uncertain mock operations.
 The website and signed ingress continue to save test receipts without dispatching.

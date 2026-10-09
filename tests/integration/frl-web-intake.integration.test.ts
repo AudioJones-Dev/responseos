@@ -1,5 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { afterAll, beforeEach, expect, test } from "vitest";
+import { afterAll, afterEach, beforeEach, expect, test, vi } from "vitest";
+import {
+  claimFrlMockDelivery,
+  settleFrlMockDelivery,
+} from "@/lib/data/frlMockDelivery";
 import {
   persistFrlWebIntake,
   purgeExpiredFrlWebIntakePayloads,
@@ -35,6 +39,85 @@ beforeEach(async () => {
   setDevSession("client_admin@org_mock_1");
 });
 afterAll(disconnectTestDb);
+afterEach(() => vi.unstubAllEnvs());
+
+test.each(["dispatching", "uncertain"] as const)(
+  "preserves expired payload with %s delivery",
+  async (status) => {
+    vi.stubEnv("RESPONSEOS_FRL_MOCK_DISPATCH_ENABLED", "true");
+    const receipt = await persistFrlWebIntake({
+      submissionId: randomUUID(),
+      environment: "test",
+      request,
+    });
+    const claim = await claimFrlMockDelivery(receipt.reference, "crm");
+    if (claim.status !== "claimed") throw new Error("Expected claim");
+    if (status === "uncertain")
+      await settleFrlMockDelivery({
+        operationId: claim.operationId,
+        token: claim.token,
+        outcome: "uncertain",
+      });
+    await prisma.frlWebIntake.updateMany({ data: { expires_at: new Date(0) } });
+    expect(await purgeExpiredFrlWebIntakePayloads()).toEqual({ purged: 0 });
+    expect(await prisma.frlWebIntake.findFirst()).toMatchObject({
+      purged_at: null,
+      request_json: request,
+    });
+  },
+);
+
+test("concurrent uncertain settlement and purge preserve recovery data", async () => {
+  vi.stubEnv("RESPONSEOS_FRL_MOCK_DISPATCH_ENABLED", "true");
+  const receipt = await persistFrlWebIntake({
+    submissionId: randomUUID(),
+    environment: "test",
+    request,
+  });
+  const claim = await claimFrlMockDelivery(receipt.reference, "crm");
+  if (claim.status !== "claimed") throw new Error("Expected claim");
+  const storedPayload = (await prisma.frlWebIntake.findFirstOrThrow())
+    .request_json;
+  await prisma.frlWebIntake.updateMany({ data: { expires_at: new Date(0) } });
+  const [, purged] = await Promise.all([
+    settleFrlMockDelivery({
+      operationId: claim.operationId,
+      token: claim.token,
+      outcome: "uncertain",
+    }),
+    purgeExpiredFrlWebIntakePayloads(),
+  ]);
+  expect(purged).toEqual({ purged: 0 });
+  expect((await prisma.frlWebIntake.findFirst())?.request_json).toEqual(
+    storedPayload,
+  );
+});
+
+test("terminal mock outcomes permit expiry purge without deleting delivery evidence", async () => {
+  vi.stubEnv("RESPONSEOS_FRL_MOCK_DISPATCH_ENABLED", "true");
+  for (const outcome of ["confirmed", "rejected"] as const) {
+    const receipt = await persistFrlWebIntake({
+      submissionId: randomUUID(),
+      environment: "test",
+      request,
+    });
+    const claim = await claimFrlMockDelivery(receipt.reference, "crm");
+    if (claim.status !== "claimed") throw new Error("Expected claim");
+    await settleFrlMockDelivery({
+      operationId: claim.operationId,
+      token: claim.token,
+      outcome,
+      ...(outcome === "confirmed" ? { receiptId: "mock_retention_test" } : {}),
+    });
+  }
+  await prisma.frlWebIntake.updateMany({ data: { expires_at: new Date(0) } });
+  expect(await purgeExpiredFrlWebIntakePayloads()).toEqual({ purged: 2 });
+  expect(
+    await prisma.frlMockDelivery.count({
+      where: { status: { in: ["confirmed", "rejected"] } },
+    }),
+  ).toBe(2);
+});
 
 test("persists all professional fields and replays a durable receipt without another audit event", async () => {
   const input = {

@@ -43,9 +43,14 @@ handling. Mock confirmation cannot close CRM/notification acceptance or go-live.
 Existing uncertainty must not be silently mapped to a fresh real delivery job.
 
 The receipt schema, private retention/access and authenticated tenant-bound ingress
-still need hosted acceptance. Current purge has only a mock, test-only dispatch
-model; before any real dispatch is introduced, retention must explicitly handle
-in-flight and uncertain operations and prevent payload loss during delivery.
+still need hosted acceptance. The local purge now excludes receipts with any
+dispatching or uncertain mock operation. Purge, claim and settlement share the
+Account lock, preventing payload deletion during those transitions. Expired
+receipts with blocked or terminal mock operations can still purge their payload;
+receipt identities, delivery state and audit evidence remain. There is no automatic
+release of uncertainty holds. Before real dispatch, approve a bounded retention
+and reconciliation policy for held payloads; this local guard does not certify
+the live privacy or retention policy.
 
 Architecture review: this is the operational memory/delivery layer; a locally built
 test of the necessary pilot recovery path preserving receipt/audit evidence. It

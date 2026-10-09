@@ -147,3 +147,7 @@ See product/frl-signed-test-ingress.md for authority and remaining release gates
 FRL explicit local mock dispatch runner now connects claim and settlement;
 confirmed replay and uncertain outcomes cannot authorize another attempt.
 Live provider delivery remains unimplemented. See product/frl-mock-runner.md.
+
+FRL local expiry purge now preserves payloads with in-flight or uncertain mock
+operations. Live retention/reconciliation policy remains unapproved; this local
+recovery guard closes no hosted or privacy gate.

@@ -150,6 +150,9 @@ export async function purgeExpiredFrlWebIntakePayloads() {
           expires_at: { lte: new Date() },
           purged_at: null,
           delivery_status: "blocked",
+          operations: {
+            none: { status: { in: ["dispatching", "uncertain"] } },
+          },
         },
         data: { request_json: Prisma.JsonNull, purged_at: new Date() },
       });
