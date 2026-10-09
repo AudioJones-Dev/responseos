@@ -1,0 +1,35 @@
+{
+  "status": "APPLIED_HOSTED_STAGING_NOLOGIN_2026_10_09",
+  "appliedTarget": "patient-snow-16014934/br-mute-boat-a6ylen11/neondb",
+  "evidence": "docs/routing/staging-database-application-2026-10-09.md",
+  "prerequisites": [
+    "approved migrations 0017-0019",
+    "backup and classification",
+    "review database-scoped PUBLIC TEMP revoke impact"
+  ],
+  "statements": [
+    "CREATE ROLE responseos_routing_worker_test NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS CONNECTION LIMIT 4",
+    "GRANT USAGE ON SCHEMA public TO responseos_routing_worker_test",
+    "DO $$ BEGIN EXECUTE format('GRANT CONNECT ON DATABASE %I TO responseos_routing_worker_test', current_database()); END $$",
+    "DO $$ BEGIN EXECUTE format('REVOKE TEMPORARY ON DATABASE %I FROM PUBLIC', current_database()); END $$",
+    "GRANT SELECT (id), UPDATE (id) ON public.\"Account\" TO responseos_routing_worker_test",
+    "GRANT SELECT ON public.\"FrlWebIntake\",public.\"HostedRoutingDelivery\",public.\"Notification\",public.\"AuditLog\" TO responseos_routing_worker_test",
+    "GRANT UPDATE (status,attempt_count,dispatch_token,lease_until,next_attempt_at,checkpoint_json,last_error_code,confirmed_at,updated_at) ON public.\"HostedRoutingDelivery\" TO responseos_routing_worker_test",
+    "GRANT INSERT ON public.\"Notification\",public.\"AuditLog\" TO responseos_routing_worker_test",
+    "CREATE FUNCTION public.routing_worker_account_immutable() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF current_user = 'responseos_routing_worker_test' THEN RAISE EXCEPTION 'worker_account_mutation_forbidden'; END IF; RETURN NEW; END $$",
+    "CREATE TRIGGER routing_worker_account_immutable BEFORE UPDATE ON public.\"Account\" FOR EACH ROW EXECUTE FUNCTION public.routing_worker_account_immutable()",
+    "ALTER TABLE public.\"Account\" ENABLE ROW LEVEL SECURITY",
+    "ALTER TABLE public.\"FrlWebIntake\" ENABLE ROW LEVEL SECURITY",
+    "ALTER TABLE public.\"HostedRoutingDelivery\" ENABLE ROW LEVEL SECURITY",
+    "ALTER TABLE public.\"Notification\" ENABLE ROW LEVEL SECURITY",
+    "ALTER TABLE public.\"AuditLog\" ENABLE ROW LEVEL SECURITY",
+    "CREATE POLICY routing_worker_account ON public.\"Account\" FOR SELECT TO responseos_routing_worker_test USING (id = 'frl_routing_staging_synthetic')",
+    "CREATE POLICY routing_worker_account_lock ON public.\"Account\" FOR UPDATE TO responseos_routing_worker_test USING (id = 'frl_routing_staging_synthetic') WITH CHECK (id = 'frl_routing_staging_synthetic')",
+    "CREATE POLICY routing_worker_intake ON public.\"FrlWebIntake\" FOR SELECT TO responseos_routing_worker_test USING (account_id = 'frl_routing_staging_synthetic' AND environment = 'test')",
+    "CREATE POLICY routing_worker_delivery ON public.\"HostedRoutingDelivery\" FOR ALL TO responseos_routing_worker_test USING (account_id = 'frl_routing_staging_synthetic' AND mode = 'simulated' AND EXISTS (SELECT 1 FROM public.\"FrlWebIntake\" i WHERE i.id = intake_id AND i.account_id = 'frl_routing_staging_synthetic' AND i.environment = 'test')) WITH CHECK (account_id = 'frl_routing_staging_synthetic' AND mode = 'simulated' AND EXISTS (SELECT 1 FROM public.\"FrlWebIntake\" i WHERE i.id = intake_id AND i.account_id = 'frl_routing_staging_synthetic' AND i.environment = 'test'))",
+    "CREATE POLICY routing_worker_notice_read ON public.\"Notification\" FOR SELECT TO responseos_routing_worker_test USING (account_id = 'frl_routing_staging_synthetic' AND channel = 'in_app' AND recipient = 'routing-operators' AND subject = 'Routing operator evidence' AND status = 'queued' AND id LIKE 'routing_%')",
+    "CREATE POLICY routing_worker_notice_insert ON public.\"Notification\" FOR INSERT TO responseos_routing_worker_test WITH CHECK (account_id = 'frl_routing_staging_synthetic' AND channel = 'in_app' AND recipient = 'routing-operators' AND subject = 'Routing operator evidence' AND status = 'queued' AND id LIKE 'routing_%' AND message::jsonb->>'externalDelivery' = 'disabled' AND EXISTS (SELECT 1 FROM public.\"HostedRoutingDelivery\" d WHERE d.id = message::jsonb->>'deliveryId' AND d.account_id = 'frl_routing_staging_synthetic'))",
+    "CREATE POLICY routing_worker_audit_read ON public.\"AuditLog\" FOR SELECT TO responseos_routing_worker_test USING (account_id = 'frl_routing_staging_synthetic' AND actor_type = 'system' AND actor_user_id IS NULL AND target_type = 'HostedRoutingDelivery' AND action LIKE 'hosted_routing.%')",
+    "CREATE POLICY routing_worker_audit_insert ON public.\"AuditLog\" FOR INSERT TO responseos_routing_worker_test WITH CHECK (account_id = 'frl_routing_staging_synthetic' AND actor_type = 'system' AND actor_user_id IS NULL AND target_type = 'HostedRoutingDelivery' AND action LIKE 'hosted_routing.%' AND EXISTS (SELECT 1 FROM public.\"HostedRoutingDelivery\" d WHERE d.id = target_id AND d.account_id = 'frl_routing_staging_synthetic'))"
+  ]
+}

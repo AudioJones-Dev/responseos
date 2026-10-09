@@ -1,0 +1,38 @@
+# Authorized staging read-only inspection — October 9, 2026
+
+Inspection window started 12:24:51 UTC, connection awakened endpoint 12:25:14, suspended_at readback 12:26:28. Under the authorized one-hour maximum. Exact project/branch/endpoint identity verified through control-plane metadata before SQL. No production project queried.
+
+Target: Neon responseos-staging-mock, patient-snow-16014934, branch br-mute-boat-a6ylen11 (named main inside staging), neondb, PostgreSQL 18.6, AWS us-west-2, endpoint ep-young-morning-a6oeu9vv. Main ResponseOS and live-demo excluded. This report supersedes the earlier archived-state observation for this inspection only.
+
+## Observed evidence
+
+* Branch transitioned archived to ready when the authorized query activated compute; final branch readback ready. Existing endpoint transitioned idle to active; explicitly suspended after inspection and final readback idle. No endpoint created or settings altered.
+* SQL used explicit SET TRANSACTION READ ONLY and local 15-second statement timeout; transaction_read_only=on verified. Only SELECT/catalog/aggregate queries executed. No user records, payload values or credentials printed. No persistent schema, role, row or migration changes.
+* Separate direct PostgreSQL SSLRequest handshake to the exact endpoint verified certificate chain and hostname with rejectUnauthorized=true: TLSv1.3, TLS_AES_256_GCM_SHA384, certificate valid through December 15, 2026. No authentication attempted on that socket; it was closed. This proves public TLS endpoint connectivity from this workstation, not a future Render worker's credentials/network path.
+* SQL via Neon connector reported server ssl=off, pg_stat_ssl.ssl=false, server address loopback. These describe the observed backend session, not the independently verified public TLS handshake. Internal/proxy transport and authenticated direct worker connection remain unverified; do not report end-to-end encrypted internal hops by inference.
+* Migrations 0001 through 0013 completed, none marked rolled back. FrlWebIntake, FrlMockDelivery and HostedRoutingDelivery absent. Repository's missing migrations are exactly 0017_frl_web_intake_receipts, 0018_frl_mock_delivery_state, 0019_hosted_routing_delivery; no 0014–0016 directories in this PR checkout.
+* Application tables owned by neondb_owner, no RLS enabled or forced, no public-schema row policies. neondb_owner is a member of neon_superuser, with CREATEROLE, CREATEDB, REPLICATION and BYPASSRLS. It is unsuitable as worker principal. No dedicated worker role exists. Inspection itself encountered no privilege denial.
+* Public schema ACL grants PUBLIC USAGE, database ACL grants PUBLIC CONNECT/TEMP. max_connections=112; SCRAM password encryption setting; default read-only off; configured idle-in-transaction timeout 300000ms. The inspection's statement timeout was transaction-local only. Pooler disabled. Public connections permitted, IP allowlist empty. passwordless_access=true metadata is not proof of anonymous SQL access; effective behavior not tested.
+* Exact aggregate counts: Account0, Contact0, ProviderConnection0, Notification0, AuditLog0, User1, WebhookEvent3. The user email did not match reserved example/.invalid domains; no email value or webhook payload fetched. Other table statistics estimated zero but were not exact counts. **Synthetic-only classification is not established.** Preserve existing records; no cleanup authorized.
+* Database size SELECT returned 10,330,112 bytes; control-plane logical_size 34,291,712 bytes is a different measure, not a discrepancy resolved by this inspection.
+* Final SQL session check: other client sessions0, idle transactions0. Connector transactions completed; direct TLS socket destroyed. No session termination SQL issued and no unrelated session killed. Compute suspension subsequently confirmed through metadata without reopening SQL.
+
+## Usage, quota and costs
+
+Subscription remained free_v3, min=max0.25CU. Start/suspend timestamps imply approximately74seconds compute runtime, or 0.00514CU-hours at0.25CU. Provider usage counters remained0 before and after: delayed/unavailable accounting, not measured zero consumption. At the published illustrative Launch rate0.106/CU-hour, this would be about$0.00055 compute; that is not the actual Free-plan charge. Expected incremental compute charge is$0 under unchanged Free allowances, but no invoice or billing ledger was available. No paid upgrade, paid resource creation or Render action occurred.
+
+$10 hard spending ceiling could not be enforced with available tools. Exposure was bounded operationally by existing Free plan, short inspection and confirmed endpoint suspension. Current metadata does not expose an authoritative remaining-CU-hour balance; zero counters cannot establish it. Published Free quota is100CU-hours/project/month, but effective quota must be verified before a seven-day trial. Current suspend_timeout0 metadata also differs from current Free documentation; explicit suspension avoided relying on idle policy.
+
+Six-hour recovery history remains metadata only; available restore points, backup consistency, access controls and hosted restoration were NOT tested. No restore branch/snapshot/export was created.
+
+## Exact separate changes needed — none applied
+
+1. Classify the existing User and three WebhookEvent records with an authorized owner. Confirm permitted synthetic use; do not delete or overwrite them by assumption. If clean isolation needs a new schema/database/branch, present that concrete change and cost for approval first.
+2. Approve backup/restore target and restricted artifact retention/access, and demonstrate provider-native restore in the staging project before schema changes. No source overwrite; temporary branch/endpoint creation and cleanup each require scope approval.
+3. Review and separately approve missing additive migrations0017,0018,0019 in dependency order after migration-checksum/schema-drift verification. Run with a separate migration principal, never worker credentials. Do not invent or apply migrations0014–0016.
+4. Create proposed responseos_routing_worker_test with no ownership, neon_superuser membership, BYPASSRLS, CREATEROLE, CREATEDB, replication or DDL/delete rights. Apply reviewed tenant/environment row policies and narrowly scoped grants from final-staging-provisioning-spec.md; prevent Account mutation despite lock privilege. Review PUBLIC CONNECT/TEMP grants for other staging consumers before any revocation. No organization-wide changes.
+5. Create only approved synthetic tenant frl_routing_staging_synthetic with separately authorized fixture principal. Test positive runtime access and negative cross-tenant/environment/DDL/delete/role-escalation behavior using the actual worker principal. No inspector privilege shortage should be confused with safe runtime isolation.
+6. Verify authenticated direct strict-TLS access using the dedicated role and future Render path, rejection of invalid credentials/certificates and plaintext, and effective endpoint passwordless setting. Accept public-TLS-only synthetic network risk explicitly or approve a separately quoted network-control upgrade. No upgrade included.
+7. Read actual remaining quota and workspace billable plan, confirm trial cap and shutdown/usage-monitoring operator. Then separately approve one Render Oregon worker, exact green deployment SHA, simulation-only secrets/activation and bounded trial. HubSpot, notifications, website deployment, merge and customer traffic remain disabled.
+
+PR #210 remains draft and unmerged. This inspection does not establish hosted restore, least-privilege readiness, Render acceptance or live routing.

@@ -1,5 +1,7 @@
 # Final staging reconciliation and authorization package
 
+**Historical proposal:** Database preparation has since been authorized and partially applied. See [current applied-state evidence](staging-database-application-2026-10-09.md). Archived-branch, missing-role and unapplied-migration statements below describe the original proposal, not current state. Render provisioning remains blocked.
+
 2026-10-09. **Configuration proposal only. Hosted readiness remains blocked.** PR #210 stays draft, stacked on PR #209. No main ResponseOS database access, hosted SQL, credentials retrieval, activation, migrations, provisioning or deployment occurred during reconciliation.
 
 ## Fixed proposed target and fresh observations

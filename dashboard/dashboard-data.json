@@ -1469,7 +1469,7 @@
       "progress": 85,
       "priority": "High",
       "blocked": true,
-      "blockedReason": "Oregon staging specification prepared; archived Neon branch, dedicated role, hosted restore, trial budget and provisioning/deployment approval remain gated",
+      "blockedReason": "Staging migrations 0017-0019, NOLOGIN role/RLS and six synthetic queued fixtures applied; PostgreSQL18 permission probes pass. Authenticated runtime TLS, Prisma status/diff, routing-ledger restore, human security review and enforceable Render spending approval remain gated",
       "ref": 210,
       "refType": "pull"
     }
