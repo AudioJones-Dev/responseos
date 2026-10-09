@@ -1,0 +1,5470 @@
+{
+  "observedAt": "2026-10-09",
+  "scope": "Read-only metadata and aggregate counts; no customer rows or credentials",
+  "repositories": {
+    "responseos": {
+      "base": "26da408",
+      "pr210": {
+        "sha": "d1a08bddf941d50a3dc217e45048192a147e5601",
+        "base": "feat/frl-web-intake-ledger",
+        "draft": true
+      }
+    },
+    "frl": {
+      "head": "a329ac6e8a380eb6d38e85df6ae6730a007be00e",
+      "ref": "feat/inquiry-retry-contract",
+      "base": "main",
+      "draft": true,
+      "state": "open"
+    }
+  },
+  "projects": [
+    {
+      "id": "quiet-band-27365020",
+      "name": "responseos",
+      "region": "aws-us-east-1",
+      "pgVersion": 17,
+      "historyRetentionSeconds": 21600,
+      "network": {
+        "allowed_ips": {
+          "ips": [],
+          "protected_branches_only": false
+        },
+        "enable_logical_replication": false,
+        "maintenance_window": {
+          "weekdays": [
+            1
+          ],
+          "start_time": "04:00",
+          "end_time": "05:00"
+        },
+        "block_public_connections": false,
+        "block_vpc_connections": false,
+        "hipaa": false
+      },
+      "branches": [
+        {
+          "id": "br-floral-sunset-aqn7cfw4",
+          "name": "production",
+          "default": true,
+          "protected": false,
+          "state": "ready"
+        },
+        {
+          "id": "br-sweet-brook-aq7dncov",
+          "name": "preview/claude/awesome-planck-kb6lzc",
+          "default": false,
+          "protected": false,
+          "state": "ready"
+        },
+        {
+          "id": "br-polished-waterfall-aq2q98bf",
+          "name": "demo",
+          "default": false,
+          "protected": false,
+          "state": "ready"
+        },
+        {
+          "id": "br-lingering-recipe-aqyp9l0v",
+          "name": "vercel-dev",
+          "default": false,
+          "protected": false,
+          "state": "archived"
+        },
+        {
+          "id": "br-autumn-thunder-aqywxmqc",
+          "name": "preview/HEAD",
+          "default": false,
+          "protected": false,
+          "state": "ready"
+        }
+      ],
+      "endpoints": [
+        {
+          "id": "ep-raspy-frog-aqbi47od",
+          "branchId": "br-sweet-brook-aq7dncov",
+          "poolerEnabled": false,
+          "passwordlessAccess": true,
+          "minCU": 0.25,
+          "maxCU": 2
+        },
+        {
+          "id": "ep-gentle-grass-aqkobdnx",
+          "branchId": "br-lingering-recipe-aqyp9l0v",
+          "poolerEnabled": false,
+          "passwordlessAccess": true,
+          "minCU": 0.25,
+          "maxCU": 2
+        },
+        {
+          "id": "ep-quiet-math-aqlgr1v5",
+          "branchId": "br-floral-sunset-aqn7cfw4",
+          "poolerEnabled": false,
+          "passwordlessAccess": true,
+          "minCU": 0.25,
+          "maxCU": 2
+        },
+        {
+          "id": "ep-muddy-sea-aqh2tp1v",
+          "branchId": "br-autumn-thunder-aqywxmqc",
+          "poolerEnabled": false,
+          "passwordlessAccess": true,
+          "minCU": 0.25,
+          "maxCU": 2
+        },
+        {
+          "id": "ep-odd-mode-aqcdbajt",
+          "branchId": "br-polished-waterfall-aq2q98bf",
+          "poolerEnabled": false,
+          "passwordlessAccess": true,
+          "minCU": 0.25,
+          "maxCU": 2
+        }
+      ],
+      "catalog": {
+        "roles": [
+          {
+            "role": "cloud_admin",
+            "login": true,
+            "bypassrls": true,
+            "create_db": true,
+            "superuser": true,
+            "create_role": true
+          },
+          {
+            "role": "neondb_owner",
+            "login": true,
+            "bypassrls": true,
+            "create_db": true,
+            "superuser": false,
+            "create_role": true
+          },
+          {
+            "role": "neon_service",
+            "login": true,
+            "bypassrls": true,
+            "create_db": true,
+            "superuser": false,
+            "create_role": true
+          },
+          {
+            "role": "neon_superuser",
+            "login": false,
+            "bypassrls": true,
+            "create_db": true,
+            "superuser": false,
+            "create_role": true
+          },
+          {
+            "role": "neon_auth",
+            "login": true,
+            "bypassrls": false,
+            "create_db": false,
+            "superuser": false,
+            "create_role": false
+          }
+        ],
+        "tables": null,
+        "schemas": [
+          "public",
+          "neon_auth"
+        ],
+        "version": "17.11 (7d7ea2a)",
+        "database": "neondb",
+        "policies": null,
+        "routines": null,
+        "triggers": null,
+        "extensions": [
+          {
+            "name": "plpgsql",
+            "version": "1.0"
+          }
+        ],
+        "database_acl": [
+          "=Tc/neondb_owner",
+          "neondb_owner=CTc/neondb_owner",
+          "neon_superuser=CTc/neondb_owner"
+        ]
+      },
+      "comparison": {
+        "constraints": null,
+        "memberships": [
+          {
+            "role": "pg_read_all_settings",
+            "admin": false,
+            "member": "pg_monitor"
+          },
+          {
+            "role": "pg_read_all_stats",
+            "admin": false,
+            "member": "pg_monitor"
+          },
+          {
+            "role": "pg_stat_scan_tables",
+            "admin": false,
+            "member": "pg_monitor"
+          },
+          {
+            "role": "neon_superuser",
+            "admin": false,
+            "member": "neondb_owner"
+          },
+          {
+            "role": "neon_superuser",
+            "admin": false,
+            "member": "neon_service"
+          },
+          {
+            "role": "pg_monitor",
+            "admin": true,
+            "member": "neon_superuser"
+          },
+          {
+            "role": "pg_signal_backend",
+            "admin": true,
+            "member": "neon_superuser"
+          },
+          {
+            "role": "neon_auth",
+            "admin": true,
+            "member": "neon_service"
+          },
+          {
+            "role": "neon_auth",
+            "admin": false,
+            "member": "neon_service"
+          },
+          {
+            "role": "neon_auth",
+            "admin": false,
+            "member": "neondb_owner"
+          },
+          {
+            "role": "pg_read_all_data",
+            "admin": true,
+            "member": "neon_superuser"
+          },
+          {
+            "role": "pg_write_all_data",
+            "admin": true,
+            "member": "neon_superuser"
+          },
+          {
+            "role": "pg_create_subscription",
+            "admin": true,
+            "member": "neon_superuser"
+          },
+          {
+            "role": "pg_maintain",
+            "admin": true,
+            "member": "neon_superuser"
+          }
+        ],
+        "extra_tables": [
+          {
+            "table": "invitation",
+            "schema": "neon_auth"
+          },
+          {
+            "table": "user",
+            "schema": "neon_auth"
+          },
+          {
+            "table": "session",
+            "schema": "neon_auth"
+          },
+          {
+            "table": "organization",
+            "schema": "neon_auth"
+          },
+          {
+            "table": "account",
+            "schema": "neon_auth"
+          },
+          {
+            "table": "verification",
+            "schema": "neon_auth"
+          },
+          {
+            "table": "jwks",
+            "schema": "neon_auth"
+          },
+          {
+            "table": "member",
+            "schema": "neon_auth"
+          },
+          {
+            "table": "project_config",
+            "schema": "neon_auth"
+          }
+        ],
+        "schema_grants": [
+          {
+            "acl": [
+              "pg_database_owner=UC/pg_database_owner",
+              "=U/pg_database_owner"
+            ],
+            "schema": "public"
+          },
+          {
+            "acl": null,
+            "schema": "neon_auth"
+          }
+        ],
+        "schema_fingerprint": "ca87b418245fd48aed84aab95cbc98a7"
+      },
+      "aggregates": null
+    },
+    {
+      "id": "patient-snow-16014934",
+      "name": "responseos-staging-mock",
+      "region": "aws-us-west-2",
+      "pgVersion": 18,
+      "historyRetentionSeconds": 21600,
+      "network": {
+        "allowed_ips": {
+          "ips": [],
+          "protected_branches_only": false
+        },
+        "enable_logical_replication": false,
+        "maintenance_window": {
+          "weekdays": [
+            3
+          ],
+          "start_time": "09:00",
+          "end_time": "10:00"
+        },
+        "block_public_connections": false,
+        "block_vpc_connections": false,
+        "hipaa": false
+      },
+      "branches": [
+        {
+          "id": "br-mute-boat-a6ylen11",
+          "name": "main",
+          "default": true,
+          "protected": false,
+          "state": "ready"
+        },
+        {
+          "id": "br-aged-block-a61fvlo5",
+          "name": "frl-backup-restore-check-2026-10-09",
+          "default": false,
+          "protected": false,
+          "state": "ready",
+          "restoredFrom": "snap-solitary-darkness-a6z6ik41",
+          "restoredAs": "br-mute-boat-a6ylen11"
+        }
+      ],
+      "endpoints": [
+        {
+          "id": "ep-noisy-pond-a65ml884",
+          "branchId": "br-aged-block-a61fvlo5",
+          "poolerEnabled": false,
+          "passwordlessAccess": true,
+          "minCU": 0.25,
+          "maxCU": 0.25
+        },
+        {
+          "id": "ep-young-morning-a6oeu9vv",
+          "branchId": "br-mute-boat-a6ylen11",
+          "poolerEnabled": false,
+          "passwordlessAccess": true,
+          "minCU": 0.25,
+          "maxCU": 0.25
+        }
+      ],
+      "catalog": {
+        "roles": [
+          {
+            "role": "cloud_admin",
+            "login": true,
+            "bypassrls": true,
+            "create_db": true,
+            "superuser": true,
+            "create_role": true
+          },
+          {
+            "role": "neondb_owner",
+            "login": true,
+            "bypassrls": true,
+            "create_db": true,
+            "superuser": false,
+            "create_role": true
+          },
+          {
+            "role": "neon_service",
+            "login": true,
+            "bypassrls": true,
+            "create_db": true,
+            "superuser": false,
+            "create_role": true
+          },
+          {
+            "role": "neon_superuser",
+            "login": false,
+            "bypassrls": true,
+            "create_db": true,
+            "superuser": false,
+            "create_role": true
+          }
+        ],
+        "tables": [
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "_prisma_migrations",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "Call",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "LeadEvent",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "LeadQualification",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "Account",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "Appointment",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "User",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "Contact",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "QuoteRequest",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "Automation",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "Notification",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "RevenueMetrics",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "AssessmentReport",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "Engagement",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "WebhookEvent",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "AuditLog",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "ProviderConnection",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "Conversation",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "SmsMessage",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "CallSegment",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "CallTranscript",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "QaLog",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "WorkflowRun",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "AgentProfile",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "ProfessionalOpportunity",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "ProspectIntake",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "CrmSyncOperation",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "KnowledgeIngestionRun",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "ProspectBootstrap",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "KnowledgeSource",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "BusinessMemorySnapshot",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "TelephonyNumber",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "TelephonyNumberAssignment",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "BootstrapPromotion",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "KnowledgeFact",
+            "force_rls": false
+          }
+        ],
+        "schemas": [
+          "public"
+        ],
+        "version": "18.6 (4e955f5)",
+        "database": "neondb",
+        "policies": null,
+        "routines": [
+          {
+            "name": "show_db_tree",
+            "type": "FUNCTION"
+          }
+        ],
+        "triggers": null,
+        "extensions": [
+          {
+            "name": "plpgsql",
+            "version": "1.0"
+          }
+        ],
+        "database_acl": [
+          "=Tc/neondb_owner",
+          "neondb_owner=CTc/neondb_owner",
+          "neon_superuser=CTc/neondb_owner"
+        ]
+      },
+      "comparison": {
+        "constraints": [
+          {
+            "name": "Account_account_type_not_null",
+            "type": "n",
+            "table": "\"Account\"",
+            "definition": "NOT NULL account_type"
+          },
+          {
+            "name": "Account_pkey",
+            "type": "p",
+            "table": "\"Account\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "AgentProfile_account_id_not_null",
+            "type": "n",
+            "table": "\"AgentProfile\"",
+            "definition": "NOT NULL account_id"
+          },
+          {
+            "name": "AgentProfile_created_at_not_null",
+            "type": "n",
+            "table": "\"AgentProfile\"",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "name": "AgentProfile_enabled_not_null",
+            "type": "n",
+            "table": "\"AgentProfile\"",
+            "definition": "NOT NULL enabled"
+          },
+          {
+            "name": "AgentProfile_id_not_null",
+            "type": "n",
+            "table": "\"AgentProfile\"",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "AgentProfile_is_default_not_null",
+            "type": "n",
+            "table": "\"AgentProfile\"",
+            "definition": "NOT NULL is_default"
+          },
+          {
+            "name": "AgentProfile_name_not_null",
+            "type": "n",
+            "table": "\"AgentProfile\"",
+            "definition": "NOT NULL name"
+          },
+          {
+            "name": "AgentProfile_pkey",
+            "type": "p",
+            "table": "\"AgentProfile\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "AgentProfile_slug_not_null",
+            "type": "n",
+            "table": "\"AgentProfile\"",
+            "definition": "NOT NULL slug"
+          },
+          {
+            "name": "AgentProfile_type_not_null",
+            "type": "n",
+            "table": "\"AgentProfile\"",
+            "definition": "NOT NULL type"
+          },
+          {
+            "name": "AgentProfile_updated_at_not_null",
+            "type": "n",
+            "table": "\"AgentProfile\"",
+            "definition": "NOT NULL updated_at"
+          },
+          {
+            "name": "Appointment_pkey",
+            "type": "p",
+            "table": "\"Appointment\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "AssessmentReport_created_at_not_null",
+            "type": "n",
+            "table": "\"AssessmentReport\"",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "name": "AssessmentReport_id_not_null",
+            "type": "n",
+            "table": "\"AssessmentReport\"",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "AssessmentReport_inputs_json_not_null",
+            "type": "n",
+            "table": "\"AssessmentReport\"",
+            "definition": "NOT NULL inputs_json"
+          },
+          {
+            "name": "AssessmentReport_organization_id_not_null",
+            "type": "n",
+            "table": "\"AssessmentReport\"",
+            "definition": "NOT NULL account_id"
+          },
+          {
+            "name": "AssessmentReport_pkey",
+            "type": "p",
+            "table": "\"AssessmentReport\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "AssessmentReport_status_not_null",
+            "type": "n",
+            "table": "\"AssessmentReport\"",
+            "definition": "NOT NULL status"
+          },
+          {
+            "name": "AssessmentReport_updated_at_not_null",
+            "type": "n",
+            "table": "\"AssessmentReport\"",
+            "definition": "NOT NULL updated_at"
+          },
+          {
+            "name": "AuditLog_action_not_null",
+            "type": "n",
+            "table": "\"AuditLog\"",
+            "definition": "NOT NULL action"
+          },
+          {
+            "name": "AuditLog_actor_type_not_null",
+            "type": "n",
+            "table": "\"AuditLog\"",
+            "definition": "NOT NULL actor_type"
+          },
+          {
+            "name": "AuditLog_created_at_not_null",
+            "type": "n",
+            "table": "\"AuditLog\"",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "name": "AuditLog_id_not_null",
+            "type": "n",
+            "table": "\"AuditLog\"",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "AuditLog_pkey",
+            "type": "p",
+            "table": "\"AuditLog\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "Automation_config_json_not_null",
+            "type": "n",
+            "table": "\"Automation\"",
+            "definition": "NOT NULL config_json"
+          },
+          {
+            "name": "Automation_created_at_not_null",
+            "type": "n",
+            "table": "\"Automation\"",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "name": "Automation_id_not_null",
+            "type": "n",
+            "table": "\"Automation\"",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "Automation_name_not_null",
+            "type": "n",
+            "table": "\"Automation\"",
+            "definition": "NOT NULL name"
+          },
+          {
+            "name": "Automation_organization_id_not_null",
+            "type": "n",
+            "table": "\"Automation\"",
+            "definition": "NOT NULL account_id"
+          },
+          {
+            "name": "Automation_pkey",
+            "type": "p",
+            "table": "\"Automation\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "Automation_status_not_null",
+            "type": "n",
+            "table": "\"Automation\"",
+            "definition": "NOT NULL status"
+          },
+          {
+            "name": "Automation_trigger_type_not_null",
+            "type": "n",
+            "table": "\"Automation\"",
+            "definition": "NOT NULL trigger_type"
+          },
+          {
+            "name": "Automation_updated_at_not_null",
+            "type": "n",
+            "table": "\"Automation\"",
+            "definition": "NOT NULL updated_at"
+          },
+          {
+            "name": "Automation_workflow_provider_not_null",
+            "type": "n",
+            "table": "\"Automation\"",
+            "definition": "NOT NULL workflow_provider"
+          },
+          {
+            "name": "Booking_calendar_provider_not_null",
+            "type": "n",
+            "table": "\"Appointment\"",
+            "definition": "NOT NULL calendar_provider"
+          },
+          {
+            "name": "Booking_contact_id_not_null",
+            "type": "n",
+            "table": "\"Appointment\"",
+            "definition": "NOT NULL contact_id"
+          },
+          {
+            "name": "Booking_created_at_not_null",
+            "type": "n",
+            "table": "\"Appointment\"",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "name": "Booking_end_time_not_null",
+            "type": "n",
+            "table": "\"Appointment\"",
+            "definition": "NOT NULL end_time"
+          },
+          {
+            "name": "Booking_id_not_null",
+            "type": "n",
+            "table": "\"Appointment\"",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "Booking_organization_id_not_null",
+            "type": "n",
+            "table": "\"Appointment\"",
+            "definition": "NOT NULL account_id"
+          },
+          {
+            "name": "Booking_start_time_not_null",
+            "type": "n",
+            "table": "\"Appointment\"",
+            "definition": "NOT NULL start_time"
+          },
+          {
+            "name": "Booking_status_not_null",
+            "type": "n",
+            "table": "\"Appointment\"",
+            "definition": "NOT NULL status"
+          },
+          {
+            "name": "Booking_title_not_null",
+            "type": "n",
+            "table": "\"Appointment\"",
+            "definition": "NOT NULL title"
+          },
+          {
+            "name": "Booking_updated_at_not_null",
+            "type": "n",
+            "table": "\"Appointment\"",
+            "definition": "NOT NULL updated_at"
+          },
+          {
+            "name": "BootstrapPromotion_account_id_not_null",
+            "type": "n",
+            "table": "\"BootstrapPromotion\"",
+            "definition": "NOT NULL account_id"
+          },
+          {
+            "name": "BootstrapPromotion_bootstrap_id_not_null",
+            "type": "n",
+            "table": "\"BootstrapPromotion\"",
+            "definition": "NOT NULL bootstrap_id"
+          },
+          {
+            "name": "BootstrapPromotion_correlation_id_not_null",
+            "type": "n",
+            "table": "\"BootstrapPromotion\"",
+            "definition": "NOT NULL correlation_id"
+          },
+          {
+            "name": "BootstrapPromotion_created_at_not_null",
+            "type": "n",
+            "table": "\"BootstrapPromotion\"",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "name": "BootstrapPromotion_id_not_null",
+            "type": "n",
+            "table": "\"BootstrapPromotion\"",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "BootstrapPromotion_manifest_hash_not_null",
+            "type": "n",
+            "table": "\"BootstrapPromotion\"",
+            "definition": "NOT NULL manifest_hash"
+          },
+          {
+            "name": "BootstrapPromotion_manifest_json_not_null",
+            "type": "n",
+            "table": "\"BootstrapPromotion\"",
+            "definition": "NOT NULL manifest_json"
+          },
+          {
+            "name": "BootstrapPromotion_pkey",
+            "type": "p",
+            "table": "\"BootstrapPromotion\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "BootstrapPromotion_source_snapshot_hash_not_null",
+            "type": "n",
+            "table": "\"BootstrapPromotion\"",
+            "definition": "NOT NULL source_snapshot_hash"
+          },
+          {
+            "name": "BootstrapPromotion_source_snapshot_id_not_null",
+            "type": "n",
+            "table": "\"BootstrapPromotion\"",
+            "definition": "NOT NULL source_snapshot_id"
+          },
+          {
+            "name": "BootstrapPromotion_status_not_null",
+            "type": "n",
+            "table": "\"BootstrapPromotion\"",
+            "definition": "NOT NULL status"
+          },
+          {
+            "name": "BootstrapPromotion_updated_at_not_null",
+            "type": "n",
+            "table": "\"BootstrapPromotion\"",
+            "definition": "NOT NULL updated_at"
+          },
+          {
+            "name": "BusinessMemorySnapshot_account_id_not_null",
+            "type": "n",
+            "table": "\"BusinessMemorySnapshot\"",
+            "definition": "NOT NULL account_id"
+          },
+          {
+            "name": "BusinessMemorySnapshot_content_hash_not_null",
+            "type": "n",
+            "table": "\"BusinessMemorySnapshot\"",
+            "definition": "NOT NULL content_hash"
+          },
+          {
+            "name": "BusinessMemorySnapshot_created_at_not_null",
+            "type": "n",
+            "table": "\"BusinessMemorySnapshot\"",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "name": "BusinessMemorySnapshot_id_not_null",
+            "type": "n",
+            "table": "\"BusinessMemorySnapshot\"",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "BusinessMemorySnapshot_memory_json_not_null",
+            "type": "n",
+            "table": "\"BusinessMemorySnapshot\"",
+            "definition": "NOT NULL memory_json"
+          },
+          {
+            "name": "BusinessMemorySnapshot_pkey",
+            "type": "p",
+            "table": "\"BusinessMemorySnapshot\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "BusinessMemorySnapshot_schema_version_not_null",
+            "type": "n",
+            "table": "\"BusinessMemorySnapshot\"",
+            "definition": "NOT NULL schema_version"
+          },
+          {
+            "name": "BusinessMemorySnapshot_status_not_null",
+            "type": "n",
+            "table": "\"BusinessMemorySnapshot\"",
+            "definition": "NOT NULL status"
+          },
+          {
+            "name": "BusinessMemorySnapshot_template_version_not_null",
+            "type": "n",
+            "table": "\"BusinessMemorySnapshot\"",
+            "definition": "NOT NULL template_version"
+          },
+          {
+            "name": "BusinessMemorySnapshot_version_not_null",
+            "type": "n",
+            "table": "\"BusinessMemorySnapshot\"",
+            "definition": "NOT NULL version"
+          },
+          {
+            "name": "CallSegment_account_id_not_null",
+            "type": "n",
+            "table": "\"CallSegment\"",
+            "definition": "NOT NULL account_id"
+          },
+          {
+            "name": "CallSegment_call_id_not_null",
+            "type": "n",
+            "table": "\"CallSegment\"",
+            "definition": "NOT NULL call_id"
+          },
+          {
+            "name": "CallSegment_created_at_not_null",
+            "type": "n",
+            "table": "\"CallSegment\"",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "name": "CallSegment_ended_at_not_null",
+            "type": "n",
+            "table": "\"CallSegment\"",
+            "definition": "NOT NULL ended_at"
+          },
+          {
+            "name": "CallSegment_id_not_null",
+            "type": "n",
+            "table": "\"CallSegment\"",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "CallSegment_pkey",
+            "type": "p",
+            "table": "\"CallSegment\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "CallSegment_sequence_not_null",
+            "type": "n",
+            "table": "\"CallSegment\"",
+            "definition": "NOT NULL sequence"
+          },
+          {
+            "name": "CallSegment_speaker_not_null",
+            "type": "n",
+            "table": "\"CallSegment\"",
+            "definition": "NOT NULL speaker"
+          },
+          {
+            "name": "CallSegment_started_at_not_null",
+            "type": "n",
+            "table": "\"CallSegment\"",
+            "definition": "NOT NULL started_at"
+          },
+          {
+            "name": "CallSegment_text_not_null",
+            "type": "n",
+            "table": "\"CallSegment\"",
+            "definition": "NOT NULL text"
+          },
+          {
+            "name": "CallTranscript_account_id_not_null",
+            "type": "n",
+            "table": "\"CallTranscript\"",
+            "definition": "NOT NULL account_id"
+          },
+          {
+            "name": "CallTranscript_call_id_not_null",
+            "type": "n",
+            "table": "\"CallTranscript\"",
+            "definition": "NOT NULL call_id"
+          },
+          {
+            "name": "CallTranscript_created_at_not_null",
+            "type": "n",
+            "table": "\"CallTranscript\"",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "name": "CallTranscript_id_not_null",
+            "type": "n",
+            "table": "\"CallTranscript\"",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "CallTranscript_language_not_null",
+            "type": "n",
+            "table": "\"CallTranscript\"",
+            "definition": "NOT NULL language"
+          },
+          {
+            "name": "CallTranscript_pkey",
+            "type": "p",
+            "table": "\"CallTranscript\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "CallTranscript_retention_lane_not_null",
+            "type": "n",
+            "table": "\"CallTranscript\"",
+            "definition": "NOT NULL retention_lane"
+          },
+          {
+            "name": "Call_created_at_not_null",
+            "type": "n",
+            "table": "\"Call\"",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "name": "Call_direction_not_null",
+            "type": "n",
+            "table": "\"Call\"",
+            "definition": "NOT NULL direction"
+          },
+          {
+            "name": "Call_from_number_not_null",
+            "type": "n",
+            "table": "\"Call\"",
+            "definition": "NOT NULL from_number"
+          },
+          {
+            "name": "Call_id_not_null",
+            "type": "n",
+            "table": "\"Call\"",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "Call_organization_id_not_null",
+            "type": "n",
+            "table": "\"Call\"",
+            "definition": "NOT NULL account_id"
+          },
+          {
+            "name": "Call_pkey",
+            "type": "p",
+            "table": "\"Call\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "Call_provider_not_null",
+            "type": "n",
+            "table": "\"Call\"",
+            "definition": "NOT NULL provider"
+          },
+          {
+            "name": "Call_started_at_not_null",
+            "type": "n",
+            "table": "\"Call\"",
+            "definition": "NOT NULL started_at"
+          },
+          {
+            "name": "Call_status_not_null",
+            "type": "n",
+            "table": "\"Call\"",
+            "definition": "NOT NULL status"
+          },
+          {
+            "name": "Call_to_number_not_null",
+            "type": "n",
+            "table": "\"Call\"",
+            "definition": "NOT NULL to_number"
+          },
+          {
+            "name": "Contact_created_at_not_null",
+            "type": "n",
+            "table": "\"Contact\"",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "name": "Contact_email_verified_not_null",
+            "type": "n",
+            "table": "\"Contact\"",
+            "definition": "NOT NULL email_verified"
+          },
+          {
+            "name": "Contact_id_not_null",
+            "type": "n",
+            "table": "\"Contact\"",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "Contact_organization_id_not_null",
+            "type": "n",
+            "table": "\"Contact\"",
+            "definition": "NOT NULL account_id"
+          },
+          {
+            "name": "Contact_pkey",
+            "type": "p",
+            "table": "\"Contact\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "Contact_source_not_null",
+            "type": "n",
+            "table": "\"Contact\"",
+            "definition": "NOT NULL source"
+          },
+          {
+            "name": "Contact_updated_at_not_null",
+            "type": "n",
+            "table": "\"Contact\"",
+            "definition": "NOT NULL updated_at"
+          },
+          {
+            "name": "Conversation_account_id_not_null",
+            "type": "n",
+            "table": "\"Conversation\"",
+            "definition": "NOT NULL account_id"
+          },
+          {
+            "name": "Conversation_business_number_not_null",
+            "type": "n",
+            "table": "\"Conversation\"",
+            "definition": "NOT NULL business_number"
+          },
+          {
+            "name": "Conversation_created_at_not_null",
+            "type": "n",
+            "table": "\"Conversation\"",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "name": "Conversation_id_not_null",
+            "type": "n",
+            "table": "\"Conversation\"",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "Conversation_last_message_at_not_null",
+            "type": "n",
+            "table": "\"Conversation\"",
+            "definition": "NOT NULL last_message_at"
+          },
+          {
+            "name": "Conversation_peer_number_not_null",
+            "type": "n",
+            "table": "\"Conversation\"",
+            "definition": "NOT NULL peer_number"
+          },
+          {
+            "name": "Conversation_pkey",
+            "type": "p",
+            "table": "\"Conversation\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "Conversation_status_not_null",
+            "type": "n",
+            "table": "\"Conversation\"",
+            "definition": "NOT NULL status"
+          },
+          {
+            "name": "Conversation_updated_at_not_null",
+            "type": "n",
+            "table": "\"Conversation\"",
+            "definition": "NOT NULL updated_at"
+          },
+          {
+            "name": "CrmSyncOperation_account_id_not_null",
+            "type": "n",
+            "table": "\"CrmSyncOperation\"",
+            "definition": "NOT NULL account_id"
+          },
+          {
+            "name": "CrmSyncOperation_attempt_count_not_null",
+            "type": "n",
+            "table": "\"CrmSyncOperation\"",
+            "definition": "NOT NULL attempt_count"
+          },
+          {
+            "name": "CrmSyncOperation_call_id_not_null",
+            "type": "n",
+            "table": "\"CrmSyncOperation\"",
+            "definition": "NOT NULL call_id"
+          },
+          {
+            "name": "CrmSyncOperation_created_at_not_null",
+            "type": "n",
+            "table": "\"CrmSyncOperation\"",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "name": "CrmSyncOperation_id_not_null",
+            "type": "n",
+            "table": "\"CrmSyncOperation\"",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "CrmSyncOperation_operation_key_not_null",
+            "type": "n",
+            "table": "\"CrmSyncOperation\"",
+            "definition": "NOT NULL operation_key"
+          },
+          {
+            "name": "CrmSyncOperation_pkey",
+            "type": "p",
+            "table": "\"CrmSyncOperation\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "CrmSyncOperation_provider_not_null",
+            "type": "n",
+            "table": "\"CrmSyncOperation\"",
+            "definition": "NOT NULL provider"
+          },
+          {
+            "name": "CrmSyncOperation_status_not_null",
+            "type": "n",
+            "table": "\"CrmSyncOperation\"",
+            "definition": "NOT NULL status"
+          },
+          {
+            "name": "CrmSyncOperation_updated_at_not_null",
+            "type": "n",
+            "table": "\"CrmSyncOperation\"",
+            "definition": "NOT NULL updated_at"
+          },
+          {
+            "name": "Engagement_assessment_report_id_not_null",
+            "type": "n",
+            "table": "\"Engagement\"",
+            "definition": "NOT NULL assessment_report_id"
+          },
+          {
+            "name": "Engagement_created_at_not_null",
+            "type": "n",
+            "table": "\"Engagement\"",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "name": "Engagement_id_not_null",
+            "type": "n",
+            "table": "\"Engagement\"",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "Engagement_is_founding_pilot_not_null",
+            "type": "n",
+            "table": "\"Engagement\"",
+            "definition": "NOT NULL is_founding_pilot"
+          },
+          {
+            "name": "Engagement_monthly_fee_cents_not_null",
+            "type": "n",
+            "table": "\"Engagement\"",
+            "definition": "NOT NULL monthly_fee_cents"
+          },
+          {
+            "name": "Engagement_organization_id_not_null",
+            "type": "n",
+            "table": "\"Engagement\"",
+            "definition": "NOT NULL account_id"
+          },
+          {
+            "name": "Engagement_pkey",
+            "type": "p",
+            "table": "\"Engagement\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "Engagement_setup_fee_cents_not_null",
+            "type": "n",
+            "table": "\"Engagement\"",
+            "definition": "NOT NULL setup_fee_cents"
+          },
+          {
+            "name": "Engagement_signed_at_not_null",
+            "type": "n",
+            "table": "\"Engagement\"",
+            "definition": "NOT NULL signed_at"
+          },
+          {
+            "name": "Engagement_status_not_null",
+            "type": "n",
+            "table": "\"Engagement\"",
+            "definition": "NOT NULL status"
+          },
+          {
+            "name": "Engagement_tier_not_null",
+            "type": "n",
+            "table": "\"Engagement\"",
+            "definition": "NOT NULL tier"
+          },
+          {
+            "name": "Engagement_updated_at_not_null",
+            "type": "n",
+            "table": "\"Engagement\"",
+            "definition": "NOT NULL updated_at"
+          },
+          {
+            "name": "Engagement_usage_model_not_null",
+            "type": "n",
+            "table": "\"Engagement\"",
+            "definition": "NOT NULL usage_model"
+          },
+          {
+            "name": "KnowledgeFact_account_id_not_null",
+            "type": "n",
+            "table": "\"KnowledgeFact\"",
+            "definition": "NOT NULL account_id"
+          },
+          {
+            "name": "KnowledgeFact_bootstrap_id_not_null",
+            "type": "n",
+            "table": "\"KnowledgeFact\"",
+            "definition": "NOT NULL bootstrap_id"
+          },
+          {
+            "name": "KnowledgeFact_created_at_not_null",
+            "type": "n",
+            "table": "\"KnowledgeFact\"",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "name": "KnowledgeFact_evidence_excerpt_not_null",
+            "type": "n",
+            "table": "\"KnowledgeFact\"",
+            "definition": "NOT NULL evidence_excerpt"
+          },
+          {
+            "name": "KnowledgeFact_fact_key_not_null",
+            "type": "n",
+            "table": "\"KnowledgeFact\"",
+            "definition": "NOT NULL fact_key"
+          },
+          {
+            "name": "KnowledgeFact_id_not_null",
+            "type": "n",
+            "table": "\"KnowledgeFact\"",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "KnowledgeFact_pkey",
+            "type": "p",
+            "table": "\"KnowledgeFact\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "KnowledgeFact_source_id_not_null",
+            "type": "n",
+            "table": "\"KnowledgeFact\"",
+            "definition": "NOT NULL source_id"
+          },
+          {
+            "name": "KnowledgeFact_source_ids_json_not_null",
+            "type": "n",
+            "table": "\"KnowledgeFact\"",
+            "definition": "NOT NULL source_ids_json"
+          },
+          {
+            "name": "KnowledgeFact_status_not_null",
+            "type": "n",
+            "table": "\"KnowledgeFact\"",
+            "definition": "NOT NULL status"
+          },
+          {
+            "name": "KnowledgeFact_updated_at_not_null",
+            "type": "n",
+            "table": "\"KnowledgeFact\"",
+            "definition": "NOT NULL updated_at"
+          },
+          {
+            "name": "KnowledgeFact_value_json_not_null",
+            "type": "n",
+            "table": "\"KnowledgeFact\"",
+            "definition": "NOT NULL value_json"
+          },
+          {
+            "name": "KnowledgeIngestionRun_account_id_not_null",
+            "type": "n",
+            "table": "\"KnowledgeIngestionRun\"",
+            "definition": "NOT NULL account_id"
+          },
+          {
+            "name": "KnowledgeIngestionRun_bootstrap_id_not_null",
+            "type": "n",
+            "table": "\"KnowledgeIngestionRun\"",
+            "definition": "NOT NULL bootstrap_id"
+          },
+          {
+            "name": "KnowledgeIngestionRun_conflict_count_not_null",
+            "type": "n",
+            "table": "\"KnowledgeIngestionRun\"",
+            "definition": "NOT NULL conflict_count"
+          },
+          {
+            "name": "KnowledgeIngestionRun_created_at_not_null",
+            "type": "n",
+            "table": "\"KnowledgeIngestionRun\"",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "name": "KnowledgeIngestionRun_extractor_version_not_null",
+            "type": "n",
+            "table": "\"KnowledgeIngestionRun\"",
+            "definition": "NOT NULL extractor_version"
+          },
+          {
+            "name": "KnowledgeIngestionRun_fact_count_not_null",
+            "type": "n",
+            "table": "\"KnowledgeIngestionRun\"",
+            "definition": "NOT NULL fact_count"
+          },
+          {
+            "name": "KnowledgeIngestionRun_id_not_null",
+            "type": "n",
+            "table": "\"KnowledgeIngestionRun\"",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "KnowledgeIngestionRun_pkey",
+            "type": "p",
+            "table": "\"KnowledgeIngestionRun\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "KnowledgeIngestionRun_source_count_not_null",
+            "type": "n",
+            "table": "\"KnowledgeIngestionRun\"",
+            "definition": "NOT NULL source_count"
+          },
+          {
+            "name": "KnowledgeIngestionRun_status_not_null",
+            "type": "n",
+            "table": "\"KnowledgeIngestionRun\"",
+            "definition": "NOT NULL status"
+          },
+          {
+            "name": "KnowledgeIngestionRun_template_version_not_null",
+            "type": "n",
+            "table": "\"KnowledgeIngestionRun\"",
+            "definition": "NOT NULL template_version"
+          },
+          {
+            "name": "KnowledgeSource_account_id_not_null",
+            "type": "n",
+            "table": "\"KnowledgeSource\"",
+            "definition": "NOT NULL account_id"
+          },
+          {
+            "name": "KnowledgeSource_bootstrap_id_not_null",
+            "type": "n",
+            "table": "\"KnowledgeSource\"",
+            "definition": "NOT NULL bootstrap_id"
+          },
+          {
+            "name": "KnowledgeSource_created_at_not_null",
+            "type": "n",
+            "table": "\"KnowledgeSource\"",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "name": "KnowledgeSource_id_not_null",
+            "type": "n",
+            "table": "\"KnowledgeSource\"",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "KnowledgeSource_normalized_url_not_null",
+            "type": "n",
+            "table": "\"KnowledgeSource\"",
+            "definition": "NOT NULL normalized_url"
+          },
+          {
+            "name": "KnowledgeSource_pkey",
+            "type": "p",
+            "table": "\"KnowledgeSource\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "KnowledgeSource_source_type_not_null",
+            "type": "n",
+            "table": "\"KnowledgeSource\"",
+            "definition": "NOT NULL source_type"
+          },
+          {
+            "name": "KnowledgeSource_status_not_null",
+            "type": "n",
+            "table": "\"KnowledgeSource\"",
+            "definition": "NOT NULL status"
+          },
+          {
+            "name": "KnowledgeSource_updated_at_not_null",
+            "type": "n",
+            "table": "\"KnowledgeSource\"",
+            "definition": "NOT NULL updated_at"
+          },
+          {
+            "name": "KnowledgeSource_url_not_null",
+            "type": "n",
+            "table": "\"KnowledgeSource\"",
+            "definition": "NOT NULL url"
+          },
+          {
+            "name": "LeadEvent_created_at_not_null",
+            "type": "n",
+            "table": "\"LeadEvent\"",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "name": "LeadEvent_event_type_not_null",
+            "type": "n",
+            "table": "\"LeadEvent\"",
+            "definition": "NOT NULL event_type"
+          },
+          {
+            "name": "LeadEvent_id_not_null",
+            "type": "n",
+            "table": "\"LeadEvent\"",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "LeadEvent_organization_id_not_null",
+            "type": "n",
+            "table": "\"LeadEvent\"",
+            "definition": "NOT NULL account_id"
+          },
+          {
+            "name": "LeadEvent_pkey",
+            "type": "p",
+            "table": "\"LeadEvent\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "LeadEvent_source_not_null",
+            "type": "n",
+            "table": "\"LeadEvent\"",
+            "definition": "NOT NULL source"
+          },
+          {
+            "name": "LeadEvent_status_not_null",
+            "type": "n",
+            "table": "\"LeadEvent\"",
+            "definition": "NOT NULL status"
+          },
+          {
+            "name": "LeadEvent_updated_at_not_null",
+            "type": "n",
+            "table": "\"LeadEvent\"",
+            "definition": "NOT NULL updated_at"
+          },
+          {
+            "name": "LeadEvent_urgency_not_null",
+            "type": "n",
+            "table": "\"LeadEvent\"",
+            "definition": "NOT NULL urgency"
+          },
+          {
+            "name": "LeadQualification_created_at_not_null",
+            "type": "n",
+            "table": "\"LeadQualification\"",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "name": "LeadQualification_id_not_null",
+            "type": "n",
+            "table": "\"LeadQualification\"",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "LeadQualification_lead_event_id_not_null",
+            "type": "n",
+            "table": "\"LeadQualification\"",
+            "definition": "NOT NULL lead_event_id"
+          },
+          {
+            "name": "LeadQualification_pkey",
+            "type": "p",
+            "table": "\"LeadQualification\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "LeadQualification_qualification_score_not_null",
+            "type": "n",
+            "table": "\"LeadQualification\"",
+            "definition": "NOT NULL qualification_score"
+          },
+          {
+            "name": "LeadQualification_qualification_status_not_null",
+            "type": "n",
+            "table": "\"LeadQualification\"",
+            "definition": "NOT NULL qualification_status"
+          },
+          {
+            "name": "LeadQualification_service_area_match_not_null",
+            "type": "n",
+            "table": "\"LeadQualification\"",
+            "definition": "NOT NULL service_area_match"
+          },
+          {
+            "name": "Notification_channel_not_null",
+            "type": "n",
+            "table": "\"Notification\"",
+            "definition": "NOT NULL channel"
+          },
+          {
+            "name": "Notification_created_at_not_null",
+            "type": "n",
+            "table": "\"Notification\"",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "name": "Notification_id_not_null",
+            "type": "n",
+            "table": "\"Notification\"",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "Notification_message_not_null",
+            "type": "n",
+            "table": "\"Notification\"",
+            "definition": "NOT NULL message"
+          },
+          {
+            "name": "Notification_organization_id_not_null",
+            "type": "n",
+            "table": "\"Notification\"",
+            "definition": "NOT NULL account_id"
+          },
+          {
+            "name": "Notification_pkey",
+            "type": "p",
+            "table": "\"Notification\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "Notification_recipient_not_null",
+            "type": "n",
+            "table": "\"Notification\"",
+            "definition": "NOT NULL recipient"
+          },
+          {
+            "name": "Notification_status_not_null",
+            "type": "n",
+            "table": "\"Notification\"",
+            "definition": "NOT NULL status"
+          },
+          {
+            "name": "Organization_created_at_not_null",
+            "type": "n",
+            "table": "\"Account\"",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "name": "Organization_id_not_null",
+            "type": "n",
+            "table": "\"Account\"",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "Organization_industry_not_null",
+            "type": "n",
+            "table": "\"Account\"",
+            "definition": "NOT NULL industry"
+          },
+          {
+            "name": "Organization_name_not_null",
+            "type": "n",
+            "table": "\"Account\"",
+            "definition": "NOT NULL name"
+          },
+          {
+            "name": "Organization_slug_not_null",
+            "type": "n",
+            "table": "\"Account\"",
+            "definition": "NOT NULL slug"
+          },
+          {
+            "name": "Organization_status_not_null",
+            "type": "n",
+            "table": "\"Account\"",
+            "definition": "NOT NULL status"
+          },
+          {
+            "name": "Organization_timezone_not_null",
+            "type": "n",
+            "table": "\"Account\"",
+            "definition": "NOT NULL timezone"
+          },
+          {
+            "name": "Organization_updated_at_not_null",
+            "type": "n",
+            "table": "\"Account\"",
+            "definition": "NOT NULL updated_at"
+          },
+          {
+            "name": "ProfessionalOpportunity_account_id_not_null",
+            "type": "n",
+            "table": "\"ProfessionalOpportunity\"",
+            "definition": "NOT NULL account_id"
+          },
+          {
+            "name": "ProfessionalOpportunity_created_at_not_null",
+            "type": "n",
+            "table": "\"ProfessionalOpportunity\"",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "name": "ProfessionalOpportunity_id_not_null",
+            "type": "n",
+            "table": "\"ProfessionalOpportunity\"",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "ProfessionalOpportunity_opportunity_type_not_null",
+            "type": "n",
+            "table": "\"ProfessionalOpportunity\"",
+            "definition": "NOT NULL opportunity_type"
+          },
+          {
+            "name": "ProfessionalOpportunity_pkey",
+            "type": "p",
+            "table": "\"ProfessionalOpportunity\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "ProfessionalOpportunity_status_not_null",
+            "type": "n",
+            "table": "\"ProfessionalOpportunity\"",
+            "definition": "NOT NULL status"
+          },
+          {
+            "name": "ProfessionalOpportunity_updated_at_not_null",
+            "type": "n",
+            "table": "\"ProfessionalOpportunity\"",
+            "definition": "NOT NULL updated_at"
+          },
+          {
+            "name": "ProspectBootstrap_account_id_not_null",
+            "type": "n",
+            "table": "\"ProspectBootstrap\"",
+            "definition": "NOT NULL account_id"
+          },
+          {
+            "name": "ProspectBootstrap_canonical_website_not_null",
+            "type": "n",
+            "table": "\"ProspectBootstrap\"",
+            "definition": "NOT NULL canonical_website"
+          },
+          {
+            "name": "ProspectBootstrap_created_at_not_null",
+            "type": "n",
+            "table": "\"ProspectBootstrap\"",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "name": "ProspectBootstrap_id_not_null",
+            "type": "n",
+            "table": "\"ProspectBootstrap\"",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "ProspectBootstrap_pkey",
+            "type": "p",
+            "table": "\"ProspectBootstrap\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "ProspectBootstrap_status_not_null",
+            "type": "n",
+            "table": "\"ProspectBootstrap\"",
+            "definition": "NOT NULL status"
+          },
+          {
+            "name": "ProspectBootstrap_updated_at_not_null",
+            "type": "n",
+            "table": "\"ProspectBootstrap\"",
+            "definition": "NOT NULL updated_at"
+          },
+          {
+            "name": "ProspectIntake_account_id_not_null",
+            "type": "n",
+            "table": "\"ProspectIntake\"",
+            "definition": "NOT NULL account_id"
+          },
+          {
+            "name": "ProspectIntake_created_at_not_null",
+            "type": "n",
+            "table": "\"ProspectIntake\"",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "name": "ProspectIntake_expires_at_not_null",
+            "type": "n",
+            "table": "\"ProspectIntake\"",
+            "definition": "NOT NULL expires_at"
+          },
+          {
+            "name": "ProspectIntake_id_not_null",
+            "type": "n",
+            "table": "\"ProspectIntake\"",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "ProspectIntake_idempotency_key_not_null",
+            "type": "n",
+            "table": "\"ProspectIntake\"",
+            "definition": "NOT NULL idempotency_key"
+          },
+          {
+            "name": "ProspectIntake_notification_status_not_null",
+            "type": "n",
+            "table": "\"ProspectIntake\"",
+            "definition": "NOT NULL notification_status"
+          },
+          {
+            "name": "ProspectIntake_payload_hash_not_null",
+            "type": "n",
+            "table": "\"ProspectIntake\"",
+            "definition": "NOT NULL payload_hash"
+          },
+          {
+            "name": "ProspectIntake_pkey",
+            "type": "p",
+            "table": "\"ProspectIntake\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "ProspectIntake_reference_not_null",
+            "type": "n",
+            "table": "\"ProspectIntake\"",
+            "definition": "NOT NULL reference"
+          },
+          {
+            "name": "ProspectIntake_status_not_null",
+            "type": "n",
+            "table": "\"ProspectIntake\"",
+            "definition": "NOT NULL status"
+          },
+          {
+            "name": "ProspectIntake_updated_at_not_null",
+            "type": "n",
+            "table": "\"ProspectIntake\"",
+            "definition": "NOT NULL updated_at"
+          },
+          {
+            "name": "ProviderConnection_account_id_not_null",
+            "type": "n",
+            "table": "\"ProviderConnection\"",
+            "definition": "NOT NULL account_id"
+          },
+          {
+            "name": "ProviderConnection_connected_by_not_null",
+            "type": "n",
+            "table": "\"ProviderConnection\"",
+            "definition": "NOT NULL connected_by"
+          },
+          {
+            "name": "ProviderConnection_created_at_not_null",
+            "type": "n",
+            "table": "\"ProviderConnection\"",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "name": "ProviderConnection_credentials_encrypted_not_null",
+            "type": "n",
+            "table": "\"ProviderConnection\"",
+            "definition": "NOT NULL credentials_encrypted"
+          },
+          {
+            "name": "ProviderConnection_id_not_null",
+            "type": "n",
+            "table": "\"ProviderConnection\"",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "ProviderConnection_pkey",
+            "type": "p",
+            "table": "\"ProviderConnection\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "ProviderConnection_provider_not_null",
+            "type": "n",
+            "table": "\"ProviderConnection\"",
+            "definition": "NOT NULL provider"
+          },
+          {
+            "name": "ProviderConnection_status_not_null",
+            "type": "n",
+            "table": "\"ProviderConnection\"",
+            "definition": "NOT NULL status"
+          },
+          {
+            "name": "ProviderConnection_updated_at_not_null",
+            "type": "n",
+            "table": "\"ProviderConnection\"",
+            "definition": "NOT NULL updated_at"
+          },
+          {
+            "name": "QaLog_account_id_not_null",
+            "type": "n",
+            "table": "\"QaLog\"",
+            "definition": "NOT NULL account_id"
+          },
+          {
+            "name": "QaLog_call_id_not_null",
+            "type": "n",
+            "table": "\"QaLog\"",
+            "definition": "NOT NULL call_id"
+          },
+          {
+            "name": "QaLog_created_at_not_null",
+            "type": "n",
+            "table": "\"QaLog\"",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "name": "QaLog_findings_json_not_null",
+            "type": "n",
+            "table": "\"QaLog\"",
+            "definition": "NOT NULL findings_json"
+          },
+          {
+            "name": "QaLog_id_not_null",
+            "type": "n",
+            "table": "\"QaLog\"",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "QaLog_pkey",
+            "type": "p",
+            "table": "\"QaLog\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "QaLog_reviewed_at_not_null",
+            "type": "n",
+            "table": "\"QaLog\"",
+            "definition": "NOT NULL reviewed_at"
+          },
+          {
+            "name": "QaLog_reviewer_type_not_null",
+            "type": "n",
+            "table": "\"QaLog\"",
+            "definition": "NOT NULL reviewer_type"
+          },
+          {
+            "name": "QaLog_rubric_version_not_null",
+            "type": "n",
+            "table": "\"QaLog\"",
+            "definition": "NOT NULL rubric_version"
+          },
+          {
+            "name": "QuoteRequest_contact_id_not_null",
+            "type": "n",
+            "table": "\"QuoteRequest\"",
+            "definition": "NOT NULL contact_id"
+          },
+          {
+            "name": "QuoteRequest_created_at_not_null",
+            "type": "n",
+            "table": "\"QuoteRequest\"",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "name": "QuoteRequest_id_not_null",
+            "type": "n",
+            "table": "\"QuoteRequest\"",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "QuoteRequest_organization_id_not_null",
+            "type": "n",
+            "table": "\"QuoteRequest\"",
+            "definition": "NOT NULL account_id"
+          },
+          {
+            "name": "QuoteRequest_pkey",
+            "type": "p",
+            "table": "\"QuoteRequest\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "QuoteRequest_service_type_not_null",
+            "type": "n",
+            "table": "\"QuoteRequest\"",
+            "definition": "NOT NULL service_type"
+          },
+          {
+            "name": "QuoteRequest_status_not_null",
+            "type": "n",
+            "table": "\"QuoteRequest\"",
+            "definition": "NOT NULL status"
+          },
+          {
+            "name": "QuoteRequest_updated_at_not_null",
+            "type": "n",
+            "table": "\"QuoteRequest\"",
+            "definition": "NOT NULL updated_at"
+          },
+          {
+            "name": "RevenueMetrics_admin_hours_saved_not_null",
+            "type": "n",
+            "table": "\"RevenueMetrics\"",
+            "definition": "NOT NULL admin_hours_saved"
+          },
+          {
+            "name": "RevenueMetrics_appointments_booked_not_null",
+            "type": "n",
+            "table": "\"RevenueMetrics\"",
+            "definition": "NOT NULL appointments_booked"
+          },
+          {
+            "name": "RevenueMetrics_calls_answered_by_ai_not_null",
+            "type": "n",
+            "table": "\"RevenueMetrics\"",
+            "definition": "NOT NULL calls_answered_by_ai"
+          },
+          {
+            "name": "RevenueMetrics_created_at_not_null",
+            "type": "n",
+            "table": "\"RevenueMetrics\"",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "name": "RevenueMetrics_estimated_recovered_revenue_not_null",
+            "type": "n",
+            "table": "\"RevenueMetrics\"",
+            "definition": "NOT NULL estimated_recovered_revenue"
+          },
+          {
+            "name": "RevenueMetrics_id_not_null",
+            "type": "n",
+            "table": "\"RevenueMetrics\"",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "RevenueMetrics_jobs_won_not_null",
+            "type": "n",
+            "table": "\"RevenueMetrics\"",
+            "definition": "NOT NULL jobs_won"
+          },
+          {
+            "name": "RevenueMetrics_missed_calls_not_null",
+            "type": "n",
+            "table": "\"RevenueMetrics\"",
+            "definition": "NOT NULL missed_calls"
+          },
+          {
+            "name": "RevenueMetrics_organization_id_not_null",
+            "type": "n",
+            "table": "\"RevenueMetrics\"",
+            "definition": "NOT NULL account_id"
+          },
+          {
+            "name": "RevenueMetrics_period_end_not_null",
+            "type": "n",
+            "table": "\"RevenueMetrics\"",
+            "definition": "NOT NULL period_end"
+          },
+          {
+            "name": "RevenueMetrics_period_start_not_null",
+            "type": "n",
+            "table": "\"RevenueMetrics\"",
+            "definition": "NOT NULL period_start"
+          },
+          {
+            "name": "RevenueMetrics_pkey",
+            "type": "p",
+            "table": "\"RevenueMetrics\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "RevenueMetrics_qualified_leads_not_null",
+            "type": "n",
+            "table": "\"RevenueMetrics\"",
+            "definition": "NOT NULL qualified_leads"
+          },
+          {
+            "name": "RevenueMetrics_quotes_requested_not_null",
+            "type": "n",
+            "table": "\"RevenueMetrics\"",
+            "definition": "NOT NULL quotes_requested"
+          },
+          {
+            "name": "RevenueMetrics_quotes_sent_not_null",
+            "type": "n",
+            "table": "\"RevenueMetrics\"",
+            "definition": "NOT NULL quotes_sent"
+          },
+          {
+            "name": "RevenueMetrics_response_time_avg_seconds_not_null",
+            "type": "n",
+            "table": "\"RevenueMetrics\"",
+            "definition": "NOT NULL response_time_avg_seconds"
+          },
+          {
+            "name": "RevenueMetrics_total_calls_not_null",
+            "type": "n",
+            "table": "\"RevenueMetrics\"",
+            "definition": "NOT NULL total_calls"
+          },
+          {
+            "name": "RevenueMetrics_verified_recovered_revenue_not_null",
+            "type": "n",
+            "table": "\"RevenueMetrics\"",
+            "definition": "NOT NULL verified_recovered_revenue"
+          },
+          {
+            "name": "SmsMessage_account_id_not_null",
+            "type": "n",
+            "table": "\"SmsMessage\"",
+            "definition": "NOT NULL account_id"
+          },
+          {
+            "name": "SmsMessage_body_not_null",
+            "type": "n",
+            "table": "\"SmsMessage\"",
+            "definition": "NOT NULL body"
+          },
+          {
+            "name": "SmsMessage_conversation_id_not_null",
+            "type": "n",
+            "table": "\"SmsMessage\"",
+            "definition": "NOT NULL conversation_id"
+          },
+          {
+            "name": "SmsMessage_created_at_not_null",
+            "type": "n",
+            "table": "\"SmsMessage\"",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "name": "SmsMessage_direction_not_null",
+            "type": "n",
+            "table": "\"SmsMessage\"",
+            "definition": "NOT NULL direction"
+          },
+          {
+            "name": "SmsMessage_from_number_not_null",
+            "type": "n",
+            "table": "\"SmsMessage\"",
+            "definition": "NOT NULL from_number"
+          },
+          {
+            "name": "SmsMessage_id_not_null",
+            "type": "n",
+            "table": "\"SmsMessage\"",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "SmsMessage_pkey",
+            "type": "p",
+            "table": "\"SmsMessage\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "SmsMessage_provider_not_null",
+            "type": "n",
+            "table": "\"SmsMessage\"",
+            "definition": "NOT NULL provider"
+          },
+          {
+            "name": "SmsMessage_segment_count_not_null",
+            "type": "n",
+            "table": "\"SmsMessage\"",
+            "definition": "NOT NULL segment_count"
+          },
+          {
+            "name": "SmsMessage_status_not_null",
+            "type": "n",
+            "table": "\"SmsMessage\"",
+            "definition": "NOT NULL status"
+          },
+          {
+            "name": "SmsMessage_to_number_not_null",
+            "type": "n",
+            "table": "\"SmsMessage\"",
+            "definition": "NOT NULL to_number"
+          },
+          {
+            "name": "TelephonyNumberAssignment_account_id_not_null",
+            "type": "n",
+            "table": "\"TelephonyNumberAssignment\"",
+            "definition": "NOT NULL account_id"
+          },
+          {
+            "name": "TelephonyNumberAssignment_assigned_at_not_null",
+            "type": "n",
+            "table": "\"TelephonyNumberAssignment\"",
+            "definition": "NOT NULL assigned_at"
+          },
+          {
+            "name": "TelephonyNumberAssignment_bootstrap_id_not_null",
+            "type": "n",
+            "table": "\"TelephonyNumberAssignment\"",
+            "definition": "NOT NULL bootstrap_id"
+          },
+          {
+            "name": "TelephonyNumberAssignment_created_at_not_null",
+            "type": "n",
+            "table": "\"TelephonyNumberAssignment\"",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "name": "TelephonyNumberAssignment_id_not_null",
+            "type": "n",
+            "table": "\"TelephonyNumberAssignment\"",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "TelephonyNumberAssignment_pkey",
+            "type": "p",
+            "table": "\"TelephonyNumberAssignment\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "TelephonyNumberAssignment_provider_assistant_id_not_null",
+            "type": "n",
+            "table": "\"TelephonyNumberAssignment\"",
+            "definition": "NOT NULL provider_assistant_id"
+          },
+          {
+            "name": "TelephonyNumberAssignment_status_not_null",
+            "type": "n",
+            "table": "\"TelephonyNumberAssignment\"",
+            "definition": "NOT NULL status"
+          },
+          {
+            "name": "TelephonyNumberAssignment_telephony_number_id_not_null",
+            "type": "n",
+            "table": "\"TelephonyNumberAssignment\"",
+            "definition": "NOT NULL telephony_number_id"
+          },
+          {
+            "name": "TelephonyNumberAssignment_updated_at_not_null",
+            "type": "n",
+            "table": "\"TelephonyNumberAssignment\"",
+            "definition": "NOT NULL updated_at"
+          },
+          {
+            "name": "TelephonyNumber_created_at_not_null",
+            "type": "n",
+            "table": "\"TelephonyNumber\"",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "name": "TelephonyNumber_deletion_lock_enabled_not_null",
+            "type": "n",
+            "table": "\"TelephonyNumber\"",
+            "definition": "NOT NULL deletion_lock_enabled"
+          },
+          {
+            "name": "TelephonyNumber_e164_not_null",
+            "type": "n",
+            "table": "\"TelephonyNumber\"",
+            "definition": "NOT NULL e164"
+          },
+          {
+            "name": "TelephonyNumber_evergreen_not_null",
+            "type": "n",
+            "table": "\"TelephonyNumber\"",
+            "definition": "NOT NULL evergreen"
+          },
+          {
+            "name": "TelephonyNumber_id_not_null",
+            "type": "n",
+            "table": "\"TelephonyNumber\"",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "TelephonyNumber_pkey",
+            "type": "p",
+            "table": "\"TelephonyNumber\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "TelephonyNumber_provider_not_null",
+            "type": "n",
+            "table": "\"TelephonyNumber\"",
+            "definition": "NOT NULL provider"
+          },
+          {
+            "name": "TelephonyNumber_provider_number_id_not_null",
+            "type": "n",
+            "table": "\"TelephonyNumber\"",
+            "definition": "NOT NULL provider_number_id"
+          },
+          {
+            "name": "TelephonyNumber_status_not_null",
+            "type": "n",
+            "table": "\"TelephonyNumber\"",
+            "definition": "NOT NULL status"
+          },
+          {
+            "name": "TelephonyNumber_updated_at_not_null",
+            "type": "n",
+            "table": "\"TelephonyNumber\"",
+            "definition": "NOT NULL updated_at"
+          },
+          {
+            "name": "User_created_at_not_null",
+            "type": "n",
+            "table": "\"User\"",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "name": "User_email_not_null",
+            "type": "n",
+            "table": "\"User\"",
+            "definition": "NOT NULL email"
+          },
+          {
+            "name": "User_id_not_null",
+            "type": "n",
+            "table": "\"User\"",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "User_name_not_null",
+            "type": "n",
+            "table": "\"User\"",
+            "definition": "NOT NULL name"
+          },
+          {
+            "name": "User_pkey",
+            "type": "p",
+            "table": "\"User\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "User_role_not_null",
+            "type": "n",
+            "table": "\"User\"",
+            "definition": "NOT NULL role"
+          },
+          {
+            "name": "User_updated_at_not_null",
+            "type": "n",
+            "table": "\"User\"",
+            "definition": "NOT NULL updated_at"
+          },
+          {
+            "name": "WebhookEvent_dedupe_hash_not_null",
+            "type": "n",
+            "table": "\"WebhookEvent\"",
+            "definition": "NOT NULL dedupe_hash"
+          },
+          {
+            "name": "WebhookEvent_event_type_not_null",
+            "type": "n",
+            "table": "\"WebhookEvent\"",
+            "definition": "NOT NULL event_type"
+          },
+          {
+            "name": "WebhookEvent_id_not_null",
+            "type": "n",
+            "table": "\"WebhookEvent\"",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "WebhookEvent_pkey",
+            "type": "p",
+            "table": "\"WebhookEvent\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "WebhookEvent_process_status_not_null",
+            "type": "n",
+            "table": "\"WebhookEvent\"",
+            "definition": "NOT NULL process_status"
+          },
+          {
+            "name": "WebhookEvent_provider_event_id_not_null",
+            "type": "n",
+            "table": "\"WebhookEvent\"",
+            "definition": "NOT NULL provider_event_id"
+          },
+          {
+            "name": "WebhookEvent_provider_not_null",
+            "type": "n",
+            "table": "\"WebhookEvent\"",
+            "definition": "NOT NULL provider"
+          },
+          {
+            "name": "WebhookEvent_raw_body_not_null",
+            "type": "n",
+            "table": "\"WebhookEvent\"",
+            "definition": "NOT NULL raw_body"
+          },
+          {
+            "name": "WebhookEvent_received_at_not_null",
+            "type": "n",
+            "table": "\"WebhookEvent\"",
+            "definition": "NOT NULL received_at"
+          },
+          {
+            "name": "WebhookEvent_signature_valid_not_null",
+            "type": "n",
+            "table": "\"WebhookEvent\"",
+            "definition": "NOT NULL signature_valid"
+          },
+          {
+            "name": "WorkflowRun_account_id_not_null",
+            "type": "n",
+            "table": "\"WorkflowRun\"",
+            "definition": "NOT NULL account_id"
+          },
+          {
+            "name": "WorkflowRun_created_at_not_null",
+            "type": "n",
+            "table": "\"WorkflowRun\"",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "name": "WorkflowRun_id_not_null",
+            "type": "n",
+            "table": "\"WorkflowRun\"",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "WorkflowRun_pkey",
+            "type": "p",
+            "table": "\"WorkflowRun\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "WorkflowRun_provider_not_null",
+            "type": "n",
+            "table": "\"WorkflowRun\"",
+            "definition": "NOT NULL provider"
+          },
+          {
+            "name": "WorkflowRun_started_at_not_null",
+            "type": "n",
+            "table": "\"WorkflowRun\"",
+            "definition": "NOT NULL started_at"
+          },
+          {
+            "name": "WorkflowRun_status_not_null",
+            "type": "n",
+            "table": "\"WorkflowRun\"",
+            "definition": "NOT NULL status"
+          },
+          {
+            "name": "WorkflowRun_workflow_id_not_null",
+            "type": "n",
+            "table": "\"WorkflowRun\"",
+            "definition": "NOT NULL workflow_id"
+          },
+          {
+            "name": "WorkflowRun_workflow_run_id_not_null",
+            "type": "n",
+            "table": "\"WorkflowRun\"",
+            "definition": "NOT NULL workflow_run_id"
+          },
+          {
+            "name": "_prisma_migrations_applied_steps_count_not_null",
+            "type": "n",
+            "table": "_prisma_migrations",
+            "definition": "NOT NULL applied_steps_count"
+          },
+          {
+            "name": "_prisma_migrations_checksum_not_null",
+            "type": "n",
+            "table": "_prisma_migrations",
+            "definition": "NOT NULL checksum"
+          },
+          {
+            "name": "_prisma_migrations_id_not_null",
+            "type": "n",
+            "table": "_prisma_migrations",
+            "definition": "NOT NULL id"
+          },
+          {
+            "name": "_prisma_migrations_migration_name_not_null",
+            "type": "n",
+            "table": "_prisma_migrations",
+            "definition": "NOT NULL migration_name"
+          },
+          {
+            "name": "_prisma_migrations_pkey",
+            "type": "p",
+            "table": "_prisma_migrations",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "_prisma_migrations_started_at_not_null",
+            "type": "n",
+            "table": "_prisma_migrations",
+            "definition": "NOT NULL started_at"
+          }
+        ],
+        "memberships": [
+          {
+            "role": "pg_read_all_settings",
+            "admin": false,
+            "member": "pg_monitor"
+          },
+          {
+            "role": "pg_read_all_stats",
+            "admin": false,
+            "member": "pg_monitor"
+          },
+          {
+            "role": "pg_stat_scan_tables",
+            "admin": false,
+            "member": "pg_monitor"
+          },
+          {
+            "role": "pg_read_all_data",
+            "admin": true,
+            "member": "neon_superuser"
+          },
+          {
+            "role": "pg_write_all_data",
+            "admin": true,
+            "member": "neon_superuser"
+          },
+          {
+            "role": "pg_monitor",
+            "admin": true,
+            "member": "neon_superuser"
+          },
+          {
+            "role": "pg_signal_backend",
+            "admin": true,
+            "member": "neon_superuser"
+          },
+          {
+            "role": "pg_create_subscription",
+            "admin": true,
+            "member": "neon_superuser"
+          },
+          {
+            "role": "pg_maintain",
+            "admin": true,
+            "member": "neon_superuser"
+          },
+          {
+            "role": "pg_signal_autovacuum_worker",
+            "admin": true,
+            "member": "neon_superuser"
+          },
+          {
+            "role": "neon_superuser",
+            "admin": false,
+            "member": "neondb_owner"
+          },
+          {
+            "role": "neon_superuser",
+            "admin": false,
+            "member": "neon_service"
+          }
+        ],
+        "extra_tables": null,
+        "schema_grants": [
+          {
+            "acl": [
+              "pg_database_owner=UC/pg_database_owner",
+              "=U/pg_database_owner"
+            ],
+            "schema": "public"
+          }
+        ],
+        "schema_fingerprint": "a6d6977633b7f2851c5bf253bb44554d"
+      },
+      "aggregates": {
+        "users": 1,
+        "accounts": 0,
+        "migrations": [
+          {
+            "name": "0001_v0_2_foundation",
+            "checksum": "4792db9a67b616e6bfbfbc1e2e5172b1a9d5d24e6037440fb5d9d854ff7a71e6",
+            "finished": true,
+            "rolled_back": false
+          },
+          {
+            "name": "0002_organization_to_account_rename",
+            "checksum": "0583bda6092066ad5032590106b9d56f01204fccabc32c33834fc18a17bfe816",
+            "finished": true,
+            "rolled_back": false
+          },
+          {
+            "name": "0003_booking_to_appointment_rename",
+            "checksum": "af5b60b409975ea72c939b3760d7a7de184d46e57b64a659488248a950946397",
+            "finished": true,
+            "rolled_back": false
+          },
+          {
+            "name": "0004_communication_substrate",
+            "checksum": "babdeeaee4f69d36c2377c7df98574b2bbd58fc9cb18b26b5b173b2085aafa4a",
+            "finished": true,
+            "rolled_back": false
+          },
+          {
+            "name": "0005_call_intelligence_substrate",
+            "checksum": "978249819d63f7d7c7e864d9c39648e68c65a0ad624e63112f33b6b6162c613c",
+            "finished": true,
+            "rolled_back": false
+          },
+          {
+            "name": "0006_workflow_run_substrate",
+            "checksum": "d261d0a8ac41e9a87f08cb78eed36069f3e3021bebaa2e22cf4d28ae3af4a53d",
+            "finished": true,
+            "rolled_back": false
+          },
+          {
+            "name": "0007_audit_logs_expansion",
+            "checksum": "9d0fd262c12988fdd40ac7ca4b4f0cdb2ee46b48dcfe602784a4fae885f390ea",
+            "finished": true,
+            "rolled_back": false
+          },
+          {
+            "name": "0008_clerk_identity_columns",
+            "checksum": "4710517a75111dc49d71af73462c3d0638865e94cede6e89a482ad041c3dc59c",
+            "finished": true,
+            "rolled_back": false
+          },
+          {
+            "name": "0009_internal_demo_professional_receptionist",
+            "checksum": "44150ac3144f78643782d69dbefe90de803e8257c701fd7b8c679c04f3d304a6",
+            "finished": true,
+            "rolled_back": false
+          },
+          {
+            "name": "0010_v0_3_provider_enum_alignment",
+            "checksum": "34dbadaa3a98b760edb13450207041ce065dfc31db25d4d5e952ea1a9451e5a6",
+            "finished": true,
+            "rolled_back": false
+          },
+          {
+            "name": "0011_gtm_demo_closure_foundation",
+            "checksum": "d872a8c22b1822ff7bc8373032586eca671c4b96fb403b59d6d1623f9330073c",
+            "finished": true,
+            "rolled_back": false
+          },
+          {
+            "name": "0012_prospect_bootstrap_foundation",
+            "checksum": "5bc0af1ed5ce12073db1bdd5efc349c5c51bb4fbf2f1de456a90e3798832f53a",
+            "finished": true,
+            "rolled_back": false
+          },
+          {
+            "name": "0013_prospect_bootstrap_review_controls",
+            "checksum": "bc3803a5fdb70a7bb5bfde83ef64345bf3a876d5d277e5ed018cf6ed9aacc6cb",
+            "finished": true,
+            "rolled_back": false
+          }
+        ],
+        "clerk_users": 1,
+        "orphan_users": 0,
+        "clerk_accounts": 0,
+        "operator_users": 1
+      }
+    },
+    {
+      "id": "dark-lake-70639149",
+      "name": "responseos-frl-live-demo",
+      "region": "aws-us-east-1",
+      "pgVersion": 17,
+      "historyRetentionSeconds": 21600,
+      "network": {
+        "allowed_ips": {
+          "ips": [],
+          "protected_branches_only": false
+        },
+        "enable_logical_replication": false,
+        "maintenance_window": {
+          "weekdays": [
+            3
+          ],
+          "start_time": "09:00",
+          "end_time": "10:00"
+        },
+        "block_public_connections": false,
+        "block_vpc_connections": false,
+        "hipaa": false
+      },
+      "branches": [
+        {
+          "id": "br-aged-block-auq28jrd",
+          "name": "main",
+          "default": true,
+          "protected": false,
+          "state": "archived"
+        }
+      ],
+      "endpoints": [
+        {
+          "id": "ep-dawn-bread-au030bt3",
+          "branchId": "br-aged-block-auq28jrd",
+          "poolerEnabled": true,
+          "passwordlessAccess": true,
+          "minCU": 0.25,
+          "maxCU": 1
+        }
+      ],
+      "catalog": {
+        "roles": [
+          {
+            "role": "cloud_admin",
+            "login": true,
+            "bypassrls": true,
+            "create_db": true,
+            "superuser": true,
+            "create_role": true
+          },
+          {
+            "role": "neondb_owner",
+            "login": true,
+            "bypassrls": true,
+            "create_db": true,
+            "superuser": false,
+            "create_role": true
+          },
+          {
+            "role": "neon_service",
+            "login": true,
+            "bypassrls": true,
+            "create_db": true,
+            "superuser": false,
+            "create_role": true
+          },
+          {
+            "role": "neon_superuser",
+            "login": false,
+            "bypassrls": true,
+            "create_db": true,
+            "superuser": false,
+            "create_role": true
+          }
+        ],
+        "tables": [
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "_prisma_migrations",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "Call",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "LeadEvent",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "LeadQualification",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "Account",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "Appointment",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "User",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "Contact",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "Automation",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "RevenueMetrics",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "QuoteRequest",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "AssessmentReport",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "Engagement",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "WebhookEvent",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "AuditLog",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "ProviderConnection",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "Conversation",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "SmsMessage",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "CallSegment",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "CallTranscript",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "QaLog",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "WorkflowRun",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "AgentProfile",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "ProfessionalOpportunity",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "ProspectIntake",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "CrmSyncOperation",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "KnowledgeIngestionRun",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "ProspectBootstrap",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "KnowledgeSource",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "BusinessMemorySnapshot",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "TelephonyNumber",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "TelephonyNumberAssignment",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "BootstrapPromotion",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "KnowledgeFact",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "CallReview",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "Notification",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "CallConsentEvent",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "CallCaptureSession",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "TelnyxCallCommand",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "CallTranscriptRevision",
+            "force_rls": false
+          },
+          {
+            "acl": null,
+            "rls": false,
+            "kind": "r",
+            "owner": "neondb_owner",
+            "table": "CallPostCallAnalysis",
+            "force_rls": false
+          }
+        ],
+        "schemas": [
+          "public"
+        ],
+        "version": "17.11 (7d7ea2a)",
+        "database": "neondb",
+        "policies": null,
+        "routines": null,
+        "triggers": null,
+        "extensions": [
+          {
+            "name": "plpgsql",
+            "version": "1.0"
+          }
+        ],
+        "database_acl": [
+          "=Tc/neondb_owner",
+          "neondb_owner=CTc/neondb_owner",
+          "neon_superuser=CTc/neondb_owner"
+        ]
+      },
+      "comparison": {
+        "constraints": [
+          {
+            "name": "Account_pkey",
+            "type": "p",
+            "table": "\"Account\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "AgentProfile_pkey",
+            "type": "p",
+            "table": "\"AgentProfile\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "Appointment_pkey",
+            "type": "p",
+            "table": "\"Appointment\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "AssessmentReport_pkey",
+            "type": "p",
+            "table": "\"AssessmentReport\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "AuditLog_pkey",
+            "type": "p",
+            "table": "\"AuditLog\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "Automation_pkey",
+            "type": "p",
+            "table": "\"Automation\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "BootstrapPromotion_pkey",
+            "type": "p",
+            "table": "\"BootstrapPromotion\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "BusinessMemorySnapshot_pkey",
+            "type": "p",
+            "table": "\"BusinessMemorySnapshot\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "CallCaptureSession_pkey",
+            "type": "p",
+            "table": "\"CallCaptureSession\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "CallConsentEvent_pkey",
+            "type": "p",
+            "table": "\"CallConsentEvent\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "CallPostCallAnalysis_pkey",
+            "type": "p",
+            "table": "\"CallPostCallAnalysis\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "CallReview_pkey",
+            "type": "p",
+            "table": "\"CallReview\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "CallSegment_pkey",
+            "type": "p",
+            "table": "\"CallSegment\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "CallTranscriptRevision_pkey",
+            "type": "p",
+            "table": "\"CallTranscriptRevision\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "CallTranscript_pkey",
+            "type": "p",
+            "table": "\"CallTranscript\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "Call_pkey",
+            "type": "p",
+            "table": "\"Call\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "Contact_pkey",
+            "type": "p",
+            "table": "\"Contact\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "Conversation_pkey",
+            "type": "p",
+            "table": "\"Conversation\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "CrmSyncOperation_pkey",
+            "type": "p",
+            "table": "\"CrmSyncOperation\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "Engagement_pkey",
+            "type": "p",
+            "table": "\"Engagement\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "KnowledgeFact_pkey",
+            "type": "p",
+            "table": "\"KnowledgeFact\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "KnowledgeIngestionRun_pkey",
+            "type": "p",
+            "table": "\"KnowledgeIngestionRun\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "KnowledgeSource_pkey",
+            "type": "p",
+            "table": "\"KnowledgeSource\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "LeadEvent_pkey",
+            "type": "p",
+            "table": "\"LeadEvent\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "LeadQualification_pkey",
+            "type": "p",
+            "table": "\"LeadQualification\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "Notification_pkey",
+            "type": "p",
+            "table": "\"Notification\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "ProfessionalOpportunity_pkey",
+            "type": "p",
+            "table": "\"ProfessionalOpportunity\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "ProspectBootstrap_pkey",
+            "type": "p",
+            "table": "\"ProspectBootstrap\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "ProspectIntake_pkey",
+            "type": "p",
+            "table": "\"ProspectIntake\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "ProviderConnection_pkey",
+            "type": "p",
+            "table": "\"ProviderConnection\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "QaLog_pkey",
+            "type": "p",
+            "table": "\"QaLog\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "QuoteRequest_pkey",
+            "type": "p",
+            "table": "\"QuoteRequest\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "RevenueMetrics_pkey",
+            "type": "p",
+            "table": "\"RevenueMetrics\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "SmsMessage_pkey",
+            "type": "p",
+            "table": "\"SmsMessage\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "TelephonyNumberAssignment_pkey",
+            "type": "p",
+            "table": "\"TelephonyNumberAssignment\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "TelephonyNumber_pkey",
+            "type": "p",
+            "table": "\"TelephonyNumber\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "TelnyxCallCommand_pkey",
+            "type": "p",
+            "table": "\"TelnyxCallCommand\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "User_pkey",
+            "type": "p",
+            "table": "\"User\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "WebhookEvent_pkey",
+            "type": "p",
+            "table": "\"WebhookEvent\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "WorkflowRun_pkey",
+            "type": "p",
+            "table": "\"WorkflowRun\"",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "name": "_prisma_migrations_pkey",
+            "type": "p",
+            "table": "_prisma_migrations",
+            "definition": "PRIMARY KEY (id)"
+          }
+        ],
+        "memberships": [
+          {
+            "role": "pg_read_all_settings",
+            "admin": false,
+            "member": "pg_monitor"
+          },
+          {
+            "role": "pg_read_all_stats",
+            "admin": false,
+            "member": "pg_monitor"
+          },
+          {
+            "role": "pg_stat_scan_tables",
+            "admin": false,
+            "member": "pg_monitor"
+          },
+          {
+            "role": "pg_read_all_data",
+            "admin": true,
+            "member": "neon_superuser"
+          },
+          {
+            "role": "pg_write_all_data",
+            "admin": true,
+            "member": "neon_superuser"
+          },
+          {
+            "role": "pg_monitor",
+            "admin": true,
+            "member": "neon_superuser"
+          },
+          {
+            "role": "pg_signal_backend",
+            "admin": true,
+            "member": "neon_superuser"
+          },
+          {
+            "role": "pg_create_subscription",
+            "admin": true,
+            "member": "neon_superuser"
+          },
+          {
+            "role": "pg_maintain",
+            "admin": true,
+            "member": "neon_superuser"
+          },
+          {
+            "role": "neon_superuser",
+            "admin": false,
+            "member": "neondb_owner"
+          },
+          {
+            "role": "neon_superuser",
+            "admin": false,
+            "member": "neon_service"
+          }
+        ],
+        "extra_tables": null,
+        "schema_grants": [
+          {
+            "acl": [
+              "pg_database_owner=UC/pg_database_owner",
+              "=U/pg_database_owner"
+            ],
+            "schema": "public"
+          }
+        ],
+        "schema_fingerprint": "6169300c9590928af1d9175baf3080b1"
+      },
+      "aggregates": {
+        "users": 1,
+        "accounts": 1,
+        "migrations": [
+          {
+            "name": "0001_v0_2_foundation",
+            "checksum": "4792db9a67b616e6bfbfbc1e2e5172b1a9d5d24e6037440fb5d9d854ff7a71e6",
+            "finished": true,
+            "rolled_back": false
+          },
+          {
+            "name": "0002_organization_to_account_rename",
+            "checksum": "0583bda6092066ad5032590106b9d56f01204fccabc32c33834fc18a17bfe816",
+            "finished": true,
+            "rolled_back": false
+          },
+          {
+            "name": "0003_booking_to_appointment_rename",
+            "checksum": "af5b60b409975ea72c939b3760d7a7de184d46e57b64a659488248a950946397",
+            "finished": true,
+            "rolled_back": false
+          },
+          {
+            "name": "0004_communication_substrate",
+            "checksum": "babdeeaee4f69d36c2377c7df98574b2bbd58fc9cb18b26b5b173b2085aafa4a",
+            "finished": true,
+            "rolled_back": false
+          },
+          {
+            "name": "0005_call_intelligence_substrate",
+            "checksum": "978249819d63f7d7c7e864d9c39648e68c65a0ad624e63112f33b6b6162c613c",
+            "finished": true,
+            "rolled_back": false
+          },
+          {
+            "name": "0006_workflow_run_substrate",
+            "checksum": "d261d0a8ac41e9a87f08cb78eed36069f3e3021bebaa2e22cf4d28ae3af4a53d",
+            "finished": true,
+            "rolled_back": false
+          },
+          {
+            "name": "0007_audit_logs_expansion",
+            "checksum": "9d0fd262c12988fdd40ac7ca4b4f0cdb2ee46b48dcfe602784a4fae885f390ea",
+            "finished": true,
+            "rolled_back": false
+          },
+          {
+            "name": "0008_clerk_identity_columns",
+            "checksum": "4710517a75111dc49d71af73462c3d0638865e94cede6e89a482ad041c3dc59c",
+            "finished": true,
+            "rolled_back": false
+          },
+          {
+            "name": "0009_internal_demo_professional_receptionist",
+            "checksum": "44150ac3144f78643782d69dbefe90de803e8257c701fd7b8c679c04f3d304a6",
+            "finished": true,
+            "rolled_back": false
+          },
+          {
+            "name": "0010_v0_3_provider_enum_alignment",
+            "checksum": "34dbadaa3a98b760edb13450207041ce065dfc31db25d4d5e952ea1a9451e5a6",
+            "finished": true,
+            "rolled_back": false
+          },
+          {
+            "name": "0011_gtm_demo_closure_foundation",
+            "checksum": "d872a8c22b1822ff7bc8373032586eca671c4b96fb403b59d6d1623f9330073c",
+            "finished": true,
+            "rolled_back": false
+          },
+          {
+            "name": "0012_prospect_bootstrap_foundation",
+            "checksum": "5bc0af1ed5ce12073db1bdd5efc349c5c51bb4fbf2f1de456a90e3798832f53a",
+            "finished": true,
+            "rolled_back": false
+          },
+          {
+            "name": "0013_prospect_bootstrap_review_controls",
+            "checksum": "bc3803a5fdb70a7bb5bfde83ef64345bf3a876d5d277e5ed018cf6ed9aacc6cb",
+            "finished": true,
+            "rolled_back": false
+          },
+          {
+            "name": "0014_supervised_tenant_runtime",
+            "checksum": "6d05e68b567551d32b78457126f1e5bb875443b531ba2f52b1acdad6627c7dcc",
+            "finished": true,
+            "rolled_back": false
+          },
+          {
+            "name": "0015_supervised_call_review",
+            "checksum": "33c41a2465c0a548f75ce2ca5677a5ef79054b0bb7aeb844b79cd030a2110733",
+            "finished": true,
+            "rolled_back": false
+          },
+          {
+            "name": "0016_supervised_qualification_assignment",
+            "checksum": "cbdcf32caa3fd8e6e147eb859c85f0a29d96286a8cd4c4e4ad075fef1f8df4b5",
+            "finished": true,
+            "rolled_back": false
+          },
+          {
+            "name": "0017_call_control_qualification",
+            "checksum": "5c404413de272d6ab4107877ce11930402ca94213d131bf2fddffbc48beebcc3",
+            "finished": true,
+            "rolled_back": false
+          }
+        ],
+        "clerk_users": 1,
+        "orphan_users": 0,
+        "clerk_accounts": 0,
+        "operator_users": 1
+      }
+    }
+  ],
+  "restoreCounts": [
+    {
+      "users": "1",
+      "clerk_users": "1",
+      "accounts": "0",
+      "migrations": "13"
+    }
+  ],
+  "mainDemoCatalog": {
+    "roles": [
+      {
+        "role": "cloud_admin",
+        "login": true,
+        "bypassrls": true,
+        "create_db": true,
+        "superuser": true,
+        "create_role": true
+      },
+      {
+        "role": "neon_service",
+        "login": true,
+        "bypassrls": true,
+        "create_db": true,
+        "superuser": false,
+        "create_role": true
+      },
+      {
+        "role": "neon_superuser",
+        "login": false,
+        "bypassrls": true,
+        "create_db": true,
+        "superuser": false,
+        "create_role": true
+      },
+      {
+        "role": "neon_auth",
+        "login": true,
+        "bypassrls": false,
+        "create_db": false,
+        "superuser": false,
+        "create_role": false
+      },
+      {
+        "role": "neondb_owner",
+        "login": true,
+        "bypassrls": true,
+        "create_db": true,
+        "superuser": false,
+        "create_role": true
+      }
+    ],
+    "tables": [
+      {
+        "acl": null,
+        "rls": false,
+        "kind": "r",
+        "owner": "neondb_owner",
+        "table": "_prisma_migrations",
+        "force_rls": false
+      },
+      {
+        "acl": null,
+        "rls": false,
+        "kind": "r",
+        "owner": "neondb_owner",
+        "table": "Contact",
+        "force_rls": false
+      },
+      {
+        "acl": null,
+        "rls": false,
+        "kind": "r",
+        "owner": "neondb_owner",
+        "table": "Call",
+        "force_rls": false
+      },
+      {
+        "acl": null,
+        "rls": false,
+        "kind": "r",
+        "owner": "neondb_owner",
+        "table": "LeadEvent",
+        "force_rls": false
+      },
+      {
+        "acl": null,
+        "rls": false,
+        "kind": "r",
+        "owner": "neondb_owner",
+        "table": "LeadQualification",
+        "force_rls": false
+      },
+      {
+        "acl": null,
+        "rls": false,
+        "kind": "r",
+        "owner": "neondb_owner",
+        "table": "User",
+        "force_rls": false
+      },
+      {
+        "acl": null,
+        "rls": false,
+        "kind": "r",
+        "owner": "neondb_owner",
+        "table": "Appointment",
+        "force_rls": false
+      },
+      {
+        "acl": null,
+        "rls": false,
+        "kind": "r",
+        "owner": "neondb_owner",
+        "table": "Account",
+        "force_rls": false
+      },
+      {
+        "acl": null,
+        "rls": false,
+        "kind": "r",
+        "owner": "neondb_owner",
+        "table": "QuoteRequest",
+        "force_rls": false
+      },
+      {
+        "acl": null,
+        "rls": false,
+        "kind": "r",
+        "owner": "neondb_owner",
+        "table": "Automation",
+        "force_rls": false
+      },
+      {
+        "acl": null,
+        "rls": false,
+        "kind": "r",
+        "owner": "neondb_owner",
+        "table": "Notification",
+        "force_rls": false
+      },
+      {
+        "acl": null,
+        "rls": false,
+        "kind": "r",
+        "owner": "neondb_owner",
+        "table": "RevenueMetrics",
+        "force_rls": false
+      },
+      {
+        "acl": null,
+        "rls": false,
+        "kind": "r",
+        "owner": "neondb_owner",
+        "table": "AssessmentReport",
+        "force_rls": false
+      },
+      {
+        "acl": null,
+        "rls": false,
+        "kind": "r",
+        "owner": "neondb_owner",
+        "table": "Engagement",
+        "force_rls": false
+      },
+      {
+        "acl": null,
+        "rls": false,
+        "kind": "r",
+        "owner": "neondb_owner",
+        "table": "WebhookEvent",
+        "force_rls": false
+      },
+      {
+        "acl": null,
+        "rls": false,
+        "kind": "r",
+        "owner": "neondb_owner",
+        "table": "ProviderConnection",
+        "force_rls": false
+      },
+      {
+        "acl": null,
+        "rls": false,
+        "kind": "r",
+        "owner": "neondb_owner",
+        "table": "Conversation",
+        "force_rls": false
+      },
+      {
+        "acl": null,
+        "rls": false,
+        "kind": "r",
+        "owner": "neondb_owner",
+        "table": "SmsMessage",
+        "force_rls": false
+      },
+      {
+        "acl": null,
+        "rls": false,
+        "kind": "r",
+        "owner": "neondb_owner",
+        "table": "CallSegment",
+        "force_rls": false
+      },
+      {
+        "acl": null,
+        "rls": false,
+        "kind": "r",
+        "owner": "neondb_owner",
+        "table": "CallTranscript",
+        "force_rls": false
+      },
+      {
+        "acl": null,
+        "rls": false,
+        "kind": "r",
+        "owner": "neondb_owner",
+        "table": "QaLog",
+        "force_rls": false
+      },
+      {
+        "acl": null,
+        "rls": false,
+        "kind": "r",
+        "owner": "neondb_owner",
+        "table": "WorkflowRun",
+        "force_rls": false
+      },
+      {
+        "acl": null,
+        "rls": false,
+        "kind": "r",
+        "owner": "neondb_owner",
+        "table": "AuditLog",
+        "force_rls": false
+      }
+    ],
+    "schemas": [
+      "public",
+      "neon_auth"
+    ],
+    "version": "17.11 (7d7ea2a)",
+    "database": "neondb",
+    "policies": null,
+    "routines": null,
+    "triggers": null,
+    "extensions": [
+      {
+        "name": "plpgsql",
+        "version": "1.0"
+      }
+    ],
+    "database_acl": [
+      "=Tc/neondb_owner",
+      "neondb_owner=CTc/neondb_owner",
+      "neon_superuser=CTc/neondb_owner"
+    ]
+  },
+  "vercel": [
+    {
+      "name": "responseos",
+      "hiddenProductionEnvCount": 0,
+      "envs": [
+        {
+          "key": "RESPONSEOS_REQUIRE_AUTH",
+          "target": [
+            "production"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "DIRECT_URL",
+          "target": [
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "DATABASE_URL",
+          "target": [
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "NEXT_PUBLIC_APP_URL",
+          "target": [
+            "production"
+          ],
+          "type": "encrypted"
+        },
+        {
+          "key": "DIRECT_URL",
+          "target": [
+            "production"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "DATABASE_URL",
+          "target": [
+            "production"
+          ],
+          "type": "sensitive"
+        }
+      ],
+      "connectionValueReadback": "UNAVAILABLE: sensitive values withheld"
+    },
+    {
+      "name": "responseos-staging-mock",
+      "hiddenProductionEnvCount": 0,
+      "envs": [
+        {
+          "key": "RESPONSEOS_DATABASE_IDENTITY",
+          "target": [],
+          "customEnvironmentIds": [
+            "env_uX6Qp8F6w9aBgx2ikH3BiREB8aHH"
+          ],
+          "type": "encrypted"
+        },
+        {
+          "key": "DIRECT_URL",
+          "target": [],
+          "customEnvironmentIds": [
+            "env_uX6Qp8F6w9aBgx2ikH3BiREB8aHH"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "DATABASE_URL",
+          "target": [],
+          "customEnvironmentIds": [
+            "env_uX6Qp8F6w9aBgx2ikH3BiREB8aHH"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "RESPONSEOS_REQUIRE_AUTH",
+          "target": [],
+          "customEnvironmentIds": [
+            "env_uX6Qp8F6w9aBgx2ikH3BiREB8aHH"
+          ],
+          "type": "encrypted"
+        },
+        {
+          "key": "NEXT_PUBLIC_APP_URL",
+          "target": [],
+          "customEnvironmentIds": [
+            "env_uX6Qp8F6w9aBgx2ikH3BiREB8aHH"
+          ],
+          "type": "encrypted"
+        },
+        {
+          "key": "AJ_DIGITAL_CLERK_ORG_ID",
+          "target": [],
+          "customEnvironmentIds": [
+            "env_uX6Qp8F6w9aBgx2ikH3BiREB8aHH"
+          ],
+          "type": "encrypted"
+        },
+        {
+          "key": "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+          "target": [],
+          "customEnvironmentIds": [
+            "env_uX6Qp8F6w9aBgx2ikH3BiREB8aHH"
+          ],
+          "type": "encrypted"
+        },
+        {
+          "key": "CLERK_SECRET_KEY",
+          "target": [],
+          "customEnvironmentIds": [
+            "env_uX6Qp8F6w9aBgx2ikH3BiREB8aHH"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "CLERK_WEBHOOK_SECRET",
+          "target": [],
+          "customEnvironmentIds": [
+            "env_uX6Qp8F6w9aBgx2ikH3BiREB8aHH"
+          ],
+          "type": "sensitive"
+        }
+      ],
+      "connectionValueReadback": "UNAVAILABLE: sensitive values withheld"
+    },
+    {
+      "name": "responseos-frl-live-demo",
+      "hiddenProductionEnvCount": 0,
+      "envs": [
+        {
+          "key": "TELNYX_PUBLIC_KEY",
+          "target": [],
+          "customEnvironmentIds": [
+            "env_k4aq29aq3e4XqcKuaNyRYyOJ7YkV"
+          ],
+          "type": "encrypted"
+        },
+        {
+          "key": "RESEND_API_KEY",
+          "target": [],
+          "customEnvironmentIds": [
+            "env_k4aq29aq3e4XqcKuaNyRYyOJ7YkV"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "HUBSPOT_ACCESS_TOKEN",
+          "target": [],
+          "customEnvironmentIds": [
+            "env_k4aq29aq3e4XqcKuaNyRYyOJ7YkV"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "EMAIL_FROM",
+          "target": [],
+          "customEnvironmentIds": [
+            "env_k4aq29aq3e4XqcKuaNyRYyOJ7YkV"
+          ],
+          "type": "encrypted"
+        },
+        {
+          "key": "CLERK_WEBHOOK_SECRET",
+          "target": [],
+          "customEnvironmentIds": [
+            "env_k4aq29aq3e4XqcKuaNyRYyOJ7YkV"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+          "target": [],
+          "customEnvironmentIds": [
+            "env_k4aq29aq3e4XqcKuaNyRYyOJ7YkV"
+          ],
+          "type": "encrypted"
+        },
+        {
+          "key": "AJ_DIGITAL_CLERK_ORG_ID",
+          "target": [],
+          "customEnvironmentIds": [
+            "env_k4aq29aq3e4XqcKuaNyRYyOJ7YkV"
+          ],
+          "type": "encrypted"
+        },
+        {
+          "key": "NEXT_PUBLIC_APP_URL",
+          "target": [],
+          "customEnvironmentIds": [
+            "env_k4aq29aq3e4XqcKuaNyRYyOJ7YkV"
+          ],
+          "type": "encrypted"
+        },
+        {
+          "key": "RESPONSEOS_DEPLOYMENT_LANE",
+          "target": [],
+          "customEnvironmentIds": [
+            "env_k4aq29aq3e4XqcKuaNyRYyOJ7YkV"
+          ],
+          "type": "encrypted"
+        },
+        {
+          "key": "RESPONSEOS_REQUIRE_AUTH",
+          "target": [],
+          "customEnvironmentIds": [
+            "env_k4aq29aq3e4XqcKuaNyRYyOJ7YkV"
+          ],
+          "type": "encrypted"
+        },
+        {
+          "key": "RESPONSEOS_BUILD_SHA",
+          "target": [],
+          "customEnvironmentIds": [
+            "env_k4aq29aq3e4XqcKuaNyRYyOJ7YkV"
+          ],
+          "type": "encrypted"
+        },
+        {
+          "key": "RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED",
+          "target": [],
+          "customEnvironmentIds": [
+            "env_k4aq29aq3e4XqcKuaNyRYyOJ7YkV"
+          ],
+          "type": "encrypted"
+        },
+        {
+          "key": "RESPONSEOS_LIVE_HUBSPOT_ENABLED",
+          "target": [],
+          "customEnvironmentIds": [
+            "env_k4aq29aq3e4XqcKuaNyRYyOJ7YkV"
+          ],
+          "type": "encrypted"
+        },
+        {
+          "key": "RESPONSEOS_LIVE_EMAIL_ENABLED",
+          "target": [],
+          "customEnvironmentIds": [
+            "env_k4aq29aq3e4XqcKuaNyRYyOJ7YkV"
+          ],
+          "type": "encrypted"
+        },
+        {
+          "key": "DATABASE_URL",
+          "target": [],
+          "customEnvironmentIds": [
+            "env_k4aq29aq3e4XqcKuaNyRYyOJ7YkV"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "DIRECT_URL",
+          "target": [],
+          "customEnvironmentIds": [
+            "env_k4aq29aq3e4XqcKuaNyRYyOJ7YkV"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "CLERK_SECRET_KEY",
+          "target": [],
+          "customEnvironmentIds": [
+            "env_k4aq29aq3e4XqcKuaNyRYyOJ7YkV"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "NEXT_PUBLIC_APP_URL",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "NODE_ENV",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "DATABASE_URL",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "DIRECT_URL",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "RESPONSEOS_DATABASE_IDENTITY",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "CLERK_SECRET_KEY",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "CLERK_WEBHOOK_SECRET",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "AJ_DIGITAL_CLERK_ORG_ID",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "RESPONSEOS_REQUIRE_AUTH",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "RESPONSEOS_DEPLOYMENT_LANE",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "RESPONSEOS_DEMO_ACCOUNT_ID",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "RESPONSEOS_INBOUND_ACCOUNT_ID",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "RESPONSEOS_PUBLIC_AUDIT_INTAKE_ENABLED",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "RESPONSEOS_AUDIT_NOTIFICATION_WEBHOOK_URL",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "RESPONSEOS_DEMO_RESET",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "RESPONSEOS_PROSPECT_PURGE_ENABLED",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "RESPONSEOS_DEV_SESSION",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "RESPONSEOS_PROVIDER_KEY",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "R2_ACCOUNT_ID",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "R2_ACCESS_KEY_ID",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "R2_SECRET_ACCESS_KEY",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "R2_BUCKET_NAME",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "TELNYX_API_KEY",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "customEnvironmentIds": [
+            "env_k4aq29aq3e4XqcKuaNyRYyOJ7YkV"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "TELNYX_PUBLIC_KEY",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "RESPONSEOS_PROSPECT_BOOTSTRAP_ENABLED",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "RESPONSEOS_PROVIDER_ATTESTATION_PUBLIC_KEY",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "RESPONSEOS_PROMOTION_IMPORT_ENABLED",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "RESPONSEOS_DEMO_PHONE_E164",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "RESPONSEOS_LIVE_CALL_DEMO_PUBLIC",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "TWILIO_ACCOUNT_SID",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "TWILIO_AUTH_TOKEN",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "TWILIO_PHONE_NUMBER",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "RETELL_API_KEY",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "VAPI_API_KEY",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "BLAND_API_KEY",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "RESEND_API_KEY",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "EMAIL_FROM",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "STRIPE_SECRET_KEY",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "STRIPE_WEBHOOK_SECRET",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "N8N_WEBHOOK_SECRET",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "N8N_BASE_URL",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "GHL_API_KEY",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "HUBSPOT_ACCESS_TOKEN",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "customEnvironmentIds": [],
+          "type": "sensitive"
+        },
+        {
+          "key": "RESPONSEOS_LIVE_HUBSPOT_ENABLED",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "CALENDLY_API_KEY",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "SENTRY_DSN",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "POSTHOG_KEY",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "NEXT_PUBLIC_POSTHOG_KEY",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "CAREER_OS_API_KEY",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "CAREER_OS_WEBHOOK_URL",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        }
+      ],
+      "connectionValueReadback": "UNAVAILABLE: sensitive values withheld"
+    },
+    {
+      "name": "florida-ramp-lift-website",
+      "hiddenProductionEnvCount": 0,
+      "envs": [
+        {
+          "key": "NEXT_PUBLIC_LEAD_CAPTURE_ENABLED",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "test/lead-acceptance-20261008",
+          "type": "plain"
+        },
+        {
+          "key": "NEXT_PUBLIC_SITE_ENV",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "test/lead-acceptance-20261008",
+          "type": "plain"
+        },
+        {
+          "key": "NEXT_PUBLIC_CAMPAIGN_ATTRIBUTION_ENABLED",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "test/lead-acceptance-20261008",
+          "type": "plain"
+        },
+        {
+          "key": "NEXT_PUBLIC_INDEXING_ENABLED",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "test/lead-acceptance-20261008",
+          "type": "plain"
+        },
+        {
+          "key": "NEXT_PUBLIC_SANITY_PROJECT_ID",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "content/image-caption-cleanup",
+          "type": "plain"
+        },
+        {
+          "key": "NEXT_PUBLIC_SANITY_DATASET",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "content/image-caption-cleanup",
+          "type": "plain"
+        },
+        {
+          "key": "NEXT_PUBLIC_SANITY_API_VERSION",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "content/image-caption-cleanup",
+          "type": "plain"
+        },
+        {
+          "key": "SITE_CONTENT_SOURCE",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "content/image-caption-cleanup",
+          "type": "plain"
+        },
+        {
+          "key": "SANITY_PREVIEW_SECRET",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "content/image-caption-cleanup",
+          "type": "sensitive"
+        },
+        {
+          "key": "NEXT_PUBLIC_SANITY_PROJECT_ID",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "fix/preview-review-access",
+          "type": "plain"
+        },
+        {
+          "key": "NEXT_PUBLIC_SANITY_DATASET",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "fix/preview-review-access",
+          "type": "plain"
+        },
+        {
+          "key": "NEXT_PUBLIC_SANITY_API_VERSION",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "fix/preview-review-access",
+          "type": "plain"
+        },
+        {
+          "key": "SITE_CONTENT_SOURCE",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "fix/preview-review-access",
+          "type": "plain"
+        },
+        {
+          "key": "SANITY_PREVIEW_SECRET",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "fix/preview-review-access",
+          "type": "sensitive"
+        },
+        {
+          "key": "NEXT_PUBLIC_SANITY_PROJECT_ID",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr07-service-content",
+          "type": "plain"
+        },
+        {
+          "key": "NEXT_PUBLIC_SANITY_DATASET",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr07-service-content",
+          "type": "plain"
+        },
+        {
+          "key": "NEXT_PUBLIC_SANITY_API_VERSION",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr07-service-content",
+          "type": "plain"
+        },
+        {
+          "key": "SITE_CONTENT_SOURCE",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr07-service-content",
+          "type": "plain"
+        },
+        {
+          "key": "SANITY_PREVIEW_SECRET",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr07-service-content",
+          "type": "sensitive"
+        },
+        {
+          "key": "SITE_CONTENT_SOURCE",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr06-location-content",
+          "type": "plain"
+        },
+        {
+          "key": "SANITY_PREVIEW_SECRET",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr06-location-content",
+          "type": "sensitive"
+        },
+        {
+          "key": "NEXT_PUBLIC_SANITY_PROJECT_ID",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr06-location-content",
+          "type": "plain"
+        },
+        {
+          "key": "NEXT_PUBLIC_SANITY_DATASET",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr06-location-content",
+          "type": "plain"
+        },
+        {
+          "key": "NEXT_PUBLIC_SANITY_API_VERSION",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr06-location-content",
+          "type": "plain"
+        },
+        {
+          "key": "NEXT_PUBLIC_SANITY_API_VERSION",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr05-location-content",
+          "type": "plain"
+        },
+        {
+          "key": "NEXT_PUBLIC_SANITY_DATASET",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr05-location-content",
+          "type": "plain"
+        },
+        {
+          "key": "NEXT_PUBLIC_SANITY_PROJECT_ID",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr05-location-content",
+          "type": "plain"
+        },
+        {
+          "key": "SANITY_PREVIEW_SECRET",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr05-location-content",
+          "type": "sensitive"
+        },
+        {
+          "key": "SITE_CONTENT_SOURCE",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr05-location-content",
+          "type": "plain"
+        },
+        {
+          "key": "NEXT_PUBLIC_LEAD_CAPTURE_ENABLED",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr04-professional-intake",
+          "type": "plain"
+        },
+        {
+          "key": "SITE_CONTENT_SOURCE",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr04-professional-intake",
+          "type": "plain"
+        },
+        {
+          "key": "SANITY_PREVIEW_SECRET",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr04-professional-intake",
+          "type": "sensitive"
+        },
+        {
+          "key": "NEXT_PUBLIC_SANITY_PROJECT_ID",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr04-professional-intake",
+          "type": "plain"
+        },
+        {
+          "key": "NEXT_PUBLIC_SANITY_DATASET",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr04-professional-intake",
+          "type": "plain"
+        },
+        {
+          "key": "NEXT_PUBLIC_SANITY_API_VERSION",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr04-professional-intake",
+          "type": "plain"
+        },
+        {
+          "key": "NEXT_PUBLIC_SANITY_API_VERSION",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr03-vpl-decision-content",
+          "type": "plain"
+        },
+        {
+          "key": "NEXT_PUBLIC_SANITY_PROJECT_ID",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr03-vpl-decision-content",
+          "type": "plain"
+        },
+        {
+          "key": "NEXT_PUBLIC_SANITY_DATASET",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr03-vpl-decision-content",
+          "type": "plain"
+        },
+        {
+          "key": "SITE_CONTENT_SOURCE",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr03-vpl-decision-content",
+          "type": "plain"
+        },
+        {
+          "key": "SANITY_PREVIEW_SECRET",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr03-vpl-decision-content",
+          "type": "sensitive"
+        },
+        {
+          "key": "SANITY_PREVIEW_SECRET",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr02-vpl-authority-content",
+          "type": "sensitive"
+        },
+        {
+          "key": "SITE_CONTENT_SOURCE",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr02-vpl-authority-content",
+          "type": "plain"
+        },
+        {
+          "key": "NEXT_PUBLIC_SANITY_PROJECT_ID",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr02-vpl-authority-content",
+          "type": "plain"
+        },
+        {
+          "key": "NEXT_PUBLIC_SANITY_DATASET",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr02-vpl-authority-content",
+          "type": "plain"
+        },
+        {
+          "key": "NEXT_PUBLIC_SANITY_API_VERSION",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr02-vpl-authority-content",
+          "type": "plain"
+        },
+        {
+          "key": "NEXT_PUBLIC_SITE_ENV",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr02-vpl-authority-content",
+          "type": "plain"
+        },
+        {
+          "key": "NEXT_PUBLIC_INDEXING_ENABLED",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr02-vpl-authority-content",
+          "type": "plain"
+        },
+        {
+          "key": "SITE_CONTENT_SOURCE",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr01-evidence-framework",
+          "type": "plain"
+        },
+        {
+          "key": "NEXT_PUBLIC_SANITY_PROJECT_ID",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr01-evidence-framework",
+          "type": "plain"
+        },
+        {
+          "key": "NEXT_PUBLIC_SANITY_DATASET",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr01-evidence-framework",
+          "type": "plain"
+        },
+        {
+          "key": "NEXT_PUBLIC_SANITY_API_VERSION",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr01-evidence-framework",
+          "type": "plain"
+        },
+        {
+          "key": "SANITY_PREVIEW_SECRET",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr01-evidence-framework",
+          "type": "sensitive"
+        },
+        {
+          "key": "NEXT_PUBLIC_SITE_ENV",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr01-evidence-framework",
+          "type": "plain"
+        },
+        {
+          "key": "NEXT_PUBLIC_INDEXING_ENABLED",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "codex/pr01-evidence-framework",
+          "type": "plain"
+        },
+        {
+          "key": "SANITY_API_READ_TOKEN",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "feat/sanity-commissioning",
+          "type": "sensitive"
+        },
+        {
+          "key": "NEXT_PUBLIC_GTM_ID",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "feat/ga4-preview",
+          "type": "plain"
+        },
+        {
+          "key": "NEXT_PUBLIC_SANITY_API_VERSION",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "feat/sanity-commissioning",
+          "type": "plain"
+        },
+        {
+          "key": "SANITY_PREVIEW_SECRET",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "feat/sanity-commissioning",
+          "type": "sensitive"
+        },
+        {
+          "key": "SITE_CONTENT_SOURCE",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "feat/sanity-commissioning",
+          "type": "plain"
+        },
+        {
+          "key": "NEXT_PUBLIC_SANITY_PROJECT_ID",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "feat/sanity-commissioning",
+          "type": "plain"
+        },
+        {
+          "key": "NEXT_PUBLIC_SANITY_DATASET",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "feat/sanity-commissioning",
+          "type": "plain"
+        },
+        {
+          "key": "NEXT_PUBLIC_GA_MEASUREMENT_ID",
+          "target": [
+            "preview"
+          ],
+          "gitBranch": "feat/ga4-preview",
+          "type": "plain"
+        },
+        {
+          "key": "SANITY_TOKEN",
+          "target": [
+            "production"
+          ],
+          "customEnvironmentIds": [],
+          "type": "sensitive"
+        },
+        {
+          "key": "SANITY_TOKEN",
+          "target": [
+            "preview"
+          ],
+          "customEnvironmentIds": [],
+          "type": "sensitive"
+        },
+        {
+          "key": "MAILERLITE_LEAD_GROUP_ID",
+          "target": [
+            "preview"
+          ],
+          "customEnvironmentIds": [],
+          "type": "plain"
+        },
+        {
+          "key": "HUBSPOT_INQUIRY_FORM_ID",
+          "target": [
+            "preview"
+          ],
+          "customEnvironmentIds": [],
+          "type": "encrypted"
+        },
+        {
+          "key": "MAILERLITE_LEAD_GROUP_ID",
+          "target": [
+            "production"
+          ],
+          "customEnvironmentIds": [],
+          "type": "plain"
+        },
+        {
+          "key": "HUBSPOT_INQUIRY_FORM_ID",
+          "target": [
+            "production"
+          ],
+          "customEnvironmentIds": [],
+          "type": "encrypted"
+        },
+        {
+          "key": "MAILERLITE_TOKEN",
+          "target": [
+            "preview"
+          ],
+          "customEnvironmentIds": [],
+          "type": "sensitive"
+        },
+        {
+          "key": "MAILERLITE_TOKEN",
+          "target": [
+            "production"
+          ],
+          "customEnvironmentIds": [],
+          "type": "sensitive"
+        },
+        {
+          "key": "HUBSPOT_PRIVATE_APP_TOKEN",
+          "target": [
+            "preview"
+          ],
+          "customEnvironmentIds": [],
+          "type": "sensitive"
+        },
+        {
+          "key": "HUBSPOT_PRIVATE_APP_TOKEN",
+          "target": [
+            "production"
+          ],
+          "customEnvironmentIds": [],
+          "type": "sensitive"
+        },
+        {
+          "key": "HUBSPOT_PORTAL_ID",
+          "target": [
+            "preview"
+          ],
+          "customEnvironmentIds": [],
+          "type": "encrypted"
+        },
+        {
+          "key": "HUBSPOT_PORTAL_ID",
+          "target": [
+            "production"
+          ],
+          "customEnvironmentIds": [],
+          "type": "encrypted"
+        },
+        {
+          "key": "NEXT_PUBLIC_LEAD_CAPTURE_ENABLED",
+          "target": [
+            "preview"
+          ],
+          "customEnvironmentIds": [],
+          "type": "encrypted"
+        },
+        {
+          "key": "DOPPLER_PROJECT",
+          "target": [
+            "preview"
+          ],
+          "customEnvironmentIds": [],
+          "type": "encrypted"
+        },
+        {
+          "key": "DOPPLER_ENVIRONMENT",
+          "target": [
+            "preview"
+          ],
+          "customEnvironmentIds": [],
+          "type": "encrypted"
+        },
+        {
+          "key": "DOPPLER_CONFIG",
+          "target": [
+            "preview"
+          ],
+          "customEnvironmentIds": [],
+          "type": "encrypted"
+        },
+        {
+          "key": "NEXT_PUBLIC_LEAD_CAPTURE_ENABLED",
+          "target": [
+            "production"
+          ],
+          "customEnvironmentIds": [],
+          "type": "encrypted"
+        },
+        {
+          "key": "DOPPLER_PROJECT",
+          "target": [
+            "production"
+          ],
+          "customEnvironmentIds": [],
+          "type": "encrypted"
+        },
+        {
+          "key": "DOPPLER_ENVIRONMENT",
+          "target": [
+            "production"
+          ],
+          "customEnvironmentIds": [],
+          "type": "encrypted"
+        },
+        {
+          "key": "DOPPLER_CONFIG",
+          "target": [
+            "production"
+          ],
+          "customEnvironmentIds": [],
+          "type": "encrypted"
+        },
+        {
+          "key": "NEXT_PUBLIC_SITE_URL",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "NEXT_PUBLIC_SITE_ENV",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "NEXT_PUBLIC_INDEXING_ENABLED",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "NEXT_PUBLIC_SANITY_PROJECT_ID",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "NEXT_PUBLIC_SANITY_DATASET",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "NEXT_PUBLIC_SANITY_API_VERSION",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "SANITY_API_READ_TOKEN",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "NEXT_PUBLIC_HUBSPOT_PORTAL_ID",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "NEXT_PUBLIC_HUBSPOT_CONTACT_FORM_ID",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "NEXT_PUBLIC_GTM_ID",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "NEXT_PUBLIC_GA_MEASUREMENT_ID",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "RESEND_API_KEY",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        },
+        {
+          "key": "EMAIL_FROM_ADDRESS",
+          "target": [
+            "production",
+            "preview"
+          ],
+          "type": "sensitive"
+        }
+      ],
+      "connectionValueReadback": "UNAVAILABLE: sensitive values withheld"
+    },
+    {
+      "name": "frl-website-client-preview",
+      "hiddenProductionEnvCount": 0,
+      "envs": [],
+      "connectionValueReadback": "UNAVAILABLE: sensitive values withheld"
+    }
+  ],
+  "render": "Workspace selection pending; no services inspected",
+  "stagingPublicFunction": {
+    "name": "show_db_tree",
+    "owner": "neondb_owner",
+    "securityDefiner": false,
+    "acl": null,
+    "settings": null
+  }
+}

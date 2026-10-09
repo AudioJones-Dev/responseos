@@ -1,0 +1,10 @@
+{
+  "status": "PROPOSED_NOT_PROVISIONED",
+  "projectId": "patient-snow-16014934",
+  "branchId": "br-mute-boat-a6ylen11",
+  "endpointId": "ep-young-morning-a6oeu9vv",
+  "host": "ep-young-morning-a6oeu9vv.us-west-2.aws.neon.tech",
+  "database": "neondb",
+  "runtimeRole": "responseos_app_staging",
+  "migrationRole": "responseos_migrator_staging"
+}

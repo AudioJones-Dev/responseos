@@ -1433,6 +1433,17 @@
       "refType": "pull",
       "priority": "High",
       "blocked": false
+    },
+    {
+      "id": "DB-NEON-01",
+      "phase": "Tech Debt & Hardening",
+      "title": "Review Neon authority, migration lineage and restore safety; hosted changes gated",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-10-09",
+      "due": "2026-10-09"
     }
   ],
   "liveIssues": [
