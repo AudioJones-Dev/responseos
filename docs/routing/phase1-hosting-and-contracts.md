@@ -18,7 +18,7 @@ ResponseOS PR [209](https://github.com/AudioJones-Dev/responseos/pull/209), head
 
 ## Existing hosting, independently refreshed
 
-Vercel readback identifies ResponseOS, responseos-frl-live-demo and responseos-staging-mock projects. The latest observed ResponseOS deployment is READY at master `26da408`, target Production, deployment `dpl_BM7TJQxPSoH7nhwBiBNfQiiQVW9p`. This is evidence of the existing application/demo surface, not worker or FRL delivery readiness. Neon lists the corresponding existing Postgres projects. No hosted database query or migration was performed. Render workspace inventory returned Michael's workspace; service listing returned no usable service inventory. Railway's account/runtime inventory is not connected here.
+Vercel readback identifies ResponseOS, responseos-frl-live-demo and responseos-staging-mock projects. The latest observed ResponseOS deployment is READY at master `26da408`, target Production, deployment `dpl_BM7TJQxPSoH7nhwBiBNfQiiQVW9p`. This is evidence of the existing application/demo surface, not worker or FRL delivery readiness. Neon lists the corresponding existing Postgres projects. ResponseOS project `quiet-band-27365020` reports PostgreSQL 17 in `aws-us-east-1`; CI now tests PostgreSQL 16 and 17. Its existing free-tier compute has suspend timeout zero, so polling cost and capacity need review. No hosted database query or migration was performed. Render workspace inventory returned Michael's workspace; service listing returned no usable service inventory. Railway's account/runtime inventory is not connected here.
 
 The governed staging contract is explicitly mock-only with provider credentials forbidden. It must not be silently repurposed for live delivery. Hosting an isolated simulated worker against approved staging resources requires configuration review and provisioning/deploy approval.
 
@@ -31,7 +31,7 @@ Recommend a Render background worker as the first deployment candidate because a
 | Concern | Design / operational consequence |
 |---|---|
 | Runtime | Long-lived Node 24 process. Render background workers receive no incoming traffic: loopback health/readiness is for in-process/container diagnosis, while platform monitoring must use logs/process supervision. Choose a reviewed private service instead if network readiness probes are required |
-| Database | Existing Neon PostgreSQL over TLS, pooled runtime role, direct migration role; choose worker region near the selected existing DB; never place migration privileges in worker runtime |
+| Database | Existing Neon PostgreSQL over TLS, pooled runtime role, direct migration role; choose worker region near the selected existing DB (ResponseOS is currently AWS us-east-1); never place migration privileges in worker runtime |
 | Queue wakeup | One-second bounded polling; no dependence on LISTEN/NOTIFY over pooled connections |
 | Concurrency | Start one replica, two jobs per batch; configurable one to four per process. Independent replicas fence the same intent but total connection/API budget needs approval |
 | Claims | Short tenant lock around claim transaction; 60-second lease; no transaction held across provider operations |

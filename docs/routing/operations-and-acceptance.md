@@ -42,4 +42,4 @@ Then approve an isolated staging website interface integration. Keep canonical r
 - HubSpot live transport/account binding and reviewed activation of read-only reconciliation proof; worker currently refuses HubSpot mode.
 - Note/Task, company association and team notification scope; pending qualification and website acquisition/attribution contract.
 - Controlled provider records and notifications approval, actual provider acceptance, staging website end-to-end acceptance.
-- CI on required Linux/Node/Postgres runtimes and human review. No production lead capture, indexing, domain cutover, Sanity publication or live customer delivery authorized.
+- CI on Linux/Node 24.18.0/PostgreSQL 16 and 17 runtimes and human review. No production lead capture, indexing, domain cutover, Sanity publication or live customer delivery authorized.
