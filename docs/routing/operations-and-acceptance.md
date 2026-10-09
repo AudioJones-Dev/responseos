@@ -36,10 +36,12 @@ Then approve an isolated staging website interface integration. Keep canonical r
 
 ## Residual blockers
 
+October 9 update: Render architecture is approved; see [deployment/secrets/cost specification](render-staging-design.md). [Local security review and cold restore](security-and-restore-review.md) passed within their stated scope. Notes/Tasks and approved existing-Company associations now have local checkpointed handling; internal notifications remain queued evidence with no external delivery. [Controlled staging acceptance](controlled-staging-acceptance.md) supersedes the earlier acceptance outline. Fresh existing staging metadata requires PostgreSQL 18 coverage and target/region reconciliation. These updates do not authorize hosted operations.
+
 - Human security review of hosted credential protocol, least-privilege DB role and credential rotation/revocation.
 - Approved host/service/region, secrets configuration, external paging and operational review of the rendered queue.
-- Populated rollback/restore drill and hosted migration approval.
+- Hosted backup/PITR restore acceptance and hosted migration approval; local populated cold restore passed.
 - HubSpot live transport/account binding and reviewed activation of read-only reconciliation proof; worker currently refuses HubSpot mode.
-- Note/Task, company association and team notification scope; pending qualification and website acquisition/attribution contract.
+- Actual Note/Task/Company provider acceptance, approved Company bindings and external team notification channel/recipient; pending qualification and website acquisition/attribution contract.
 - Controlled provider records and notifications approval, actual provider acceptance, staging website end-to-end acceptance.
-- CI on Linux/Node 24.18.0/PostgreSQL 16 and 17 runtimes and human review. No production lead capture, indexing, domain cutover, Sanity publication or live customer delivery authorized.
+- CI on Linux/Node 24.18.0/PostgreSQL 16, 17 and 18 runtimes and human review. No production lead capture, indexing, domain cutover, Sanity publication or live customer delivery authorized.
