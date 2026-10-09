@@ -1433,6 +1433,32 @@
       "refType": "pull",
       "priority": "High",
       "blocked": false
+    },
+    {
+      "id": "FRL-WEB-RECEIPT",
+      "ref": 209,
+      "refType": "pull",
+      "phase": "Integrations",
+      "title": "Validate local FRL durable receipt foundation; delivery blocked",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 85,
+      "priority": "High",
+      "blocked": true,
+      "blockedReason": "Hosted ingress and durable dispatch adapter remain unimplemented"
+    },
+    {
+      "id": "FRL-MOCK-DELIVERY",
+      "ref": 209,
+      "refType": "pull",
+      "phase": "Integrations",
+      "title": "Validate FRL mock dispatch, runner, retention and receipt expiry recovery",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 85,
+      "priority": "High",
+      "blocked": true,
+      "blockedReason": "Live adapters, hosted ingress and provider reconciliation remain unimplemented; signed local test ingress validated"
     }
   ],
   "liveIssues": [

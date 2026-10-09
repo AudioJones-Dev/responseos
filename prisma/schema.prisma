@@ -196,23 +196,65 @@ enum NotificationStatus {
 }
 
 model Account {
-  id            String        @id @default(cuid())
-  name          String
-  slug          String        @unique
-  industry      String
-  website_url   String?
-  primary_phone String?
-  timezone      String
-  status        AccountStatus @default(lead)
+  frl_web_intakes FrlWebIntake[]
+  id              String         @id @default(cuid())
+  name            String
+  slug            String         @unique
+  industry        String
+  website_url     String?
+  primary_phone   String?
+  timezone        String
+  status          AccountStatus  @default(lead)
   // ADR-0046 — administrative classification. Defaults to `customer`
   // so every existing row stays valid without backfill.
-  account_type  AccountType   @default(customer)
+  account_type    AccountType    @default(customer)
   // 32A — Clerk integration substrate per ADR-0005 + step-2.4 plan §4.3.
   // Nullable so existing seeded accounts stay valid without backfill.
   // Wiring (session derivation, webhook sync) lands in 32B/32C.
-  clerk_org_id  String?       @unique
-  created_at    DateTime      @default(now())
-  updated_at    DateTime      @updatedAt
+  clerk_org_id    String?        @unique
+  created_at      DateTime       @default(now())
+  updated_at      DateTime       @updatedAt
+}
+
+model FrlWebIntake {
+  operations      FrlMockDelivery[]
+  id              String            @id @default(cuid())
+  account_id      String
+  account         Account           @relation(fields: [account_id], references: [id], onDelete: Restrict)
+  environment     String
+  submission_id   String
+  reference       String            @unique
+  payload_hash    String
+  request_json    Json?
+  delivery_status String            @default("blocked")
+  expires_at      DateTime
+  purged_at       DateTime?
+  created_at      DateTime          @default(now())
+  updated_at      DateTime          @updatedAt
+
+  @@unique([account_id, environment, submission_id])
+  @@unique([account_id, id])
+  @@index([account_id, delivery_status])
+  @@index([expires_at])
+}
+
+model FrlMockDelivery {
+  id             String       @id @default(cuid())
+  account_id     String
+  intake_id      String
+  intake         FrlWebIntake @relation(fields: [account_id, intake_id], references: [account_id, id], onDelete: Restrict)
+  kind           String
+  mode           String       @default("mock")
+  status         String       @default("blocked")
+  attempt_count  Int          @default(0)
+  dispatch_token String?
+  lease_until    DateTime?
+  receipt_id     String?
+  created_at     DateTime     @default(now())
+  updated_at     DateTime     @updatedAt
+
+  @@unique([account_id, intake_id, kind])
+  @@index([account_id, status])
 }
 
 model User {
