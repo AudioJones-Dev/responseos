@@ -1469,7 +1469,7 @@
       "progress": 85,
       "priority": "High",
       "blocked": true,
-      "blockedReason": "Hosting/security review, live provider reconciliation and controlled acceptance remain gated",
+      "blockedReason": "Oregon staging specification prepared; archived Neon branch, dedicated role, hosted restore, trial budget and provisioning/deployment approval remain gated",
       "ref": 210,
       "refType": "pull"
     }
@@ -1487,3 +1487,4 @@
   ],
   "generatedAt": "2026-08-21T00:51:44.624Z"
 }
+

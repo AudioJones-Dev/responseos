@@ -3,7 +3,7 @@
  "services": [{
   "type": "worker", "name": "responseos-routing-staging", "runtime": "node",
   "repo": "https://github.com/AudioJones-Dev/responseos", "branch": "feat/frl-hosted-routing-phase1",
-  "region": "virginia", "plan": "0.5c-512mb", "numInstances": 1,
+  "region": "oregon", "plan": "0.5c-512mb", "numInstances": 1,
   "autoDeployTrigger": "off", "maxShutdownDelaySeconds": 90,
   "buildCommand": "npm ci --include=dev && npx prisma generate",
   "startCommand": "node --import tsx scripts/routing-worker.ts",
