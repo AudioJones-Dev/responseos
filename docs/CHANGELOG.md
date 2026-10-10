@@ -14,7 +14,7 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
   - `esbuild@0.28.1` (via `tsx` and `vitest`): postinstall check that the platform binary from `@esbuild/*` is present, fetching it from the npm registry if it is missing.
   - `unrs-resolver@1.12.2` (via `eslint-config-next`'s import resolver): postinstall check, through `napi-postinstall`, that the native binding from `@unrs/*` is present.
 - **Why:** #212 approved Prisma's scripts and left these two for a decision. The Vercel build for `7a6b8ea` still warned about them, and npm 12 would skip them by default.
-- **Pinning:** entries are pinned to the reviewed version, as in #212. An upgrade of either package needs `npm install-scripts approve esbuild unrs-resolver` in the same change.
+- **Pinning:** entries are pinned to the reviewed version, as in #212. An upgrade of either package needs `npm approve-scripts esbuild unrs-resolver` in the same change. That form works on the pinned npm 11.16.0 and on later 11.x; the `npm install-scripts approve` namespace only exists from a later 11.x release.
 - **Verified:** a clean `npm ci` with npm 11.19.0 prints no install-scripts warning. `package-lock.json` is unchanged.
 - Dashboard task `L-20`.
 
@@ -25,7 +25,7 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
   - `@prisma/engines@6.19.3`: postinstall query-engine download.
   - `@prisma/client@6.19.3`: postinstall client setup.
 - **Why:** Vercel's npm 11.19 warned that these scripts were not yet approved. npm 12 blocks unapproved dependency scripts by default, which would leave the build without a query engine.
-- **Pinning:** entries are pinned to the reviewed version, which is npm's default. A Prisma upgrade needs `npm install-scripts approve prisma @prisma/client @prisma/engines` in the same change.
+- **Pinning:** entries are pinned to the reviewed version, which is npm's default. A Prisma upgrade needs `npm approve-scripts prisma @prisma/client @prisma/engines` in the same change. (Corrected in #213: the pinned npm 11.16.0 has no `install-scripts` command.)
 - **Not approved:** `esbuild` and `unrs-resolver` also have install scripts and stay unapproved here.
 - **Verified:** a clean `npm ci` with npm 11.19.0 runs the Prisma scripts with no warning for them, generates the client and downloads the engine. `package-lock.json` is unchanged.
 - **CI:** the aggregate `integration` check from #211 now uses `if: ${{ !cancelled() }}` instead of `always()`. A run cancelled by a newer push was reporting a red `integration` check on the superseded commit. It still fails when any PostgreSQL version fails.
