@@ -32,7 +32,7 @@ jobs:
       - run: npm test
       - run: npm run build
 
-  integration:
+  integration-matrix:
     name: integration (PostgreSQL ${{ matrix.postgres }})
     runs-on: ubuntu-latest
     strategy:
@@ -86,3 +86,12 @@ jobs:
           diff /tmp/responseos_test.reconciliation /tmp/responseos_restore.reconciliation
           npx prisma migrate diff --from-url "$DATABASE_URL" --to-url "postgresql://responseos:responseos@localhost:5432/responseos_restore" --exit-code
       - run: npm run build
+
+  # Branch protection requires a check named "integration"; it passes only
+  # when every PostgreSQL version in the matrix passed.
+  integration:
+    needs: integration-matrix
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - run: test "${{ needs.integration-matrix.result }}" = "success"
