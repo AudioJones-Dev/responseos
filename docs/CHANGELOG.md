@@ -12,7 +12,7 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 - **Bug:** `isConnectionLoss` (from #211) missed one of the ways a terminated Postgres backend reaches Prisma. When a batch `$transaction([...])` reads Postgres's `FATAL: terminating connection due to administrator command` before the socket closes, Prisma raises a `PrismaClientUnknownRequestError` with no code. That is neither `P1017` nor `P2010`. The recovering client then did not treat it as connection loss and did not reset the pool.
 - **Seen in:** `integration (PostgreSQL 17)` on #214's first push. The `database-reconnect` test failed because the error was not `P1017`. The same test passed on `master` for `92dadce`, so this is a race, not a regression.
-- **Fix:** an unknown-request error whose message is Postgres's admin- or crash-shutdown FATAL (SQLSTATE `57P01`/`57P02`) now counts as connection loss. Any other uncoded error still does not.
+- **Fix:** an unknown-request error whose message is one of Postgres's session-ending messages, at the severity Postgres sends it, now counts as connection loss. Those are `FATAL: terminating connection due to administrator command`, plus the `WARNING`s for a crash of another server process, an immediate shutdown, and an unexpected SIGQUIT (SQLSTATE `57P01`/`57P02`, per `src/backend/tcop/postgres.c`). Any other uncoded error still does not.
 - **Tests:** the three integration assertions that expected `P1017` exactly now accept any connection-loss form through `isConnectionLoss`. New unit cases cover the uncoded form and fail without the fix. Locally, the reconnect integration file passed five runs out of five on PostgreSQL 16.
 
 ## Unreleased — docs: record the dev-only `braces` advisory as an accepted risk (#214)
