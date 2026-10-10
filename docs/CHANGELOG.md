@@ -8,7 +8,7 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
-## Unreleased — chore: approve Prisma's install scripts for npm's allowScripts policy
+## Unreleased — chore: approve Prisma's install scripts for npm's allowScripts policy (#212)
 
 - **What changed:** `package.json` gains an `allowScripts` field approving the three Prisma packages whose install scripts the app needs:
   - `prisma@6.19.3`: preinstall version check.
