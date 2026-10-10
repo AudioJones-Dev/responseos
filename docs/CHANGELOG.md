@@ -18,6 +18,7 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - **Pinning:** entries are pinned to the reviewed version, which is npm's default. A Prisma upgrade needs `npm install-scripts approve prisma @prisma/client @prisma/engines` in the same change.
 - **Not approved:** `esbuild` and `unrs-resolver` also have install scripts and stay unapproved here.
 - **Verified:** a clean `npm ci` with npm 11.19.0 runs the Prisma scripts with no warning for them, generates the client and downloads the engine. `package-lock.json` is unchanged.
+- **CI:** the aggregate `integration` check from #211 now uses `if: ${{ !cancelled() }}` instead of `always()`. A run cancelled by a newer push was reporting a red `integration` check on the superseded commit. It still fails when any PostgreSQL version fails.
 - Dashboard task `L-19`.
 
 ## Unreleased — chore: audit Neon authority and database migration safety (#211)
