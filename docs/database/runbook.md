@@ -66,4 +66,4 @@ Stop only authorized producers/workers first; preserve both databases, audit/que
 
 Live ResponseOS routing/provider activation, FRL content, domain/DNS/indexing, billing and receptionist behavior remain outside this task's authorization.
 
-A15: Application pool reset after P1017 is implemented for review and validated on synthetic local data without replay. Hosted pooler/network-outage and PR #210 worker recovery remain unverified; do not close cutover acceptance from local tests alone.
+A15: Application pool reset after a lost connection (P1017, or P2010 with SQLSTATE 57P01/57P02/08xxx) is implemented for review and validated on synthetic local data without replay. Hosted pooler/network-outage and PR #210 worker recovery remain unverified; do not close cutover acceptance from local tests alone.

@@ -1,6 +1,16 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { PrismaClient, type Prisma } from "@prisma/client";
 
+// A terminated backend surfaces either as a dropped connection (P1017) or,
+// when Postgres sends its FATAL first, as a failed raw query (P2010) carrying
+// the server's admin/crash shutdown or connection-exception SQLSTATE.
+export function isConnectionLoss(error: unknown): boolean {
+  if (!(error instanceof Error) || !("code" in error)) return false;
+  if (error.code === "P1017") return true;
+  const sqlState = (error as { meta?: { code?: unknown } }).meta?.code;
+  return error.code === "P2010" && typeof sqlState === "string" && (["57P01", "57P02"].includes(sqlState) || sqlState.startsWith("08"));
+}
+
 export function createRecoveringClient(options?: Prisma.PrismaClientOptions) {
   const base = new PrismaClient(options);
   const transactionContext = new AsyncLocalStorage<boolean>();
@@ -14,7 +24,7 @@ export function createRecoveringClient(options?: Prisma.PrismaClientOptions) {
     try {
       return await operation();
     } catch (error) {
-      if (error instanceof Error && "code" in error && error.code === "P1017" && !recovery) {
+      if (isConnectionLoss(error) && !recovery) {
         recovery = new Promise<void>(resolve => { releaseRecovery = resolve; });
       }
       throw error;

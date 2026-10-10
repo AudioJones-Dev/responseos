@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { PrismaClient } from "@prisma/client";
 import { expect, test } from "vitest";
-import { createRecoveringClient } from "../../lib/db/recoveringClient";
+import { createRecoveringClient, isConnectionLoss } from "../../lib/db/recoveringClient";
 import { runtimePrincipalQuery } from "../../scripts/database-principal-query.mjs";
 
 test("application client recovers after backend loss without replaying the failed query", async () => {
@@ -152,7 +152,8 @@ test("pool recovery waits for a concurrent healthy transaction to commit", async
     await ready;
     const [backend] = await client.$queryRaw<{pid:number}[]>`SELECT pg_backend_pid() AS pid`;
     await controller.$queryRaw`SELECT pg_terminate_backend(${backend.pid}::integer)`;
-    await expect(client.$queryRaw`SELECT 1`).rejects.toMatchObject({code:"P1017"});
+    const lost = await client.$queryRaw`SELECT 1`.then(()=>null,(error:unknown)=>error);
+    expect(isConnectionLoss(lost)).toBe(true);
     const later = Promise.resolve(client.account.count({where:{id}}));
     release();
     await transaction;
