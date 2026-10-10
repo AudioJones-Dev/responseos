@@ -48,7 +48,7 @@ CI now adds PostgreSQL 16/17/18 matrix runs: schema replay/shadow diff, seed, fu
 | duplicate inquiry replay | pinned #210 receipt replay/concurrent idempotency tests PASS |
 | delivery uncertainty quarantine | pinned #210 lease-expiry, lost-ack, partial-association, checkpoint and plan-change tests PASS |
 | worker restart recovery | pinned #210 isolated process stop/restart test PASS with durable simulated receipt |
-| DB disconnection/reconnection | new test terminates its own synthetic backend, reconnects and verifies one committed tenant survives; multi-service outage/hosted network acceptance pending |
+| DB disconnection/reconnection | test terminates its own synthetic backend and verifies committed data survives an explicit client reset. Automatic recovery through the unchanged application singleton is NOT PROVEN; local same-client retries failed and this blocks recovery acceptance |
 | backup restoration | local all-table logical restore PASS; six-hour Neon history metadata observed; hosted binding-safe routing-data restore not run |
 | security privilege validation | offline role/URL/options rejection PASS; shared-table RLS/PUBLIC TEMP impact reviewed; no actual dedicated LOGIN hosted grants installed/tested |
 | application regression | lint/type/unit/integration/build PASS locally; no FRL behavior changed |
@@ -57,3 +57,14 @@ CI now adds PostgreSQL 16/17/18 matrix runs: schema replay/shadow diff, seed, fu
 Supplemental untracked permission proposal reviewed separately: JSON SHA256 `47E35095EEBCC836CD1C8361757885AF2C0FC0DA97065A1BCC4239EC899FA971`; local-review script SHA256 `49AF19075D3C9137BAB3D75BB709FAA76A6B5F90164ACEF71C00C201B2E7EAD1`. Its report claims prior all-35-table hosted snapshot reconciliation; that report was read, not independently rerun here. This audit independently read original/restore User, Clerk-linked User, Account and migration counts only. Prior TLS handshake/usage/approval claims likewise remain attributed reports. Current metadata confirms corrected original/restore bindings; no historical operator action is inferred from current state.
 
 No production cutover, actual provider data migration, live routing, hosted grant/RLS validation or production readiness is claimed. Outstanding gates are in [approval register](runbook.md#outstanding-approval-register).
+
+
+## Review follow-up, 2026-10-10
+
+Migration exports now require explicit boolean finished/rolled_back fields; malformed flags cannot skip lineage validation. Restore snapshots require nonempty branch names. Readiness checks membership in every privileged or public-object/schema/database owner role, including indirect membership, and requires session_user=current_user. A synthetic PostgreSQL role test detects inherited ownership and CREATEDB membership; it is not a hosted login test.
+
+The previous reconnect test manually disconnected after failed attempts. Removing that reset exposed failure across three same-client attempts (including 250ms waits) on local PostgreSQL 16.15. The retained regression is explicitly named manual-reset recovery. No automatic reset/retry was added to business mutations: uncertain writes require an idempotency/reconciliation design. Automatic application recovery is an outstanding acceptance blocker, not a passing claim.
+
+Render discovery was authorized for Michael's workspace, but two list-services calls returned JSON null with no inventory or error. This does not establish that the workspace is empty. Effective service/database configuration remains UNKNOWN.
+
+Follow-up local checks: 701 unit tests, lint, typecheck and database-backed build PASS. Full integration rerun and exact-head CI are tracked on PR #211; earlier green evidence does not certify this follow-up commit.

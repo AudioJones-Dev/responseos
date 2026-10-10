@@ -29,10 +29,12 @@ describe("database connection boundary", () => {
 });
 describe("migration lineage", () => {
   const expected=[{name:"0001_base",checksum:"a"},{name:"0017_frl",checksum:"b"}];
-  it("allows unapplied trailing migrations", () => expect(validateMigrationHistory([{...expected[0],finished:true}],expected)).toEqual([]));
-  it("blocks the live-demo and FRL divergent 0017 histories", () => expect(validateMigrationHistory([{name:"0017_call_control",checksum:"c",finished:true}],expected)).toContain("applied_migration_absent_from_repository"));
-  it("blocks checksum drift and unfinished migration", () => expect(validateMigrationHistory([{name:"0001_base",checksum:"changed",finished:false}],expected)).toEqual(["unfinished_migration","migration_checksum_mismatch"]));
-  it("blocks missing earlier migrations", () => expect(validateMigrationHistory([{...expected[1],finished:true}],expected)).toContain("migration_history_gap"));
+  it("allows unapplied trailing migrations", () => expect(validateMigrationHistory([{...expected[0],finished:true,rolled_back:false}],expected)).toEqual([]));
+  it("blocks the live-demo and FRL divergent 0017 histories", () => expect(validateMigrationHistory([{name:"0017_call_control",checksum:"c",finished:true,rolled_back:false}],expected)).toContain("applied_migration_absent_from_repository"));
+  it.each(["false", undefined, null, 0])("rejects malformed rollback flags", (flag) => expect(validateMigrationHistory([{...expected[0],finished:true,rolled_back:flag}],expected)).toEqual(["migration_row_invalid"]));
+  it("rejects malformed finished flags", () => expect(validateMigrationHistory([{...expected[0],finished:"true",rolled_back:false}],expected)).toEqual(["migration_row_invalid"]));
+  it("blocks checksum drift and unfinished migration", () => expect(validateMigrationHistory([{name:"0001_base",checksum:"changed",finished:false,rolled_back:false}],expected)).toEqual(["unfinished_migration","migration_checksum_mismatch"]));
+  it("blocks missing earlier migrations", () => expect(validateMigrationHistory([{...expected[1],finished:true,rolled_back:false}],expected)).toContain("migration_history_gap"));
 });
 describe("restore binding incident regression", () => {
   const before={projectId:"p",defaultBranchId:"source",branches:[{id:"source",name:"main"}],endpoints:[{id:"app-endpoint",branchId:"source"}],connections:[{service:"web",endpointId:"app-endpoint",database:"db",role:"app"}]};
@@ -42,6 +44,7 @@ describe("restore binding incident regression", () => {
   it("blocks the original endpoint being rebound to the clone", () => expect(validateRestoreBindings(before,{...after,endpoints:after.endpoints.map(e=>e.id==="app-endpoint"?{...e,branchId:"clone"}:e)},clone)).toContain("existing_endpoint_binding_changed"));
   it("blocks default branch swaps", () => expect(validateRestoreBindings(before,{...after,defaultBranchId:"clone"},clone)).toContain("project_or_default_branch_changed"));
   it("blocks application retargeting", () => expect(validateRestoreBindings(before,{...after,connections:[{...before.connections[0],endpointId:"clone-endpoint"}]},clone)).toContain("application_connection_changed"));
+  it("requires names in both binding snapshots", () => expect(validateRestoreBindings({...before,branches:[{id:"source"}]},{...after,branches:[{id:"source"},{id:"clone",name:"restore"}]},clone)).toEqual(["binding_branch_name_missing"]));
   it("blocks incomplete inventories", () => expect(validateRestoreBindings({...before,connections:[]},after,clone)).toContain("binding_snapshot_incomplete"));
   it("blocks restore over the original branch", () => expect(validateRestoreBindings(before,after,{branchId:"source",endpointId:"app-endpoint"})).toContain("restore_target_not_separate"));
 });

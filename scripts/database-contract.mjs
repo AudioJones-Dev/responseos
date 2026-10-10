@@ -35,6 +35,7 @@ export function migrationFiles(directory) {
 
 export function validateMigrationHistory(applied, expected) {
   const errors = [];
+  if (applied.some(m => !m || typeof m.finished !== "boolean" || typeof m.rolled_back !== "boolean" || typeof m.name !== "string" || !m.name.trim() || typeof m.checksum !== "string" || !m.checksum.trim())) return ["migration_row_invalid"];
   const active = applied.filter(m => !m.rolled_back);
   const names = new Set();
   for (const row of active) {
@@ -57,6 +58,7 @@ export function validateRestoreBindings(before, after, restoreTarget) {
     for (const [list, key] of [[snapshot.branches, "id"], [snapshot.endpoints, "id"], [snapshot.connections, "service"]]) {
       if (list.some(e => !e[key]) || new Set(list.map(e => e[key])).size !== list.length) return ["binding_snapshot_ambiguous"];
     }
+    if (snapshot.branches.some(b => typeof b.name !== "string" || !b.name.trim())) return ["binding_branch_name_missing"];
     if (!snapshot.branches.some(b => b.id === snapshot.defaultBranchId) || snapshot.endpoints.some(e => !snapshot.branches.some(b => b.id === e.branchId)) || snapshot.connections.some(c => !c.database || !c.role || !snapshot.endpoints.some(e => e.id === c.endpointId))) return ["binding_snapshot_invalid"];
   }
   if (before.projectId !== after.projectId || before.defaultBranchId !== after.defaultBranchId) errors.push("project_or_default_branch_changed");

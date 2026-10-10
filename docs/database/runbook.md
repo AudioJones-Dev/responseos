@@ -49,7 +49,7 @@ Stop only authorized producers/workers first; preserve both databases, audit/que
 
 | ID | Required decision / evidence | Owner | State / blocks |
 | --- | --- | --- | --- |
-| A01 | Confirm Render Michael's workspace for read-only service/env discovery | AJ Digital | requested, pending; Render dependency inventory |
+| A01 | Confirm Render Michael's workspace for read-only service/env discovery | AJ Digital | authorized 2026-10-10; connector returned null, inventory remains UNKNOWN; Render dependency inventory |
 | A02 | Privately verify effective Vercel, GitHub/Doppler and Render URL/role/environment mappings | AJ Digital + operator | UNKNOWN; authority and source identity |
 | A03 | Identify production dataset and main neon_auth/demo consumers | AJ Digital | pending; production target and any consolidation |
 | A04 | Ratify ADR-0070, PG17 production proposal and staged PG18 compatibility evidence | AJ Digital | proposed; no version/region change authorized |
@@ -65,3 +65,5 @@ Stop only authorized producers/workers first; preserve both databases, audit/que
 | A14 | PR review/merge and PR #209/#210/#93 decisions | human reviewers | separate; this PR changes no PR state on those stacks |
 
 Live ResponseOS routing/provider activation, FRL content, domain/DNS/indexing, billing and receptionist behavior remain outside this task's authorization.
+
+A15: Automatic Prisma singleton recovery after backend loss requires a separately reviewed implementation and passing same-client outage test before recovery acceptance/cutover. Explicit reset recovery preserves data locally but does not close this gate.

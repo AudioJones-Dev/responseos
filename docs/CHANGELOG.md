@@ -1,5 +1,7 @@
 # Changelog — ResponseOS
 
+- PR #211 review follow-up: reject malformed lineage/binding evidence and inherited owner privileges; document automatic reconnect acceptance blocker.
+
 All notable changes to this repo. Newest first. Format is a lightweight take on Keep-a-Changelog. Each entry links to the merge commit; PR numbers reference `audiojones-dev/responseos`.
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
