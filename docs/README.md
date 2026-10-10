@@ -19,6 +19,8 @@ The authoritative provider-stack baseline is the decision log: Telnyx primary / 
 
 ## Start here
 
+- [Neon standardization handoff](database/README.md) — dependency inventory, proposed architecture, schema/role risks, restore safety and approval register. Hosted changes remain gated.
+
 0. [`strategy/responseos-platform-doctrine-v1.md`](./strategy/responseos-platform-doctrine-v1.md) — **the platform doctrine.** Strategic source of truth: what ResponseOS is and is not, verified current-state truth, the nine-layer architecture, the intelligence flywheel, moat and build-vs-buy doctrine, provider strategy, revenue-attribution states, trust infrastructure, roadmap phases with evidence gates, and the public-claims policy. Read this before proposing product or architecture changes. *(Proposed — pending operator ratification.)*
 1. [`PRD.md`](./PRD.md) — short product source of truth (what it is, who it's for, current scope).
 2. [`ROADMAP.md`](./ROADMAP.md) — version table and milestone status (v0.1 → v0.2 → v0.3 → …).

@@ -1,8 +1,17 @@
 # Changelog — ResponseOS
 
+- PR #211: recover the application Prisma pool after connection loss without replaying failed operations; cover transaction rollback and concurrent failures.
+
+- PR #211 review follow-up: reject malformed lineage/binding evidence and inherited owner privileges; document automatic reconnect acceptance blocker.
+
 All notable changes to this repo. Newest first. Format is a lightweight take on Keep-a-Changelog. Each entry links to the merge commit; PR numbers reference `audiojones-dev/responseos`.
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
+
+## Unreleased — chore: audit Neon authority and database migration safety (#211)
+
+- Inventory existing PostgreSQL/identity/provider dependencies and propose ADR-0070 with preservation mapping, security impacts, costs/recovery targets and cutover/rollback approvals. No confirmed Supabase runtime database migration; production dataset authority remains unverified.
+- Add operator-only database preflight/readiness and offline history/restore binding checks, a backend-loss regression test, and PostgreSQL 16/17/18 CI with synthetic schema/count/digest restore reconciliation. No hosted changes or live activation.
 
 ## Unreleased — fix: point the prospect website fetcher's user agent at the live trust page (#207)
 

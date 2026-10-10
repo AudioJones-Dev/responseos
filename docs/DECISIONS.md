@@ -2,6 +2,16 @@
 
 This file records the load-bearing decisions that constrain how ResponseOS is built. Each ADR is short by design: context, decision, consequences. If a decision is reversed, mark the entry **Superseded by ADR-XXX** rather than deleting it.
 
+## ADR-0070 — Neon standardization preserves environment authority and requires restore binding proof
+
+**Status:** Proposed, 2026-10-09. ADR-0026's Neon selection remains accepted; this operational extension awaits human review. Number follows ADR-0065–0069 reserved by the unmerged FRL #209/#210 stack; it does not accept or merge those decisions.
+
+**Context.** Three Neon environments use PG17/18 and different migration histories. Staging contains a Clerk-linked operator. The primary default branch has no public app tables and an existing Neon Auth schema; its project name does not prove production data authority. Live-demo's applied `0017_call_control_qualification` differs from FRL's proposed `0017_frl_web_intake_receipts`. A prior restore changed branch/endpoint assignments. No Supabase runtime database dependency was confirmed in either repository.
+
+**Proposed decision.** Retain ordinary Prisma/Postgres on Neon and Clerk identity; preserve each existing environment's data and history. Prefer PG17 for an approved new production baseline while retaining PG18 staging; qualify both via migration/restore CI. Use separate non-owner pooled runtime and direct migration principals. Require a complete consumer/role/RLS impact review and a separately restored-copy acceptance before any hosted security change. Restore drills create only new targets and verify original branches, default selection, endpoints and application targets remain unchanged. No provider data migration, role provisioning, hosted DDL, cutover or resource retirement follows from this decision alone.
+
+**Consequences.** Repository audit tools reject target/credential/TLS misconfiguration, divergent applied history and changed restore bindings. Actual production dataset authority, sensitive deployed URL mapping, extra auth consumers, hosted security and recovery evidence remain gates. Detailed architecture, costs, §21 answers, preservation manifest and approvals: [database handoff](database/README.md). No broad privilege revocation or automatic migration is introduced. For the application client, recover a P1017 pool only after active root operations/transactions drain, return the original error and never replay the failed operation. Validate interactive/batch transaction behavior and concurrent failures before review; hosted outage and independent worker acceptance remain separate.
+
 ## ADR-0001 — Mock-first development; no live integrations until v0.3
 
 **Status:** Accepted. Carried from v0.1 foundation.

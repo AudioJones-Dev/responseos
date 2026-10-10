@@ -1433,6 +1433,19 @@
       "refType": "pull",
       "priority": "High",
       "blocked": false
+    },
+    {
+      "id": "DB-NEON-01",
+      "phase": "Tech Debt & Hardening",
+      "title": "Review Neon safety and non-replaying connection recovery; hosted acceptance remains gated",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-10-09",
+      "due": "2026-10-09",
+      "ref": 211,
+      "refType": "pull"
     }
   ],
   "liveIssues": [

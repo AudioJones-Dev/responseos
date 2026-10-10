@@ -6,6 +6,8 @@
 
 ## Version table
 
+Database hardening under review: [Neon standardization](database/README.md) reconciles existing environments and adds local configuration/history/restore gates plus a PostgreSQL 16/17/18 CI matrix. No milestone promotion, hosted migration or live activation is authorized; deployed connection identity, role/RLS acceptance and hosted recovery remain open.
+
 | Version | Theme | Status |
 |---|---|---|
 | **v0.1** | Internal operator console scaffold; mock provider adapters; 11 typed models; webhook-ready route stubs; canonical envelopes | ✅ Shipped (`6987c59`, May 2026) |

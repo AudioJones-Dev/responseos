@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "responseos.database-migration.v1",
+  "status": "NO_PROVIDER_DATA_MIGRATION_REQUIRED_FOR_CONFIRMED_REPOSITORY_DEPENDENCIES",
+  "executionAuthorized": false,
+  "sourceProvider": null,
+  "sourceDatabase": null,
+  "targetProvider": "Neon PostgreSQL",
+  "targetDatabase": null,
+  "dataTransfers": [],
+  "reason": "No Supabase runtime database or application-service dependency established in either repository. Deployed effective URLs, Render inventory and extra-schema ownership remain unresolved. No export/import or resource retirement is authorized.",
+  "retainedAuthorities": [
+    {"environment": "staging", "projectId": "patient-snow-16014934", "branchId": "br-mute-boat-a6ylen11", "database": "neondb", "action": "KEEP_EXISTING_DATA"},
+    {"environment": "live-demo", "projectId": "dark-lake-70639149", "branchId": "br-aged-block-auq28jrd", "database": "neondb", "action": "KEEP_DISTINCT_LINEAGE"}
+  ],
+  "productionAuthority": "UNVERIFIED_DO_NOT_SELECT_BY_PROJECT_NAME",
+  "supabaseServiceClassification": {
+    "postgresql": "NOT_FOUND_IN_REPOSITORY_RUNTIME",
+    "auth": "NOT_FOUND_CLERK_RETAINED",
+    "storage": "NOT_FOUND_OBJECT_OWNERSHIP_UNVERIFIED",
+    "realtime": "NOT_FOUND",
+    "edgeFunctions": "NOT_FOUND",
+    "postgrestRpc": "NOT_FOUND",
+    "applicationConfiguration": "NO_RUNTIME_SUPABASE_KEYS_FOUND_IN_INSPECTED_SOURCE_OR_VERCEL_NAMES",
+    "historicalDocumentation": "PRESENT_SUPERSEDED_BY_ADR_0026"
+  },
+  "preservationMappingIfLaterApproved": [
+    {"category": "tenant_root", "source": "Account", "target": "Account", "preserve": ["id", "clerk_org_id", "status", "original timestamps", "unique constraints"], "consumers": ["session lookup", "web data", "signed Clerk sync", "worker account lock"]},
+    {"category": "identity", "source": "User", "target": "User", "preserve": ["id", "clerk_user_id", "account_id including null", "role", "unique email constraint", "timestamps"], "gate": "verified Clerk instance/control-org mapping; no email relinking or real identity migration without approval"},
+    {"category": "events_and_audit", "source": "WebhookEvent, AuditLog", "target": "same names and schema", "preserve": ["primary and foreign keys", "provider dedupe keys", "account_id", "signature status", "payload expiry", "audit actor/action/reference", "legal holds"], "gate": "no raw PII in reconciliation evidence"},
+    {"category": "intake", "source": "ProspectIntake; FrlWebIntake only where applied", "target": "same tables after lineage validation", "preserve": ["id", "account_id", "environment", "submission_id", "reference", "payload_hash", "request_json under approved protection", "expiry/purge timestamps", "unique and CHECK constraints"]},
+    {"category": "delivery", "source": "FrlMockDelivery, HostedRoutingDelivery only where applied", "target": "same tables after lineage validation", "preserve": ["composite account/intake FKs", "mode/status", "attempt_count", "dispatch_token", "lease_until", "manifest_version", "next_attempt_at", "checkpoint_json", "receipt_id", "confirmed_at", "last_error_code", "uncertain quarantine"]},
+    {"category": "operations", "source": "all remaining application tables in exact approved schema", "target": "identity mapping, no transformation", "preserve": ["PK/FK/unique/check constraints", "indexes", "enum values", "JSON", "timestamps", "ownership", "tenant IDs", "CrmSyncOperation idempotency", "Notification state", "artifact references"]},
+    {"category": "schema_history", "source": "_prisma_migrations and schema catalogs", "target": "preserve applied history and reproduce approved schema", "preserve": ["migration_name", "checksum", "finished/rolled-back state", "extensions", "views", "functions", "triggers", "policies", "grants", "ownership"], "gate": "no checksum edits, reset, blind baseline or unresolved migration-name divergence"},
+    {"category": "non_prisma", "source": "neon_auth and show_db_tree where present", "target": "retain in place pending owner decision", "gate": "no export, import, deletion or auth replacement authorized"},
+    {"category": "objects", "source": "external artifacts and buckets", "target": "same authorized object service", "gate": "separate object manifest, checksums, ACLs, delivery URLs and retention proof required; SQL references do not migrate objects"}
+  ],
+  "futureMigrationRequiredFields": ["approved source project/branch/database", "approved target project/branch/database/endpoint", "exact table/column/type map", "per-table row counts and private checksum evidence", "constraint/index/policy/extension comparison", "verified identity and tenant mapping", "write freeze or replication design", "restore binding invariants", "rollback RPO/window", "signed operator authorization"],
+  "unresolvedGates": ["effective deployed database URLs and roles", "Render service and environment inventory", "production dataset ownership", "main neon_auth consumers", "0017 lineage reconciliation", "security grants/RLS acceptance", "hosted backup and restore evidence", "private artifact inventory"]
+}
