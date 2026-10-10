@@ -8,6 +8,16 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — chore: approve esbuild's and unrs-resolver's install scripts for npm's allowScripts policy
+
+- **What changed:** `package.json` `allowScripts` now also approves the two remaining dependencies with install scripts:
+  - `esbuild@0.28.1` (via `tsx` and `vitest`): postinstall check that the platform binary from `@esbuild/*` is present, fetching it from the npm registry if it is missing.
+  - `unrs-resolver@1.12.2` (via `eslint-config-next`'s import resolver): postinstall check, through `napi-postinstall`, that the native binding from `@unrs/*` is present.
+- **Why:** #212 approved Prisma's scripts and left these two for a decision. The Vercel build for `7a6b8ea` still warned about them, and npm 12 would skip them by default.
+- **Pinning:** entries are pinned to the reviewed version, as in #212. An upgrade of either package needs `npm install-scripts approve esbuild unrs-resolver` in the same change.
+- **Verified:** a clean `npm ci` with npm 11.19.0 prints no install-scripts warning. `package-lock.json` is unchanged.
+- Dashboard task `L-20`.
+
 ## Unreleased — chore: approve Prisma's install scripts for npm's allowScripts policy (#212)
 
 - **What changed:** `package.json` gains an `allowScripts` field approving the three Prisma packages whose install scripts the app needs:
