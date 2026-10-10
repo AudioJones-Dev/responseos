@@ -1,0 +1,6 @@
+{
+  "file": "raw-evidence.tar.gz",
+  "sha256": "0509bc38f6378489e4f66b6f0e25b774e0d2e892703dbd0c9326fd75c80e32f2",
+  "bytes": 12650,
+  "scope": "Controlled hook check and fresh Windows exact-lock overlay validation; not Linux/Postgres acceptance"
+}

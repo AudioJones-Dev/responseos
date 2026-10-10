@@ -1,0 +1,15 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import {pathToFileURL} from 'node:url';
+import {spawnSync} from 'node:child_process';
+const evidence=path.resolve('.security-evidence/artifact-verification');
+const build=JSON.parse(fs.readFileSync(path.join(evidence,'build-summary.json')));
+const log=path.join(evidence,'synthetic-loads.jsonl');fs.writeFileSync(log,'');
+const env={...build.env,NODE_ENV:'test',RESPONSEOS_PROBE_ROOT:build.checkout,RESPONSEOS_PROBE_LOG:log};delete env.RESPONSEOS_REQUIRE_AUTH;
+const args=['--import',pathToFileURL(path.resolve('scripts/security/braces-runtime-preload.mjs')).href,path.join(build.checkout,'node_modules/vitest/vitest.mjs'),'run','tests/unit/session.test.ts','tests/unit/auth-required.test.ts','tests/unit/route-protection.test.ts','tests/unit/data-tenant-matrix.test.ts','tests/unit/health-route.test.ts'];
+const result=spawnSync(process.execPath,args,{cwd:build.checkout,env,encoding:'utf8',windowsHide:true,timeout:120000,maxBuffer:10000000});
+fs.writeFileSync(path.join(evidence,'synthetic-tests.log'),(result.stdout||'')+(result.stderr||''));
+const events=fs.readFileSync(log,'utf8').trim().split('\n').filter(Boolean).map(line=>JSON.parse(line));
+const summary={applicationSha:build.sourceCommit,exit:result.status,eventCount:events.length,affectedEvents:events.filter(event=>/eslint-config-next|eslint-plugin-next|fast-glob|micromatch|(?:^|[\\/])braces(?:[\\/]|$)/.test([event.request,event.file,event.url].filter(Boolean).join(' '))),escapes:events.filter(event=>event.kind==='escape-blocked'),scope:'Mocked session/unit test execution through Vitest; not authenticated production HTTP; includes tooling loads'};
+fs.writeFileSync(path.join(evidence,'synthetic-summary.json'),JSON.stringify(summary,null,2)+'\n');console.log(JSON.stringify(summary));
+process.exitCode=result.status===0&&summary.escapes.length===0?0:1;

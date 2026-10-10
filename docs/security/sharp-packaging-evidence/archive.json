@@ -1,0 +1,12 @@
+{
+  "file": "raw-evidence.tar.gz",
+  "sha256": "adefebf6379c010fa8829c03585583711f29bfc0c4d2f82a6e39fdb1cd0edde9",
+  "bytes": 159370,
+  "snapshots": [
+    "original-pr195",
+    "master",
+    "pr195"
+  ],
+  "rawFiles": 35,
+  "limitations": "Paths identify local disposable artifacts; archive contains observations, not dependency/build directories."
+}

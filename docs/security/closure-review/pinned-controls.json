@@ -1,0 +1,175 @@
+{
+  "scope": "Synthetic gate controls, not application acceptance",
+  "results": [
+    {
+      "name": "Synthetic complete pair is accepted",
+      "pass": true,
+      "observedAcceptance": true,
+      "error": null
+    },
+    {
+      "name": "Missing all reports",
+      "pass": true,
+      "observedAcceptance": false,
+      "error": null
+    },
+    {
+      "name": "Incomplete platform coverage",
+      "pass": true,
+      "observedAcceptance": false,
+      "error": null
+    },
+    {
+      "name": "Duplicate platform reports",
+      "pass": true,
+      "observedAcceptance": false,
+      "error": null
+    },
+    {
+      "name": "Malformed report with matching inventory",
+      "pass": true,
+      "observedAcceptance": false,
+      "error": "Expected property name or '}' in JSON at position 1 (line 1 column 2)"
+    },
+    {
+      "name": "Missing report inventory entry",
+      "pass": true,
+      "observedAcceptance": false,
+      "error": "Missing evidence inventory"
+    },
+    {
+      "name": "Incomplete inventory",
+      "pass": true,
+      "observedAcceptance": false,
+      "error": "Incomplete evidence inventory"
+    },
+    {
+      "name": "Missing mandatory raw evidence",
+      "pass": true,
+      "observedAcceptance": false,
+      "error": "Missing required evidence: artifact-verification/audit.log"
+    },
+    {
+      "name": "Corrupted report",
+      "pass": true,
+      "observedAcceptance": false,
+      "error": "Evidence hash mismatch"
+    },
+    {
+      "name": "Corrupted raw evidence",
+      "pass": true,
+      "observedAcceptance": false,
+      "error": "Evidence hash mismatch"
+    },
+    {
+      "name": "Path traversal",
+      "pass": true,
+      "observedAcceptance": false,
+      "error": "Invalid evidence inventory entry"
+    },
+    {
+      "name": "Duplicate inventory entries",
+      "pass": true,
+      "observedAcceptance": false,
+      "error": "Invalid evidence inventory entry"
+    },
+    {
+      "name": "Mismatched application identities",
+      "pass": true,
+      "observedAcceptance": false,
+      "error": "Raw evidence identity mismatch"
+    },
+    {
+      "name": "Mismatched tooling identities",
+      "pass": true,
+      "observedAcceptance": false,
+      "error": null
+    },
+    {
+      "name": "Audit summary contradicts raw scan",
+      "pass": true,
+      "observedAcceptance": false,
+      "error": "Audit report mismatch"
+    },
+    {
+      "name": "Compatibility summary contradicts raw cases",
+      "pass": true,
+      "observedAcceptance": false,
+      "error": "Compatibility report mismatch"
+    },
+    {
+      "name": "UNKNOWN occurrence cannot claim closure",
+      "pass": true,
+      "observedAcceptance": false,
+      "error": "Unproven closure"
+    },
+    {
+      "name": "Hostile failure cannot claim success",
+      "pass": true,
+      "observedAcceptance": false,
+      "error": "Hostile report mismatch"
+    },
+    {
+      "name": "Native load failure cannot claim success",
+      "pass": true,
+      "observedAcceptance": false,
+      "error": "Native report mismatch"
+    },
+    {
+      "name": "Missing native success evidence",
+      "pass": true,
+      "observedAcceptance": false,
+      "error": null
+    },
+    {
+      "name": "Missing native raw evidence",
+      "pass": true,
+      "observedAcceptance": false,
+      "error": "Missing native raw evidence"
+    },
+    {
+      "name": "Evidence links prohibited",
+      "pass": true,
+      "observedAcceptance": false,
+      "error": "Evidence links are prohibited"
+    },
+    {
+      "name": "Integration failure",
+      "pass": true,
+      "observedAcceptance": false,
+      "error": null
+    },
+    {
+      "name": "Integration cancelled",
+      "pass": true,
+      "observedAcceptance": false,
+      "error": null
+    },
+    {
+      "name": "Integration skipped",
+      "pass": true,
+      "observedAcceptance": false,
+      "error": null
+    },
+    {
+      "name": "Integration pending",
+      "pass": true,
+      "observedAcceptance": false,
+      "error": null
+    },
+    {
+      "name": "Integration null",
+      "pass": true,
+      "observedAcceptance": false,
+      "error": null
+    },
+    {
+      "name": "AST true/false/exception/conditional/short-circuit/fallthrough distinctions",
+      "pass": true
+    },
+    {
+      "name": "CLI exits nonzero without reports",
+      "pass": true
+    }
+  ]
+}

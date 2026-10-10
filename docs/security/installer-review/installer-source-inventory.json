@@ -1,0 +1,78 @@
+{
+  "applicationSha": "4e1f353117696658988bca171e4e0e51c0fb1b96",
+  "scope": "Inspected entry points and selected helpers; not complete transitive code review",
+  "entries": [
+    {
+      "package": "@prisma/client",
+      "version": "6.19.3",
+      "integrity": "sha512-mKq3jQFhjvko5LTJFHGilsuQs+W+T3Gm451NzuTDGQxwCzwXHYnIu2zGkRoW+Exq3Rob7yp2MfzSrdIiZVhrBg==",
+      "file": "scripts/postinstall.js",
+      "bytes": 12864,
+      "sha256": "26a1ee611276787062e1518a5dab6f22c580efa721864d8206cd6bad55a21983"
+    },
+    {
+      "package": "@prisma/engines",
+      "version": "6.19.3",
+      "integrity": "sha512-RSYxtlYFl5pJ8ZePgMv0lZ9IzVCOdTPOegrs2qcbAEFrBI1G33h6wyC9kjQvo0DnYEhEVY0X4LsuFHXLKQk88g==",
+      "file": "scripts/postinstall.js",
+      "bytes": 1092,
+      "sha256": "c4219fdab06232498675a5372968a9eed209696a1a825c88ccc4f247a922f1b0"
+    },
+    {
+      "package": "@prisma/engines",
+      "version": "6.19.3",
+      "integrity": "sha512-RSYxtlYFl5pJ8ZePgMv0lZ9IzVCOdTPOegrs2qcbAEFrBI1G33h6wyC9kjQvo0DnYEhEVY0X4LsuFHXLKQk88g==",
+      "file": "dist/scripts/postinstall.js",
+      "bytes": 5762,
+      "sha256": "14bb8640afbce8a9cd1e7f05cf8676069a05d2058f704dfd1a272507a78f419e"
+    },
+    {
+      "package": "esbuild",
+      "version": "0.28.1",
+      "integrity": "sha512-HrJrvZv5ayxBzPfwphOoNzkzOIIlifzk0KJrGK2c8R4+LKpMtpYLQeUdjnwjWv/LZlkH2laZk+4w78pi99D4Vw==",
+      "file": "install.js",
+      "bytes": 11773,
+      "sha256": "612294e278914443bdcf81cb17f54afec34dbdd2ebd999a6ee187912320cc315"
+    },
+    {
+      "package": "prisma",
+      "version": "6.19.3",
+      "integrity": "sha512-++ZJ0ijLrDJF6hNB4t4uxg2br3fC4H9Yc9tcbjr2fcNFP3rh/SBNrAgjhsqBU4Ght8JPrVofG/ZkXfnSfnYsFg==",
+      "file": "scripts/preinstall-entry.js",
+      "bytes": 144,
+      "sha256": "d6385b9abaee148d114260990efb85507429831b8e57ad7610d7afed08831dda"
+    },
+    {
+      "package": "prisma",
+      "version": "6.19.3",
+      "integrity": "sha512-++ZJ0ijLrDJF6hNB4t4uxg2br3fC4H9Yc9tcbjr2fcNFP3rh/SBNrAgjhsqBU4Ght8JPrVofG/ZkXfnSfnYsFg==",
+      "file": "preinstall/index.js",
+      "bytes": 26331,
+      "sha256": "90395c828b92a1756433f6388ac7f1ab26d3967c2d679d8e22c1a89b5768586c"
+    },
+    {
+      "package": "unrs-resolver",
+      "version": "1.12.2",
+      "integrity": "sha512-dmlRxBJJayXjqTwC+JtF1HhJmgf3ftQ3YejFcZrf4+KKtJv0qDsK1pjqaaVjG7wJ5NJ6UVP1OqRMQ71Z4C3rxQ==",
+      "file": "postinstall.js",
+      "bytes": 156,
+      "sha256": "446a0aeed55eeb28eadd9ac31f0b71654265aba8ca5a99dbc22dab0b26a02469"
+    },
+    {
+      "package": "napi-postinstall",
+      "version": "0.3.4",
+      "integrity": "sha512-PHI5f1O0EP5xJ9gQmFGMS6IZcrVvTjpXjz7Na41gTE7eE2hK11lg04CECCYEEjdc17EV4DO+fkGEtt7TpTaTiQ==",
+      "file": "lib/index.js",
+      "bytes": 10533,
+      "sha256": "5c2547bb5ff29882a69737fe31509e32efc5a9cf0f4aa832e31e718403d70b04"
+    },
+    {
+      "package": "napi-postinstall",
+      "version": "0.3.4",
+      "integrity": "sha512-PHI5f1O0EP5xJ9gQmFGMS6IZcrVvTjpXjz7Na41gTE7eE2hK11lg04CECCYEEjdc17EV4DO+fkGEtt7TpTaTiQ==",
+      "file": "lib/helpers.js",
+      "bytes": 8228,
+      "sha256": "31740188ff37907a490c98d1d483a0814257c4a35a182c732468a8dd053ddf67"
+    }
+  ]
+}
