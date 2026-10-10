@@ -8,6 +8,19 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — chore: approve Prisma's install scripts for npm's allowScripts policy (#212)
+
+- **What changed:** `package.json` gains an `allowScripts` field approving the three Prisma packages whose install scripts the app needs:
+  - `prisma@6.19.3`: preinstall version check.
+  - `@prisma/engines@6.19.3`: postinstall query-engine download.
+  - `@prisma/client@6.19.3`: postinstall client setup.
+- **Why:** Vercel's npm 11.19 warned that these scripts were not yet approved. npm 12 blocks unapproved dependency scripts by default, which would leave the build without a query engine.
+- **Pinning:** entries are pinned to the reviewed version, which is npm's default. A Prisma upgrade needs `npm install-scripts approve prisma @prisma/client @prisma/engines` in the same change.
+- **Not approved:** `esbuild` and `unrs-resolver` also have install scripts and stay unapproved here.
+- **Verified:** a clean `npm ci` with npm 11.19.0 runs the Prisma scripts with no warning for them, generates the client and downloads the engine. `package-lock.json` is unchanged.
+- **CI:** the aggregate `integration` check from #211 now uses `if: ${{ !cancelled() }}` instead of `always()`. A run cancelled by a newer push was reporting a red `integration` check on the superseded commit. It still fails when any PostgreSQL version fails.
+- Dashboard task `L-19`.
+
 ## Unreleased — chore: audit Neon authority and database migration safety (#211)
 
 - Inventory existing PostgreSQL/identity/provider dependencies and propose ADR-0070 with preservation mapping, security impacts, costs/recovery targets and cutover/rollback approvals. No confirmed Supabase runtime database migration; production dataset authority remains unverified.
