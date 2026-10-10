@@ -46,6 +46,21 @@ describe("restore binding incident regression", () => {
   it("blocks default branch swaps", () => expect(validateRestoreBindings(before,{...after,defaultBranchId:"clone"},clone)).toContain("project_or_default_branch_changed"));
   it("blocks application retargeting", () => expect(validateRestoreBindings(before,{...after,connections:[{...before.connections[0],endpointId:"clone-endpoint"}]},clone)).toContain("application_connection_changed"));
   it("requires names in both binding snapshots", () => expect(validateRestoreBindings({...before,branches:[{id:"source"}]},{...after,branches:[{id:"source"},{id:"clone",name:"restore"}]},clone)).toEqual(["binding_branch_name_missing"]));
+  it.each([
+    ["project", {...before,projectId:7}],
+    ["default branch", {...before,defaultBranchId:1}],
+    ["branch", {...before,branches:[{id:1,name:"main"}]}],
+    ["endpoint", {...before,endpoints:[{id:2,branchId:"source"}]}],
+    ["endpoint branch", {...before,endpoints:[{id:"app-endpoint",branchId:1}]}],
+    ["connection role", {...before,connections:[{...before.connections[0],role:3}]}],
+    ["connection database", {...before,connections:[{...before.connections[0],database:" "}]}],
+  ])("rejects a non-string %s identifier", (_field, snapshot) => expect(validateRestoreBindings(snapshot,after,clone)).toEqual(["binding_identifier_invalid"]));
+  it("rejects numeric identifiers even when both snapshots agree", () => {
+    const numericBefore={projectId:1,defaultBranchId:10,branches:[{id:10,name:"main"}],endpoints:[{id:20,branchId:10}],connections:[{service:"web",endpointId:20,database:"db",role:"app"}]};
+    const numericAfter={...numericBefore,branches:[...numericBefore.branches,{id:11,name:"restore"}],endpoints:[...numericBefore.endpoints,{id:21,branchId:11}]};
+    expect(validateRestoreBindings(numericBefore,numericAfter,{branchId:11,endpointId:21})).toEqual(["binding_identifier_invalid"]);
+  });
+  it("rejects a non-string restore target", () => expect(validateRestoreBindings(before,after,{branchId:"clone",endpointId:9})).toContain("restore_target_not_separate"));
   it("blocks incomplete inventories", () => expect(validateRestoreBindings({...before,connections:[]},after,clone)).toContain("binding_snapshot_incomplete"));
   it("blocks restore over the original branch", () => expect(validateRestoreBindings(before,after,{branchId:"source",endpointId:"app-endpoint"})).toContain("restore_target_not_separate"));
 });

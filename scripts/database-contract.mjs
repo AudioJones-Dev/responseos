@@ -52,10 +52,13 @@ export function validateMigrationHistory(applied, expected) {
   return [...new Set(errors)];
 }
 
+const isId = v => typeof v === "string" && v.trim() !== "";
+
 export function validateRestoreBindings(before, after, restoreTarget) {
   const errors = [];
   for (const snapshot of [before, after]) {
     if (!snapshot?.projectId || !snapshot.defaultBranchId || !Array.isArray(snapshot.branches) || !snapshot.branches.length || !Array.isArray(snapshot.endpoints) || !snapshot.endpoints.length || !Array.isArray(snapshot.connections) || !snapshot.connections.length) return ["binding_snapshot_incomplete"];
+    if (!isId(snapshot.projectId) || !isId(snapshot.defaultBranchId) || snapshot.branches.some(b => !isId(b?.id)) || snapshot.endpoints.some(e => !isId(e?.id) || !isId(e.branchId)) || snapshot.connections.some(c => !isId(c?.service) || !isId(c.endpointId) || !isId(c.database) || !isId(c.role))) return ["binding_identifier_invalid"];
     for (const [list, key] of [[snapshot.branches, "id"], [snapshot.endpoints, "id"], [snapshot.connections, "service"]]) {
       if (list.some(e => !e[key]) || new Set(list.map(e => e[key])).size !== list.length) return ["binding_snapshot_ambiguous"];
     }
@@ -67,6 +70,6 @@ export function validateRestoreBindings(before, after, restoreTarget) {
   for (const e of before.endpoints) if (!after.endpoints.some(a => a.id === e.id && a.branchId === e.branchId)) errors.push("existing_endpoint_binding_changed");
   const connections = s => JSON.stringify([...s.connections].sort((a,b) => a.service.localeCompare(b.service)).map(c => [c.service,c.endpointId,c.database,c.role]));
   if (connections(before) !== connections(after)) errors.push("application_connection_changed");
-  if (!restoreTarget?.branchId || !restoreTarget.endpointId || before.branches.some(b => b.id === restoreTarget.branchId) || before.endpoints.some(e => e.id === restoreTarget.endpointId) || !after.endpoints.some(e => e.id === restoreTarget.endpointId && e.branchId === restoreTarget.branchId)) errors.push("restore_target_not_separate");
+  if (!isId(restoreTarget?.branchId) || !isId(restoreTarget.endpointId) || before.branches.some(b => b.id === restoreTarget.branchId) || before.endpoints.some(e => e.id === restoreTarget.endpointId) || !after.endpoints.some(e => e.id === restoreTarget.endpointId && e.branchId === restoreTarget.branchId)) errors.push("restore_target_not_separate");
   return [...new Set(errors)];
 }
