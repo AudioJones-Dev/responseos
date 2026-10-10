@@ -1,0 +1,45 @@
+{
+  "date": "2026-10-10",
+  "scope": "read_only_catalog_and_aggregate_counts",
+  "hostedWrites": false,
+  "primaryNeonAuth": {
+    "projectId": "quiet-band-27365020",
+    "branchId": "br-floral-sunset-aqn7cfw4",
+    "database": "neondb",
+    "counts": {
+      "user": 0,
+      "account": 0,
+      "organization": 0,
+      "session": 0
+    },
+    "productionAuthority": "UNKNOWN",
+    "uninspectedAuthTables": "preserved; no absence of consumers inferred"
+  },
+  "stagingFunction": {
+    "projectId": "patient-snow-16014934",
+    "branchId": "br-mute-boat-a6ylen11",
+    "name": "public.show_db_tree()",
+    "owner": "neondb_owner",
+    "securityDefiner": false,
+    "definitionMd5": "afc3f368beed7e4fb52b8c71a7b77586",
+    "proacl": null,
+    "proconfig": null,
+    "reads": [
+      "pg_database",
+      "pg_namespace",
+      "pg_class",
+      "pg_proc"
+    ],
+    "businessDataReads": false,
+    "mutations": false,
+    "externalCalls": false,
+    "repositoryCallersFound": false,
+    "externalCallers": "UNKNOWN"
+  },
+  "render": {
+    "workspaceId": "tea-db1rckjbc2fs73diota0",
+    "listServicesResult": null,
+    "browserFallback": "sign_in_required",
+    "inventory": "UNKNOWN"
+  }
+}

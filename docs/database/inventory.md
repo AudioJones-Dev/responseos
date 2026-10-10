@@ -40,3 +40,6 @@ No shared workspace packages or additional backend code are imported by the insp
 ## Catalog and scheduling coverage
 
 Inspected default branches have only plpgsql installed, no public triggers/views/materialized views/RLS policies. Staging has a public `show_db_tree` function owned by neondb_owner, SECURITY INVOKER, default/null ACL and no local settings; its body/callers and EXECUTE exposure need review before permission hardening. Main has a `neon_auth` schema outside Prisma; do not drop or re-purpose it. No pg_cron extension or database job implementation established. CI/workflows and operator commands are schedulers outside PostgreSQL; master retention is operator-run, not automatic. Bucket inventories, external cron/Render settings and provider backups remain UNKNOWN.
+
+
+Read-only follow-up on 2026-10-10: the primary default branch has zero rows in each of neon_auth.user, account, organization and session. This narrows observed identity data but does not certify other auth tables, absence of consumers or production authority. Staging show_db_tree body is catalog-only, SECURITY INVOKER, with no repository callers found; external callers and privilege approval remain open. See readback-followup-2026-10-10.json.

@@ -48,7 +48,7 @@ CI now adds PostgreSQL 16/17/18 matrix runs: schema replay/shadow diff, seed, fu
 | duplicate inquiry replay | pinned #210 receipt replay/concurrent idempotency tests PASS |
 | delivery uncertainty quarantine | pinned #210 lease-expiry, lost-ack, partial-association, checkpoint and plan-change tests PASS |
 | worker restart recovery | pinned #210 isolated process stop/restart test PASS with durable simulated receipt |
-| DB disconnection/reconnection | test terminates its own synthetic backend and verifies committed data survives an explicit client reset. Follow-up application factory resets the failed pool after P1017 without retrying the failed operation; synthetic same-client, non-replayed write, transaction rollback and concurrent-failure tests PASS. Hosted pooler/network-outage acceptance remains pending |
+| DB disconnection/reconnection | test terminates its own synthetic backend. The application factory resets the failed pool after P1017 without retrying the failed operation; synthetic same-client, non-replayed write, transaction rollback and concurrent-failure tests PASS. Hosted pooler/network-outage acceptance remains pending |
 | backup restoration | local all-table logical restore PASS; six-hour Neon history metadata observed; hosted binding-safe routing-data restore not run |
 | security privilege validation | offline role/URL/options rejection PASS; shared-table RLS/PUBLIC TEMP impact reviewed; no actual dedicated LOGIN hosted grants installed/tested |
 | application regression | lint/type/unit/integration/build PASS locally; no FRL behavior changed |
@@ -81,3 +81,6 @@ Synthetic tests cover a committed tenant surviving recovery on the same applicat
 Runtime for this follow-up is available Node 24.21.0; CI continues to pin 24.18.0. Earlier local evidence used 24.19.0. No dependency/version pin was changed.
 
 Render list-services again returned null. The browser fallback reached the Render sign-in page; no signed-in inventory was available and no credentials were entered.
+
+
+Application follow-up local validation: 702 unit tests and 169 integration tests PASS, including six database recovery/privilege cases. Lint, typecheck, database-backed build and no-database build PASS. Exact-head PG16/17/18 CI is tracked on PR #211; no hosted recovery acceptance is inferred.

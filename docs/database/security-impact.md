@@ -64,3 +64,6 @@ Fresh catalog metadata independently confirms `show_db_tree` is owned by neondb_
 
 
 Application pool recovery: the shared web application client resets its connection pool after P1017 only after active root operations/transactions drain. This can affect every application data accessor using lib/db/client.ts, so full tenant/operator/authentication regressions are required. Query arguments and account filters are unchanged; failed writes and transactions are never replayed. Other direct Prisma constructors, including the separately reviewed PR #210 worker, are outside this factory. No role, grant, RLS, identity mapping or hosted connection is changed.
+
+
+Read-only follow-up, 2026-10-10: staging public.show_db_tree() definition hash afc3f368beed7e4fb52b8c71a7b77586 (MD5) contains catalog-only SELECTs over pg_database/pg_namespace/pg_class/pg_proc. It has no business-table reads, mutations or external calls, and is SECURITY INVOKER (prosecdef=false). NULL proacl retains PostgreSQL default function EXECUTE behavior; broad database/schema/object-name discovery is possible. No application/script/migration caller was found in this branch. Retain pending complete external consumer/permission review; no permission was changed.
