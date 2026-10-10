@@ -68,3 +68,5 @@ The previous reconnect test manually disconnected after failed attempts. Removin
 Render discovery was authorized for Michael's workspace, but two list-services calls returned JSON null with no inventory or error. This does not establish that the workspace is empty. Effective service/database configuration remains UNKNOWN.
 
 Follow-up local checks: 701 unit tests, lint, typecheck and database-backed build PASS. Full integration rerun and exact-head CI are tracked on PR #211; earlier green evidence does not certify this follow-up commit.
+
+Additional review checks reject out-of-order applied migration sequences and require completed catch-up plus final frozen-position reconciliation before connection switching.

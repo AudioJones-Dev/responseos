@@ -46,6 +46,7 @@ export function validateMigrationHistory(applied, expected) {
     if (!file) errors.push("applied_migration_absent_from_repository");
     else if (file.checksum !== row.checksum) errors.push("migration_checksum_mismatch");
   }
+  if (active.some((row, i) => row.name !== expected[i]?.name)) errors.push("migration_application_order_mismatch");
   const lastApplied = expected.reduce((last, m, i) => names.has(m.name) ? i : last, -1);
   if (expected.slice(0, lastApplied).some(m => !names.has(m.name))) errors.push("migration_history_gap");
   return [...new Set(errors)];

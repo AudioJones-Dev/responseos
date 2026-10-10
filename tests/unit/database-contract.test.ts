@@ -34,6 +34,7 @@ describe("migration lineage", () => {
   it.each(["false", undefined, null, 0])("rejects malformed rollback flags", (flag) => expect(validateMigrationHistory([{...expected[0],finished:true,rolled_back:flag}],expected)).toEqual(["migration_row_invalid"]));
   it("rejects malformed finished flags", () => expect(validateMigrationHistory([{...expected[0],finished:"true",rolled_back:false}],expected)).toEqual(["migration_row_invalid"]));
   it("blocks checksum drift and unfinished migration", () => expect(validateMigrationHistory([{name:"0001_base",checksum:"changed",finished:false,rolled_back:false}],expected)).toEqual(["unfinished_migration","migration_checksum_mismatch"]));
+  it("rejects migrations applied out of repository order", () => expect(validateMigrationHistory([...expected].reverse().map(m=>({...m,finished:true,rolled_back:false})),expected)).toContain("migration_application_order_mismatch"));
   it("blocks missing earlier migrations", () => expect(validateMigrationHistory([{...expected[1],finished:true,rolled_back:false}],expected)).toContain("migration_history_gap"));
 });
 describe("restore binding incident regression", () => {
