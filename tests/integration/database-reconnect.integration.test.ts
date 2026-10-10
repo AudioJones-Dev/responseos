@@ -4,6 +4,11 @@ import { expect, test } from "vitest";
 import { createRecoveringClient, isConnectionLoss } from "../../lib/db/recoveringClient";
 import { runtimePrincipalQuery } from "../../scripts/database-principal-query.mjs";
 
+async function expectConnectionLoss(operation: PromiseLike<unknown>) {
+  const error = await Promise.resolve(operation).then(() => null, (failure: unknown) => failure);
+  expect(isConnectionLoss(error)).toBe(true);
+}
+
 test("application client recovers after backend loss without replaying the failed query", async () => {
   const url = new URL(process.env.DATABASE_URL ?? "");
   if (!["127.0.0.1", "localhost"].includes(url.hostname) || !url.pathname.endsWith("_test")) throw new Error("synthetic_local_test_database_required");
@@ -73,7 +78,7 @@ test("failed writes are not replayed and a later write succeeds once", async () 
   try {
     const [backend] = await client.$queryRaw<{pid:number}[]>`SELECT pg_backend_pid() AS pid`;
     await controller.$queryRaw`SELECT pg_terminate_backend(${backend.pid}::integer)`;
-    await expect(client.account.create({data})).rejects.toMatchObject({code:"P1017"});
+    await expectConnectionLoss(client.account.create({data}));
     expect(await controller.account.count({where:{id}})).toBe(0);
     await client.account.create({data});
     await expect(client.account.create({data})).rejects.toMatchObject({code:"P2002"});
@@ -93,17 +98,17 @@ test("connection loss aborts an interactive transaction before the pool recovers
   const controller = new PrismaClient();
   const id = `rollback_${randomUUID()}`;
   try {
-    await expect(client.$transaction(async tx => {
+    await expectConnectionLoss(client.$transaction(async tx => {
       await tx.account.create({data:{id,slug:id,name:"Synthetic rollback",industry:"test",timezone:"UTC"}});
       const [backend] = await tx.$queryRaw<{pid:number}[]>`SELECT pg_backend_pid() AS pid`;
       await controller.$queryRaw`SELECT pg_terminate_backend(${backend.pid}::integer)`;
       await tx.account.count();
-    })).rejects.toMatchObject({code:"P1017"});
+    }));
     expect(await client.account.count({where:{id}})).toBe(0);
     expect(await client.$transaction([client.account.count({where:{id}})])).toEqual([0]);
     const [backend] = await client.$queryRaw<{pid:number}[]>`SELECT pg_backend_pid() AS pid`;
     await controller.$queryRaw`SELECT pg_terminate_backend(${backend.pid}::integer)`;
-    await expect(client.$transaction([client.account.count(),client.account.count()])).rejects.toMatchObject({code:"P1017"});
+    await expectConnectionLoss(client.$transaction([client.account.count(),client.account.count()]));
     expect(await client.account.count({where:{id}})).toBe(0);
   } finally {
     await controller.account.deleteMany({where:{id}});

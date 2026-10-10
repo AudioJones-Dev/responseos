@@ -1,10 +1,16 @@
 import { AsyncLocalStorage } from "node:async_hooks";
-import { PrismaClient, type Prisma } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 
-// A terminated backend surfaces either as a dropped connection (P1017) or,
-// when Postgres sends its FATAL first, as a failed raw query (P2010) carrying
-// the server's admin/crash shutdown or connection-exception SQLSTATE.
+// Postgres's session-ending messages for SQLSTATE 57P01/57P02, with the
+// severity it sends each at (src/backend/tcop/postgres.c).
+const SESSION_TERMINATED = /(?:FATAL: terminating connection due to administrator command|WARNING: terminating connection (?:because of crash of another server process|due to immediate shutdown command|because of unexpected SIGQUIT signal))/;
+
+// A terminated backend surfaces as a dropped connection (P1017); or, when
+// Postgres's termination message arrives first, as a failed raw query (P2010)
+// carrying the server's admin/crash shutdown or connection-exception SQLSTATE,
+// or as an uncoded request error (seen on batch transactions) whose message is it.
 export function isConnectionLoss(error: unknown): boolean {
+  if (error instanceof Prisma.PrismaClientUnknownRequestError) return SESSION_TERMINATED.test(error.message);
   if (!(error instanceof Error) || !("code" in error)) return false;
   if (error.code === "P1017") return true;
   const sqlState = (error as { meta?: { code?: unknown } }).meta?.code;

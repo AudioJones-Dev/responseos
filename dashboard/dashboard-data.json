@@ -1425,6 +1425,19 @@
       "refType": "pull"
     },
     {
+      "id": "G-19",
+      "phase": "Tech Debt & Hardening",
+      "title": "Record the dev-only braces advisory as an accepted risk in SECURITY.md",
+      "owner": "Claude Code",
+      "status": "In Progress",
+      "progress": 80,
+      "priority": "Low",
+      "start": "2026-10-10",
+      "due": "2026-10-10",
+      "ref": 214,
+      "refType": "pull"
+    },
+    {
       "id": "G-12",
       "phase": "Tech Debt & Hardening",
       "title": "Clear npm audit failures blocking all CI",
