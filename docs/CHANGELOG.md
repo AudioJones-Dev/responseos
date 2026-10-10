@@ -1,5 +1,7 @@
 # Changelog — ResponseOS
 
+- PR #211: recover the application Prisma pool after connection loss without replaying failed operations; cover transaction rollback and concurrent failures.
+
 - PR #211 review follow-up: reject malformed lineage/binding evidence and inherited owner privileges; document automatic reconnect acceptance blocker.
 
 All notable changes to this repo. Newest first. Format is a lightweight take on Keep-a-Changelog. Each entry links to the merge commit; PR numbers reference `audiojones-dev/responseos`.

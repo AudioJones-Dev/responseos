@@ -48,7 +48,7 @@ CI now adds PostgreSQL 16/17/18 matrix runs: schema replay/shadow diff, seed, fu
 | duplicate inquiry replay | pinned #210 receipt replay/concurrent idempotency tests PASS |
 | delivery uncertainty quarantine | pinned #210 lease-expiry, lost-ack, partial-association, checkpoint and plan-change tests PASS |
 | worker restart recovery | pinned #210 isolated process stop/restart test PASS with durable simulated receipt |
-| DB disconnection/reconnection | test terminates its own synthetic backend and verifies committed data survives an explicit client reset. Automatic recovery through the unchanged application singleton is NOT PROVEN; local same-client retries failed and this blocks recovery acceptance |
+| DB disconnection/reconnection | test terminates its own synthetic backend and verifies committed data survives an explicit client reset. Follow-up application factory resets the failed pool after P1017 without retrying the failed operation; synthetic same-client, non-replayed write, transaction rollback and concurrent-failure tests PASS. Hosted pooler/network-outage acceptance remains pending |
 | backup restoration | local all-table logical restore PASS; six-hour Neon history metadata observed; hosted binding-safe routing-data restore not run |
 | security privilege validation | offline role/URL/options rejection PASS; shared-table RLS/PUBLIC TEMP impact reviewed; no actual dedicated LOGIN hosted grants installed/tested |
 | application regression | lint/type/unit/integration/build PASS locally; no FRL behavior changed |
@@ -70,3 +70,14 @@ Render discovery was authorized for Michael's workspace, but two list-services c
 Follow-up local checks: 701 unit tests, lint, typecheck and database-backed build PASS. Full integration rerun and exact-head CI are tracked on PR #211; earlier green evidence does not certify this follow-up commit.
 
 Additional review checks reject out-of-order applied migration sequences and require completed catch-up plus final frozen-position reconciliation before connection switching.
+
+
+## Application recovery follow-up
+
+Local bare Prisma 6.19.3 returned P1017 for six consecutive attempts after its backend was terminated. The application singleton now uses a query extension and a transaction wrapper to drain active root operations before disconnecting the failed pool. New operations wait for this reset. The original P1017 is rethrown; no query, mutation, transaction or external delivery is replayed. Interactive transactions use their original transaction client and reset only after the transaction exits; batch transactions preserve PrismaPromise semantics. P2002 and unrelated errors do not request a reset. Failed-write uncertainty still requires ledger/idempotency reconciliation by the caller.
+
+Synthetic tests cover a committed tenant surviving recovery on the same application client, a failed create remaining absent, a later create succeeding once, unique enforcement, interactive transaction rollback, failed batch transaction recovery and concurrent failures followed by successful queries. This closes the local automatic pool-recovery gap only; it does not establish end-to-end hosted outage recovery or the independent PR #210 worker's direct client behavior.
+
+Runtime for this follow-up is available Node 24.21.0; CI continues to pin 24.18.0. Earlier local evidence used 24.19.0. No dependency/version pin was changed.
+
+Render list-services again returned null. The browser fallback reached the Render sign-in page; no signed-in inventory was available and no credentials were entered.

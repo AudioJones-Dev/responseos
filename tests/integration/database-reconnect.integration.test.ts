@@ -1,13 +1,14 @@
 import { randomUUID } from "node:crypto";
 import { PrismaClient } from "@prisma/client";
 import { expect, test } from "vitest";
+import { createRecoveringClient } from "../../lib/db/recoveringClient";
 import { runtimePrincipalQuery } from "../../scripts/database-principal-query.mjs";
 
-test("explicit Prisma reset recovers a committed tenant after backend loss", async () => {
+test("application client recovers after backend loss without replaying the failed query", async () => {
   const url = new URL(process.env.DATABASE_URL ?? "");
   if (!["127.0.0.1", "localhost"].includes(url.hostname) || !url.pathname.endsWith("_test")) throw new Error("synthetic_local_test_database_required");
   url.searchParams.set("connection_limit", "1");
-  const client = new PrismaClient({ datasources: { db: { url: url.toString() } } });
+  const client = createRecoveringClient({ datasources: { db: { url: url.toString() } } });
   const controller = new PrismaClient();
   const id = `reconnect_${randomUUID()}`;
   try {
@@ -16,7 +17,6 @@ test("explicit Prisma reset recovers a committed tenant after backend loss", asy
     const [terminated] = await controller.$queryRaw<{terminated:boolean}[]>`SELECT pg_terminate_backend(${backend.pid}::integer) AS terminated`;
     expect(terminated.terminated).toBe(true);
     await expect(client.account.findUnique({where:{id}})).rejects.toThrow();
-    await client.$disconnect();
     expect((await client.account.findUnique({where:{id}}))?.id).toBe(id);
     expect(await controller.account.count({where:{id}})).toBe(1);
   } finally {
@@ -58,5 +58,111 @@ test("readiness detects inherited owner and privileged group membership", async 
     await client.$executeRawUnsafe(`DROP ROLE IF EXISTS ${member}`);
     await client.$executeRawUnsafe(`DROP ROLE IF EXISTS ${owner}`);
     await client.$disconnect();
+  }
+});
+
+
+test("failed writes are not replayed and a later write succeeds once", async () => {
+  const url = new URL(process.env.DATABASE_URL ?? "");
+  if (!["127.0.0.1", "localhost"].includes(url.hostname) || !url.pathname.endsWith("_test")) throw new Error("synthetic_local_test_database_required");
+  url.searchParams.set("connection_limit", "1");
+  const client = createRecoveringClient({datasources:{db:{url:url.toString()}}});
+  const controller = new PrismaClient();
+  const id = `no_replay_${randomUUID()}`;
+  const data = {id,slug:id,name:"Synthetic no replay",industry:"test",timezone:"UTC"};
+  try {
+    const [backend] = await client.$queryRaw<{pid:number}[]>`SELECT pg_backend_pid() AS pid`;
+    await controller.$queryRaw`SELECT pg_terminate_backend(${backend.pid}::integer)`;
+    await expect(client.account.create({data})).rejects.toMatchObject({code:"P1017"});
+    expect(await controller.account.count({where:{id}})).toBe(0);
+    await client.account.create({data});
+    await expect(client.account.create({data})).rejects.toMatchObject({code:"P2002"});
+    expect(await client.account.count({where:{id}})).toBe(1);
+  } finally {
+    await controller.account.deleteMany({where:{id}});
+    await client.$disconnect();
+    await controller.$disconnect();
+  }
+});
+
+test("connection loss aborts an interactive transaction before the pool recovers", async () => {
+  const url = new URL(process.env.DATABASE_URL ?? "");
+  if (!["127.0.0.1", "localhost"].includes(url.hostname) || !url.pathname.endsWith("_test")) throw new Error("synthetic_local_test_database_required");
+  url.searchParams.set("connection_limit", "1");
+  const client = createRecoveringClient({datasources:{db:{url:url.toString()}}});
+  const controller = new PrismaClient();
+  const id = `rollback_${randomUUID()}`;
+  try {
+    await expect(client.$transaction(async tx => {
+      await tx.account.create({data:{id,slug:id,name:"Synthetic rollback",industry:"test",timezone:"UTC"}});
+      const [backend] = await tx.$queryRaw<{pid:number}[]>`SELECT pg_backend_pid() AS pid`;
+      await controller.$queryRaw`SELECT pg_terminate_backend(${backend.pid}::integer)`;
+      await tx.account.count();
+    })).rejects.toMatchObject({code:"P1017"});
+    expect(await client.account.count({where:{id}})).toBe(0);
+    expect(await client.$transaction([client.account.count({where:{id}})])).toEqual([0]);
+    const [backend] = await client.$queryRaw<{pid:number}[]>`SELECT pg_backend_pid() AS pid`;
+    await controller.$queryRaw`SELECT pg_terminate_backend(${backend.pid}::integer)`;
+    await expect(client.$transaction([client.account.count(),client.account.count()])).rejects.toMatchObject({code:"P1017"});
+    expect(await client.account.count({where:{id}})).toBe(0);
+  } finally {
+    await controller.account.deleteMany({where:{id}});
+    await client.$disconnect();
+    await controller.$disconnect();
+  }
+});
+
+test("concurrent failures drain before one recovered pool serves later queries", async () => {
+  const url = new URL(process.env.DATABASE_URL ?? "");
+  if (!["127.0.0.1", "localhost"].includes(url.hostname) || !url.pathname.endsWith("_test")) throw new Error("synthetic_local_test_database_required");
+  url.searchParams.set("connection_limit", "1");
+  const client = createRecoveringClient({datasources:{db:{url:url.toString()}}});
+  const controller = new PrismaClient();
+  try {
+    const [backend] = await client.$queryRaw<{pid:number}[]>`SELECT pg_backend_pid() AS pid`;
+    await controller.$queryRaw`SELECT pg_terminate_backend(${backend.pid}::integer)`;
+    const results = await Promise.allSettled([client.account.count(),client.account.count(),client.account.count()]);
+    expect(results.every(r=>r.status === "rejected")).toBe(true);
+    const counts = await Promise.all([client.account.count(),client.account.count()]);
+    expect(counts[0]).toBe(counts[1]);
+  } finally {
+    await client.$disconnect();
+    await controller.$disconnect();
+  }
+});
+
+
+test("pool recovery waits for a concurrent healthy transaction to commit", async () => {
+  const url = new URL(process.env.DATABASE_URL ?? "");
+  if (!["127.0.0.1", "localhost"].includes(url.hostname) || !url.pathname.endsWith("_test")) throw new Error("synthetic_local_test_database_required");
+  url.searchParams.set("connection_limit", "2");
+  const client = createRecoveringClient({datasources:{db:{url:url.toString()}}});
+  const controller = new PrismaClient();
+  const id = `drain_${randomUUID()}`;
+  let release!: () => void;
+  let entered!: () => void;
+  const hold = new Promise<void>(resolve=>{release=resolve;});
+  const ready = new Promise<void>(resolve=>{entered=resolve;});
+  const transaction = client.$transaction(async tx=>{
+    await tx.account.create({data:{id,slug:id,name:"Synthetic drain",industry:"test",timezone:"UTC"}});
+    entered();
+    await hold;
+  });
+  try {
+    await ready;
+    const [backend] = await client.$queryRaw<{pid:number}[]>`SELECT pg_backend_pid() AS pid`;
+    await controller.$queryRaw`SELECT pg_terminate_backend(${backend.pid}::integer)`;
+    await expect(client.$queryRaw`SELECT 1`).rejects.toMatchObject({code:"P1017"});
+    const later = Promise.resolve(client.account.count({where:{id}}));
+    release();
+    await transaction;
+    expect(await later).toBe(1);
+    expect(await client.account.count({where:{id}})).toBe(1);
+  } finally {
+    release();
+    await transaction.catch(()=>{});
+    await controller.account.deleteMany({where:{id}});
+    await client.$disconnect();
+    await controller.$disconnect();
   }
 });

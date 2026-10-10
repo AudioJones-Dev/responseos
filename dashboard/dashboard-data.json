@@ -1437,7 +1437,7 @@
     {
       "id": "DB-NEON-01",
       "phase": "Tech Debt & Hardening",
-      "title": "Review Neon safety checks; automatic reconnect and hosted acceptance remain gated",
+      "title": "Review Neon safety and non-replaying connection recovery; hosted acceptance remains gated",
       "owner": "Codex",
       "status": "Review",
       "progress": 90,

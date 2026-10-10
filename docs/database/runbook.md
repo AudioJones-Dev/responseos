@@ -66,4 +66,4 @@ Stop only authorized producers/workers first; preserve both databases, audit/que
 
 Live ResponseOS routing/provider activation, FRL content, domain/DNS/indexing, billing and receptionist behavior remain outside this task's authorization.
 
-A15: Automatic Prisma singleton recovery after backend loss requires a separately reviewed implementation and passing same-client outage test before recovery acceptance/cutover. Explicit reset recovery preserves data locally but does not close this gate.
+A15: Application pool reset after P1017 is implemented for review and validated on synthetic local data without replay. Hosted pooler/network-outage and PR #210 worker recovery remain unverified; do not close cutover acceptance from local tests alone.

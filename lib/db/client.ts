@@ -1,5 +1,5 @@
 import "@/lib/serverOnlyGuard";
-import { PrismaClient } from "@prisma/client";
+import { createRecoveringClient, type RecoveringClient } from "./recoveringClient";
 
 /**
  * Prisma singleton with graceful no-DB fallback.
@@ -13,17 +13,17 @@ import { PrismaClient } from "@prisma/client";
  */
 
 declare global {
-  var __responseos_prisma__: PrismaClient | null | undefined;
+  var __responseos_prisma__: RecoveringClient | null | undefined;
 }
 
-function createClient(): PrismaClient | null {
+function createClient(): RecoveringClient | null {
   if (!process.env.DATABASE_URL) {
     return null;
   }
-  return new PrismaClient();
+  return createRecoveringClient();
 }
 
-export const db: PrismaClient | null =
+export const db: RecoveringClient | null =
   globalThis.__responseos_prisma__ ?? createClient();
 
 if (process.env.NODE_ENV !== "production") {

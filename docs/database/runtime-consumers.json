@@ -82,7 +82,7 @@
     "scripts/retention-purge.ts"
   ],
   "directPrismaClients": [
-    "lib/db/client.ts",
+    "lib/db/recoveringClient.ts",
     "scripts/database-readiness.mjs",
     "scripts/reset-demo-sandbox.ts",
     "prisma/seed.ts"

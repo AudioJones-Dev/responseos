@@ -81,3 +81,6 @@ Remaining risks: unresolved deployed targets, PG17/18 lineage divergence, extra 
 13. Separate hosted/security/data/cutover/decommission approvals retained.
 14. No increased customer-data movement; unknown backup/identity ownership blocks writes.
 15. Required now to prevent mistaken restore targets and divergent migration deployment.
+
+
+Recovery implementation review under ADR-0070: a bounded Prisma extension resets the application pool after P1017 without replay, preserving ledger uncertainty (questions 1, 3-5). It uses the existing bought Prisma client, adds no dependency or provider lock-in and duplicates no business platform (2, 6-9). Account filtering and attribution stay unchanged (10-11). Local synthetic tests support only local recovery claims (12); hosted/deploy approvals remain separate (13), no private-data export is added (14), and the reproduced permanent pool failure requires this repair now (15).
