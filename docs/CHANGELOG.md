@@ -8,6 +8,13 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: record the dev-only `braces` advisory as an accepted risk
+
+- **What changed:** `docs/SECURITY.md` gains a **Dependency advisories** section. It states the CI audit policy (ADR-0063) and records GHSA-vfj7-8cjw-p6xm in `braces` as an accepted dev-only risk: what it is, why it doesn't reach the deployed app, why no remedy is available, what it costs, and when to revisit it.
+- **Why:** the full audit and every Vercel build log report "5 high severity vulnerabilities" from this single advisory, and nothing written explained that count.
+- No code, dependency, or CI change.
+- Dashboard task `G-19`.
+
 ## Unreleased — chore: approve esbuild's and unrs-resolver's install scripts for npm's allowScripts policy
 
 - **What changed:** `package.json` `allowScripts` now also approves the two remaining dependencies with install scripts:

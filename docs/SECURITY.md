@@ -123,6 +123,19 @@ Raw artifacts and redacted review copies live in **separate** storage paths/poli
 - Promotion import is separately default-denied by `RESPONSEOS_PROMOTION_IMPORT_ENABLED`. It validates both manifest and source-snapshot hashes, creates a new disabled tenant ID, and cannot copy demo calls, callers, transcripts, recordings, raw webhooks, provider records, credentials, or audit history.
 - Import does not mutate the source export automatically. A second operator-only acknowledgment must match the exported manifest hash and identify the imported disabled account before the sandbox lifecycle becomes `converted`.
 
+## Dependency advisories
+
+CI fails on any high or critical advisory in a production dependency (`npm audit --omit=dev --audit-level=high`). A full audit, dev tooling included, runs on every PR as a report-only step. See ADR-0063.
+
+### Accepted risk: GHSA-vfj7-8cjw-p6xm in `braces` (dev only)
+
+- **Advisory:** GHSA-vfj7-8cjw-p6xm / CVE-2026-93687, high. A deeply nested brace pattern overflows the stack in `braces` and crashes the Node process. It covers every published version (≤3.0.3), and no fixed release exists.
+- **Where it is:** only in lint tooling: `eslint-config-next` → `@next/eslint-plugin-next` → `fast-glob` → `micromatch` → `braces`. `npm audit` counts it as 5 high findings, one for each package in that chain. The production audit reports 0.
+- **Why it is accepted:** the deployed app does not include or run `braces`. It runs only when ESLint lints this repository, on patterns from the repository's own config, so no outside input reaches it. The remedies on offer are worse. `npm audit fix --force` downgrades `eslint-config-next` to 14.x, which does not match Next 16. An override has no fixed version to point at.
+- **What it costs:** the full audit step stays red, and Vercel build logs show "5 high severity vulnerabilities". Both are expected until upstream ships a fix.
+- **When to revisit:** when a patched `braces` is published, or a `micromatch`/`fast-glob`/`@next/eslint-plugin-next` release drops it. Then update the lockfile, restore the single blocking full audit, and remove this entry (ADR-0063 decision 4). A new advisory anywhere else in the dev tree is not covered by this entry and needs its own decision.
+- **Accepted:** 2026-10-10, owner.
+
 ## Incident response
 
 Severity matrix:
