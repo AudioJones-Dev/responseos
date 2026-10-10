@@ -1360,6 +1360,17 @@
       "refType": "pull"
     },
     {
+      "id": "L-19",
+      "phase": "Launch / Demo Deploy",
+      "title": "Approve Prisma install scripts for npm's allowScripts policy",
+      "owner": "Claude Code",
+      "status": "In Progress",
+      "progress": 80,
+      "priority": "Med",
+      "start": "2026-10-10",
+      "due": "2026-10-10"
+    },
+    {
       "id": "G-16",
       "phase": "Tech Debt & Hardening",
       "title": "Vendor web fonts so next build makes no network requests",
