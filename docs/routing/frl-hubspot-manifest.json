@@ -1,0 +1,38 @@
+{
+  "status": "VERIFIED_PROVIDER_IDS_NOT_ACTIVATED",
+  "verifiedAt": "2026-10-09",
+  "portalId": "247150421",
+  "primaryOwnerId": "97785262",
+  "backupOwnerId": "169043038",
+  "ownerStatus": "Both approved owners independently verified active October 9; backup admin mailbox verified. Seat review remains due October 23.",
+  "sales": {
+    "pipelineId": "default",
+    "stageId": "4201284342"
+  },
+  "repair": {
+    "pipelineId": "0",
+    "stageId": "1"
+  },
+  "acquisition": {
+    "pipelineId": "2609285880",
+    "stageId": "4414846685",
+    "offerExpiredStageId": "4414846701"
+  },
+  "financialRules": {
+    "acquisitionDirection": "frl_pays_seller",
+    "standardDealAmount": "MUST_REMAIN_UNSET",
+    "offerAndPaymentActions": "OPERATOR_APPROVAL_REQUIRED"
+  },
+  "executionStatus": "Not connected to a live worker; controlled six-path acceptance remains pending",
+  "schemaVersion": "frl-hubspot.v1",
+  "pathways": [
+    "residential",
+    "builder",
+    "architect",
+    "commercial",
+    "repair",
+    "equipment_acquisition"
+  ],
+  "contactMatching": "Exact normalized email and phone; ambiguity blocks; existing context preserved; phone-only new contacts require review.",
+  "notificationPolicy": "Internal operator status only; outbound notifications require separate acceptance."
+}

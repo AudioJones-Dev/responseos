@@ -8,6 +8,7 @@
     "npm": "11.16.0"
   },
   "scripts": {
+    "routing:worker": "tsx scripts/routing-worker.ts",
     "postinstall": "node scripts/patch-minimatch-cjs-compat.mjs",
     "dev": "next dev",
     "build": "next build",
