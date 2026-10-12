@@ -262,7 +262,7 @@ model HostedRoutingDelivery {
   id               String       @id @default(cuid())
   account_id       String
   intake_id        String
-  intake           FrlWebIntake @relation(fields: [account_id, intake_id], references: [account_id, id], onDelete: Restrict)
+  intake           FrlWebIntake @relation(fields: [account_id, intake_id], references: [account_id, id], onDelete: Restrict, map: "HostedRoutingDelivery_scope_fk")
   manifest_version String
   mode             String       @default("simulated")
   status           String       @default("queued")
