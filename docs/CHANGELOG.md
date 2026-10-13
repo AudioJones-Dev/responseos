@@ -8,6 +8,13 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — chore: add Telnyx agent skills for Claude Code
+
+- **What changed:** three agent skills from [`team-telnyx/skills`](https://github.com/team-telnyx/skills) are added under `.claude/skills/`: `telnyx-voice-javascript`, `telnyx-ai-assistants-javascript`, and `telnyx-messaging-javascript`. `skills-lock.json` records the source and a content hash for each one.
+- **What they are:** Markdown reference only (a `SKILL.md` and an `references/api-details.md` per skill). They contain no scripts or hooks, need no API key, and make no provider calls. They don't change the mock-adapter boundary or move any v0.3 gate.
+- **Note:** the skills' examples use the official `telnyx` npm package. This repo does not depend on it; `lib/providers/telnyx/` remains the integration surface.
+- **Local corrections (from review):** the upstream `SKILL.md` files listed SDK response fields in camelCase (`callControlId`, `sentAt`, `createdAt`, …), but `telnyx-node` returns snake_case (`call_control_id`, `sent_at`, `created_at`). Those 48 field names are corrected. The voice and messaging setup sections now pass `publicKey` (`TELNYX_PUBLIC_KEY`), which `client.webhooks.unwrap()` needs to verify signatures. A second review pass, each item checked against `telnyx-node` v6.74.2, also fixed: error-handling examples that swallowed failures (they now rethrow); `assistants.update` called without a body; the alphanumeric sender mislabelled E.164; group MMS `to` typed as `array[object]` instead of `array[string]`; a past `send_at`; an empty WhatsApp payload; `;secure=srtp` appended to phone numbers (it applies to SIP URIs only); the bridge target listed as `call_control_id` instead of `call_control_id_to_bridge_with`; and a broken table row. `skills-lock.json` still holds the upstream hashes, so re-running `npx skills add` or an update would overwrite these corrections; re-apply them or check whether upstream has fixed them first.
+
 ## Unreleased — fix: recognise connection loss reported without an error code (#214)
 
 - **Bug:** `isConnectionLoss` (from #211) missed one of the ways a terminated Postgres backend reaches Prisma. When a batch `$transaction([...])` reads Postgres's `FATAL: terminating connection due to administrator command` before the socket closes, Prisma raises a `PrismaClientUnknownRequestError` with no code. That is neither `P1017` nor `P2010`. The recovering client then did not treat it as connection loss and did not reset the pool.
