@@ -43,3 +43,14 @@ Inspected default branches have only plpgsql installed, no public triggers/views
 
 
 Read-only follow-up on 2026-10-10: the primary default branch has zero rows in each of neon_auth.user, account, organization and session. This narrows observed identity data but does not certify other auth tables, absence of consumers or production authority. Staging show_db_tree body is catalog-only, SECURITY INVOKER, with no repository callers found; external callers and privilege approval remain open. See readback-followup-2026-10-10.json.
+
+
+## Discovery refresh - 2026-10-13
+
+[Redacted evidence](readback-2026-10-13.json) records a read-only refresh based on master `915051a9538f4d16401da4f8ead111730c42d191`. PR #211 merged on October 10; restore identifier validation was subsequently tightened and #214 expanded connection-loss recognition. These are repository changes, not hosted cutover evidence. PRs #209/#210 and FRL #93 remain open at the exact heads in the evidence; the earlier pinned routing tests do not certify their newer heads.
+
+Render now returns one service in the previously authorized Michael's workspace, including previews: `srv-db5874lckfvc739a72j0`, `frl-ops-portal-neon-test`, repository `AudioJones-Dev/FRL-CONTRACTOR-PORTAL`, branch `claude/neon-phase3-data-layer`, Oregon, free web service, one instance, not suspended, automatic deployment off. No ResponseOS or FRL website service was returned in this workspace. This replaces the earlier null-result uncertainty for this workspace's service list only. Environment values were not retrieved. No service was created, modified, deployed or suspended.
+
+The portal is a separate repository. No direct reference to it was found in ResponseOS's application, scripts or database documentation before this refresh. Classify it as INVESTIGATE outside the currently authorized two-repository migration scope; do not transfer its data, replace its authentication, change its configuration or infer it belongs to the ResponseOS database. Other workspaces and services are not certified absent.
+
+The current ResponseOS package manifests, application, scripts and Prisma source still contain no Supabase client/runtime dependency; the only source text match is a professional-knowledge fixture. Local primary checkout has only `.env.example`, so it provides no real deployed URL mapping. Production authority, effective Vercel credentials/roles, hosted security and recovery remain UNKNOWN. Neon topology and data counts from October 9-10 were not rechecked in this refresh and must be reread before any hosted change.

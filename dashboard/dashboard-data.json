@@ -1575,6 +1575,17 @@
       "refType": "pull",
       "refState": "merged",
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/211"
+    },
+    {
+      "id": "DB-NEON-02",
+      "phase": "Tech Debt & Hardening",
+      "title": "Refresh merged Neon handoff and scoped Render inventory; hosted authority remains unresolved",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-10-13",
+      "due": "2026-10-13"
     }
   ],
   "liveIssues": [

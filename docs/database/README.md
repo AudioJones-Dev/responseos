@@ -2,6 +2,8 @@
 
 Status: discovery and safe repository implementation; hosted configuration, migration and cutover are **NOT AUTHORIZED**. Neon is the selected relational platform under ADR-0026. The authoritative **dataset and deployed connection** must be identified per environment; a project name is not proof of data ownership.
 
+Latest refresh: [October 13 discovery evidence](readback-2026-10-13.json) and [inventory update](inventory.md#discovery-refresh---2026-10-13). PR #211 is merged; hosted authority, security, recovery and cutover gates remain open. Render service-list discovery is complete only for the authorized workspace, which returned a separate portal service.
+
 Deliverables:
 
 1. [Dependency inventory](inventory.md) and [redacted provider evidence](readback-2026-10-09.json).

@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-13",
+  "mode": "read_only_provider_discovery",
+  "repositoryBase": "915051a9538f4d16401da4f8ead111730c42d191",
+  "responseosPr211": {
+    "merged": true,
+    "mergedAt": "2026-10-10T16:08:55Z",
+    "mergeCommit": "14c543f8460520201d311b613cfa65aade6e297d",
+    "head": "586fc353c8265a8c432b9df83e8985b9acc4aeae"
+  },
+  "independentOpenPullRequests": {
+    "responseos209": "43b2a25097a5ff862cedfc4fec3e7cd34cdf9108",
+    "responseos210": "2da49b33953b6e1a228caf1da6eb3c1d904c4fa0",
+    "frlWebsite93": "a329ac6e8a380eb6d38e85df6ae6730a007be00e"
+  },
+  "render": {
+    "workspaceId": "tea-db1rckjbc2fs73diota0",
+    "includePreviews": true,
+    "returnedServices": [
+      {
+        "id": "srv-db5874lckfvc739a72j0",
+        "name": "frl-ops-portal-neon-test",
+        "repository": "AudioJones-Dev/FRL-CONTRACTOR-PORTAL",
+        "branch": "claude/neon-phase3-data-layer",
+        "type": "web_service",
+        "region": "oregon",
+        "plan": "free",
+        "autoDeploy": "no",
+        "autoDeployTrigger": "off",
+        "suspended": "not_suspended",
+        "instances": 1
+      }
+    ],
+    "responseosOrWebsiteServicesReturned": 0,
+    "serviceEnvironmentValuesRetrieved": false,
+    "scopeLimit": "Only the previously authorized workspace; no other account/workspace inference"
+  },
+  "hostedMutations": false,
+  "neonTopologyRefreshed": false,
+  "sensitiveConnectionIdentity": "UNKNOWN"
+}

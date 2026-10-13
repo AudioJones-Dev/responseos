@@ -1,5 +1,7 @@
 # Changelog — ResponseOS
 
+- Database discovery follow-up: record PR #211 merge and current routing heads; reconcile the authorized Render workspace service list while preserving hosted approval gates.
+
 - PR #211: recover the application Prisma pool after connection loss without replaying failed operations; cover transaction rollback and concurrent failures.
 
 - PR #211 review follow-up: reject malformed lineage/binding evidence and inherited owner privileges; document automatic reconnect acceptance blocker.

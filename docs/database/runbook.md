@@ -49,7 +49,7 @@ Stop only authorized producers/workers first; preserve both databases, audit/que
 
 | ID | Required decision / evidence | Owner | State / blocks |
 | --- | --- | --- | --- |
-| A01 | Confirm Render Michael's workspace for read-only service/env discovery | AJ Digital | authorized 2026-10-10; connector returned null, inventory remains UNKNOWN; Render dependency inventory |
+| A01 | Confirm Render Michael's workspace for read-only service/env discovery | AJ Digital | workspace service-list discovery COMPLETE 2026-10-13: one separate portal service, no ResponseOS/website service returned; environment/connection mapping remains under A02 |
 | A02 | Privately verify effective Vercel, GitHub/Doppler and Render URL/role/environment mappings | AJ Digital + operator | UNKNOWN; authority and source identity |
 | A03 | Identify production dataset and main neon_auth/demo consumers | AJ Digital | pending; production target and any consolidation |
 | A04 | Ratify ADR-0070, PG17 production proposal and staged PG18 compatibility evidence | AJ Digital | proposed; no version/region change authorized |
@@ -62,7 +62,7 @@ Stop only authorized producers/workers first; preserve both databases, audit/que
 | A11 | Actual customer/identity data movement and private reconciliation plan | data owner + AJ Digital | NOT AUTHORIZED; no migration currently selected |
 | A12 | Cutover, rollback window/loss policy and post-cutover smoke | AJ Digital | NOT AUTHORIZED |
 | A13 | Source/resource retirement, restore-copy cleanup and obsolete Supabase deletion | AJ Digital | NOT AUTHORIZED; separate final decision |
-| A14 | PR review/merge and PR #209/#210/#93 decisions | human reviewers | separate; this PR changes no PR state on those stacks |
+| A14 | PR review/merge and PR #209/#210/#93 decisions | human reviewers | PR #211 merged 2026-10-10; #209/#210/#93 still open at refreshed heads; their merge/activation decisions remain separate |
 
 Live ResponseOS routing/provider activation, FRL content, domain/DNS/indexing, billing and receptionist behavior remain outside this task's authorization.
 
