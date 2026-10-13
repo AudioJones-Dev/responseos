@@ -1,0 +1,6 @@
+{
+  "file": "raw-evidence.tar.gz",
+  "sha256": "dedeb63decffe96181b25df821eb5d54a2b85d0d2a82950bb578a1b9070fe515",
+  "bytes": 1120902,
+  "verification": "Archive extraction reproduced all 40 evidence hashes and the verification report"
+}

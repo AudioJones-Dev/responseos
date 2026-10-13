@@ -1,0 +1,169 @@
+{
+  "scope": "Original pinned Windows x64 package; supplemental rows only",
+  "originalMatrixSha256": "3e77e4d426db8e7b34585b7b1e784ec304900483e25cf65c0a09b3b4709ddf1b",
+  "summary": {
+    "capturedAt": "2026-10-08T06:06:19.945Z",
+    "applicationSha": "4e1f353117696658988bca171e4e0e51c0fb1b96",
+    "toolHash": "e9ffcf34b2fc100213bab6b4b33c920ad7d39e56bd2c2e7fd92ec53ea124b242",
+    "platform": "win32-x64",
+    "occurrences": 140,
+    "decisions": {
+      "CLOSED_SOURCE_FILE_EXCLUDED": 4,
+      "UNKNOWN": 106,
+      "CLOSED_INACTIVE_WINDOWS_BRANCH": 28,
+      "CLOSED_INACTIVE_LINUX_GUARD": 2
+    },
+    "artifactScopes": {
+      "BUILD_ONLY_OUTPUT": 4,
+      "DUPLICATED_RUNTIME_COPY": 6,
+      "PACKAGED_RUNTIME": 130
+    },
+    "categories": {
+      "dynamic": 70,
+      "framework-alias": 27,
+      "optional": 7,
+      "platform-specific": 36
+    },
+    "duplicateRows": 6,
+    "overallPackagingClosure": "FAIL",
+    "nativeOperationSucceeded": false,
+    "nativeFailure": "Could not load the \"sharp\" module using the win32-x64 runtime\nERR_DLOPEN_FAILED: The specified module could not be found.\r\n\\\\?\\C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\runtime-QciRyu\\node_modules\\@img\\sharp-win32-x64\\lib\\sharp-win32-x64-0.35.5.node\nPossible solutions:\n- Ensure optional dependencies can be installed:\n    npm install --include=optional sharp\n- Ensure your package manager supports multi-platform installation:\n    See https://sharp.pixelplumbing.com/install#cross-platform\n- Add platform-specific dependencies:\n    npm install --os=win32 --cpu=x64 sharp\n- Consult the installation documentation:\n    See https://sharp.pixelplumbing.com/install",
+    "auditFindings": 5,
+    "taskFailures": 36,
+    "limitations": [
+      "Occurrence closure is scoped to the inspected materialized Windows package, not every deployment",
+      "All 140 original IDs are retained, including build-only and duplicate source copies",
+      "Module resolution is not proof of call-site execution",
+      "Native control is a synthetic one-pixel image operation, not production request coverage",
+      "Linux, edge deployment, alias resolution and independent review remain pending"
+    ]
+  },
+  "rows": [
+    {
+      "id": 116,
+      "applicationSha": "4e1f353117696658988bca171e4e0e51c0fb1b96",
+      "platform": "win32-x64",
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.cjs",
+      "line": 146,
+      "column": 26,
+      "sourceHash": "76120d3971051fcc469c0bfa36e7b23d3c388b6a2f5785bf1491bbdb90ff0176",
+      "artifactScope": "PACKAGED_RUNTIME",
+      "duplicateOf": null,
+      "category": "dynamic",
+      "kind": "require",
+      "input": "`@img/sharp-libvips-${runtimePlatform}/package`",
+      "containingFunction": null,
+      "guards": [
+        {
+          "kind": "try-catch",
+          "handled": true,
+          "branch": "try"
+        },
+        {
+          "kind": "if",
+          "expression": "isLinux && /(symbol not found|CXXABI_)/i.test(messages)",
+          "branch": "true"
+        },
+        {
+          "kind": "if",
+          "expression": "!sharp",
+          "branch": "true"
+        }
+      ],
+      "context": "{ config } = require(`@img/sharp-libvips-${runtimePlatform}/package`)",
+      "proposedTarget": "Requires computed target enumeration",
+      "decision": "CLOSED_INACTIVE_LINUX_GUARD",
+      "runtimeReachability": "INACTIVE_FOR_INSPECTED_PLATFORM",
+      "proof": [
+        {
+          "kind": "packaged-file",
+          "file": "node_modules/sharp/dist/sharp.cjs",
+          "sha256": "76120d3971051fcc469c0bfa36e7b23d3c388b6a2f5785bf1491bbdb90ff0176"
+        },
+        {
+          "kind": "inactive-linux-guard",
+          "selected": "win32-x64",
+          "expression": "isLinux && /(symbol not found|CXXABI_)/i.test(messages)",
+          "isLinux": false,
+          "definition": "[\"linux\", \"darwin\", \"win32\"].map((os) => runtimePlatform.startsWith(os))",
+          "selectorSources": [
+            {
+              "file": ".next/standalone/node_modules/sharp/dist/libvips.cjs",
+              "sha256": "3419f6cb4303feaf4a76abe122ce1caf5dc755f9f17fa013afd5561827b61062",
+              "supported": true
+            },
+            {
+              "file": ".next/standalone/node_modules/sharp/dist/libvips.mjs",
+              "sha256": "d9984601b0aafe44c393b29ce4b0712b1c40890c3d740d4fda49842a4ea5873d",
+              "supported": true
+            }
+          ]
+        }
+      ],
+      "remainingObligation": "Windows x64 false-guard proof only; Linux requires independent selector and failure-path evidence"
+    },
+    {
+      "id": 134,
+      "applicationSha": "4e1f353117696658988bca171e4e0e51c0fb1b96",
+      "platform": "win32-x64",
+      "file": ".next/standalone/node_modules/sharp/dist/sharp.mjs",
+      "line": 146,
+      "column": 26,
+      "sourceHash": "d0c3ce3837636a140e8363850823e3b8dc2b000928303664cc9fc1aa2ba326ee",
+      "artifactScope": "PACKAGED_RUNTIME",
+      "duplicateOf": null,
+      "category": "dynamic",
+      "kind": "require",
+      "input": "`@img/sharp-libvips-${runtimePlatform}/package`",
+      "containingFunction": null,
+      "guards": [
+        {
+          "kind": "try-catch",
+          "handled": true,
+          "branch": "try"
+        },
+        {
+          "kind": "if",
+          "expression": "isLinux && /(symbol not found|CXXABI_)/i.test(messages)",
+          "branch": "true"
+        },
+        {
+          "kind": "if",
+          "expression": "!sharp",
+          "branch": "true"
+        }
+      ],
+      "context": "{ config } = require(`@img/sharp-libvips-${runtimePlatform}/package`)",
+      "proposedTarget": "Requires computed target enumeration",
+      "decision": "CLOSED_INACTIVE_LINUX_GUARD",
+      "runtimeReachability": "INACTIVE_FOR_INSPECTED_PLATFORM",
+      "proof": [
+        {
+          "kind": "packaged-file",
+          "file": "node_modules/sharp/dist/sharp.mjs",
+          "sha256": "d0c3ce3837636a140e8363850823e3b8dc2b000928303664cc9fc1aa2ba326ee"
+        },
+        {
+          "kind": "inactive-linux-guard",
+          "selected": "win32-x64",
+          "expression": "isLinux && /(symbol not found|CXXABI_)/i.test(messages)",
+          "isLinux": false,
+          "definition": "[\"linux\", \"darwin\", \"win32\"].map((os) => runtimePlatform.startsWith(os))",
+          "selectorSources": [
+            {
+              "file": ".next/standalone/node_modules/sharp/dist/libvips.cjs",
+              "sha256": "3419f6cb4303feaf4a76abe122ce1caf5dc755f9f17fa013afd5561827b61062",
+              "supported": true
+            },
+            {
+              "file": ".next/standalone/node_modules/sharp/dist/libvips.mjs",
+              "sha256": "d9984601b0aafe44c393b29ce4b0712b1c40890c3d740d4fda49842a4ea5873d",
+              "supported": true
+            }
+          ]
+        }
+      ],
+      "remainingObligation": "Windows x64 false-guard proof only; Linux requires independent selector and failure-path evidence"
+    }
+  ]
+}

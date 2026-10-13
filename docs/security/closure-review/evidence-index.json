@@ -1,0 +1,54 @@
+[
+  {
+    "file": ".gitattributes",
+    "sha256": "9871ac5d7f5decf5c31ae260a4292e515c9207a52c5435fffdab87fe403f8bc2"
+  },
+  {
+    "file": "fresh-runtime-summary.json",
+    "sha256": "d0f1f945d81dd5c863d901c840954958a43c394ce67730b6b6d71b0fb158d5d1"
+  },
+  {
+    "file": "infrastructure-controls.json",
+    "sha256": "69783ce986f0111b70799bfd9942938939087fd0ff683c742b289fa0c696b9ad"
+  },
+  {
+    "file": "installed-native-loads.jsonl",
+    "sha256": "0db6eda082bc7a68797afa0bea449ae620b61e96ecb4284955162e213935724b"
+  },
+  {
+    "file": "installed-native-probe.log",
+    "sha256": "e499f1959c89fde5504fa6bd2bd63373283de1928e06180ebb9a308e2eebf059"
+  },
+  {
+    "file": "installed-native-summary.json",
+    "sha256": "8a6a311dbfd7c53826e5a2957b3607d5237ddb6aa572a8cc2e63e8b8228fea19"
+  },
+  {
+    "file": "native-loads.jsonl",
+    "sha256": "46c449d69ba55acc09884b5c27c1d018434b71a5e0610631e33e741f56c9046f"
+  },
+  {
+    "file": "native-packaging-comparison.json",
+    "sha256": "7cddb7e186e55b2a909652b1f9103e060e7710ccbd1ec49f13add56f9ec24c8d"
+  },
+  {
+    "file": "native-probe.log",
+    "sha256": "ce83532ac043a26e011c544896486d42154e84795ceb408ef56a286eacd51414"
+  },
+  {
+    "file": "native-summary.json",
+    "sha256": "c38b238ff9ddfb87a76a3f06b4c117b64559cf8abf9313ff7474663fc7341f9b"
+  },
+  {
+    "file": "occurrence-closure.json",
+    "sha256": "3e77e4d426db8e7b34585b7b1e784ec304900483e25cf65c0a09b3b4709ddf1b"
+  },
+  {
+    "file": "occurrence-closure.md",
+    "sha256": "12aef834cfc81ebdaa3b42e65e7b2d5a76b6d4bc91bb5db149ab2fdcb87d7c31"
+  },
+  {
+    "file": "validation.json",
+    "sha256": "7c50eccb189c5506de905591d792c816df32d5a6988443e3d8b4b5145d2df5b6"
+  }
+]

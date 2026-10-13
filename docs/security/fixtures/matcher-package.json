@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "brace-expansion": "5.0.12",
+    "fill-range": "7.1.1",
+    "picomatch": "2.3.2"
+  }
+}

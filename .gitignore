@@ -51,3 +51,7 @@ next-env.d.ts
 
 # repo-pruner generated evidence (regenerated per run, never committed)
 .pruner/
+
+.security-tools/
+.security-evidence/
+.security-integration/

@@ -1,0 +1,13 @@
+{
+  "exit": 1,
+  "observation": {
+    "platform": "win32",
+    "arch": "x64",
+    "nativeSucceeded": false,
+    "runtimePlatform": "win32-x64",
+    "error": "Could not load the \"sharp\" module using the win32-x64 runtime\nERR_DLOPEN_FAILED: The specified module could not be found.\r\n\\\\?\\C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\runtime-QciRyu\\node_modules\\@img\\sharp-win32-x64\\lib\\sharp-win32-x64-0.35.5.node\nPossible solutions:\n- Ensure optional dependencies can be installed:\n    npm install --include=optional sharp\n- Ensure your package manager supports multi-platform installation:\n    See https://sharp.pixelplumbing.com/install#cross-platform\n- Add platform-specific dependencies:\n    npm install --os=win32 --cpu=x64 sharp\n- Consult the installation documentation:\n    See https://sharp.pixelplumbing.com/install"
+  },
+  "eventCount": 483,
+  "escapes": [],
+  "scope": "Synthetic one-pixel image control with module containment; not production request coverage"
+}

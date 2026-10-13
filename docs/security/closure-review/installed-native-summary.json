@@ -1,0 +1,13 @@
+{
+  "exit": 0,
+  "observation": {
+    "platform": "win32",
+    "arch": "x64",
+    "nativeSucceeded": true,
+    "runtimePlatform": "win32-x64",
+    "pngBytes": 90
+  },
+  "eventCount": 556,
+  "escapes": [],
+  "scope": "Synthetic one-pixel image control with module containment; not production request coverage"
+}

@@ -1,0 +1,226 @@
+{
+  "nativeOperationSucceeded": false,
+  "nativeProbeExit": 1,
+  "nativeProbeError": "Could not load the \"sharp\" module using the win32-x64 runtime\nERR_DLOPEN_FAILED: The specified module could not be found.\r\n\\\\?\\C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\runtime-A2iieb\\node_modules\\@img\\sharp-win32-x64\\lib\\sharp-win32-x64-0.35.5.node\nPossible solutions:\n- Ensure optional dependencies can be installed:\n    npm install --include=optional sharp\n- Ensure your package manager supports multi-platform installation:\n    See https://sharp.pixelplumbing.com/install#cross-platform\n- Add platform-specific dependencies:\n    npm install --os=win32 --cpu=x64 sharp\n- Consult the installation documentation:\n    See https://sharp.pixelplumbing.com/install",
+  "capturedAt": "2026-10-08T05:25:22.015Z",
+  "sourceCommit": "4e1f353117696658988bca171e4e0e51c0fb1b96",
+  "runtime": "C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\runtime-A2iieb",
+  "port": 57547,
+  "controlExit": 0,
+  "controlEvents": 56,
+  "requests": [
+    {
+      "route": "/api/health",
+      "status": 200,
+      "location": null,
+      "bytes": 133,
+      "sha256": "76a31c5931ea33abfb2f29aa477a842debec009a549378be762976b0dfa46a3a",
+      "health": {
+        "status": "ok",
+        "service": "responseos",
+        "version": "0.2.0",
+        "build_sha": "4e1f353117696658988bca171e4e0e51c0fb1b96",
+        "environment": "local"
+      }
+    },
+    {
+      "route": "/",
+      "status": 200,
+      "location": null,
+      "bytes": 80280,
+      "sha256": "b421655e9e454c549d72208a52694d8a0096322a940b301d52dcac16306e0a56"
+    },
+    {
+      "route": "/demo/receptionist",
+      "status": 200,
+      "location": null,
+      "bytes": 32098,
+      "sha256": "89b1eaf206c772f9a08b1d8afee3a97b8e4667f4ca42cf5a5d7b73f7fc70ab1f"
+    },
+    {
+      "route": "/demo/client-dashboard",
+      "status": 200,
+      "location": null,
+      "bytes": 30387,
+      "sha256": "646aae6c3a3314e7ad7139488b10998982aefebc1449ced6dd6b60ba245e9934"
+    },
+    {
+      "route": "/admin",
+      "status": 307,
+      "location": "/",
+      "bytes": 1,
+      "sha256": "8a5edab282632443219e051e4ade2d1d5bbc671c781051bf1437897cbdfea0f1"
+    },
+    {
+      "route": "/client/dashboard",
+      "status": 307,
+      "location": "/",
+      "bytes": 1,
+      "sha256": "8a5edab282632443219e051e4ade2d1d5bbc671c781051bf1437897cbdfea0f1"
+    },
+    {
+      "route": "/api/accounts",
+      "status": 307,
+      "location": "/",
+      "bytes": 1,
+      "sha256": "8a5edab282632443219e051e4ade2d1d5bbc671c781051bf1437897cbdfea0f1"
+    },
+    {
+      "route": "/api/auth/session",
+      "status": 307,
+      "location": "/",
+      "bytes": 1,
+      "sha256": "8a5edab282632443219e051e4ade2d1d5bbc671c781051bf1437897cbdfea0f1"
+    },
+    {
+      "route": "/demo/packaging-closure-missing",
+      "status": 404,
+      "location": null,
+      "bytes": 12074,
+      "sha256": "fb9f320e88c77f9d04c0ce85a2eae92bb5ac4987ace98ae55f93de3aa85c16d9"
+    }
+  ],
+  "failure": null,
+  "exit": {
+    "code": null,
+    "signal": "SIGTERM"
+  },
+  "eventCount": 6657,
+  "affectedEvents": [],
+  "escapes": [],
+  "resolutionFailures": [
+    {
+      "time": "2026-10-08T05:25:17.597Z",
+      "kind": "cjs-failed",
+      "request": "@opentelemetry/api",
+      "error": "Cannot find module '@opentelemetry/api'\nRequire stack:\n- C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\runtime-A2iieb\\node_modules\\next\\dist\\server\\lib\\trace\\tracer.js\n- C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\runtime-A2iieb\\node_modules\\next\\dist\\server\\next.js\n- C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\runtime-A2iieb\\server.js"
+    },
+    {
+      "time": "2026-10-08T05:25:18.499Z",
+      "kind": "cjs-failed",
+      "request": "next/dist/compiled/webpack/webpack-lib",
+      "error": "Cannot find module 'next/dist/compiled/webpack/webpack-lib'\nRequire stack:\n- C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\runtime-A2iieb\\node_modules\\next\\dist\\server\\config-utils.js\n- C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\runtime-A2iieb\\node_modules\\next\\dist\\server\\config.js\n- C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\runtime-A2iieb\\node_modules\\next\\dist\\server\\next.js\n- C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\runtime-A2iieb\\server.js"
+    },
+    {
+      "time": "2026-10-08T05:25:19.199Z",
+      "kind": "cjs-failed",
+      "request": "C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\runtime-A2iieb\\.next\\server\\instrumentation.js",
+      "error": "Cannot find module 'C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\runtime-A2iieb\\.next\\server\\instrumentation.js'\nRequire stack:\n- C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\runtime-A2iieb\\node_modules\\next\\dist\\server\\lib\\router-utils\\instrumentation-globals.external.js\n- C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\runtime-A2iieb\\node_modules\\next\\dist\\server\\next-server.js\n- C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\runtime-A2iieb\\node_modules\\next\\dist\\server\\next.js\n- C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\runtime-A2iieb\\server.js"
+    },
+    {
+      "time": "2026-10-08T05:25:19.200Z",
+      "kind": "cjs-failed",
+      "request": "C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\runtime-A2iieb\\.next\\server\\instrumentation.js",
+      "error": "Cannot find module 'C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\runtime-A2iieb\\.next\\server\\instrumentation.js'\nRequire stack:\n- C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\runtime-A2iieb\\node_modules\\next\\dist\\server\\lib\\router-utils\\instrumentation-globals.external.js\n- C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\runtime-A2iieb\\node_modules\\next\\dist\\server\\next-server.js\n- C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\runtime-A2iieb\\node_modules\\next\\dist\\server\\next.js\n- C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\runtime-A2iieb\\server.js"
+    },
+    {
+      "time": "2026-10-08T05:25:19.238Z",
+      "kind": "cjs-failed",
+      "request": "C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\runtime-A2iieb\\.next\\server\\instrumentation.js",
+      "error": "Cannot find module 'C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\runtime-A2iieb\\.next\\server\\instrumentation.js'\nRequire stack:\n- C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\runtime-A2iieb\\node_modules\\next\\dist\\server\\lib\\router-utils\\instrumentation-globals.external.js\n- C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\runtime-A2iieb\\node_modules\\next\\dist\\server\\next-server.js\n- C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\runtime-A2iieb\\node_modules\\next\\dist\\server\\next.js\n- C:\\Users\\AJDIGI~1\\AppData\\Local\\Temp\\responseos-artifact-5dNKwW\\runtime-A2iieb\\server.js"
+    }
+  ],
+  "changedOriginalFiles": [],
+  "addedFiles": [
+    {
+      "file": ".next/server/route-cache/APP_PAGE/41da0ef926a63354a29f601d8e8d0a5951196c45ebcd28b7d4708fb7f56f3bf1/$/_not-found.html",
+      "bytes": 12074,
+      "sha256": "fb9f320e88c77f9d04c0ce85a2eae92bb5ac4987ace98ae55f93de3aa85c16d9"
+    },
+    {
+      "file": ".next/server/route-cache/APP_PAGE/41da0ef926a63354a29f601d8e8d0a5951196c45ebcd28b7d4708fb7f56f3bf1/$/_not-found.meta",
+      "bytes": 588,
+      "sha256": "ab608f7dbd2a824f1d931ed44d2247af51c66e6eb4073e9a9807d926be66b35a"
+    },
+    {
+      "file": ".next/server/route-cache/APP_PAGE/41da0ef926a63354a29f601d8e8d0a5951196c45ebcd28b7d4708fb7f56f3bf1/$/_not-found.rsc",
+      "bytes": 7235,
+      "sha256": "300e4a80811c5f6854949c597fea10bde9407d6fd5a5034b878985f69db6e64a"
+    },
+    {
+      "file": ".next/server/route-cache/APP_PAGE/41da0ef926a63354a29f601d8e8d0a5951196c45ebcd28b7d4708fb7f56f3bf1/$/_not-found.segments/_full.segment.rsc",
+      "bytes": 7235,
+      "sha256": "300e4a80811c5f6854949c597fea10bde9407d6fd5a5034b878985f69db6e64a"
+    },
+    {
+      "file": ".next/server/route-cache/APP_PAGE/41da0ef926a63354a29f601d8e8d0a5951196c45ebcd28b7d4708fb7f56f3bf1/$/_not-found.segments/_not-found/__PAGE__.segment.rsc",
+      "bytes": 6324,
+      "sha256": "f64314384b9645d5a34e809d3c78029636de966d4f675c873d7565c21dfce819"
+    },
+    {
+      "file": ".next/server/route-cache/APP_PAGE/41da0ef926a63354a29f601d8e8d0a5951196c45ebcd28b7d4708fb7f56f3bf1/$/_not-found.segments/_tree.segment.rsc",
+      "bytes": 327,
+      "sha256": "ef452d7dbd0eb911325f330fad86400eec9d956fab22b36822cd8d2befc46abe"
+    },
+    {
+      "file": ".next/server/route-cache/APP_PAGE/4bb03c5b0956e16903e4d949187bc3188877c7cf8bae1b4202c260a322244816/$/demo/client-dashboard.html",
+      "bytes": 30387,
+      "sha256": "646aae6c3a3314e7ad7139488b10998982aefebc1449ced6dd6b60ba245e9934"
+    },
+    {
+      "file": ".next/server/route-cache/APP_PAGE/4bb03c5b0956e16903e4d949187bc3188877c7cf8bae1b4202c260a322244816/$/demo/client-dashboard.meta",
+      "bytes": 785,
+      "sha256": "87de1dc29e5862749fb52523294c127e4f9da59beac4ab9d07408076513c5a96"
+    },
+    {
+      "file": ".next/server/route-cache/APP_PAGE/4bb03c5b0956e16903e4d949187bc3188877c7cf8bae1b4202c260a322244816/$/demo/client-dashboard.rsc",
+      "bytes": 16048,
+      "sha256": "e60203aabffd8dea62da5404301929281e84920878476818718f2f83e22b71e7"
+    },
+    {
+      "file": ".next/server/route-cache/APP_PAGE/4bb03c5b0956e16903e4d949187bc3188877c7cf8bae1b4202c260a322244816/$/demo/client-dashboard.segments/_full.segment.rsc",
+      "bytes": 16048,
+      "sha256": "e60203aabffd8dea62da5404301929281e84920878476818718f2f83e22b71e7"
+    },
+    {
+      "file": ".next/server/route-cache/APP_PAGE/4bb03c5b0956e16903e4d949187bc3188877c7cf8bae1b4202c260a322244816/$/demo/client-dashboard.segments/_tree.segment.rsc",
+      "bytes": 793,
+      "sha256": "1fd9764c17eed84828acc9d1607608f0c7f79c1a72d31e1964309a2242d1ba9a"
+    },
+    {
+      "file": ".next/server/route-cache/APP_PAGE/4bb03c5b0956e16903e4d949187bc3188877c7cf8bae1b4202c260a322244816/$/demo/client-dashboard.segments/!KGRlbW8p/demo/client-dashboard/__PAGE__.segment.rsc",
+      "bytes": 14488,
+      "sha256": "17a2aef57d005f6eaf12a79c547adfab6666098844f4d1afedf9716fcde69505"
+    },
+    {
+      "file": ".next/server/route-cache/APP_PAGE/fbc7cff547721d382af4b9d109099b791bd305babad0bd0437c0c6fafeed8080/$/index.html",
+      "bytes": 80280,
+      "sha256": "b421655e9e454c549d72208a52694d8a0096322a940b301d52dcac16306e0a56"
+    },
+    {
+      "file": ".next/server/route-cache/APP_PAGE/fbc7cff547721d382af4b9d109099b791bd305babad0bd0437c0c6fafeed8080/$/index.meta",
+      "bytes": 601,
+      "sha256": "2d17a5c687e24ae8e7dbc9856e703de28e89500ec4022e142790d4add3a4733a"
+    },
+    {
+      "file": ".next/server/route-cache/APP_PAGE/fbc7cff547721d382af4b9d109099b791bd305babad0bd0437c0c6fafeed8080/$/index.rsc",
+      "bytes": 43396,
+      "sha256": "fd3c14c552c23af6e90169766b3b42b351ff84c2f380912516632d7a2dea3548"
+    },
+    {
+      "file": ".next/server/route-cache/APP_PAGE/fbc7cff547721d382af4b9d109099b791bd305babad0bd0437c0c6fafeed8080/$/index.segments/_full.segment.rsc",
+      "bytes": 43396,
+      "sha256": "fd3c14c552c23af6e90169766b3b42b351ff84c2f380912516632d7a2dea3548"
+    },
+    {
+      "file": ".next/server/route-cache/APP_PAGE/fbc7cff547721d382af4b9d109099b791bd305babad0bd0437c0c6fafeed8080/$/index.segments/_tree.segment.rsc",
+      "bytes": 644,
+      "sha256": "5708334693977806bdf11a79da22d4a5b1bba26cc9152c7d8d5fe6d596a7393a"
+    },
+    {
+      "file": ".next/server/route-cache/APP_PAGE/fbc7cff547721d382af4b9d109099b791bd305babad0bd0437c0c6fafeed8080/$/index.segments/!KG1hcmtldGluZyk.segment.rsc",
+      "bytes": 10933,
+      "sha256": "c0300a0ae7cafee58a1dd79420237232a456f0cd44f17c28918f57f71710e5df"
+    },
+    {
+      "file": ".next/server/route-cache/APP_PAGE/fbc7cff547721d382af4b9d109099b791bd305babad0bd0437c0c6fafeed8080/$/index.segments/!KG1hcmtldGluZyk/__PAGE__.segment.rsc",
+      "bytes": 31546,
+      "sha256": "00942a657b43592e0e8fbf15d96db0eb5a4bcdce85ca3f1a9f3818cc9b1be04e"
+    }
+  ],
+  "limitations": [
+    "Startup, public GETs, protected denials and public 404 only",
+    "Embedded code execution is not established by module load hooks",
+    "Fresh Windows standalone artifact, not deployed Vercel artifact"
+  ]
+}

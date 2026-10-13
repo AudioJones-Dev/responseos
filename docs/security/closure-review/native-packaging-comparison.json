@@ -1,0 +1,25 @@
+{
+  "applicationSha": "4e1f353117696658988bca171e4e0e51c0fb1b96",
+  "node": "v24.18.0",
+  "installedProbeExit": 0,
+  "installedObservation": {
+    "platform": "win32",
+    "arch": "x64",
+    "nativeSucceeded": true,
+    "runtimePlatform": "win32-x64",
+    "pngBytes": 90
+  },
+  "missingPackagedFiles": [
+    {
+      "file": "node_modules/@img/sharp-win32-x64/lib/libvips-42.dll",
+      "sourceSha256": "06dab07cc386748513337a31672b1d5269fbc770a14ff403080575665bf0813f",
+      "packaged": false
+    },
+    {
+      "file": "node_modules/@img/sharp-win32-x64/lib/libvips-cpp-8.18.7.dll",
+      "sourceSha256": "25001dbd05305a0a29119ab49933622c70b4a20ea12ef1d5d20ca40181db53bf",
+      "packaged": false
+    }
+  ],
+  "scope": "Original inspected package unchanged; no DLL copied"
+}

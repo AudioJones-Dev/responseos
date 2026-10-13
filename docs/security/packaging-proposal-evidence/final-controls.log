@@ -1,0 +1,2 @@
+PASS: missing-platform, tampered-report and omitted-report inventory controls; workflow manual trigger/read-only permission; five Bash blocks parsed; captured hashes verified.
+Only post-run tooling change: remove extra blank line at end of braces-directory-experiment.mjs; executable content unchanged.

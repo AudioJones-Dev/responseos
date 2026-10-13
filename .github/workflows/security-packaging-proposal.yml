@@ -1,0 +1,114 @@
+name: Security packaging proposal
+on:
+  workflow_dispatch:
+    inputs:
+      application_sha:
+        description: Immutable application commit to inspect; no deployment
+        type: string
+        required: true
+        default: 4e1f353117696658988bca171e4e0e51c0fb1b96
+permissions:
+  contents: read
+concurrency:
+  group: security-packaging-${{ github.ref }}
+  cancel-in-progress: false
+env:
+  SECURITY_APPLICATION_SHA: ${{ inputs.application_sha }}
+  NEXT_TELEMETRY_DISABLED: '1'
+jobs:
+  artifacts:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 24.18.0
+      - run: |
+          [[ "$SECURITY_APPLICATION_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          git cat-file -e "$SECURITY_APPLICATION_SHA^{commit}"
+          npm install --global --ignore-scripts --no-fund npm@11.16.0
+          echo "SECURITY_NPM_CLI=$(npm root -g)/npm/bin/npm-cli.js" >> "$GITHUB_ENV"
+          npm ci --ignore-scripts --include=dev --no-fund
+          node scripts/patch-minimatch-cjs-compat.mjs
+      - name: Verify rejection controls, then collect diagnostics without accepting audit findings
+        run: node scripts/security/braces-ci.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: security-${{ matrix.os }}
+          path: .security-evidence/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+  integration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:16@sha256:ca0bd484cb98bf4b24eb1010e73fb3fcbd6714d240fbc1a10eea5b7dbecb641d
+        env:
+          POSTGRES_USER: responseos
+          POSTGRES_PASSWORD: responseos
+          POSTGRES_DB: responseos_test
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U responseos" --health-interval 10s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://responseos:responseos@localhost:5432/responseos_test
+      DIRECT_URL: postgresql://responseos:responseos@localhost:5432/responseos_test
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 24.18.0
+      - run: |
+          [[ "$SECURITY_APPLICATION_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          git cat-file -e "$SECURITY_APPLICATION_SHA^{commit}"
+          mkdir application
+          git archive "$SECURITY_APPLICATION_SHA" | tar -x -C application
+          npm install --global --ignore-scripts --no-fund npm@11.16.0
+      - name: Record exact-lock integration commands and raw evidence
+        run: |
+          export SECURITY_NPM_CLI="$(npm root -g)/npm/bin/npm-cli.js"
+          node scripts/security/braces-integration.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: security-integration
+          path: .security-integration/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+  acceptance:
+    if: always()
+    needs: [artifacts, integration]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 24.18.0
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          path: downloaded-evidence
+          pattern: security-*
+      - name: Reject incomplete security or compatibility acceptance
+        env:
+          INTEGRATION_RESULT: ${{ needs.integration.result }}
+        run: node scripts/security/braces-ci-accept.mjs
