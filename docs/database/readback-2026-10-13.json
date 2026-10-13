@@ -36,7 +36,7 @@
     "scopeLimit": "Only the previously authorized workspace; no other account/workspace inference"
   },
   "hostedMutations": false,
-  "neonTopologyRefreshed": "Only Doppler-referenced demo branch and endpoint; other prior topology remains historical",
+  "neonTopologyRefreshed": "Defaults/endpoints and read-only catalogs refreshed; see catalog-readback-2026-10-13.json",
   "sensitiveConnectionIdentity": "UNKNOWN",
   "vercelProduction": {
     "userConfirmedProjectUrl": "https://vercel.com/audiojones/responseos",
@@ -115,5 +115,13 @@
     },
     "productionVercelSyncMapping": "UNKNOWN",
     "secretValuesPersisted": false
+  },
+  "interpretationCorrections": {
+    "archived": "Automatic cold storage, not unusable/deleted; queries reactivate automatically",
+    "pooler_enabled": "Deprecated; false does not disprove pooling via -pooler hostname",
+    "sources": [
+      "https://neon.com/blog/cutting-storage-costs",
+      "https://neon.com/api_spec/release/v2.json"
+    ]
   }
 }

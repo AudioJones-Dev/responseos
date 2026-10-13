@@ -70,3 +70,12 @@ Read-only follow-up, 2026-10-10: staging public.show_db_tree() definition hash a
 
 
 Doppler follow-up (2026-10-13): stg_staging_demo reuses neondb_owner in runtime and direct URLs, has no explicit sslaccept, and references an archived demo branch. These config values do not satisfy the proposed non-owner runtime/separate migrator/TLS preflight. No query, credential rotation or secret update was performed. The production config does not contain DB URLs, and Vercel does not return its sensitive value; effective hosted roles remain unverified.
+
+
+## October 13 current security readback
+
+Staging currently differs from the original baseline: 38 public tables, five with RLS enabled (not forced), eight permissive policies scoped to the NOLOGIN responseos_routing_worker_test role, PUBLIC TEMP revoked, Account immutable-update trigger installed, and one Clerk-linked operator/one Account present. The role has SELECT on scoped intake/delivery, column-limited delivery UPDATE and Account id SELECT/UPDATE, Notification/AuditLog SELECT/INSERT. Policies constrain tenant/environment/mode and relational delivery references; they do not by themselves validate every opaque audit/notification payload or prove application-level authorization. The neondb_owner inspection role has BYPASSRLS; owner readback is not a denial test. Existing changes were observed only; no hosted security test, grant or mutation was issued.
+
+The main demo branch and live-demo still have no application RLS policies. Main default has no public tables. Staging migration checksums match the current pinned PR #210 chain, but live-demo retains its distinct supervised-runtime lineage. Equal started_at timestamps on staging 0017-0019 require completion/deployment evidence, not arbitrary UUID order. See catalog-readback-2026-10-13.json for metadata with policy literals redacted.
+
+Correction to earlier Doppler risk wording: archive state is automatic cold storage and is not a permission/availability rejection. Neon marks pooler_enabled deprecated; its false value does not negate the pooled hostname. The owner-role reuse and missing explicit sslaccept remain separate configuration concerns.
