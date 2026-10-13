@@ -29,50 +29,66 @@
     }
   ],
   "catalogs": [
-    [
-      {
-        "database": "neondb",
-        "inspection_role": "neondb_owner",
-        "server_version_num": 170011,
-        "public_tables": "0",
-        "rls_tables": "0",
-        "policies": "0",
-        "has_migration_history": false
-      }
-    ],
-    [
-      {
-        "database": "neondb",
-        "inspection_role": "neondb_owner",
-        "server_version_num": 170011,
-        "public_tables": "23",
-        "rls_tables": "0",
-        "policies": "0",
-        "has_migration_history": true
-      }
-    ],
-    [
-      {
-        "database": "neondb",
-        "inspection_role": "neondb_owner",
-        "server_version_num": 180006,
-        "public_tables": "38",
-        "rls_tables": "5",
-        "policies": "8",
-        "has_migration_history": true
-      }
-    ],
-    [
-      {
-        "database": "neondb",
-        "inspection_role": "neondb_owner",
-        "server_version_num": 170011,
-        "public_tables": "41",
-        "rls_tables": "0",
-        "policies": "0",
-        "has_migration_history": true
-      }
-    ]
+    {
+      "projectId": "quiet-band-27365020",
+      "branchId": "br-floral-sunset-aqn7cfw4",
+      "summary": [
+        {
+          "database": "neondb",
+          "inspection_role": "neondb_owner",
+          "server_version_num": 170011,
+          "public_tables": "0",
+          "rls_tables": "0",
+          "policies": "0",
+          "has_migration_history": false
+        }
+      ]
+    },
+    {
+      "projectId": "quiet-band-27365020",
+      "branchId": "br-polished-waterfall-aq2q98bf",
+      "summary": [
+        {
+          "database": "neondb",
+          "inspection_role": "neondb_owner",
+          "server_version_num": 170011,
+          "public_tables": "23",
+          "rls_tables": "0",
+          "policies": "0",
+          "has_migration_history": true
+        }
+      ]
+    },
+    {
+      "projectId": "patient-snow-16014934",
+      "branchId": "br-mute-boat-a6ylen11",
+      "summary": [
+        {
+          "database": "neondb",
+          "inspection_role": "neondb_owner",
+          "server_version_num": 180006,
+          "public_tables": "38",
+          "rls_tables": "5",
+          "policies": "8",
+          "has_migration_history": true
+        }
+      ]
+    },
+    {
+      "projectId": "dark-lake-70639149",
+      "branchId": "br-aged-block-auq28jrd",
+      "summary": [
+        {
+          "database": "neondb",
+          "inspection_role": "neondb_owner",
+          "server_version_num": 170011,
+          "public_tables": "41",
+          "rls_tables": "0",
+          "policies": "0",
+          "has_migration_history": true
+        }
+      ]
+    }
   ],
   "staging": {
     "accounts": 1,
@@ -606,7 +622,9 @@
           "rolled_back": false
         }
       ],
-      "database_acl": "{=c/neondb_owner,neondb_owner=CTc/neondb_owner,neon_superuser=CTc/neondb_owner,responseos_routing_worker_test=c/neondb_owner}"
+      "database_acl": "{=c/neondb_owner,neondb_owner=CTc/neondb_owner,neon_superuser=CTc/neondb_owner,responseos_routing_worker_test=c/neondb_owner}",
+      "projectId": "patient-snow-16014934",
+      "branchId": "br-mute-boat-a6ylen11"
     },
     {
       "roles": [
@@ -991,7 +1009,9 @@
           "rolled_back": false
         }
       ],
-      "database_acl": "{=Tc/neondb_owner,neondb_owner=CTc/neondb_owner,neon_superuser=CTc/neondb_owner}"
+      "database_acl": "{=Tc/neondb_owner,neondb_owner=CTc/neondb_owner,neon_superuser=CTc/neondb_owner}",
+      "projectId": "dark-lake-70639149",
+      "branchId": "br-aged-block-auq28jrd"
     },
     {
       "roles": [
@@ -1221,7 +1241,9 @@
           "rolled_back": false
         }
       ],
-      "database_acl": "{=Tc/neondb_owner,neondb_owner=CTc/neondb_owner,neon_superuser=CTc/neondb_owner}"
+      "database_acl": "{=Tc/neondb_owner,neondb_owner=CTc/neondb_owner,neon_superuser=CTc/neondb_owner}",
+      "projectId": "quiet-band-27365020",
+      "branchId": "br-polished-waterfall-aq2q98bf"
     }
   ],
   "checksumComparison": {
@@ -1229,5 +1251,47 @@
     "referenceSha": "2da49b33953b6e1a228caf1da6eb3c1d904c4fa0",
     "all16MigrationChecksumsMatch": true,
     "orderAmbiguity": "0017-0019 identical started_at; finished_at ascends 0017-0019; UUID sort is not application order."
-  }
+  },
+  "endpointBindings": [
+    {
+      "projectId": "quiet-band-27365020",
+      "endpointId": "ep-quiet-math-aqlgr1v5",
+      "branchId": "br-floral-sunset-aqn7cfw4"
+    },
+    {
+      "projectId": "quiet-band-27365020",
+      "endpointId": "ep-odd-mode-aqcdbajt",
+      "branchId": "br-polished-waterfall-aq2q98bf"
+    },
+    {
+      "projectId": "quiet-band-27365020",
+      "endpointId": "ep-raspy-frog-aqbi47od",
+      "branchId": "br-sweet-brook-aq7dncov"
+    },
+    {
+      "projectId": "quiet-band-27365020",
+      "endpointId": "ep-gentle-grass-aqkobdnx",
+      "branchId": "br-lingering-recipe-aqyp9l0v"
+    },
+    {
+      "projectId": "quiet-band-27365020",
+      "endpointId": "ep-muddy-sea-aqh2tp1v",
+      "branchId": "br-autumn-thunder-aqywxmqc"
+    },
+    {
+      "projectId": "patient-snow-16014934",
+      "endpointId": "ep-young-morning-a6oeu9vv",
+      "branchId": "br-mute-boat-a6ylen11"
+    },
+    {
+      "projectId": "patient-snow-16014934",
+      "endpointId": "ep-noisy-pond-a65ml884",
+      "branchId": "br-aged-block-a61fvlo5"
+    },
+    {
+      "projectId": "dark-lake-70639149",
+      "endpointId": "ep-dawn-bread-au030bt3",
+      "branchId": "br-aged-block-auq28jrd"
+    }
+  ]
 }
