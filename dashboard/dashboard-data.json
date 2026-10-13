@@ -1575,6 +1575,17 @@
       "refType": "pull",
       "refState": "merged",
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/211"
+    },
+    {
+      "id": "G-20",
+      "phase": "Tech Debt & Hardening",
+      "title": "Add Telnyx voice, AI assistant, and messaging agent skills for Claude Code",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "Low",
+      "start": "2026-10-13",
+      "due": "2026-10-13"
     }
   ],
   "liveIssues": [
