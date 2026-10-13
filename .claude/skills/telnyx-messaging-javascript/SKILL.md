@@ -52,12 +52,14 @@ try {
   } else if (err instanceof Telnyx.RateLimitError) {
     const retryAfter = err.headers?.['retry-after'] || 1;
     await new Promise(r => setTimeout(r, retryAfter * 1000));
+    // Retry the request here (bounded), or fall through to rethrow.
   } else if (err instanceof Telnyx.APIError) {
     console.error(`API error ${err.status}: ${err.message}`);
     if (err.status === 422) {
       console.error('Validation error — check required fields and formats');
     }
   }
+  throw err;
 }
 ```
 
@@ -128,7 +130,7 @@ Common sender variant that requires different request shape.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `from` | string (E.164) | Yes | A valid alphanumeric sender ID on the user's account. |
+| `from` | string | Yes | A valid alphanumeric sender ID on the user's account. |
 | `to` | string (E.164) | Yes | Receiving address (+E.164 formatted phone number or short co... |
 | `text` | string | Yes | The message body. |
 | `messaging_profile_id` | string (UUID) | Yes | The messaging profile ID to use. |
@@ -226,7 +228,7 @@ Send one MMS payload to multiple recipients.
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `from` | string (E.164) | Yes | Phone number, in +E.164 format, used to send the message. |
-| `to` | array[object] | Yes | A list of destinations. |
+| `to` | array[string] | Yes | A list of destinations. |
 | `media_urls` | array[string] | No | A list of media URLs. |
 | `webhook_url` | string (URL) | No | The URL where webhooks related to this message will be sent. |
 | `webhook_failover_url` | string (URL) | No | The failover URL where webhooks related to this message will... |
@@ -366,7 +368,7 @@ const response = await client.messages.schedule({
     to: '+18445550001',
     from: '+18005550101',
     text: 'Appointment reminder',
-    send_at: '2025-07-01T15:00:00Z',
+    send_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
 });
 
 console.log(response.data);
@@ -399,7 +401,10 @@ Send WhatsApp traffic instead of SMS/MMS.
 const response = await client.messages.sendWhatsapp({
   from: '+13125551234',
   to: '+13125551234',
-  whatsapp_message: {},
+  whatsapp_message: {
+    type: 'text',
+    text: { body: 'Hello from Telnyx!' },
+  },
 });
 
 console.log(response.data);

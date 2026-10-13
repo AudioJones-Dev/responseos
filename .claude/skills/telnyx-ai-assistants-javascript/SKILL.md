@@ -51,12 +51,14 @@ try {
   } else if (err instanceof Telnyx.RateLimitError) {
     const retryAfter = err.headers?.['retry-after'] || 1;
     await new Promise(r => setTimeout(r, retryAfter * 1000));
+    // Retry the request here (bounded), or fall through to rethrow.
   } else if (err instanceof Telnyx.APIError) {
     console.error(`API error ${err.status}: ${err.message}`);
     if (err.status === 422) {
       console.error('Validation error — check required fields and formats');
     }
   }
+  throw err;
 }
 ```
 
@@ -225,7 +227,9 @@ Create or provision an additional resource when the core tasks do not cover this
 | ... | | | +27 optional params in [references/api-details.md](references/api-details.md) |
 
 ```javascript
-const assistant = await client.ai.assistants.update('550e8400-e29b-41d4-a716-446655440000');
+const assistant = await client.ai.assistants.update('550e8400-e29b-41d4-a716-446655440000', {
+  name: 'updated-name',
+});
 
 console.log(assistant.id);
 ```

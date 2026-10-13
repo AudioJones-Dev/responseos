@@ -311,8 +311,7 @@
 | `dynamic_variables` | object | A map of dynamic variable names to values. |
 | `max_retries_client_errors` | integer | Configure number of retries on client errors: busy, no-answer, failed, cancel... |
 | `retry_interval_secs` | integer |  |
-| `call_settings` | object | Per-call telephony overrides applied when a scheduled phone-call event
-dispat... |
+| `call_settings` | object | Per-call telephony overrides applied when a scheduled phone-call event dispat... |
 
 ### Test Assistant Tool — `client.ai.assistants.tools.test()`
 

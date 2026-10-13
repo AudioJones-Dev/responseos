@@ -44,7 +44,7 @@ try {
   const response = await client.calls.dial({
     connection_id: '7267xxxxxxxxxxxxxx',
     from: '+18005550101',
-    to: '+18005550100;secure=srtp',
+    to: '+18005550100',
   });
 } catch (err) {
   if (err instanceof Telnyx.APIConnectionError) {
@@ -52,12 +52,14 @@ try {
   } else if (err instanceof Telnyx.RateLimitError) {
     const retryAfter = err.headers?.['retry-after'] || 1;
     await new Promise(r => setTimeout(r, retryAfter * 1000));
+    // Retry the request here (bounded), or fall through to rethrow.
   } else if (err instanceof Telnyx.APIError) {
     console.error(`API error ${err.status}: ${err.message}`);
     if (err.status === 422) {
       console.error('Validation error — check required fields and formats');
     }
   }
+  throw err;
 }
 ```
 
@@ -106,7 +108,7 @@ Primary voice entrypoint. Agents need the async call-control identifiers returne
 const response = await client.calls.dial({
   connection_id: '7267xxxxxxxxxxxxxx',
   from: '+18005550101',
-  to: '+18005550100;secure=srtp',
+  to: '+18005550100',
 });
 
 console.log(response.data);
@@ -161,7 +163,7 @@ Common post-answer control path with downstream webhook implications.
 
 ```javascript
 const response = await client.calls.actions.transfer('call_control_id', {
-  to: '+18005550100;secure=srtp',
+  to: '+18005550100',
 });
 
 console.log(response.data);
@@ -275,7 +277,7 @@ Trigger a follow-up action in an existing workflow rather than creating a new to
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `call_control_id` | string (UUID) | Yes | The Call Control ID of the call you want to bridge with, can... |
+| `call_control_id_to_bridge_with` | string (UUID) | Yes | The Call Control ID of the call you want to bridge with, can... |
 | `call_control_id` | string (UUID) | Yes | Unique identifier and token for controlling the call |
 | `client_state` | string | No | Use this field to add state to every subsequent webhook. |
 | `command_id` | string (UUID) | No | Use this field to avoid duplicate commands. |
