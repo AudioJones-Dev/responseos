@@ -8,6 +8,14 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — fix: recognise connection loss inside an interactive transaction (#218)
+
+- **Bug:** the reconnect integration test "connection loss aborts an interactive transaction before the pool recovers" still failed now and then on PostgreSQL 17 and 18 after #214 (seen on #216). When `tx.account.count()` reads Postgres's `57P01` FATAL before the socket closes, Prisma 6.19.3 raises a `PrismaClientUnknownRequestError` that carries the driver's debug struct, `PostgresError { code: "57P01", message: "terminating connection due to administrator command", severity: "FATAL", … }`, not `FATAL: terminating connection …`. #214's pattern did not match that form, so the pool was not reset.
+- **Reproduced in CI:** a temporary workflow ran the scenario 400 times on each of PostgreSQL 16, 17 and 18. Interactive transactions: P1017 in 396–397 runs, the debug-struct form in 3–4. Batch transactions: P1017, or #214's `FATAL:` message form. No other form appeared: no P2028 or other transaction-API error, and no committed row. Looping the test file failed 1 run in 40 on PG16 and on PG18, and the failure message showed the debug-struct form.
+- **Fix:** `isConnectionLoss` reads the severity and message out of that debug struct and tests them against the same set of session-ending messages as before. The set of server errors counted as connection loss does not change. Only the way the engine prints one is new. A statement timeout, a background worker's shutdown, and P2028 (transaction already closed) are still not connection loss.
+- **Tests:** `expectConnectionLoss` now puts the actual error's class, code, meta and message in the assertion message. New unit cases cover the debug-struct form and fail without the fix. Unit negatives now cover P2028 and a non-terminating debug-struct error. With the fix, the same CI repro classified every observed form as connection loss and passed 40 of 40 looped runs on each version. The temporary repro workflow was removed before merge.
+- Dashboard task `G-20`.
+
 ## Unreleased — fix: recognise connection loss reported without an error code (#214)
 
 - **Bug:** `isConnectionLoss` (from #211) missed one of the ways a terminated Postgres backend reaches Prisma. When a batch `$transaction([...])` reads Postgres's `FATAL: terminating connection due to administrator command` before the socket closes, Prisma raises a `PrismaClientUnknownRequestError` with no code. That is neither `P1017` nor `P2010`. The recovering client then did not treat it as connection loss and did not reset the pool.

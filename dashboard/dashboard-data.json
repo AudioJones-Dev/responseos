@@ -1524,6 +1524,19 @@
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/214"
     },
     {
+      "id": "G-20",
+      "phase": "Tech Debt & Hardening",
+      "title": "Recognise connection loss inside an interactive transaction (reconnect test race on PG 16–18)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-10-13",
+      "due": "2026-10-13",
+      "ref": 218,
+      "refType": "pull"
+    },
+    {
       "id": "G-12",
       "phase": "Tech Debt & Hardening",
       "title": "Clear npm audit failures blocking all CI",
