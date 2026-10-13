@@ -13,6 +13,7 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - **What changed:** three agent skills from [`team-telnyx/skills`](https://github.com/team-telnyx/skills) are added under `.claude/skills/`: `telnyx-voice-javascript`, `telnyx-ai-assistants-javascript`, and `telnyx-messaging-javascript`. `skills-lock.json` records the source and a content hash for each one.
 - **What they are:** Markdown reference only (a `SKILL.md` and an `references/api-details.md` per skill). They contain no scripts or hooks, need no API key, and make no provider calls. They don't change the mock-adapter boundary or move any v0.3 gate.
 - **Note:** the skills' examples use the official `telnyx` npm package. This repo does not depend on it; `lib/providers/telnyx/` remains the integration surface.
+- **Local corrections (from review):** the upstream `SKILL.md` files listed SDK response fields in camelCase (`callControlId`, `sentAt`, `createdAt`, …), but `telnyx-node` returns snake_case (`call_control_id`, `sent_at`, `created_at`). Those 48 field names are corrected. The voice and messaging setup sections now pass `publicKey` (`TELNYX_PUBLIC_KEY`), which `client.webhooks.unwrap()` needs to verify signatures. `skills-lock.json` still holds the upstream hashes, so re-running `npx skills add` or an update would overwrite these corrections; re-apply them or check whether upstream has fixed them first.
 
 ## Unreleased — fix: recognise connection loss reported without an error code (#214)
 

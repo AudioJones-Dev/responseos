@@ -28,6 +28,7 @@ import Telnyx from 'telnyx';
 
 const client = new Telnyx({
   apiKey: process.env['TELNYX_API_KEY'], // This is the default and can be omitted
+  publicKey: process.env['TELNYX_PUBLIC_KEY'], // Required by client.webhooks.unwrap(); this is the default and can be omitted
 });
 ```
 
@@ -116,7 +117,7 @@ Primary response fields:
 - `response.data.to`
 - `response.data.from`
 - `response.data.text`
-- `response.data.sentAt`
+- `response.data.sent_at`
 - `response.data.errors`
 
 ### Send an SMS with an alphanumeric sender ID
@@ -151,7 +152,7 @@ Primary response fields:
 - `response.data.to`
 - `response.data.from`
 - `response.data.text`
-- `response.data.sentAt`
+- `response.data.sent_at`
 - `response.data.errors`
 
 ---
@@ -159,7 +160,7 @@ Primary response fields:
 ### Webhook Verification
 
 Telnyx signs webhooks with Ed25519. Each request includes `telnyx-signature-ed25519`
-and `telnyx-timestamp` headers. Always verify signatures in production:
+and `telnyx-timestamp` headers. Always verify signatures in production. `client.webhooks.unwrap()` verifies against your account's public key, read from `TELNYX_PUBLIC_KEY` or the `publicKey` client option; without it, every webhook fails verification:
 
 ```javascript
 // In your webhook handler (e.g., Express — use raw body, not parsed JSON):

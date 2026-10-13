@@ -108,8 +108,8 @@ Primary response fields:
 - `assistant.name`
 - `assistant.model`
 - `assistant.instructions`
-- `assistant.createdAt`
-- `assistant.conversationFlow`
+- `assistant.created_at`
+- `assistant.conversation_flow`
 
 ### Chat with an assistant
 
@@ -169,10 +169,10 @@ console.log(assistantTest.test_id);
 ```
 
 Primary response fields:
-- `assistantTest.testId`
+- `assistantTest.test_id`
 - `assistantTest.name`
 - `assistantTest.destination`
-- `assistantTest.createdAt`
+- `assistantTest.created_at`
 - `assistantTest.instructions`
 - `assistantTest.description`
 
@@ -205,10 +205,10 @@ console.log(assistant.id);
 Primary response fields:
 - `assistant.id`
 - `assistant.name`
-- `assistant.createdAt`
-- `assistant.conversationFlow`
+- `assistant.created_at`
+- `assistant.conversation_flow`
 - `assistant.description`
-- `assistant.dynamicVariables`
+- `assistant.dynamic_variables`
 
 ### Update an assistant
 
@@ -233,10 +233,10 @@ console.log(assistant.id);
 Primary response fields:
 - `assistant.id`
 - `assistant.name`
-- `assistant.createdAt`
-- `assistant.conversationFlow`
+- `assistant.created_at`
+- `assistant.conversation_flow`
 - `assistant.description`
-- `assistant.dynamicVariables`
+- `assistant.dynamic_variables`
 
 ### List assistants
 
@@ -256,10 +256,10 @@ Response wrapper:
 Primary item fields:
 - `id`
 - `name`
-- `createdAt`
-- `conversationFlow`
+- `created_at`
+- `conversation_flow`
 - `description`
-- `dynamicVariables`
+- `dynamic_variables`
 
 ### Import assistants from external provider
 
@@ -288,10 +288,10 @@ Response wrapper:
 Primary item fields:
 - `id`
 - `name`
-- `createdAt`
-- `conversationFlow`
+- `created_at`
+- `conversation_flow`
 - `description`
-- `dynamicVariables`
+- `dynamic_variables`
 
 ### Get All Tags
 
@@ -334,11 +334,11 @@ Response wrapper:
 
 Primary item fields:
 - `name`
-- `createdAt`
+- `created_at`
 - `description`
 - `destination`
 - `instructions`
-- `maxDurationSeconds`
+- `max_duration_seconds`
 
 ### Get all test suite names
 
@@ -384,11 +384,11 @@ Response wrapper:
 
 Primary item fields:
 - `status`
-- `createdAt`
-- `updatedAt`
-- `completedAt`
-- `conversationId`
-- `conversationInsightsId`
+- `created_at`
+- `updated_at`
+- `completed_at`
+- `conversation_id`
+- `conversation_insights_id`
 
 ---
 

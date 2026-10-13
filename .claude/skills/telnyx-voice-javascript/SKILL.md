@@ -28,6 +28,7 @@ import Telnyx from 'telnyx';
 
 const client = new Telnyx({
   apiKey: process.env['TELNYX_API_KEY'], // This is the default and can be omitted
+  publicKey: process.env['TELNYX_PUBLIC_KEY'], // Required by client.webhooks.unwrap(); this is the default and can be omitted
 });
 ```
 
@@ -112,12 +113,12 @@ console.log(response.data);
 ```
 
 Primary response fields:
-- `response.data.callControlId`
-- `response.data.callLegId`
-- `response.data.callSessionId`
-- `response.data.isAlive`
-- `response.data.recordingId`
-- `response.data.callDuration`
+- `response.data.call_control_id`
+- `response.data.call_leg_id`
+- `response.data.call_session_id`
+- `response.data.is_alive`
+- `response.data.recording_id`
+- `response.data.call_duration`
 
 ### Answer an inbound call
 
@@ -141,7 +142,7 @@ console.log(response.data);
 
 Primary response fields:
 - `response.data.result`
-- `response.data.recordingId`
+- `response.data.recording_id`
 
 ### Transfer a live call
 
@@ -174,7 +175,7 @@ Primary response fields:
 ### Webhook Verification
 
 Telnyx signs webhooks with Ed25519. Each request includes `telnyx-signature-ed25519`
-and `telnyx-timestamp` headers. Always verify signatures in production:
+and `telnyx-timestamp` headers. Always verify signatures in production. `client.webhooks.unwrap()` verifies against your account's public key, read from `TELNYX_PUBLIC_KEY` or the `publicKey` client option; without it, every webhook fails verification:
 
 ```javascript
 // In your webhook handler (e.g., Express — use raw body, not parsed JSON):
@@ -331,12 +332,12 @@ console.log(response.data);
 ```
 
 Primary response fields:
-- `response.data.callControlId`
-- `response.data.callDuration`
-- `response.data.callLegId`
-- `response.data.callSessionId`
-- `response.data.clientState`
-- `response.data.endTime`
+- `response.data.call_control_id`
+- `response.data.call_duration`
+- `response.data.call_leg_id`
+- `response.data.call_session_id`
+- `response.data.client_state`
+- `response.data.end_time`
 
 ### List all active calls for given connection
 
@@ -363,12 +364,12 @@ Response wrapper:
 - pagination: `connectionListActiveCallsResponse.meta`
 
 Primary item fields:
-- `callControlId`
-- `callDuration`
-- `callLegId`
-- `callSessionId`
-- `clientState`
-- `recordType`
+- `call_control_id`
+- `call_duration`
+- `call_leg_id`
+- `call_session_id`
+- `client_state`
+- `record_type`
 
 ### List call control applications
 
@@ -395,11 +396,11 @@ Response wrapper:
 
 Primary item fields:
 - `id`
-- `createdAt`
-- `updatedAt`
+- `created_at`
+- `updated_at`
 - `active`
-- `anchorsiteOverride`
-- `applicationName`
+- `anchorsite_override`
+- `application_name`
 
 ---
 
