@@ -37,5 +37,34 @@
   },
   "hostedMutations": false,
   "neonTopologyRefreshed": false,
-  "sensitiveConnectionIdentity": "UNKNOWN"
+  "sensitiveConnectionIdentity": "UNKNOWN",
+  "vercelProduction": {
+    "userConfirmedProjectUrl": "https://vercel.com/audiojones/responseos",
+    "projectId": "prj_yfk70Hr49dG7IwIPg4EiymB6elEk",
+    "teamId": "team_BHxIkAGPW6qEKKQBAt9c0NGz",
+    "deploymentId": "dpl_CLbZ6u4cJde7fKZAMJrkH2euBcc3",
+    "deploymentUrl": "responseos-8xxzh3wq2-audiojones.vercel.app",
+    "target": "production",
+    "state": "READY",
+    "sha": "39abc254b9a1a8cf3b055ad1898120cfed4ae952",
+    "ref": "master",
+    "aliases": [
+      "responseos.vercel.app",
+      "responseos.ajdigital.app",
+      "responseos-audiojones.vercel.app",
+      "responseos-git-master-audiojones.vercel.app"
+    ],
+    "productionVariableNames": [
+      "DATABASE_URL",
+      "DIRECT_URL",
+      "RESPONSEOS_REQUIRE_AUTH",
+      "NEXT_PUBLIC_APP_URL"
+    ],
+    "databaseUrlType": "sensitive",
+    "databaseUrlDecrypted": false,
+    "databaseUrlValueReturned": false,
+    "effectiveNeonProjectBranchDatabaseRole": "UNKNOWN",
+    "runtimeConnectivityTested": false,
+    "businessCommissioning": "NOT_ESTABLISHED"
+  }
 }

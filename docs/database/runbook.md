@@ -50,8 +50,8 @@ Stop only authorized producers/workers first; preserve both databases, audit/que
 | ID | Required decision / evidence | Owner | State / blocks |
 | --- | --- | --- | --- |
 | A01 | Confirm Render Michael's workspace for read-only service/env discovery | AJ Digital | workspace service-list discovery COMPLETE 2026-10-13: one separate portal service, no ResponseOS/website service returned; environment/connection mapping remains under A02 |
-| A02 | Privately verify effective Vercel, GitHub/Doppler and Render URL/role/environment mappings | AJ Digital + operator | UNKNOWN; authority and source identity |
-| A03 | Identify production dataset and main neon_auth/demo consumers | AJ Digital | pending; production target and any consolidation |
+| A02 | Privately verify effective Vercel, GitHub/Doppler and Render URL/role/environment mappings | AJ Digital + operator | ResponseOS production Vercel project/deployment identified 2026-10-13; sensitive URL withheld, effective Neon project/branch/database/runtime role UNKNOWN |
+| A03 | Identify production dataset and main neon_auth/demo consumers | AJ Digital | web production deployment confirmed; authoritative relational dataset and extra-schema consumers still pending; no consolidation authorized |
 | A04 | Ratify ADR-0070, PG17 production proposal and staged PG18 compatibility evidence | AJ Digital | proposed; no version/region change authorized |
 | A05 | Resolve distinct applied 0017 histories across supervised runtime and FRL stack | human reviewers | blocked; no renumber/checksum rewrite or cross-lineage deploy |
 | A06 | Approve restored-copy grants/ownership/RLS and PUBLIC TEMP strategy for every consumer | security reviewer + AJ Digital | pending; worker principal/enablement |
