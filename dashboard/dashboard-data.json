@@ -1445,7 +1445,7 @@
       "progress": 85,
       "priority": "High",
       "blocked": true,
-      "blockedReason": "Hosted ingress and durable dispatch adapter remain unimplemented"
+      "blockedReason": "Simulated hosted ingress and dispatch worker under review in PR #215; live dispatch adapter remains unimplemented"
     },
     {
       "id": "FRL-MOCK-DELIVERY",
@@ -1458,7 +1458,20 @@
       "progress": 85,
       "priority": "High",
       "blocked": true,
-      "blockedReason": "Live adapters, hosted ingress and provider reconciliation remain unimplemented; signed local test ingress validated"
+      "blockedReason": "Live adapters and provider reconciliation remain unimplemented; signed local test ingress validated; simulated hosted ingress under review in PR #215"
+    },
+    {
+      "id": "FRL-HOSTED-ROUTING",
+      "ref": 215,
+      "refType": "pull",
+      "phase": "Integrations",
+      "title": "Review simulated hosted routing worker and delivery ledger",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 80,
+      "priority": "High",
+      "blocked": true,
+      "blockedReason": "Depends on unmerged PR #209; worker runs the simulated provider only, HubSpot adapter is not wired to a live client and no hosted deployment is authorized"
     }
   ],
   "liveIssues": [
