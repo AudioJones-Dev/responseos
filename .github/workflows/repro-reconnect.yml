@@ -1,0 +1,52 @@
+# TEMPORARY — reproduces the reconnect race; removed before merge.
+name: repro-reconnect
+
+on:
+  push:
+    branches: [fix/interactive-transaction-connection-loss]
+
+permissions:
+  contents: read
+
+jobs:
+  repro:
+    name: repro (PostgreSQL ${{ matrix.postgres }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        postgres: [16, 17, 18]
+    services:
+      postgres:
+        image: postgres:${{ matrix.postgres }}
+        env:
+          POSTGRES_USER: responseos
+          POSTGRES_PASSWORD: responseos
+          POSTGRES_DB: responseos_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U responseos"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://responseos:responseos@localhost:5432/responseos_test
+      DIRECT_URL: postgresql://responseos:responseos@localhost:5432/responseos_test
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.18.0
+          cache: npm
+      - run: npm ci
+      - run: npx prisma migrate deploy
+      - name: Tally error forms
+        run: npx tsx .github/repro/reconnect-forms.mts 400
+      - name: Loop the reconnect test file
+        run: |
+          fails=0
+          for i in $(seq 1 40); do
+            npx vitest run --config vitest.integration.config.ts tests/integration/database-reconnect.integration.test.ts > /tmp/run.log 2>&1 || { fails=$((fails+1)); grep -E "AssertionError|FAIL" /tmp/run.log | head -5; }
+          done
+          echo "failed runs: $fails / 40"
