@@ -36,7 +36,7 @@
     "scopeLimit": "Only the previously authorized workspace; no other account/workspace inference"
   },
   "hostedMutations": false,
-  "neonTopologyRefreshed": false,
+  "neonTopologyRefreshed": "Only Doppler-referenced demo branch and endpoint; other prior topology remains historical",
   "sensitiveConnectionIdentity": "UNKNOWN",
   "vercelProduction": {
     "userConfirmedProjectUrl": "https://vercel.com/audiojones/responseos",
@@ -66,5 +66,54 @@
     "effectiveNeonProjectBranchDatabaseRole": "UNKNOWN",
     "runtimeConnectivityTested": false,
     "businessCommissioning": "NOT_ESTABLISHED"
+  },
+  "doppler": {
+    "cliVersion": "3.76.6",
+    "authenticatedReadSucceeded": true,
+    "localSetup": {
+      "project": "response-os",
+      "config": "dev",
+      "scope": "ResponseOS primary checkout",
+      "verified": true,
+      "hostedWrites": false
+    },
+    "configsInspected": [
+      "dev",
+      "dev_personal",
+      "dev_local-audio-config",
+      "stg",
+      "stg_staging_demo",
+      "prd",
+      "prd_demo_prod"
+    ],
+    "databaseUrlNamesAbsentIn": [
+      "dev",
+      "dev_personal",
+      "dev_local-audio-config",
+      "stg",
+      "prd",
+      "prd_demo_prod"
+    ],
+    "stagingConfig": {
+      "name": "stg_staging_demo",
+      "projectId": "quiet-band-27365020",
+      "branchId": "br-polished-waterfall-aq2q98bf",
+      "branchName": "demo",
+      "branchState": "archived",
+      "endpointId": "ep-odd-mode-aqcdbajt",
+      "endpointBranchBindingConfirmed": true,
+      "endpointState": "idle",
+      "endpointPoolerEnabledMetadata": false,
+      "database": "neondb",
+      "runtimeRole": "neondb_owner",
+      "migrationRole": "neondb_owner",
+      "runtimeHost": "ep-odd-mode-aqcdbajt-pooler.c-8.us-east-1.aws.neon.tech",
+      "migrationHost": "ep-odd-mode-aqcdbajt.c-8.us-east-1.aws.neon.tech",
+      "sslmode": "require",
+      "sslacceptPresent": false,
+      "connectionAttempted": false
+    },
+    "productionVercelSyncMapping": "UNKNOWN",
+    "secretValuesPersisted": false
   }
 }

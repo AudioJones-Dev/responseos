@@ -67,3 +67,6 @@ Application pool recovery: the shared web application client resets its connecti
 
 
 Read-only follow-up, 2026-10-10: staging public.show_db_tree() definition hash afc3f368beed7e4fb52b8c71a7b77586 (MD5) contains catalog-only SELECTs over pg_database/pg_namespace/pg_class/pg_proc. It has no business-table reads, mutations or external calls, and is SECURITY INVOKER (prosecdef=false). NULL proacl retains PostgreSQL default function EXECUTE behavior; broad database/schema/object-name discovery is possible. No application/script/migration caller was found in this branch. Retain pending complete external consumer/permission review; no permission was changed.
+
+
+Doppler follow-up (2026-10-13): stg_staging_demo reuses neondb_owner in runtime and direct URLs, has no explicit sslaccept, and references an archived demo branch. These config values do not satisfy the proposed non-owner runtime/separate migrator/TLS preflight. No query, credential rotation or secret update was performed. The production config does not contain DB URLs, and Vercel does not return its sensitive value; effective hosted roles remain unverified.

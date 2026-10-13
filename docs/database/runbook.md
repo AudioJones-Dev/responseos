@@ -50,7 +50,7 @@ Stop only authorized producers/workers first; preserve both databases, audit/que
 | ID | Required decision / evidence | Owner | State / blocks |
 | --- | --- | --- | --- |
 | A01 | Confirm Render Michael's workspace for read-only service/env discovery | AJ Digital | workspace service-list discovery COMPLETE 2026-10-13: one separate portal service, no ResponseOS/website service returned; environment/connection mapping remains under A02 |
-| A02 | Privately verify effective Vercel, GitHub/Doppler and Render URL/role/environment mappings | AJ Digital + operator | ResponseOS production Vercel project/deployment identified 2026-10-13; sensitive URL withheld, effective Neon project/branch/database/runtime role UNKNOWN |
+| A02 | Privately verify effective Vercel, GitHub/Doppler and Render URL/role/environment mappings | AJ Digital + operator | ResponseOS production Vercel project/deployment identified 2026-10-13; sensitive URL withheld; Doppler production configs have no DB URLs; effective Neon project/branch/database/runtime role UNKNOWN |
 | A03 | Identify production dataset and main neon_auth/demo consumers | AJ Digital | web production deployment confirmed; authoritative relational dataset and extra-schema consumers still pending; no consolidation authorized |
 | A04 | Ratify ADR-0070, PG17 production proposal and staged PG18 compatibility evidence | AJ Digital | proposed; no version/region change authorized |
 | A05 | Resolve distinct applied 0017 histories across supervised runtime and FRL stack | human reviewers | blocked; no renumber/checksum rewrite or cross-lineage deploy |
@@ -67,3 +67,5 @@ Stop only authorized producers/workers first; preserve both databases, audit/que
 Live ResponseOS routing/provider activation, FRL content, domain/DNS/indexing, billing and receptionist behavior remain outside this task's authorization.
 
 A15: Application pool reset after a lost connection (P1017, or P2010 with SQLSTATE 57P01/57P02/08xxx) is implemented for review and validated on synthetic local data without replay. Hosted pooler/network-outage and PR #210 worker recovery remain unverified; do not close cutover acceptance from local tests alone.
+
+A16: Reconcile or retire the Doppler stg_staging_demo mapping only after its consumers and intended environment are confirmed. Its currently archived demo branch, owner-role reuse, missing explicit sslaccept and pooling metadata mismatch block using it as an approved validation target. No secret rewrite, activation or resource cleanup is authorized.
