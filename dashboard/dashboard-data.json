@@ -1575,6 +1575,19 @@
       "refType": "pull",
       "refState": "merged",
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/211"
+    },
+    {
+      "id": "FRL-MIKE-LIVE-DEMO",
+      "ref": 177,
+      "refType": "pull",
+      "phase": "Integrations",
+      "title": "Supervised FRL demonstration: approved knowledge, consent, review, CRM and email",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "blocked": true,
+      "blockedReason": "Local reconciliation passes lint, typecheck, unit tests and build. PostgreSQL integration, exact-head CI, independent review, hosted commissioning and two live rehearsals remain unverified and gated."
     }
   ],
   "liveIssues": [

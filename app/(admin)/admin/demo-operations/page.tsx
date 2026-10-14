@@ -1,3 +1,7 @@
+import { ConsentControls } from "./ConsentControls";
+import { loadCallReviewConsole } from "@/lib/callReview/service";
+import type { ReviewPayload } from "@/lib/callReview/contracts";
+import { CallReviewCard } from "./CallReviewCard";
 import { CrmRetryAction, ProspectActions } from "./DemoOperationActions";
 import { listCrmSyncOperations } from "@/lib/crm/syncFinalizedCall";
 import { Calls } from "@/lib/data";
@@ -7,6 +11,24 @@ import { EmptyState, PageHeader, StatusBadge, Table, TBody, TD, THead, TR } from
 export const dynamic = "force-dynamic";
 
 export default async function DemoOperationsPage() {
+  // Sign-in is enforced upstream but the application role is not, so an
+  // authenticated non-operator reaches this page and the console's own
+  // operator check throws mid-render. Answer with a denied state instead of an
+  // uncaught rendering exception; the check itself stays in the console.
+  let console_: Awaited<ReturnType<typeof loadCallReviewConsole>>;
+  try {
+    console_ = await loadCallReviewConsole();
+  } catch (error) {
+    if (!(error instanceof Error) || error.message !== "operator_required") throw error;
+    return (
+      <>
+        <PageHeader title="Demo operations" />
+        <EmptyState title="Operator access required" description="This console is limited to ResponseOS operators." />
+      </>
+    );
+  }
+  const { captures, reviews } = console_;
+
   const demoAccountId = process.env.RESPONSEOS_DEMO_ACCOUNT_ID;
   const inboundAccountId = process.env.RESPONSEOS_INBOUND_ACCOUNT_ID;
   const [callResult, crmResult, intakeResult] = await Promise.all([
@@ -30,6 +52,12 @@ export default async function DemoOperationsPage() {
         description="Canonical Telnyx evidence, durable CRM sync state, and the prospect-intake review queue. Full transcripts remain inside authenticated ResponseOS call views."
       />
 
+      <h2 className="mb-3 mt-8 font-display text-xl font-semibold text-ink">Capture consent</h2>
+      {captures.map((capture) => <div key={capture.id}><ConsentControls id={capture.id} callReference={capture.provider_call_id} /><p>{capture.accountName} · {capture.call ? `${capture.call.from_number} → ${capture.call.to_number} · ${capture.call.started_at.toISOString()}` : "signaling metadata pending"}</p><p>Call Control state: {capture.control_state} · DTMF: {capture.dtmf_decision ?? "pending"} · Latest consent: {capture.consentAction ?? "none"}</p>{capture.commands.map((command) => <p key={`${command.command_type}:${command.intended_at.toISOString()}`}>{command.command_type}: {command.status}{command.error_code ? ` (${command.error_code})` : ""}</p>)}</div>)}
+      <h2 className="mb-3 mt-8 font-display text-xl font-semibold text-ink">Supervised call review</h2>
+      <p>Review each call before approving its CRM record and email. Email acceptance does not confirm inbox delivery.</p>
+      {reviews.length === 0 && <EmptyState title="No calls awaiting review" description="A finalized call with consented evidence will appear here." />}
+      {reviews.map((row) => <CallReviewCard key={row.id + row.status} id={row.id} callId={row.call_id} revision={row.revision} status={row.status} recipient={row.recipient} payload={row.payload_json as unknown as ReviewPayload} transcript={(row.evidence_json as { transcript?: string }).transcript ?? null} crmStatus={row.crm_status} emailStatus={row.email_status} />)}
       <h2 className="mb-3 mt-8 font-display text-xl font-semibold text-ink">Telnyx call evidence</h2>
       {calls.length === 0 ? <EmptyState title="No Telnyx calls captured" description="Signed demo call events will appear here after normalization." /> : (
         <Table>
