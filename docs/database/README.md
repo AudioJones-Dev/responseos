@@ -4,6 +4,8 @@ Status: discovery and safe repository implementation; hosted configuration, migr
 
 Latest refresh: [October 13 discovery evidence](readback-2026-10-13.json) and [inventory update](inventory.md#discovery-refresh---2026-10-13). PR #211 is merged; hosted authority, security, recovery and cutover gates remain open. Render service-list discovery is complete only for the authorized workspace, which returned a separate portal service.
 
+Latest security review: [October 15 membership and column-grant evidence](role-readback-2026-10-15.json) corrects the owner SET ROLE claim and supports the installed column-privilege summary. Hosted acceptance gates remain open.
+
 Deliverables:
 
 1. [Dependency inventory](inventory.md) and [redacted provider evidence](readback-2026-10-09.json).

@@ -1579,7 +1579,7 @@
     {
       "id": "DB-NEON-02",
       "phase": "Tech Debt & Hardening",
-      "title": "Review current Neon/RLS/Doppler evidence and archive semantics; production identity unresolved",
+      "title": "Review Neon/RLS/Doppler evidence with explicit membership and column grants; production identity unresolved",
       "owner": "Codex",
       "status": "Review",
       "progress": 90,

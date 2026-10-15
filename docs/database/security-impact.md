@@ -79,3 +79,10 @@ Staging currently differs from the original baseline: 38 public tables, five wit
 The main demo branch and live-demo still have no application RLS policies. Main default has no public tables. Staging migration checksums match the current pinned PR #210 chain, but live-demo retains its distinct supervised-runtime lineage. Equal started_at timestamps on staging 0017-0019 require completion/deployment evidence, not arbitrary UUID order. See catalog-readback-2026-10-13.json for metadata with policy literals redacted.
 
 Correction to earlier Doppler risk wording: archive state is automatic cold storage and is not a permission/availability rejection. Neon marks pooler_enabled deprecated; its false value does not negate the pooled hostname. The owner-role reuse and missing explicit sslaccept remain separate configuration concerns.
+
+
+## October 15 role review evidence
+
+The earlier owner-can-assume-worker claim is withdrawn. Fresh catalog membership includes grantor/admin/set/inherit options; both memberships have set_option=false and inherit_option=false, and pg_has_role(neondb_owner,responseos_routing_worker_test,SET) returns false. Owner membership administration powers are not current SET ROLE permission. No membership was modified or role assumed.
+
+role-readback-2026-10-15.json retains all 92 observed column grants. It supports Account id SELECT/UPDATE and HostedRoutingDelivery UPDATE limited to attempt_count, checkpoint_json, confirmed_at, dispatch_token, last_error_code, lease_until, next_attempt_at, status and updated_at. No table-level UPDATE grant was observed for these tables. NOLOGIN worker configuration still does not prove a dedicated restricted runtime login or tenant/operator denial behavior.
