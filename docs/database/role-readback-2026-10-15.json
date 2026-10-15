@@ -1,0 +1,623 @@
+{
+  "date": "2026-10-15",
+  "scope": "read_only_role_membership_and_privilege_catalog",
+  "projectId": "patient-snow-16014934",
+  "branchId": "br-mute-boat-a6ylen11",
+  "endpointId": "ep-young-morning-a6oeu9vv",
+  "database": "neondb",
+  "hostedDdlDmlOrSetRoleExecuted": false,
+  "membershipSemanticsSource": "https://www.postgresql.org/docs/18/catalog-pg-auth-members.html",
+  "memberships": [
+    {
+      "role": "responseos_routing_worker_test",
+      "member": "neondb_owner",
+      "grantor": "cloud_admin",
+      "set_option": false,
+      "admin_option": true,
+      "inherit_option": false
+    },
+    {
+      "role": "responseos_routing_worker_test",
+      "member": "neondb_owner",
+      "grantor": "neondb_owner",
+      "set_option": false,
+      "admin_option": false,
+      "inherit_option": false
+    }
+  ],
+  "worker_role": {
+    "role": "responseos_routing_worker_test",
+    "login": false,
+    "bypassrls": false
+  },
+  "table_grants": [
+    {
+      "table": "AuditLog",
+      "grantable": "NO",
+      "privilege": "INSERT"
+    },
+    {
+      "table": "AuditLog",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "FrlWebIntake",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "HostedRoutingDelivery",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "Notification",
+      "grantable": "NO",
+      "privilege": "INSERT"
+    },
+    {
+      "table": "Notification",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    }
+  ],
+  "column_grants": [
+    {
+      "table": "Account",
+      "column": "id",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "Account",
+      "column": "id",
+      "grantable": "NO",
+      "privilege": "UPDATE"
+    },
+    {
+      "table": "AuditLog",
+      "column": "account_id",
+      "grantable": "NO",
+      "privilege": "INSERT"
+    },
+    {
+      "table": "AuditLog",
+      "column": "account_id",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "AuditLog",
+      "column": "action",
+      "grantable": "NO",
+      "privilege": "INSERT"
+    },
+    {
+      "table": "AuditLog",
+      "column": "action",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "AuditLog",
+      "column": "actor_role",
+      "grantable": "NO",
+      "privilege": "INSERT"
+    },
+    {
+      "table": "AuditLog",
+      "column": "actor_role",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "AuditLog",
+      "column": "actor_type",
+      "grantable": "NO",
+      "privilege": "INSERT"
+    },
+    {
+      "table": "AuditLog",
+      "column": "actor_type",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "AuditLog",
+      "column": "actor_user_id",
+      "grantable": "NO",
+      "privilege": "INSERT"
+    },
+    {
+      "table": "AuditLog",
+      "column": "actor_user_id",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "AuditLog",
+      "column": "after_ref",
+      "grantable": "NO",
+      "privilege": "INSERT"
+    },
+    {
+      "table": "AuditLog",
+      "column": "after_ref",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "AuditLog",
+      "column": "before_ref",
+      "grantable": "NO",
+      "privilege": "INSERT"
+    },
+    {
+      "table": "AuditLog",
+      "column": "before_ref",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "AuditLog",
+      "column": "category",
+      "grantable": "NO",
+      "privilege": "INSERT"
+    },
+    {
+      "table": "AuditLog",
+      "column": "category",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "AuditLog",
+      "column": "created_at",
+      "grantable": "NO",
+      "privilege": "INSERT"
+    },
+    {
+      "table": "AuditLog",
+      "column": "created_at",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "AuditLog",
+      "column": "expires_at",
+      "grantable": "NO",
+      "privilege": "INSERT"
+    },
+    {
+      "table": "AuditLog",
+      "column": "expires_at",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "AuditLog",
+      "column": "id",
+      "grantable": "NO",
+      "privilege": "INSERT"
+    },
+    {
+      "table": "AuditLog",
+      "column": "id",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "AuditLog",
+      "column": "ip_address",
+      "grantable": "NO",
+      "privilege": "INSERT"
+    },
+    {
+      "table": "AuditLog",
+      "column": "ip_address",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "AuditLog",
+      "column": "metadata_json",
+      "grantable": "NO",
+      "privilege": "INSERT"
+    },
+    {
+      "table": "AuditLog",
+      "column": "metadata_json",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "AuditLog",
+      "column": "reason",
+      "grantable": "NO",
+      "privilege": "INSERT"
+    },
+    {
+      "table": "AuditLog",
+      "column": "reason",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "AuditLog",
+      "column": "target_id",
+      "grantable": "NO",
+      "privilege": "INSERT"
+    },
+    {
+      "table": "AuditLog",
+      "column": "target_id",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "AuditLog",
+      "column": "target_type",
+      "grantable": "NO",
+      "privilege": "INSERT"
+    },
+    {
+      "table": "AuditLog",
+      "column": "target_type",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "AuditLog",
+      "column": "user_agent",
+      "grantable": "NO",
+      "privilege": "INSERT"
+    },
+    {
+      "table": "AuditLog",
+      "column": "user_agent",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "FrlWebIntake",
+      "column": "account_id",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "FrlWebIntake",
+      "column": "created_at",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "FrlWebIntake",
+      "column": "delivery_status",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "FrlWebIntake",
+      "column": "environment",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "FrlWebIntake",
+      "column": "expires_at",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "FrlWebIntake",
+      "column": "id",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "FrlWebIntake",
+      "column": "payload_hash",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "FrlWebIntake",
+      "column": "purged_at",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "FrlWebIntake",
+      "column": "reference",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "FrlWebIntake",
+      "column": "request_json",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "FrlWebIntake",
+      "column": "submission_id",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "FrlWebIntake",
+      "column": "updated_at",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "HostedRoutingDelivery",
+      "column": "account_id",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "HostedRoutingDelivery",
+      "column": "attempt_count",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "HostedRoutingDelivery",
+      "column": "attempt_count",
+      "grantable": "NO",
+      "privilege": "UPDATE"
+    },
+    {
+      "table": "HostedRoutingDelivery",
+      "column": "checkpoint_json",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "HostedRoutingDelivery",
+      "column": "checkpoint_json",
+      "grantable": "NO",
+      "privilege": "UPDATE"
+    },
+    {
+      "table": "HostedRoutingDelivery",
+      "column": "confirmed_at",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "HostedRoutingDelivery",
+      "column": "confirmed_at",
+      "grantable": "NO",
+      "privilege": "UPDATE"
+    },
+    {
+      "table": "HostedRoutingDelivery",
+      "column": "created_at",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "HostedRoutingDelivery",
+      "column": "dispatch_token",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "HostedRoutingDelivery",
+      "column": "dispatch_token",
+      "grantable": "NO",
+      "privilege": "UPDATE"
+    },
+    {
+      "table": "HostedRoutingDelivery",
+      "column": "id",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "HostedRoutingDelivery",
+      "column": "intake_id",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "HostedRoutingDelivery",
+      "column": "last_error_code",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "HostedRoutingDelivery",
+      "column": "last_error_code",
+      "grantable": "NO",
+      "privilege": "UPDATE"
+    },
+    {
+      "table": "HostedRoutingDelivery",
+      "column": "lease_until",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "HostedRoutingDelivery",
+      "column": "lease_until",
+      "grantable": "NO",
+      "privilege": "UPDATE"
+    },
+    {
+      "table": "HostedRoutingDelivery",
+      "column": "manifest_version",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "HostedRoutingDelivery",
+      "column": "mode",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "HostedRoutingDelivery",
+      "column": "next_attempt_at",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "HostedRoutingDelivery",
+      "column": "next_attempt_at",
+      "grantable": "NO",
+      "privilege": "UPDATE"
+    },
+    {
+      "table": "HostedRoutingDelivery",
+      "column": "status",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "HostedRoutingDelivery",
+      "column": "status",
+      "grantable": "NO",
+      "privilege": "UPDATE"
+    },
+    {
+      "table": "HostedRoutingDelivery",
+      "column": "updated_at",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "HostedRoutingDelivery",
+      "column": "updated_at",
+      "grantable": "NO",
+      "privilege": "UPDATE"
+    },
+    {
+      "table": "Notification",
+      "column": "account_id",
+      "grantable": "NO",
+      "privilege": "INSERT"
+    },
+    {
+      "table": "Notification",
+      "column": "account_id",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "Notification",
+      "column": "channel",
+      "grantable": "NO",
+      "privilege": "INSERT"
+    },
+    {
+      "table": "Notification",
+      "column": "channel",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "Notification",
+      "column": "created_at",
+      "grantable": "NO",
+      "privilege": "INSERT"
+    },
+    {
+      "table": "Notification",
+      "column": "created_at",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "Notification",
+      "column": "id",
+      "grantable": "NO",
+      "privilege": "INSERT"
+    },
+    {
+      "table": "Notification",
+      "column": "id",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "Notification",
+      "column": "lead_event_id",
+      "grantable": "NO",
+      "privilege": "INSERT"
+    },
+    {
+      "table": "Notification",
+      "column": "lead_event_id",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "Notification",
+      "column": "message",
+      "grantable": "NO",
+      "privilege": "INSERT"
+    },
+    {
+      "table": "Notification",
+      "column": "message",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "Notification",
+      "column": "recipient",
+      "grantable": "NO",
+      "privilege": "INSERT"
+    },
+    {
+      "table": "Notification",
+      "column": "recipient",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "Notification",
+      "column": "sent_at",
+      "grantable": "NO",
+      "privilege": "INSERT"
+    },
+    {
+      "table": "Notification",
+      "column": "sent_at",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "Notification",
+      "column": "status",
+      "grantable": "NO",
+      "privilege": "INSERT"
+    },
+    {
+      "table": "Notification",
+      "column": "status",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    },
+    {
+      "table": "Notification",
+      "column": "subject",
+      "grantable": "NO",
+      "privilege": "INSERT"
+    },
+    {
+      "table": "Notification",
+      "column": "subject",
+      "grantable": "NO",
+      "privilege": "SELECT"
+    }
+  ],
+  "inspection_role": "neondb_owner",
+  "inspection_login": "neondb_owner",
+  "server_version_num": 180006,
+  "owner_can_set_worker": false
+}

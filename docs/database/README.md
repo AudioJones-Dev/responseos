@@ -2,6 +2,10 @@
 
 Status: discovery and safe repository implementation; hosted configuration, migration and cutover are **NOT AUTHORIZED**. Neon is the selected relational platform under ADR-0026. The authoritative **dataset and deployed connection** must be identified per environment; a project name is not proof of data ownership.
 
+Latest refresh: [October 13 discovery evidence](readback-2026-10-13.json) and [inventory update](inventory.md#discovery-refresh---2026-10-13). PR #211 is merged; hosted authority, security, recovery and cutover gates remain open. Render service-list discovery is complete only for the authorized workspace, which returned a separate portal service.
+
+Latest security review: [October 15 membership and column-grant evidence](role-readback-2026-10-15.json) corrects the owner SET ROLE claim and supports the installed column-privilege summary. Hosted acceptance gates remain open.
+
 Deliverables:
 
 1. [Dependency inventory](inventory.md) and [redacted provider evidence](readback-2026-10-09.json).
@@ -11,8 +15,8 @@ Deliverables:
 5. [Validation and reconciliation evidence](validation.md).
 6. [Cutover, restore safety, rollback and outstanding approvals](runbook.md).
 
-Critical findings: staging has a Clerk-linked operator and cannot be reset; live-demo has an applied `0017_call_control_qualification` that differs from the FRL stack's `0017_frl_web_intake_receipts`; the primary project's default branch has no public application tables but has `neon_auth` tables; application RLS is absent in inspected branches; actual deployed sensitive connection values are unavailable through the connector. The migration conflict is a lineage discrepancy, not proof that PostgreSQL disallows two differently named migration directories with the same numeric prefix.
+Critical findings: staging has a Clerk-linked operator and cannot be reset; live-demo has an applied `0017_call_control_qualification` that differs from the FRL stack's `0017_frl_web_intake_receipts`; the primary project's default branch has no public application tables but has `neon_auth` tables; the original RLS baseline is superseded by the [current staging security readback](catalog-readback-2026-10-13.json): five RLS tables and eight policies are now installed; actual deployed sensitive connection values are unavailable through the connector. The migration conflict is a lineage discrepancy, not proof that PostgreSQL disallows two differently named migration directories with the same numeric prefix.
 
-**NO PROVIDER DATA MIGRATION REQUIRED** for the repository dependencies confirmed in this audit: neither repository uses Supabase database APIs, Auth, Storage, Realtime or Edge Functions. This conclusion is bounded by the unresolved deployment/Render inventory and unknown owners of extra schemas. It is not permission to remove a Supabase resource or a claim that every account-wide resource was inspected.
+**NO PROVIDER DATA MIGRATION REQUIRED** for the repository dependencies confirmed in this audit: neither repository uses Supabase database APIs, Auth, Storage, Realtime or Edge Functions. This conclusion is bounded by the unresolved deployed bindings, workspace-limited Render discovery and unknown owners of extra schemas. It is not permission to remove a Supabase resource or a claim that every account-wide resource was inspected.
 
 Repository changes deliberately do not import PR #209/#210, renumber applied migrations, change adapters or alter any hosted connection. Their routing acceptance remains independently reviewable.

@@ -8,7 +8,7 @@ Status: reviewable plan only. No hosted write, migration, restore, provisioning,
 
 `npm run database:ready -- <approved-target.json>` performs a read-only connection/catalog query with a validated runtime principal. It rejects DIRECT_URL in its context, checks PG17/18, database/user identity and elevated privileges/table ownership. It reports neither credentials nor SQL errors. It does not prove tenant RLS, schema correctness, hostname certificate rejection, connection pooling, provider delivery or application acceptance. Do not use its result as a release gate on its own. No new public health endpoint exposes database state; existing `/api/health` remains application liveness.
 
-`npm run database:evidence -- history <applied-history.json>` compares `{ "migrations": [...] }` to the checked-out migration files. Rows contain `name`, `checksum`, `finished`, `rolled_back`; no row payloads. Export rows in actual application order (`ORDER BY started_at, id`), never sorted by migration name; retain started_at/id in protected source evidence. The active sequence must be an ordered prefix of the repository chain. It rejects absent applied files, checksum drift, duplicate/unfinished records and gaps before an applied migration. Export this metadata privately and read-only from the exact approved database. The command never applies migrations.
+`npm run database:evidence -- history <applied-history.json>` compares `{ "migrations": [...] }` to the checked-out migration files. Rows contain `name`, `checksum`, `finished`, `rolled_back`; no row payloads. Export rows in actual application order (`ORDER BY started_at, finished_at, id`), never sorted by migration name; retain started_at/finished_at/id in protected source evidence. Equal started_at values cannot be ordered by random UUID as execution proof; use completion timestamps and deployment evidence, and keep unresolved ties/overlapping execution blocked. The active sequence must be an ordered prefix of the repository chain. It rejects absent applied files, checksum drift, duplicate/unfinished records and gaps before an applied migration. Export this metadata privately and read-only from the exact approved database. The command never applies migrations.
 
 `npm run database:evidence -- restore <before.json> <after.json> <restore-target.json>` checks binding invariants. Snapshot shape: projectId, defaultBranchId, branches[{id,name}], endpoints[{id,branchId}], connections[{service,endpointId,database,role}]. The target contains branchId and endpointId. No URLs/passwords. Every original branch/name, endpoint→branch and application target must remain unchanged; restore IDs must be new. Full service inventory is a prerequisite; missing or ambiguous inventories fail. This is a mandatory approval/readback gate, not a substitute for preventing source-targeting API calls. No repository tool invokes a hosted restore API.
 
@@ -49,9 +49,9 @@ Stop only authorized producers/workers first; preserve both databases, audit/que
 
 | ID | Required decision / evidence | Owner | State / blocks |
 | --- | --- | --- | --- |
-| A01 | Confirm Render Michael's workspace for read-only service/env discovery | AJ Digital | authorized 2026-10-10; connector returned null, inventory remains UNKNOWN; Render dependency inventory |
-| A02 | Privately verify effective Vercel, GitHub/Doppler and Render URL/role/environment mappings | AJ Digital + operator | UNKNOWN; authority and source identity |
-| A03 | Identify production dataset and main neon_auth/demo consumers | AJ Digital | pending; production target and any consolidation |
+| A01 | Confirm Render Michael's workspace for read-only service/env discovery | AJ Digital | workspace service-list discovery COMPLETE 2026-10-13: one separate portal service, no ResponseOS/website service returned; environment/connection mapping remains under A02 |
+| A02 | Privately verify effective Vercel, GitHub/Doppler and Render URL/role/environment mappings | AJ Digital + operator | ResponseOS production Vercel project/deployment identified 2026-10-13; sensitive URL withheld; Doppler production configs have no DB URLs; effective Neon project/branch/database/runtime role UNKNOWN |
+| A03 | Identify production dataset and main neon_auth/demo consumers | AJ Digital | web production deployment confirmed; authoritative relational dataset and extra-schema consumers still pending; no consolidation authorized |
 | A04 | Ratify ADR-0070, PG17 production proposal and staged PG18 compatibility evidence | AJ Digital | proposed; no version/region change authorized |
 | A05 | Resolve distinct applied 0017 histories across supervised runtime and FRL stack | human reviewers | blocked; no renumber/checksum rewrite or cross-lineage deploy |
 | A06 | Approve restored-copy grants/ownership/RLS and PUBLIC TEMP strategy for every consumer | security reviewer + AJ Digital | pending; worker principal/enablement |
@@ -62,8 +62,12 @@ Stop only authorized producers/workers first; preserve both databases, audit/que
 | A11 | Actual customer/identity data movement and private reconciliation plan | data owner + AJ Digital | NOT AUTHORIZED; no migration currently selected |
 | A12 | Cutover, rollback window/loss policy and post-cutover smoke | AJ Digital | NOT AUTHORIZED |
 | A13 | Source/resource retirement, restore-copy cleanup and obsolete Supabase deletion | AJ Digital | NOT AUTHORIZED; separate final decision |
-| A14 | PR review/merge and PR #209/#210/#93 decisions | human reviewers | separate; this PR changes no PR state on those stacks |
+| A14 | PR review/merge and PR #209/#210/#93 decisions | human reviewers | PR #211 merged 2026-10-10; #209/#210/#93 still open at refreshed heads; their merge/activation decisions remain separate |
 
 Live ResponseOS routing/provider activation, FRL content, domain/DNS/indexing, billing and receptionist behavior remain outside this task's authorization.
 
 A15: Application pool reset after a lost connection (P1017, or P2010 with SQLSTATE 57P01/57P02/08xxx) is implemented for review and validated on synthetic local data without replay. Hosted pooler/network-outage and PR #210 worker recovery remain unverified; do not close cutover acceptance from local tests alone.
+
+A16: Reconcile or retire the Doppler stg_staging_demo mapping only after its consumers and intended environment are confirmed. Owner-role reuse, missing explicit sslaccept and unverified environment ownership block adopting it as an approved runtime target. Archived is normal cold storage; deprecated pooler_enabled does not establish a pooling mismatch. No secret rewrite, explicit compute activation or resource cleanup is authorized.
+
+A17: Review the already-installed staging 0017-0019 chain, PUBLIC TEMP revocation and five-table RLS against all consumers. October 15 role evidence shows SET FALSE/INHERIT FALSE on owner-to-worker memberships and retains column grants. Current read-only evidence does not authorize these changes retrospectively, prove their approval history, or certify a dedicated runtime login. Preserve the existing Clerk-linked operator and Account.
