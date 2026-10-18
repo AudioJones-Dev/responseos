@@ -107,8 +107,18 @@ export async function normalizeTelnyxEvent(params: {
   transcriptExpiresAt?: Date;
   options?: NormalizeTelnyxEventOptions;
 }): Promise<{ callId: string | null; finalized: boolean }> {
+  if (!params.client) {
+    if (database === null) throw new Error("database_unavailable");
+    return database.$transaction(
+      client => normalizeTelnyxEvent({ ...params, client }),
+      { maxWait: 5_000, timeout: 15_000 },
+    );
+  }
   const db = params.client ?? database;
   if (db === null) throw new Error("database_unavailable");
+  // Cooperating normalizers share contacts across calls. Capture callers already
+  // hold their capture lock; never acquire a capture lock after this account lock.
+  await db.$executeRaw`SELECT pg_advisory_xact_lock(1380930382, hashtext(${params.accountId}))`;
   const payload = params.event.data.payload;
   const providerCallId = params.providerCallId ?? getTelnyxCallId(payload);
   if (!providerCallId) {

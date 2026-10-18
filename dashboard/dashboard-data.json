@@ -1597,6 +1597,17 @@
       "priority": "High",
       "blocked": true,
       "blockedReason": "CRM purge paths preserve binding evidence and fence stale generations. Pinned Node 24.18.0/npm 11.16.0 pass 936 unit tests, lint, typecheck, build and PostgreSQL 16/17/18 matrices (250 tests each), migrations, seed, restore reconciliation and DB-backed builds. Exact-head CI, independent review of the expanded diff, hosted commissioning and two live rehearsals remain unverified and gated."
+    },
+    {
+      "id": "FRL-LOCAL-HARDENING-20261018",
+      "phase": "Integrations",
+      "title": "Local FRL workflow quarantine, qualification contract and normalization concurrency hardening",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 75,
+      "priority": "High",
+      "blocked": true,
+      "blockedReason": "Local candidate only. Hosted pipeline activation, immutable webhook fingerprint schema approval, hosted commissioning and live rehearsals remain gated. Exact local validation is recorded in the external hardening evidence bundle."
     }
   ],
   "liveIssues": [

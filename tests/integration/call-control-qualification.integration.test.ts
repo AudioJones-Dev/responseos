@@ -72,6 +72,45 @@ describe("FRL Call Control qualification", () => {
   });
   afterAll(disconnectTestDb);
 
+  test("actual consent transaction backend loss never grants consent or dispatches AI", async () => {
+    const url = new URL(process.env.DATABASE_URL!);
+    if (!["127.0.0.1", "localhost"].includes(url.hostname) || !url.pathname.endsWith("_test")) throw new Error("Disposable loopback database required");
+    await setupQualification();
+    await ingest(event("call.initiated", "backend-loss-init", { to: NUMBER }, 1_000));
+    const capture = await prisma.callCaptureSession.findFirstOrThrow();
+    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "CONSENT_PENDING_OPERATOR", dtmf_decision: "affirmative" } });
+    sendCommand.mockClear();
+    const { PrismaClient } = await import("@prisma/client");
+    const controller = new PrismaClient();
+    const route = await import("@/app/api/admin/call-capture/[id]/consent/route");
+    let response: Promise<Response> | undefined;
+    try {
+      await controller.$transaction(async lock => {
+        await lock.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${"capture:" + capture.account_id + ":" + capture.provider_call_id}))`;
+        response = route.POST(new Request("https://example.test", { method: "POST", body: JSON.stringify({ action: "grant", disclosureRef: "approved:v1", evidenceRef: "witness:test", jurisdictionBasis: "commissioning:test", eventKey: "00000000-0000-4000-8000-000000000099" }) }), { params: Promise.resolve({ id: capture.id }) });
+        let victim: number | undefined;
+        for (let attempt = 0; attempt < 100 && !victim; attempt++) {
+          await lock.$executeRaw`SELECT pg_stat_clear_snapshot()`;
+          const waiting = await lock.$queryRaw<{ pid: number }[]>`SELECT pid FROM pg_stat_activity WHERE datname = current_database() AND pid <> pg_backend_pid() AND wait_event = 'advisory' AND query LIKE '%pg_advisory_xact_lock%'`;
+          if (waiting.length > 1) throw new Error("Ambiguous synthetic backend target");
+          victim = waiting[0]?.pid;
+          if (!victim) await new Promise(resolve => setTimeout(resolve, 20));
+        }
+        if (!victim) throw new Error("Consent transaction did not reach capture lock");
+        const result = await lock.$queryRaw<{ terminated: boolean }[]>`SELECT pg_terminate_backend(${victim}::int) AS terminated`;
+        expect(result[0].terminated).toBe(true);
+      }, { timeout: 10_000 });
+      expect((await response!).status).toBe(503);
+      expect(await prisma.callConsentEvent.count({ where: { provider_call_id: capture.provider_call_id } })).toBe(0);
+      expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } })).control_state).toBe("CONSENT_PENDING_OPERATOR");
+      expect(await prisma.telnyxCallCommand.count({ where: { capture_session_id: capture.id, command_type: "ai_assistant_start" } })).toBe(0);
+      expect(sendCommand).not.toHaveBeenCalled();
+    } finally {
+      await response;
+      await controller.$disconnect();
+    }
+  });
+
   test.each([-86_400_000, 0, 86_400_000])("disclosure and durable grant/intent precede AI dispatch with application clock offset %i ms", async (clockOffset) => {
     await setupQualification();
     await ingest(event("call.initiated", "cc-1", { to: NUMBER, from: "+15555550199" }, 1_000));

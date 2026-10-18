@@ -1,5 +1,7 @@
 # Unreleased — supervised FRL demonstration (in review)
 
+- Local hardening candidate: close the unsafe Preview/migration deployment workflow pending separate activation review, add offline qualification/target evidence contracts, and serialize cooperating account normalizers transactionally. Preserve manual analysis and all effect gates. Fingerprint schema work and hosted readiness remain unimplemented approval gates; see the October 18 local hardening plan.
+
 - Reconcile PR177 with master at `915051a`: preserve consent/correlation and generation-bound CRM recovery alongside audited retention, expired-payload rejection and purged-call cancellation. Explicitly label Call Control manual operator analysis; add retention/auth regressions and the phased commissioning/qualification plan. Development candidate only; hosted checks and all live effects remain gated.
 
 - Cumulative history that arrives after a hangup is ledgered but before its capture-state transition commits is stored redacted while it awaits the signed conversation boundary. Previously the full body could be stored and was never re-redacted if the boundary later excluded it. An admitted retry still restores the authorized body.
