@@ -121,6 +121,18 @@ export async function runCrmSyncForCall(params: {
     const binding = bindingOf(operation);
     const fresh = !binding && operation.last_error_redacted === null && phase?.mode === "ready" && phase.effect === "contact_create" && !operation.provider_contact_id && !operation.provider_activity_id && !operation.provider_task_id;
     if (operation.status === "cancelled") return ok(toView(operation));
+    const retainedCall = await client.call.findFirst({ where: { id: params.callId, account_id: params.accountId } });
+    if (retainedCall?.from_number === PURGED_CALLER_NUMBER && operation.status !== "succeeded") {
+      const previous = operation;
+      await client.$transaction(async (tx) => {
+        const changed = await tx.crmSyncOperation.updateMany({
+          where: { ...where, attempt_count: previous.attempt_count, status: previous.status, last_error_code: previous.last_error_code, updated_at: previous.updated_at },
+          data: { status: "cancelled", attempt_count: { increment: 1 }, last_error_code: "retention_purged", next_attempt_at: null },
+        });
+        if (changed.count) await tx.auditLog.create(evidence(previous, "crm_retention_cancelled", { generation: previous.attempt_count, resultingGeneration: previous.attempt_count + 1, previousCode: previous.last_error_code }));
+      });
+      return ok(toView(await client.crmSyncOperation.findUniqueOrThrow({ where })));
+    }
     if (!phase || (!binding && !fresh)) {
       await client.$transaction(async (tx) => {
         const changed = await tx.crmSyncOperation.updateMany({ where: { ...where, attempt_count: operation!.attempt_count, last_error_code: operation!.last_error_code, status: operation!.status }, data: { status: "review_required", last_error_code: "crm_legacy_unknown" } });
@@ -158,9 +170,12 @@ export async function runCrmSyncForCall(params: {
     if (provider.providerId !== operation.provider || (params.requireLiveProvider && provider.providerId !== "hubspot")) throw new Error("live_provider_disabled");
     const call = await client.call.findFirst({ where: { id: params.callId, account_id: params.accountId } });
     if (call?.from_number === PURGED_CALLER_NUMBER) {
-      await client.crmSyncOperation.updateMany({
-        where: { ...where, attempt_count: generation, status: "processing" },
-        data: { status: "cancelled", last_error_code: "retention_purged", last_error_redacted: "retention_purged", next_attempt_at: null },
+      await client.$transaction(async (tx) => {
+        const changed = await tx.crmSyncOperation.updateMany({
+          where: { ...where, attempt_count: generation!, status: "processing", last_error_code: operation!.last_error_code, last_error_redacted: operation!.last_error_redacted },
+          data: { status: "cancelled", attempt_count: { increment: 1 }, last_error_code: "retention_purged", next_attempt_at: null },
+        });
+        if (changed.count) await tx.auditLog.create(evidence(operation!, "crm_retention_cancelled", { generation: generation!, resultingGeneration: generation! + 1, previousCode: operation!.last_error_code }));
       });
       return ok(toView(await client.crmSyncOperation.findUniqueOrThrow({ where })));
     }

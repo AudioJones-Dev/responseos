@@ -1587,7 +1587,7 @@
       "progress": 90,
       "priority": "High",
       "blocked": true,
-      "blockedReason": "Local reconciliation passes lint, typecheck, unit tests and build. PostgreSQL integration, exact-head CI, independent review, hosted commissioning and two live rehearsals remain unverified and gated."
+      "blockedReason": "CRM purge paths preserve binding evidence and fence stale generations. Pinned Node 24.18.0/npm 11.16.0 pass 936 unit tests, lint, typecheck, build and PostgreSQL 16/17/18 matrices (250 tests each), migrations, seed, restore reconciliation and DB-backed builds. Exact-head CI, independent review of the expanded diff, hosted commissioning and two live rehearsals remain unverified and gated."
     }
   ],
   "liveIssues": [

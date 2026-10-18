@@ -189,6 +189,85 @@ test("newer review cannot dispatch an uncertain original operation", async () =>
   expect(await runCrmSyncForCall({ ...params(), reviewId: "new-review" })).toMatchObject({ ok: false, error: { code: "crm_review_binding_mismatch" } });
 });
 
+test("retention cancellation preserves uncertain provider evidence and fences its generation", async () => {
+  const activity = vi.spyOn(provider, "createCallActivity").mockRejectedValue(new Error("timeout"));
+  await runCrmSyncForCall(params());
+  const uncertain = clone();
+  expect(uncertain.status).toBe("review_required");
+  mocks.db.call.findFirst.mockResolvedValue({ id: "call", status: "completed", from_number: "<PURGED>" });
+  await runCrmSyncForCall(params());
+  expect(row).toMatchObject({
+    status: "cancelled", last_error_code: "retention_purged", attempt_count: uncertain.attempt_count + 1,
+    provider_contact_id: uncertain.provider_contact_id, last_error_redacted: uncertain.last_error_redacted,
+  });
+  expect(activity).toHaveBeenCalledOnce();
+});
+
+test("retention cancellation rolls back when its audit cannot be recorded", async () => {
+  row.last_error_code = null;
+  const previous = clone();
+  mocks.db.call.findFirst.mockResolvedValue({ id: "call", status: "completed", from_number: "<PURGED>" });
+  mocks.db.auditLog.create.mockRejectedValue(new Error("audit failed"));
+  expect(await runCrmSyncForCall(params())).toMatchObject({ ok: false });
+  expect(row).toEqual(previous);
+});
+
+test("purge between call reads preserves binding and audits cancellation after the claim", async () => {
+  vi.spyOn(provider, "findContacts").mockRejectedValueOnce(new Error("read unavailable"));
+  await runCrmSyncForCall(params());
+  const previous = clone();
+  const originalCall = await mocks.db.call.findFirst({ where: { account_id: "account" } });
+  mocks.db.call.findFirst.mockReset().mockResolvedValueOnce(originalCall).mockResolvedValue({ ...originalCall, from_number: "<PURGED>" });
+  const destination = vi.spyOn(provider, "getDestination");
+  expect(await runCrmSyncForCall(params())).toMatchObject({ ok: true, data: { status: "cancelled" } });
+  expect(row).toMatchObject({ last_error_redacted: previous.last_error_redacted, attempt_count: previous.attempt_count + 2 });
+  expect(destination).not.toHaveBeenCalled();
+  expect(mocks.db.auditLog.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ action: "crm_retention_cancelled" }) }));
+});
+
+test("post-claim cancellation audit failure preserves evidence without provider effects", async () => {
+  vi.spyOn(provider, "findContacts").mockRejectedValueOnce(new Error("read unavailable"));
+  await runCrmSyncForCall(params());
+  const previous = clone();
+  const originalCall = await mocks.db.call.findFirst({ where: { account_id: "account" } });
+  mocks.db.call.findFirst.mockReset().mockResolvedValueOnce(originalCall).mockResolvedValue({ ...originalCall, from_number: "<PURGED>" });
+  mocks.db.auditLog.create.mockImplementation(async ({ data }) => { if (data.action === "crm_retention_cancelled") throw new Error("audit failed"); });
+  const create = vi.spyOn(provider, "createContact");
+  await runCrmSyncForCall(params());
+  expect(row).toMatchObject({ status: "retryable_failed", last_error_code: previous.last_error_code, last_error_redacted: previous.last_error_redacted, attempt_count: previous.attempt_count + 1 });
+  expect(create).not.toHaveBeenCalled();
+});
+
+test("retention cancellation fences an in-flight acknowledgment without losing prior evidence", async () => {
+  const reached = delay<void>(); const resume = delay<void>();
+  vi.spyOn(provider, "createCallActivity").mockImplementation(async () => { reached.release(); await resume.promise; return { providerActivityId: "accepted-after-cancel" }; });
+  const task = vi.spyOn(provider, "createFollowUpTask");
+  const worker = runCrmSyncForCall(params());
+  await reached.promise;
+  const previous = clone();
+  mocks.db.call.findFirst.mockResolvedValue({ id: "call", status: "completed", from_number: "<PURGED>" });
+  try {
+    await runCrmSyncForCall(params());
+    expect(row).toMatchObject({ status: "cancelled", attempt_count: previous.attempt_count + 1, provider_contact_id: previous.provider_contact_id, last_error_redacted: previous.last_error_redacted });
+  } finally { resume.release(); await worker; }
+  expect(row.status).toBe("cancelled");
+  expect(row.provider_activity_id).toBeNull();
+  expect(task).not.toHaveBeenCalled();
+});
+
+test("a concurrent success wins over a stale retention cancellation snapshot", async () => {
+  const reached = delay<void>(); const resume = delay<void>();
+  mocks.db.call.findFirst.mockImplementation(async () => { reached.release(); await resume.promise; return { id: "call", from_number: "<PURGED>" }; });
+  const cancellation = runCrmSyncForCall(params());
+  await reached.promise;
+  row = { ...row, status: "succeeded", attempt_count: row.attempt_count + 1, last_error_code: "crm_ready:done", provider_contact_id: "contact", provider_activity_id: "activity", provider_task_id: "task" };
+  const completed = clone();
+  resume.release();
+  expect(await cancellation).toMatchObject({ ok: true, data: { status: "succeeded" } });
+  expect(row).toEqual(completed);
+  expect(mocks.db.auditLog.create).not.toHaveBeenCalled();
+});
+
 test("legacy row without phase evidence fails closed", async () => {
   row.last_error_code = null; row.status = "processing"; row.updated_at = new Date(0);
   const create = vi.spyOn(provider, "createContact"); await runCrmSyncForCall(params());

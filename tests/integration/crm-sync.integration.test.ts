@@ -91,7 +91,7 @@ describe("durable CRM synchronization", () => {
     expect(provider.createCallActivity).not.toHaveBeenCalled();
   });
 
-  test("cancels instead of syncing a call whose content was purged", async () => {
+  test.each(["pending", "processing", "retryable_failed", "review_required"] as const)("cancels %s instead of syncing a call whose content was purged", async (status) => {
     await prisma.call.update({
       where: { id: "call_responseos_demo" },
       data: { from_number: "<PURGED>", contact_id: null, transcript: null, summary: null },
@@ -99,7 +99,7 @@ describe("durable CRM synchronization", () => {
     await prisma.crmSyncOperation.create({ data: {
       account_id: "org_responseos_demo", call_id: "call_responseos_demo",
       operation_key: "crm-call:org_responseos_demo:call_responseos_demo",
-      provider: "mock", status: "retryable_failed",
+      provider: "mock", status,
     } });
     const provider = new MockCrmProvider();
     const find = vi.spyOn(provider, "findContacts");
@@ -111,8 +111,44 @@ describe("durable CRM synchronization", () => {
     expect(result.ok && result.data.status).toBe("cancelled");
     expect(find).not.toHaveBeenCalled();
     expect(await prisma.crmSyncOperation.findFirstOrThrow()).toMatchObject({
-      status: "cancelled", last_error_code: "retention_purged", next_attempt_at: null,
+      status: "cancelled", last_error_code: "retention_purged", next_attempt_at: null, attempt_count: 1,
     });
+    expect(await prisma.auditLog.count({ where: { action: "crm_retention_cancelled" } })).toBe(1);
+    await runCrmSyncForCall({ accountId: "org_responseos_demo", callId: "call_responseos_demo", providerOverride: provider });
+    expect(await prisma.auditLog.count({ where: { action: "crm_retention_cancelled" } })).toBe(1);
+    expect(find).not.toHaveBeenCalled();
+  });
+
+  test("retention cancellation leaves another tenant's purged operation untouched", async () => {
+    await prisma.call.update({ where: { id: "call_responseos_demo" }, data: { from_number: "<PURGED>" } });
+    const foreignCall = await prisma.call.create({ data: {
+      account_id: "org_mock_1", provider: "manual", direction: "inbound", status: "completed", from_number: "<PURGED>",
+      to_number: "+15555550199", started_at: new Date(),
+    } });
+    const foreign = await prisma.crmSyncOperation.create({ data: {
+      account_id: "org_mock_1", call_id: foreignCall.id, operation_key: `crm-call:org_mock_1:${foreignCall.id}`,
+      provider: "mock", status: "review_required", attempt_count: 7, provider_contact_id: "foreign-contact",
+    } });
+    const provider = new MockCrmProvider();
+    const find = vi.spyOn(provider, "findContacts");
+    expect(await runCrmSyncForCall({ accountId: "org_responseos_demo", callId: "call_responseos_demo", providerOverride: provider }))
+      .toMatchObject({ ok: true, data: { status: "cancelled" } });
+    expect(await prisma.crmSyncOperation.findUniqueOrThrow({ where: { id: foreign.id } })).toEqual(foreign);
+    expect(await prisma.call.findUniqueOrThrow({ where: { id: foreignCall.id } })).toEqual(foreignCall);
+    expect(await prisma.auditLog.count({ where: { account_id: "org_mock_1", action: "crm_retention_cancelled" } })).toBe(0);
+    expect(find).not.toHaveBeenCalled();
+  });
+
+  test("preserves completed CRM evidence when call content is purged", async () => {
+    const provider = new MockCrmProvider();
+    const params = { accountId: "org_responseos_demo", callId: "call_responseos_demo", providerOverride: provider };
+    await runCrmSyncForCall(params);
+    const completed = await prisma.crmSyncOperation.findFirstOrThrow();
+    await prisma.call.update({ where: { id: params.callId }, data: { from_number: "<PURGED>", contact_id: null, transcript: null, summary: null } });
+    const find = vi.spyOn(provider, "findContacts");
+    expect(await runCrmSyncForCall(params)).toMatchObject({ ok: true, data: { status: "succeeded" } });
+    expect(await prisma.crmSyncOperation.findFirstOrThrow()).toEqual(completed);
+    expect(find).not.toHaveBeenCalled();
   });
 });
 

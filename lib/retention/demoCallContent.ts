@@ -12,8 +12,8 @@ export type DemoCallPurgeCounts = { calls: number; webhookPayloads: number } & R
  * purge is idempotent and late webhooks for the same call still dedupe.
  * Succeeded CRM operations are kept: they are the only local pointer to the
  * HubSpot copy, which this purge does not delete. Every other operation is
- * cancelled, including `processing`: a call this old has no live sync, so a
- * processing row is one a crashed worker left behind.
+ * cancelled with a new generation, retaining provider IDs and binding evidence.
+ * This fences local acknowledgments; it cannot undo an in-flight provider effect.
  */
 export async function purgeExpiredDemoCallContent(params: {
   accountId: string;
@@ -69,7 +69,7 @@ export async function purgeExpiredDemoCallContent(params: {
       });
       const crmOperations = await tx.crmSyncOperation.updateMany({
         where: { account_id: accountId, call_id: { in: callIds }, status: { in: ["pending", "processing", "retryable_failed", "review_required"] } },
-        data: { status: "cancelled", last_error_code: "retention_purged", last_error_redacted: "retention_purged", next_attempt_at: null },
+        data: { status: "cancelled", attempt_count: { increment: 1 }, last_error_code: "retention_purged", next_attempt_at: null },
       });
 
       const contactRef = { account_id: accountId, contact_id: { in: contactIds } };

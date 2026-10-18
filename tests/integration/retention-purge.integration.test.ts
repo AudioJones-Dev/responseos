@@ -1,6 +1,9 @@
-import { afterAll, beforeEach, describe, expect, test } from "vitest";
+import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
 import { RESPONSEOS_DEMO_ACCOUNT_ID } from "@/lib/demo/constants";
 import { runRetentionPurge, type RetentionPurgeReport } from "@/lib/retention/runRetentionPurge";
+import { purgeExpiredDemoCallContent } from "@/lib/retention/demoCallContent";
+import { runCrmSyncForCall } from "@/lib/crm/syncFinalizedCall";
+import { MockCrmProvider } from "@/lib/providers/crm";
 import { disconnectTestDb, prisma, resetAndSeedTestDb, setDevSession } from "./setup";
 
 const now = new Date("2026-10-08T12:00:00.000Z");
@@ -202,6 +205,50 @@ describe("retention purge runner", () => {
     setDevSession("aj_admin");
   });
   afterAll(disconnectTestDb);
+
+  test.each(["pending", "processing", "retryable_failed", "review_required"] as const)("purge preserves %s CRM evidence, completed records and another tenant", async (status) => {
+    await demoCall("purge_evidence", { startedAt: longAgo });
+    await demoCall("purge_completed", { startedAt: longAgo });
+    const foreignCall = await prisma.call.create({ data: {
+      account_id: INBOUND_ACCOUNT_ID, provider: "telnyx", direction: "inbound", status: "completed",
+      from_number: "+15555550188", to_number: "+15555550199", started_at: longAgo,
+    } });
+    const binding = JSON.stringify({ v: 1, reviewId: null, payloadHash: "fixture-hash", destination: "mock:local" });
+    const evidence = { provider: "mock", attempt_count: 4, provider_contact_id: "contact-evidence", provider_activity_id: "activity-evidence", provider_task_id: "task-evidence", last_error_redacted: binding };
+    const pending = await prisma.crmSyncOperation.create({ data: { ...evidence, account_id: DEMO_ACCOUNT_ID, call_id: "purge_evidence", operation_key: "purge-evidence", status, last_error_code: "crm_reconcile:task_associate", next_attempt_at: now } });
+    const completed = await prisma.crmSyncOperation.create({ data: { ...evidence, account_id: DEMO_ACCOUNT_ID, call_id: "purge_completed", operation_key: "purge-completed", status: "succeeded", last_error_code: "crm_ready:done", completed_at: now } });
+    const foreign = await prisma.crmSyncOperation.create({ data: { ...evidence, account_id: INBOUND_ACCOUNT_ID, call_id: foreignCall.id, operation_key: "purge-foreign", status } });
+    expect(await purgeExpiredDemoCallContent({ accountId: DEMO_ACCOUNT_ID, now })).toMatchObject({ ok: true, data: { crmOperationsCancelled: 1 } });
+    const cancelled = await prisma.crmSyncOperation.findUniqueOrThrow({ where: { id: pending.id } });
+    expect(cancelled).toMatchObject({ ...evidence, attempt_count: 5, status: "cancelled", last_error_code: "retention_purged", next_attempt_at: null });
+    expect(await prisma.crmSyncOperation.findUniqueOrThrow({ where: { id: completed.id } })).toEqual(completed);
+    expect(await prisma.crmSyncOperation.findUniqueOrThrow({ where: { id: foreign.id } })).toEqual(foreign);
+    expect(await prisma.call.findUniqueOrThrow({ where: { id: foreignCall.id } })).toEqual(foreignCall);
+    expect(await purgeExpiredDemoCallContent({ accountId: DEMO_ACCOUNT_ID, now })).toMatchObject({ ok: true, data: { crmOperationsCancelled: 0 } });
+    expect(await prisma.crmSyncOperation.findUniqueOrThrow({ where: { id: pending.id } })).toEqual(cancelled);
+  });
+
+  test("purge fences a pending provider acknowledgment and preserves committed evidence", async () => {
+    await demoCall("purge_racing_worker", { startedAt: longAgo });
+    let reached!: () => void; let resume!: () => void;
+    const reachedPromise = new Promise<void>((resolve) => { reached = resolve; });
+    const resumePromise = new Promise<void>((resolve) => { resume = resolve; });
+    const provider = new MockCrmProvider();
+    vi.spyOn(provider, "createCallActivity").mockImplementation(async () => { reached(); await resumePromise; return { providerActivityId: "late-activity" }; });
+    const task = vi.spyOn(provider, "createFollowUpTask");
+    const worker = runCrmSyncForCall({ accountId: DEMO_ACCOUNT_ID, callId: "purge_racing_worker", providerOverride: provider });
+    await reachedPromise;
+    const previous = await prisma.crmSyncOperation.findFirstOrThrow({ where: { call_id: "purge_racing_worker" } });
+    try {
+      expect(await purgeExpiredDemoCallContent({ accountId: DEMO_ACCOUNT_ID, now })).toMatchObject({ ok: true, data: { crmOperationsCancelled: 1 } });
+    } finally { resume(); await worker; }
+    expect(await prisma.crmSyncOperation.findUniqueOrThrow({ where: { id: previous.id } })).toMatchObject({
+      status: "cancelled", attempt_count: previous.attempt_count + 1, provider_contact_id: previous.provider_contact_id,
+      provider_activity_id: null, last_error_redacted: previous.last_error_redacted,
+    });
+    expect(task).not.toHaveBeenCalled();
+    expect(await prisma.auditLog.count({ where: { account_id: DEMO_ACCOUNT_ID, action: "retention.demo_call_content_purged" } })).toBe(1);
+  });
 
   test("preview counts every sweep and writes nothing", async () => {
     await seedDueData();
