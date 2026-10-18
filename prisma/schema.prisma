@@ -906,6 +906,9 @@ model WebhookEvent {
   provider_event_id  String
   event_type         String
   raw_body           String
+  content_fingerprint String? @db.Char(64)
+  fingerprint_version Int? @db.SmallInt
+  fingerprint_key_id String? @db.VarChar(64)
   signature_header   String?
   signature_valid    Boolean              @default(false)
   dedupe_hash        String               @unique

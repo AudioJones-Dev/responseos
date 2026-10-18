@@ -10,7 +10,7 @@ The schema mirrors `types/*.ts` and `prisma/schema.prisma`. Conventions:
 
 ## Current implementation snapshot
 
-The source of truth for exact fields, enum values, relations, and indexes is `prisma/schema.prisma`. The current migration chain runs from `0001_v0_2_foundation` through `0017_call_control_qualification`. Migrations `0011`–`0013` carry the GTM demo and prospect-bootstrap foundations; `0014`–`0017` carry the supervised demonstration and qualification substrate described below and are deployment-gated — `0015` additionally carries a deployment requirement recorded in [`DEPLOYMENT.md`](./DEPLOYMENT.md).
+The source of truth for exact fields, enum values, relations, and indexes is `prisma/schema.prisma`. The current migration chain runs from `0001_v0_2_foundation` through `0018_webhook_content_fingerprint` (0018 is a local-only candidate; no hosted application). Migrations `0011`–`0013` carry the GTM demo and prospect-bootstrap foundations; `0014`–`0017` carry the supervised demonstration and qualification substrate described below and are deployment-gated — `0015` additionally carries a deployment requirement recorded in [`DEPLOYMENT.md`](./DEPLOYMENT.md).
 
 Current Prisma models:
 
@@ -63,6 +63,7 @@ Current migration history:
 | `0015_supervised_call_review` | Adds supervised call review, capture and consent evidence. Not deployed or activated; carries the index deployment requirement in [`DEPLOYMENT.md`](./DEPLOYMENT.md). |
 | `0016_supervised_qualification_assignment` | Adds the temporary, effects-disabled qualification assignment and durable capture assignment pin. Not deployed or activated. |
 | `0017_call_control_qualification` | Adds Call Control state, idempotent provider-command evidence, immutable transcript revisions and post-call interpretation provenance. Not deployed or activated. |
+| `0018_webhook_content_fingerprint` | Additive nullable immutable fingerprint tuple with expiry erasure; synthetic local scaffold only, no runtime binding or hosted migration. |
 
 The sections below retain historical v0.1/v0.2 design context. If they conflict with `prisma/schema.prisma`, the Prisma schema wins until this document is fully rewritten from the live schema.
 

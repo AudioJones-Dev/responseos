@@ -1,5 +1,7 @@
 # FRL boundary successor — local review candidate
 
+Owner update: additive fingerprint migration/scaffold and isolated official CLI41.7 verification are now locally approved and implemented. See [scope and evidence](FRL_FINGERPRINT_LOCAL_2026-10-18.md). Runtime fingerprint binding, real keys, hosted migrations and activation remain gated.
+
 Base: frozen `565fcdbc91a0744ea417a8703e029ccf3f629a7b` (tree `46d050ce03770946d33ec4e805df4e5d3fe73e33`). Frozen `457e568` and all other developer branches remain preserved. Work is isolated on `feat/frl-boundary-matrix-20261018`. Exact final SHA/tree, commands, counts, patch and logs belong in the external `boundary-evidence-20261018` bundle, after validation. This document does not certify hosted readiness.
 
 ## Bounded changes
@@ -38,14 +40,14 @@ The supplied historical review and main-clone runbook were read without modifica
 
 | Finding | Current disposition and evidence |
 |---|---|
-| H1 changed signed body | **Confirmed current / approval pending.** Tenant binding is repaired, but body identity needs the proposed schema/key/retention design. No schema or migration authored. |
+| H1 changed signed body | **Application gap remains.** Additive schema and synthetic identity tests now exist; production ingestion/recovery binding and real keys remain unimplemented. |
 | H2 coverage | **Expanded in successor**, per matrix above and exact final logs. Stronger prompt-ID interpretation, source-time semantics and hosted auth remain open; no blanket checklist acceptance. |
 | M1 self-attested preflight | **Resolved labeling defect locally.** CLI output explicitly says attested/unverified; authenticated durable readback remains a hosted gate. |
 | M2 aliases | **Resolved local contract mismatch.** Exact two-alias set, per-alias readbacks, three-origin SHA checks and negative fixtures. Current hosted aliases/protection are NOT EVALUATED. |
 | M3 forbidden provider names | **Resolved locally.** Shared list and negative cases for every name; no values read/disclosed. |
 | M4 delayed withdrawal | **Needs decision.** Characterized recording-time behavior; no policy change. |
 | M5 consent failure timing | **Expanded locally.** Mid-write termination and committed-then-lost-ack tests; transport-level ambiguity remains a stated test limitation. |
-| M6 pipeline absent | **Resolved as implementation in frozen565/successor**, still disabled. CLI installation/artifact verification and hosted activation remain approval gates. |
+| M6 pipeline absent | **Resolved as implementation in frozen565/successor**, still disabled. Isolated official CLI41.7 version/help and artifact integrity are now verified; hosted activation remains gated. |
 | L1 stale runbook | **Resolved locally.** Correct workflow/input names, separate qualification command, manual analysis and two internal rehearsals. Main-clone file unchanged. |
 | L2 purge coordination | **Resolved for named cooperating paths**, including cleanup recreation guard. Broader writers/throughput remain limits. |
 | L3 auth flag semantics | **Intentional variance.** Runtime treats ambiguous truthy values as requiring auth; preflight permits only exact `1`/`true`, thus stricter. |
@@ -55,7 +57,7 @@ The supplied historical review and main-clone runbook were read without modifica
 ## Remaining release gates and owners
 
 1. **Codex / local reviewer:** freeze the successor, run final-tree lint/types/unit/build/config and PG16/17/18 (existing migrations, seed, restore, schema checks and DB build), resolve material findings, publish exact local evidence. No push is authorized. Recheck sessions/deployment triggers before any future publication decision.
-2. **Owner/privacy:** decide immutable fingerprint conflict policy, nullable tuple, retention and key lifecycle before local schema implementation; separately authorize isolated CLI41.7 artifact install/help verification. These approvals have not arrived.
+2. **Owner/privacy:** local schema/tests and isolated CLI verification were approved and completed. Review the separate production ingestion/recovery scope and real key lifecycle before any runtime binding.
 3. **Owner/engineering:** resolve source-effective withdrawal and stronger prompt binding if required; decide readback-only recovery for qualification. No invented authority envelope or automatic model analysis expansion. First demo remains manual operator summary/qualification; propose model-backed expansion separately.
 4. **Founder/release operator:** approve the actual control ref and exact control/application pair at release authorization before publication/activation. Keep `enabled=false`, `trustedControlRef=null` and `approvedApplicationSha=null` until a separately reviewed change is approved.
 5. **Hosted commissioner, separately authorized:** pinned SHA, exact database/role/schema, compatible migrations/rollback, authenticated tenant review, approved FRL facts/disclosure, number/routing, recording/retention, recipient/callback expectations. Catalogue migrations 0014–0017 do not prove deployed app binding; do not mix routing-lane migrations. Hosted checks 1.6/3.8/4.8/6.5/7.5 are **NOT EVALUATED**.
@@ -63,4 +65,4 @@ The supplied historical review and main-clone runbook were read without modifica
 
 Proposed dispatch remains: approved refs/heads parameter matches dispatch ref; control SHA equals workflow_sha/control HEAD/remote approved-ref tip; application SHA equals application HEAD and separately approved SHA. Execute controls from the control checkout. Verify source clean before/after build, project/link/env and prebuilt target, build/runtime/deployment SHA metadata, returned host then deployment ID, exact team/project/custom environment, both exact aliases and all three health origins. Any mismatch stops with redacted output. Post-deploy failure may leave effects; no automatic retry/rollback. Shared hosted configuration conflicts require proposed isolation, not an unauthorized setting change. Bypass health is not auth acceptance.
 
-D1–D5 remain binding. Literal variances still require acceptance: imported constants rather than YAML `EXPECTED_*` names, `github.workflow_sha` rather than `github.sha`, explicit false rather than absent-means-disabled. CLI version assertion is implemented but installed41.7 execution is unverified. No production mutation, provider configuration, credential access, model call, live call, CRM/email/SMS send, migration against hosted data or client contact occurred.
+D1–D5 remain binding. Literal variances still require acceptance: imported constants rather than YAML `EXPECTED_*` names, `github.workflow_sha` rather than `github.sha`, explicit false rather than absent-means-disabled. CLI version assertion and isolated installed41.7 version/help are verified; authenticated commands remain unexecuted. No production mutation, provider configuration, credential access, model call, live call, CRM/email/SMS send, migration against hosted data or client contact occurred.
