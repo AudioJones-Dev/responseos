@@ -151,6 +151,64 @@ describe("supervised tenant configuration", () => {
     expect(sinks.send).not.toHaveBeenCalled();
   });
 
+  test("signed initialization rejects changed originals before capture/context and accepts identical retry", async () => {
+    delete process.env.RESPONSEOS_AUTHORIZED_EXECUTION_GATES;
+    expect((await configureSupervisedTenant(input(), now)).ok).toBe(true);
+    const qualification = await startSupervisedQualification({ accountSlug: "example-supervised", providerNumberId: PROVIDER_NUMBER_ID, e164: NUMBER, providerAssistantId: "synthetic-initialization", approvalRecordRef: "synthetic:initialization" }, now);
+    expect(qualification.ok).toBe(true);
+    const oldKey = process.env.TELNYX_PUBLIC_KEY, oldEnabled = process.env.RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED;
+    process.env.TELNYX_PUBLIC_KEY = publicKey;
+    process.env.RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED = "true";
+    deferredCallbacks.length = 0;
+    const network = vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("unexpected_provider_request"));
+    try {
+      const { POST } = await import("@/app/api/webhooks/telnyx/assistant-initialization/route");
+      const raw = JSON.stringify({ data: { id: "signed-init-original", event_type: "assistant.initialization", occurred_at: new Date(now.getTime() + 1000).toISOString(), payload: { to: NUMBER, call_control_id: "signed-init-call" } } });
+      const request = (body: string, signedBody = body) => {
+        const timestamp = String(Math.floor(Date.now() / 1000));
+        return new Request("http://localhost/api/webhooks/telnyx/assistant-initialization", { method: "POST", headers: { "content-type": "application/json", "telnyx-timestamp": timestamp, "telnyx-signature-ed25519": sign(null, Buffer.from(timestamp + "|" + signedBody), keys.privateKey).toString("base64") }, body });
+      };
+      const invalid = await POST(request(raw, raw + "invalid"));
+      expect(invalid.status).toBe(401);
+      expect(await invalid.json()).toMatchObject({ ok: false, error: { code: "telnyx_signature_invalid" } });
+      expect(await prisma.webhookEvent.count({ where: { provider_event_id: "signed-init-original" } })).toBe(0);
+      expect(await prisma.callCaptureSession.count()).toBe(0);
+      expect(deferredCallbacks).toHaveLength(0);
+      const accepted = await POST(request(raw));
+      expect(accepted.status).toBe(200);
+      const context = await accepted.json();
+      expect(context.dynamic_variables.business_name).toBe("Example Business");
+      expect(context.dynamic_variables.approved_business_context).toContain("Example demonstration service");
+      const capture = await prisma.callCaptureSession.findFirstOrThrow();
+      const ledger = await prisma.webhookEvent.findFirstOrThrow({ where: { provider_event_id: "signed-init-original" } });
+      for (const callback of deferredCallbacks.splice(0)) await callback();
+      for (const changed of [raw + "\n", raw.replace("signed-init-call", "changed-init-call")]) {
+        const rejected = await POST(request(changed));
+        expect(rejected.status).toBe(503);
+        expect(await rejected.json()).toEqual({ ok: false, error: { code: "webhook_ledger_unavailable", message: "Telnyx webhook ledger is unavailable." } });
+        expect(await prisma.callCaptureSession.findMany()).toEqual([capture]);
+        expect(deferredCallbacks).toHaveLength(0);
+        expect(await prisma.webhookEvent.findUniqueOrThrow({ where: { id: ledger.id } })).toMatchObject({ content_fingerprint: ledger.content_fingerprint, raw_body: ledger.raw_body, provider_call_id: ledger.provider_call_id });
+      }
+      const retry = await POST(request(raw));
+      expect(retry.status).toBe(200);
+      expect(await retry.json()).toEqual(context);
+      for (const callback of deferredCallbacks.splice(0)) await callback();
+      expect(await prisma.callCaptureSession.findMany()).toEqual([capture]);
+      expect(await prisma.webhookEvent.count({ where: { provider_event_id: "signed-init-original" } })).toBe(1);
+      expect(await prisma.telnyxCallCommand.count()).toBe(0);
+      expect(await prisma.crmSyncOperation.count()).toBe(0);
+      expect(sinks.crm).not.toHaveBeenCalled();
+      expect(sinks.email).not.toHaveBeenCalled();
+      expect(sinks.send).not.toHaveBeenCalled();
+      expect(network).not.toHaveBeenCalled();
+    } finally {
+      if (oldKey === undefined) delete process.env.TELNYX_PUBLIC_KEY; else process.env.TELNYX_PUBLIC_KEY = oldKey;
+      if (oldEnabled === undefined) delete process.env.RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED; else process.env.RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED = oldEnabled;
+      deferredCallbacks.length = 0;
+    }
+  });
+
   test("a dry run reports readiness and writes nothing", async () => {
     const result = await configureSupervisedTenant(input({ dryRun: true }), now);
     expect(result.ok).toBe(true);
@@ -570,3 +628,4 @@ describe("supervised tenant configuration", () => {
     expect(await prisma.telephonyNumberAssignment.count({ where: { status: "active", bootstrap_id: null } })).toBe(1);
   });
 });
+

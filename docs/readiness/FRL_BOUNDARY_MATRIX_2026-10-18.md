@@ -1,5 +1,7 @@
 # FRL boundary successor — local review candidate
 
+> Historical checkpoint: the H1 application-gap assessment below describes the pre-runtime candidate. The local runtime successor and signed initialization-route regression are documented in [FRL fingerprint runtime](FRL_FINGERPRINT_RUNTIME_2026-10-18.md). This annotation does not promote hosted readiness.
+
 Owner update: additive fingerprint migration/scaffold and isolated official CLI41.7 verification are now locally approved and implemented. See [scope and evidence](FRL_FINGERPRINT_LOCAL_2026-10-18.md). Runtime fingerprint binding, real keys, hosted migrations and activation remain gated.
 
 Base: frozen `565fcdbc91a0744ea417a8703e029ccf3f629a7b` (tree `46d050ce03770946d33ec4e805df4e5d3fe73e33`). Frozen `457e568` and all other developer branches remain preserved. Work is isolated on `feat/frl-boundary-matrix-20261018`. Exact final SHA/tree, commands, counts, patch and logs belong in the external `boundary-evidence-20261018` bundle, after validation. This document does not certify hosted readiness.
