@@ -32,6 +32,15 @@
   ],
   "tasks": [
     {
+      "id": "FRL-RECOVERY-SUCCESSOR",
+      "phase": "Tech Debt & Hardening",
+      "title": "Local FRL successor incorporates PR218 connection recovery; hosted release remains gated",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High"
+    },
+    {
       "id": "G-14",
       "phase": "Tech Debt & Hardening",
       "title": "Apply owner-approved copy redlines (claims, naming, CTA)",

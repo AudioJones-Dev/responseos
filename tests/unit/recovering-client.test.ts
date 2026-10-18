@@ -5,6 +5,9 @@ import { isConnectionLoss } from "../../lib/db/recoveringClient";
 const known = (code: string, meta?: Record<string, unknown>) =>
   new Prisma.PrismaClientKnownRequestError("synthetic", { code, clientVersion: "6.19.3", meta });
 const uncoded = (message: string) => new Prisma.PrismaClientUnknownRequestError(message, { clientVersion: "6.19.3" });
+// The form Prisma 6.19.3 raised for `tx.account.count()` after pg_terminate_backend in CI.
+const engineDebug = (sqlState: string, message: string, severity: string) =>
+  `Error occurred during query execution:\nConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "${sqlState}", message: "${message}", severity: "${severity}", detail: None, column: None, hint: None }), transient: false })`;
 
 describe("connection loss detection", () => {
   it("treats a closed connection as connection loss", () => expect(isConnectionLoss(known("P1017"))).toBe(true));
@@ -18,7 +21,15 @@ describe("connection loss detection", () => {
   ])("treats an uncoded batch failure reporting '%s' as connection loss", (message) =>
     expect(isConnectionLoss(uncoded(`Error in connector: Error querying the database: ${message}`))).toBe(true));
   it.each([
+    ["57P01", "terminating connection due to administrator command", "FATAL"],
+    ["57P02", "terminating connection because of crash of another server process", "WARNING"],
+  ])("treats an uncoded interactive-transaction failure carrying SQLSTATE %s as connection loss", (sqlState, message, severity) =>
+    expect(isConnectionLoss(uncoded(engineDebug(sqlState, message, severity)))).toBe(true));
+  it.each([
     ["a unique violation", known("P2002")],
+    ["an interactive-transaction statement timeout", uncoded(engineDebug("57014", "canceling statement due to statement timeout", "ERROR"))],
+    ["an interactive-transaction background worker's shutdown", uncoded(engineDebug("57P01", "terminating autovacuum process due to administrator command", "FATAL"))],
+    ["a closed interactive transaction", known("P2028", { error: "Transaction already closed: A query cannot be executed on an expired transaction." })],
     ["a raw query syntax error", known("P2010", { code: "42601" })],
     ["a raw query failure without a SQLSTATE", known("P2010")],
     ["a plain error", new Error("P1017")],
