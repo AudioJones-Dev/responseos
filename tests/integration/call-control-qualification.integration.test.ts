@@ -1,8 +1,11 @@
 import { afterAll, afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { generateKeyPairSync, sign } from "node:crypto";
 import { configureSupervisedTenant } from "@/lib/agentExecution/supervisedTenant";
 import { startSupervisedQualification } from "@/lib/agentExecution/supervisedQualification";
 import { conservativePostCallAnalysis } from "@/lib/callControl/analysis";
 import { ingestCallControlEvent, requestQualifiedTransfer, runOperatorConsentEffect } from "@/lib/callControl/service";
+import { supervisedCallWasQualification } from "@/lib/agentExecution/supervisedRuntime";
+import { recordWebhookEvent } from "@/lib/data/webhookEvents";
 import { db } from "@/lib/db/client";
 import { withCaptureLock } from "@/lib/callReview/consent";
 import type { CallControlEvent } from "@/lib/providers/telnyx/callControl";
@@ -35,7 +38,15 @@ function state(captureId: string, generation = 1) {
 }
 
 async function ingest(value: CallControlEvent) {
-  return ingestCallControlEvent({ event: value, rawBody: JSON.stringify(value), signature: "verified-test-signature" });
+  return ingestCallControlEvent({ verifiedBytes: Buffer.from(JSON.stringify(value)), event: value, rawBody: JSON.stringify(value), signature: "verified-test-signature" });
+}
+
+async function dtmfProof(capture: { id: string; account_id: string; provider_call_id: string }) {
+  const value = event("call.gather.ended", "proof-" + capture.id, { call_control_id: capture.provider_call_id, status: "valid", digits: "1", client_state: state(capture.id) }, 2_000);
+  const raw = JSON.stringify(value);
+  const result = await recordWebhookEvent({ account_id: capture.account_id, provider: "telnyx", provider_call_id: capture.provider_call_id, provider_event_id: value.data.id, event_type: value.data.event_type, raw_body: raw, verifiedBytes: Buffer.from(raw), signature_valid: true });
+  if (!result.ok) throw new Error(result.error.code);
+  return value.data.id;
 }
 
 async function setupQualification() {
@@ -77,6 +88,84 @@ describe("FRL Call Control qualification", () => {
       expect(command.action).not.toMatch(/^record/);
       expect(JSON.stringify(command.body ?? {})).not.toMatch(/"recording(?:_enabled)?":(?:true|"true")/);
     }
+  });
+
+  test("reservation-stage failure retries immediately while an unfinished duplicate remains retryable", async () => {
+    await setupQualification();
+    if (!db) throw new Error("Database required");
+    const value = event("call.initiated", "reservation-failure", { to: NUMBER }, 1_000);
+    const failure = vi.spyOn(db.callCaptureSession, "findFirst").mockRejectedValueOnce(new Error("synthetic_capture_read_failure"));
+    await expect(ingest(value)).rejects.toThrow("synthetic_capture_read_failure");
+    failure.mockRestore();
+    expect(await prisma.webhookEvent.findFirstOrThrow({ where: { provider_event_id: value.data.id } })).toMatchObject({ process_status: "error" });
+    await expect(ingest(value)).resolves.toMatchObject({ duplicate: false });
+    const unfinished = event("call.initiated", "reservation-unfinished", { to: NUMBER, call_control_id: "unfinished-call" }, 1_000);
+    const raw = JSON.stringify(unfinished);
+    await recordWebhookEvent({ provider: "telnyx", provider_event_id: unfinished.data.id, event_type: unfinished.data.event_type, raw_body: raw, verifiedBytes: Buffer.from(raw), signature_valid: true });
+    sendCommand.mockClear();
+    await expect(ingest(unfinished)).rejects.toThrow("webhook_processing_in_progress");
+    expect(sendCommand).not.toHaveBeenCalled();
+    expect(await prisma.callCaptureSession.count({ where: { provider_call_id: "unfinished-call" } })).toBe(0);
+  });
+
+  test("history waits for the account lock before locking a boundary ledger", async () => {
+    await setupQualification();
+    await ingest(event("call.initiated", "lock-order-init", { to: NUMBER }, 1_000));
+    const capture = await prisma.callCaptureSession.findFirstOrThrow();
+    const boundary = event("call.hangup", "lock-order-hangup", {}, 9_000), raw = JSON.stringify(boundary);
+    const saved = await recordWebhookEvent({ account_id: capture.account_id, provider: "telnyx", provider_call_id: capture.provider_call_id, provider_event_id: boundary.data.id, event_type: boundary.data.event_type, raw_body: raw, verifiedBytes: Buffer.from(raw), signature_valid: true });
+    if (!saved.ok) throw new Error(saved.error.code);
+    let pending: Promise<unknown> | undefined;
+    await prisma.$transaction(async tx => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(1380930382, hashtext(${capture.account_id}))`;
+      pending = ingest(event("call.ai_gather.message_history_updated", "lock-order-history", { client_state: state(capture.id), message_history: [{ role: "user", content: "Synthetic" }] }, 8_000)).catch(error => error);
+      let waiting = false;
+      for (let i = 0; i < 100 && !waiting; i++) {
+        const rows = await tx.$queryRaw<{ present: boolean }[]>`SELECT EXISTS(SELECT 1 FROM pg_locks WHERE locktype='advisory' AND classid=1380930382 AND objid=(hashtext(${capture.account_id})::bigint & 4294967295)::oid AND NOT granted) AS present`;
+        waiting = rows[0].present;
+        if (!waiting) await new Promise(resolve => setTimeout(resolve, 20));
+      }
+      expect(waiting).toBe(true);
+      await tx.$queryRaw`SELECT id FROM "WebhookEvent" WHERE id=${saved.data.id} FOR UPDATE NOWAIT`;
+    }, { timeout: 10_000 });
+    await pending;
+  });
+
+  test("unrecoverable origin cannot release a capture-less historical qualification call", async () => {
+    await setupQualification();
+    const assignment = await prisma.telephonyNumberAssignment.findFirstOrThrow({ where: { status: "qualification" } });
+    await prisma.telephonyNumberAssignment.update({ where: { id: assignment.id }, data: { unassigned_at: new Date(NOW.getTime() + 10_000) } });
+    const raw = JSON.stringify({ data: { occurred_at: new Date(NOW.getTime() + 1_000).toISOString() } });
+    const binding = await recordWebhookEvent({ account_id: assignment.account_id, provider: "telnyx", provider_event_id: "origin-anchor", event_type: "assistant.initialization", provider_call_id: "origin-call", agent_target: NUMBER, raw_body: raw, verifiedBytes: Buffer.from(raw), signature_valid: true });
+    if (!binding.ok) throw new Error(binding.error.code);
+    const call = await prisma.call.create({ data: { account_id: assignment.account_id, provider: "telnyx", provider_call_id: "origin-call", direction: "inbound", status: "completed", from_number: "+15555550177", to_number: NUMBER, started_at: new Date(NOW.getTime() + 20_000) } });
+    expect(await supervisedCallWasQualification(assignment.account_id, call.id)).toBe(true);
+    await prisma.webhookEvent.update({ where: { id: binding.data.id }, data: { payload_expires_at: new Date(0) } });
+    expect(await supervisedCallWasQualification(assignment.account_id, call.id)).toBe(true);
+    expect(await prisma.callCaptureSession.count()).toBe(0);
+  });
+
+  test("signed changed-body initiation is rejected before a second capture or carrier command", async () => {
+    await setupQualification();
+    const keys = generateKeyPairSync("ed25519");
+    const previous = process.env.TELNYX_PUBLIC_KEY;
+    process.env.TELNYX_PUBLIC_KEY = keys.publicKey.export({ type: "spki", format: "pem" }).toString();
+    try {
+      const { POST } = await import("@/app/api/webhooks/telnyx/call-control/route");
+      const original = JSON.stringify(event("call.initiated", "bound-init", { to: NUMBER }, 1_000));
+      const request = (body: string) => {
+        const timestamp = String(Math.floor(Date.now() / 1000));
+        return new Request("http://localhost", { method: "POST", headers: { "content-type": "application/json", "telnyx-timestamp": timestamp, "telnyx-signature-ed25519": sign(null, Buffer.from(`${timestamp}|${body}`), keys.privateKey).toString("base64") }, body });
+      };
+      expect((await POST(request(original))).status).toBe(200);
+      sendCommand.mockClear();
+      const changed = original.replaceAll("call-control-1", "other-control").replaceAll("call-session-1", "other-session");
+      expect((await POST(request(changed))).status).toBe(503);
+      expect(await prisma.callCaptureSession.count()).toBe(1);
+      expect(sendCommand).not.toHaveBeenCalled();
+      expect((await POST(request(original))).status).toBe(200);
+      expect(sendCommand).not.toHaveBeenCalled();
+    } finally { if (previous === undefined) delete process.env.TELNYX_PUBLIC_KEY; else process.env.TELNYX_PUBLIC_KEY = previous; }
   });
 
   test.each([null, "client_admin@org_mock_1", "client_viewer@org_mock_1"])("consent route denies %s before revealing capture existence", async role => {
@@ -133,7 +222,7 @@ describe("FRL Call Control qualification", () => {
     await setupQualification(); setDevSession("aj_admin");
     await ingest(event("call.initiated", "admin-grant-init", { to: NUMBER }, 1_000));
     const capture = await prisma.callCaptureSession.findFirstOrThrow();
-    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "CONSENT_PENDING_OPERATOR", dtmf_decision: "affirmative" } });
+    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "CONSENT_PENDING_OPERATOR", dtmf_decision: "affirmative", dtmf_event_id: await dtmfProof(capture) } });
     const route = await import("@/app/api/admin/call-capture/[id]/consent/route");
     for (const [action, suffix] of [["grant", "086"], ["withdraw", "087"]]) expect((await route.POST(new Request("http://localhost", { method: "POST", body: JSON.stringify({ action, disclosureRef: "approved:v1", evidenceRef: "witness:test", jurisdictionBasis: "test", eventKey: `00000000-0000-4000-8000-000000000${suffix}` }) }), { params: Promise.resolve({ id: capture.id }) })).status).toBe(200);
     expect(await prisma.callConsentEvent.count()).toBe(2);
@@ -165,7 +254,7 @@ describe("FRL Call Control qualification", () => {
     await setupQualification();
     await ingest(event("call.initiated", "mid-write-init", { to: NUMBER }, 1_000));
     const capture = await prisma.callCaptureSession.findFirstOrThrow();
-    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "CONSENT_PENDING_OPERATOR", dtmf_decision: "affirmative" } });
+    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "CONSENT_PENDING_OPERATOR", dtmf_decision: "affirmative", dtmf_event_id: await dtmfProof(capture) } });
     const { PrismaClient } = await import("@prisma/client");
     const controller = new PrismaClient();
     const route = await import("@/app/api/admin/call-capture/[id]/consent/route");
@@ -198,7 +287,7 @@ describe("FRL Call Control qualification", () => {
     await setupQualification();
     await ingest(event("call.initiated", "lost-ack-init", { to: NUMBER }, 1_000));
     const capture = await prisma.callCaptureSession.findFirstOrThrow();
-    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "CONSENT_PENDING_OPERATOR", dtmf_decision: "affirmative" } });
+    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "CONSENT_PENDING_OPERATOR", dtmf_decision: "affirmative", dtmf_event_id: await dtmfProof(capture) } });
     const route = await import("@/app/api/admin/call-capture/[id]/consent/route");
     const request = () => new Request("http://localhost", { method: "POST", body: JSON.stringify({ action: "grant", disclosureRef: "approved:v1", evidenceRef: "witness:test", jurisdictionBasis: "test", eventKey: "00000000-0000-4000-8000-000000000097" }) });
     if (!db) throw new Error("Database required");
@@ -226,7 +315,7 @@ describe("FRL Call Control qualification", () => {
     await setupQualification();
     await ingest(event("call.initiated", "backend-loss-init", { to: NUMBER }, 1_000));
     const capture = await prisma.callCaptureSession.findFirstOrThrow();
-    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "CONSENT_PENDING_OPERATOR", dtmf_decision: "affirmative" } });
+    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "CONSENT_PENDING_OPERATOR", dtmf_decision: "affirmative", dtmf_event_id: await dtmfProof(capture) } });
     sendCommand.mockClear();
     const { PrismaClient } = await import("@prisma/client");
     const controller = new PrismaClient();
@@ -363,7 +452,7 @@ describe("FRL Call Control qualification", () => {
     await setupQualification();
     await ingest(event("call.initiated", "cc-grant-pair-init", { to: NUMBER }, 1_000));
     const capture = await prisma.callCaptureSession.findFirstOrThrow();
-    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "START_PENDING", dtmf_decision: "affirmative" } });
+    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "START_PENDING", dtmf_decision: "affirmative", dtmf_event_id: await dtmfProof(capture) } });
     let resolveStart!: (value: unknown) => void;
     sendCommand.mockReset().mockImplementationOnce(() => new Promise((resolve) => { resolveStart = resolve; }));
 
@@ -385,7 +474,7 @@ describe("FRL Call Control qualification", () => {
     await setupQualification();
     await ingest(event("call.initiated", "cc-grant-withdraw-init", { to: NUMBER }, 1_000));
     const capture = await prisma.callCaptureSession.findFirstOrThrow();
-    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "START_PENDING", dtmf_decision: "affirmative" } });
+    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "START_PENDING", dtmf_decision: "affirmative", dtmf_event_id: await dtmfProof(capture) } });
     let resolveStart!: (value: unknown) => void;
     const start = new Promise((resolve) => { resolveStart = resolve; });
     sendCommand.mockReset().mockImplementation(({ action }: { action: string }) => action === "ai_assistant_start"
@@ -412,7 +501,7 @@ describe("FRL Call Control qualification", () => {
     await setupQualification();
     await ingest(event("call.initiated", "cc-start-time-init", { to: NUMBER }, 1_000));
     const capture = await prisma.callCaptureSession.findFirstOrThrow();
-    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "START_PENDING", dtmf_decision: "affirmative" } });
+    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "START_PENDING", dtmf_decision: "affirmative", dtmf_event_id: await dtmfProof(capture) } });
     sendCommand.mockResolvedValueOnce({ status: 200, providerDate: null, conversationId: "conversation-1", ok: true, errorCode: null });
 
     await expect(runOperatorConsentEffect({ captureId: capture.id, action: "grant" })).rejects.toThrow("telnyx_start_time_unconfirmed");
@@ -716,7 +805,7 @@ describe("FRL Call Control qualification", () => {
     // The hangup is ledgered but its capture-state transition has not committed:
     // admission is still open and the capture is still AI_ACTIVE.
     const hangup = event("call.hangup", "cc-race-hangup", { conversation_id: "conversation-1" }, 9_000);
-    await prisma.webhookEvent.create({ data: { account_id: capture.account_id, provider: "telnyx", provider_event_id: hangup.data.id, event_type: "call.hangup", raw_body: JSON.stringify(hangup), signature_valid: true, dedupe_hash: "test-race-hangup", provider_call_id: capture.provider_call_id } });
+    await recordWebhookEvent({ account_id: capture.account_id, provider: "telnyx", provider_event_id: hangup.data.id, event_type: "call.hangup", raw_body: JSON.stringify(hangup), verifiedBytes: Buffer.from(JSON.stringify(hangup)), signature_valid: true, provider_call_id: capture.provider_call_id });
 
     const protectedText = "Content generated after the conversation boundary";
     const history = event("call.ai_gather.message_history_updated", "cc-race-history", { conversation_id: "conversation-1", client_state: state(capture.id), message_history: [{ role: "user", content: protectedText }] }, 8_000);

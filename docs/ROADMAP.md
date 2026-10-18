@@ -135,3 +135,5 @@ Architectural placement: [`architecture.md`](./architecture.md) § Future Knowle
 Repository implementation in progress under the [approved brief](./product/responseos-mike-live-demo.md). Reuses the supervised runtime candidate; adds per-call capture authority, pinned approved knowledge, human-reviewed follow-up and operational email. No live activation or readiness gate is cleared.
 
 Local FRL hardening scope (in review): additive webhook fingerprint migration0018 and synthetic recovery/retention tests only. Production ingestion binding, key provisioning, hosted migration and activation are not shipped; see [local scope](readiness/FRL_FINGERPRINT_LOCAL_2026-10-18.md).
+
+Local-only fingerprint runtime successor is under review: [scope, limits and approval gates](readiness/FRL_FINGERPRINT_RUNTIME_2026-10-18.md). This is no milestone promotion or deployment authority; retention conflict and real key policy remain open.

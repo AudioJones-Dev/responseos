@@ -99,11 +99,11 @@ test.each(["operator", "aj_admin"])("review route permits %s approval and reject
 });
 
 test("signed initialization aliases recover both the tenant and canonical capture identity", async () => {
-  await recordWebhookEvent({ account_id: accountId, provider: "telnyx", provider_event_id: "aliases", event_type: "assistant.initialization", raw_body: JSON.stringify({ data: { occurred_at: now.toISOString() } }), signature_valid: true, provider_call_id: "provider-call", provider_call_ids: ["provider-call", "shared-session"], agent_target: "+15555550188" });
+  await recordWebhookEvent({ account_id: accountId, provider: "telnyx", provider_event_id: "aliases", event_type: "assistant.initialization", verifiedBytes: Buffer.from(JSON.stringify({ data: { occurred_at: now.toISOString() } })), raw_body: JSON.stringify({ data: { occurred_at: now.toISOString() } }), signature_valid: true, provider_call_id: "provider-call", provider_call_ids: ["provider-call", "shared-session"], agent_target: "+15555550188" });
   expect(await findAgentTargetForProviderCall({ provider: "telnyx", providerCallIds: ["shared-session"] })).toBe("+15555550188");
   expect(await findInitializedProviderCallId({ provider: "telnyx", providerCallIds: ["shared-session"], target: "+15555550188" })).toBe("provider-call");
   expect(await findInitializedProviderCallId({ provider: "telnyx", providerCallIds: ["shared-session"], target: "+15555550189" })).toBeNull();
-  await recordWebhookEvent({ account_id: "another-account", provider: "telnyx", provider_event_id: "other-leg", event_type: "assistant.initialization", raw_body: "{}", signature_valid: true, provider_call_id: "other-control", provider_call_ids: ["shared-session"], agent_target: "+15555550189" });
+  await recordWebhookEvent({ account_id: "another-account", provider: "telnyx", provider_event_id: "other-leg", event_type: "assistant.initialization", verifiedBytes: Buffer.from("{}"), raw_body: "{}", signature_valid: true, provider_call_id: "other-control", provider_call_ids: ["shared-session"], agent_target: "+15555550189" });
   expect(await findAgentTargetForProviderCall({ provider: "telnyx", providerCallIds: ["shared-session"] })).toBeNull();
 });
 

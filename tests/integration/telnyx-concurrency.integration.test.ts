@@ -15,7 +15,7 @@ async function input(index: number, sameCall: boolean) {
   const event = { data: { id: `concurrency-${index}`, event_type: "call.conversation_insights.generated", payload: {
     call_control_id: sameCall ? "shared-call" : `call-${index}`, from: phone, to: demoNumber, summary: "Synthetic operator review required",
   } } };
-  const recorded = await recordWebhookEvent({ account_id: accountId, provider: "telnyx", provider_event_id: event.data.id, event_type: event.data.event_type, raw_body: JSON.stringify(event), signature_valid: true });
+  const recorded = await recordWebhookEvent({ account_id: accountId, provider: "telnyx", provider_event_id: event.data.id, event_type: event.data.event_type, verifiedBytes: Buffer.from(JSON.stringify(event)), raw_body: JSON.stringify(event), signature_valid: true });
   if (!recorded.ok) throw new Error("synthetic ledger failed");
   return { accountId, demoNumber, webhookEventId: recorded.data.id, event };
 }
@@ -32,7 +32,7 @@ describe("cooperating Telnyx normalizers", () => {
     vi.stubEnv("RESPONSEOS_DEMO_ACCOUNT_ID", accountId);
     vi.stubEnv("RESPONSEOS_DEMO_PHONE_E164", demoNumber);
     const value = { data: { id: "signed-concurrent", event_type: "call.conversation_insights.generated", occurred_at: new Date().toISOString(), payload: { call_control_id: "signed-shared", from: phone, to: demoNumber, summary: "Synthetic callback", qualification: { status: "qualified" }, next_action: "Synthetic callback" } } };
-    const recorded = await recordWebhookEvent({ account_id: accountId, provider: "telnyx", provider_event_id: value.data.id, event_type: value.data.event_type, raw_body: JSON.stringify(value), signature_valid: true });
+    const recorded = await recordWebhookEvent({ account_id: accountId, provider: "telnyx", provider_event_id: value.data.id, event_type: value.data.event_type, verifiedBytes: Buffer.from(JSON.stringify(value)), raw_body: JSON.stringify(value), signature_valid: true });
     if (!recorded.ok) throw new Error("Ledger required");
     await prisma.webhookEvent.update({ where: { id: recorded.data.id }, data: { received_at: new Date(0) } });
     const route = await import("@/app/api/webhooks/telnyx/calls/route");
@@ -59,7 +59,7 @@ describe("cooperating Telnyx normalizers", () => {
   test("concurrent tenant collisions and stale retry preserve the first ledger owner", async () => {
     const first = await input(90, true);
     await prisma.webhookEvent.update({ where: { id: first.webhookEventId }, data: { received_at: new Date(0) } });
-    const results = await Promise.all(Array.from({ length: 6 }, (_, index) => recordWebhookEvent({ account_id: index % 2 ? "org_mock_1" : accountId, provider: "telnyx", provider_event_id: first.event.data.id, event_type: first.event.data.event_type, raw_body: JSON.stringify(first.event), signature_valid: true })));
+    const results = await Promise.all(Array.from({ length: 6 }, (_, index) => recordWebhookEvent({ account_id: index % 2 ? "org_mock_1" : accountId, provider: "telnyx", provider_event_id: first.event.data.id, event_type: first.event.data.event_type, verifiedBytes: Buffer.from(JSON.stringify(first.event)), raw_body: JSON.stringify(first.event), signature_valid: true })));
     expect(results.filter(result => !result.ok)).toHaveLength(3);
     for (const result of results.filter(result => !result.ok)) expect(result).toMatchObject({ error: { code: "webhook_tenant_conflict" } });
     await Promise.all(results.filter(result => result.ok).map(() => normalizeTelnyxEvent(first)));
@@ -67,13 +67,13 @@ describe("cooperating Telnyx normalizers", () => {
     expect(await prisma.call.count({ where: { account_id: accountId, provider_call_id: "shared-call" } })).toBe(1);
     expect(await prisma.call.count({ where: { account_id: "org_mock_1", provider_call_id: "shared-call" } })).toBe(0);
     const original = await prisma.webhookEvent.findUniqueOrThrow({ where: { id: first.webhookEventId } });
-    await expect(backfillWebhookEvent({ id: original.id, account_id: "org_mock_1", raw_body: "foreign", payload_expires_at: null })).rejects.toThrow("webhook_tenant_conflict");
+    await expect(backfillWebhookEvent({ id: original.id, account_id: "org_mock_1", verifiedBytes: Buffer.from(JSON.stringify(first.event)), raw_body: "foreign", payload_expires_at: null })).rejects.toThrow("webhook_tenant_conflict");
     expect(await prisma.webhookEvent.findUniqueOrThrow({ where: { id: original.id } })).toEqual(original);
   });
   test("simultaneous unscoped backfills bind once and never replace the winning tenant", async () => {
-    const row = await recordWebhookEvent({ provider: "telnyx", provider_event_id: "unscoped-race", event_type: "call.initiated", raw_body: "{}", signature_valid: true });
+    const row = await recordWebhookEvent({ provider: "telnyx", provider_event_id: "unscoped-race", event_type: "call.initiated", verifiedBytes: Buffer.from("{}"), raw_body: "{}", signature_valid: true });
     if (!row.ok) throw new Error("Ledger required");
-    const results = await Promise.allSettled([accountId, "org_mock_1"].map(account_id => backfillWebhookEvent({ id: row.data.id, account_id, raw_body: JSON.stringify({ account_id }), payload_expires_at: null })));
+    const results = await Promise.allSettled([accountId, "org_mock_1"].map(account_id => backfillWebhookEvent({ id: row.data.id, account_id, verifiedBytes: Buffer.from("{}"), raw_body: JSON.stringify({ account_id }), payload_expires_at: null })));
     expect(results.filter(result => result.status === "fulfilled")).toHaveLength(1);
     expect(results.filter(result => result.status === "rejected")).toHaveLength(1);
     const saved = await prisma.webhookEvent.findUniqueOrThrow({ where: { id: row.data.id } });

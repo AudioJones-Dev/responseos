@@ -3,7 +3,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { db } from "@/lib/db/client";
 import { buildSupervisedAgentContext } from "@/lib/agentExecution/supervisedContext";
 import { resolveSupervisedTenantForNumber, touchSupervisedAssignment } from "@/lib/agentExecution/supervisedRuntime";
-import { recordWebhookEvent, setWebhookProcessStatus } from "@/lib/data/webhookEvents";
+import { assertStoredWebhookIdentity, backfillWebhookEvent, recordWebhookEvent, setWebhookProcessStatus } from "@/lib/data/webhookEvents";
 import { extractTelnyxTranscript } from "@/lib/providers/telnyx/insights";
 import { normalizeTelnyxEvent } from "@/lib/providers/telnyx/normalize";
 import type { TelnyxWebhookEnvelope } from "@/lib/providers/telnyx/webhook";
@@ -148,18 +148,19 @@ async function captureForEvent(event: CallControlEvent) {
   });
 }
 
-async function normalizeMetadata(event: CallControlEvent, capture: { account_id: string; provider_call_id: string }, webhookEventId: string, numberE164: string) {
+async function normalizeMetadata(event: CallControlEvent, capture: { account_id: string; provider_call_id: string }, webhookEventId: string, numberE164: string, verifiedBytes: Uint8Array) {
   return normalizeTelnyxEvent({
     accountId: capture.account_id,
     providerCallId: capture.provider_call_id,
     demoNumber: numberE164,
     webhookEventId,
+    verifiedBytes,
     event: providerPayload(event),
     options: { captureCallerIdentity: false, createQuoteRequest: false, reviewRequired: true },
   });
 }
 
-async function recordTranscriptRevision(event: CallControlEvent, capture: NonNullable<Awaited<ReturnType<typeof captureForEvent>>>, webhookEventId: string, numberE164: string, client: Prisma.TransactionClient) {
+async function recordTranscriptRevision(event: CallControlEvent, capture: NonNullable<Awaited<ReturnType<typeof captureForEvent>>>, webhookEventId: string, numberE164: string, client: Prisma.TransactionClient, verifiedBytes: Uint8Array) {
   const terminalReconciliation = ["FINALIZING", "EVIDENCE_FROZEN", "TRANSFER_PENDING", "TRANSFERRED"].includes(capture.control_state) && capture.capture_ended_at !== null;
   if (!capture.assignment_id || !capture.conversation_id || !capture.capture_started_at || (capture.content_admission_closed_at && !terminalReconciliation)) return "rejected" as const;
   const eventOccurredAt = new Date(event.data.occurred_at);
@@ -180,6 +181,7 @@ async function recordTranscriptRevision(event: CallControlEvent, capture: NonNul
     providerCallId: capture.provider_call_id,
     demoNumber: numberE164,
     webhookEventId,
+    verifiedBytes,
     event: providerPayload(event),
     client,
     options: { captureCallerIdentity: true, createQuoteRequest: false, reviewRequired: true },
@@ -214,6 +216,12 @@ async function freezeEvidence(captureId: string) {
       client.webhookEvent.findFirst({ where: { account_id: capture.account_id, provider: "telnyx", provider_call_id: capture.provider_call_id, event_type: "call.ai_gather.message_history_updated", signature_valid: true, process_status: "processed" }, orderBy: { received_at: "desc" }, select: { provider_event_id: true, received_at: true, raw_body: true } }),
     ]);
     if (!conversationEnded || !callHangup) return { status: "not_ready" as const };
+    await assertStoredWebhookIdentity(conversationEnded.id, client);
+    await assertStoredWebhookIdentity(callHangup.id, client);
+    if (latestHistory) {
+      const history = await client.webhookEvent.findUniqueOrThrow({ where: { provider_provider_event_id: { provider: "telnyx", provider_event_id: latestHistory.provider_event_id } } });
+      await assertStoredWebhookIdentity(history.id, client);
+    }
     const withdrawal = await client.callConsentEvent.findFirst({ where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, action: "withdraw", artifact: "transcript" }, orderBy: { occurred_at: "desc" } });
     const endBoundary = withdrawal?.occurred_at ?? capture.capture_ended_at;
     const stop = withdrawal ? await client.telnyxCallCommand.findFirst({ where: { capture_session_id: capture.id, command_type: "ai_assistant_stop", generation: capture.generation, status: "succeeded" } }) : null;
@@ -254,9 +262,19 @@ async function freezeEvidence(captureId: string) {
   });
 }
 
-export async function ingestCallControlEvent(params: { event: CallControlEvent; rawBody: string; signature: string; timestamp?: string }) {
+export async function ingestCallControlEvent(params: { verifiedBytes: Uint8Array; event: CallControlEvent; rawBody: string; signature: string; timestamp?: string }) {
   if (!db) throw new Error("database_unavailable");
   const event = params.event;
+  const reservation = await recordWebhookEvent({ provider: "telnyx", provider_event_id: event.data.id, event_type: event.data.event_type,
+    raw_body: JSON.stringify({ data: { ...event.data, payload: { ...event.data.payload, message_history: undefined } } }),
+    signature_valid: true, verifiedBytes: params.verifiedBytes,
+  });
+  if (!reservation.ok) throw new Error(reservation.error.code);
+  if (reservation.data.process_status === "duplicate") {
+    const pending = await db.webhookEvent.findUniqueOrThrow({ where: { id: reservation.data.id } });
+    if (pending.process_status === "received" && Date.now() - pending.received_at.getTime() < 30_000) throw new Error("webhook_processing_in_progress");
+  }
+  try {
   const occurredAt = new Date(event.data.occurred_at);
   const existing = event.data.event_type === "call.initiated" ? await captureForEvent(event) : null;
   const initial = event.data.event_type === "call.initiated" && !existing ? await createQualificationCapture(event) : null;
@@ -272,6 +290,7 @@ export async function ingestCallControlEvent(params: { event: CallControlEvent; 
   const persistedEvent = { data: { ...event.data, payload: { ...event.data.payload, message_history: undefined } } };
   const record = async (rawBody: string, client?: Prisma.TransactionClient) => {
     const ledger = await recordWebhookEvent({
+      verifiedBytes: params.verifiedBytes,
       client,
       account_id: capture.account_id,
       provider: "telnyx",
@@ -285,11 +304,14 @@ export async function ingestCallControlEvent(params: { event: CallControlEvent; 
       agent_target: event.data.payload.to,
     });
     if (!ledger.ok) throw new Error(ledger.error.code);
+    await backfillWebhookEvent({ client, id: ledger.data.id, account_id: capture.account_id, raw_body: rawBody, payload_expires_at: null,
+      verifiedBytes: params.verifiedBytes, provider_call_id: capture.provider_call_id,
+      provider_call_ids: [event.data.payload.call_control_id, event.data.payload.call_session_id, event.data.payload.call_leg_id ?? "", event.data.payload.conversation_id ?? ""].filter(Boolean), agent_target: event.data.payload.to });
     const database = client ?? db;
     if (!database) throw new Error("database_unavailable");
-    if (ledger.data.process_status === "duplicate") {
-      const prior = await database.webhookEvent.findUnique({ where: { id: ledger.data.id }, select: { process_status: true } });
-      if (prior?.process_status !== "error") return { id: ledger.data.id, duplicate: true };
+    if (reservation.data.process_status === "duplicate") {
+      const prior = await database.webhookEvent.findUnique({ where: { id: ledger.data.id }, select: { process_status: true, received_at: true } });
+      if (prior?.process_status !== "error" && !(prior?.process_status === "received" && Date.now() - prior.received_at.getTime() > 30_000)) return { id: ledger.data.id, duplicate: true };
       await database.webhookEvent.update({ where: { id: ledger.data.id }, data: { process_status: "received", process_error: null, processed_at: null } });
     }
     return { id: ledger.data.id, duplicate: false };
@@ -297,13 +319,16 @@ export async function ingestCallControlEvent(params: { event: CallControlEvent; 
 
   if (event.data.event_type === "call.ai_gather.message_history_updated") {
     const historyResult = await withCaptureLock(capture.account_id, capture.provider_call_id, async (client) => {
+      await client.$executeRaw`SELECT pg_advisory_xact_lock(1380930382, hashtext(${capture.account_id}))`;
       const current = await client.callCaptureSession.findUnique({ where: { id: capture.id } });
       const [latestConsent, start, conversationEndedLedger, hangupLedger] = await Promise.all([
         client.callConsentEvent.findFirst({ where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, artifact: "transcript" }, orderBy: [{ occurred_at: "desc" }, { id: "desc" }] }),
         client.telnyxCallCommand.findFirst({ where: { capture_session_id: capture.id, command_type: "ai_assistant_start", generation: capture.generation, status: "succeeded" } }),
-        client.webhookEvent.findFirst({ where: { account_id: capture.account_id, provider: "telnyx", provider_call_id: capture.provider_call_id, event_type: "call.conversation.ended", signature_valid: true }, orderBy: { received_at: "asc" }, select: { raw_body: true } }),
+        client.webhookEvent.findFirst({ where: { account_id: capture.account_id, provider: "telnyx", provider_call_id: capture.provider_call_id, event_type: "call.conversation.ended", signature_valid: true }, orderBy: { received_at: "asc" }, select: { id: true, raw_body: true } }),
         client.webhookEvent.findFirst({ where: { account_id: capture.account_id, provider: "telnyx", provider_call_id: capture.provider_call_id, event_type: "call.hangup", signature_valid: true }, orderBy: { received_at: "asc" }, select: { id: true } }),
       ]);
+      if (conversationEndedLedger) await assertStoredWebhookIdentity(conversationEndedLedger.id, client);
+      if (hangupLedger) await assertStoredWebhookIdentity(hangupLedger.id, client);
       const activeAdmission = current?.content_admission_closed_at === null && ["START_PENDING", "AI_ACTIVE"].includes(current.control_state);
       const conversationEndedEvent = conversationEndedLedger ? parseCallControlEvent(conversationEndedLedger.raw_body) : null;
       const conversationEndedAt = conversationEndedEvent ? new Date(conversationEndedEvent.data.occurred_at) : null;
@@ -332,7 +357,7 @@ export async function ingestCallControlEvent(params: { event: CallControlEvent; 
           await client.callCaptureSession.updateMany({ where: { id: capture.id, control_state: "START_PENDING", generation: capture.generation, content_admission_closed_at: null }, data: { control_state: "AI_ACTIVE", capture_started_at: start.provider_date_at, conversation_id: start.conversation_id } });
         }
         const refreshed = await client.callCaptureSession.findUnique({ where: { id: capture.id } });
-        const admission = refreshed ? await recordTranscriptRevision(event, refreshed, ledger.id, numberE164, client) : "rejected";
+        const admission = refreshed ? await recordTranscriptRevision(event, refreshed, ledger.id, numberE164, client, params.verifiedBytes) : "rejected";
         if (admission === "rejected" || admission === "stale_or_conflicting") await setWebhookProcessStatus({ client, id: ledger.id, process_status: "rejected", process_error: admission === "stale_or_conflicting" ? "cumulative_history_conflict" : "protected_content_not_admitted" });
         else if (admission === "duplicate") await setWebhookProcessStatus({ client, id: ledger.id, process_status: "processed" });
         return { duplicate: false as const, captureId: capture.id };
@@ -351,7 +376,7 @@ export async function ingestCallControlEvent(params: { event: CallControlEvent; 
   if (ledger.duplicate) return { duplicate: true };
   try {
     if (event.data.event_type === "call.initiated") {
-      await normalizeMetadata(event, capture, ledger.id, numberE164);
+      await normalizeMetadata(event, capture, ledger.id, numberE164, params.verifiedBytes);
       if (capture.control_state === "CALL_RECEIVED") {
         const result = await executeCommand({ capture, commandType: "answer", action: "answer", request: { client_state: clientState(capture.id, capture.generation) } });
         if (result.status !== "succeeded") throw new Error(result.error_code ?? "telnyx_answer_unconfirmed");
@@ -386,7 +411,7 @@ export async function ingestCallControlEvent(params: { event: CallControlEvent; 
       }
       await setWebhookProcessStatus({ id: ledger.id, process_status: "processed" });
     } else if (event.data.event_type === "call.conversation.ended") {
-      await normalizeMetadata(event, capture, ledger.id, numberE164);
+      await normalizeMetadata(event, capture, ledger.id, numberE164, params.verifiedBytes);
       await withCaptureLock(capture.account_id, capture.provider_call_id, async (client) => {
         const current = await client.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } });
         const withdrawal = await client.callConsentEvent.findFirst({ where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, action: "withdraw", artifact: "transcript" }, orderBy: { occurred_at: "desc" } });
@@ -404,7 +429,7 @@ export async function ingestCallControlEvent(params: { event: CallControlEvent; 
       if (!moved.count) throw new Error("stale_capture_state");
       await setWebhookProcessStatus({ id: ledger.id, process_status: "processed" });
     } else if (event.data.event_type === "call.hangup") {
-      await normalizeMetadata(event, capture, ledger.id, numberE164);
+      await normalizeMetadata(event, capture, ledger.id, numberE164, params.verifiedBytes);
       await withCaptureLock(capture.account_id, capture.provider_call_id, async (client) => {
         const current = await client.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } });
         if (["REFUSED", "AMBIGUOUS", "STOPPED", "TRANSFERRED", "EVIDENCE_FROZEN"].includes(current.control_state)) return;
@@ -423,6 +448,10 @@ export async function ingestCallControlEvent(params: { event: CallControlEvent; 
     return { duplicate: false, captureId: capture.id };
   } catch (error) {
     await setWebhookProcessStatus({ id: ledger.id, process_status: "error", process_error: error instanceof Error ? error.message : "call_control_failed" });
+    throw error;
+  }
+  } catch (error) {
+    await db.webhookEvent.updateMany({ where: { id: reservation.data.id, process_status: "received" }, data: { process_status: "error", process_error: "call_control_retry_required" } });
     throw error;
   }
 }
@@ -444,6 +473,9 @@ export async function runOperatorConsentEffect(params: { captureId: string; acti
         return;
       }
       if (current.control_state !== "START_PENDING" || current.dtmf_decision !== "affirmative") throw new Error("affirmative_dtmf_required");
+      const dtmf = current.dtmf_event_id ? await client.webhookEvent.findUnique({ where: { provider_provider_event_id: { provider: "telnyx", provider_event_id: current.dtmf_event_id } } }) : null;
+      if (!dtmf || dtmf.account_id !== current.account_id || dtmf.provider_call_id !== current.provider_call_id) throw new Error("webhook_fingerprint_unavailable");
+      await assertStoredWebhookIdentity(dtmf.id, client);
       const assignment = await client.telephonyNumberAssignment.findUnique({ where: { id: capture.assignment_id! } });
       if (!assignment || assignment.status !== "qualification") throw new Error("qualification_assignment_mismatch");
       const result = await executeCommand({ capture: current, commandType: "ai_assistant_start", action: "ai_assistant_start", request: { assistant: { id: assignment.provider_assistant_id }, send_message_history_updates: true, client_state: clientState(current.id, current.generation) } });

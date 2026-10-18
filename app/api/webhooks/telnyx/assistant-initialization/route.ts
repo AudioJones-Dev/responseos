@@ -50,10 +50,11 @@ export async function POST(req: Request) {
     });
   }
 
-  const rawBody = await req.text();
+  const verifiedBytes = Buffer.from(await req.arrayBuffer());
+  const rawBody = verifiedBytes.toString('utf8');
   const signature = req.headers.get("telnyx-signature-ed25519");
   const timestamp = req.headers.get("telnyx-timestamp");
-  const verified = verifyTelnyxWebhook({ rawBody, signature, timestamp, publicKey });
+  const verified = verifyTelnyxWebhook({ rawBody: verifiedBytes, signature, timestamp, publicKey });
   if (!verified.ok) {
     return errorResponse(401, {
       code: `telnyx_signature_${verified.reason}`,
@@ -108,6 +109,7 @@ export async function POST(req: Request) {
   // but attribution needs the event's own time: an untimed initialization is
   // stored unscoped rather than under whoever holds the number now.
   const ledger = await recordWebhookEvent({
+    verifiedBytes,
     account_id: (occurredAt ? owner?.accountId : undefined) ?? prospect?.accountId,
     provider: "telnyx",
     provider_event_id: event.data.id,

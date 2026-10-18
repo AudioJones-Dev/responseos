@@ -255,6 +255,10 @@ export async function supervisedCallWasQualification(accountId: string, callId: 
     ? await findCallCorrelation({ provider: "telnyx", providerCallIds: [call.provider_call_id] })
     : null;
   const correlationTarget = correlation ? normalizeE164(correlation.target) : null;
+  // Losing recoverable origin proof cannot authorize a historically qualified number.
+  if (!correlation || correlationTarget !== e164) {
+    return Boolean(await db.telephonyNumberAssignment.findFirst({ where: { account_id: accountId, telephony_number_id: number.id, bootstrap_id: null, status: "qualification", assigned_at: { lte: call.started_at } }, select: { id: true } }));
+  }
   const assignmentTime = correlation && correlationTarget === e164
     ? correlation.anchoredAt
     : call.started_at;

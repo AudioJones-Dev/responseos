@@ -6,6 +6,7 @@ import { err, errFromThrown, ok, type Result } from "./result";
 import { requireRole } from "@/lib/auth/session";
 import { retentionAuditData } from "@/lib/retention/audit";
 import { CLERK_PAYLOAD_RETENTION_DAYS, daysAfter } from "@/lib/retention/periods";
+import { assertFingerprint, contentFingerprint, fingerprintPolicy } from "@/lib/providers/telnyx/fingerprint";
 
 export type WebhookProcessStatus =
   | "received"
@@ -90,6 +91,7 @@ export function computeDedupeHash(
  * return process_status = "duplicate" and do not insert again.
  */
 export async function recordWebhookEvent(entry: {
+  verifiedBytes?: Uint8Array;
   client?: Prisma.TransactionClient;
   account_id?: string;
   provider: string;
@@ -115,6 +117,20 @@ export async function recordWebhookEvent(entry: {
   const dedupe_hash = computeDedupeHash(entry.provider, entry.provider_event_id);
 
   try {
+    if (entry.provider === "telnyx" && !entry.client) {
+      return await database!.$transaction(client => recordWebhookEvent({ ...entry, client }));
+    }
+    let identity = {};
+    let expiresAt = entry.payload_expires_at;
+    if (entry.provider === "telnyx") {
+      if (entry.account_id) await db.$executeRaw`SELECT pg_advisory_xact_lock(1380930382, hashtext(${entry.account_id}))`;
+      if (!entry.signature_valid || !entry.verifiedBytes) return err("webhook_fingerprint_unverified", "Verified original bytes are required.");
+      const policy = fingerprintPolicy();
+      const now = (await db.$queryRaw<{ now: Date }[]>`SELECT clock_timestamp() AS now`)[0].now;
+      expiresAt = new Date(Math.min(entry.payload_expires_at?.getTime() ?? Infinity, now.getTime() + policy.retentionSeconds * 1000));
+      if (entry.payload_purged_at || expiresAt <= now) return err("webhook_fingerprint_expired_or_purged", "Webhook identity evidence is unavailable.");
+      identity = { content_fingerprint: contentFingerprint(entry.verifiedBytes, policy.keys.get(policy.keyId)!), fingerprint_version: 1, fingerprint_key_id: policy.keyId };
+    }
     // createMany(skipDuplicates) compiles to ON CONFLICT DO NOTHING on
     // PostgreSQL. Unlike catching a unique-constraint error, it leaves an
     // enclosing capture-lock transaction usable for the authoritative lookup.
@@ -129,7 +145,8 @@ export async function recordWebhookEvent(entry: {
         signature_valid: entry.signature_valid ?? false,
         dedupe_hash,
         process_status: "received",
-        payload_expires_at: entry.payload_expires_at ?? null,
+        payload_expires_at: expiresAt ?? null,
+        ...identity,
         payload_purged_at: entry.payload_purged_at ?? null,
         provider_call_id: entry.provider_call_id ?? null,
         provider_call_ids: [...new Set([...(entry.provider_call_ids ?? []), ...(entry.provider_call_id ? [entry.provider_call_id] : [])])],
@@ -139,9 +156,18 @@ export async function recordWebhookEvent(entry: {
     });
     const row = await db.webhookEvent.findUnique({
       where: { dedupe_hash },
-      select: { id: true, process_status: true, account_id: true },
     });
     if (!row) return err("webhook_event_not_recorded", "Webhook event insert did not produce a readable ledger row.");
+    if (entry.provider === "telnyx") {
+      try {
+        await assertWebhookIdentity(row.id, entry.verifiedBytes!, entry.client!);
+      } catch (error) {
+        const code = error instanceof Error && error.message.startsWith("webhook_fingerprint_") ? error.message : "webhook_fingerprint_unavailable";
+        console.warn(JSON.stringify({ event: "webhook_identity_rejected", code, ledgerId: row.id }));
+        await db.auditLog.create({ data: retentionAuditData({ accountId: row.account_id, action: "webhook.identity_rejected", targetType: "WebhookEvent", reason: code, metadata: { ledgerId: row.id }, now: new Date() }) });
+        return err(code, "Webhook identity evidence is unavailable or conflicting.");
+      }
+    }
     if (row.account_id && entry.account_id && row.account_id !== entry.account_id) return err("webhook_tenant_conflict", "Webhook identity is already bound to another tenant.");
     return ok({
       id: row.id,
@@ -150,6 +176,22 @@ export async function recordWebhookEvent(entry: {
   } catch (e) {
     return errFromThrown<{ id: string; process_status: WebhookProcessStatus }>(e);
   }
+}
+
+export async function assertWebhookIdentity(id: string, bytes: Uint8Array, client: Prisma.TransactionClient) {
+  await client.$queryRaw`SELECT id FROM "WebhookEvent" WHERE id = ${id} FOR UPDATE`;
+  const row = await client.webhookEvent.findUnique({ where: { id } });
+  if (!row) throw new Error("webhook_fingerprint_unavailable");
+  const now = (await client.$queryRaw<{ now: Date }[]>`SELECT clock_timestamp() AS now`)[0].now;
+  assertFingerprint(row, bytes, now);
+  return row;
+}
+
+export async function assertStoredWebhookIdentity(id: string, client: Prisma.TransactionClient) {
+  await client.$queryRaw`SELECT id FROM "WebhookEvent" WHERE id = ${id} FOR UPDATE`;
+  const row = await client.webhookEvent.findUnique({ where: { id } });
+  if (!row) throw new Error("webhook_fingerprint_unavailable");
+  return assertWebhookIdentity(id, Buffer.from(row.raw_body), client);
 }
 
 /**
@@ -202,7 +244,7 @@ export async function findCallCorrelation(params: {
       signature_valid: true,
     },
     orderBy: { received_at: "asc" },
-    select: { agent_target: true, raw_body: true, event_type: true },
+    select: { agent_target: true, raw_body: true, event_type: true, signature_valid: true, content_fingerprint: true, fingerprint_version: true, fingerprint_key_id: true, payload_expires_at: true, payload_purged_at: true },
   });
   // Fail closed without a call-start anchor. Any other row for this call
   // (a direct call event delivered before the initialization, or a
@@ -210,6 +252,7 @@ export async function findCallCorrelation(params: {
   // it, and the tenant must be resolved at that moment.
   const start = rows.find((row) => row.event_type === CALL_START_EVENT_TYPE);
   if (!start?.agent_target) return null;
+  try { assertFingerprint(start, Buffer.from(start.raw_body), new Date()); } catch { return null; }
   if (rows.some((row) => row.agent_target !== start.agent_target)) return null;
   const anchoredAt = occurredAtFromRawBody(start.raw_body);
   if (!anchoredAt) return null;
@@ -225,18 +268,23 @@ export async function findAgentTargetForProviderCall(params: {
 
 export async function findInitializedProviderCallId(params: { provider: string; providerCallIds: readonly string[]; target: string }): Promise<string | null> {
   if (!db || params.providerCallIds.length === 0) return null;
+  let retained;
+  try { retained = { fingerprint_version: 1, content_fingerprint: { not: null }, fingerprint_key_id: { in: [...fingerprintPolicy().keys.keys()] }, payload_purged_at: null, payload_expires_at: { gt: new Date() } }; } catch { return null; }
   const exact = await db.webhookEvent.findFirst({
-    where: { provider: params.provider, event_type: "assistant.initialization", signature_valid: true, agent_target: params.target, provider_call_id: { in: [...params.providerCallIds] } },
-    select: { provider_call_id: true },
+    where: { ...retained, provider: params.provider, event_type: "assistant.initialization", signature_valid: true, agent_target: params.target, provider_call_id: { in: [...params.providerCallIds] } },
   });
-  if (exact?.provider_call_id) return exact.provider_call_id;
+  if (exact?.provider_call_id) {
+    try { assertFingerprint(exact, Buffer.from(exact.raw_body), new Date()); } catch { return null; }
+    return exact.provider_call_id;
+  }
   const row = await db.webhookEvent.findFirst({
-    where: { provider: params.provider, event_type: "assistant.initialization", signature_valid: true, agent_target: params.target,
+    where: { ...retained, provider: params.provider, event_type: "assistant.initialization", signature_valid: true, agent_target: params.target,
       OR: [{ provider_call_id: { in: [...params.providerCallIds] } }, { provider_call_ids: { hasSome: [...params.providerCallIds] } }],
     },
-    orderBy: { received_at: "asc" }, select: { provider_call_id: true },
+    orderBy: { received_at: "asc" },
   });
   if (!row?.provider_call_id) return null;
+  try { assertFingerprint(row, Buffer.from(row.raw_body), new Date()); } catch { return null; }
   const conflict = await db.webhookEvent.findFirst({
     where: { provider: params.provider, event_type: "assistant.initialization", signature_valid: true, agent_target: params.target,
       provider_call_id: { not: row.provider_call_id }, provider_call_ids: { hasSome: [...params.providerCallIds] },
@@ -367,6 +415,7 @@ export async function setWebhookProcessStatus(params: {
  * scheduled for purge.
  */
 export async function backfillWebhookEvent(entry: {
+  verifiedBytes?: Uint8Array;
   client?: Prisma.TransactionClient;
   id: string;
   account_id: string;
@@ -378,13 +427,17 @@ export async function backfillWebhookEvent(entry: {
 }): Promise<void> {
   const client = entry.client ?? db;
   if (client === null) return;
+  if (!entry.client) return database!.$transaction(tx => backfillWebhookEvent({ ...entry, client: tx }));
+  await entry.client.$executeRaw`SELECT pg_advisory_xact_lock(1380930382, hashtext(${entry.account_id}))`;
+  if (!entry.verifiedBytes) throw new Error("webhook_fingerprint_unverified");
+  const bound = await assertWebhookIdentity(entry.id, entry.verifiedBytes, entry.client);
   const current = await client.webhookEvent.findUnique({ where: { id: entry.id }, select: { provider_call_ids: true } });
   const updated = await client.webhookEvent.updateMany({
     where: { id: entry.id, OR: [{ account_id: null }, { account_id: entry.account_id }] },
     data: {
       account_id: entry.account_id,
       raw_body: entry.raw_body,
-      payload_expires_at: entry.payload_expires_at,
+      payload_expires_at: entry.payload_expires_at && entry.payload_expires_at < bound.payload_expires_at! ? entry.payload_expires_at : bound.payload_expires_at,
       provider_call_id: entry.provider_call_id ?? undefined,
       provider_call_ids: [...new Set([...(current?.provider_call_ids ?? []), ...(entry.provider_call_ids ?? []), ...(entry.provider_call_id ? [entry.provider_call_id] : [])])],
       agent_target: entry.agent_target ?? undefined,

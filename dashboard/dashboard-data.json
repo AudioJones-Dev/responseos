@@ -1607,7 +1607,7 @@
       "progress": 85,
       "priority": "High",
       "blocked": true,
-      "blockedReason": "Boundary successor expands actual-route, signature, fresh-process, final-sink and retention ordering checks; activation remains disabled. Additive immutable-body schema and isolated CLI verification are locally approved; runtime fingerprint binding, real keys, consent source-time decision and hosted commissioning/rehearsals remain gated. Exact final-commit evidence is external."
+      "blockedReason": "Boundary successor expands actual-route, signature, fresh-process, final-sink and retention ordering checks; activation remains disabled. Additive immutable-body schema and isolated CLI verification are locally approved; runtime fingerprint binding is now a local-only review candidate; real keys, retention conflict policy, consent source-time decision and hosted commissioning/rehearsals remain gated. Exact final-commit evidence is external."
     },
     {
       "id": "FRL-DOPPLER-PLAN-20261018",

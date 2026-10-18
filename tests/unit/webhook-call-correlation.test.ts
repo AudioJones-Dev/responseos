@@ -1,4 +1,5 @@
 import { beforeEach, expect, test, vi } from "vitest";
+import { contentFingerprint } from "@/lib/providers/telnyx/fingerprint";
 import { findCallCorrelation } from "@/lib/data/webhookEvents";
 
 const database = vi.hoisted(() => ({ webhookEvent: { findMany: vi.fn() } }));
@@ -7,8 +8,9 @@ vi.mock("@/lib/auth/session", () => ({ requireRole: vi.fn() }));
 
 const callStartedAt = new Date("2026-09-14T15:00:00.000Z");
 const body = (occurredAt: Date | null) => JSON.stringify({ data: occurredAt ? { occurred_at: occurredAt.toISOString() } : {} });
-const initialization = { event_type: "assistant.initialization", agent_target: "+15555550188", raw_body: body(callStartedAt) };
-const hangup = { event_type: "call.hangup", agent_target: "+15555550188", raw_body: body(new Date("2026-09-14T15:04:00.000Z")) };
+const identity = { signature_valid: true, content_fingerprint: "42".repeat(32), fingerprint_version: 1, fingerprint_key_id: "synthetic-local-v1", payload_expires_at: new Date(Date.now() + 60_000), payload_purged_at: null };
+const initialization = { ...identity, content_fingerprint: contentFingerprint(Buffer.from(body(callStartedAt)), Buffer.alloc(32, 0x42)), event_type: "assistant.initialization", agent_target: "+15555550188", raw_body: body(callStartedAt) };
+const hangup = { ...identity, event_type: "call.hangup", agent_target: "+15555550188", raw_body: body(new Date("2026-09-14T15:04:00.000Z")) };
 const params = { provider: "telnyx", providerCallIds: ["session"] };
 
 beforeEach(() => {

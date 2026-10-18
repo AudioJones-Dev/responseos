@@ -126,7 +126,7 @@ async function ledger(event: TelnyxWebhookEnvelope, accountId: string) {
     provider: "telnyx",
     provider_event_id: event.data.id,
     event_type: event.data.event_type,
-    raw_body: JSON.stringify(event),
+    verifiedBytes: Buffer.from(JSON.stringify(event)), raw_body: JSON.stringify(event),
     signature_valid: true,
   });
   if (!result.ok) throw new Error(result.error.message);

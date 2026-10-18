@@ -1143,6 +1143,8 @@ export async function cleanupExpiredProspectBootstraps(now = new Date(), options
     for (const bootstrap of due) {
       await db.$transaction(async (tx) => {
         await tx.$executeRaw`SELECT pg_advisory_xact_lock(1380930382, hashtext(${bootstrap.account_id}))`;
+        const [{ databaseNow }] = await tx.$queryRaw<{ databaseNow: Date }[]>`SELECT clock_timestamp() AS "databaseNow"`;
+        if (await tx.webhookEvent.findFirst({ where: { account_id: bootstrap.account_id, content_fingerprint: { not: null }, payload_expires_at: { gt: databaseNow } }, select: { id: true } })) throw new Error("cleanup_blocked_by_unexpired_fingerprint");
         await tx.prospectBootstrap.update({ where: { id: bootstrap.id }, data: { status: "cleanup_pending" } });
         const calls = await tx.call.findMany({ where: { account_id: bootstrap.account_id }, select: { id: true } });
         const callIds = calls.map(({ id }) => id);
@@ -1155,7 +1157,7 @@ export async function cleanupExpiredProspectBootstraps(now = new Date(), options
         await tx.leadEvent.deleteMany({ where: { account_id: bootstrap.account_id } });
         await tx.call.deleteMany({ where: { id: { in: callIds } } });
         await tx.contact.deleteMany({ where: { account_id: bootstrap.account_id } });
-        await tx.webhookEvent.updateMany({ where: { account_id: bootstrap.account_id, payload_purged_at: null }, data: { raw_body: "<PURGED_PROSPECT_DEMO_PAYLOAD>", signature_header: null, process_error: null, payload_purged_at: now } });
+        await tx.webhookEvent.updateMany({ where: { account_id: bootstrap.account_id, payload_purged_at: null }, data: { raw_body: "<PURGED_PROSPECT_DEMO_PAYLOAD>", signature_header: null, process_error: null, payload_purged_at: new Date(Math.min(now.getTime(), databaseNow.getTime())) } });
         await tx.knowledgeFact.deleteMany({ where: { account_id: bootstrap.account_id, bootstrap_id: bootstrap.id } });
         await tx.knowledgeSource.updateMany({ where: { account_id: bootstrap.account_id, bootstrap_id: bootstrap.id }, data: { status: "purged", extracted_text: null, purged_at: now } });
         await tx.businessMemorySnapshot.deleteMany({ where: { account_id: bootstrap.account_id, bootstrap_id: bootstrap.id } });

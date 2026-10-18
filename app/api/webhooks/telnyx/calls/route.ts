@@ -53,10 +53,11 @@ export async function POST(req: Request) {
     });
   }
 
-  const rawBody = await req.text();
+  const verifiedBytes = Buffer.from(await req.arrayBuffer());
+  const rawBody = verifiedBytes.toString('utf8');
   const signature = req.headers.get("telnyx-signature-ed25519");
   const timestamp = req.headers.get("telnyx-timestamp");
-  const verified = verifyTelnyxWebhook({ rawBody, signature, timestamp, publicKey });
+  const verified = verifyTelnyxWebhook({ rawBody: verifiedBytes, signature, timestamp, publicKey });
   if (!verified.ok) {
     return errorResponse(401, {
       code: `telnyx_signature_${verified.reason}`,
@@ -153,6 +154,7 @@ export async function POST(req: Request) {
   // recorded signature; only the denied branch stores a projection.
   const retainedBody = (allowed: boolean) => (allowed ? rawBody : JSON.stringify(metadataOnly(event)));
   const record = async (allowed: boolean, client?: import("@prisma/client").Prisma.TransactionClient) => recordWebhookEvent({
+    verifiedBytes,
     client,
 
     // The verified number assignment identifies the tenant even when its
@@ -255,6 +257,7 @@ export async function POST(req: Request) {
         ...(supervisedTenant && providerCallId ? { providerCallId } : {}),
         demoNumber: assignment.demoNumber,
         webhookEventId: ledger.data.id,
+        verifiedBytes,
         event: contentAllowed ? event : metadataOnly(event),
         ...(supervisedTenant
           ? { options: { captureCallerIdentity: contentAllowed, createQuoteRequest: false, reviewRequired: true } }
@@ -314,6 +317,7 @@ export async function POST(req: Request) {
       // Consent is re-read under the capture lock rather than reused from the
       // earlier ledger write, so a refusal recorded in between is honoured.
       const scope = async (allowed: boolean, client?: import("@prisma/client").Prisma.TransactionClient) => backfillWebhookEvent({
+        verifiedBytes,
         client,
         id: ledger.data.id,
         account_id: assignment.accountId,

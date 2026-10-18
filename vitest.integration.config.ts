@@ -8,6 +8,7 @@ export default defineConfig({
     },
   },
   test: {
+    setupFiles: ["tests/fingerprint-environment.ts"],
     globals: true,
     environment: "node",
     include: ["tests/integration/**/*.test.ts"],

@@ -1,7 +1,7 @@
 import "@/lib/serverOnlyGuard";
 import { db as database } from "@/lib/db/client";
 import type { Prisma } from "@prisma/client";
-import { setWebhookProcessStatus } from "@/lib/data/webhookEvents";
+import { assertWebhookIdentity, setWebhookProcessStatus } from "@/lib/data/webhookEvents";
 import { PURGED_CALLER_NUMBER } from "@/lib/retention/periods";
 import { normalizeE164 } from "@/lib/validation/common";
 import {
@@ -98,6 +98,7 @@ export interface NormalizeTelnyxEventOptions {
 }
 
 export async function normalizeTelnyxEvent(params: {
+  verifiedBytes?: Uint8Array;
   providerCallId?: string;
   client?: Prisma.TransactionClient;
   accountId: string;
@@ -119,6 +120,7 @@ export async function normalizeTelnyxEvent(params: {
   // Cooperating normalizers share contacts across calls. Capture callers already
   // hold their capture lock; never acquire a capture lock after this account lock.
   await db.$executeRaw`SELECT pg_advisory_xact_lock(1380930382, hashtext(${params.accountId}))`;
+
   const cleanedProspect = await db.prospectBootstrap.findFirst({
     where: { account_id: params.accountId, status: "cleaned" }, select: { id: true },
   });
@@ -158,6 +160,9 @@ export async function normalizeTelnyxEvent(params: {
     });
     return { callId: null, finalized: false };
   }
+  const evidence = await db.webhookEvent.findUnique({ where: { id: params.webhookEventId }, select: { raw_body: true, account_id: true } });
+  if (!evidence || evidence.account_id !== params.accountId) throw new Error("webhook_fingerprint_tenant_mismatch");
+  await assertWebhookIdentity(params.webhookEventId, params.verifiedBytes ?? Buffer.from(evidence.raw_body), db);
   const rawFrom = stringValue(payload.from) ?? existing?.from_number ?? "unavailable";
   const fromNumber = rawFrom === "unavailable" ? rawFrom : normalizeE164(rawFrom) ?? rawFrom;
   const toNumber = stringValue(payload.to) ?? existing?.to_number ?? params.demoNumber;

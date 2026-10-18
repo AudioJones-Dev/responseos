@@ -24,7 +24,7 @@ function publicKeyFromConfig(value: string) {
 }
 
 export function verifyTelnyxWebhook(params: {
-  rawBody: string;
+  rawBody: string | Uint8Array;
   signature: string | null;
   timestamp: string | null;
   publicKey: string;
@@ -39,7 +39,7 @@ export function verifyTelnyxWebhook(params: {
   }
 
   try {
-    const signedPayload = Buffer.from(`${params.timestamp}|${params.rawBody}`);
+    const signedPayload = Buffer.concat([Buffer.from(`${params.timestamp}|`), typeof params.rawBody === "string" ? Buffer.from(params.rawBody) : Buffer.from(params.rawBody)]);
     const signature = Buffer.from(params.signature, "base64");
     return verify(null, signedPayload, publicKeyFromConfig(params.publicKey), signature)
       ? { ok: true }

@@ -1,0 +1,25 @@
+# FRL fingerprint runtime: local review candidate
+
+Status: EXPERIMENTAL, local development only. Owner authorized this bounded successor on October 18 from frozen `cf532216102a92160397414038cf745693afdfa6`. That remains the separate release-control SHA. The application SHA, tree, patch and exact-head check results are recorded in the external evidence directory `fingerprint-runtime-evidence-20261018`. No push, merge, deployment, hosted migration, credential provisioning, provider request or activation is included.
+
+## Changes and limits
+
+The three Telnyx routes preserve the original request bytes for Ed25519 verification and HMAC-SHA-256 binding before any redaction. Initial insertion atomically binds version 1, nonsecret key ID, digest and finite expiry. Duplicate originals must match before backfill, normalization or Call Control capture creation. Legacy, expired, purged, unknown-version, missing-key and changed originals fail closed. Rejection audits contain a ledger ID and fixed reason, never body or digest/key values.
+
+Runtime configuration has no credential or lifetime default: `RESPONSEOS_WEBHOOK_FINGERPRINT_KEY_ID`, `RESPONSEOS_WEBHOOK_FINGERPRINT_KEYS_JSON`, and positive integer `RESPONSEOS_WEBHOOK_FINGERPRINT_RETENTION_SECONDS` are required for Telnyx ingestion. Tests supply a synthetic 32-byte key and one-hour test lifetime only. Those values are not a production recommendation. New expiry is the earlier of the configured bound and an existing lane expiry. Backfill never extends it. Deployment requires an approved key lifecycle, retention duration, secret delivery and rollback plan.
+
+Recovery verifies retained bytes against the bound original. If an initialization or DTMF body was redacted or reserialized and cannot reproduce the original bytes, recovery denies it. This intentionally reduces availability; no extra sensitive payload retention, guessed digest, historical backfill or canonical-JSON fallback is added. Operator consent timing policy is unchanged. Refusal/withdrawal safety actions are not blocked by unavailable proof.
+
+Call Control reserves identity before capture creation. An unfinished duplicate returns retryable failure; a reservation-stage error permits immediate identical retry. Capture/account/ledger ordering is preserved. Qualification-origin uncertainty cannot become authorization when an initialization fingerprint expires: capture-less calls on historically qualified numbers remain blocked when origin cannot be verified. This may also block a later legitimate call until independently bound assignment evidence exists.
+
+Account cleanup does **not** shorten fingerprint expiry. Under its existing account lock it fails before mutation when any fingerprint remains unexpired, even if the account cleanup deadline elapsed. Reconciling those competing retention deadlines is an owner policy decision. Two-statement shortening followed by erasure is not used as a workaround. Other eligible retention operations and the immutable tuple trigger remain unchanged; migration 0018 is unmodified.
+
+## Review and commissioning gates
+
+1. Codex: validate exact application SHA with lint, typecheck, unit tests, secret-free build/config checks, and disposable PostgreSQL 16/17/18 migration, integration, restore and DB-build checks. Preserve failed preliminary results separately.
+2. Claude/human reviewer: review exact patch, retention conflict, recovery availability, tenant boundaries, lock ordering, lost acknowledgment and final sink suppression. Local checks do not prove hosted wiring or demo readiness.
+3. Owner: decide retention/key lifecycle and unrecoverable projection policy before provisioning. Keep release controls pinned separately; activation remains disabled. No model-backed analysis has been added; the first demonstration requires manual operator summary/qualification and the deterministic Analysis unavailable behavior remains.
+4. Hosted commissioning requires separate approval for application SHA, intended database/role/schema, compatible migration inventory/rollback, auth, approved FRL facts/disclosure, Voice API Call Control number/routing and recipient/callback expectations. Do not use the failed September TeXML/no-code path.
+5. Separately authorized no-effects qualification must prove consent grant/refusal/withdrawal, capture boundaries, recording/retention, initialization timing and authenticated transcript review. Qualification intervals permanently prohibit CRM/email effects. A later SUPERVISED_PILOT call needs approved test records/recipient, frozen human-approved content, HubSpot readback, provider message ID and inbox receipt. Two consecutive complete internal rehearsals are required before declaring Mike-demo ready.
+
+Rollback: disable identity-dependent ingestion/recovery and effects before reverting application code. Retain additive schema/trigger and eligible purge capability. Do not drop proof, manufacture fingerprints for legacy rows, or revive erased tuples. A restored database still requires original bytes, available matching key and unexpired proof; local restore checks do not establish hosted restore readiness.

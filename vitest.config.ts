@@ -8,6 +8,7 @@ export default defineConfig({
     },
   },
   test: {
+    setupFiles: ["tests/fingerprint-environment.ts"],
     globals: true,
     environment: "node",
     // Two suites exceed the 5s default on slower local machines; CI on
