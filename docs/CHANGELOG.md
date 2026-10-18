@@ -1,5 +1,7 @@
 # Unreleased — supervised FRL demonstration (in review)
 
+- Add disabled, non-secret Doppler mapping proposal and offline validator/tests; preserve existing consumers and require separate source selection, scoped-access and sync approval. No credentials, login, token or hosted setting changed.
+
 - Owner-approved local-only fingerprint migration0018 and synthetic migration/recovery/retention tests; no runtime binding or hosted migration. Official isolated CLI41.7 version/help verified without tokens.
 
 - Local boundary successor: block historical qualification notification retries before provider acquisition; serialize content purge with normalization and reject cleaned cancelled prospects; bind webhook backfill to its first tenant. Expand actual-route, real-signature, final-sink, fresh-process, consent-fault and purge-order regressions. Bind both approved deployment aliases and share forbidden-provider checks; supplied preflight policy remains attested/unverified. No schema, activation or live readiness claim.

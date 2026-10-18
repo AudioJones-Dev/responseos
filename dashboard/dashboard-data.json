@@ -1608,6 +1608,17 @@
       "priority": "High",
       "blocked": true,
       "blockedReason": "Boundary successor expands actual-route, signature, fresh-process, final-sink and retention ordering checks; activation remains disabled. Additive immutable-body schema and isolated CLI verification are locally approved; runtime fingerprint binding, real keys, consent source-time decision and hosted commissioning/rehearsals remain gated. Exact final-commit evidence is external."
+    },
+    {
+      "id": "FRL-DOPPLER-PLAN-20261018",
+      "phase": "Integrations",
+      "title": "Review disabled Doppler source/delivery plan and exact approval scopes",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 80,
+      "priority": "High",
+      "blocked": true,
+      "blockedReason": "Local non-secret scaffold only. FRL source configs, provider sync metadata/custom-environment support and action-time access/sync approvals remain unresolved; no production or qualification credentials changed."
     }
   ],
   "liveIssues": [

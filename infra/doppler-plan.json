@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "executionEnabled": false,
+  "syncEnabled": false,
+  "localDevelopment": { "project": "response-os", "config": "dev", "configExistenceVerified": true },
+  "historicalDemo": { "project": "response-os", "config": "stg_staging_demo", "configExistenceVerified": true, "reuseForQualification": false },
+  "qualificationRuntime": {
+    "source": null,
+    "destination": { "provider": "vercel", "orgId": "team_BHxIkAGPW6qEKKQBAt9c0NGz", "projectId": "prj_Pm88ysh24EgV1DEIcvaE9r2Xd28A", "projectName": "responseos-frl-live-demo", "environmentId": "env_k4aq29aq3e4XqcKuaNyRYyOJ7YkV", "environmentSlug": "frl-live-demo" },
+    "secretNames": ["DATABASE_URL", "DIRECT_URL", "CLERK_SECRET_KEY", "CLERK_WEBHOOK_SECRET"],
+    "configurationNames": ["NEXT_PUBLIC_APP_URL", "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "AJ_DIGITAL_CLERK_ORG_ID", "RESPONSEOS_DEPLOYMENT_LANE", "RESPONSEOS_REQUIRE_AUTH", "RESPONSEOS_LIVE_HUBSPOT_ENABLED", "RESPONSEOS_LIVE_EMAIL_ENABLED", "RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED"],
+    "syncMetadataVerified": false,
+    "customEnvironmentSupportDocumented": true
+  },
+  "qualificationRelease": {
+    "source": null,
+    "destination": { "provider": "github", "repository": "AudioJones-Dev/responseos", "environment": "live-demo-staging", "scope": "environment-only" },
+    "secretNames": ["VERCEL_TOKEN", "VERCEL_AUTOMATION_BYPASS_SECRET", "LIVE_DEMO_DATABASE_URL", "LIVE_DEMO_DIRECT_URL"],
+    "nonsecretEnvironmentSecretNames": ["VERCEL_ORG_ID", "VERCEL_PROJECT_ID"],
+    "syncMetadataVerified": false
+  },
+  "productionIncluded": false,
+  "approvalReference": null
+}
