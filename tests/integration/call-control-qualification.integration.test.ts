@@ -72,7 +72,7 @@ describe("FRL Call Control qualification", () => {
   });
   afterAll(disconnectTestDb);
 
-  test("disclosure completes before DTMF authority and operator grant precedes AI start intent", async () => {
+  test.each([-86_400_000, 0, 86_400_000])("disclosure and durable grant/intent precede AI dispatch with application clock offset %i ms", async (clockOffset) => {
     await setupQualification();
     await ingest(event("call.initiated", "cc-1", { to: NUMBER, from: "+15555550199" }, 1_000));
     const capture = await prisma.callCaptureSession.findFirstOrThrow({ where: { provider_call_id: "call-control-1" } });
@@ -93,12 +93,34 @@ describe("FRL Call Control qualification", () => {
 
     const route = await import("@/app/api/admin/call-capture/[id]/consent/route");
     const grantRequest = () => new Request("https://example.test", { method: "POST", body: JSON.stringify({ action: "grant", disclosureRef: "approved:v1", evidenceRef: "witness:test", jurisdictionBasis: "commissioning:test", eventKey: "00000000-0000-4000-8000-000000000001" }) });
-    const response = await route.POST(grantRequest(), { params: Promise.resolve({ id: capture.id }) });
+    let dispatchObservedAt: Date | undefined;
+    sendCommand.mockImplementationOnce(async ({ action, body }: { action: string; body: { command_id: string } }) => {
+      expect(action).toBe("ai_assistant_start");
+      // This independent connection must see committed authority and intent before dispatch.
+      expect(await prisma.callConsentEvent.findFirstOrThrow({ where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, action: "grant" } })).toMatchObject({ evidence_ref: "witness:test" });
+      expect(await prisma.telnyxCallCommand.findFirstOrThrow({ where: { account_id: capture.account_id, command_id: body.command_id } })).toMatchObject({ status: "intent_recorded", provider_responded_at: null });
+      const [clock] = await prisma.$queryRaw<{ at: Date }[]>`SELECT clock_timestamp()::timestamp(3) AS at`;
+      dispatchObservedAt = clock.at;
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date(clock.at.getTime() + clockOffset));
+      return { status: 200, providerDate: new Date(NOW.getTime() + 4_000), conversationId: "conversation-1", ok: true, errorCode: null };
+    });
+    let response: Response;
+    try {
+      response = await route.POST(grantRequest(), { params: Promise.resolve({ id: capture.id }) });
+    } finally {
+      vi.useRealTimers();
+    }
     expect(response.status).toBe(200);
+    const [responseObserved] = await prisma.$queryRaw<{ at: Date }[]>`SELECT clock_timestamp()::timestamp(3) AS at`;
     const start = await prisma.telnyxCallCommand.findFirstOrThrow({ where: { command_type: "ai_assistant_start" } });
     expect(start.status).toBe("succeeded");
     expect(start.conversation_id).toBe("conversation-1");
     expect(start.intended_at.getTime()).toBeLessThanOrEqual(start.provider_responded_at!.getTime());
+    expect(dispatchObservedAt).toBeDefined();
+    expect(start.provider_responded_at!.getTime()).toBeGreaterThanOrEqual(dispatchObservedAt!.getTime());
+    expect(start.provider_responded_at!.getTime()).toBeLessThanOrEqual(responseObserved.at.getTime());
+    expect(start.provider_date_at).toEqual(new Date(NOW.getTime() + 4_000));
     await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "AI_ACTIVE", capture_started_at: start.provider_date_at } });
     expect((await route.POST(grantRequest(), { params: Promise.resolve({ id: capture.id }) })).status).toBe(200);
     expect(await prisma.telnyxCallCommand.count({ where: { capture_session_id: capture.id, command_type: "ai_assistant_start" } })).toBe(1);

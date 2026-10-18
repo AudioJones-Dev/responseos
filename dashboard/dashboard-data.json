@@ -737,7 +737,7 @@
       "start": "2026-08-18",
       "due": "2026-08-18",
       "blocked": true,
-      "blockedReason": "Repository workflow and runbook are in progress; Vercel, Neon, Clerk, Telnyx, HubSpot, secret injection, deployment, rehearsal, and prospect release remain unexecuted"
+      "blockedReason": "Consent-command response observation uses the database clock with cross-clock causal regression coverage; exact-commit validation and review are required. Vercel, Neon, Clerk, Telnyx, HubSpot, secret injection, deployment, rehearsal, and prospect release remain separately gated"
     },
     {
       "id": "L-06",

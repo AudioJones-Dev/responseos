@@ -1,5 +1,9 @@
 # FRL supervised demonstration: development and commissioning plan
 
+## October 18 consent-command clock correction
+
+Command intent uses PostgreSQL's timestamp default; response observation now also uses PostgreSQL `clock_timestamp()` at the column's millisecond precision after the provider response. The provider's own date remains separate and unchanged. This removes application/database clock skew from the intent-versus-response comparison without clamping timestamps or changing consent/capture boundaries. The integration regression shifts the application clock by ±24 hours at mocked dispatch, verifies committed consent and intent through an independent connection before dispatch, and bounds response observation between database-clock samples. Database wall-clock discontinuities remain an operational limitation; timestamps alone are not causal proof. Final exact-commit validation is recorded in the external October 18 clock-fix evidence report; hosted readiness remains gated.
+
 Status: development candidate only. No deployment, provider activation, migration, live call, CRM write or email send is authorized by this document. Owner: Audio/AJ Digital. Development: Codex. Hosted commissioning: authorized operator with engineering support. FRL facts and demonstration acceptance: Audio with designated FRL approver.
 
 ## Phases and acceptance gates

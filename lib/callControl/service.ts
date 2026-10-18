@@ -90,11 +90,15 @@ async function executeCommand(params: {
   const body = { ...params.request, command_id: intent.command_id };
   const result = await sendTelnyxCallCommand({ callControlId: params.capture.provider_call_id, action: params.action, body });
   const missingStartTime = params.commandType === "ai_assistant_start" && result.ok && !result.providerDate;
+  // Intent and response observation use the database clock; provider_date_at remains provider evidence.
+  const respondedAt = result.status > 0
+    ? (await db.$queryRaw<{ responded_at: Date }[]>`SELECT clock_timestamp()::timestamp(3) AS responded_at`)[0].responded_at
+    : null;
   await db.telnyxCallCommand.updateMany({
     where: { id: intent.id, status: { not: "succeeded" } },
     data: {
       status: missingStartTime ? "uncertain" : result.ok ? "succeeded" : result.errorCode === "telnyx_response_uncertain" ? "uncertain" : "failed",
-      provider_responded_at: result.status > 0 ? new Date() : null,
+      provider_responded_at: respondedAt,
       provider_response_status: result.status,
       provider_date_at: result.providerDate,
       conversation_id: result.conversationId,
