@@ -96,6 +96,16 @@ describe("lib/auth/session.ts", () => {
     expect(await getCurrentSession()).toBeNull();
   });
 
+  test.each(["invalid-key", "sk_test_synthetic"])("Clerk error with %s never falls back to a privileged session", async key => {
+    process.env.CLERK_SECRET_KEY = key;
+    process.env.RESPONSEOS_REQUIRE_AUTH = "true";
+    const { session, auth, userFindUnique } = await loadClerkSession();
+    auth.mockRejectedValue(new Error("synthetic Clerk configuration failure"));
+    userFindUnique.mockClear();
+    await expect(session.getCurrentSession()).rejects.toThrow("synthetic Clerk configuration failure");
+    expect(userFindUnique).not.toHaveBeenCalled();
+  });
+
   test("RESPONSEOS_REQUIRE_AUTH=0/false preserves the mock-first fallback", async () => {
     process.env.RESPONSEOS_REQUIRE_AUTH = "0";
     const { getCurrentSession } = await freshSession();

@@ -1,5 +1,4 @@
-name: Live Demo Deployment Gate (closed)
-
+name: Qualification deployment (activation disabled)
 on:
   workflow_dispatch:
     inputs:
@@ -11,28 +10,60 @@ on:
         description: Exact reviewed application commit
         required: true
         type: string
-
 permissions:
   contents: read
-
 concurrency:
   group: responseos-frl-live-demo-exclusive
   cancel-in-progress: false
-
+env:
+  CONTROL_SHA: ${{ inputs.control_sha }}
+  APPLICATION_SHA: ${{ inputs.application_sha }}
+  WORKFLOW_SHA: ${{ github.workflow_sha }}
+  CONTROL_REF: ${{ github.ref }}
 jobs:
   commissioning-gate:
     runs-on: ubuntu-latest
-    env:
-      CONTROL_SHA: ${{ inputs.control_sha }}
-      APPLICATION_SHA: ${{ inputs.application_sha }}
-      WORKFLOW_SHA: ${{ github.workflow_sha }}
     steps:
-      - name: Validate revision binding and stop before hosted effects
+      - name: Fetch exact control and application without deployment credentials
         shell: bash
         run: |
           set -euo pipefail
           [[ "$CONTROL_SHA" =~ ^[0-9a-f]{40}$ ]]
           [[ "$APPLICATION_SHA" =~ ^[0-9a-f]{40}$ ]]
           test "$CONTROL_SHA" = "$WORKFLOW_SHA"
-          echo '::error::Deployment remains closed. Complete docs/readiness/FRL_LOCAL_HARDENING_2026-10-18.md commissioning gates and approve a separately reviewed activation change.'
-          exit 1
+          git init control
+          git -C control fetch --depth=1 https://github.com/AudioJones-Dev/responseos.git "$CONTROL_SHA"
+          git -C control checkout --detach FETCH_HEAD
+          node -e 'const p=require("./control/infra/qualification-deployment.json");if(p.enabled!==true)process.exit(1)'
+          git init application
+          git -C application fetch --depth=1 https://github.com/AudioJones-Dev/responseos.git "$APPLICATION_SHA"
+          git -C application checkout --detach FETCH_HEAD
+          node control/scripts/run-qualification-deployment.mjs application --gate-only
+  qualification:
+    needs: commissioning-gate
+    environment: live-demo-staging
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch reviewed checkouts on deployment runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$CONTROL_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$APPLICATION_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$CONTROL_SHA" = "$WORKFLOW_SHA"
+          git init control
+          git -C control fetch --depth=1 https://github.com/AudioJones-Dev/responseos.git "$CONTROL_SHA"
+          git -C control checkout --detach FETCH_HEAD
+          git init application
+          git -C application fetch --depth=1 https://github.com/AudioJones-Dev/responseos.git "$APPLICATION_SHA"
+          git -C application checkout --detach FETCH_HEAD
+          node control/scripts/run-qualification-deployment.mjs application --gate-only
+      - name: Verify installed runtime and run protected qualification sequence
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+          DATABASE_URL: ${{ secrets.LIVE_DEMO_DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.LIVE_DEMO_DIRECT_URL }}
+        run: node control/scripts/run-qualification-deployment.mjs application

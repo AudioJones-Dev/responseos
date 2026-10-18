@@ -115,9 +115,10 @@ describe("closed FRL commissioning contract", () => {
     expect(validateQualificationPreflight(env, { ...policy, consent: { recording: { enabled: true } } }).length).toBeGreaterThan(0);
     expect(validateQualificationPreflight(env, { ...policy, crmEmailPermanentlyBlocked: false }).length).toBeGreaterThan(0);
   });
-  test("workflow has no secret binding, provider command, migration or deploy step", () => {
+  test("workflow keeps activation disabled and has no migration or CLI installation", () => {
     const workflow = readFileSync(".github/workflows/deploy-live-demo.yml", "utf8");
-    expect(workflow).toContain("exit 1");
-    expect(workflow).not.toMatch(/secrets\.|vercel (pull|build|deploy)|prisma migrate|npm install|uses:/);
+    expect(workflow).toContain("needs: commissioning-gate");
+    expect(workflow).not.toMatch(/prisma migrate|npm install|uses:/);
+    expect(JSON.parse(readFileSync("infra/qualification-deployment.json", "utf8")).enabled).toBe(false);
   });
 });

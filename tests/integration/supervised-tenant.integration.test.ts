@@ -1,6 +1,6 @@
 import { generateKeyPairSync, sign } from "node:crypto";
 import type { Prisma } from "@prisma/client";
-import { afterAll, beforeEach, describe, expect, test } from "vitest";
+import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
 import { canonicalProviderAttestationPayload } from "@/lib/prospectBootstrap/attestation";
 import {
   SUPERVISED_RECEPTIONIST_TEMPLATE_CHECKSUM,
@@ -14,6 +14,13 @@ import {
 import { resolveSupervisedTenantForNumber, supervisedExecutionAuthorized } from "@/lib/agentExecution/supervisedRuntime";
 import { resolveTelnyxEventAssignment } from "@/lib/prospectBootstrap/service";
 import { disconnectTestDb, prisma, resetAndSeedTestDb, setDevSession } from "./setup";
+
+import { POST as qualificationRoute } from "@/app/api/admin/supervised-tenants/qualification/route";
+import { dispatchCallReview } from "@/lib/callReview/service";
+import { runCrmSyncForCall } from "@/lib/crm/syncFinalizedCall";
+const sinks = vi.hoisted(() => ({ email: vi.fn(), crm: vi.fn() }));
+vi.mock("@/lib/providers/email", () => ({ getEmailProvider: sinks.email }));
+vi.mock("@/lib/providers/crm", () => ({ getCrmProvider: sinks.crm }));
 
 const GATE = "v0.3-live-communications";
 const NUMBER = "+15555550188";
@@ -98,12 +105,30 @@ function input(overrides: Record<string, unknown> = {}) {
 describe("supervised tenant configuration", () => {
   beforeEach(async () => {
     await resetAndSeedTestDb();
+    vi.clearAllMocks();
     setDevSession("operator");
     process.env.RESPONSEOS_AUTHORIZED_EXECUTION_GATES = GATE;
     process.env.RESPONSEOS_PROVIDER_ATTESTATION_PUBLIC_KEY = publicKey;
     process.env.RESPONSEOS_DEMO_PHONE_E164 = "+17867560897";
   });
   afterAll(disconnectTestDb);
+
+  test.each([null, "client_admin@org_mock_1", "client_viewer@org_mock_1"])("qualification route denies %s without creating an assignment", async session => {
+    const authRequired = process.env.RESPONSEOS_REQUIRE_AUTH;
+    const clerkKey = process.env.CLERK_SECRET_KEY;
+    try {
+      if (session) setDevSession(session);
+      else { delete process.env.RESPONSEOS_DEV_SESSION; delete process.env.CLERK_SECRET_KEY; process.env.RESPONSEOS_REQUIRE_AUTH = "true"; }
+      for (const action of ["start", "end"]) {
+        const response = await qualificationRoute(new Request("http://localhost/api/admin/supervised-tenants/qualification", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(action === "start" ? { action, accountSlug: "example-supervised", providerNumberId: PROVIDER_NUMBER_ID, e164: NUMBER, providerAssistantId: "synthetic", approvalRecordRef: "synthetic" } : { action, accountSlug: "example-supervised", e164: NUMBER, reason: "synthetic" }) }));
+        expect(response.status).toBe(session ? 403 : 401);
+      }
+      expect(await prisma.telephonyNumberAssignment.count()).toBe(0);
+    } finally {
+      if (authRequired === undefined) delete process.env.RESPONSEOS_REQUIRE_AUTH; else process.env.RESPONSEOS_REQUIRE_AUTH = authRequired;
+      if (clerkKey === undefined) delete process.env.CLERK_SECRET_KEY; else process.env.CLERK_SECRET_KEY = clerkKey;
+    }
+  });
 
   test("a dry run reports readiness and writes nothing", async () => {
     const result = await configureSupervisedTenant(input({ dryRun: true }), now);
@@ -273,6 +298,17 @@ describe("supervised tenant configuration", () => {
     });
     expect(await supervisedExecutionAuthorized(started.data.accountId)).toBe(true);
     expect(await supervisedExecutionAuthorized(started.data.accountId, call.id)).toBe(false);
+    const review = await prisma.callReview.create({ data: {
+      account_id: started.data.accountId, call_id: call.id, revision: 1,
+      source_hash: "synthetic", evidence_json: {}, payload_json: {},
+      recipient: "owner@example.test", status: "approved", crm_status: "succeeded",
+    } });
+    await expect(dispatchCallReview(review.id)).rejects.toThrow("execution_gate_not_authorized");
+    expect(await runCrmSyncForCall({ accountId: started.data.accountId, callId: call.id, reviewId: review.id })).toMatchObject({ ok: false, error: { code: "qualification_business_effects_forbidden" } });
+    expect(sinks.email).not.toHaveBeenCalled();
+    expect(sinks.crm).not.toHaveBeenCalled();
+    expect(await prisma.crmSyncOperation.count({ where: { account_id: started.data.accountId, call_id: call.id } })).toBe(0);
+    expect(await prisma.callReview.findUnique({ where: { id: review.id } })).toMatchObject({ dispatch_at: null, email_attempt_at: null, email_status: "pending" });
   });
 
   test("revokes the previous snapshot when the configuration changes", async () => {

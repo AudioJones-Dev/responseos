@@ -1604,10 +1604,10 @@
       "title": "Local FRL workflow quarantine, qualification contract and normalization concurrency hardening",
       "owner": "Codex",
       "status": "Review",
-      "progress": 75,
+      "progress": 85,
       "priority": "High",
       "blocked": true,
-      "blockedReason": "Local candidate only. Hosted pipeline activation, immutable webhook fingerprint schema approval, hosted commissioning and live rehearsals remain gated. Exact local validation is recorded in the external hardening evidence bundle."
+      "blockedReason": "Local successor adds inactive workflow orchestration and auth/final-provider regression evidence. Hosted activation, installed CLI verification, immutable webhook fingerprint schema approval, hosted commissioning and live rehearsals remain gated. Exact final-commit checks are in the external successor evidence bundle."
     }
   ],
   "liveIssues": [

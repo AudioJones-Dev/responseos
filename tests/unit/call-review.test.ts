@@ -106,6 +106,19 @@ describe("review authorization", () => {
     expect(mocks.send).not.toHaveBeenCalled();
     expect(mocks.db.callReview.findFirst).not.toHaveBeenCalled();
   });
+  test.each(["operator", "aj_admin"])("%s can approve frozen content without effects", async role => {
+    mocks.session.mockResolvedValue({ user: { id: "reviewer", role }, account: null });
+    await expect(decideCallReview("review", 1, "approve", payload)).resolves.toMatchObject({ status: "approved" });
+    expect(mocks.send).not.toHaveBeenCalled();
+  });
+  test.each(["client_admin", "client_viewer"])("%s cannot approve own-tenant review either", async role => {
+    mocks.session.mockResolvedValue({ user: { id: "client", role }, account: { id: "account" } });
+    await expect(decideCallReview("review", 1, "approve", payload)).rejects.toThrow("operator_required");
+    await expect(dispatchCallReview("review")).rejects.toThrow("operator_required");
+    expect(mocks.db.callReview.findUnique).not.toHaveBeenCalled();
+    expect(mocks.crm).not.toHaveBeenCalled();
+    expect(mocks.send).not.toHaveBeenCalled();
+  });
   test("stale revisions never approve", async () => {
     mocks.db.callReview.findFirst.mockResolvedValue({ ...base, id: "newer", revision: 2 });
     await expect(decideCallReview("review", 1, "approve", payload)).rejects.toThrow("stale_review");
