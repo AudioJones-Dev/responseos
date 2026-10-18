@@ -1,6 +1,12 @@
 import { generateKeyPairSync, sign } from "node:crypto";
+import { execFileSync } from "node:child_process";
+import path from "node:path";
+import { deferredCallbacks } from "./deferredCallbacks";
+vi.mock("next/server", async original => ({ ...await original<typeof import("next/server")>(), after: (task: () => unknown) => deferredCallbacks.push(task) }));
 import type { Prisma } from "@prisma/client";
-import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import * as emailProviders from "@/lib/providers/email";
+import * as crmProviders from "@/lib/providers/crm";
 import { canonicalProviderAttestationPayload } from "@/lib/prospectBootstrap/attestation";
 import {
   SUPERVISED_RECEPTIONIST_TEMPLATE_CHECKSUM,
@@ -18,9 +24,8 @@ import { disconnectTestDb, prisma, resetAndSeedTestDb, setDevSession } from "./s
 import { POST as qualificationRoute } from "@/app/api/admin/supervised-tenants/qualification/route";
 import { dispatchCallReview } from "@/lib/callReview/service";
 import { runCrmSyncForCall } from "@/lib/crm/syncFinalizedCall";
-const sinks = vi.hoisted(() => ({ email: vi.fn(), crm: vi.fn() }));
-vi.mock("@/lib/providers/email", () => ({ getEmailProvider: sinks.email }));
-vi.mock("@/lib/providers/crm", () => ({ getCrmProvider: sinks.crm }));
+import { dispatchCompletedInteractionNotification, retryCompletedInteractionNotification } from "@/lib/notifications/completedInteraction";
+const sinks = vi.hoisted(() => ({ email: vi.fn(), crm: vi.fn(), send: vi.fn() }));
 
 const GATE = "v0.3-live-communications";
 const NUMBER = "+15555550188";
@@ -106,12 +111,17 @@ describe("supervised tenant configuration", () => {
   beforeEach(async () => {
     await resetAndSeedTestDb();
     vi.clearAllMocks();
+    sinks.email.mockReturnValue({ providerId: "resend", send: sinks.send });
+    sinks.send.mockResolvedValue({ providerMessageId: "synthetic-message" });
+    vi.spyOn(emailProviders, "getEmailProvider").mockImplementation(sinks.email);
+    vi.spyOn(crmProviders, "getCrmProvider").mockImplementation(sinks.crm);
     setDevSession("operator");
     process.env.RESPONSEOS_AUTHORIZED_EXECUTION_GATES = GATE;
     process.env.RESPONSEOS_PROVIDER_ATTESTATION_PUBLIC_KEY = publicKey;
     process.env.RESPONSEOS_DEMO_PHONE_E164 = "+17867560897";
   });
   afterAll(disconnectTestDb);
+  afterEach(() => vi.restoreAllMocks());
 
   test.each([null, "client_admin@org_mock_1", "client_viewer@org_mock_1"])("qualification route denies %s without creating an assignment", async session => {
     const authRequired = process.env.RESPONSEOS_REQUIRE_AUTH;
@@ -128,6 +138,17 @@ describe("supervised tenant configuration", () => {
       if (authRequired === undefined) delete process.env.RESPONSEOS_REQUIRE_AUTH; else process.env.RESPONSEOS_REQUIRE_AUTH = authRequired;
       if (clerkKey === undefined) delete process.env.CLERK_SECRET_KEY; else process.env.CLERK_SECRET_KEY = clerkKey;
     }
+  });
+
+  test.each(["operator", "aj_admin"])("qualification route permits %s start and end without business effects", async role => {
+    setDevSession(role);
+    expect((await configureSupervisedTenant(input(), new Date())).ok).toBe(true);
+    for (const action of ["start", "end"]) {
+      const response = await qualificationRoute(new Request("http://localhost", { method: "POST", body: JSON.stringify(action === "start" ? { action, accountSlug: "example-supervised", providerNumberId: PROVIDER_NUMBER_ID, e164: NUMBER, providerAssistantId: "synthetic", approvalRecordRef: "synthetic" } : { action, accountSlug: "example-supervised", e164: NUMBER, reason: "Completed synthetic qualification" }) }));
+      expect(response.status).toBe(200);
+    }
+    expect(await prisma.telephonyNumberAssignment.findFirst()).toMatchObject({ status: "qualification", unassigned_at: expect.any(Date) });
+    expect(sinks.send).not.toHaveBeenCalled();
   });
 
   test("a dry run reports readiness and writes nothing", async () => {
@@ -305,9 +326,34 @@ describe("supervised tenant configuration", () => {
     } });
     await expect(dispatchCallReview(review.id)).rejects.toThrow("execution_gate_not_authorized");
     expect(await runCrmSyncForCall({ accountId: started.data.accountId, callId: call.id, reviewId: review.id })).toMatchObject({ ok: false, error: { code: "qualification_business_effects_forbidden" } });
+    await prisma.call.update({ where: { id: call.id }, data: { review_required: false } });
+    const notification = await prisma.notification.create({ data: {
+      account_id: started.data.accountId, call_id: call.id, event: "completed_interaction",
+      dedupe_key: `completed_interaction:${started.data.accountId}:${call.id}`, channel: "email",
+      recipient: "owner@example.test", subject: "Synthetic", message: "Frozen synthetic body", status: "failed",
+    } });
+    for (let retry = 0; retry < 2; retry++) {
+      expect(await dispatchCompletedInteractionNotification({ accountId: started.data.accountId, callId: call.id })).toMatchObject({ ok: false, error: { code: "qualification_business_effects_forbidden" } });
+      expect(await retryCompletedInteractionNotification({ id: notification.id })).toMatchObject({ ok: false, error: { code: "qualification_business_effects_forbidden" } });
+    }
+    expect(await prisma.notification.findUnique({ where: { id: notification.id } })).toMatchObject({ status: "failed", attempt_count: 0, provider_message_id: null });
+    const operation = await prisma.crmSyncOperation.create({ data: { account_id: started.data.accountId, call_id: call.id, operation_key: `crm-call:${started.data.accountId}:${call.id}`, provider: "mock", status: "retryable_failed", last_error_code: "crm_ready:contact_create" } });
+    const callbacks = deferredCallbacks;
+    callbacks.length = 0;
+    const retryRoute = await import("@/app/api/admin/crm-sync-operations/[id]/retry/route");
+    const previousAccount = process.env.RESPONSEOS_DEMO_ACCOUNT_ID;
+    try {
+      process.env.RESPONSEOS_DEMO_ACCOUNT_ID = started.data.accountId;
+      expect((await retryRoute.POST(new Request("http://localhost", { method: "POST" }), { params: Promise.resolve({ id: operation.id }) })).status).toBe(202);
+      expect(callbacks).toHaveLength(1);
+      expect(await callbacks[0]()).toMatchObject({ ok: false, error: { code: "qualification_business_effects_forbidden" } });
+    } finally { if (previousAccount === undefined) delete process.env.RESPONSEOS_DEMO_ACCOUNT_ID; else process.env.RESPONSEOS_DEMO_ACCOUNT_ID = previousAccount; }
+    const restarted = JSON.parse(execFileSync(process.execPath, [path.resolve("node_modules/tsx/dist/cli.mjs"), "tests/integration/qualification-restart.fixture.ts", started.data.accountId, call.id, notification.id], { encoding: "utf8", env: { ...process.env, NODE_ENV: "test", RESPONSEOS_DEV_SESSION: "operator" }, timeout: 15_000 }));
+    expect(restarted).toEqual({ crmCode: "qualification_business_effects_forbidden", emailCode: "qualification_business_effects_forbidden", crmWrites: 0, emailSends: 0 });
+    expect(sinks.send).not.toHaveBeenCalled();
     expect(sinks.email).not.toHaveBeenCalled();
     expect(sinks.crm).not.toHaveBeenCalled();
-    expect(await prisma.crmSyncOperation.count({ where: { account_id: started.data.accountId, call_id: call.id } })).toBe(0);
+    expect(await prisma.crmSyncOperation.count({ where: { account_id: started.data.accountId, call_id: call.id } })).toBe(1);
     expect(await prisma.callReview.findUnique({ where: { id: review.id } })).toMatchObject({ dispatch_at: null, email_attempt_at: null, email_status: "pending" });
   });
 

@@ -1,6 +1,9 @@
-import { afterAll, beforeEach, describe, expect, test } from "vitest";
+import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
+import { db } from "@/lib/db/client";
 import { normalizeTelnyxEvent } from "@/lib/providers/telnyx/normalize";
 import { recordWebhookEvent } from "@/lib/data/webhookEvents";
+import { purgeExpiredDemoCallContent } from "@/lib/retention/demoCallContent";
+import { cleanupExpiredProspectBootstraps, purgeExpiredProspectContent } from "@/lib/prospectBootstrap/service";
 import type { TelnyxWebhookEnvelope } from "@/lib/providers/telnyx/webhook";
 import { disconnectTestDb, prisma, resetAndSeedTestDb } from "./setup";
 
@@ -23,6 +26,78 @@ async function ledger(event: TelnyxWebhookEnvelope) {
 describe("Telnyx canonical normalization", () => {
   beforeEach(resetAndSeedTestDb);
   afterAll(disconnectTestDb);
+
+  test.each(["general", "prospect", "cleanup"])("normalization queued behind %s cannot restore purged content", async lane => {
+    const now = new Date("2026-10-18T12:00:00Z"), old = new Date("2026-01-01T12:00:00Z");
+    if (lane !== "general") await prisma.prospectBootstrap.create({ data: { account_id: accountId, canonical_website: "https://synthetic.example.test", status: "expired", content_expires_at: old, expires_at: old } });
+    await prisma.call.create({ data: { account_id: accountId, provider: "telnyx", provider_call_id: "purge-first", direction: "inbound", status: "completed", from_number: "+15555550177", to_number: demoNumber, started_at: old } });
+    const event: TelnyxWebhookEnvelope = { data: { id: "purge-first-event", event_type: "call.conversation_insights.generated", payload: { call_control_id: "purge-first", from: "+15555550177", to: demoNumber, transcript: "Synthetic private content" } } };
+    const webhookEventId = await ledger(event);
+    let ready!: () => void, release!: () => void;
+    const held = new Promise<void>(resolve => { ready = resolve; });
+    const released = new Promise<void>(resolve => { release = resolve; });
+    if (!db) throw new Error("Database required");
+    const transaction = db.$transaction.bind(db);
+    const pause = vi.spyOn(db, "$transaction").mockImplementationOnce((async (callback: (tx: unknown) => Promise<unknown>) => transaction(async tx => {
+      const result = await callback(tx); ready(); await released; return result;
+    }, { timeout: 10_000 })) as typeof db.$transaction);
+    const purge = lane === "general" ? purgeExpiredDemoCallContent({ accountId, now }) : lane === "prospect" ? purgeExpiredProspectContent(now) : cleanupExpiredProspectBootstraps(now);
+    let normalization: ReturnType<typeof normalizeTelnyxEvent> | undefined;
+    try {
+      await Promise.race([held, purge.then(() => { throw new Error("Purge did not reach commit barrier"); })]);
+      normalization = normalizeTelnyxEvent({ accountId, demoNumber, webhookEventId, event });
+      let waiting = false;
+      for (let attempt = 0; attempt < 100 && !waiting; attempt++) {
+        const locks = await prisma.$queryRaw<{ present: boolean }[]>`SELECT EXISTS(SELECT 1 FROM pg_locks WHERE locktype = 'advisory' AND classid = 1380930382 AND objid = (hashtext(${accountId})::bigint & 4294967295)::oid AND NOT granted) AS present`;
+        waiting = locks[0].present;
+        if (!waiting) await new Promise(resolve => setTimeout(resolve, 20));
+      }
+      expect(waiting).toBe(true);
+    } finally { release(); pause.mockRestore(); expect((await purge).ok).toBe(true); }
+    expect(await normalization).toEqual({ callId: null, finalized: false });
+    expect(await prisma.contact.count({ where: { account_id: accountId, phone: "+15555550177" } })).toBe(0);
+    expect(await prisma.call.count({ where: { account_id: accountId, provider_call_id: "purge-first", from_number: { not: "<PURGED>" } } })).toBe(0);
+    expect(await prisma.webhookEvent.findUnique({ where: { id: webhookEventId } })).toMatchObject({ process_status: "rejected", process_error: lane === "cleanup" ? "prospect_content_cleaned" : "call_content_purged" });
+  });
+
+  test.each(["general", "prospect"])("%s purge waits for normalization and late replay cannot restore content", async lane => {
+    const now = new Date("2026-10-18T12:00:00Z");
+    const old = new Date("2026-01-01T12:00:00Z");
+    if (lane === "prospect") await prisma.prospectBootstrap.create({ data: {
+      account_id: accountId, canonical_website: "https://synthetic.example.test", status: "expired", content_expires_at: old,
+    } });
+    await prisma.call.create({ data: {
+      account_id: accountId, provider: "telnyx", provider_call_id: "purge-race", direction: "inbound",
+      status: "completed", from_number: "+17865550177", to_number: demoNumber, started_at: old,
+    } });
+    const event: TelnyxWebhookEnvelope = { data: { id: "race-insights", event_type: "call.conversation_insights.generated", occurred_at: old.toISOString(), payload: {
+      call_control_id: "purge-race", from: "+17865550177", to: demoNumber, transcript: "Synthetic private content", summary: "Synthetic summary",
+    } } };
+    const webhookEventId = await ledger(event);
+    let purging: ReturnType<typeof purgeExpiredDemoCallContent> | ReturnType<typeof purgeExpiredProspectContent> | undefined;
+    try {
+      await prisma.$transaction(async tx => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(1380930382, hashtext(${accountId}))`;
+        purging = lane === "general" ? purgeExpiredDemoCallContent({ accountId, now }) : purgeExpiredProspectContent(now);
+        let waiting = false;
+        for (let attempt = 0; attempt < 100 && !waiting; attempt++) {
+          await tx.$executeRaw`SELECT pg_stat_clear_snapshot()`;
+          const locks = await tx.$queryRaw<{ present: boolean }[]>`SELECT EXISTS(SELECT 1 FROM pg_locks WHERE locktype = 'advisory' AND classid = 1380930382 AND objid = (hashtext(${accountId})::bigint & 4294967295)::oid AND NOT granted) AS present`;
+          waiting = locks[0].present;
+          if (!waiting) await new Promise(resolve => setTimeout(resolve, 20));
+        }
+        expect(waiting).toBe(true);
+        await normalizeTelnyxEvent({ client: tx, accountId, demoNumber, webhookEventId, event });
+      }, { timeout: 10_000 });
+    } finally { if (purging) expect((await purging).ok).toBe(true); }
+    const replay = { data: { ...event.data, id: "race-replay" } };
+    expect(await normalizeTelnyxEvent({ accountId, demoNumber, webhookEventId: await ledger(replay), event: replay })).toEqual({ callId: null, finalized: false });
+    const call = await prisma.call.findFirstOrThrow({ where: { account_id: accountId, provider_call_id: "purge-race" } });
+    expect(call).toMatchObject({ from_number: "<PURGED>", contact_id: null, transcript: null, summary: null });
+    expect(await prisma.leadEvent.count({ where: { call_id: call.id } })).toBe(0);
+    expect(await prisma.contact.count({ where: { account_id: accountId, phone: "+17865550177" } })).toBe(0);
+    expect(await prisma.callTranscript.findFirst({ where: { call_id: call.id } })).toMatchObject({ inline_text: null });
+  });
 
   test("handles insights before lifecycle events without duplicate calls", async () => {
     const insights: TelnyxWebhookEnvelope = {

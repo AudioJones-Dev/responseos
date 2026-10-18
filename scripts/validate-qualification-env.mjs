@@ -15,7 +15,7 @@ try {
     console.error(["Effects-disabled offline qualification preflight failed:", ...errors].join("\n"));
     process.exitCode = 1;
   } else {
-    console.log("Effects-disabled offline qualification preflight passed; hosted identity, live carrier authorization and durable assignment verification remain separate gates.");
+    console.log("Effects-disabled offline qualification preflight passed; policy evidence is attested, unverified. Hosted identity, live carrier authorization and authenticated durable assignment verification remain separate gates.");
   }
 } catch {
   console.error("Qualification input could not be read or parsed; values withheld.");

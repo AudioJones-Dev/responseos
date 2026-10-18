@@ -8,6 +8,8 @@ import { decideCallReview, hasActiveDispatchClaim, queueCallReview, loadCallRevi
 import { runCrmSyncForCall, prepareCrmSyncRetry } from "@/lib/crm/syncFinalizedCall";
 import { dispatchCompletedInteractionNotification } from "@/lib/notifications/completedInteraction";
 import { MockCrmProvider } from "@/lib/providers/crm";
+import * as crmProviders from "@/lib/providers/crm";
+import * as emailProviders from "@/lib/providers/email";
 import { ReviewPayloadSchema } from "@/lib/callReview/contracts";
 import { recordWebhookEvent, findAgentTargetForProviderCall, findInitializedProviderCallId } from "@/lib/data/webhookEvents";
 
@@ -29,6 +31,72 @@ beforeEach(async () => {
   callId = call.id;
 });
 afterAll(disconnectTestDb);
+
+test.each(["operator", "aj_admin"])("%s approved dispatch reaches synthetic CRM and email sinks once", async role => {
+  setDevSession(role);
+  const previous = process.env.RESPONSEOS_AUTHORIZED_EXECUTION_GATES;
+  process.env.RESPONSEOS_AUTHORIZED_EXECUTION_GATES = "v0.3-live-communications";
+  await prisma.agentProfile.create({ data: { account_id: accountId, name: "Synthetic", type: "supervised_receptionist", slug: "route-synthetic", enabled: true, system_policy_json: JSON.parse(JSON.stringify(EXECUTION_MODE_POLICIES.SUPERVISED_PILOT)) } });
+  const provider = new MockCrmProvider();
+  Object.defineProperty(provider, "providerId", { value: "hubspot" });
+  const create = vi.spyOn(provider, "createContact"), activity = vi.spyOn(provider, "createCallActivity"), task = vi.spyOn(provider, "createFollowUpTask");
+  const send = vi.fn().mockResolvedValue({ providerMessageId: "synthetic-approved-message" });
+  const crm = vi.spyOn(crmProviders, "getCrmProvider").mockReturnValue(provider);
+  const email = vi.spyOn(emailProviders, "getEmailProvider").mockReturnValue({ providerId: "resend", send });
+  try {
+    const review = (await queueCallReview(accountId, callId, { summary: value.summary }))!;
+    const route = await import("@/app/api/admin/call-reviews/[id]/route");
+    const post = (body: unknown) => route.POST(new Request("http://localhost", { method: "POST", body: JSON.stringify(body) }), { params: Promise.resolve({ id: review.id }) });
+    expect((await post({ action: "approve", revision: review.revision, payload: value })).status).toBe(200);
+    expect((await post({ action: "dispatch" })).status).toBe(200);
+    expect((await post({ action: "dispatch" })).status).toBe(200);
+    for (const spy of [create, activity, task, send]) expect(spy).toHaveBeenCalledOnce();
+    expect(await prisma.callReview.findUnique({ where: { id: review.id } })).toMatchObject({ crm_status: "succeeded", email_status: "accepted", email_message_id: "synthetic-approved-message", payload_json: value });
+  } finally {
+    crm.mockRestore(); email.mockRestore();
+    if (previous === undefined) delete process.env.RESPONSEOS_AUTHORIZED_EXECUTION_GATES; else process.env.RESPONSEOS_AUTHORIZED_EXECUTION_GATES = previous;
+  }
+});
+
+test.each([null, "client_admin@org_mock_1", "client_viewer@org_mock_1"])("review route denies %s for every action and conceals known/missing IDs", async role => {
+  const review = (await queueCallReview(accountId, callId, { summary: value.summary }))!;
+  const route = await import("@/app/api/admin/call-reviews/[id]/route");
+  const previous = process.env.RESPONSEOS_REQUIRE_AUTH;
+  try {
+    if (role) setDevSession(role);
+    else { delete process.env.RESPONSEOS_DEV_SESSION; process.env.RESPONSEOS_REQUIRE_AUTH = "true"; }
+    const bodies = [
+      { action: "approve", revision: 1, payload: value }, { action: "reject", revision: 1 },
+      { action: "dispatch" }, { action: "crm_inspect" },
+      { action: "crm_adopt", generation: 1, reason: "Synthetic resolution", evidence: "Synthetic evidence", priorWorkerStopped: true, expectedProviderId: "synthetic" },
+      { action: "crm_abandon", generation: 1, reason: "Synthetic resolution", evidence: "Synthetic evidence" },
+    ];
+    for (const body of bodies) for (const id of [review.id, "missing-review"]) {
+      const response = await route.POST(new Request("http://localhost", { method: "POST", body: JSON.stringify(body) }), { params: Promise.resolve({ id }) });
+      expect(response.status).toBe(403);
+      expect(await response.json()).toMatchObject({ error: { code: "operator_required" } });
+    }
+    expect(await prisma.callReview.findUnique({ where: { id: review.id } })).toMatchObject({ status: "pending", dispatch_at: null });
+    expect(await prisma.crmSyncOperation.count()).toBe(0);
+    expect(await prisma.notification.count()).toBe(0);
+  } finally { if (previous === undefined) delete process.env.RESPONSEOS_REQUIRE_AUTH; else process.env.RESPONSEOS_REQUIRE_AUTH = previous; }
+});
+
+test.each(["operator", "aj_admin"])("review route permits %s approval and rejection, rejects tenant overrides", async role => {
+  setDevSession(role);
+  const review = (await queueCallReview(accountId, callId, { summary: value.summary }))!;
+  const route = await import("@/app/api/admin/call-reviews/[id]/route");
+  const post = (body: unknown) => route.POST(new Request("http://localhost", { method: "POST", body: JSON.stringify(body) }), { params: Promise.resolve({ id: review.id }) });
+  expect((await post({ action: "approve", revision: 1, payload: value, accountId: "org_mock_1" })).status).toBe(422);
+  expect((await post({ action: "approve", revision: 1, payload: value })).status).toBe(200);
+  expect(await prisma.callReview.findUnique({ where: { id: review.id } })).toMatchObject({ status: "approved", payload_json: value });
+  await prisma.call.update({ where: { id: callId }, data: { transcript: "Synthetic changed evidence" } });
+  const second = (await queueCallReview(accountId, callId, { summary: "Synthetic revision" }))!;
+  expect((await route.POST(new Request("http://localhost", { method: "POST", body: JSON.stringify({ action: "reject", revision: second.revision }) }), { params: Promise.resolve({ id: second.id }) })).status).toBe(200);
+  expect(await prisma.callReview.findUnique({ where: { id: second.id } })).toMatchObject({ status: "rejected" });
+  expect(await prisma.crmSyncOperation.count()).toBe(0);
+  expect(await prisma.notification.count()).toBe(0);
+});
 
 test("signed initialization aliases recover both the tenant and canonical capture identity", async () => {
   await recordWebhookEvent({ account_id: accountId, provider: "telnyx", provider_event_id: "aliases", event_type: "assistant.initialization", raw_body: JSON.stringify({ data: { occurred_at: now.toISOString() } }), signature_valid: true, provider_call_id: "provider-call", provider_call_ids: ["provider-call", "shared-session"], agent_target: "+15555550188" });

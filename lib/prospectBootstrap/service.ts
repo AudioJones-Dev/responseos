@@ -1047,6 +1047,7 @@ export async function purgeExpiredProspectContent(now = new Date(), options: { p
     for (const bootstrap of due) {
       const purgeAccountContent = contentDueIds.has(bootstrap.id);
       const counts = await db.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(1380930382, hashtext(${bootstrap.account_id}))`;
         const sourceResult = await tx.knowledgeSource.updateMany({
           where: {
             account_id: bootstrap.account_id,
@@ -1141,6 +1142,7 @@ export async function cleanupExpiredProspectBootstraps(now = new Date(), options
     let cleaned = 0;
     for (const bootstrap of due) {
       await db.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(1380930382, hashtext(${bootstrap.account_id}))`;
         await tx.prospectBootstrap.update({ where: { id: bootstrap.id }, data: { status: "cleanup_pending" } });
         const calls = await tx.call.findMany({ where: { account_id: bootstrap.account_id }, select: { id: true } });
         const callIds = calls.map(({ id }) => id);

@@ -1,3 +1,5 @@
+import { LIVE_DEMO_FORBIDDEN } from "./live-demo-forbidden.mjs";
+
 export const LIVE_DEMO_TARGET = Object.freeze({
   orgId: "team_BHxIkAGPW6qEKKQBAt9c0NGz",
   projectId: "prj_Pm88ysh24EgV1DEIcvaE9r2Xd28A",
@@ -5,6 +7,10 @@ export const LIVE_DEMO_TARGET = Object.freeze({
   environmentId: "env_k4aq29aq3e4XqcKuaNyRYyOJ7YkV",
   environmentSlug: "frl-live-demo",
   alias: "responseos-frl-live-demo-env-frl-live-demo-audiojones.vercel.app",
+  aliases: Object.freeze([
+    "responseos-frl-live-demo-env-frl-live-demo-audiojones.vercel.app",
+    "responseos-frl-live-demo-frl-live-demo.vercel.app",
+  ]),
 });
 
 const sha = value => typeof value === "string" && /^[0-9a-f]{40}$/.test(value);
@@ -14,7 +20,7 @@ const present = value => typeof value === "string" && value.trim().length > 0;
 export function validateLiveDemoIdentity(evidence) {
   const errors = [];
   const target = LIVE_DEMO_TARGET;
-  const { project, environment, deployment, alias, revisions } = evidence ?? {};
+  const { project, environment, deployment, alias, aliases, revisions } = evidence ?? {};
   if (project?.id !== target.projectId || project?.name !== target.projectName || project?.accountId !== target.orgId) errors.push("Project/team identity mismatch");
   if (environment?.id !== target.environmentId || environment?.slug !== target.environmentSlug) errors.push("Custom environment identity mismatch");
   if (!sha(revisions?.control) || revisions.control !== revisions?.workflow || revisions.control !== revisions?.trustedControlTip || !sha(revisions?.application)) errors.push("Exact revision binding missing or mismatched");
@@ -22,17 +28,19 @@ export function validateLiveDemoIdentity(evidence) {
   if (!Object.hasOwn(deployment ?? {}, "target") || ![null, target.environmentSlug].includes(deployment?.target)) errors.push("Preview/Production or unknown deployment target is forbidden");
   if (deployment?.meta?.responseosApplicationSha !== revisions?.application || deployment?.meta?.responseosControlSha !== revisions?.control || (deployment?.gitSource?.sha != null && deployment.gitSource.sha !== revisions?.application)) errors.push("Deployment revision mismatch");
   if (typeof deployment?.id !== "string" || !/^dpl_[A-Za-z0-9]+$/.test(deployment.id) || deployment.id !== evidence?.expectedDeploymentId || deployment?.readyState !== "READY") errors.push("Exact READY deployment identity missing");
-  if (typeof deployment?.url !== "string" || !/^[a-z0-9-]+\.vercel\.app$/.test(deployment.url) || deployment.url === target.alias || deployment.url !== evidence?.expectedDeploymentHost) errors.push("Immutable deployment host mismatch");
+  if (typeof deployment?.url !== "string" || !/^[a-z0-9-]+\.vercel\.app$/.test(deployment.url) || target.aliases.includes(deployment.url) || deployment.url !== evidence?.expectedDeploymentHost) errors.push("Immutable deployment host mismatch");
   if (alias?.alias !== target.alias || alias?.projectId !== target.projectId || alias?.deploymentId !== deployment?.id || alias?.deployment?.id !== deployment?.id || alias?.deployment?.url !== deployment?.url || alias?.redirect != null || alias?.redirectStatusCode != null) errors.push("Managed alias binding mismatch");
   for (const key of ["alias", "automaticAliases", "userAliases"]) {
     const values = deployment?.[key];
-    if (!Array.isArray(values) || values.some(value => value !== target.alias) || values.length > 1 || (key === "userAliases" && values.length !== 0)) errors.push(`Deployment ${key} evidence missing or unsafe`);
+    if (!Array.isArray(values) || new Set(values).size !== values.length || values.some(value => !target.aliases.includes(value)) || (key === "alias" && (values.length !== target.aliases.length || target.aliases.some(value => !values.includes(value))))) errors.push(`Deployment ${key} evidence missing or unsafe`);
   }
+  if (!Array.isArray(aliases) || aliases.length !== target.aliases.length || new Set(aliases.map(value => value?.alias)).size !== target.aliases.length || target.aliases.some(host => !aliases.some(value => value?.alias === host && value.projectId === target.projectId && value.deploymentId === deployment?.id && value.deployment?.id === deployment?.id && value.deployment?.url === deployment?.url && value.redirect == null && value.redirectStatusCode == null))) errors.push("Exact alias readbacks missing or mismatched");
   return errors;
 }
 
 export function validateQualificationPreflight(env, policy) {
   const errors = [];
+  for (const key of LIVE_DEMO_FORBIDDEN) if (present(env[key])) errors.push(`${key} forbidden in qualification`);
   if (env.RESPONSEOS_DEPLOYMENT_LANE !== "live-demo") errors.push("Wrong deployment lane");
   if (!["1", "true"].includes(env.RESPONSEOS_REQUIRE_AUTH)) errors.push("Explicit authentication required");
   if (env.RESPONSEOS_DEV_SESSION !== undefined && env.RESPONSEOS_DEV_SESSION !== "") errors.push("Development session override forbidden");

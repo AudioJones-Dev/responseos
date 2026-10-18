@@ -1,8 +1,9 @@
-import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { configureSupervisedTenant } from "@/lib/agentExecution/supervisedTenant";
 import { startSupervisedQualification } from "@/lib/agentExecution/supervisedQualification";
 import { conservativePostCallAnalysis } from "@/lib/callControl/analysis";
 import { ingestCallControlEvent, requestQualifiedTransfer, runOperatorConsentEffect } from "@/lib/callControl/service";
+import { db } from "@/lib/db/client";
 import { withCaptureLock } from "@/lib/callReview/consent";
 import type { CallControlEvent } from "@/lib/providers/telnyx/callControl";
 import { disconnectTestDb, prisma, resetAndSeedTestDb, setDevSession } from "./setup";
@@ -71,6 +72,153 @@ describe("FRL Call Control qualification", () => {
     sendCommand.mockReset().mockImplementation(async ({ action }: { action: string }) => ({ status: 200, providerDate: new Date(NOW.getTime() + 4_000), conversationId: action === "ai_assistant_start" ? "conversation-1" : null, ok: true, errorCode: null }));
   });
   afterAll(disconnectTestDb);
+  afterEach(() => {
+    for (const [command] of sendCommand.mock.calls) {
+      expect(command.action).not.toMatch(/^record/);
+      expect(JSON.stringify(command.body ?? {})).not.toMatch(/"recording(?:_enabled)?":(?:true|"true")/);
+    }
+  });
+
+  test.each([null, "client_admin@org_mock_1", "client_viewer@org_mock_1"])("consent route denies %s before revealing capture existence", async role => {
+    await setupQualification();
+    await ingest(event("call.initiated", "auth-init", { to: NUMBER }, 1_000));
+    const capture = await prisma.callCaptureSession.findFirstOrThrow();
+    const route = await import("@/app/api/admin/call-capture/[id]/consent/route");
+    const previous = process.env.RESPONSEOS_REQUIRE_AUTH;
+    sendCommand.mockClear();
+    try {
+      if (role) setDevSession(role);
+      else { delete process.env.RESPONSEOS_DEV_SESSION; process.env.RESPONSEOS_REQUIRE_AUTH = "true"; }
+      for (const action of ["grant", "refuse", "withdraw"]) for (const id of [capture.id, "missing-capture"]) {
+        const response = await route.POST(new Request("http://localhost", { method: "POST", body: JSON.stringify({ action, disclosureRef: "approved:v1", evidenceRef: "witness:test", jurisdictionBasis: "test", eventKey: "00000000-0000-4000-8000-000000000080" }) }), { params: Promise.resolve({ id }) });
+        expect(response.status).toBe(403);
+      }
+      expect(await prisma.callConsentEvent.count()).toBe(0);
+      expect(sendCommand).not.toHaveBeenCalled();
+    } finally { if (previous === undefined) delete process.env.RESPONSEOS_REQUIRE_AUTH; else process.env.RESPONSEOS_REQUIRE_AUTH = previous; }
+  });
+
+  test.each(["operator", "aj_admin"])("%s records refusal and cannot grant after refusal or committed timeout", async role => {
+    await setupQualification(); setDevSession(role);
+    await ingest(event("call.initiated", "refusal-init", { to: NUMBER }, 1_000));
+    const capture = await prisma.callCaptureSession.findFirstOrThrow();
+    const route = await import("@/app/api/admin/call-capture/[id]/consent/route");
+    const post = (action: string, extra = {}) => route.POST(new Request("http://localhost", { method: "POST", body: JSON.stringify({ action, disclosureRef: "approved:v1", evidenceRef: "witness:test", jurisdictionBasis: "test", eventKey: action === "refuse" ? "00000000-0000-4000-8000-000000000081" : "00000000-0000-4000-8000-000000000082", ...extra }) }), { params: Promise.resolve({ id: capture.id }) });
+    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "CONSENT_PENDING_OPERATOR", dtmf_decision: "refused" } });
+    sendCommand.mockClear();
+    expect((await post("refuse")).status).toBe(200);
+    expect((await post("grant")).status).toBe(503);
+    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "AMBIGUOUS", dtmf_decision: "ambiguous" } });
+    expect((await post("grant")).status).toBe(503);
+    for (const extra of [{ source_channel: "unverified_external" }, { accountId: "org_mock_1" }]) expect((await post("grant", extra)).status).toBe(422);
+    expect(await prisma.callConsentEvent.count({ where: { action: "grant" } })).toBe(0);
+    expect(sendCommand.mock.calls.filter(([c]) => c.action === "ai_assistant_start")).toHaveLength(0);
+  });
+
+  test("committed signed gather timeout rejects a later affirmative event and operator grant", async () => {
+    await setupQualification();
+    await ingest(event("call.initiated", "timeout-sequence-init", { to: NUMBER }, 1_000));
+    const capture = await prisma.callCaptureSession.findFirstOrThrow();
+    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "AWAITING_DTMF" } });
+    await ingest(event("call.gather.ended", "timeout-sequence", { status: "timeout", digits: "", client_state: state(capture.id) }, 2_000));
+    expect(await prisma.callCaptureSession.findUnique({ where: { id: capture.id } })).toMatchObject({ control_state: "AMBIGUOUS" });
+    await expect(ingest(event("call.gather.ended", "timeout-late-affirmative", { status: "valid", digits: "1", client_state: state(capture.id) }, 3_000))).rejects.toThrow();
+    const route = await import("@/app/api/admin/call-capture/[id]/consent/route");
+    expect((await route.POST(new Request("http://localhost", { method: "POST", body: JSON.stringify({ action: "grant", disclosureRef: "approved:v1", evidenceRef: "witness:test", jurisdictionBasis: "test", eventKey: "00000000-0000-4000-8000-000000000085" }) }), { params: Promise.resolve({ id: capture.id }) })).status).toBe(503);
+    expect(await prisma.callConsentEvent.count({ where: { action: "grant" } })).toBe(0);
+    expect(sendCommand.mock.calls.filter(([c]) => c.action === "ai_assistant_start")).toHaveLength(0);
+  });
+
+  test("aj_admin can grant and withdraw witnessed consent through the actual route", async () => {
+    await setupQualification(); setDevSession("aj_admin");
+    await ingest(event("call.initiated", "admin-grant-init", { to: NUMBER }, 1_000));
+    const capture = await prisma.callCaptureSession.findFirstOrThrow();
+    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "CONSENT_PENDING_OPERATOR", dtmf_decision: "affirmative" } });
+    const route = await import("@/app/api/admin/call-capture/[id]/consent/route");
+    for (const [action, suffix] of [["grant", "086"], ["withdraw", "087"]]) expect((await route.POST(new Request("http://localhost", { method: "POST", body: JSON.stringify({ action, disclosureRef: "approved:v1", evidenceRef: "witness:test", jurisdictionBasis: "test", eventKey: `00000000-0000-4000-8000-000000000${suffix}` }) }), { params: Promise.resolve({ id: capture.id }) })).status).toBe(200);
+    expect(await prisma.callConsentEvent.count()).toBe(2);
+    expect(sendCommand.mock.calls.filter(([c]) => c.action === "ai_assistant_start")).toHaveLength(1);
+    expect(sendCommand.mock.calls.filter(([c]) => c.action === "ai_assistant_stop")).toHaveLength(1);
+  });
+
+  test("withdrawal uses operator recording time and a subsequent grant remains denied", async () => {
+    await setupQualification();
+    await ingest(event("call.initiated", "withdraw-time-init", { to: NUMBER }, 1_000));
+    const capture = await prisma.callCaptureSession.findFirstOrThrow();
+    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "AI_ACTIVE", dtmf_decision: "affirmative", capture_started_at: NOW } });
+    const route = await import("@/app/api/admin/call-capture/[id]/consent/route");
+    const post = (action: string, extra = {}) => route.POST(new Request("http://localhost", { method: "POST", body: JSON.stringify({ action, disclosureRef: "approved:v1", evidenceRef: "witness:delayed-report", jurisdictionBasis: "test", eventKey: action === "withdraw" ? "00000000-0000-4000-8000-000000000083" : "00000000-0000-4000-8000-000000000084", ...extra }) }), { params: Promise.resolve({ id: capture.id }) });
+    expect((await post("withdraw", { occurredAt: NOW.toISOString() })).status).toBe(422);
+    const before = new Date();
+    expect((await post("withdraw")).status).toBe(200);
+    const after = new Date();
+    const withdrawal = await prisma.callConsentEvent.findFirstOrThrow({ where: { action: "withdraw" } });
+    expect(withdrawal.occurred_at.getTime()).toBeGreaterThanOrEqual(before.getTime());
+    expect(withdrawal.occurred_at.getTime()).toBeLessThanOrEqual(after.getTime());
+    expect(await prisma.callCaptureSession.findUnique({ where: { id: capture.id } })).toMatchObject({ content_admission_closed_at: withdrawal.occurred_at });
+    expect((await post("grant")).status).toBe(503);
+  });
+
+  test("backend loss after consent insert rolls back grant and capture transition", async () => {
+    const url = new URL(process.env.DATABASE_URL!);
+    if (!["127.0.0.1", "localhost"].includes(url.hostname) || !url.pathname.endsWith("_test")) throw new Error("Disposable loopback database required");
+    await setupQualification();
+    await ingest(event("call.initiated", "mid-write-init", { to: NUMBER }, 1_000));
+    const capture = await prisma.callCaptureSession.findFirstOrThrow();
+    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "CONSENT_PENDING_OPERATOR", dtmf_decision: "affirmative" } });
+    const { PrismaClient } = await import("@prisma/client");
+    const controller = new PrismaClient();
+    const route = await import("@/app/api/admin/call-capture/[id]/consent/route");
+    sendCommand.mockClear();
+    let response: Promise<Response> | undefined;
+    try {
+      await controller.$transaction(async lock => {
+        await lock.$queryRaw`SELECT id FROM "CallCaptureSession" WHERE id = ${capture.id} FOR UPDATE`;
+        response = route.POST(new Request("http://localhost", { method: "POST", body: JSON.stringify({ action: "grant", disclosureRef: "approved:v1", evidenceRef: "witness:test", jurisdictionBasis: "test", eventKey: "00000000-0000-4000-8000-000000000098" }) }), { params: Promise.resolve({ id: capture.id }) });
+        let victim: number | undefined;
+        for (let attempt = 0; attempt < 100 && !victim; attempt++) {
+          await lock.$executeRaw`SELECT pg_stat_clear_snapshot()`;
+          const waiting = await lock.$queryRaw<{ pid: number }[]>`SELECT pid FROM pg_stat_activity WHERE datname = current_database() AND pid <> pg_backend_pid() AND wait_event = 'transactionid' AND query LIKE '%UPDATE%CallCaptureSession%'`;
+          if (waiting.length > 1) throw new Error("Ambiguous synthetic backend target");
+          victim = waiting[0]?.pid;
+          if (!victim) await new Promise(resolve => setTimeout(resolve, 20));
+        }
+        if (!victim) throw new Error("Consent transaction did not reach post-insert capture update");
+        expect((await lock.$queryRaw<{ terminated: boolean }[]>`SELECT pg_terminate_backend(${victim}::int) AS terminated`)[0].terminated).toBe(true);
+      }, { timeout: 10_000 });
+      expect((await response!).status).toBe(503);
+      expect(await prisma.callConsentEvent.count({ where: { provider_call_id: capture.provider_call_id } })).toBe(0);
+      expect(await prisma.callCaptureSession.findUnique({ where: { id: capture.id } })).toMatchObject({ control_state: "CONSENT_PENDING_OPERATOR" });
+      expect(await prisma.telnyxCallCommand.count({ where: { capture_session_id: capture.id, command_type: "ai_assistant_start" } })).toBe(0);
+      expect(sendCommand).not.toHaveBeenCalled();
+    } finally { await response; await controller.$disconnect(); }
+  });
+
+  test("lost acknowledgement after actual consent COMMIT requires same-key readback before one start", async () => {
+    await setupQualification();
+    await ingest(event("call.initiated", "lost-ack-init", { to: NUMBER }, 1_000));
+    const capture = await prisma.callCaptureSession.findFirstOrThrow();
+    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "CONSENT_PENDING_OPERATOR", dtmf_decision: "affirmative" } });
+    const route = await import("@/app/api/admin/call-capture/[id]/consent/route");
+    const request = () => new Request("http://localhost", { method: "POST", body: JSON.stringify({ action: "grant", disclosureRef: "approved:v1", evidenceRef: "witness:test", jurisdictionBasis: "test", eventKey: "00000000-0000-4000-8000-000000000097" }) });
+    if (!db) throw new Error("Database required");
+    const original = db.$transaction.bind(db);
+    const lost = vi.spyOn(db, "$transaction").mockImplementationOnce((async (...args: unknown[]) => {
+      await Reflect.apply(original, db, args);
+      throw new Error("synthetic_committed_ack_lost");
+    }) as typeof db.$transaction);
+    sendCommand.mockClear();
+    try { expect((await route.POST(request(), { params: Promise.resolve({ id: capture.id }) })).status).toBe(503); }
+    finally { lost.mockRestore(); }
+    expect(await prisma.callConsentEvent.count({ where: { provider_call_id: capture.provider_call_id } })).toBe(1);
+    expect(await prisma.callCaptureSession.findUnique({ where: { id: capture.id } })).toMatchObject({ control_state: "START_PENDING" });
+    expect(sendCommand).not.toHaveBeenCalled();
+    expect((await route.POST(request(), { params: Promise.resolve({ id: capture.id }) })).status).toBe(200);
+    expect((await route.POST(request(), { params: Promise.resolve({ id: capture.id }) })).status).toBe(200);
+    expect(await prisma.callConsentEvent.count({ where: { provider_call_id: capture.provider_call_id } })).toBe(1);
+    expect(sendCommand.mock.calls.filter(([c]) => c.action === "ai_assistant_start")).toHaveLength(1);
+  });
+
 
   test("actual consent transaction backend loss never grants consent or dispatches AI", async () => {
     const url = new URL(process.env.DATABASE_URL!);

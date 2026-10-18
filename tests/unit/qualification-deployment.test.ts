@@ -11,11 +11,11 @@ function fixture() {
   const pulled = { DATABASE_URL: env.DATABASE_URL, DIRECT_URL: env.DIRECT_URL, NEXT_PUBLIC_APP_URL: `https://${t.alias}`, RESPONSEOS_DEPLOYMENT_LANE: "live-demo", RESPONSEOS_REQUIRE_AUTH: "true", CLERK_SECRET_KEY: "sk_test_synthetic", NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_synthetic", CLERK_WEBHOOK_SECRET: "whsec_synthetic", AJ_DIGITAL_CLERK_ORG_ID: "org_synthetic", RESPONSEOS_LIVE_HUBSPOT_ENABLED: "false", RESPONSEOS_LIVE_EMAIL_ENABLED: "false", RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED: "false" };
   const project = { id: String(t.projectId), name: String(t.projectName), accountId: String(t.orgId), framework: "nextjs", rootDirectory: null, outputDirectory: null, installCommand: "npm --version", buildCommand: "npm run build", nodeVersion: "24.x", ssoProtection: { deploymentType: "all_except_custom_domains" } };
   const environment = { id: String(t.environmentId), slug: String(t.environmentSlug) };
-  const deployment = { id: "dpl_synthetic", url: "immutable-test.vercel.app", readyState: "READY", target: null, projectId: String(t.projectId), ownerId: String(t.orgId), customEnvironment: { id: String(t.environmentId) }, meta: { responseosApplicationSha: app, responseosControlSha: control }, alias: [t.alias], automaticAliases: [t.alias], userAliases: [] };
+  const deployment = { id: "dpl_synthetic", url: "immutable-test.vercel.app", readyState: "READY", target: null, projectId: String(t.projectId), ownerId: String(t.orgId), customEnvironment: { id: String(t.environmentId) }, meta: { responseosApplicationSha: app, responseosControlSha: control }, alias: [...t.aliases], automaticAliases: [t.alias], userAliases: [] };
   const alias = { alias: t.alias, projectId: String(t.projectId), deploymentId: deployment.id, deployment: { id: deployment.id, url: deployment.url } };
   const io = {
     cliVersion: vi.fn(async () => "41.7.0"),
-    get: vi.fn(async (resource: string): Promise<unknown> => resource.includes("custom-environments") ? environment : resource.startsWith("/v9/projects") ? project : resource.startsWith("/v13/") ? deployment : alias),
+    get: vi.fn(async (resource: string): Promise<unknown> => resource.includes("custom-environments") ? environment : resource.startsWith("/v9/projects") ? project : resource.startsWith("/v13/") ? deployment : resource.includes(t.alias) ? alias : { ...alias, alias: t.aliases[1] }),
     cli: vi.fn(async (args: string[]) => args[0] === "deploy" ? `https://${deployment.url}` : ""),
     assertCleanSource: vi.fn(async () => undefined),
     readProjectLink: vi.fn(async () => ({ orgId: String(t.orgId), projectId: String(t.projectId) })),
@@ -33,13 +33,13 @@ describe("qualification deployment orchestration with synthetic I/O only", () =>
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("values withheld");
   });
-  test("binds every stage and verifies exact deployment and both health origins", async () => {
+  test("binds every stage and verifies exact deployment and all three health origins", async () => {
     const f = fixture(); expect(await f.run()).toMatchObject({ deploymentId: "dpl_synthetic", applicationSha: app, controlSha: control });
     expect(f.io.cli.mock.calls.map(c => c[0][0])).toEqual(["pull", "build", "deploy"]);
     expect(f.io.cli.mock.calls[0][0]).toContain(`--environment=${String(t.environmentSlug)}`);
     for (const call of f.io.cli.mock.calls.slice(1)) expect(call[0]).toContain(`--target=${String(t.environmentSlug)}`);
     expect(f.io.cli.mock.calls[2][0]).toContain("--prebuilt");
-    expect(f.io.health.mock.calls).toHaveLength(2);
+    expect(f.io.health.mock.calls).toHaveLength(3);
     expect(f.io.get).toHaveBeenCalledWith("/v13/deployments/dpl_synthetic?withGitRepoInfo=true");
   });
   test.each(["controlSha", "workflowSha", "controlHead", "controlTip", "applicationSha", "applicationHead", "ref"])("rejects mismatched %s before I/O", async key => {

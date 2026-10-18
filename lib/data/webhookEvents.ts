@@ -139,9 +139,10 @@ export async function recordWebhookEvent(entry: {
     });
     const row = await db.webhookEvent.findUnique({
       where: { dedupe_hash },
-      select: { id: true, process_status: true },
+      select: { id: true, process_status: true, account_id: true },
     });
     if (!row) return err("webhook_event_not_recorded", "Webhook event insert did not produce a readable ledger row.");
+    if (row.account_id && entry.account_id && row.account_id !== entry.account_id) return err("webhook_tenant_conflict", "Webhook identity is already bound to another tenant.");
     return ok({
       id: row.id,
       process_status: inserted.count === 1 ? row.process_status as WebhookProcessStatus : "duplicate",
@@ -378,8 +379,8 @@ export async function backfillWebhookEvent(entry: {
   const client = entry.client ?? db;
   if (client === null) return;
   const current = await client.webhookEvent.findUnique({ where: { id: entry.id }, select: { provider_call_ids: true } });
-  await client.webhookEvent.update({
-    where: { id: entry.id },
+  const updated = await client.webhookEvent.updateMany({
+    where: { id: entry.id, OR: [{ account_id: null }, { account_id: entry.account_id }] },
     data: {
       account_id: entry.account_id,
       raw_body: entry.raw_body,
@@ -389,6 +390,7 @@ export async function backfillWebhookEvent(entry: {
       agent_target: entry.agent_target ?? undefined,
     },
   });
+  if (updated.count !== 1) throw new Error("webhook_tenant_conflict");
 }
 
 export async function getWebhookProcessingState(id: string): Promise<

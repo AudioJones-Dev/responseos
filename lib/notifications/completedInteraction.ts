@@ -6,6 +6,7 @@ import { err, errFromThrown, ok, type Result } from "@/lib/data/result";
 import { sanitizeCrmText } from "@/lib/crm/sanitization";
 import { BusinessMemorySnapshotSchema } from "@/lib/prospectBootstrap/contracts";
 import { readOperatingConfigurationValue } from "@/lib/agentExecution/operatingConfiguration";
+import { supervisedCallWasQualification } from "@/lib/agentExecution/supervisedRuntime";
 import { getEmailProvider, isRetryableEmailErrorCode, type EmailProvider } from "@/lib/providers/email";
 
 /**
@@ -185,6 +186,7 @@ export async function dispatchCompletedInteractionNotification(params: {
   const dedupeKey = `${NOTIFICATION_EVENT}:${params.accountId}:${params.callId}`;
 
   try {
+    if (await supervisedCallWasQualification(params.accountId, params.callId)) return err("qualification_business_effects_forbidden", "Qualification calls cannot dispatch business notifications.");
     const protectedCall = await db.call.findFirst({ where: { id: params.callId, account_id: params.accountId } });
     if (protectedCall?.review_required) return err("approval_required", "Use the approved call review dispatch.");
     const existing = await db.notification.findUnique({ where: { dedupe_key: dedupeKey } });

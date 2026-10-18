@@ -119,6 +119,13 @@ export async function normalizeTelnyxEvent(params: {
   // Cooperating normalizers share contacts across calls. Capture callers already
   // hold their capture lock; never acquire a capture lock after this account lock.
   await db.$executeRaw`SELECT pg_advisory_xact_lock(1380930382, hashtext(${params.accountId}))`;
+  const cleanedProspect = await db.prospectBootstrap.findFirst({
+    where: { account_id: params.accountId, status: "cleaned" }, select: { id: true },
+  });
+  if (cleanedProspect && await db.account.findFirst({ where: { id: params.accountId, status: "cancelled" }, select: { id: true } })) {
+    await setWebhookProcessStatus({ client: params.client, id: params.webhookEventId, process_status: "rejected", process_error: "prospect_content_cleaned" });
+    return { callId: null, finalized: false };
+  }
   const payload = params.event.data.payload;
   const providerCallId = params.providerCallId ?? getTelnyxCallId(payload);
   if (!providerCallId) {

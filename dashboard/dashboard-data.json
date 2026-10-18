@@ -1601,13 +1601,13 @@
     {
       "id": "FRL-LOCAL-HARDENING-20261018",
       "phase": "Integrations",
-      "title": "Local FRL workflow quarantine, qualification contract and normalization concurrency hardening",
+      "title": "Local FRL route, sink, consent-fault and purge-boundary hardening",
       "owner": "Codex",
       "status": "Review",
       "progress": 85,
       "priority": "High",
       "blocked": true,
-      "blockedReason": "Local successor adds inactive workflow orchestration and auth/final-provider regression evidence. Hosted activation, installed CLI verification, immutable webhook fingerprint schema approval, hosted commissioning and live rehearsals remain gated. Exact final-commit checks are in the external successor evidence bundle."
+      "blockedReason": "Boundary successor expands actual-route, signature, fresh-process, final-sink and retention ordering checks; activation remains disabled. Immutable-body schema, CLI installation, consent source-time decision and hosted commissioning/rehearsals remain gated. Exact final-commit evidence is external."
     }
   ],
   "liveIssues": [

@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { describe, expect, test } from "vitest";
 import { LIVE_DEMO_TARGET as target, validateLiveDemoIdentity, validateQualificationPreflight } from "@/scripts/live-demo-commissioning-contract.mjs";
+import { LIVE_DEMO_FORBIDDEN } from "@/scripts/live-demo-forbidden.mjs";
 
 const control = "a".repeat(40);
 const application = "b".repeat(40);
@@ -17,9 +18,10 @@ const evidence = () => ({
     id: "dpl_test123", url: "immutable-test.vercel.app", readyState: "READY", target: null as string | null,
     projectId: target.projectId, ownerId: String(target.orgId), customEnvironment: { id: target.environmentId },
     meta: { responseosApplicationSha: application, responseosControlSha: control },
-    alias: [target.alias], automaticAliases: [target.alias], userAliases: [] as string[],
+    alias: [...target.aliases], automaticAliases: [target.alias] as string[], userAliases: [] as string[],
   },
   alias: { alias: target.alias, projectId: target.projectId, deploymentId: "dpl_test123", deployment: { id: "dpl_test123", url: "immutable-test.vercel.app" } },
+  aliases: target.aliases.map(alias => ({ alias, projectId: target.projectId, deploymentId: "dpl_test123", deployment: { id: "dpl_test123", url: "immutable-test.vercel.app" } })),
 });
 const env = {
   RESPONSEOS_DEPLOYMENT_LANE: "live-demo", RESPONSEOS_REQUIRE_AUTH: "true",
@@ -49,6 +51,7 @@ describe("closed FRL commissioning contract", () => {
       const positive = run(env);
       expect(positive.status).toBe(0);
       expect(positive.stdout).toContain("Effects-disabled offline qualification preflight passed");
+      expect(positive.stdout).toContain("attested, unverified");
       expect(run({ ...env, RESPONSEOS_LIVE_EMAIL_ENABLED: "true" }).status).toBe(1);
       writeFileSync(policyPath, "{synthetic-sensitive-marker");
       const malformed = run(env);
@@ -100,10 +103,29 @@ describe("closed FRL commissioning contract", () => {
       expect(validateQualificationPreflight({ ...env, [key]: value }, policy).length).toBeGreaterThan(0);
     }
   });
-  test.each(["RESPONSEOS_DEV_SESSION", "HUBSPOT_ACCESS_TOKEN", "RESEND_API_KEY", "TELNYX_API_KEY", "RESPONSEOS_AUTHORIZED_EXECUTION_GATES"])("rejects %s without disclosing its value", key => {
+  test.each([...LIVE_DEMO_FORBIDDEN, "HUBSPOT_ACCESS_TOKEN", "RESEND_API_KEY", "TELNYX_API_KEY", "RESPONSEOS_AUTHORIZED_EXECUTION_GATES"])("rejects %s without disclosing its value", key => {
     const errors = validateQualificationPreflight({ ...env, [key]: "sensitive-synthetic-value" }, policy);
     expect(errors.length).toBeGreaterThan(0);
     expect(errors.join(" ")).not.toContain("sensitive-synthetic-value");
+  });
+  test("requires both exact aliases and both deployment-bound readbacks", () => {
+    for (const mutate of [
+      (input: ReturnType<typeof evidence>) => { input.deployment.alias.pop(); },
+      (input: ReturnType<typeof evidence>) => { input.deployment.alias.push("unexpected.vercel.app"); },
+      (input: ReturnType<typeof evidence>) => { input.aliases.pop(); },
+      (input: ReturnType<typeof evidence>) => { input.aliases[1].deploymentId = "dpl_other"; },
+      (input: ReturnType<typeof evidence>) => { input.aliases[1].deployment.url = "other.vercel.app"; },
+      (input: ReturnType<typeof evidence>) => { input.aliases[1] = input.aliases[0]; },
+      (input: ReturnType<typeof evidence>) => { Object.assign(input.aliases[1], { redirect: "https://unexpected.example.test" }); },
+      (input: ReturnType<typeof evidence>) => { Object.assign(input.aliases[1], { projectId: "other" }); },
+      (input: ReturnType<typeof evidence>) => { Object.assign(input, { aliases: undefined }); },
+      (input: ReturnType<typeof evidence>) => { input.deployment.automaticAliases.push("unexpected.vercel.app"); },
+    ]) {
+      const input = evidence(); mutate(input);
+      expect(validateLiveDemoIdentity(input).length).toBeGreaterThan(0);
+    }
+    const reversed = evidence(); reversed.deployment.alias.reverse(); reversed.aliases.reverse();
+    expect(validateLiveDemoIdentity(reversed)).toEqual([]);
   });
   test("rejects invalid Clerk, recording and incomplete permanent prohibition evidence", () => {
     for (const key of ["CLERK_SECRET_KEY", "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "CLERK_WEBHOOK_SECRET", "AJ_DIGITAL_CLERK_ORG_ID"]) {

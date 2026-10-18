@@ -30,7 +30,7 @@ export function deploymentHost(output) {
   const value = String(output).trim();
   let url;
   try { url = new URL(value); } catch { throw new Error("invalid_deployment_url"); }
-  if (url.protocol !== "https:" || url.username || url.password || url.port || url.pathname !== "/" || url.search || url.hash || !/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.vercel\.app$/.test(url.hostname) || url.hostname === target.alias) throw new Error("invalid_deployment_url");
+  if (url.protocol !== "https:" || url.username || url.password || url.port || url.pathname !== "/" || url.search || url.hash || !/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.vercel\.app$/.test(url.hostname) || target.aliases.includes(url.hostname)) throw new Error("invalid_deployment_url");
   return url.hostname;
 }
 
@@ -77,12 +77,14 @@ export async function runQualificationDeployment(input, policy, env, io) {
   const byId = await io.get(`/v13/deployments/${deployment.id}?withGitRepoInfo=true`);
   if (byId.id !== deployment.id || byId.url !== host) throw new Error("deployment_readback_conflict");
   const alias = await io.get(`/v4/aliases/${target.alias}?projectId=${target.projectId}`);
+  const aliases = [alias];
+  for (const host of target.aliases.filter(value => value !== target.alias)) aliases.push(await io.get(`/v4/aliases/${host}?projectId=${target.projectId}`));
   requireValid(validateLiveDemoIdentity({
-    project, environment, deployment: byId, alias,
+    project, environment, deployment: byId, alias, aliases,
     expectedDeploymentId: deployment.id, expectedDeploymentHost: host,
     revisions: { control: input.controlSha, workflow: input.workflowSha, trustedControlTip: input.controlTip, application: input.applicationSha },
   }));
-  for (const origin of [`https://${host}`, `https://${target.alias}`]) {
+  for (const origin of [`https://${host}`, ...target.aliases.map(value => `https://${value}`)]) {
     const health = await io.health(origin);
     if (health?.build_sha !== input.applicationSha) throw new Error("health_revision_mismatch");
   }

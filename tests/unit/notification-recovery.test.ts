@@ -7,7 +7,7 @@ const provider = { providerId: "resend" as const, send: mocks.send };
 const row = { id: "notification", account_id: "account", call_id: "call", recipient: "owner@example.test", subject: "Callback", message: "Approved summary", status: "failed", provider: "resend", attempt_count: 1, last_error_code: "email_request_failed", provider_message_id: null };
 beforeEach(() => {
   vi.resetAllMocks();
-  mocks.call.mockResolvedValue({ review_required: false });
+  mocks.call.mockResolvedValue({ review_required: false, to_number: "", provider_call_id: null });
   mocks.find.mockResolvedValue({ ...row });
   mocks.update.mockResolvedValue({});
   mocks.send.mockResolvedValue({ providerMessageId: "accepted-id" });

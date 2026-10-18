@@ -20,6 +20,7 @@
     "config:plan:production": "node scripts/config/build-promotion-plan.mjs infra/environments/staging/environment.json infra/environments/production/environment.template.json infra/environments/promotion/staging-to-production.rules.json",
     "validate:staging-env": "node scripts/validate-staging-env.mjs",
     "validate:live-demo-env": "node scripts/validate-live-demo-env.mjs",
+    "validate:qualification-env": "node scripts/validate-qualification-env.mjs",
     "retention:purge": "tsx scripts/retention-purge.ts",
     "demo:reset": "tsx scripts/reset-demo-sandbox.ts",
     "dev:doppler": "doppler run -- next dev",

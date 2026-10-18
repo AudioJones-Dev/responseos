@@ -1,5 +1,7 @@
 # Unreleased — supervised FRL demonstration (in review)
 
+- Local boundary successor: block historical qualification notification retries before provider acquisition; serialize content purge with normalization and reject cleaned cancelled prospects; bind webhook backfill to its first tenant. Expand actual-route, real-signature, final-sink, fresh-process, consent-fault and purge-order regressions. Bind both approved deployment aliases and share forbidden-provider checks; supplied preflight policy remains attested/unverified. No schema, activation or live readiness claim.
+
 - Local FRL successor: wire disabled qualification deployment checks and strengthen auth/final-provider regression evidence; hosted activation and live readiness remain gated.
 
 - Local hardening candidate: close the unsafe Preview/migration deployment workflow pending separate activation review, add offline qualification/target evidence contracts, and serialize cooperating account normalizers transactionally. Preserve manual analysis and all effect gates. Fingerprint schema work and hosted readiness remain unimplemented approval gates; see the October 18 local hardening plan.

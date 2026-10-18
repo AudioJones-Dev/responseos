@@ -1,7 +1,8 @@
 import { afterAll, afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { runCrmSyncForCall, reconcileCrmOperation } from "@/lib/crm/syncFinalizedCall";
 import { MockCrmProvider, type CrmProvider } from "@/lib/providers/crm";
-import { disconnectTestDb, prisma, resetAndSeedTestDb } from "./setup";
+import { disconnectTestDb, prisma, resetAndSeedTestDb, setDevSession } from "./setup";
+import * as crmProviders from "@/lib/providers/crm";
 
 describe("durable CRM synchronization", () => {
   beforeEach(resetAndSeedTestDb);
@@ -176,6 +177,31 @@ describe("supervised CRM external-effect uncertainty", () => {
   });
   afterEach(() => vi.unstubAllEnvs());
   afterAll(disconnectTestDb);
+
+  test.each(["operator", "aj_admin"])("%s can inspect and abandon a preexisting qualification recovery record without CRM writes", async role => {
+    setDevSession(role);
+    const create = vi.spyOn(provider, "createContact").mockRejectedValue(new Error("synthetic uncertain acceptance"));
+    await runCrmSyncForCall(params());
+    const call = await prisma.call.findUniqueOrThrow({ where: { id: callId } });
+    const number = await prisma.telephonyNumber.create({ data: { provider: "telnyx", provider_number_id: "synthetic-reconciliation", e164: call.to_number, status: "assigned" } });
+    await prisma.telephonyNumberAssignment.create({ data: { account_id: accountId, telephony_number_id: number.id, provider_assistant_id: "synthetic-assistant", status: "qualification", assigned_at: new Date(call.started_at.getTime() - 1000), unassigned_at: new Date(call.started_at.getTime() + 1000) } });
+    create.mockClear();
+    const readback = vi.spyOn(provider, "reconcileEffect");
+    const activity = vi.spyOn(provider, "createCallActivity"), task = vi.spyOn(provider, "createFollowUpTask"), associate = vi.spyOn(provider, "associateContact");
+    const factory = vi.spyOn(crmProviders, "getCrmProvider").mockReturnValue(provider);
+    try {
+      const route = await import("@/app/api/admin/call-reviews/[id]/route");
+      const post = (body: unknown) => route.POST(new Request("http://localhost", { method: "POST", body: JSON.stringify(body) }), { params: Promise.resolve({ id: reviewId }) });
+      expect((await post({ action: "crm_inspect" })).status).toBe(200);
+      expect(readback).toHaveBeenCalledOnce();
+      readback.mockResolvedValue({ outcome: "verified_match", providerId: "synthetic-observed" });
+      expect((await post({ action: "crm_adopt", generation: (await operation()).attempt_count, reason: "Synthetic operator adoption", evidence: "Synthetic provider readback inspected", priorWorkerStopped: true, expectedProviderId: "synthetic-observed" })).status).toBe(409);
+      expect((await post({ action: "crm_abandon", generation: (await operation()).attempt_count, reason: "Synthetic operator abandonment", evidence: "Synthetic provider readback inspected" })).status).toBe(200);
+      expect(await operation()).toMatchObject({ status: "cancelled" });
+      expect(await runCrmSyncForCall(params())).toMatchObject({ ok: false, error: { code: "qualification_business_effects_forbidden" } });
+      for (const spy of [create, activity, task, associate]) expect(spy).not.toHaveBeenCalled();
+    } finally { factory.mockRestore(); }
+  });
 
   test("accepted timeout, invisible search, explicit verified adoption and continuation retain original review", async () => {
     const create = vi.spyOn(provider, "createContact").mockRejectedValue(new Error("accepted then timeout"));

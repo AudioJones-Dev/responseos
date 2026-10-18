@@ -46,6 +46,7 @@ export async function purgeExpiredDemoCallContent(params: {
       return ok({ calls, webhookPayloads });
     }
     const counts = await db.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(1380930382, hashtext(${accountId}))`;
       const calls = await tx.call.findMany({ where: callWhere, select: { id: true, contact_id: true } });
       const callIds = calls.map(({ id }) => id);
       const leads = await tx.leadEvent.findMany({

@@ -1,5 +1,7 @@
 # FRL local hardening and commissioning gates
 
+> Historical checkpoint description for `457e568`. Current implementation and limitations are in `FRL_BOUNDARY_MATRIX_2026-10-18.md` and `FRL_QUALIFICATION_WORKFLOW_2026-10-18.md`. The successor workflow is implemented but inactive, both approved aliases are bound, purge writers share the normalization lock, and consent fault tests extend beyond the pre-write boundary. The checkpoint descriptions below are not current implementation claims.
+
 Status: local development candidate, not hosted or Mike-demo ready. Base is the preserved release successor `664a76a2d58c0e94868722488b34a2b16b9890cd`; isolated branch `feat/frl-local-hardening-20261018`. Original worktrees and developer branches remain unchanged. Final commit/tree and check counts belong in the external `hardening-20261018` evidence bundle, generated after committing this document.
 
 ## Phases and owners

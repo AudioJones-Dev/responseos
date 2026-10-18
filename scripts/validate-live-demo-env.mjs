@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import { parseEnv } from "node:util";
 import { pathToFileURL } from "node:url";
+import { LIVE_DEMO_FORBIDDEN as FORBIDDEN } from "./live-demo-forbidden.mjs";
 
 const REQUIRED = [
   "DATABASE_URL",
@@ -25,23 +26,6 @@ const LIVE_COMMUNICATIONS_GATE = "v0.3-live-communications";
 // TELNYX_API_KEY is permitted here (owner decision 2026-09-27): Call Control
 // qualification sends provider commands with it. It stays forbidden in the
 // mock-only staging lane.
-const FORBIDDEN = [
-  "RESPONSEOS_DEV_SESSION",
-  "TWILIO_ACCOUNT_SID",
-  "TWILIO_AUTH_TOKEN",
-  "TWILIO_PHONE_NUMBER",
-  "RETELL_API_KEY",
-  "VAPI_API_KEY",
-  "BLAND_API_KEY",
-  "GHL_API_KEY",
-  "CALENDLY_API_KEY",
-  "STRIPE_SECRET_KEY",
-  "STRIPE_WEBHOOK_SECRET",
-  "R2_ACCOUNT_ID",
-  "R2_ACCESS_KEY_ID",
-  "R2_SECRET_ACCESS_KEY",
-  "R2_BUCKET_NAME",
-];
 
 const hasValue = (value) => typeof value === "string" && value.trim().length > 0;
 const enabled = (value) => hasValue(value) && value !== "0" && value.toLowerCase() !== "false";
