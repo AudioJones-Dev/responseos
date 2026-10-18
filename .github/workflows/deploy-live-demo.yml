@@ -26,7 +26,6 @@ jobs:
       CONTROL_SHA: ${{ inputs.control_sha }}
       APPLICATION_SHA: ${{ inputs.application_sha }}
       WORKFLOW_SHA: ${{ github.workflow_sha }}
-      DISPATCH_REF: ${{ github.ref }}
     steps:
       - name: Validate revision binding and stop before hosted effects
         shell: bash
@@ -34,7 +33,6 @@ jobs:
           set -euo pipefail
           [[ "$CONTROL_SHA" =~ ^[0-9a-f]{40}$ ]]
           [[ "$APPLICATION_SHA" =~ ^[0-9a-f]{40}$ ]]
-          test "$DISPATCH_REF" = refs/heads/master
           test "$CONTROL_SHA" = "$WORKFLOW_SHA"
           echo '::error::Deployment remains closed. Complete docs/readiness/FRL_LOCAL_HARDENING_2026-10-18.md commissioning gates and approve a separately reviewed activation change.'
           exit 1

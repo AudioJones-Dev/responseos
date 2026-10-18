@@ -17,7 +17,7 @@ export function validateLiveDemoIdentity(evidence) {
   const { project, environment, deployment, alias, revisions } = evidence ?? {};
   if (project?.id !== target.projectId || project?.name !== target.projectName || project?.accountId !== target.orgId) errors.push("Project/team identity mismatch");
   if (environment?.id !== target.environmentId || environment?.slug !== target.environmentSlug) errors.push("Custom environment identity mismatch");
-  if (!sha(revisions?.control) || revisions.control !== revisions?.workflow || revisions.control !== revisions?.currentMaster || !sha(revisions?.application)) errors.push("Exact revision binding missing or mismatched");
+  if (!sha(revisions?.control) || revisions.control !== revisions?.workflow || revisions.control !== revisions?.trustedControlTip || !sha(revisions?.application)) errors.push("Exact revision binding missing or mismatched");
   if (deployment?.projectId !== target.projectId || deployment?.ownerId !== target.orgId || deployment?.customEnvironment?.id !== target.environmentId) errors.push("Deployment target identity mismatch");
   if (!Object.hasOwn(deployment ?? {}, "target") || ![null, target.environmentSlug].includes(deployment?.target)) errors.push("Preview/Production or unknown deployment target is forbidden");
   if (deployment?.meta?.responseosApplicationSha !== revisions?.application || deployment?.meta?.responseosControlSha !== revisions?.control || (deployment?.gitSource?.sha != null && deployment.gitSource.sha !== revisions?.application)) errors.push("Deployment revision mismatch");
@@ -40,6 +40,7 @@ export function validateQualificationPreflight(env, policy) {
   if (!/^pk_(test|live)_[A-Za-z0-9=]+$/.test(env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ?? "")) errors.push("Clerk publishable key shape invalid");
   if ((env.CLERK_SECRET_KEY ?? "").split("_")[1] !== (env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ?? "").split("_")[1]) errors.push("Clerk key modes mismatch");
   if (!/^org_[A-Za-z0-9]+$/.test(env.AJ_DIGITAL_CLERK_ORG_ID ?? "")) errors.push("Operator organization required");
+  if (!/^whsec_[A-Za-z0-9+/=]+$/.test(env.CLERK_WEBHOOK_SECRET ?? "")) errors.push("Clerk webhook secret shape invalid");
   for (const key of ["RESPONSEOS_LIVE_HUBSPOT_ENABLED", "RESPONSEOS_LIVE_EMAIL_ENABLED"]) {
     if (env[key] !== "false") errors.push(`${key} must explicitly equal false`);
   }
