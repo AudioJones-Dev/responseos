@@ -238,7 +238,11 @@ test.each(["withdrawal", "shutdown"])("managed edge %s closes admission and supp
     } else await f.runtime.close();
     await closed;
     await vi.waitFor(() => expect(f.requests.filter(r => r.url.endsWith("/hangup"))).toHaveLength(1), { timeout: 4000 });
-    expect(f.received.filter(frame => frame.event === "media")).toHaveLength(0);
+    const framesAtClosure = f.received.filter(frame => frame.event === "media").length;
+    await vi.waitFor(() => expect(f.sessions[0].readyState).toBe(WebSocket.CLOSED));
+    const lateWrite = await new Promise<Error | undefined>(resolve => f.sessions[0].send(JSON.stringify({ type: "response.output_audio.delta", response_id: "late_edge", delta: Buffer.alloc(320, 255).toString("base64") }), resolve));
+    expect(lateWrite).toBeInstanceOf(Error);
+    expect(f.received.filter(frame => frame.event === "media")).toHaveLength(framesAtClosure);
     expect((await prisma.grokCallSession.findUniqueOrThrow({ where: { id: f.id } })).stopped_at).not.toBeNull();
     const replay = await f.connect().catch(() => null);
     if (replay) await once(replay, "close");
