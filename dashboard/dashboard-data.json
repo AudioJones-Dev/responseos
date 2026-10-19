@@ -1740,6 +1740,18 @@
       "start": "2026-10-19",
       "blocked": true,
       "blockedReason": "Partial local candidate: receipt guards and SQL-only PG16/17/18 checks. End-call dispatch authority, withdrawal continuation scope and isolated Node runtime validation remain unresolved. Activation disabled."
+    },
+    {
+      "id": "FRL-TERMINAL-ERROR",
+      "phase": "Integrations",
+      "title": "Restore exact post-marker withdrawal terminal error",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 80,
+      "priority": "High",
+      "start": "2026-10-19",
+      "blocked": true,
+      "blockedReason": "Narrow migration0025 correction only; isolated SQL evidence recorded externally. Runtime validation and Claude exact-commit review remain outstanding. Activation disabled."
     }
   ],
   "liveIssues": [

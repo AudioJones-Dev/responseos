@@ -44,4 +44,6 @@ Frozen pair 44e45c21e925510c1f9563f7c9f0d63bb2b6744b / 905091b9707bba33d2f376d7a
 
 ## Partial bounded correction
 
+The later [terminal-error correction](FRL_TERMINAL_ERROR_2026-10-19.md) preserves this partial pair as frozen parents and adds only shared migration0025/docs plus an application exact-error assertion. It does not resolve the dispatch/continuation/runtime blockers below.
+
 Frozen application afa127e6efc9c56065d4d52abf6ed1ae9b5fcdef and control 83f5a6c4c1dda2360e2998c59a39df17ccc7ae73 are preserved. [Partial correction](FRL_BOUNDED_CORRECTION_2026-10-19.md) adds application state guards and per-case environment restoration, with shared migration 0024 and documentation. Control runtime sources retain their existing split-checkout baseline; they are not the application source. End-call dispatch and continuation remain pending policy decisions. Only isolated SQL PG16/17/18 checks have run for this successor; full final-tree runtime and pair-script validation remain NOT RUN. External evidence: commissioning-bounded-correction-evidence-20261019. Activation remains disabled.

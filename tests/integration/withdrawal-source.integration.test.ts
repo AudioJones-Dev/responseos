@@ -83,7 +83,7 @@ test('identical retry is stable, conflicting timestamp is audited and cannot reo
   const grant = { action: "grant", disclosureRef: f.input.disclosureRef, evidenceRef: f.input.evidenceRef, jurisdictionBasis: f.input.jurisdictionBasis };
   expect((await f.post({ ...grant, action: 'grant', eventKey: randomUUID() })).status).toBe(503);
   expect(consentAllowsCapture([{ action: 'withdraw', occurred_at: f.source }, { action: 'grant', occurred_at: new Date() }], f.source, new Date())).toBe(false);
-  await expect(prisma.callCaptureSession.update({ where: { id: f.capture.id }, data: { withdrawal_received_at: null, control_state: 'AI_ACTIVE' } })).rejects.toThrow();
+  await expect(prisma.callCaptureSession.update({ where: { id: f.capture.id }, data: { withdrawal_received_at: null, control_state: 'AI_ACTIVE' } })).rejects.toThrow('withdrawal_is_terminal');
 });
 
 test('late withdrawal and concurrent contradictory observations remain terminal without historical rewrites', async () => {

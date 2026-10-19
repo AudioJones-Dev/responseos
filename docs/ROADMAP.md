@@ -6,6 +6,8 @@
 
 ## Version table
 
+Narrow terminal-error successor: migration0025 preserves0024 and restores0021's exact post-marker withdrawal error. Runtime validation remains gated by isolation; no milestone advances. [Local correction](readiness/FRL_TERMINAL_ERROR_2026-10-19.md).
+
 Local bounded receipt correction is partial: receipt-visible state guards and per-case test environment restoration are prepared; SQL-only PG16/17/18 checks pass. Dispatch/continuation decisions and isolated application runtime validation remain blocked. No milestone or activation gate advances. [Scope and evidence limits](readiness/FRL_BOUNDED_CORRECTION_2026-10-19.md).
 
 Database hardening under review: [Neon standardization](database/README.md) reconciles existing environments and adds local configuration/history/restore gates plus a PostgreSQL 16/17/18 CI matrix. No milestone promotion, hosted migration or live activation is authorized; deployed connection identity, role/RLS acceptance and hosted recovery remain open.
