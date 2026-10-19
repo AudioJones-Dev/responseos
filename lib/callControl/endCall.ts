@@ -4,6 +4,7 @@ import type { CallCaptureSession, Prisma, UserRole } from "@prisma/client";
 import { db } from "@/lib/db/client";
 import { withCaptureLock } from "@/lib/callReview/consent";
 import { requireReviewOperator } from "@/lib/callReview/service";
+import { providerCallHasWithdrawal } from "@/lib/callReview/withdrawal";
 import { assertStoredWebhookIdentity } from "@/lib/data/webhookEvents";
 import { parseCallControlEvent, sendTelnyxCallCommand } from "@/lib/providers/telnyx/callControl";
 
@@ -99,7 +100,7 @@ export async function endCaptureCall(input: EndCallTarget, actor?: { id: string;
     await client.callCaptureSession.update({ where: { id: capture.id, account_id: capture.account_id }, data: {
       content_admission_closed_at: capture.content_admission_closed_at ?? now,
       // FINALIZING keeps its state so the ended conversation can still reconcile its final transcript.
-      control_state: capture.withdrawal_received_at || capture.control_state === "FINALIZING" ? capture.control_state : "SAFE_FALLBACK",
+      control_state: await providerCallHasWithdrawal(capture.account_id, capture.provider_call_id, client) || capture.control_state === "FINALIZING" ? capture.control_state : "SAFE_FALLBACK",
     } });
     await client.auditLog.create({ data: { account_id: capture.account_id, actor_type: actor ? "user" : "system", ...(actor ? { actor_user_id: actor.id, actor_role: actor.role } : {}), action: "call_end_requested", category: "workflow", target_type: "CallCaptureSession", target_id: capture.id, metadata_json: { generation: capture.generation, commandId: command.command_id } } });
     return { dispatch: true as const, capture, command, evidence };

@@ -1,5 +1,7 @@
 # Withdrawal receipt and raw history admission
 
+> Superseded for the Option B successor by [independent receipt/drain](FRL_WITHDRAWAL_RECEIPT_B_2026-10-19.md); retained as the frozen predecessor design.
+
 Status: EXPERIMENTAL local synthetic successor, pending independent review. Frozen application 0752de433a2ea1fde0c5ae52d86f240a91a0ec7f and disabled control 7a4dc58a44756a8b31ebc889f29edc8b5548c00c are preserved. Exact successor commits and validation belong in external commissioning-withdrawal-race-evidence-20261019. No hosted migration, retention-policy change, activation or F2 implementation is authorized.
 
 ## Reproduction and correction

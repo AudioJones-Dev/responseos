@@ -1,6 +1,8 @@
 import { disconnectionEvidence, endCallEligibility } from "@/lib/callControl/endCall";
 import "@/lib/serverOnlyGuard";
 import { callHasWithdrawal, withdrawalActivity } from "./withdrawal";
+import { withdrawalProgress, withdrawalFailure } from "./withdrawalReceipt";
+import { withCaptureLock } from "./consent";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
 import { getCurrentSession } from "@/lib/auth/session";
@@ -42,9 +44,10 @@ export async function loadCallReviewConsole() {
       db!.account.findUnique({ where: { id: capture.account_id }, select: { name: true } }),
     ]);
     const withdrawals = await db!.callConsentEvent.findMany({ where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, action: 'withdraw' }, orderBy: { recorded_at: 'asc' } });
-    const withdrawalReview = capture.withdrawal_received_at ? await withdrawalActivity(db! as unknown as Prisma.TransactionClient, capture, withdrawals.some(w => w.source_time_status !== 'verified') ? new Date(Math.min(call?.started_at.getTime() ?? Infinity, capture.capture_started_at?.getTime() ?? Infinity, capture.created_at.getTime())) : withdrawals.find(w => w.source_time_status === 'verified')?.source_occurred_at ?? capture.capture_started_at ?? capture.created_at, capture.withdrawal_received_at) : null;
+    const withdrawal = await withdrawalProgress(capture).catch(error => withdrawalFailure(capture, error));
+    const withdrawalReview = withdrawal.receivedAt ? await withdrawalActivity(db! as unknown as Prisma.TransactionClient, capture, withdrawals.some(w => w.source_time_status !== 'verified') ? new Date(Math.min(call?.started_at.getTime() ?? Infinity, capture.capture_started_at?.getTime() ?? Infinity, capture.created_at.getTime())) : withdrawals.find(w => w.source_time_status === 'verified')?.source_occurred_at ?? capture.capture_started_at ?? capture.created_at, withdrawal.receivedAt) : null;
     const { disconnection, endCall } = await db!.$transaction(async client => { const disconnection = await disconnectionEvidence(capture, client); return { disconnection, endCall: await endCallEligibility(capture, client, disconnection) }; });
-    return { ...capture, disconnection, endCall, consentAction: capture.withdrawal_received_at ? 'withdraw' : consent?.action ?? null, commands, call, accountName: account?.name ?? capture.account_id, withdrawals, withdrawalReview };
+    return { ...capture, withdrawal, disconnection, endCall, consentAction: withdrawal.receipt !== "not_recorded" ? 'withdraw' : consent?.action ?? null, commands, call, accountName: account?.name ?? capture.account_id, withdrawals, withdrawalReview };
   }));
   const latest = await db.callReview.groupBy({
     by: ["account_id", "call_id"], _max: { revision: true, created_at: true },
@@ -130,6 +133,7 @@ export async function queueCallReview(accountId: string, callId: string, payload
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${accountId + ":" + callId}))`;
     const call = await tx.call.findFirst({ where: { id: callId, account_id: accountId } });
     if (!call?.provider_call_id || !call.review_required) throw new Error("review_call_missing");
+    if (await callHasWithdrawal(accountId, callId, tx)) return null;
     if (call.status !== "completed") return null;
     const capture = await tx.callCaptureSession.findUnique({ where: { account_id_provider_call_id: { account_id: accountId, provider_call_id: call.provider_call_id } } });
     if (!capture) throw new Error("call_snapshot_missing");
@@ -152,13 +156,19 @@ export async function queueCallReview(accountId: string, callId: string, payload
     };
     return tx.callReview.create({ data: { account_id: accountId, call_id: callId, revision: (latest?.revision ?? 0) + 1, source_hash: hash, evidence_json: { transcript: call.transcript, summary: call.summary, snapshotId: capture.snapshot_id }, payload_json: draft as Prisma.InputJsonValue, recipient: recipient?.enabled ? recipient.recipient : "" } });
   };
-  return client ? run(client) : db.$transaction(run);
+  if (client) return run(client);
+  const located = await db.call.findFirst({ where: { id: callId, account_id: accountId }, select: { provider_call_id: true } });
+  if (!located?.provider_call_id) throw new Error("review_call_missing");
+  return withCaptureLock(accountId, located.provider_call_id, run);
 }
 
 export async function decideCallReview(id: string, revision: number, action: "approve" | "reject", payload?: ReviewPayload) {
   const operator = await requireReviewOperator();
   if (!db) throw new Error("database_unavailable");
   return db.$transaction(async (tx) => {
+    await tx.$executeRaw`SET LOCAL lock_timeout = '1000ms'`;
+    await tx.$executeRaw`SET LOCAL statement_timeout = '2000ms'`;
+    await tx.$executeRaw`SET LOCAL idle_in_transaction_session_timeout = '12000ms'`;
     const row = await tx.callReview.findUnique({ where: { id } });
     if (!row) throw new Error("not_found");
     // Same lock order as the webhook (capture, then review): approval waits
@@ -180,7 +190,7 @@ export async function decideCallReview(id: string, revision: number, action: "ap
     if (!updated.count) throw new Error("stale_review");
     await tx.auditLog.create({ data: { account_id: row.account_id, actor_type: "user", actor_user_id: operator.user.id, actor_role: operator.user.role, action: `call_review_${action}`, category: "workflow", target_type: "CallReview", target_id: id, metadata_json: { revision } } });
     return { id, revision, status: action === "approve" ? "approved" : "rejected" };
-  });
+  }, { isolationLevel: "ReadCommitted", maxWait: 1000, timeout: 15000 });
 }
 
 export async function dispatchCallReview(id: string) {

@@ -1,8 +1,8 @@
 import "@/lib/serverOnlyGuard";
-import { createHash } from "node:crypto";
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
 import { withCaptureLock } from "./consent";
+import { assertReceiptAwareIsolation, drainWithdrawal, persistWithdrawalReceipt, withdrawalRequestHash } from "./withdrawalReceipt";
 
 type Client = Prisma.TransactionClient;
 export async function callHasWithdrawal(accountId: string, callId: string, client: Client | null = db as Client | null) {
@@ -13,6 +13,8 @@ export async function callHasWithdrawal(accountId: string, callId: string, clien
 }
 export async function providerCallHasWithdrawal(accountId: string, providerCallId: string, client: Client | null = db as Client | null) {
   if (!client) throw new Error("database_unavailable");
+  await assertReceiptAwareIsolation(client);
+  if (await client.callWithdrawalReceipt.findUnique({ where: { account_id_provider_call_id: { account_id: accountId, provider_call_id: providerCallId } }, select: { id: true } })) return true;
   const capture = await client.callCaptureSession.findUnique({ where: { account_id_provider_call_id: { account_id: accountId, provider_call_id: providerCallId } }, select: { withdrawal_received_at: true } });
   return Boolean(capture?.withdrawal_received_at || await client.callConsentEvent.findFirst({ where: { account_id: accountId, provider_call_id: providerCallId, action: "withdraw", artifact: "transcript" }, select: { id: true } }));
 }
@@ -29,7 +31,7 @@ export function sourceTime(claim: unknown, received: Date, lower: Date | null, e
 
 export async function withdrawalActivity(client: Client, capture: { id: string; account_id: string; provider_call_id: string }, from: Date, received: Date) {
   const call = await client.call.findFirst({ where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id }, select: { id: true } });
-  const [commands, transcripts, reviews, crm, notifications, analyses, captureState] = await Promise.all([
+  const [commands, transcripts, reviews, crm, notifications, analyses, captureState, rawWrites, normalized, contentWrites] = await Promise.all([
     client.telnyxCallCommand.findMany({ where: { account_id: capture.account_id, capture_session_id: capture.id, OR: [{ intended_at: { gte: from } }, { provider_responded_at: { gte: from } }, { status: { in: ["intent_recorded", "uncertain"] } }] }, select: { id: true, command_type: true, status: true, intended_at: true, provider_responded_at: true, provider_response_status: true, reconciliation_state: true } }),
     client.callTranscriptRevision.findMany({ where: { account_id: capture.account_id, capture_session_id: capture.id, OR: [{ created_at: { gte: from } }, { frozen_at: { gte: from } }] }, select: { id: true, created_at: true, frozen_at: true } }),
     call ? client.callReview.findMany({ where: { account_id: capture.account_id, call_id: call.id }, select: { id: true, status: true, created_at: true, dispatch_at: true, email_attempt_at: true, email_status: true, email_message_id: true, crm_status: true } }) : [],
@@ -37,16 +39,24 @@ export async function withdrawalActivity(client: Client, capture: { id: string; 
     call ? client.notification.findMany({ where: { account_id: capture.account_id, call_id: call.id }, select: { id: true, status: true, created_at: true, sent_at: true, attempt_count: true, provider_message_id: true, last_error_code: true } }) : [],
     call ? client.callPostCallAnalysis.findMany({ where: { account_id: capture.account_id, call_id: call.id, created_at: { gte: from } }, select: { id: true, created_at: true, transcript_revision_id: true, completeness: true } }) : [],
     client.callCaptureSession.findUnique({ where: { id: capture.id, account_id: capture.account_id }, select: { capture_started_at: true, capture_ended_at: true, content_admission_closed_at: true, withdrawal_received_at: true, control_state: true } }),
+    client.webhookEvent.findMany({ where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id }, select: { id: true, event_type: true, received_at: true, processed_at: true, process_status: true, payload_purged_at: true } }),
+    client.$queryRaw`SELECT id, created_at, status::text, (transcript IS NOT NULL) AS transcript_present, (summary IS NOT NULL) AS summary_present FROM "Call" WHERE account_id = ${capture.account_id} AND provider_call_id = ${capture.provider_call_id}`,
+    client.auditLog.findMany({ where: { account_id: capture.account_id, target_id: capture.provider_call_id, action: "call_content_write_observed" }, select: { id: true, created_at: true, metadata_json: true } }),
   ]);
-  return JSON.parse(JSON.stringify({ from, received, classification: "review_required_actual_activity_not_prevented", commands, transcripts, reviews, crm, notifications, analyses, captureState })) as Prisma.InputJsonValue;
+  return JSON.parse(JSON.stringify({ from, received, classification: "review_required_actual_activity_not_prevented", timing: "timestamps_are_observations_not_commit_times; preauthorized_content_may_commit_until_drain", contentWrites, rawWrites, normalized, commands, transcripts, reviews, crm, notifications, analyses, captureState })) as Prisma.InputJsonValue;
+}
+
+export async function recordContentActivity(client: Client, accountId: string, providerCallId: string, webhookId: string, outcome: { rawHistory: boolean; normalized: boolean; transcript: boolean | null }) {
+  await client.auditLog.create({ data: { account_id: accountId, actor_type: "system", action: "call_content_write_observed", category: "workflow", target_type: "ProviderCall", target_id: providerCallId, metadata_json: { webhookId, ...outcome, timing: "transaction_observation_not_commit_time" } } });
 }
 
 export async function recordWithdrawal(capture: { id: string; account_id: string; provider_call_id: string }, actorId: string, value: { eventKey: string; disclosureRef: string; evidenceRef: string; jurisdictionBasis: string; withdrawalSourceTime?: unknown }) {
   if (!db) throw new Error("database_unavailable");
-  const [{ received }] = await db.$queryRaw<{ received: Date }[]>`SELECT date_trunc('milliseconds', clock_timestamp() AT TIME ZONE 'UTC') AS received`;
-  // Persist the terminal fence before timestamp validation or waiting for an in-flight capture operation.
-  await db.callCaptureSession.updateMany({ where: { id: capture.id, account_id: capture.account_id, withdrawal_received_at: null }, data: { withdrawal_received_at: received } });
-  const requestHash = createHash('sha256').update(JSON.stringify([value.disclosureRef, value.evidenceRef, value.jurisdictionBasis, value.withdrawalSourceTime ?? null])).digest('hex');
+  // Receipt commits independently; previously authorized content may finish until the drain commits.
+  const receipt = await persistWithdrawalReceipt(capture, actorId, value);
+  const received = receipt.received_at;
+  await drainWithdrawal(capture);
+  const requestHash = withdrawalRequestHash(value);
   return withCaptureLock(capture.account_id, capture.provider_call_id, async client => {
     const current = await client.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id, account_id: capture.account_id } });
     const key = `${capture.id}:${value.eventKey}`;
@@ -56,8 +66,9 @@ export async function recordWithdrawal(capture: { id: string; account_id: string
     const grant = await client.callConsentEvent.findFirst({ where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, action: 'grant', artifact: 'transcript' }, orderBy: { occurred_at: 'desc' } });
     const prior = await client.callConsentEvent.findFirst({ where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, action: 'withdraw', artifact: 'transcript' }, orderBy: { recorded_at: 'asc' } });
     const lower = grant?.occurred_at ?? null;
-    const source = sourceTime(value.withdrawalSourceTime, received, lower, current.capture_ended_at);
-    const reason = !value.disclosureRef || !value.evidenceRef || !value.jurisdictionBasis ? 'missing_consent_references' : conflict ? 'idempotency_conflict' : prior && (!source.parsed || prior.source_occurred_at?.getTime() !== source.parsed.getTime() || prior.source_time_status !== 'verified') ? 'conflicting_withdrawal' : source.parsed && current.withdrawal_received_at && source.parsed > current.withdrawal_received_at && source.parsed <= received ? 'after_first_receipt' : source.reason;
+    const observed = new Date();
+    const source = sourceTime(value.withdrawalSourceTime, observed, lower, current.capture_ended_at);
+    const reason = !value.disclosureRef || !value.evidenceRef || !value.jurisdictionBasis ? 'missing_consent_references' : conflict ? 'idempotency_conflict' : prior && (!source.parsed || prior.source_occurred_at?.getTime() !== source.parsed.getTime() || prior.source_time_status !== 'verified') ? 'conflicting_withdrawal' : source.parsed && current.withdrawal_received_at && source.parsed > current.withdrawal_received_at && source.parsed <= observed ? 'after_first_receipt' : source.reason;
     const effective = !reason && source.parsed ? source.parsed : received;
     const eventKey = conflict ? `${key}:withdrawal:${requestHash}` : key;
     const snapshot = await withdrawalActivity(client, current, !reason ? effective : current.capture_started_at ?? grant?.occurred_at ?? current.created_at, received);
@@ -66,7 +77,7 @@ export async function recordWithdrawal(capture: { id: string; account_id: string
       source_channel: 'call', actor_user_id: actorId, occurred_at: effective, recorded_at: received, source_occurred_at: source.parsed, source_time_claim: source.raw, source_time_status: reason ? 'review_required' : 'verified', source_time_reason: reason, source_provenance: source.provenance, request_hash: requestHash, review_activity_json: snapshot,
     } });
     const boundary = new Date(Math.min(effective.getTime(), current.withdrawal_received_at!.getTime(), current.content_admission_closed_at?.getTime() ?? Infinity));
-    await client.callCaptureSession.update({ where: { id: current.id, account_id: current.account_id }, data: { control_state: 'STOP_PENDING', content_admission_closed_at: boundary } });
+    await client.callCaptureSession.update({ where: { id: current.id, account_id: current.account_id }, data: { control_state: current.control_state === 'STOPPED' ? 'STOPPED' : 'STOP_PENDING', content_admission_closed_at: boundary } });
     return { event, conflict };
   });
 }

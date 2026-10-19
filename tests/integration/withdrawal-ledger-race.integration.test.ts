@@ -1,20 +1,25 @@
-import { randomUUID } from 'node:crypto';
+import type { Prisma } from '@prisma/client';
+import { randomUUID, generateKeyPairSync, sign } from 'node:crypto';
 import { afterAll, afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { prisma, resetAndSeedTestDb, disconnectTestDb, setDevSession } from './setup';
 import { configureSupervisedTenant } from '@/lib/agentExecution/supervisedTenant';
 import { startSupervisedQualification } from '@/lib/agentExecution/supervisedQualification';
+import { deferredCallbacks } from './deferredCallbacks';
+vi.mock('next/server', async original => ({ ...await original<typeof import('next/server')>(), after: (task: () => unknown) => deferredCallbacks.push(task) }));
 import { recordWithdrawal } from '@/lib/callReview/withdrawal';
+import { persistWithdrawalReceipt, drainWithdrawal, withdrawalProgress } from '@/lib/callReview/withdrawalReceipt';
 import { ingestCallControlEvent } from '@/lib/callControl/service';
 import { parseCallControlEvent } from '@/lib/providers/telnyx/callControl';
 import { assertWebhookIdentity, assertStoredWebhookIdentity } from '@/lib/data/webhookEvents';
 
-const gates = vi.hoisted(() => { vi.resetModules(); return { beforeCapture: null as null | (() => Promise<void>), beforeBackfill: null as null | (() => Promise<void>), send: vi.fn() }; });
+const gates = vi.hoisted(() => { vi.resetModules(); return { afterCapture: null as null | ((tx: Prisma.TransactionClient) => Promise<void>), beforeCapture: null as null | (() => Promise<void>), beforeBackfill: null as null | (() => Promise<void>), send: vi.fn() }; });
 vi.mock('@/lib/providers/telnyx/callControl', async original => ({ ...await original<typeof import('@/lib/providers/telnyx/callControl')>(), sendTelnyxCallCommand: gates.send }));
 vi.mock('@/lib/callReview/consent', async original => {
   const actual = await original<typeof import('@/lib/callReview/consent')>();
   return { ...actual, withCaptureLock: async (...args: Parameters<typeof actual.withCaptureLock>) => {
     const gate = gates.beforeCapture; gates.beforeCapture = null; if (gate) await gate();
-    return actual.withCaptureLock(...args);
+    const after = gates.afterCapture; gates.afterCapture = null;
+    return actual.withCaptureLock(args[0], args[1], async tx => { const result = await args[2](tx); if (after) await after(tx); return result; }, args[3]);
   } };
 });
 vi.mock('@/lib/data/webhookEvents', async original => {
@@ -24,9 +29,9 @@ vi.mock('@/lib/data/webhookEvents', async original => {
     return actual.backfillWebhookEvent(...args);
   } };
 });
-beforeEach(async () => { await resetAndSeedTestDb(); setDevSession('operator'); gates.beforeCapture = null; gates.beforeBackfill = null; gates.send.mockReset().mockImplementation(() => { throw Error('provider forbidden'); }); vi.stubGlobal('fetch', vi.fn(() => { throw Error('network forbidden'); })); });
-afterEach(() => { expect(gates.send).not.toHaveBeenCalled(); expect(fetch).not.toHaveBeenCalled(); vi.unstubAllGlobals(); });
-afterAll(async () => { await disconnectTestDb(); for (const name of ['@/lib/providers/telnyx/callControl', '@/lib/callReview/consent', '@/lib/data/webhookEvents']) vi.doUnmock(name); vi.resetModules(); });
+beforeEach(async () => { await resetAndSeedTestDb(); setDevSession('operator'); gates.afterCapture = null; gates.beforeCapture = null; gates.beforeBackfill = null; gates.send.mockReset().mockImplementation(() => { throw Error('provider forbidden'); }); vi.stubGlobal('fetch', vi.fn(() => { throw Error('network forbidden'); })); });
+afterEach(() => { expect(gates.send).not.toHaveBeenCalled(); expect(fetch).not.toHaveBeenCalled(); vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
+afterAll(async () => { await disconnectTestDb(); for (const name of ['next/server', '@/lib/providers/telnyx/callControl', '@/lib/callReview/consent', '@/lib/data/webhookEvents']) vi.doUnmock(name); vi.resetModules(); });
 
 const CONFIGURATION = [
   { key: "business.knowledge", value: { facts: [{ topic: "services", statement: "VPL evaluations are available.", sourceRef: "test-approval" }], fictionalScenarios: [] } },
@@ -106,7 +111,8 @@ test('durable receipt blocks concurrent ended/history while withdrawal waits for
   const withdrawal = f.withdraw();
   await gate.reached;
   try {
-    expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: f.capture.id } })).withdrawal_received_at).not.toBeNull();
+    expect(await prisma.callWithdrawalReceipt.count({ where: { capture_id: f.capture.id } })).toBe(1);
+    expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: f.capture.id } })).withdrawal_received_at).toBeNull();
     const sentinel = 'SYNTHETIC_PENDING_WITHDRAWAL';
     const history = f.event('call.ai_gather.message_history_updated', sentinel);
     await Promise.all([f.event('call.conversation.ended').ingest(), history.ingest()]);
@@ -125,28 +131,74 @@ test('nonwithdrawn FINALIZING still admits history inside its capture interval',
   expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: f.capture.id } })).control_state).toBe('FINALIZING');
 });
 
-test('history admission holds a row lock until raw persistence commits; receipt then fences later history', async () => {
+test('preauthorized history commits after receipt; drain waits and queued history loses authorization', async () => {
   const f = await fixture(), gate = barrier();
-  gates.beforeBackfill = gate.wait;
-  const history = f.event('call.ai_gather.message_history_updated', 'Synthetic history before receipt');
+  gates.afterCapture = gate.wait;
+  const history = f.event('call.ai_gather.message_history_updated', 'Synthetic history authorized before receipt');
   const processing = history.ingest();
   await gate.reached;
-  const withdrawal = f.withdraw();
+  const queued = f.event('call.ai_gather.message_history_updated', 'SYNTHETIC_QUEUED_AFTER_AUTH');
+  const waiting = barrier(); gates.beforeCapture = async () => { waiting.release(); };
+  const queuedProcessing = queued.ingest(); await waiting.wait();
   try {
-    let receiptCommitted = false, receiptWaiting = false;
-    for (let attempt = 0; attempt < 100 && !receiptCommitted && !receiptWaiting; attempt++) {
-      receiptCommitted = (await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: f.capture.id } })).withdrawal_received_at !== null;
-      const waiting = await prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) FROM pg_stat_activity WHERE datname = current_database() AND wait_event_type = 'Lock' AND query LIKE 'UPDATE%CallCaptureSession%'`;
-      receiptWaiting = Number(waiting[0].count) > 0;
-      if (!receiptCommitted && !receiptWaiting) await new Promise(resolve => setTimeout(resolve, 10));
-    }
-    expect(receiptCommitted).toBe(false);
-    expect(receiptWaiting).toBe(true);
-  } finally { gate.release(); await Promise.all([processing, withdrawal]); }
+    await persistWithdrawalReceipt(f.capture, 'operator', { eventKey: randomUUID(), disclosureRef: 'synthetic', evidenceRef: 'synthetic', jurisdictionBasis: 'synthetic' });
+    expect(await withdrawalProgress(f.capture)).toMatchObject({ receipt: 'recorded', drain: 'pending' });
+    await expect(drainWithdrawal(f.capture)).rejects.toThrow();
+    expect(await prisma.callTranscriptRevision.count({ where: { capture_session_id: f.capture.id } })).toBe(0);
+  } finally { gate.release(); await Promise.all([processing, queuedProcessing]); }
   expect(await prisma.callTranscriptRevision.count({ where: { capture_session_id: f.capture.id } })).toBe(1);
   expect((await prisma.webhookEvent.findUniqueOrThrow({ where: { provider_provider_event_id: { provider: 'telnyx', provider_event_id: history.id } } })).raw_body).toBe(history.raw);
+  expect((await prisma.webhookEvent.findUniqueOrThrow({ where: { provider_provider_event_id: { provider: 'telnyx', provider_event_id: queued.id } } })).raw_body).not.toContain('SYNTHETIC_QUEUED_AFTER_AUTH');
+  await drainWithdrawal(f.capture);
+  expect(await withdrawalProgress(f.capture)).toMatchObject({ receipt: 'recorded', drain: 'confirmed' });
   const delayed = f.event('call.ai_gather.message_history_updated', 'SYNTHETIC_AFTER_RECEIPT');
   await delayed.ingest();
   expect((await prisma.webhookEvent.findUniqueOrThrow({ where: { provider_provider_event_id: { provider: 'telnyx', provider_event_id: delayed.id } } })).raw_body).not.toContain('SYNTHETIC_AFTER_RECEIPT');
   expect(await prisma.callTranscriptRevision.count({ where: { capture_session_id: f.capture.id } })).toBe(1);
+});
+
+test.each(['statement_timeout', 'connection_loss'] as const)('real history content rolls back on %s while receipt survives', async failure => {
+  const f = await fixture(), held = barrier(); let pid = 0;
+  gates.afterCapture = async tx => {
+    const rows = await tx.$queryRawUnsafe<{pid:number}[]>('SELECT pg_backend_pid() AS pid'); pid = rows[0].pid;
+    await held.wait();
+    await tx.$queryRawUnsafe('SELECT 1 FROM pg_sleep(30)');
+  };
+  const history = f.event('call.ai_gather.message_history_updated', 'SYNTHETIC_ROLLED_BACK_HISTORY');
+  const processing = history.ingest().catch(error => error);
+  await held.reached;
+  await persistWithdrawalReceipt(f.capture, 'operator', { eventKey: randomUUID(), disclosureRef: 'synthetic', evidenceRef: 'synthetic', jurisdictionBasis: 'synthetic' });
+  expect((await withdrawalProgress(f.capture)).drain).toBe('pending');
+  if (failure === 'connection_loss') await prisma.$queryRawUnsafe('SELECT pg_terminate_backend($1::int)', pid);
+  held.release();
+  expect(await processing).toBeInstanceOf(Error);
+  expect(await prisma.callTranscriptRevision.count({ where: { capture_session_id: f.capture.id } })).toBe(0);
+  expect((await prisma.call.findFirstOrThrow({ where: { account_id: f.capture.account_id, provider_call_id: f.capture.provider_call_id } })).transcript).toBeNull();
+  const raw = await prisma.webhookEvent.findMany({ where: { account_id: f.capture.account_id } });
+  expect(JSON.stringify(raw)).not.toContain('SYNTHETIC_ROLLED_BACK_HISTORY');
+  await drainWithdrawal(f.capture);
+  expect(await withdrawalProgress(f.capture)).toMatchObject({receipt:'recorded',drain:'confirmed'});
+});
+
+test('authenticated generic webhook sees the independent receipt before projection and retains metadata only', async () => {
+  const f = await fixture();
+  await persistWithdrawalReceipt(f.capture, 'operator', { eventKey: randomUUID(), disclosureRef: 'synthetic', evidenceRef: 'synthetic', jurisdictionBasis: 'synthetic' });
+  expect((await prisma.callCaptureSession.findUniqueOrThrow({where:{id:f.capture.id}})).withdrawal_received_at).toBeNull();
+  const keys = generateKeyPairSync('ed25519');
+  vi.stubEnv('TELNYX_PUBLIC_KEY', keys.publicKey.export({type:'spki',format:'pem'}).toString());
+  vi.stubEnv('RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED', 'true');
+  const value = {data:{id:randomUUID(),event_type:'call.conversation_insights.generated',occurred_at:new Date().toISOString(),payload:{call_control_id:f.capture.provider_call_id,from:'+15555550111',to:'+15555550188',summary:'SYNTHETIC_GENERIC_PROTECTED',transcript:'SYNTHETIC_GENERIC_PROTECTED'}}};
+  const raw=JSON.stringify(value), timestamp=String(Math.floor(Date.now()/1000));
+  const route = await import('@/app/api/webhooks/telnyx/calls/route');
+  deferredCallbacks.length=0;
+  const response = await route.POST(new Request('http://localhost',{method:'POST',headers:{'content-type':'application/json','telnyx-timestamp':timestamp,'telnyx-signature-ed25519':sign(null,Buffer.from(timestamp+'|'+raw),keys.privateKey).toString('base64')},body:raw}));
+  expect([200,202]).toContain(response.status);
+  await Promise.all(deferredCallbacks.splice(0).map(callback=>callback()));
+  const ledger=await prisma.webhookEvent.findUniqueOrThrow({where:{provider_provider_event_id:{provider:'telnyx',provider_event_id:value.data.id}}});
+  expect(ledger.signature_valid).toBe(true);
+  expect(ledger.raw_body).not.toContain('SYNTHETIC_GENERIC_PROTECTED');
+  const call=await prisma.call.findFirstOrThrow({where:{account_id:f.capture.account_id,provider_call_id:f.capture.provider_call_id}});
+  expect(call.transcript).toBeNull(); expect(call.summary).toBeNull();
+  expect(await prisma.callTranscriptRevision.count({where:{capture_session_id:f.capture.id}})).toBe(0);
+  expect(await prisma.callReview.count({where:{account_id:f.capture.account_id}})).toBe(0);
 });

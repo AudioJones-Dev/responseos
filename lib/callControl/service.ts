@@ -12,7 +12,7 @@ import { parseCallControlEvent, type CallControlEvent, sendTelnyxCallCommand, ty
 import { asJson, conservativePostCallAnalysis, POST_CALL_ANALYSIS_PROMPT_VERSION, POST_CALL_ANALYSIS_SCHEMA_VERSION } from "./analysis";
 import { queueCallReview } from "@/lib/callReview/service";
 import { withCaptureLock } from "@/lib/callReview/consent";
-import { providerCallHasWithdrawal } from "@/lib/callReview/withdrawal";
+import { providerCallHasWithdrawal, recordContentActivity } from "@/lib/callReview/withdrawal";
 import { BusinessMemorySnapshotSchema } from "@/lib/prospectBootstrap/contracts";
 import { readOperatingConfigurationValue } from "@/lib/agentExecution/operatingConfiguration";
 import type { Prisma } from "@prisma/client";
@@ -76,12 +76,15 @@ async function executeCommand(params: {
   commandType: CommandType;
   action: TelnyxCommandAction;
   request: Record<string, unknown>;
-}) {
+  authorizationClient?: Prisma.TransactionClient;
+}): Promise<{ status: string | null; error_code: string | null; conversation_id: string | null; provider_date_at: Date | null }> {
   if (!db || !params.capture.assignment_id) throw new Error("qualification_capture_invalid");
   if (params.commandType === "hangup") {
     const result = await endCaptureCall({ captureId: params.capture.id, expectedAccountId: params.capture.account_id, expectedProviderCallId: params.capture.provider_call_id, generation: params.capture.generation });
     return { status: result.disconnection.confirmed ? "succeeded" : result.commandStatus, error_code: "telnyx_hangup_unconfirmed", conversation_id: null, provider_date_at: null };
   }
+  if (params.commandType !== "ai_assistant_stop" && !params.authorizationClient) return withCaptureLock(params.capture.account_id, params.capture.provider_call_id, client => executeCommand({ ...params, authorizationClient: client }));
+  if (params.commandType !== "ai_assistant_stop" && await providerCallHasWithdrawal(params.capture.account_id, params.capture.provider_call_id, params.authorizationClient)) throw new Error("withdrawal_is_terminal");
   const intent = await persistCommandIntent({
     captureId: params.capture.id,
     accountId: params.capture.account_id,
@@ -94,7 +97,7 @@ async function executeCommand(params: {
   if (intent.status === "succeeded") return intent;
   if (!["intent_recorded", "uncertain", "failed"].includes(intent.status)) throw new Error("telnyx_command_not_executable");
   const body = { ...params.request, command_id: intent.command_id };
-  if (!["ai_assistant_stop", "hangup"].includes(params.commandType) && await providerCallHasWithdrawal(params.capture.account_id, params.capture.provider_call_id)) throw new Error("withdrawal_is_terminal");
+  if (params.commandType !== "ai_assistant_stop" && await providerCallHasWithdrawal(params.capture.account_id, params.capture.provider_call_id, params.authorizationClient)) throw new Error("withdrawal_is_terminal");
   const result = await sendTelnyxCallCommand({ callControlId: params.capture.provider_call_id, action: params.action, body });
   const missingStartTime = params.commandType === "ai_assistant_start" && result.ok && !result.providerDate;
   // Intent and response observation use the database clock; provider_date_at remains provider evidence.
@@ -331,8 +334,8 @@ export async function ingestCallControlEvent(params: { verifiedBytes: Uint8Array
   if (event.data.event_type === "call.ai_gather.message_history_updated") {
     const historyResult = await withCaptureLock(capture.account_id, capture.provider_call_id, async (client) => {
       await client.$executeRaw`SELECT pg_advisory_xact_lock(1380930382, hashtext(${capture.account_id}))`;
-      // Receipt persistence does not take the advisory lock; serialize it with raw-body admission.
-      await client.$queryRaw`SELECT id FROM "CallCaptureSession" WHERE id = ${capture.id} AND account_id = ${capture.account_id} FOR UPDATE`;
+      // Preserve capture identity without blocking the independent receipt foreign key.
+      await client.$queryRaw`SELECT id FROM "CallCaptureSession" WHERE id = ${capture.id} AND account_id = ${capture.account_id} FOR NO KEY UPDATE`;
       const current = await client.callCaptureSession.findUnique({ where: { id: capture.id } });
       const [latestConsent, start, conversationEndedLedger, hangupLedger] = await Promise.all([
         client.callConsentEvent.findFirst({ where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, artifact: "transcript" }, orderBy: [{ occurred_at: "desc" }, { id: "desc" }] }),
@@ -372,6 +375,7 @@ export async function ingestCallControlEvent(params: { verifiedBytes: Uint8Array
         }
         const refreshed = await client.callCaptureSession.findUnique({ where: { id: capture.id } });
         const admission = refreshed ? await recordTranscriptRevision(event, refreshed, ledger.id, numberE164, client, params.verifiedBytes) : "rejected";
+        await recordContentActivity(client, capture.account_id, capture.provider_call_id, ledger.id, { rawHistory: true, normalized: admission === "admitted", transcript: admission === "admitted" });
         if (admission === "rejected" || admission === "stale_or_conflicting") await setWebhookProcessStatus({ client, id: ledger.id, process_status: "rejected", process_error: admission === "stale_or_conflicting" ? "cumulative_history_conflict" : "protected_content_not_admitted" });
         else if (admission === "duplicate") await setWebhookProcessStatus({ client, id: ledger.id, process_status: "processed" });
         return { duplicate: false as const, captureId: capture.id };
@@ -427,14 +431,15 @@ export async function ingestCallControlEvent(params: { verifiedBytes: Uint8Array
     } else if (event.data.event_type === "call.conversation.ended") {
       await normalizeMetadata(event, capture, ledger.id, numberE164, params.verifiedBytes);
       await withCaptureLock(capture.account_id, capture.provider_call_id, async (client) => {
-        await client.$queryRaw`SELECT id FROM "CallCaptureSession" WHERE id = ${capture.id} AND account_id = ${capture.account_id} FOR UPDATE`;
+        await client.$queryRaw`SELECT id FROM "CallCaptureSession" WHERE id = ${capture.id} AND account_id = ${capture.account_id} FOR NO KEY UPDATE`;
         const current = await client.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } });
         const withdrawal = await client.callConsentEvent.findFirst({ where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, action: "withdraw", artifact: "transcript" }, orderBy: { occurred_at: "desc" } });
+        const receipt = await client.callWithdrawalReceipt.findUnique({ where: { account_id_provider_call_id: { account_id: capture.account_id, provider_call_id: capture.provider_call_id } } });
         const transferState = ["TRANSFER_PENDING", "TRANSFERRED"].includes(current.control_state);
         await client.callCaptureSession.update({ where: { id: capture.id }, data: {
           capture_ended_at: occurredAt,
-          content_admission_closed_at: current.content_admission_closed_at ?? current.withdrawal_received_at ?? withdrawal?.occurred_at ?? occurredAt,
-          control_state: transferState ? current.control_state : current.withdrawal_received_at || withdrawal ? "STOP_PENDING" : "FINALIZING",
+          content_admission_closed_at: current.content_admission_closed_at ?? receipt?.received_at ?? current.withdrawal_received_at ?? withdrawal?.occurred_at ?? occurredAt,
+          control_state: transferState ? current.control_state : receipt || current.withdrawal_received_at || withdrawal ? "STOP_PENDING" : "FINALIZING",
         } });
       });
       const finalization = await freezeEvidence(capture.id);
@@ -480,13 +485,10 @@ export async function runOperatorConsentEffect(params: { captureId: string; acti
   const capture = await db.callCaptureSession.findUnique({ where: { id: params.captureId } });
   if (!capture?.assignment_id) throw new Error("qualification_capture_not_found");
   if (params.action === "grant") {
-    // The start is checked and sent under the capture lock that withdrawal
-    // takes: a withdrawal either commits first and is seen here, or waits
-    // until the start settles and its stop follows it. The command's 8s
-    // abort keeps this inside the lock transaction's timeout.
+    // A saved receipt denies a new start; an already authorized effect finishes before drain.
     await withCaptureLock(capture.account_id, capture.provider_call_id, async (client) => {
       const current = await client.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } });
-      if (current.withdrawal_received_at) throw new Error("withdrawal_is_terminal");
+      if (await providerCallHasWithdrawal(current.account_id, current.provider_call_id, client)) throw new Error("withdrawal_is_terminal");
       if (current.content_admission_closed_at) throw new Error("capture_closed");
       const completed = await client.telnyxCallCommand.findFirst({ where: { capture_session_id: current.id, command_type: "ai_assistant_start", generation: current.generation, status: "succeeded" } });
       if (completed?.conversation_id && completed.provider_date_at) {
@@ -499,9 +501,9 @@ export async function runOperatorConsentEffect(params: { captureId: string; acti
       await assertStoredWebhookIdentity(dtmf.id, client);
       const assignment = await client.telephonyNumberAssignment.findUnique({ where: { id: capture.assignment_id! } });
       if (!assignment || assignment.status !== "qualification") throw new Error("qualification_assignment_mismatch");
-      const result = await executeCommand({ capture: current, commandType: "ai_assistant_start", action: "ai_assistant_start", request: { assistant: { id: assignment.provider_assistant_id }, send_message_history_updates: true, client_state: clientState(current.id, current.generation) } });
+      const result = await executeCommand({ capture: current, authorizationClient: client, commandType: "ai_assistant_start", action: "ai_assistant_start", request: { assistant: { id: assignment.provider_assistant_id }, send_message_history_updates: true, client_state: clientState(current.id, current.generation) } });
       if (result.status !== "succeeded" || !result.conversation_id || !result.provider_date_at) throw new Error(result.error_code ?? "telnyx_start_unconfirmed");
-      await client.callCaptureSession.updateMany({ where: { id: current.id, withdrawal_received_at: null }, data: { conversation_id: result.conversation_id } });
+      if (!await providerCallHasWithdrawal(current.account_id, current.provider_call_id, client)) await client.callCaptureSession.updateMany({ where: { id: current.id, withdrawal_received_at: null }, data: { conversation_id: result.conversation_id } });
     });
     return;
   }
@@ -515,13 +517,14 @@ export async function runOperatorConsentEffect(params: { captureId: string; acti
     if (result.status !== "succeeded") throw new Error(result.error_code ?? "telnyx_refusal_ack_unconfirmed");
     return;
   }
+  if (!capture.withdrawal_drained_at) throw new Error("withdrawal_drain_required");
   const completed = await db.telnyxCallCommand.findFirst({ where: { capture_session_id: capture.id, command_type: "ai_assistant_stop", generation: capture.generation, status: "succeeded" } });
   if (completed) {
     if (await providerCallHasWithdrawal(capture.account_id, capture.provider_call_id)) await db.callCaptureSession.updateMany({ where: { id: capture.id, control_state: "STOP_PENDING" }, data: { control_state: "STOPPED" } });
     await freezeEvidence(capture.id);
     return;
   }
-  if (capture.control_state !== "STOP_PENDING") throw new Error("active_capture_required");
+  if (!capture.withdrawal_drained_at || capture.control_state !== "STOP_PENDING") throw new Error("withdrawal_drain_required");
   const generation = capture.generation;
   const result = await executeCommand({ capture, commandType: "ai_assistant_stop", action: "ai_assistant_stop", request: { client_state: clientState(capture.id, generation) } });
   if (result.status !== "succeeded") throw new Error(result.error_code ?? "telnyx_stop_unconfirmed");
@@ -531,20 +534,24 @@ export async function runOperatorConsentEffect(params: { captureId: string; acti
 
 export async function requestQualifiedTransfer(params: { captureId: string; destination: string }) {
   if (!db) throw new Error("database_unavailable");
-  const capture = await db.callCaptureSession.findUnique({ where: { id: params.captureId } });
+  const located = await db.callCaptureSession.findUnique({ where: { id: params.captureId } });
+  if (!located) throw new Error("active_capture_required");
+  return withCaptureLock(located.account_id, located.provider_call_id, async client => {
+  const capture = await client.callCaptureSession.findUnique({ where: { id: params.captureId, account_id: located.account_id } });
   // TRANSFER_PENDING is a resume state: a failed or uncertain stop/transfer is
   // re-driven with the same command identity for this generation.
-  if (!capture?.assignment_id || capture.withdrawal_received_at || !["AI_ACTIVE", "TRANSFER_PENDING"].includes(capture.control_state)) throw new Error("active_capture_required");
+  if (!capture?.assignment_id || await providerCallHasWithdrawal(capture.account_id, capture.provider_call_id, client) || !["AI_ACTIVE", "TRANSFER_PENDING"].includes(capture.control_state)) throw new Error("active_capture_required");
   const memory = BusinessMemorySnapshotSchema.safeParse(capture.snapshot_json);
   const allowed = memory.success ? readOperatingConfigurationValue(memory.data, "contact.escalation.primary")?.phone : null;
   if (!allowed || params.destination !== allowed) throw new Error("transfer_destination_denied");
   if (capture.control_state === "AI_ACTIVE") {
-    const moved = await db.callCaptureSession.updateMany({ where: { id: capture.id, generation: capture.generation, control_state: "AI_ACTIVE" }, data: { control_state: "TRANSFER_PENDING", content_admission_closed_at: new Date() } });
+    const moved = await db!.callCaptureSession.updateMany({ where: { id: capture.id, generation: capture.generation, control_state: "AI_ACTIVE" }, data: { control_state: "TRANSFER_PENDING", content_admission_closed_at: new Date() } });
     if (!moved.count) throw new Error("stale_capture_state");
   }
-  const stopped = await executeCommand({ capture, commandType: "ai_assistant_stop", action: "ai_assistant_stop", request: { client_state: clientState(capture.id, capture.generation) } });
+  const stopped = await executeCommand({ capture, authorizationClient: client, commandType: "ai_assistant_stop", action: "ai_assistant_stop", request: { client_state: clientState(capture.id, capture.generation) } });
   if (stopped.status !== "succeeded") throw new Error(stopped.error_code ?? "telnyx_stop_unconfirmed");
-  const result = await executeCommand({ capture, commandType: "transfer", action: "transfer", request: { to: allowed, client_state: clientState(capture.id, capture.generation) } });
+  const result = await executeCommand({ capture, authorizationClient: client, commandType: "transfer", action: "transfer", request: { to: allowed, client_state: clientState(capture.id, capture.generation) } });
   if (result.status !== "succeeded") throw new Error(result.error_code ?? "telnyx_transfer_unconfirmed");
   return { attempted: true, connected: false };
+  });
 }

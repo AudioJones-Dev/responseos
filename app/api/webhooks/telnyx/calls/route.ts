@@ -1,6 +1,7 @@
 import { canRetainCallContent, metadataOnly, withCaptureLock } from "@/lib/callReview/consent";
 import { hasActiveDispatchClaim, hasQueuedReview, queueCallReview } from "@/lib/callReview/service";
 import { after, NextResponse } from "next/server";
+import { recordContentActivity } from "@/lib/callReview/withdrawal";
 import { runCrmSyncForCall } from "@/lib/crm/syncFinalizedCall";
 import {
   backfillWebhookEvent,
@@ -278,6 +279,7 @@ export async function POST(req: Request) {
         if (supervisedTenant && normalized.callId && (normalized.finalized && contentAllowed || await hasQueuedReview(assignment.accountId, normalized.callId, client))) {
           await queueCallReview(assignment.accountId, normalized.callId, contentAllowed ? event.data.payload : metadataOnly(event).data.payload, client);
         }
+        if (client && supervisedTenant && providerCallId && contentAllowed) await recordContentActivity(client, assignment.accountId, providerCallId, ledger.data.id, { rawHistory: false, normalized: Boolean(normalized.callId), transcript: null });
         return { normalized, contentAllowed };
       };
       const { normalized } = supervisedTenant && providerCallId

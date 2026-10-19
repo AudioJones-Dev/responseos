@@ -1715,6 +1715,19 @@
       "start": "2026-10-19",
       "blocked": true,
       "blockedReason": "Local synthetic correction; independent exact-commit Claude review pending. F2 and activation remain separately gated."
+    },
+    {
+      "id": "FRL-RECEIPT-B",
+      "phase": "Integrations",
+      "title": "Independent withdrawal receipt and explicit content drain",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-10-19",
+      "due": "2026-10-19",
+      "blocked": true,
+      "blockedReason": "Local candidate; final-tree validation and independent exact-commit Claude review required. Activation remains disabled."
     }
   ],
   "liveIssues": [

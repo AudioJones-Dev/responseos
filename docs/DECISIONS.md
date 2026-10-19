@@ -1907,3 +1907,7 @@ Owner-approved bounded local successor, October 19. Require retained exact activ
 Owner-approved F1 and local migration 0022, October 19. Nullable call_disconnected_at is written once from a fresh authenticated exact-call/generation hangup and protected against clearing by a trigger; no backfill. End call fences on it instead of capture_ended_at, conversation end or FINALIZING. Raw-proof freshness remains a separate presentation. F2 unresolved. Supersedes the lifecycle fence part of ADR-0073. [Amendment and Doctrine21](readiness/FRL_END_CALL_ELIGIBILITY_2026-10-19.md).
 
 ADR-0074 withdrawal correctness addendum: preserve receipt-only withdrawal through conversation end and serialize raw-history admission against durable receipt persistence. No disconnection identity, retention, schema or activation change. [Local correction](readiness/FRL_WITHDRAWAL_LEDGER_RACE_2026-10-19.md).
+
+## ADR-0075 - Independent withdrawal receipt with explicit content drain
+
+Owner-approved Option B, local only. A saved receipt blocks new authorizations; previously authorized content may finish and remain stored. Receipt, drain and AI-stop status are separate. Additive migration 0023 preserves earlier migration bytes and chronology. Supersedes ADR-0069/0074 complete-fence-at-receipt claims. [Contract and Doctrine21](readiness/FRL_WITHDRAWAL_RECEIPT_B_2026-10-19.md). No activation or retention duration change.

@@ -10,6 +10,8 @@ export default async function verifyConsole({page, origin, fixture, evidence}) {
   const repeat=card('repeat'), stale=card('stale'), stopped=card('stopped');
   await repeat.getByRole('button',{name:'End call',exact:true}).waitFor();
   for(const row of [repeat,stale,stopped]) {
+    assert.match(await row.innerText(), /Withdrawal receipt: recorded; content drain: pending; AI stop command: not requested/);
+    assert.match(await row.innerText(), /Provider cessation unconfirmed by withdrawal/);
     await row.locator('summary').first().click();
     for(const label of ['Disclosure version/reference','Evidence reference','Jurisdiction basis']) await row.getByLabel(label,{exact:true}).fill('synthetic');
     for(const action of ['grant','refuse']) {

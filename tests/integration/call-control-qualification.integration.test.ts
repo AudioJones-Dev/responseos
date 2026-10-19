@@ -8,11 +8,12 @@ import { ingestCallControlEvent, requestQualifiedTransfer, runOperatorConsentEff
 import { supervisedCallWasQualification } from "@/lib/agentExecution/supervisedRuntime";
 import { recordWebhookEvent } from "@/lib/data/webhookEvents";
 import { db } from "@/lib/db/client";
+import { persistWithdrawalReceipt, drainWithdrawal } from "@/lib/callReview/withdrawalReceipt";
 import { withCaptureLock } from "@/lib/callReview/consent";
 import type { CallControlEvent } from "@/lib/providers/telnyx/callControl";
 import { disconnectTestDb, prisma, resetAndSeedTestDb, setDevSession } from "./setup";
 
-const sendCommand = vi.hoisted(() => vi.fn());
+const sendCommand = vi.hoisted(() => { vi.resetModules(); return vi.fn(); });
 vi.mock("@/lib/providers/telnyx/callControl", async (original) => ({
   ...await original<typeof import("@/lib/providers/telnyx/callControl")>(),
   sendTelnyxCallCommand: sendCommand,
@@ -422,6 +423,8 @@ describe("FRL Call Control qualification", () => {
     await setupQualification();
     await ingest(event("call.initiated", "cc-command-race-init", { to: NUMBER }, 1_000));
     const capture = await prisma.callCaptureSession.findFirstOrThrow();
+    await persistWithdrawalReceipt(capture, "operator", { eventKey: "synthetic", disclosureRef: "synthetic", evidenceRef: "synthetic", jurisdictionBasis: "synthetic" });
+    await drainWithdrawal(capture);
     // Withdrawal effects are not serialized by the capture lock, so two can
     // reach the provider concurrently; grants are (see the next test).
     await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "STOP_PENDING" } });
@@ -493,7 +496,10 @@ describe("FRL Call Control qualification", () => {
 
     resolveStart({ status: 200, providerDate: new Date(NOW.getTime() + 4_000), conversationId: "conversation-1", ok: true, errorCode: null });
     await grant;
-    expect((await withdrawal).status).toBe(200);
+    const pending = await withdrawal;
+    expect(pending.status).toBe(202);
+    expect(await pending.json()).toMatchObject({ withdrawal: { receipt: "recorded", drain: "pending" } });
+    expect((await route.POST(new Request("https://example.test", { method: "POST", body: JSON.stringify({ action: "withdraw", disclosureRef: "approved:v1", evidenceRef: "witness:withdraw", jurisdictionBasis: "commissioning:test", eventKey: "00000000-0000-4000-8000-000000000009" }) }), { params: Promise.resolve({ id: capture.id }) })).status).toBe(200);
     expect(sendCommand.mock.calls.map(([params]) => params.action)).toEqual(["ai_assistant_start", "ai_assistant_stop"]);
     expect(await prisma.callConsentEvent.count({ where: { provider_call_id: capture.provider_call_id, action: "withdraw" } })).toBe(1);
   });

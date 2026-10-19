@@ -11,7 +11,7 @@ const effect = vi.hoisted(() => { vi.resetModules(); return vi.fn(); });
 vi.mock("@/lib/callControl/service", async original => ({ ...await original<object>(), runOperatorConsentEffect: effect }));
 
 beforeEach(async () => { await resetAndSeedTestDb(); setDevSession('operator'); effect.mockReset().mockResolvedValue(undefined); });
-afterAll(disconnectTestDb);
+afterAll(async () => { await disconnectTestDb(); vi.doUnmock("@/lib/callControl/service"); vi.resetModules(); });
 
 async function fixture() {
   const account = await prisma.account.findFirstOrThrow();
@@ -109,7 +109,7 @@ test('receipt fence survives a capture-lock wait and persistence failure', async
   await prisma.$transaction(async tx => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${"capture:" + f.account.id + ":" + f.capture.provider_call_id}))`;
     pending = f.post();
-    await vi.waitFor(async () => expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: f.capture.id } })).withdrawal_received_at).not.toBeNull());
+    await vi.waitFor(async () => expect(await prisma.callWithdrawalReceipt.count({ where: { capture_id: f.capture.id } })).toBe(1));
     expect(await prisma.callConsentEvent.count({ where: { action: 'withdraw' } })).toBe(0);
     expect(await callHasWithdrawal(f.account.id, f.call.id)).toBe(true);
   });
@@ -117,8 +117,8 @@ test('receipt fence survives a capture-lock wait and persistence failure', async
   const second = await fixture();
   if (!db) throw Error('test database required');
   const failed = vi.spyOn(db, '$transaction').mockRejectedValueOnce(new Error('synthetic_event_write_failure'));
-  try { const response = await second.post(); expect(response.status).toBe(503); expect(await response.json()).toMatchObject({ error: 'withdrawal_recording_incomplete' }); } finally { failed.mockRestore(); }
-  expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: second.capture.id } })).withdrawal_received_at).not.toBeNull();
+  try { const response = await second.post(); expect(response.status).toBe(202); expect(await response.json()).toMatchObject({ error: 'withdrawal_recording_incomplete', withdrawal: { receipt: 'recorded', drain: 'pending' } }); } finally { failed.mockRestore(); }
+  expect(await prisma.callWithdrawalReceipt.count({ where: { capture_id: second.capture.id } })).toBe(1);
   expect(await callHasWithdrawal(second.account.id, second.call.id)).toBe(true);
 });
 

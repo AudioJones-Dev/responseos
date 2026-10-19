@@ -4,6 +4,7 @@ import type { Prisma } from "@prisma/client";
 import "@/lib/serverOnlyGuard";
 import { db } from "@/lib/db/client";
 import type { TelnyxWebhookEnvelope } from "@/lib/providers/telnyx/webhook";
+import { providerCallHasWithdrawal } from "./withdrawal";
 
 export function metadataOnly(event: TelnyxWebhookEnvelope): TelnyxWebhookEnvelope {
   const payload: Record<string, unknown> = {};
@@ -37,7 +38,7 @@ export async function canRetainCallContent(accountId: string, providerCallId: st
   if (!client) return false;
   const session = await client.callCaptureSession.findUnique({ where: { account_id_provider_call_id: { account_id: accountId, provider_call_id: providerCallId } } });
   if (!session) return false;
-  if (session.withdrawal_received_at) return false;
+  if (await providerCallHasWithdrawal(accountId, providerCallId, client)) return false;
   const memory = BusinessMemorySnapshotSchema.safeParse(session.snapshot_json);
   if (!memory.success || !readOperatingConfigurationValue(memory.data, "policy.consent")?.transcription.enabled) return false;
   // A cumulative transcript is safe only if its entire interval is authorized.
@@ -51,10 +52,13 @@ export async function canRetainCallContent(accountId: string, providerCallId: st
   return consentAllowsCapture(events, new Date(start), new Date(end));
 }
 
-export async function withCaptureLock<T>(accountId: string, providerCallId: string, run: (client: Prisma.TransactionClient) => Promise<T>) {
+export async function withCaptureLock<T>(accountId: string, providerCallId: string, run: (client: Prisma.TransactionClient) => Promise<T>, options: { bounded?: boolean } = {}) {
   if (!db) throw new Error("database_unavailable");
   return db.$transaction(async (client) => {
+    await client.$executeRawUnsafe(options.bounded ? "SET LOCAL lock_timeout = '250ms'" : "SET LOCAL lock_timeout = '1000ms'");
+    await client.$executeRawUnsafe(options.bounded ? "SET LOCAL statement_timeout = '500ms'" : "SET LOCAL statement_timeout = '2000ms'");
+    await client.$executeRawUnsafe(options.bounded ? "SET LOCAL idle_in_transaction_session_timeout = '1000ms'" : "SET LOCAL idle_in_transaction_session_timeout = '12000ms'");
     await client.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${"capture:" + accountId + ":" + providerCallId}))`;
     return run(client);
-  }, { timeout: 15_000 });
+  }, { isolationLevel: "ReadCommitted", maxWait: options.bounded ? 250 : 1000, timeout: options.bounded ? 1500 : 15_000 });
 }

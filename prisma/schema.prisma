@@ -224,23 +224,24 @@ enum NotificationStatus {
 }
 
 model Account {
-  id            String        @id @default(cuid())
-  name          String
-  slug          String        @unique
-  industry      String
-  website_url   String?
-  primary_phone String?
-  timezone      String
-  status        AccountStatus @default(lead)
+  withdrawal_receipts CallWithdrawalReceipt[]
+  id                  String                  @id @default(cuid())
+  name                String
+  slug                String                  @unique
+  industry            String
+  website_url         String?
+  primary_phone       String?
+  timezone            String
+  status              AccountStatus           @default(lead)
   // ADR-0046 — administrative classification. Defaults to `customer`
   // so every existing row stays valid without backfill.
-  account_type  AccountType   @default(customer)
+  account_type        AccountType             @default(customer)
   // 32A — Clerk integration substrate per ADR-0005 + step-2.4 plan §4.3.
   // Nullable so existing seeded accounts stay valid without backfill.
   // Wiring (session derivation, webhook sync) lands in 32B/32C.
-  clerk_org_id  String?       @unique
-  created_at    DateTime      @default(now())
-  updated_at    DateTime      @updatedAt
+  clerk_org_id        String?                 @unique
+  created_at          DateTime                @default(now())
+  updated_at          DateTime                @updatedAt
 }
 
 model User {
@@ -283,31 +284,31 @@ model Contact {
 }
 
 model Call {
-  id               String         @id @default(cuid())
-  account_id       String
-  contact_id       String?
-  provider         CallProvider
-  provider_call_id String?
-  direction        CallDirection
-  status           CallStatus
-  from_number      String
-  to_number        String
-  started_at       DateTime
-  ended_at         DateTime?
-  duration_seconds Int?
-  recording_url    String?
-  transcript       String?
-  summary          String?
-  review_required  Boolean        @default(false)
-  sentiment        CallSentiment?
-  spam_score       Float?
-  lead_score       Int?
+  id                  String              @id @default(cuid())
+  account_id          String
+  contact_id          String?
+  provider            CallProvider
+  provider_call_id    String?
+  direction           CallDirection
+  status              CallStatus
+  from_number         String
+  to_number           String
+  started_at          DateTime
+  ended_at            DateTime?
+  duration_seconds    Int?
+  recording_url       String?
+  transcript          String?
+  summary             String?
+  review_required     Boolean             @default(false)
+  sentiment           CallSentiment?
+  spam_score          Float?
+  lead_score          Int?
   // Supervised-pilot classification from the provider's structured insight
   // (ADR-0052). Null until a finalized insight carries a valid value.
   caller_relationship CallerRelationship?
   interaction_class   InteractionClass?
   recording_consent   RecordingConsent?
-  created_at       DateTime       @default(now())
+  created_at          DateTime            @default(now())
 
   @@unique([account_id, provider, provider_call_id])
   @@index([account_id])
@@ -316,14 +317,15 @@ model Call {
 }
 
 model CallCaptureSession {
-  id                          String            @id @default(cuid())
+  withdrawal_receipts         CallWithdrawalReceipt[]
+  id                          String                  @id @default(cuid())
   account_id                  String
   provider_call_id            String
   assignment_id               String?
   snapshot_id                 String
   snapshot_json               Json
-  control_state               CallControlState  @default(CALL_RECEIVED)
-  generation                  Int               @default(1)
+  control_state               CallControlState        @default(CALL_RECEIVED)
+  generation                  Int                     @default(1)
   call_session_id             String?
   call_leg_id                 String?
   conversation_id             String?
@@ -331,61 +333,84 @@ model CallCaptureSession {
   dtmf_event_id               String?
   disclosure_completed_at     DateTime?
   content_admission_closed_at DateTime?
-  withdrawal_received_at     DateTime?
+  withdrawal_received_at      DateTime?
+  withdrawal_drained_at       DateTime?
   capture_started_at          DateTime?
   capture_ended_at            DateTime?
   /// Migration 0022: set once from a fresh authenticated exact-call hangup;
   /// a database trigger rejects clearing or changing it.
   call_disconnected_at        DateTime?
-  created_at                  DateTime          @default(now())
+  created_at                  DateTime                @default(now())
+
   @@unique([account_id, provider_call_id])
+  @@unique([id, account_id, provider_call_id])
   @@index([account_id])
 }
 
+model CallWithdrawalReceipt {
+  id                String             @id @default(cuid())
+  account_id        String
+  capture_id        String
+  provider_call_id  String
+  generation        Int
+  actor_user_id     String?
+  event_key         String?
+  request_hash      String?
+  source_time_claim String?
+  source_provenance String
+  received_at       DateTime           @default(dbgenerated("date_trunc('milliseconds'::text, (clock_timestamp() AT TIME ZONE 'UTC'::text))"))
+  account           Account            @relation(fields: [account_id], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  capture           CallCaptureSession @relation(fields: [capture_id, account_id, provider_call_id], references: [id, account_id, provider_call_id], onDelete: Restrict, onUpdate: Restrict, map: "withdrawal_receipt_capture_fkey")
+
+  @@unique([account_id, provider_call_id])
+}
+
 model CallConsentEvent {
-  id               String   @id @default(cuid())
-  account_id       String
-  provider_call_id String
-  event_key        String   @unique
-  action           String
-  artifact         String
-  disclosure_ref   String
-  evidence_ref     String
+  id                   String    @id @default(cuid())
+  account_id           String
+  provider_call_id     String
+  event_key            String    @unique
+  action               String
+  artifact             String
+  disclosure_ref       String
+  evidence_ref         String
   /// ADR-0055 §1: the jurisdiction basis and the source channel are part of the
   /// minimum immutable record of authority.
-  jurisdiction_basis String
-  source_channel     String
-  actor_user_id    String
-  occurred_at      DateTime @default(now())
-  recorded_at      DateTime?
-  source_occurred_at DateTime?
-  source_time_claim String?
-  source_time_status String?
-  source_time_reason String?
-  source_provenance String?
-  request_hash     String?
+  jurisdiction_basis   String
+  source_channel       String
+  actor_user_id        String
+  occurred_at          DateTime  @default(now())
+  recorded_at          DateTime?
+  source_occurred_at   DateTime?
+  source_time_claim    String?
+  source_time_status   String?
+  source_time_reason   String?
+  source_provenance    String?
+  request_hash         String?
   review_activity_json Json?
+
   @@index([account_id, provider_call_id, occurred_at])
 }
 
 model CallReview {
-  id                String   @id @default(cuid())
-  account_id        String
-  call_id           String
-  revision          Int
-  source_hash       String
-  evidence_json     Json
-  payload_json      Json
-  recipient         String
-  status            String   @default("pending")
-  reviewer_user_id   String?
-  reviewed_at       DateTime?
-  crm_status        String   @default("pending")
-  email_status      String   @default("pending")
-  email_message_id  String?
-  email_attempt_at  DateTime?
-  dispatch_at       DateTime?
-  created_at        DateTime @default(now())
+  id               String    @id @default(cuid())
+  account_id       String
+  call_id          String
+  revision         Int
+  source_hash      String
+  evidence_json    Json
+  payload_json     Json
+  recipient        String
+  status           String    @default("pending")
+  reviewer_user_id String?
+  reviewed_at      DateTime?
+  crm_status       String    @default("pending")
+  email_status     String    @default("pending")
+  email_message_id String?
+  email_attempt_at DateTime?
+  dispatch_at      DateTime?
+  created_at       DateTime  @default(now())
+
   @@unique([account_id, call_id, revision])
   @@index([account_id, status])
 }
@@ -484,27 +509,27 @@ model Automation {
 }
 
 model Notification {
-  id            String              @id @default(cuid())
-  account_id    String
-  lead_event_id String?
-  channel       NotificationChannel
-  recipient     String
-  subject       String?
-  message       String
-  status        NotificationStatus  @default(queued)
-  sent_at       DateTime?
+  id                  String              @id @default(cuid())
+  account_id          String
+  lead_event_id       String?
+  channel             NotificationChannel
+  recipient           String
+  subject             String?
+  message             String
+  status              NotificationStatus  @default(queued)
+  sent_at             DateTime?
   // Dispatch ledger for provider-sent notifications (ADR-0052). Subject
   // and message are frozen at first dispatch; retries resend them verbatim
   // under the same provider idempotency key.
   call_id             String?
   event               String?
-  dedupe_key          String?   @unique
+  dedupe_key          String?             @unique
   provider            String?
   provider_message_id String?
-  attempt_count       Int       @default(0)
+  attempt_count       Int                 @default(0)
   last_error_code     String?
   next_attempt_at     DateTime?
-  created_at    DateTime            @default(now())
+  created_at          DateTime            @default(now())
 
   @@index([account_id])
   @@index([lead_event_id])
@@ -912,30 +937,30 @@ model AuditLog {
 }
 
 model WebhookEvent {
-  id                 String               @id @default(cuid())
-  account_id         String?
-  provider           String
-  provider_event_id  String
-  event_type         String
-  raw_body           String
-  content_fingerprint String? @db.Char(64)
-  fingerprint_version Int? @db.SmallInt
-  fingerprint_key_id String? @db.VarChar(64)
-  signature_header   String?
-  signature_valid    Boolean              @default(false)
-  dedupe_hash        String               @unique
-  received_at        DateTime             @default(now())
-  processed_at       DateTime?
-  process_status     WebhookProcessStatus @default(received)
-  process_error      String?
+  id                          String               @id @default(cuid())
+  account_id                  String?
+  provider                    String
+  provider_event_id           String
+  event_type                  String
+  raw_body                    String
+  content_fingerprint         String?              @db.Char(64)
+  fingerprint_version         Int?                 @db.SmallInt
+  fingerprint_key_id          String?              @db.VarChar(64)
+  signature_header            String?
+  signature_valid             Boolean              @default(false)
+  dedupe_hash                 String               @unique
+  received_at                 DateTime             @default(now())
+  processed_at                DateTime?
+  process_status              WebhookProcessStatus @default(received)
+  process_error               String?
   payload_erasure_required_at DateTime?
-  payload_expires_at DateTime?
-  payload_purged_at  DateTime?
+  payload_expires_at          DateTime?
+  payload_purged_at           DateTime?
   // Correlation keys for provider events that omit the called number
   // (Telnyx insights events carry only call-control identifiers).
-  provider_call_id   String?
-  provider_call_ids  String[]             @default([])
-  agent_target       String?
+  provider_call_id            String?
+  provider_call_ids           String[]             @default([])
+  agent_target                String?
 
   @@unique([provider, provider_event_id])
   @@index([provider, provider_call_id])
@@ -1522,12 +1547,12 @@ model ProfessionalOpportunity {
 }
 
 model WebhookErasureAudit {
-  webhook_event_id String @id
-  account_id String?
+  webhook_event_id        String   @id
+  account_id              String?
   authorization_reference String
-  reason String
-  database_actor String
-  erased_at DateTime
-  expires_at DateTime
-  transaction_id BigInt
+  reason                  String
+  database_actor          String
+  erased_at               DateTime
+  expires_at              DateTime
+  transaction_id          BigInt
 }

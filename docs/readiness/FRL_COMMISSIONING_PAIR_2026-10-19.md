@@ -37,3 +37,7 @@ Frozen review pair application deea487eb656cfe53f098831ba7051cb716fdee5 / contro
 ## Withdrawal raw-ledger correction
 
 Frozen F1 pair application 0752de433a2ea1fde0c5ae52d86f240a91a0ec7f / control 7a4dc58a44756a8b31ebc889f29edc8b5548c00c is preserved. The local successor serializes raw-history admission with durable withdrawal receipt and preserves receipt-only withdrawal on conversation end. No schema or control behavior changes. [Correction and validation contract](FRL_WITHDRAWAL_LEDGER_RACE_2026-10-19.md). External evidence: commissioning-withdrawal-race-evidence-20261019. F2 remains design-only. The supplied main proposal is reconciled in the external evidence; its CSV, reference model and vendor excerpts remain uninspected.
+
+## Independent receipt successor
+
+Frozen pair 44e45c21e925510c1f9563f7c9f0d63bb2b6744b / 905091b9707bba33d2f376d7ac27bf9666c61b4d is preserved. [Accepted Option B](FRL_WITHDRAWAL_RECEIPT_B_2026-10-19.md) supersedes complete serialization at receipt: preauthorized content may finish, drain is separate. Schema/migration0023 and shared documentation match across the split pair; deployment control remains disabled. External evidence is commissioning-receipt-b-evidence-20261019.

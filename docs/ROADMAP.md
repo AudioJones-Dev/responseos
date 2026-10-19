@@ -153,3 +153,5 @@ Disabled commissioning control remains in review with pinned locked tooling and 
 Disconnection-fact successor (F1, local migration 0022) is EXPERIMENTAL and awaiting separate review; no milestone, hosted migration or activation change. F2 remains an open scope decision. [Amendment](readiness/FRL_END_CALL_ELIGIBILITY_2026-10-19.md).
 
 Local EXPERIMENTAL withdrawal correction under review: [raw-ledger admission race](readiness/FRL_WITHDRAWAL_LEDGER_RACE_2026-10-19.md). No milestone or activation gate moves; F2 remains unimplemented.
+
+Independent withdrawal receipt/drain is a local review candidate under accepted Option B. [Scope](readiness/FRL_WITHDRAWAL_RECEIPT_B_2026-10-19.md). No milestone or hosted readiness promotion.

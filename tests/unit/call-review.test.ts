@@ -8,7 +8,7 @@ import { PROSPECT_BOOTSTRAP_SCHEMA_VERSION } from "@/lib/prospectBootstrap/contr
 const mocks = vi.hoisted(() => ({
   session: vi.fn(), crm: vi.fn(), reconcile: vi.fn(), send: vi.fn(), gate: vi.fn(),
   db: {
-    $transaction: vi.fn(), $executeRaw: vi.fn(),
+    $transaction: vi.fn(), $executeRaw: vi.fn(), $executeRawUnsafe: vi.fn(),
     callReview: { findUnique: vi.fn(), findFirst: vi.fn(), updateMany: vi.fn(), update: vi.fn(), create: vi.fn() },
     call: { findFirst: vi.fn() }, auditLog: { create: vi.fn() }, callCaptureSession: { findUnique: vi.fn() }, crmSyncOperation: { findUnique: vi.fn() }, webhookEvent: { count: vi.fn() },
   },
@@ -82,8 +82,9 @@ describe("review queueing", () => {
   test("canonical evidence is read only after the revision lock is held", async () => {
     mocks.db.callReview.findFirst.mockResolvedValue(null);
     await queueCallReview("account", "call", { summary: "Requested a ramp evaluation." });
-    const lock = mocks.db.$executeRaw.mock.invocationCallOrder[0];
-    expect(mocks.db.call.findFirst.mock.invocationCallOrder[0]).toBeGreaterThan(lock);
+    const lock = mocks.db.$executeRaw.mock.invocationCallOrder[1];
+    expect(mocks.db.call.findFirst.mock.calls[0][0]).toMatchObject({ select: { provider_call_id: true } });
+    expect(mocks.db.call.findFirst.mock.invocationCallOrder[1]).toBeGreaterThan(lock);
     expect(mocks.db.callCaptureSession.findUnique.mock.invocationCallOrder[0]).toBeGreaterThan(lock);
   });
   test("a transcript-only late event preserves the earlier analysis", async () => {
@@ -127,7 +128,7 @@ describe("review authorization", () => {
   });
   test("approval takes the capture lock before the review lock", async () => {
     await decideCallReview("review", 1, "approve", payload);
-    const lockKeys = mocks.db.$executeRaw.mock.calls.map((call) => call[1]);
+    const lockKeys = mocks.db.$executeRaw.mock.calls.filter((call) => call[1] !== undefined).map((call) => call[1]);
     expect(lockKeys[0]).toBe("capture:account:pc");
     expect(lockKeys[1]).toBe("account:call");
   });
