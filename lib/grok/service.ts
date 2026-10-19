@@ -211,7 +211,7 @@ export async function bindGrokRealtime(id: string, workerToken: string, realtime
   return database().$transaction(async tx => {
     const s = await lock(tx, id);
     if (s.worker_token !== workerToken || s.stopped_at || s.lease_expires_at <= await clock(tx) || await authority(target(s), tx) !== s.authority_digest) throw Error("realtime_authority_closed");
-    await tx.grokIncomingReceipt.create({ data: { event_id: `realtime:${id}`, session_id: id, call_id: realtimeSessionId, body_digest: hash(`${id}|${workerToken}|${realtimeSessionId}|${provider.GROK_MODEL}`) } });
+    await tx.grokIncomingReceipt.create({ data: { event_id: `realtime:${realtimeSessionId}`, session_id: id, call_id: realtimeSessionId, body_digest: hash(`${id}|${workerToken}|${realtimeSessionId}|${provider.GROK_MODEL}`) } });
     const command = await tx.grokCallCommand.findUniqueOrThrow({ where: { session_id_kind: { session_id: id, kind: "join" } } });
     if (command.result_at || command.status !== "uncertain") throw Error("realtime_join_consumed");
     await tx.grokCallCommand.update({ where: { id: command.id }, data: { status: "accepted", result_at: await clock(tx) } });

@@ -75,6 +75,16 @@ test("signed media binding consumes one capability under concurrency and keeps r
   expect(transport.terminate).toHaveBeenCalledExactlyOnceWith("telnyx", f.capture.provider_call_id, expect.any(String));
 });
 
+test("one realtime session identity cannot bind two carrier calls", async () => {
+  const first = await mediaFixture(), second = await mediaFixture();
+  const a = await claimGrokMedia(first.input.headers, first.input.rawStart, first.input.trusted);
+  const b = await claimGrokMedia(second.input.headers, second.input.rawStart, second.input.trusted);
+  const results = await Promise.allSettled([bindGrokRealtime(first.id, a.session.worker_token!, "same_realtime_session"), bindGrokRealtime(second.id, b.session.worker_token!, "same_realtime_session")]);
+  expect(results.filter(r => r.status === "fulfilled")).toHaveLength(1);
+  expect(await prisma.grokIncomingReceipt.count({ where: { event_id: "realtime:same_realtime_session" } })).toBe(1);
+  expect(await prisma.grokCallCommand.count({ where: { kind: "join", status: "accepted" } })).toBe(1);
+});
+
 test.each(["signature", "url", "token", "call", "generation", "codec"])("media rejects %s mismatch before socket or claim", async kind => {
   const f = await mediaFixture();
   if (kind === "signature") f.input.headers.set("telnyx-signature-ed25519", Buffer.alloc(64).toString("base64"));
