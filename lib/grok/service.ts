@@ -79,6 +79,7 @@ export async function acceptGrokIncoming(raw: string, headers: Headers) {
   if (!found) throw Error("grok_correlation_unknown");
   return database().$transaction(async tx => {
     let s = await lock(tx, found.id);
+    if (await tx.grokIncomingReceipt.findFirst({ where: { session_id: s.id, event_id: { startsWith: "stream:" } } })) throw Error("grok_transport_retarget_denied");
     if (s.xai_call_id && s.xai_call_id !== proof.callId) throw Error("grok_call_retarget_denied");
     const receipt = await tx.grokIncomingReceipt.findUnique({ where: { event_id: proof.eventId } });
     if (receipt && (receipt.session_id !== s.id || receipt.call_id !== proof.callId || receipt.body_digest !== proof.bodyDigest)) throw Error("grok_replay_conflict");

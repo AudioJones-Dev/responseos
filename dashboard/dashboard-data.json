@@ -1805,14 +1805,14 @@
     {
       "id": "FRL-GROK-DIRECT-SIP-LOCAL",
       "phase": "Integrations",
-      "title": "Implement disabled durable Grok authority; reassess media transport",
+      "title": "Implement disabled Grok media bridge and durable call authority",
       "owner": "Codex",
       "status": "In Progress",
       "progress": 35,
       "priority": "High",
       "start": "2026-10-19",
       "blocked": true,
-      "blockedReason": "Durable application claims and disabled worker/watchdog implemented; local validation underway. SIP expansion paused for media-bridge review. Hosting, retention, budgets and live qualification unresolved."
+      "blockedReason": "Signed stream claims and injected-socket media bridge implemented; final local validation underway. Production listener composition, hosting, retention, budgets and live qualification unresolved."
     }
   ],
   "liveIssues": [
@@ -1846,3 +1846,4 @@
   ],
   "generatedAt": "2026-10-12T13:31:06.263Z"
 }
+

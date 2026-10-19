@@ -141,6 +141,40 @@ test("withdrawal during socket open closes late connection without configuring i
   await expect(startMediaBridge(f.input, f)).rejects.toThrow("media_open_failed");
   expect(f.realtime.send).not.toHaveBeenCalled(); expect(f.realtime.close).toHaveBeenCalledTimes(1);
 });
+
+test("network open failure consumes admission and concurrent shutdown never retries hangup", async () => {
+  const f = await mediaFixture(); f.openRealtime.mockRejectedValue(Error("synthetic_network_loss"));
+  await expect(startMediaBridge(f.input, f)).rejects.toThrow("media_open_failed");
+  await expect(startMediaBridge(f.input, f)).rejects.toThrow("stream_binding_consumed_or_stopped");
+  await Promise.all([dispatchGrokTermination(f.id), watchdogGrokSweep()]);
+  expect(f.openRealtime).toHaveBeenCalledTimes(1); expect(transport.terminate).toHaveBeenCalledTimes(1);
+});
+
+test("saved withdrawal independently fences an active media bridge and clears both sockets", async () => {
+  const f = await mediaFixture(), bridge = await startMediaBridge(f.input, f);
+  try {
+    await bridge.xai(JSON.stringify({ type: "session.updated", session: { ...realtimeConfig.session, id: "session_fixture", model: "grok-voice-3.0" } }));
+    await f.receipt();
+    await vi.waitFor(() => expect(f.realtime.close).toHaveBeenCalledTimes(1), { timeout: 4000 });
+    await bridge.stop("test_complete");
+    expect(transport.terminate).toHaveBeenCalledExactlyOnceWith("telnyx", f.capture.provider_call_id, expect.any(String));
+    expect(f.carrier.close).toHaveBeenCalledTimes(1);
+    expect((await prisma.grokCallSession.findUniqueOrThrow({ where: { id: f.id } })).stopped_at).not.toBeNull();
+  } finally { await bridge.stop("test_complete"); }
+});
+
+test("media output is paced as PCMU and termination evidence remains unconfirmed", async () => {
+  const f = await mediaFixture(), bridge = await startMediaBridge(f.input, f);
+  try {
+    await bridge.xai(JSON.stringify({ type: "session.updated", session: { ...realtimeConfig.session, id: "session_fixture", model: "grok-voice-3.0" } }));
+    await bridge.xai(JSON.stringify({ type: "response.created", response: { id: "response_one" } }));
+    await bridge.xai(JSON.stringify({ type: "response.output_audio.delta", response_id: "response_one", delta: Buffer.alloc(320, 255).toString("base64") }));
+    await vi.waitFor(() => expect(f.carrier.send.mock.calls.filter(c => JSON.parse(c[0]).event === "media")).toHaveLength(2));
+    for (const [raw] of f.carrier.send.mock.calls) { const frame = JSON.parse(raw); if (frame.event === "media") expect(Buffer.from(frame.media.payload, "base64")).toHaveLength(160); }
+    await Promise.all([bridge.disconnected(), bridge.stop("concurrent_operator")]);
+    expect(transport.terminate).toHaveBeenCalledTimes(1); expect(bridge.disconnectionConfirmed).toBe(false);
+  } finally { await bridge.stop("test_complete"); }
+});
 async function bound() {
   const f = await fixture(); const started = await beginGrokHandoff(f.capture);
   const message = incoming(transport.handoff.mock.calls.at(-1)![1]);
@@ -235,7 +269,7 @@ test("late binding after withdrawal is retained solely for exact termination", a
   expect(await acceptGrokIncoming(message.raw, message.headers)).toMatchObject({ stopped: true, disconnectionConfirmed: false });
   await expect(claimGrokWorker(started.sessionId)).rejects.toThrow("grok_worker_not_eligible");
   await dispatchGrokTermination(started.sessionId);
-  expect(transport.terminate.mock.calls.map(c => [c[0], c[1]])).toEqual([["telnyx", f.capture.provider_call_id], ["xai", JSON.parse(message.raw).callId]]);
+  expect(transport.terminate.mock.calls.map(c => [c[0], c[1]]).sort()).toEqual([["telnyx", f.capture.provider_call_id], ["xai", JSON.parse(message.raw).callId]].sort());
 });
 
 test("concurrent watchdog and operator dispatch consume each termination once", async () => {

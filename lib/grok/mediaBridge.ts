@@ -19,11 +19,11 @@ export async function startMediaBridge(input: { headers: Headers; connectedToken
   matchConnectedToken(input.connectedToken, input.headers.get("x-telnyx-streaming-auth-token") ?? "");
   const binding = await claimGrokMedia(input.headers, input.rawStart, input.trusted);
   const id = binding.session.id, worker = binding.session.worker_token!;
-  let closed = false, ready = false, checking = false, realtime: MediaSocket | undefined;
+  let closed = false, ready = false, configuring = false, checking = false, realtime: MediaSocket | undefined;
   let response: string | undefined, speaking = false, nextChunk = 1, lastTimestamp = -1, lastSequence = -1;
   let gapSince = 0, verifiedAt = performance.now(), lastPlayback = 0, playback = Buffer.alloc(0), serial = 0;
   const inbound = new Map<number, z.infer<typeof media>>(), marks = new Map<string, number>(), fenced = new Set<string>();
-  let clock: ReturnType<typeof setInterval> | undefined;
+  const timers: { clock?: ReturnType<typeof setInterval> } = {};
   let stopResult: Promise<void> | undefined;
   function send(socket: MediaSocket, value: unknown) {
     if (socket.bufferedAmount > 16384) throw Error("media_backpressure");
@@ -32,7 +32,7 @@ export async function startMediaBridge(input: { headers: Headers; connectedToken
   function fence() { ready = false; playback = Buffer.alloc(0); inbound.clear(); marks.clear(); }
   function stop(reason: string) {
     if (closed) return stopResult ?? Promise.resolve();
-    closed = true; fence(); if (clock) clearInterval(clock);
+    closed = true; fence(); if (timers.clock) clearInterval(timers.clock);
     try { send(ports.carrier, { event: "clear" }); } catch {}
     try { realtime?.close(); } catch {}
     try { ports.carrier.close(); } catch {}
@@ -94,7 +94,8 @@ export async function startMediaBridge(input: { headers: Headers; connectedToken
       const frame = object.parse(JSON.parse(raw));
       if (frame.type === "session.created" || frame.type === "conversation.created") return;
       if (frame.type === "session.updated") {
-        if (ready) throw Error("realtime_reconfiguration_denied");
+        if (ready || configuring) throw Error("realtime_reconfiguration_denied");
+        configuring = true;
         const session = configuration.parse(frame.session);
         await bindGrokRealtime(id, worker, session.id);
         if (closed || !await heartbeatGrok(id, worker)) { await stop("realtime_binding_closed"); return; }
@@ -135,7 +136,7 @@ export async function startMediaBridge(input: { headers: Headers; connectedToken
     } catch { await stop("realtime_protocol_failure"); }
   }
   let nextCheck = performance.now() + 1000;
-  clock = setInterval(() => {
+  timers.clock = setInterval(() => {
     if (closed) return;
     const now = performance.now();
     try {
@@ -151,3 +152,4 @@ export async function startMediaBridge(input: { headers: Headers; connectedToken
   }, 20);
   return { carrier, xai, stop, disconnected: () => stop("media_socket_closed"), sessionId: id, disconnectionConfirmed: false as const };
 }
+
