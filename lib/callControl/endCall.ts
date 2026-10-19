@@ -25,6 +25,15 @@ async function exactEvent(capture: CallCaptureSession, id: string, client: Prism
   return { row, event };
 }
 
+// Fresh means the retained original is still present and unexpired; only then can it record the disconnection fact.
+export async function verifiedExactHangup(capture: CallCaptureSession, id: string, client: Prisma.TransactionClient) {
+  const metadata = await client.webhookEvent.findUnique({ where: { id }, select: { payload_purged_at: true, payload_erasure_required_at: true, payload_expires_at: true } });
+  if (!metadata || metadata.payload_purged_at || metadata.payload_erasure_required_at) return null;
+  const now = (await client.$queryRaw<{ now: Date }[]>`SELECT clock_timestamp() AS now`)[0].now;
+  if (metadata.payload_expires_at && metadata.payload_expires_at <= now) return null;
+  try { return await exactEvent(capture, id, client, ["call.hangup"]); } catch { return null; }
+}
+
 export async function disconnectionEvidence(capture: CallCaptureSession, client: Prisma.TransactionClient) {
   const events = await client.webhookEvent.findMany({ where: {
     account_id: capture.account_id, provider: "telnyx", event_type: "call.hangup",
@@ -47,8 +56,10 @@ export async function disconnectionEvidence(capture: CallCaptureSession, client:
 }
 
 export async function endCallEligibility(capture: CallCaptureSession, client: Prisma.TransactionClient, evidence: Awaited<ReturnType<typeof disconnectionEvidence>>, ignoreClaimId?: string) {
+  if (capture.call_disconnected_at) return { allowed: false, reason: "call_disconnected" };
   if (evidence.confirmed) return { allowed: false, reason: "disconnection_confirmed" };
-  if (capture.capture_ended_at || ["FINALIZING", "EVIDENCE_FROZEN", "TRANSFER_PENDING", "TRANSFERRED"].includes(capture.control_state)) return { allowed: false, reason: "lifecycle_ended" };
+  // Capture end, conversation end and FINALIZING close content capture; the phone call may still be connected.
+  if (["EVIDENCE_FROZEN", "TRANSFER_PENDING", "TRANSFERRED"].includes(capture.control_state)) return { allowed: false, reason: "lifecycle_ended" };
   if (evidence.state !== "absent") return { allowed: false, reason: "disconnection_evidence_unavailable" };
   const claim = await client.telnyxCallCommand.findFirst({ where: { account_id: capture.account_id, capture_session_id: capture.id, command_type: "hangup", ...(ignoreClaimId ? { id: { not: ignoreClaimId } } : {}) } });
   if (claim) return { allowed: false, reason: "hangup_already_claimed" };
@@ -87,7 +98,8 @@ export async function endCaptureCall(input: EndCallTarget, actor?: { id: string;
     const now = (await client.$queryRaw<{ now: Date }[]>`SELECT date_trunc('milliseconds', clock_timestamp() AT TIME ZONE 'UTC') AS now`)[0].now;
     await client.callCaptureSession.update({ where: { id: capture.id, account_id: capture.account_id }, data: {
       content_admission_closed_at: capture.content_admission_closed_at ?? now,
-      control_state: capture.withdrawal_received_at ? capture.control_state : "SAFE_FALLBACK",
+      // FINALIZING keeps its state so the ended conversation can still reconcile its final transcript.
+      control_state: capture.withdrawal_received_at || capture.control_state === "FINALIZING" ? capture.control_state : "SAFE_FALLBACK",
     } });
     await client.auditLog.create({ data: { account_id: capture.account_id, actor_type: actor ? "user" : "system", ...(actor ? { actor_user_id: actor.id, actor_role: actor.role } : {}), action: "call_end_requested", category: "workflow", target_type: "CallCaptureSession", target_id: capture.id, metadata_json: { generation: capture.generation, commandId: command.command_id } } });
     return { dispatch: true as const, capture, command, evidence };

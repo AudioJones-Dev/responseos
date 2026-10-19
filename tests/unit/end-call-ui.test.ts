@@ -26,3 +26,8 @@ test('ineligible controls explain independent carrier fallback and visibly disab
   expect(html).toMatch(/disabled="">End call/);
   expect(renderToStaticMarkup(createElement(ConsentControls,{id:'c',callReference:'call',terminal:true}))).toContain('disabled:opacity-40');
 });
+test('recorded disconnection disables End call without offering a carrier fallback', () => {
+  const html=renderToStaticMarkup(createElement(EndCallControls,{target,confirmed:false,disconnectedAt:'2026-10-19T00:00:00.000Z',eligibility:{allowed:true,reason:'fresh_exact_active_evidence'}}));
+  expect(html).toMatch(/disabled="">End call/);
+  expect(html).not.toContain('Operator fallback');
+});

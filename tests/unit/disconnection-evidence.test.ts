@@ -1,6 +1,6 @@
 import { expect, test, vi } from "vitest";
 import type { CallCaptureSession, Prisma } from "@prisma/client";
-import { disconnectionEvidence, endCallEligibility } from "@/lib/callControl/endCall";
+import { disconnectionEvidence, endCallEligibility, verifiedExactHangup } from "@/lib/callControl/endCall";
 const verify = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/data/webhookEvents", () => ({ assertStoredWebhookIdentity: verify }));
 const capture={id:'capture',account_id:'account',provider_call_id:'call',call_session_id:'session',call_leg_id:'leg',generation:1} as CallCaptureSession;
@@ -28,8 +28,31 @@ test.each(['expired','erased'] as const)('classifies %s metadata without parsing
   expect(verify).not.toHaveBeenCalled();
 });
 
-test('lifecycle end veto does not claim confirmed disconnection or consult normalized status', async () => {
-  const proof={state:'absent' as const,confirmed:false,eventId:null,occurredAt:null,receivedAt:null};
-  expect(await endCallEligibility({...capture,capture_ended_at:new Date()},client,proof)).toEqual({allowed:false,reason:'lifecycle_ended'});
-  expect(proof.confirmed).toBe(false);
+const absent={state:'absent' as const,confirmed:false,eventId:null,occurredAt:null,receivedAt:null};
+const eligibilityClient={...client,telnyxCallCommand:{findFirst:async()=>null},telephonyNumberAssignment:{findFirst:async()=>({id:'assignment'})},webhookEvent:{...(client as unknown as {webhookEvent:object}).webhookEvent,findMany:async()=>[]}} as unknown as Prisma.TransactionClient;
+
+test('capture end, conversation end and FINALIZING alone are not a call-ended veto', async () => {
+  for(const state of ['STOP_PENDING','FINALIZING'] as const)
+    expect(await endCallEligibility({...capture,assignment_id:'assignment',capture_ended_at:new Date(),control_state:state},eligibilityClient,absent)).toEqual({allowed:false,reason:'active_evidence_unavailable'});
+  expect(await endCallEligibility({...capture,control_state:'EVIDENCE_FROZEN'},eligibilityClient,absent)).toEqual({allowed:false,reason:'lifecycle_ended'});
+});
+
+test('recorded disconnection vetoes End call even after raw proof expired or was erased', async () => {
+  for(const state of ['expired','erased','absent'] as const)
+    expect(await endCallEligibility({...capture,call_disconnected_at:new Date()},eligibilityClient,{...absent,state})).toEqual({allowed:false,reason:'call_disconnected'});
+});
+
+test('only a fresh exact retained hangup can record disconnection', async () => {
+  verify.mockReset().mockResolvedValue(row);
+  expect(await verifiedExactHangup(capture,'row',client)).not.toBeNull();
+  expect(await verifiedExactHangup({...capture,generation:2},'row',client)).toBeNull();
+  expect(await verifiedExactHangup({...capture,call_leg_id:'other'},'row',client)).toBeNull();
+  verify.mockClear();
+  for(const metadata of [{payload_expires_at:new Date(0)},{payload_purged_at:new Date()},{payload_erasure_required_at:new Date()}]) {
+    const tx={$queryRaw:async()=>[{now:new Date()}],webhookEvent:{findUnique:async()=>({payload_purged_at:null,payload_erasure_required_at:null,payload_expires_at:null,...metadata})}} as unknown as Prisma.TransactionClient;
+    expect(await verifiedExactHangup(capture,'row',tx)).toBeNull();
+  }
+  expect(verify).not.toHaveBeenCalled();
+  verify.mockRejectedValue(Error('webhook_fingerprint_conflict'));
+  expect(await verifiedExactHangup(capture,'row',client)).toBeNull();
 });

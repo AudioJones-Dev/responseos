@@ -27,17 +27,17 @@ async function main() {
     const account=await db.account.findUniqueOrThrow({where:{slug:'browser-synthetic'}});
     const assignment=await db.telephonyNumberAssignment.findFirstOrThrow({where:{account_id:account.id}});
     const snapshot=await db.businessMemorySnapshot.findFirstOrThrow({where:{account_id:account.id,status:'approved'}});
-    for(const name of ['repeat','stale','stopped','expired','ended']) {
-      const capture=await db.callCaptureSession.create({data:{account_id:account.id,provider_call_id:'synthetic-browser-'+name,snapshot_id:snapshot.id,snapshot_json:snapshot.memory_json!,assignment_id:assignment.id,call_session_id:'session',call_leg_id:'leg',conversation_id:'conversation',capture_ended_at:name==='ended'?new Date():null,control_state:name==='repeat'?'STOP_PENDING':'STOPPED',withdrawal_received_at:new Date(),content_admission_closed_at:new Date()}});
+    for(const name of ['repeat','stale','stopped','expired','ended','disconnected']) {
+      const capture=await db.callCaptureSession.create({data:{account_id:account.id,provider_call_id:'synthetic-browser-'+name,snapshot_id:snapshot.id,snapshot_json:snapshot.memory_json!,assignment_id:assignment.id,call_session_id:'session',call_leg_id:'leg',conversation_id:'conversation',capture_ended_at:name==='ended'||name==='disconnected'?new Date():null,call_disconnected_at:name==='disconnected'?new Date():null,control_state:name==='repeat'||name==='ended'?'STOP_PENDING':'STOPPED',withdrawal_received_at:new Date(),content_admission_closed_at:new Date()}});
       await db.call.create({data:{account_id:account.id,provider:'telnyx',provider_call_id:capture.provider_call_id,direction:'inbound',status:'completed',from_number:'+15555550111',to_number:'+15555550188',started_at:new Date()}});
       const activeId='synthetic-browser-active-'+name;
       const activeRaw=JSON.stringify({data:{id:activeId,event_type:'call.answered',occurred_at:new Date().toISOString(),payload:{call_control_id:capture.provider_call_id,call_session_id:'session',call_leg_id:'leg',client_state:Buffer.from(JSON.stringify({captureId:capture.id,generation:1})).toString('base64')}}});
       const active=await recordWebhookEvent({account_id:account.id,provider:'telnyx',provider_call_id:capture.provider_call_id,provider_event_id:activeId,event_type:'call.answered',raw_body:activeRaw,verifiedBytes:Buffer.from(activeRaw),signature_valid:true});
       if(!active.ok) throw Error(active.error.code);
-      if(name==='stopped'||name==='expired') {
+      if(name==='stopped'||name==='expired'||name==='disconnected') {
         const id='synthetic-browser-hangup-'+name;
         const retention=process.env.RESPONSEOS_WEBHOOK_FINGERPRINT_RETENTION_SECONDS;
-        if(name==='expired') process.env.RESPONSEOS_WEBHOOK_FINGERPRINT_RETENTION_SECONDS='1';
+        if(name==='expired'||name==='disconnected') process.env.RESPONSEOS_WEBHOOK_FINGERPRINT_RETENTION_SECONDS='1';
         const raw=JSON.stringify({data:{id,event_type:'call.hangup',occurred_at:new Date().toISOString(),payload:{call_control_id:capture.provider_call_id,call_session_id:'session',call_leg_id:'leg',client_state:Buffer.from(JSON.stringify({captureId:capture.id,generation:1})).toString('base64')}}});
         const stored=await recordWebhookEvent({account_id:account.id,provider:'telnyx',provider_call_id:capture.provider_call_id,provider_event_id:id,event_type:'call.hangup',raw_body:raw,verifiedBytes:Buffer.from(raw),signature_valid:true});
         process.env.RESPONSEOS_WEBHOOK_FINGERPRINT_RETENTION_SECONDS=retention;
@@ -52,7 +52,8 @@ async function main() {
   } else if(action==='inspect') {
     const account=await db.account.findUniqueOrThrow({where:{slug:'browser-synthetic'}});
     const stale=await db.callCaptureSession.findFirstOrThrow({where:{account_id:account.id,provider_call_id:'synthetic-browser-stale'}});
-    const result={commands:await db.telnyxCallCommand.count({where:{account_id:account.id}}),staleCommands:await db.telnyxCallCommand.count({where:{capture_session_id:stale.id}}),consentEvents:await db.callConsentEvent.count({where:{account_id:account.id}}),withdrawn:await db.callCaptureSession.count({where:{account_id:account.id,withdrawal_received_at:{not:null},content_admission_closed_at:{not:null}}}),commandsByType:await db.telnyxCallCommand.findMany({where:{account_id:account.id},select:{command_type:true,status:true}})};
+    const ended=await db.callCaptureSession.findFirstOrThrow({where:{account_id:account.id,provider_call_id:'synthetic-browser-ended'}});
+    const result={commands:await db.telnyxCallCommand.count({where:{account_id:account.id}}),staleCommands:await db.telnyxCallCommand.count({where:{capture_session_id:stale.id}}),endedCommands:await db.telnyxCallCommand.count({where:{capture_session_id:ended.id}}),consentEvents:await db.callConsentEvent.count({where:{account_id:account.id}}),withdrawn:await db.callCaptureSession.count({where:{account_id:account.id,withdrawal_received_at:{not:null},content_admission_closed_at:{not:null}}}),commandsByType:await db.telnyxCallCommand.findMany({where:{account_id:account.id},select:{command_type:true,status:true}})};
     writeFileSync(process.argv[3],JSON.stringify(result,null,2));
   } else throw Error('unknown_fixture_action');
 }

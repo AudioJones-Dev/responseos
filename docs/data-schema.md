@@ -360,3 +360,5 @@ Migration0019 local successor adds a pending-erasure marker and bounded content-
 Migration 0020 replaces retention functions only: UTC clock expressions compare with existing TIMESTAMP(3) UTC wall-clock fields. No stored value, schema type, legacy deadline or grant is transformed. See [UTC correction](readiness/FRL_RETENTION_UTC_2026-10-19.md).
 
 Migration0021 adds nullable source/receipt/provenance/review evidence on CallConsentEvent and a terminal withdrawal_received_at fence on CallCaptureSession. No historical backfill. See [source-time contract](readiness/FRL_WITHDRAWAL_SOURCE_2026-10-19.md).
+
+Migration 0022 adds nullable `call_disconnected_at` on CallCaptureSession. It is written once, only from a fresh authenticated `call.hangup` that matches the exact call control id, session, leg, capture and generation, and a trigger (`guard_call_disconnection`) rejects clearing or changing it. No historical backfill. `capture_ended_at`, conversation end and `FINALIZING` do not record disconnection. See [End-call eligibility](readiness/FRL_END_CALL_ELIGIBILITY_2026-10-19.md).

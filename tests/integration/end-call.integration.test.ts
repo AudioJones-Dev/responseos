@@ -83,6 +83,11 @@ test('clients and anonymous requests cannot end calls or read evidence', async (
   expect(send).not.toHaveBeenCalled();
 });
 
+async function ingest(f: Awaited<ReturnType<typeof fixture>>, type: string, overrides: Record<string,unknown> = {}, occurredAt = new Date()) {
+  const raw=JSON.stringify({data:{id:randomUUID(),event_type:type,occurred_at:occurredAt.toISOString(),payload:{call_control_id:f.capture.provider_call_id,call_session_id:'session',call_leg_id:'leg',client_state:Buffer.from(JSON.stringify({captureId:f.capture.id,generation:1})).toString('base64'),...overrides}}});
+  return ingestCallControlEvent({event:parseCallControlEvent(raw)!,rawBody:raw,verifiedBytes:Buffer.from(raw),signature:'synthetic'});
+}
+
 async function hangup(f: Awaited<ReturnType<typeof fixture>>, overrides: Record<string,unknown> = {}, signed = true) {
   const id=randomUUID();
   const value={data:{id,event_type:'call.hangup',occurred_at:new Date().toISOString(),payload:{call_control_id:f.capture.provider_call_id,call_session_id:'session',call_leg_id:'leg',client_state:Buffer.from(JSON.stringify({captureId:f.capture.id,generation:1})).toString('base64'),...overrides}}};
@@ -153,13 +158,14 @@ test('erased unidentifiable hangup blocks account calls without restoring erased
   expect((await f.post()).status).toBe(409); expect(send).not.toHaveBeenCalled();
 });
 
-test('stored lifecycle end blocks a new hangup even with absent proof and fresh active evidence', async () => {
+test.each(['STOP_PENDING','FINALIZING'] as const)('stored capture end with %s alone does not block End call', async state => {
   const f=await fixture();
-  await prisma.callCaptureSession.update({where:{id:f.capture.id},data:{capture_ended_at:new Date()}});
+  await prisma.callCaptureSession.update({where:{id:f.capture.id},data:{capture_ended_at:new Date(),control_state:state}});
   const row=(await loadCallReviewConsole()).captures.find(c=>c.id===f.capture.id)!;
-  expect(row.disconnection.state).toBe('absent');
-  expect(row.endCall).toEqual({allowed:false,reason:'lifecycle_ended'});
-  expect((await f.post()).status).toBe(409); expect(send).not.toHaveBeenCalled();
+  expect(row.call_disconnected_at).toBeNull();
+  expect(row.endCall).toEqual({allowed:true,reason:'fresh_exact_active_evidence'});
+  expect((await f.post()).status).toBe(202); expect(send).toHaveBeenCalledTimes(1);
+  expect(await prisma.callCaptureSession.findUniqueOrThrow({where:{id:f.capture.id}})).toMatchObject({control_state:state});
 });
 
 test('missing fresh active identity fails closed; normalized completed is not disconnection proof', async () => {
@@ -176,14 +182,16 @@ test('a prior generation hangup claim cannot be resent after generation changes'
   expect(send).toHaveBeenCalledTimes(1); expect(await prisma.telnyxCallCommand.count()).toBe(1);
 });
 
-test('verified hangup preserves a lifecycle veto for already withdrawn STOPPED calls', async () => {
+test('verified exact hangup records disconnection for an already withdrawn STOPPED call', async () => {
   const f=await fixture();
-  const raw=JSON.stringify({data:{id:randomUUID(),event_type:'call.hangup',occurred_at:new Date().toISOString(),payload:{call_control_id:f.capture.provider_call_id,call_session_id:'session',call_leg_id:'leg',client_state:Buffer.from(JSON.stringify({captureId:f.capture.id,generation:1})).toString('base64')}}});
-  await ingestCallControlEvent({event:parseCallControlEvent(raw)!,rawBody:raw,verifiedBytes:Buffer.from(raw),signature:'synthetic'});
+  const occurredAt=new Date();
+  await ingest(f,'call.hangup',{},occurredAt);
   const ended=await prisma.callCaptureSession.findUniqueOrThrow({where:{id:f.capture.id}});
   expect(ended.capture_ended_at).not.toBeNull();
+  expect(ended.call_disconnected_at).toEqual(occurredAt);
   expect(ended.control_state).toBe('STOPPED');
   expect(ended.withdrawal_received_at).toEqual(f.capture.withdrawal_received_at);
+  expect((await loadCallReviewConsole()).captures.find(c=>c.id===f.capture.id)?.endCall).toEqual({allowed:false,reason:'call_disconnected'});
   expect(send).not.toHaveBeenCalled();
 });
 
@@ -196,4 +204,64 @@ test('proof expiry after a claim never releases the claim for retry', async () =
   expect((await f.post()).status).toBe(202);
   expect(send).toHaveBeenCalledTimes(1);
   expect(await prisma.telnyxCallCommand.count()).toBe(1);
+});
+
+test.each([true,false])('withdrawal then conversation.ended keeps End call available and dispatches exactly once (withdraw event recorded: %s)', async recorded => {
+  const f=await fixture();
+  await prisma.callCaptureSession.update({where:{id:f.capture.id},data:{control_state:'STOP_PENDING'}});
+  if(recorded) await prisma.callConsentEvent.create({data:{account_id:f.capture.account_id,provider_call_id:f.capture.provider_call_id,event_key:randomUUID(),action:'withdraw',artifact:'transcript',disclosure_ref:'synthetic',evidence_ref:'synthetic',jurisdiction_basis:'synthetic',source_channel:'operator',actor_user_id:'synthetic',occurred_at:f.capture.withdrawal_received_at!}});
+  await ingest(f,'call.conversation.ended');
+  const ended=await prisma.callCaptureSession.findUniqueOrThrow({where:{id:f.capture.id}});
+  expect(ended).toMatchObject({control_state:recorded?'STOP_PENDING':'FINALIZING',call_disconnected_at:null,withdrawal_received_at:f.capture.withdrawal_received_at});
+  expect(ended.capture_ended_at).not.toBeNull();
+  const row=(await loadCallReviewConsole()).captures.find(c=>c.id===f.capture.id)!;
+  expect(row.disconnection.state).toBe('absent');
+  expect(row.endCall).toEqual({allowed:true,reason:'fresh_exact_active_evidence'});
+  const results=await Promise.all([f.post(),f.post(),f.post()]);
+  expect(results.map(r=>r.status)).toEqual([202,202,202]);
+  expect(send).toHaveBeenCalledTimes(1);
+  expect(send.mock.calls[0][0]).toMatchObject({action:'hangup',callControlId:f.capture.provider_call_id});
+  expect(await prisma.telnyxCallCommand.count()).toBe(1);
+  expect(await prisma.callCaptureSession.findUniqueOrThrow({where:{id:f.capture.id}})).toMatchObject({control_state:ended.control_state,withdrawal_received_at:f.capture.withdrawal_received_at});
+  await ingest(f,'call.hangup');
+  expect((await prisma.callCaptureSession.findUniqueOrThrow({where:{id:f.capture.id}})).call_disconnected_at).not.toBeNull();
+  await f.post();
+  expect(send).toHaveBeenCalledTimes(1);
+  expect(await prisma.callConsentEvent.count({where:{account_id:f.capture.account_id}})).toBe(recorded?1:0);
+});
+
+test('mismatched hangups never record disconnection and keep the ambiguity veto', async () => {
+  const f=await fixture();
+  for(const p of [{call_control_id:'other-leg-same-session'},{call_session_id:'other'},{call_leg_id:'other'},{client_state:Buffer.from(JSON.stringify({captureId:f.capture.id,generation:2})).toString('base64')},{client_state:Buffer.from(JSON.stringify({captureId:'other',generation:1})).toString('base64')},{client_state:''}]) await ingest(f,'call.hangup',p);
+  expect((await prisma.callCaptureSession.findUniqueOrThrow({where:{id:f.capture.id}})).call_disconnected_at).toBeNull();
+  const row=(await loadCallReviewConsole()).captures.find(c=>c.id===f.capture.id)!;
+  expect(row.disconnection.confirmed).toBe(false);
+  expect(row.endCall).toEqual({allowed:false,reason:'disconnection_evidence_unavailable'});
+  expect((await f.post()).status).toBe(409); expect(send).not.toHaveBeenCalled();
+});
+
+test('raw proof expiry after verified disconnection keeps the recorded fact and never re-enables End call', async () => {
+  const f=await fixture();
+  const prior=process.env.RESPONSEOS_WEBHOOK_FINGERPRINT_RETENTION_SECONDS;
+  process.env.RESPONSEOS_WEBHOOK_FINGERPRINT_RETENTION_SECONDS='2';
+  try { await ingest(f,'call.hangup'); } finally { process.env.RESPONSEOS_WEBHOOK_FINGERPRINT_RETENTION_SECONDS=prior; }
+  const recorded=(await prisma.callCaptureSession.findUniqueOrThrow({where:{id:f.capture.id}})).call_disconnected_at;
+  expect(recorded).not.toBeNull();
+  await prisma.$executeRaw`SELECT pg_sleep(2.1)`;
+  const row=(await loadCallReviewConsole()).captures.find(c=>c.id===f.capture.id)!;
+  expect(row.disconnection).toMatchObject({state:'expired',confirmed:false,eventId:null,occurredAt:null});
+  expect(row.call_disconnected_at).toEqual(recorded);
+  expect(row.endCall).toEqual({allowed:false,reason:'call_disconnected'});
+  expect((await f.post()).status).toBe(409); expect(send).not.toHaveBeenCalled();
+});
+
+test('recorded disconnection cannot be cleared, changed or overwritten by a later hangup', async () => {
+  const f=await fixture();
+  const first=new Date(Date.now()-5_000);
+  await ingest(f,'call.hangup',{},first);
+  await ingest(f,'call.hangup',{},new Date());
+  expect((await prisma.callCaptureSession.findUniqueOrThrow({where:{id:f.capture.id}})).call_disconnected_at).toEqual(first);
+  await expect(prisma.callCaptureSession.update({where:{id:f.capture.id},data:{call_disconnected_at:null}})).rejects.toThrow(/call_disconnection_is_permanent/);
+  await expect(prisma.callCaptureSession.update({where:{id:f.capture.id},data:{call_disconnected_at:new Date()}})).rejects.toThrow(/call_disconnection_is_permanent/);
+  expect((await prisma.callCaptureSession.findUniqueOrThrow({where:{id:f.capture.id}})).call_disconnected_at).toEqual(first);
 });

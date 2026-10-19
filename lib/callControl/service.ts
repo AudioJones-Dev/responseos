@@ -1,4 +1,4 @@
-import { endCaptureCall } from "./endCall";
+import { endCaptureCall, verifiedExactHangup } from "./endCall";
 import "@/lib/serverOnlyGuard";
 import { createHash, randomUUID } from "node:crypto";
 import { db } from "@/lib/db/client";
@@ -445,7 +445,8 @@ export async function ingestCallControlEvent(params: { verifiedBytes: Uint8Array
         const current = await client.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } });
         const retained = await assertStoredWebhookIdentity(ledger.id, client);
         if (retained.raw_body !== params.rawBody) throw new Error("webhook_fingerprint_conflict");
-        await client.callCaptureSession.update({ where: { id: current.id, account_id: current.account_id }, data: { capture_ended_at: current.capture_ended_at ?? occurredAt } });
+        const disconnected = !current.call_disconnected_at && await verifiedExactHangup(current, ledger.id, client);
+        await client.callCaptureSession.update({ where: { id: current.id, account_id: current.account_id }, data: { capture_ended_at: current.capture_ended_at ?? occurredAt, ...(disconnected ? { call_disconnected_at: occurredAt } : {}) } });
         if (["REFUSED", "AMBIGUOUS", "STOPPED", "TRANSFERRED", "EVIDENCE_FROZEN"].includes(current.control_state)) return;
         const terminalConversation = ["START_PENDING", "AI_ACTIVE", "STOP_PENDING", "FINALIZING"].includes(current.control_state);
         await client.callCaptureSession.update({ where: { id: capture.id }, data: {

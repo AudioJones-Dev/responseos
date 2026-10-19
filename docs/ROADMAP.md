@@ -149,3 +149,5 @@ Restricted post-withdrawal transfer: local preflight/simulation under review; ho
 Local commissioning successor in review: operator End call and exact-call authenticated disconnection evidence, including withdrawn calls. EXPERIMENTAL; no milestone or activation change. [Contract](readiness/FRL_LOCAL_COMMISSIONING_2026-10-19.md).
 
 Disabled commissioning control remains in review with pinned locked tooling and trusted qualification modes. Bounded eligibility/operator-clarity successor is EXPERIMENTAL and in review; no milestone or activation change. [Shared contract](readiness/FRL_END_CALL_ELIGIBILITY_2026-10-19.md).
+
+Disconnection-fact successor (F1, local migration 0022) is EXPERIMENTAL and awaiting separate review; no milestone, hosted migration or activation change. F2 remains an open scope decision. [Amendment](readiness/FRL_END_CALL_ELIGIBILITY_2026-10-19.md).

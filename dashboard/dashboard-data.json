@@ -1691,6 +1691,18 @@
       "start": "2026-10-19",
       "blocked": true,
       "blockedReason": "Local synthetic successor; exact-commit Claude review pending. Activation and operational use remain separately gated."
+    },
+    {
+      "id": "FRL-COMMISSIONING-DISCONNECTION",
+      "phase": "Integrations",
+      "title": "Recorded call disconnection fact (migration 0022) so End call survives conversation end after withdrawal",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-10-19",
+      "blocked": true,
+      "blockedReason": "Local synthetic successor implemented by Claude Code; separate exact-commit review required. F2, hosted migration and activation remain separately gated."
     }
   ],
   "liveIssues": [

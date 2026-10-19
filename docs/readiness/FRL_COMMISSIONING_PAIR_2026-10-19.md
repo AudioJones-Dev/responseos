@@ -30,3 +30,6 @@ Doctrine21: (1) deployment trust and test layer; (2) use npm's lock/SRI rather t
 
 ## Bounded eligibility successor
 The expired-evidence proposal above is superseded by the owner-approved [implemented local eligibility contract](FRL_END_CALL_ELIGIBILITY_2026-10-19.md). Frozen review pair is application 5e0581c286690a75407d050153f854315ee17ceb / control 6d07349d85fa3547e837f878953ca0c141d75119. Supervised-pilot End call and real CLI experiments remain deferred. Shared DECISIONS/ROADMAP/api-spec/Doppler/dashboard are now reconciled; configuration differences remain intentional as documented in the eligibility contract.
+
+## Disconnection fact successor
+Frozen review pair application deea487eb656cfe53f098831ba7051cb716fdee5 / control 1376180119735d7aea727e7fe14df6645583ef76 is preserved. The successor pair adds owner-approved local migration 0022 (call_disconnected_at) to both checkouts so the prisma tree stays identical; no hosted migration is authorized. End call now fences on the recorded disconnection fact rather than capture end, conversation end or FINALIZING. F2 (account-wide unattributable hangup veto) remains unresolved. [Amendment](FRL_END_CALL_ELIGIBILITY_2026-10-19.md).

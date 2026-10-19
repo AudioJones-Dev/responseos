@@ -334,6 +334,9 @@ model CallCaptureSession {
   withdrawal_received_at     DateTime?
   capture_started_at          DateTime?
   capture_ended_at            DateTime?
+  /// Migration 0022: set once from a fresh authenticated exact-call hangup;
+  /// a database trigger rejects clearing or changing it.
+  call_disconnected_at        DateTime?
   created_at                  DateTime          @default(now())
   @@unique([account_id, provider_call_id])
   @@index([account_id])
