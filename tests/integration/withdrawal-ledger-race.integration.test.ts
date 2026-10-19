@@ -150,4 +150,3 @@ test('history admission holds a row lock until raw persistence commits; receipt 
   expect((await prisma.webhookEvent.findUniqueOrThrow({ where: { provider_provider_event_id: { provider: 'telnyx', provider_event_id: delayed.id } } })).raw_body).not.toContain('SYNTHETIC_AFTER_RECEIPT');
   expect(await prisma.callTranscriptRevision.count({ where: { capture_session_id: f.capture.id } })).toBe(1);
 });
-
