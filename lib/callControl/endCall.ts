@@ -112,7 +112,7 @@ export async function endCaptureCall(input: EndCallTarget, actor?: { id: string;
       await client.$queryRaw`SELECT id FROM "TelnyxCallCommand" WHERE id = ${claimed.command.id} AND account_id = ${located.account_id} FOR UPDATE`;
       await client.$queryRaw`SELECT id FROM "TelephonyNumberAssignment" WHERE id = ${claimed.capture.assignment_id} AND account_id = ${located.account_id} FOR SHARE`;
       const capture = await client.callCaptureSession.findUniqueOrThrow({ where: { id: located.id, account_id: located.account_id } });
-      if (capture.generation !== claimed.capture.generation || capture.provider_call_id !== claimed.capture.provider_call_id || capture.assignment_id !== claimed.capture.assignment_id || capture.call_session_id !== claimed.capture.call_session_id || capture.call_leg_id !== claimed.capture.call_leg_id) throw new Error("end_call_target_mismatch");
+      if (!capture.assignment_id || !capture.call_session_id || !capture.call_leg_id || capture.generation !== claimed.capture.generation || capture.provider_call_id !== claimed.capture.provider_call_id || capture.assignment_id !== claimed.capture.assignment_id || capture.call_session_id !== claimed.capture.call_session_id || capture.call_leg_id !== claimed.capture.call_leg_id) throw new Error("end_call_target_mismatch");
       const evidence = await disconnectionEvidence(capture, client);
       if (evidence.confirmed || !(await endCallEligibility(capture, client, evidence, claimed.command.id)).allowed) return { dispatch: false as const, evidence };
       const identity = {

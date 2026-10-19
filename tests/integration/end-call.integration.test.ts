@@ -339,7 +339,7 @@ test('historical qualification remains eligible after assignment end', async () 
 
 test('stalled operator send holds no transaction or locks; duplicates, exact hangup and receipt/drain proceed', async () => {
   const f = await fixture(), entered = barrier(), release = barrier();
-  send.mockImplementationOnce(async () => { entered.resolve(); await release.promise; return { ok: true, status: 200, providerDate: null, errorCode: null }; });
+  send.mockImplementationOnce(async () => { entered.resolve(); await Promise.all([release.promise, new Promise(resolve => setTimeout(resolve, 8_000))]); return { ok: true, status: 200, providerDate: null, errorCode: null }; });
   const pending = f.post();
   await entered.promise;
   try {
@@ -393,4 +393,29 @@ test('actorless automatic End call retains its existing locked dispatch without 
   await pending; await drainWithdrawal(f.capture);
   expect(send).toHaveBeenCalledTimes(1);
   expect((await withdrawalProgress(f.capture)).drain).toBe('confirmed');
+});
+test('authorization and its audit witness commit atomically; a failed witness leaves only the reservation', async () => {
+  const f = await fixture();
+  await prisma.$executeRawUnsafe(`CREATE FUNCTION synthetic_reject_authorization() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'synthetic authorization failure'; END $$`);
+  await prisma.$executeRawUnsafe(`CREATE TRIGGER synthetic_reject_authorization BEFORE INSERT ON "AuditLog" FOR EACH ROW WHEN (NEW.action = 'call_end_authorized') EXECUTE FUNCTION synthetic_reject_authorization()`);
+  try {
+    expect((await f.post()).status).toBe(503);
+    expect(await prisma.telnyxCallCommand.findFirstOrThrow()).toMatchObject({ status: 'uncertain', reconciliation_state: 'end_call_dispatch_claimed' });
+    expect(await prisma.auditLog.count({ where: { action: 'call_end_authorized' } })).toBe(0);
+  } finally {
+    await prisma.$executeRawUnsafe('DROP TRIGGER synthetic_reject_authorization ON "AuditLog"');
+    await prisma.$executeRawUnsafe('DROP FUNCTION synthetic_reject_authorization()');
+  }
+  expect((await f.post()).status).toBe(202);
+  expect(send).not.toHaveBeenCalled();
+});
+
+test('exact hangup after final authorization cannot cancel the pinned send or erase disconnection', async () => {
+  const f = await fixture();
+  boundaries.authorized = () => ingest(f, 'call.hangup');
+  expect((await f.post()).status).toBe(202);
+  expect(send).toHaveBeenCalledTimes(1);
+  expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: f.capture.id } })).call_disconnected_at).not.toBeNull();
+  expect((await f.post()).status).toBe(200);
+  expect(send).toHaveBeenCalledTimes(1);
 });
