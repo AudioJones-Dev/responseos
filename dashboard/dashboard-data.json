@@ -1631,6 +1631,18 @@
       "start": "2026-10-19",
       "blocked": true,
       "blockedReason": "Local successor only. Exact-SHA handoff, broader control review, hosted role/maintenance grants and separate commissioning approvals remain required."
+    },
+    {
+      "id": "FRL-LOCAL-COMMISSIONING",
+      "phase": "Integrations",
+      "title": "Local exact-call End call and authenticated disconnection evidence",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-10-19",
+      "blocked": true,
+      "blockedReason": "Local synthetic candidate; independent Claude review and separate activation approval remain required."
     }
   ],
   "liveIssues": [

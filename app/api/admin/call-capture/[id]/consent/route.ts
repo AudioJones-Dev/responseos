@@ -40,6 +40,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
       const current = await client.callCaptureSession.findUnique({ where: { id: capture.id } });
       if (!current) throw new Error("capture_not_found");
       if (current.withdrawal_received_at) throw new Error("withdrawal_is_terminal");
+      if (current.content_admission_closed_at) throw new Error("capture_closed");
       if (value.action === "grant" && (current.control_state !== "CONSENT_PENDING_OPERATOR" || current.dtmf_decision !== "affirmative")) throw new Error("affirmative_dtmf_required");
       if (value.action === "refuse" && (current.control_state !== "CONSENT_PENDING_OPERATOR" || current.dtmf_decision !== "refused")) throw new Error("refusal_dtmf_required");
       const recordedAt = new Date();

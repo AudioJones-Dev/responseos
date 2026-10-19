@@ -145,3 +145,5 @@ Local UTC retention correction is in review: [scope and verification](readiness/
 Source-time withdrawal5.8 is a local review candidate: [contract](readiness/FRL_WITHDRAWAL_SOURCE_2026-10-19.md). Hosted and rehearsal gates remain open.
 
 Restricted post-withdrawal transfer: local preflight/simulation under review; hosted execution blocked on qualified cessation and recording evidence. [Scope](readiness/FRL_WITHDRAWAL_TRANSFER_2026-10-19.md).
+
+Local commissioning successor in review: operator End call and exact-call authenticated disconnection evidence, including withdrawn calls. EXPERIMENTAL; no milestone or activation change. [Contract](readiness/FRL_LOCAL_COMMISSIONING_2026-10-19.md).

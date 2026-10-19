@@ -1891,3 +1891,6 @@ Owner-authorized local successor October19 (Sentinel_3b2f888768cc8191bab1c5cb95f
 
 ## ADR-0070: restricted withdrawal transfer stays disabled without qualified stop evidence
 Owner authorized local implementation/tests on 2026-10-19. Implement a non-effecting operator preflight and explicit synthetic lifecycle; current provider contracts cannot prove independent cessation and recording-off. No command-guard exception, new migration, announcement or activation switch. [Scope and evidence requirements](readiness/FRL_WITHDRAWAL_TRANSFER_2026-10-19.md).
+
+## ADR-0071 - Local operator End call and authenticated disconnection
+Owner-authorized local implementation, October 19. Persist one-shot uncertain hangup intent before dispatch; never infer disconnection from command acceptance or reopen consent. No schema or activation expansion. [Contract and Doctrine21](readiness/FRL_LOCAL_COMMISSIONING_2026-10-19.md).

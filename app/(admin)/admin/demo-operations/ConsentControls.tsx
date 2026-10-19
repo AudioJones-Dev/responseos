@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 type Action = "grant" | "refuse" | "withdraw";
 
-export function ConsentControls({ id, callReference }: { id: string; callReference: string }) {
+export function ConsentControls({ id, callReference, terminal = false }: { id: string; callReference: string; terminal?: boolean }) {
   const [disclosure, setDisclosure] = useState("");
   const [evidence, setEvidence] = useState("");
   const [jurisdiction, setJurisdiction] = useState("");
@@ -45,7 +45,7 @@ export function ConsentControls({ id, callReference }: { id: string; callReferen
     <label className="block">Disclosure version/reference<input className="m-2 rounded border p-2" value={disclosure} onChange={(event) => setDisclosure(event.target.value)} /></label>
     <label className="block">Evidence reference<input className="m-2 rounded border p-2" value={evidence} onChange={(event) => setEvidence(event.target.value)} /></label>
     <label className="block">Jurisdiction basis<input className="m-2 rounded border p-2" value={jurisdiction} onChange={(event) => setJurisdiction(event.target.value)} /></label>
-    <label className="block">Withdrawal source time (UTC, YYYY-MM-DDTHH:mm:ss.sssZ)<input className="m-2 rounded border p-2" value={sourceTime} onChange={event => setSourceTime(event.target.value)} /></label><label className="block"><input type="checkbox" checked={witnessed} onChange={event => setWitnessed(event.target.checked)} /> I personally witnessed this withdrawal at the stated time; the evidence reference supports it.</label><p>Unknown or disputed time still stops processing and requires review. Activity before receipt may already have occurred.</p><div className="flex gap-3">{(["grant", "refuse", "withdraw"] as const).map((action) => <button key={action} className="rounded border px-3 py-2" disabled={busy || (action !== "withdraw" && (!disclosure.trim() || !evidence.trim() || !jurisdiction.trim()))} onClick={() => record(action)}>Record {action}</button>)}</div>
+    <label className="block">Withdrawal source time (UTC, YYYY-MM-DDTHH:mm:ss.sssZ)<input className="m-2 rounded border p-2" value={sourceTime} onChange={event => setSourceTime(event.target.value)} /></label><label className="block"><input type="checkbox" checked={witnessed} onChange={event => setWitnessed(event.target.checked)} /> I personally witnessed this withdrawal at the stated time; the evidence reference supports it.</label><p>Unknown or disputed time still stops processing and requires review. Activity before receipt may already have occurred.</p><div className="flex gap-3">{(["grant", "refuse", "withdraw"] as const).map((action) => <button key={action} className="rounded border px-3 py-2" disabled={busy || (terminal && action !== "withdraw") || (action !== "withdraw" && (!disclosure.trim() || !evidence.trim() || !jurisdiction.trim()))} onClick={() => record(action)}>Record {action}</button>)}</div>
     <p role="status">{status}</p>
   </details>;
 }

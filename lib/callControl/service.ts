@@ -1,3 +1,4 @@
+import { endCaptureCall } from "./endCall";
 import "@/lib/serverOnlyGuard";
 import { createHash, randomUUID } from "node:crypto";
 import { db } from "@/lib/db/client";
@@ -77,6 +78,10 @@ async function executeCommand(params: {
   request: Record<string, unknown>;
 }) {
   if (!db || !params.capture.assignment_id) throw new Error("qualification_capture_invalid");
+  if (params.commandType === "hangup") {
+    const result = await endCaptureCall({ captureId: params.capture.id, expectedAccountId: params.capture.account_id, expectedProviderCallId: params.capture.provider_call_id, generation: params.capture.generation });
+    return { status: result.disconnection.confirmed ? "succeeded" : result.commandStatus, error_code: "telnyx_hangup_unconfirmed", conversation_id: null, provider_date_at: null };
+  }
   const intent = await persistCommandIntent({
     captureId: params.capture.id,
     accountId: params.capture.account_id,
@@ -474,6 +479,7 @@ export async function runOperatorConsentEffect(params: { captureId: string; acti
     await withCaptureLock(capture.account_id, capture.provider_call_id, async (client) => {
       const current = await client.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } });
       if (current.withdrawal_received_at) throw new Error("withdrawal_is_terminal");
+      if (current.content_admission_closed_at) throw new Error("capture_closed");
       const completed = await client.telnyxCallCommand.findFirst({ where: { capture_session_id: current.id, command_type: "ai_assistant_start", generation: current.generation, status: "succeeded" } });
       if (completed?.conversation_id && completed.provider_date_at) {
         if (!current.conversation_id) await client.callCaptureSession.update({ where: { id: current.id }, data: { conversation_id: completed.conversation_id } });
