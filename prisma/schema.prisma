@@ -916,6 +916,7 @@ model WebhookEvent {
   processed_at       DateTime?
   process_status     WebhookProcessStatus @default(received)
   process_error      String?
+  payload_erasure_required_at DateTime?
   payload_expires_at DateTime?
   payload_purged_at  DateTime?
   // Correlation keys for provider events that omit the called number
@@ -1506,4 +1507,15 @@ model ProfessionalOpportunity {
   @@index([account_id])
   @@index([account_id, status])
   @@index([created_at])
+}
+
+model WebhookErasureAudit {
+  webhook_event_id String @id
+  account_id String?
+  authorization_reference String
+  reason String
+  database_actor String
+  erased_at DateTime
+  expires_at DateTime
+  transaction_id BigInt
 }

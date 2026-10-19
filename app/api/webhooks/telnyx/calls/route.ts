@@ -327,11 +327,13 @@ export async function POST(req: Request) {
         provider_call_ids: getTelnyxCallIds(event.data.payload),
         agent_target: directTarget ?? undefined,
       });
+      let scoped: boolean;
       if (supervisedTenant && providerCallId) {
-        await withCaptureLock(assignment.accountId, providerCallId, async (client) => scope(supervisedReady && await canRetainCallContent(assignment.accountId, providerCallId, event, client), client));
+        scoped = await withCaptureLock(assignment.accountId, providerCallId, async (client) => scope(supervisedReady && await canRetainCallContent(assignment.accountId, providerCallId, event, client), client));
       } else {
-        await scope(Boolean(resolved));
+        scoped = await scope(Boolean(resolved));
       }
+      if (!scoped) return NextResponse.json({ ok: false, error: { code: "webhook_erasure_required" } }, { status: 503 });
     }
     const deferredForDispatch = state?.process_status === "rejected" && state.process_error === "review_dispatch_in_progress";
     if (state?.process_status === "error" || abandonedReceived || awaitingCorrelation || deferredForDispatch) {

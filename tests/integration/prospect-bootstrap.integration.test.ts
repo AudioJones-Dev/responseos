@@ -324,7 +324,7 @@ describe("personalized prospect bootstrap persistence and isolation", () => {
       received_at: expiredAt,
     } });
 
-    expect(unwrap(await cleanupExpiredProspectBootstraps(new Date("2026-08-20T00:00:00.000Z")))).toEqual({ cleaned: 1 });
+    expect(unwrap(await cleanupExpiredProspectBootstraps(new Date("2026-08-20T00:00:00.000Z")))).toEqual({ cleaned: 1, blocked: [] });
     expect(await prisma.knowledgeFact.count({ where: { account_id: prepared.account.id } })).toBe(0);
     expect(await prisma.businessMemorySnapshot.count({ where: { account_id: prepared.account.id } })).toBe(0);
     expect(await prisma.knowledgeSource.findFirst({ where: { account_id: prepared.account.id } })).toMatchObject({ status: "purged", extracted_text: null });

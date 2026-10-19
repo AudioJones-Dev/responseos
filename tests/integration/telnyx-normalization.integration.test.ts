@@ -1,3 +1,4 @@
+import { expireFingerprintFixture } from "./expire-fingerprint-fixture";
 import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
 import { db } from "@/lib/db/client";
 import { normalizeTelnyxEvent } from "@/lib/providers/telnyx/normalize";
@@ -33,7 +34,7 @@ describe("Telnyx canonical normalization", () => {
     await prisma.call.create({ data: { account_id: accountId, provider: "telnyx", provider_call_id: "purge-first", direction: "inbound", status: "completed", from_number: "+15555550177", to_number: demoNumber, started_at: old } });
     const event: TelnyxWebhookEnvelope = { data: { id: "purge-first-event", event_type: "call.conversation_insights.generated", payload: { call_control_id: "purge-first", from: "+15555550177", to: demoNumber, transcript: "Synthetic private content" } } };
     const webhookEventId = await ledger(event);
-    if (lane === "cleanup") await prisma.webhookEvent.update({ where: { id: webhookEventId }, data: { payload_expires_at: old } });
+    if (lane === "cleanup") await expireFingerprintFixture(webhookEventId, old);
     let ready!: () => void, release!: () => void;
     const held = new Promise<void>(resolve => { ready = resolve; });
     const released = new Promise<void>(resolve => { release = resolve; });
@@ -68,7 +69,7 @@ describe("Telnyx canonical normalization", () => {
     const id = await ledger(event);
     const before = await prisma.webhookEvent.findUniqueOrThrow({ where: { id } });
     const result = await cleanupExpiredProspectBootstraps(new Date());
-    expect(result.ok).toBe(false);
+    expect(result).toMatchObject({ ok: true, data: { cleaned: 0, blocked: [{ accountId }] } });
     expect(await prisma.webhookEvent.findUniqueOrThrow({ where: { id } })).toEqual(before);
     expect(await prisma.prospectBootstrap.findUniqueOrThrow({ where: { id: bootstrap.id } })).toMatchObject({ status: "expired" });
     expect((await prisma.account.findUniqueOrThrow({ where: { id: accountId } })).status).not.toBe("cancelled");

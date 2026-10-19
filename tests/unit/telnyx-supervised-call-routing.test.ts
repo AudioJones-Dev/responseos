@@ -108,6 +108,7 @@ describe("supervised Telnyx call lane", () => {
     vi.resetModules();
     vi.clearAllMocks();
     mocks.pending.length = 0;
+    mocks.backfillWebhookEvent.mockResolvedValue(true);
     mocks.canRetainCallContent.mockResolvedValue(true);
     mocks.findSupervisedNumberOwner.mockResolvedValue(null);
     mocks.hasQueuedReview.mockResolvedValue(false);
@@ -178,6 +179,20 @@ describe("supervised Telnyx call lane", () => {
     expect(mocks.backfillWebhookEvent).toHaveBeenCalledOnce();
     expect(mocks.backfillWebhookEvent).toHaveBeenCalledWith(expect.objectContaining({ id: "ledger-1", account_id: supervisedTenant().accountId, payload_expires_at: null, provider_call_ids: expect.arrayContaining(["call-correlation"]) }));
     expect(mocks.backfillWebhookEvent.mock.invocationCallOrder[0]).toBeLessThan(mocks.normalizeTelnyxEvent.mock.invocationCallOrder[0]);
+  });
+
+  test("committed erasure-required backfill stops retries before normalization and effects", async () => {
+    const { POST } = await import("@/app/api/webhooks/telnyx/calls/route");
+    mocks.findCallCorrelation.mockResolvedValue({ target: TENANT_NUMBER, anchoredAt: new Date() });
+    mocks.resolveSupervisedTenantForNumber.mockResolvedValue(supervisedTenant());
+    mocks.recordWebhookEvent.mockResolvedValue({ ok: true, data: { id: "ledger-1", process_status: "duplicate" } });
+    mocks.getWebhookProcessingState.mockResolvedValue({ process_status: "rejected", process_error: "awaiting_call_correlation", received_at: new Date() });
+    mocks.backfillWebhookEvent.mockResolvedValue(false);
+    expect((await POST(signedEvent({ call_control_id: "call-correlation", transcript: "private call" }))).status).toBe(503);
+    await settle();
+    expect(mocks.normalizeTelnyxEvent).not.toHaveBeenCalled();
+    expect(mocks.runCrmSyncForCall).not.toHaveBeenCalled();
+    expect(mocks.dispatchCompletedInteractionNotification).not.toHaveBeenCalled();
   });
 
   test.each(["incomplete", "degraded", "out-of-scope"])("rejects %s supervised calls before retaining content or queuing review", async (reason) => {

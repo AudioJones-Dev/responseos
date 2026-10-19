@@ -244,7 +244,7 @@ export async function findCallCorrelation(params: {
       signature_valid: true,
     },
     orderBy: { received_at: "asc" },
-    select: { agent_target: true, raw_body: true, event_type: true, signature_valid: true, content_fingerprint: true, fingerprint_version: true, fingerprint_key_id: true, payload_expires_at: true, payload_purged_at: true },
+    select: { payload_erasure_required_at: true, agent_target: true, raw_body: true, event_type: true, signature_valid: true, content_fingerprint: true, fingerprint_version: true, fingerprint_key_id: true, payload_expires_at: true, payload_purged_at: true },
   });
   // Fail closed without a call-start anchor. Any other row for this call
   // (a direct call event delivered before the initialization, or a
@@ -269,7 +269,7 @@ export async function findAgentTargetForProviderCall(params: {
 export async function findInitializedProviderCallId(params: { provider: string; providerCallIds: readonly string[]; target: string }): Promise<string | null> {
   if (!db || params.providerCallIds.length === 0) return null;
   let retained;
-  try { retained = { fingerprint_version: 1, content_fingerprint: { not: null }, fingerprint_key_id: { in: [...fingerprintPolicy().keys.keys()] }, payload_purged_at: null, payload_expires_at: { gt: new Date() } }; } catch { return null; }
+  try { retained = { fingerprint_version: 1, content_fingerprint: { not: null }, fingerprint_key_id: { in: [...fingerprintPolicy().keys.keys()] }, payload_erasure_required_at: null, payload_purged_at: null, payload_expires_at: { gt: new Date() } }; } catch { return null; }
   const exact = await db.webhookEvent.findFirst({
     where: { ...retained, provider: params.provider, event_type: "assistant.initialization", signature_valid: true, agent_target: params.target, provider_call_id: { in: [...params.providerCallIds] } },
   });
@@ -424,26 +424,29 @@ export async function backfillWebhookEvent(entry: {
   provider_call_id?: string;
   provider_call_ids?: readonly string[];
   agent_target?: string;
-}): Promise<void> {
+}): Promise<boolean> {
   const client = entry.client ?? db;
-  if (client === null) return;
+  if (client === null) return false;
   if (!entry.client) return database!.$transaction(tx => backfillWebhookEvent({ ...entry, client: tx }));
   await entry.client.$executeRaw`SELECT pg_advisory_xact_lock(1380930382, hashtext(${entry.account_id}))`;
   if (!entry.verifiedBytes) throw new Error("webhook_fingerprint_unverified");
   const bound = await assertWebhookIdentity(entry.id, entry.verifiedBytes, entry.client);
+  const earlierDeadline = entry.payload_expires_at && entry.payload_expires_at < bound.payload_expires_at! ? entry.payload_expires_at : null;
   const current = await client.webhookEvent.findUnique({ where: { id: entry.id }, select: { provider_call_ids: true } });
   const updated = await client.webhookEvent.updateMany({
     where: { id: entry.id, OR: [{ account_id: null }, { account_id: entry.account_id }] },
     data: {
       account_id: entry.account_id,
       raw_body: entry.raw_body,
-      payload_expires_at: entry.payload_expires_at && entry.payload_expires_at < bound.payload_expires_at! ? entry.payload_expires_at : bound.payload_expires_at,
+      payload_erasure_required_at: earlierDeadline,
+      payload_expires_at: bound.payload_expires_at,
       provider_call_id: entry.provider_call_id ?? undefined,
       provider_call_ids: [...new Set([...(current?.provider_call_ids ?? []), ...(entry.provider_call_ids ?? []), ...(entry.provider_call_id ? [entry.provider_call_id] : [])])],
       agent_target: entry.agent_target ?? undefined,
     },
   });
   if (updated.count !== 1) throw new Error("webhook_tenant_conflict");
+  return earlierDeadline === null;
 }
 
 export async function getWebhookProcessingState(id: string): Promise<

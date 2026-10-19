@@ -137,3 +137,5 @@ Repository implementation in progress under the [approved brief](./product/respo
 Local FRL hardening scope (in review): additive webhook fingerprint migration0018 and synthetic recovery/retention tests only. Production ingestion binding, key provisioning, hosted migration and activation are not shipped; see [local scope](readiness/FRL_FINGERPRINT_LOCAL_2026-10-18.md).
 
 Local-only fingerprint runtime successor is under review: [scope, limits and approval gates](readiness/FRL_FINGERPRINT_RUNTIME_2026-10-18.md). This is no milestone promotion or deployment authority; retention conflict and real key policy remain open.
+
+Local L1/L2 remediation is in review: [retention authority](readiness/FRL_RETENTION_REMEDIATION_2026-10-19.md). No milestone promotion or hosted authority.

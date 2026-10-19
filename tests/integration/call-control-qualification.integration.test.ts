@@ -1,3 +1,4 @@
+import { expireFingerprintFixture } from "./expire-fingerprint-fixture";
 import { afterAll, afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { generateKeyPairSync, sign } from "node:crypto";
 import { configureSupervisedTenant } from "@/lib/agentExecution/supervisedTenant";
@@ -140,7 +141,7 @@ describe("FRL Call Control qualification", () => {
     if (!binding.ok) throw new Error(binding.error.code);
     const call = await prisma.call.create({ data: { account_id: assignment.account_id, provider: "telnyx", provider_call_id: "origin-call", direction: "inbound", status: "completed", from_number: "+15555550177", to_number: NUMBER, started_at: new Date(NOW.getTime() + 20_000) } });
     expect(await supervisedCallWasQualification(assignment.account_id, call.id)).toBe(true);
-    await prisma.webhookEvent.update({ where: { id: binding.data.id }, data: { payload_expires_at: new Date(0) } });
+    await expireFingerprintFixture(binding.data.id, new Date(0));
     expect(await supervisedCallWasQualification(assignment.account_id, call.id)).toBe(true);
     expect(await prisma.callCaptureSession.count()).toBe(0);
   });

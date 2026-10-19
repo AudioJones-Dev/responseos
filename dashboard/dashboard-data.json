@@ -1619,6 +1619,18 @@
       "priority": "High",
       "blocked": true,
       "blockedReason": "Local non-secret scaffold only. FRL source configs, provider sync metadata/custom-environment support and action-time access/sync approvals remain unresolved; no production or qualification credentials changed."
+    },
+    {
+      "id": "FRL-RETENTION-20261019",
+      "phase": "Integrations",
+      "title": "Local fingerprint retention authority and cleanup remediation",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-10-19",
+      "blocked": true,
+      "blockedReason": "Local successor only. Exact-SHA handoff, broader control review, hosted role/maintenance grants and separate commissioning approvals remain required."
     }
   ],
   "liveIssues": [

@@ -1,3 +1,4 @@
+import { expireFingerprintFixture } from "./expire-fingerprint-fixture";
 import { afterAll, afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { generateKeyPairSync, sign } from "node:crypto";
 import { deferredCallbacks } from "./deferredCallbacks";
@@ -68,7 +69,7 @@ describe("application fingerprint boundaries", () => {
     const created = await record("original");
     if (!created.ok) throw new Error("fixture failed");
     const [{ now }] = await prisma.$queryRaw<{ now: Date }[]>`SELECT clock_timestamp() - interval '1 second' AS now`;
-    await prisma.webhookEvent.update({ where: { id: created.data.id }, data: { payload_expires_at: now } });
+    await expireFingerprintFixture(created.data.id, now);
     expect((await record("original")).ok).toBe(false);
     await prisma.webhookEvent.update({ where: { id: created.data.id }, data: { payload_purged_at: now, raw_body: "<PURGED_WEBHOOK_PAYLOAD>" } });
     await expect(backfillWebhookEvent({ id: created.data.id, account_id: accountId, raw_body: "original", verifiedBytes: Buffer.from("original"), payload_expires_at: null })).rejects.toThrow("webhook_fingerprint_expired_or_purged");
@@ -93,7 +94,7 @@ describe("application fingerprint boundaries", () => {
     const { POST } = await import("@/app/api/webhooks/telnyx/calls/route");
     const raw = body(), create = vi.spyOn(MockCrmProvider.prototype, "createContact");
     expect((await POST(request(raw))).status).toBe(202);
-    await prisma.webhookEvent.updateMany({ where: { provider_event_id: "fingerprint-route" }, data: { payload_expires_at: new Date(0) } });
+    await expireFingerprintFixture((await prisma.webhookEvent.findFirstOrThrow({ where: { provider_event_id: "fingerprint-route" } })).id, new Date(0));
     for (const callback of deferredCallbacks.splice(0)) await callback();
     expect(await prisma.call.count({ where: { provider_call_id: "fingerprint-route" } })).toBe(0);
     expect(create).not.toHaveBeenCalled();

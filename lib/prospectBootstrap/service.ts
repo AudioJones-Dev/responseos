@@ -1135,16 +1135,18 @@ export async function purgeExpiredProspectContent(now = new Date(), options: { p
 
 export async function cleanupExpiredProspectBootstraps(now = new Date(), options: { preview?: boolean } = {}) {
   if (!db) return err("no_database", "Cleanup requires DATABASE_URL.");
+  let cleaned = 0;
+  const blocked: { accountId: string; eligibleAt: string }[] = [];
   try {
     const cutoff = addDays(now, -PROSPECT_CONTENT_RETENTION_DAYS);
     const due = await db.prospectBootstrap.findMany({ where: { status: "expired", expires_at: { lte: cutoff } } });
     if (options.preview) return ok({ cleaned: due.length });
-    let cleaned = 0;
     for (const bootstrap of due) {
-      await db.$transaction(async (tx) => {
+      const outcome = await db.$transaction(async (tx) => {
         await tx.$executeRaw`SELECT pg_advisory_xact_lock(1380930382, hashtext(${bootstrap.account_id}))`;
         const [{ databaseNow }] = await tx.$queryRaw<{ databaseNow: Date }[]>`SELECT clock_timestamp() AS "databaseNow"`;
-        if (await tx.webhookEvent.findFirst({ where: { account_id: bootstrap.account_id, content_fingerprint: { not: null }, payload_expires_at: { gt: databaseNow } }, select: { id: true } })) throw new Error("cleanup_blocked_by_unexpired_fingerprint");
+        const retained = await tx.webhookEvent.findFirst({ where: { account_id: bootstrap.account_id, content_fingerprint: { not: null }, payload_expires_at: { gt: databaseNow } }, orderBy: { payload_expires_at: "desc" }, select: { payload_expires_at: true } });
+        if (retained?.payload_expires_at) return { accountId: bootstrap.account_id, eligibleAt: retained.payload_expires_at.toISOString() };
         await tx.prospectBootstrap.update({ where: { id: bootstrap.id }, data: { status: "cleanup_pending" } });
         const calls = await tx.call.findMany({ where: { account_id: bootstrap.account_id }, select: { id: true } });
         const callIds = calls.map(({ id }) => id);
@@ -1187,12 +1189,16 @@ export async function cleanupExpiredProspectBootstraps(now = new Date(), options
           metadata_json: { contentPurged: true, credentialMutation: false, providerNumberReleased: false },
           expires_at: addDays(now, PROSPECT_AUDIT_RETENTION_DAYS),
         } });
+        return null;
       });
-      cleaned += 1;
+      if (outcome) blocked.push(outcome);
+      else cleaned += 1;
     }
-    return ok({ cleaned });
+    return ok({ cleaned, blocked });
   } catch (error) {
-    return errFromThrown(error);
+    const failure = errFromThrown(error);
+    if (!failure.ok) failure.error.details = { cleaned, blocked };
+    return failure;
   }
 }
 

@@ -12,7 +12,7 @@ export function fingerprintPolicy(): FingerprintPolicy {
     const keyId = process.env.RESPONSEOS_WEBHOOK_FINGERPRINT_KEY_ID ?? "";
     const retentionSeconds = Number(process.env.RESPONSEOS_WEBHOOK_FINGERPRINT_RETENTION_SECONDS);
     const configured: unknown = JSON.parse(process.env.RESPONSEOS_WEBHOOK_FINGERPRINT_KEYS_JSON ?? "null");
-    if (!configured || typeof configured !== "object" || Array.isArray(configured) || !Number.isSafeInteger(retentionSeconds) || retentionSeconds <= 0 || !Number.isFinite(new Date(Date.now() + retentionSeconds * 1000).getTime())) throw new Error();
+    if (!configured || typeof configured !== "object" || Array.isArray(configured) || !Number.isSafeInteger(retentionSeconds) || retentionSeconds <= 0 || retentionSeconds > 86400 || !Number.isFinite(new Date(Date.now() + retentionSeconds * 1000).getTime())) throw new Error();
     const keys = new Map<string, Buffer>();
     for (const [id, value] of Object.entries(configured)) {
       if (!/^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$/.test(id) || typeof value !== "string" || !/^[0-9a-f]{64}$/.test(value)) throw new Error();
@@ -30,6 +30,7 @@ export function contentFingerprint(bytes: Uint8Array, key: Buffer) {
 }
 
 export interface FingerprintedRow {
+  payload_erasure_required_at?: Date | null;
   signature_valid: boolean;
   content_fingerprint: string | null;
   fingerprint_version: number | null;
@@ -39,6 +40,7 @@ export interface FingerprintedRow {
 }
 
 export function assertFingerprintAvailable(row: FingerprintedRow, now: Date, policy = fingerprintPolicy()) {
+  if (row.payload_erasure_required_at) throw new Error("webhook_erasure_required");
   if (!row.signature_valid || row.payload_purged_at || !row.payload_expires_at || !Number.isFinite(row.payload_expires_at.getTime()) || row.payload_expires_at <= now) throw new Error("webhook_fingerprint_expired_or_purged");
   if (row.fingerprint_version !== 1 || !row.content_fingerprint || !/^[0-9a-f]{64}$/.test(row.content_fingerprint) || !row.fingerprint_key_id) throw new Error("webhook_fingerprint_unverifiable");
   const key = policy.keys.get(row.fingerprint_key_id);

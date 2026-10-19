@@ -1,3 +1,4 @@
+import { expireFingerprintFixture } from "./expire-fingerprint-fixture";
 import { generateKeyPairSync, sign } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -102,7 +103,7 @@ describe("local-only immutable webhook fingerprint migration", () => {
   test("same-statement early erasure, future and backdated purge evidence fail", async () => {
     const row = await ingest("expiry");
     await expect(prisma.webhookEvent.update({ where: { id: row.id }, data: { payload_expires_at: new Date(0), payload_purged_at: new Date() } })).rejects.toThrow();
-    await prisma.webhookEvent.update({ where: { id: row.id }, data: { payload_expires_at: new Date(1000) } });
+    await expireFingerprintFixture(row.id, new Date(1000));
     await expect(prisma.webhookEvent.update({ where: { id: row.id }, data: { provider_event_id: "other-during-purge", payload_purged_at: new Date() } })).rejects.toThrow();
     for (const payload_purged_at of [new Date(0), new Date(Date.now() + 60_000)]) {
       await expect(prisma.webhookEvent.update({ where: { id: row.id }, data: { payload_purged_at } })).rejects.toThrow();
@@ -113,7 +114,7 @@ describe("local-only immutable webhook fingerprint migration", () => {
 
   test("existing retention erases the tuple atomically; replay or legacy-style updates cannot resurrect it", async () => {
     const row = await ingest("purge");
-    await prisma.webhookEvent.update({ where: { id: row.id }, data: { payload_expires_at: new Date(0) } });
+    await expireFingerprintFixture(row.id, new Date(0));
     expect(await purgeExpiredWebhookPayloads(await elapsedDatabaseTime())).toMatchObject({ ok: true, data: { purged: 1 } });
     const purged = await prisma.webhookEvent.findUniqueOrThrow({ where: { id: row.id } });
     expect(purged).toMatchObject({ content_fingerprint: null, fingerprint_version: null, fingerprint_key_id: null, raw_body: "<PURGED_WEBHOOK_PAYLOAD>" });
@@ -142,7 +143,7 @@ describe("local-only immutable webhook fingerprint migration", () => {
     expect(identityMatches(await prisma.webhookEvent.findUniqueOrThrow({ where: { id: "old-insert" } }), body, keyring)).toBe(false);
     const purgeTimestamp = await elapsedDatabaseTime();
     await prisma.$transaction(async tx => {
-      await tx.webhookEvent.update({ where: { id: row.id }, data: { payload_expires_at: new Date(0) } });
+      await expireFingerprintFixture(row.id, new Date(0), tx);
       await tx.webhookEvent.update({ where: { id: row.id }, data: { payload_purged_at: purgeTimestamp, raw_body: "<PURGED_WEBHOOK_PAYLOAD>" } });
     });
     expect((await prisma.webhookEvent.findUniqueOrThrow({ where: { id: row.id } })).content_fingerprint).toBeNull();
