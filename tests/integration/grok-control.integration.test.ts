@@ -51,7 +51,7 @@ async function bound() {
   await acceptGrokIncoming(message.raw, message.headers);
   return { ...f, id: started.sessionId, message };
 }
-function afterCommit(effect: () => Promise<void>) {
+function afterCommit(effect: () => Promise<unknown>) {
   const original = db!.$transaction.bind(db!);
   const spy = vi.spyOn(db!, "$transaction").mockImplementation((async (...args: unknown[]) => {
     const result = await Reflect.apply(original, db!, args);

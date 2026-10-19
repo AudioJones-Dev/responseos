@@ -8,6 +8,7 @@ CREATE TABLE "GrokCallSession" (
  CONSTRAINT "GrokCallSession_capture_id_account_id_provider_call_id_fkey" FOREIGN KEY ("capture_id", "account_id", "provider_call_id") REFERENCES "CallCaptureSession"("id", "account_id", "provider_call_id") ON DELETE RESTRICT ON UPDATE RESTRICT
 );
 CREATE UNIQUE INDEX "GrokCallSession_capture_id_key" ON "GrokCallSession"("capture_id");
+CREATE UNIQUE INDEX "GrokCallSession_capture_id_account_id_provider_call_id_key" ON "GrokCallSession"("capture_id","account_id","provider_call_id");
 CREATE UNIQUE INDEX "GrokCallSession_correlation_hash_key" ON "GrokCallSession"("correlation_hash");
 CREATE UNIQUE INDEX "GrokCallSession_xai_call_id_key" ON "GrokCallSession"("xai_call_id");
 CREATE INDEX "GrokCallSession_stopped_at_lease_expires_at_idx" ON "GrokCallSession"("stopped_at", "lease_expires_at");

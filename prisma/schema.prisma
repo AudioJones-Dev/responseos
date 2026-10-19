@@ -368,6 +368,7 @@ model GrokCallSession {
   capture              CallCaptureSession @relation(fields: [capture_id, account_id, provider_call_id], references: [id, account_id, provider_call_id], onDelete: Restrict, onUpdate: Restrict)
   commands             GrokCallCommand[]
   receipts             GrokIncomingReceipt[]
+  @@unique([capture_id, account_id, provider_call_id])
   @@index([stopped_at, lease_expires_at])
 }
 
