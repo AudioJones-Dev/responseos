@@ -152,4 +152,3 @@ export async function startMediaBridge(input: { headers: Headers; connectedToken
   }, 20);
   return { carrier, xai, stop, disconnected: () => stop("media_socket_closed"), sessionId: id, disconnectionConfirmed: false as const };
 }
-
