@@ -498,9 +498,9 @@ test("capture lock timeout before operator reservation cannot suppress the autom
   const f = await mediaFixture();
   let release!: () => void, entered!: () => void;
   const held = new Promise<void>(resolve => { entered = resolve; }), gate = new Promise<void>(resolve => { release = resolve; });
-  const holder = prisma.$transaction(async tx => { await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${"capture:" + f.capture.account_id + ":" + f.capture.provider_call_id}))`; entered(); await gate; }, { timeout: 10000 });
+  const holder = prisma.$transaction(async tx => { await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${"capture:" + f.capture.account_id + ":" + f.capture.provider_call_id}))`; entered(); await gate; }, { timeout: 10000 });
   try {
-    await held;
+    await Promise.race([held, holder]);
     await expect(grokService.operatorEndGrok(f.capture)).rejects.toThrow();
     expect(await prisma.telnyxCallCommand.count({ where: { capture_session_id: f.capture.id, command_type: "hangup" } })).toBe(0);
     await watchdogGrokSweep(); await watchdogGrokSweep();
