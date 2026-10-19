@@ -299,9 +299,8 @@ test("stalled carrier hangup does not block the independent xAI termination atte
   const stalled = new Promise<void>(r => { release = r; }), ready = new Promise<void>(r => { xaiSent = r; });
   transport.terminate.mockImplementation(async (provider: string) => { if (provider === "telnyx") await stalled; else xaiSent(); return "accepted"; });
   const dispatch = dispatchGrokTermination(f.id);
-  try { await ready; expect(transport.terminate).toHaveBeenCalledTimes(2); }
-  finally { release(); }
-  await dispatch;
+  try { await ready; await vi.waitFor(() => expect(transport.terminate).toHaveBeenCalledTimes(2)); }
+  finally { release(); await dispatch; }
 });
 
 test("audit failure rolls back durable handoff authority without sending", async () => {
