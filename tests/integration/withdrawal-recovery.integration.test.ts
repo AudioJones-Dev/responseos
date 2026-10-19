@@ -91,14 +91,14 @@ test.each([false,true])("missing receipt refuses recovery without creating one (
 test("legacy receipt still permits drain but cannot manufacture original evidence", async () => {
   const f = await fixture("legacy");
   expect(await (await f.post()).json()).toMatchObject({ data: { withdrawal: { drain: "confirmed" }, evidence: { state: "review_required", reason: "original_inputs_unavailable" } } });
-  expect(await prisma.callWithdrawalReceipt.findUniqueOrThrow()).toEqual(f.receipt); expect(await prisma.callConsentEvent.count({ where: { action: "withdraw" } })).toBe(0);
+  expect(await prisma.callWithdrawalReceipt.findUniqueOrThrow({ where: { id: f.receipt!.id } })).toEqual(f.receipt); expect(await prisma.callConsentEvent.count({ where: { action: "withdraw" } })).toBe(0);
 });
 
 test.each(["missing", "references", "source", "blank"])("%s original inputs require review while drain remains useful", async kind => {
   const f = await fixture();
   const original = kind === "missing" ? undefined : kind === "references" ? { ...f.original, evidenceRef: "changed" } : kind === "source" ? { ...f.original, withdrawalSourceTime: { ...f.original.withdrawalSourceTime, attestation: "unverified" } } : { disclosureRef: "", evidenceRef: "", jurisdictionBasis: "" };
   expect(await (await f.post({ ...f.body, original })).json()).toMatchObject({ data: { withdrawal: { drain: "confirmed" }, evidence: { state: "review_required" } } });
-  expect(await prisma.callConsentEvent.count({ where: { action: "withdraw" } })).toBe(0); expect(await prisma.callWithdrawalReceipt.findUniqueOrThrow()).toEqual(f.receipt);
+  expect(await prisma.callConsentEvent.count({ where: { action: "withdraw" } })).toBe(0); expect(await prisma.callWithdrawalReceipt.findUniqueOrThrow({ where: { id: f.receipt!.id } })).toEqual(f.receipt);
 });
 
 test.each(["top", "original"])("rejects user-supplied event key at %s level", async level => {
@@ -112,7 +112,7 @@ test("new evidence is classified using current call state; later retries preserv
   expect(await (await f.post()).json()).toMatchObject({ data: { evidence: { state: "review_required", reason: "after_capture_end" } } });
   const evidence = await prisma.callConsentEvent.findFirstOrThrow({ where: { action: "withdraw" } });
   await prisma.callCaptureSession.update({ where: { id: f.capture.id }, data: { capture_ended_at: new Date() } });
-  await f.post(); expect(await prisma.callConsentEvent.findUniqueOrThrow({ where: { id: evidence.id } })).toEqual(evidence); expect(await prisma.callWithdrawalReceipt.findUniqueOrThrow()).toEqual(f.receipt);
+  await f.post(); expect(await prisma.callConsentEvent.findUniqueOrThrow({ where: { id: evidence.id } })).toEqual(evidence); expect(await prisma.callWithdrawalReceipt.findUniqueOrThrow({ where: { id: f.receipt!.id } })).toEqual(f.receipt);
 });
 
 test.each(["drain", "evidence"] as const)("lost %s acknowledgement can be retried without effects or duplicate history", async boundary => {
@@ -120,7 +120,7 @@ test.each(["drain", "evidence"] as const)("lost %s acknowledgement can be retrie
   const first = await f.post(); expect(first.status).toBe(boundary === "drain" ? 200 : 503);
   expect((await f.post()).status).toBe(200);
   expect(await prisma.callConsentEvent.count({ where: { action: "withdraw" } })).toBe(1);
-  expect(await prisma.callWithdrawalReceipt.findUniqueOrThrow()).toEqual(f.receipt); expect(hooks.send).not.toHaveBeenCalled();
+  expect(await prisma.callWithdrawalReceipt.findUniqueOrThrow({ where: { id: f.receipt!.id } })).toEqual(f.receipt); expect(hooks.send).not.toHaveBeenCalled();
 });
 
 test("locked preauthorized work leaves drain pending; a later continuation completes", async () => {
@@ -134,7 +134,7 @@ test("locked preauthorized work leaves drain pending; a later continuation compl
 
 test("generation mutation after drain vetoes evidence without retargeting", async () => {
   const f = await fixture(); hooks.drain = async () => { await prisma.callCaptureSession.update({ where: { id: f.capture.id }, data: { generation: 2 } }); };
-  expect((await f.post()).status).toBe(409); expect(await prisma.callConsentEvent.count({ where: { action: "withdraw" } })).toBe(0); expect(await prisma.callWithdrawalReceipt.findUniqueOrThrow()).toEqual(f.receipt);
+  expect((await f.post()).status).toBe(409); expect(await prisma.callConsentEvent.count({ where: { action: "withdraw" } })).toBe(0); expect(await prisma.callWithdrawalReceipt.findUniqueOrThrow({ where: { id: f.receipt!.id } })).toEqual(f.receipt);
 });
 
 test("concurrent original withdrawal may send stop independently; continuation never does", async () => {
