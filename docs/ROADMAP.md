@@ -151,3 +151,5 @@ Local commissioning successor in review: operator End call and exact-call authen
 Disabled commissioning control remains in review with pinned locked tooling and trusted qualification modes. Bounded eligibility/operator-clarity successor is EXPERIMENTAL and in review; no milestone or activation change. [Shared contract](readiness/FRL_END_CALL_ELIGIBILITY_2026-10-19.md).
 
 Disconnection-fact successor (F1, local migration 0022) is EXPERIMENTAL and awaiting separate review; no milestone, hosted migration or activation change. F2 remains an open scope decision. [Amendment](readiness/FRL_END_CALL_ELIGIBILITY_2026-10-19.md).
+
+Local EXPERIMENTAL withdrawal correction under review: [raw-ledger admission race](readiness/FRL_WITHDRAWAL_LEDGER_RACE_2026-10-19.md). No milestone or activation gate moves; F2 remains unimplemented.

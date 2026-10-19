@@ -1,0 +1,19 @@
+# Withdrawal receipt and raw history admission
+
+Status: EXPERIMENTAL local synthetic successor, pending independent review. Frozen application 0752de433a2ea1fde0c5ae52d86f240a91a0ec7f and disabled control 7a4dc58a44756a8b31ebc889f29edc8b5548c00c are preserved. Exact successor commits and validation belong in external commissioning-withdrawal-race-evidence-20261019. No hosted migration, retention-policy change, activation or F2 implementation is authorized.
+
+## Reproduction and correction
+
+The baseline durably saves withdrawal_received_at before waiting for its capture advisory lock. Evidence insertion can then fail, leaving a receipt without a withdrawal consent event. Conversation-end previously selected FINALIZING from the consent event alone. History admission then restored full raw message_history before the transcript handler rejected the receipt. Deterministic PostgreSQL tests reproduced stored raw content with no transcript or review, both after evidence failure and while withdrawal waited for its evidence phase. A separate barrier reproduced receipt persistence between admission and raw backfill.
+
+The history handler now locks the stored account/capture row before reading admission state and checks providerCallHasWithdrawal before any full-body backfill. The row lock is held through raw-body and transcript persistence. A committed receipt always vetoes content. If history owns the row lock first, its authorized transaction commits before the receipt update can commit; this is transaction ordering, not a claim that the operator request arrived later. The receipt timestamp is still sampled before its update and the withdrawal activity evidence can report intervening activity. No timestamp is rewritten, no request is silently dropped, and no already retained content is purged by this change.
+
+Conversation-end also locks the capture row and respects a receipt without consent evidence, preserving STOP_PENDING and the receipt boundary instead of selecting FINALIZING. Existing transfer states remain unchanged. Nonwithdrawn FINALIZING history reconciliation remains available. The standalone durable receipt precedes the withdrawal advisory lock, so there is no transaction holding the receipt row lock while waiting for that advisory lock.
+
+Original verified bytes still create and verify the fingerprint. Metadata-only rejected bodies do not acquire a replacement fingerprint; original-byte verification succeeds while verification of the projected stored body fails. Duplicate and delayed histories cannot restore protected content after the receipt. F1 exact disconnection identity, one-shot End call, withdrawal guards, CRM/email/recording restrictions and disabled automatic transfer are unchanged. Migrations 0001 through 0022 are unchanged.
+
+## Review and validation
+
+Review the receipt-only failure, simultaneous conversation-end/history, row-lock ordering, duplicate/delayed delivery and legitimate FINALIZING tests in tests/integration/withdrawal-ledger-race.integration.test.ts. Recheck the existing End call authorization, uncertainty and concurrency suite; final-tree unit/lint/typecheck/build/config/Doppler checks; PostgreSQL 16/17/18 integrations, 0021-to-0022 upgrade and restore/ACL probes; exact split pair and local browser checks. Preserved red results distinguish the invalid initial fixture from the independently reproduced baseline defects.
+
+Doctrine21: (1) evidence/admission layer; (2) bounded app correction; (3) existing PostgreSQL substrate; (4) original evidence preserved; (5) no acceptance-as-disconnection claim; (6) no learning; (7) no carrier replacement; (8) no CRM duplication; (9) no provider change; (10) stored account/capture locks; (11) no inferred correlation; (12) EXPERIMENTAL only; (13) existing local-only authority; (14) no policy expansion or real records; (15) fixes the reproduced withdrawal leak now.

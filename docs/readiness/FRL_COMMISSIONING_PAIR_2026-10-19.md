@@ -33,3 +33,7 @@ The expired-evidence proposal above is superseded by the owner-approved [impleme
 
 ## Disconnection fact successor
 Frozen review pair application deea487eb656cfe53f098831ba7051cb716fdee5 / control 1376180119735d7aea727e7fe14df6645583ef76 is preserved. The successor pair adds owner-approved local migration 0022 (call_disconnected_at) to both checkouts so the prisma tree stays identical; no hosted migration is authorized. End call now fences on the recorded disconnection fact rather than capture end, conversation end or FINALIZING. F2 (account-wide unattributable hangup veto) remains unresolved. [Amendment](FRL_END_CALL_ELIGIBILITY_2026-10-19.md).
+
+## Withdrawal raw-ledger correction
+
+Frozen F1 pair application 0752de433a2ea1fde0c5ae52d86f240a91a0ec7f / control 7a4dc58a44756a8b31ebc889f29edc8b5548c00c is preserved. The local successor serializes raw-history admission with durable withdrawal receipt and preserves receipt-only withdrawal on conversation end. No schema or control behavior changes. [Correction and validation contract](FRL_WITHDRAWAL_LEDGER_RACE_2026-10-19.md). External evidence: commissioning-withdrawal-race-evidence-20261019. F2 remains design-only and blocked on the unavailable full proposal archive.

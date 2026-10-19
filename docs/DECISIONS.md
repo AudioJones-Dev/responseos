@@ -1905,3 +1905,5 @@ Owner-approved bounded local successor, October 19. Require retained exact activ
 
 ## ADR-0074 - Record call disconnection separately from capture end
 Owner-approved F1 and local migration 0022, October 19. Nullable call_disconnected_at is written once from a fresh authenticated exact-call/generation hangup and protected against clearing by a trigger; no backfill. End call fences on it instead of capture_ended_at, conversation end or FINALIZING. Raw-proof freshness remains a separate presentation. F2 unresolved. Supersedes the lifecycle fence part of ADR-0073. [Amendment and Doctrine21](readiness/FRL_END_CALL_ELIGIBILITY_2026-10-19.md).
+
+ADR-0074 withdrawal correctness addendum: preserve receipt-only withdrawal through conversation end and serialize raw-history admission against durable receipt persistence. No disconnection identity, retention, schema or activation change. [Local correction](readiness/FRL_WITHDRAWAL_LEDGER_RACE_2026-10-19.md).

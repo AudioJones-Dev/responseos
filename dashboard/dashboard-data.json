@@ -1703,6 +1703,18 @@
       "start": "2026-10-19",
       "blocked": true,
       "blockedReason": "Local synthetic successor implemented by Claude Code; separate exact-commit review required. F2, hosted migration and activation remain separately gated."
+    },
+    {
+      "id": "FRL-WITHDRAWAL-RAW-LEDGER-RACE",
+      "phase": "Integrations",
+      "title": "Serialize raw history admission against durable withdrawal receipt",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-10-19",
+      "blocked": true,
+      "blockedReason": "Local synthetic correction; independent exact-commit Claude review pending. F2 and activation remain separately gated."
     }
   ],
   "liveIssues": [
@@ -1736,3 +1748,4 @@
   ],
   "generatedAt": "2026-10-12T13:31:06.263Z"
 }
+

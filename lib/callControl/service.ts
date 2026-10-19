@@ -331,6 +331,8 @@ export async function ingestCallControlEvent(params: { verifiedBytes: Uint8Array
   if (event.data.event_type === "call.ai_gather.message_history_updated") {
     const historyResult = await withCaptureLock(capture.account_id, capture.provider_call_id, async (client) => {
       await client.$executeRaw`SELECT pg_advisory_xact_lock(1380930382, hashtext(${capture.account_id}))`;
+      // Receipt persistence does not take the advisory lock; serialize it with raw-body admission.
+      await client.$queryRaw`SELECT id FROM "CallCaptureSession" WHERE id = ${capture.id} AND account_id = ${capture.account_id} FOR UPDATE`;
       const current = await client.callCaptureSession.findUnique({ where: { id: capture.id } });
       const [latestConsent, start, conversationEndedLedger, hangupLedger] = await Promise.all([
         client.callConsentEvent.findFirst({ where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, artifact: "transcript" }, orderBy: [{ occurred_at: "desc" }, { id: "desc" }] }),
@@ -351,7 +353,8 @@ export async function ingestCallControlEvent(params: { verifiedBytes: Uint8Array
       // Awaiting the boundary is never admission: a ledgered hangup can precede
       // its state transition, and a body stored now would not be re-redacted if
       // the boundary later excludes it. The retry restores an admitted body.
-      const admitted = Boolean(current && !awaitingConversationBoundary && latestConsent?.action === "grant" && start?.provider_date_at && start.conversation_id && withinCaptureInterval && (activeAdmission || terminalReconciliation) && (!event.data.payload.conversation_id || event.data.payload.conversation_id === start.conversation_id));
+      const withdrawn = await providerCallHasWithdrawal(capture.account_id, capture.provider_call_id, client);
+      const admitted = Boolean(current && !withdrawn && !awaitingConversationBoundary && latestConsent?.action === "grant" && start?.provider_date_at && start.conversation_id && withinCaptureInterval && (activeAdmission || terminalReconciliation) && (!event.data.payload.conversation_id || event.data.payload.conversation_id === start.conversation_id));
       const ledger = await record(admitted ? params.rawBody : JSON.stringify(persistedEvent), client);
       if (ledger.duplicate) return { duplicate: true as const };
       if (awaitingConversationBoundary) {
@@ -424,13 +427,14 @@ export async function ingestCallControlEvent(params: { verifiedBytes: Uint8Array
     } else if (event.data.event_type === "call.conversation.ended") {
       await normalizeMetadata(event, capture, ledger.id, numberE164, params.verifiedBytes);
       await withCaptureLock(capture.account_id, capture.provider_call_id, async (client) => {
+        await client.$queryRaw`SELECT id FROM "CallCaptureSession" WHERE id = ${capture.id} AND account_id = ${capture.account_id} FOR UPDATE`;
         const current = await client.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } });
         const withdrawal = await client.callConsentEvent.findFirst({ where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, action: "withdraw", artifact: "transcript" }, orderBy: { occurred_at: "desc" } });
         const transferState = ["TRANSFER_PENDING", "TRANSFERRED"].includes(current.control_state);
         await client.callCaptureSession.update({ where: { id: capture.id }, data: {
           capture_ended_at: occurredAt,
-          content_admission_closed_at: current.content_admission_closed_at ?? withdrawal?.occurred_at ?? occurredAt,
-          control_state: transferState ? current.control_state : withdrawal ? "STOP_PENDING" : "FINALIZING",
+          content_admission_closed_at: current.content_admission_closed_at ?? current.withdrawal_received_at ?? withdrawal?.occurred_at ?? occurredAt,
+          control_state: transferState ? current.control_state : current.withdrawal_received_at || withdrawal ? "STOP_PENDING" : "FINALIZING",
         } });
       });
       const finalization = await freezeEvidence(capture.id);
