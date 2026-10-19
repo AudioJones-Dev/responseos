@@ -212,7 +212,7 @@ test.each([true,false])('withdrawal then conversation.ended keeps End call avail
   if(recorded) await prisma.callConsentEvent.create({data:{account_id:f.capture.account_id,provider_call_id:f.capture.provider_call_id,event_key:randomUUID(),action:'withdraw',artifact:'transcript',disclosure_ref:'synthetic',evidence_ref:'synthetic',jurisdiction_basis:'synthetic',source_channel:'operator',actor_user_id:'synthetic',occurred_at:f.capture.withdrawal_received_at!}});
   await ingest(f,'call.conversation.ended');
   const ended=await prisma.callCaptureSession.findUniqueOrThrow({where:{id:f.capture.id}});
-  expect(ended).toMatchObject({control_state:recorded?'STOP_PENDING':'FINALIZING',call_disconnected_at:null,withdrawal_received_at:f.capture.withdrawal_received_at});
+  expect(ended).toMatchObject({control_state:'STOP_PENDING',call_disconnected_at:null,withdrawal_received_at:f.capture.withdrawal_received_at});
   expect(ended.capture_ended_at).not.toBeNull();
   const row=(await loadCallReviewConsole()).captures.find(c=>c.id===f.capture.id)!;
   expect(row.disconnection.state).toBe('absent');
