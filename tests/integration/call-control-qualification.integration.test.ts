@@ -51,6 +51,10 @@ async function dtmfProof(capture: { id: string; account_id: string; provider_cal
   return value.data.id;
 }
 
+async function prepareCommittedGrant(capture: { id: string; account_id: string; provider_call_id: string }) {
+  await prisma.callConsentEvent.create({ data: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, event_key: "committed-grant-" + capture.id, action: "grant", artifact: "transcript", disclosure_ref: "synthetic", evidence_ref: "synthetic", jurisdiction_basis: "synthetic", source_channel: "call", actor_user_id: "user_operator_mock", occurred_at: new Date() } });
+  await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "START_PENDING", dtmf_decision: "affirmative", dtmf_event_id: await dtmfProof(capture) } });
+}
 async function setupQualification() {
   const configured = await configureSupervisedTenant({
     accountSlug: "frl-call-control-test",
@@ -383,7 +387,7 @@ describe("FRL Call Control qualification", () => {
       expect(action).toBe("ai_assistant_start");
       // This independent connection must see committed authority and intent before dispatch.
       expect(await prisma.callConsentEvent.findFirstOrThrow({ where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, action: "grant" } })).toMatchObject({ evidence_ref: "witness:test" });
-      expect(await prisma.telnyxCallCommand.findFirstOrThrow({ where: { account_id: capture.account_id, command_id: body.command_id } })).toMatchObject({ status: "intent_recorded", provider_responded_at: null });
+      expect(await prisma.telnyxCallCommand.findFirstOrThrow({ where: { account_id: capture.account_id, command_id: body.command_id } })).toMatchObject({ status: "uncertain", reconciliation_state: "ai_start_attempt_consumed", provider_responded_at: null });
       const [clock] = await prisma.$queryRaw<{ at: Date }[]>`SELECT date_trunc('milliseconds', clock_timestamp() AT TIME ZONE 'UTC') AS at`;
       dispatchObservedAt = clock.at;
       vi.useFakeTimers({ toFake: ["Date"] });
@@ -446,7 +450,7 @@ describe("FRL Call Control qualification", () => {
 
     // Either attempt may reach the provider first, so the test orders the
     // responses, not the attempts: success lands, then the late uncertainty.
-    const attempts = Promise.all([
+    const attempts = Promise.allSettled([
       runOperatorConsentEffect({ captureId: capture.id, action: "withdraw" }),
       runOperatorConsentEffect({ captureId: capture.id, action: "withdraw" }),
     ]);
@@ -454,7 +458,9 @@ describe("FRL Call Control qualification", () => {
     resolveFirst({ status: 200, providerDate: new Date(NOW.getTime() + 4_000), conversationId: null, ok: true, errorCode: null });
     await vi.waitFor(async () => expect((await prisma.telnyxCallCommand.findFirstOrThrow({ where: { capture_session_id: capture.id, command_type: "ai_assistant_stop" } })).status).toBe("succeeded"));
     resolveSecond({ status: 0, providerDate: null, conversationId: null, ok: false, errorCode: "telnyx_response_uncertain" });
-    await attempts;
+    const outcomes = await attempts;
+    expect(outcomes.filter(outcome => outcome.status === "fulfilled")).toHaveLength(1);
+    expect(outcomes.filter(outcome => outcome.status === "rejected")).toHaveLength(1);
 
     expect(await prisma.telnyxCallCommand.findFirstOrThrow({ where: { capture_session_id: capture.id, command_type: "ai_assistant_stop" } })).toMatchObject({ status: "succeeded", error_code: null });
   });
@@ -463,11 +469,11 @@ describe("FRL Call Control qualification", () => {
     await setupQualification();
     await ingest(event("call.initiated", "cc-grant-pair-init", { to: NUMBER }, 1_000));
     const capture = await prisma.callCaptureSession.findFirstOrThrow();
-    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "START_PENDING", dtmf_decision: "affirmative", dtmf_event_id: await dtmfProof(capture) } });
+    await prepareCommittedGrant(capture);
     let resolveStart!: (value: unknown) => void;
     sendCommand.mockReset().mockImplementationOnce(() => new Promise((resolve) => { resolveStart = resolve; }));
 
-    const attempts = Promise.all([
+    const attempts = Promise.allSettled([
       runOperatorConsentEffect({ captureId: capture.id, action: "grant" }),
       runOperatorConsentEffect({ captureId: capture.id, action: "grant" }),
     ]);
@@ -475,42 +481,37 @@ describe("FRL Call Control qualification", () => {
     await new Promise((resolve) => setTimeout(resolve, 300));
     expect(sendCommand).toHaveBeenCalledOnce();
     resolveStart({ status: 200, providerDate: new Date(NOW.getTime() + 4_000), conversationId: "conversation-1", ok: true, errorCode: null });
-    await attempts;
+    const outcomes = await attempts;
+    expect(outcomes.filter(outcome => outcome.status === "fulfilled")).toHaveLength(1);
+    expect(outcomes.filter(outcome => outcome.status === "rejected")).toHaveLength(1);
 
     expect(sendCommand).toHaveBeenCalledOnce();
     expect(await prisma.telnyxCallCommand.findFirstOrThrow({ where: { capture_session_id: capture.id, command_type: "ai_assistant_start" } })).toMatchObject({ status: "succeeded", conversation_id: "conversation-1" });
   });
 
-  test("a withdrawal waits for an in-flight start and its stop follows the start", async () => {
+  test("withdrawal drains while a start response is in flight and late success cannot reopen it", async () => {
     await setupQualification();
     await ingest(event("call.initiated", "cc-grant-withdraw-init", { to: NUMBER }, 1_000));
     const capture = await prisma.callCaptureSession.findFirstOrThrow();
-    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "START_PENDING", dtmf_decision: "affirmative", dtmf_event_id: await dtmfProof(capture) } });
+    await prepareCommittedGrant(capture);
     let resolveStart!: (value: unknown) => void;
     const start = new Promise((resolve) => { resolveStart = resolve; });
     sendCommand.mockReset().mockImplementation(({ action }: { action: string }) => action === "ai_assistant_start"
       ? start
       : Promise.resolve({ status: 200, providerDate: new Date(NOW.getTime() + 5_000), conversationId: null, ok: true, errorCode: null }));
-
-    const grant = runOperatorConsentEffect({ captureId: capture.id, action: "grant" });
+    const grant = runOperatorConsentEffect({ captureId: capture.id, action: "grant" }).catch(error => error);
     await vi.waitFor(() => expect(sendCommand).toHaveBeenCalledOnce());
     const route = await import("@/app/api/admin/call-capture/[id]/consent/route");
-    const withdrawal = route.POST(new Request("https://example.test", { method: "POST", body: JSON.stringify({ action: "withdraw", disclosureRef: "approved:v1", evidenceRef: "witness:withdraw", jurisdictionBasis: "commissioning:test", eventKey: "00000000-0000-4000-8000-000000000009" }) }), { params: Promise.resolve({ id: capture.id }) });
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    // The withdrawal is blocked on the capture lock the in-flight start holds.
-    expect(await prisma.callConsentEvent.count({ where: { provider_call_id: capture.provider_call_id, action: "withdraw" } })).toBe(0);
-    expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } })).control_state).toBe("START_PENDING");
-
-    resolveStart({ status: 200, providerDate: new Date(NOW.getTime() + 4_000), conversationId: "conversation-1", ok: true, errorCode: null });
-    await grant;
-    const pending = await withdrawal;
-    expect(pending.status).toBe(202);
-    expect(await pending.json()).toMatchObject({ withdrawal: { receipt: "recorded", drain: "pending" } });
-    expect((await route.POST(new Request("https://example.test", { method: "POST", body: JSON.stringify({ action: "withdraw", disclosureRef: "approved:v1", evidenceRef: "witness:withdraw", jurisdictionBasis: "commissioning:test", eventKey: "00000000-0000-4000-8000-000000000009" }) }), { params: Promise.resolve({ id: capture.id }) })).status).toBe(200);
-    expect(sendCommand.mock.calls.map(([params]) => params.action)).toEqual(["ai_assistant_start", "ai_assistant_stop"]);
+    try {
+      const withdrawal = await route.POST(new Request("https://example.test", { method: "POST", body: JSON.stringify({ action: "withdraw", disclosureRef: "approved:v1", evidenceRef: "witness:withdraw", jurisdictionBasis: "commissioning:test", eventKey: "00000000-0000-4000-8000-000000000009" }) }), { params: Promise.resolve({ id: capture.id }) });
+      expect(withdrawal.status).toBe(200);
+      expect(await withdrawal.json()).toMatchObject({ withdrawal: { receipt: "recorded", drain: "confirmed", providerCessationConfirmed: false } });
+      expect(sendCommand.mock.calls.map(([params]) => params.action)).toEqual(["ai_assistant_start", "ai_assistant_stop"]);
+    } finally { resolveStart({ status: 200, providerDate: new Date(NOW.getTime() + 4_000), conversationId: "conversation-1", ok: true, errorCode: null }); }
+    expect(await grant).toMatchObject({ message: "ai_start_termination_required" });
+    expect(await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } })).toMatchObject({ control_state: "STOPPED", conversation_id: null });
     expect(await prisma.callConsentEvent.count({ where: { provider_call_id: capture.provider_call_id, action: "withdraw" } })).toBe(1);
   });
-
   test("ordering probe: synthetic delayed start can apply after an accepted withdrawal stop", async () => {
     await setupQualification();
     await ingest(event("call.initiated", "ordering-delayed-init", { to: NUMBER }, 1_000));
@@ -542,7 +543,7 @@ describe("FRL Call Control qualification", () => {
     console.info("SYNTHETIC COUNTEREXAMPLE: local drained/STOPPED and accepted stop do not exclude a remotely delayed start; no provider behavior is asserted.");
   });
 
-  test("ordering probe: an uncertain start is currently resent with the same command identity", async () => {
+  test("uncertain AI start cannot be resent or acquire a new command identity", async () => {
     await setupQualification();
     await ingest(event("call.initiated", "ordering-retry-init", { to: NUMBER }, 1_000));
     const capture = await prisma.callCaptureSession.findFirstOrThrow();
@@ -552,17 +553,16 @@ describe("FRL Call Control qualification", () => {
     const post = () => route.POST(new Request("http://localhost", { method: "POST", body: JSON.stringify({ action: "grant", eventKey: "00000000-0000-4000-8000-000000000083", disclosureRef: "synthetic", evidenceRef: "synthetic", jurisdictionBasis: "synthetic" }) }), { params: Promise.resolve({ id: capture.id }) });
     expect((await post()).status).toBe(409);
     expect((await post()).status).toBe(409);
-    expect(sendCommand).toHaveBeenCalledTimes(2);
-    expect(sendCommand.mock.calls[0][0].body.command_id).toBe(sendCommand.mock.calls[1][0].body.command_id);
+    expect(sendCommand).toHaveBeenCalledTimes(1);
     expect(await prisma.telnyxCallCommand.count({ where: { capture_session_id: capture.id, command_type: "ai_assistant_start" } })).toBe(1);
-    console.info("CURRENT RETRY POLICY: two application dispatch invocations share one start UUID; provider deduplication is not proved.");
+
   });
 
   test("AI start remains uncertain without a provider response timestamp", async () => {
     await setupQualification();
     await ingest(event("call.initiated", "cc-start-time-init", { to: NUMBER }, 1_000));
     const capture = await prisma.callCaptureSession.findFirstOrThrow();
-    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "START_PENDING", dtmf_decision: "affirmative", dtmf_event_id: await dtmfProof(capture) } });
+    await prepareCommittedGrant(capture);
     sendCommand.mockResolvedValueOnce({ status: 200, providerDate: null, conversationId: "conversation-1", ok: true, errorCode: null });
 
     await expect(runOperatorConsentEffect({ captureId: capture.id, action: "grant" })).rejects.toThrow("telnyx_start_time_unconfirmed");

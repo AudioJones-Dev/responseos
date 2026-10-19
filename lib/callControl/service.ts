@@ -1,3 +1,4 @@
+import { startCaptureAi, type AiStartTarget } from "./startAi";
 import { endCaptureCall, verifiedExactHangup } from "./endCall";
 import "@/lib/serverOnlyGuard";
 import { createHash, randomUUID } from "node:crypto";
@@ -79,6 +80,7 @@ async function executeCommand(params: {
   authorizationClient?: Prisma.TransactionClient;
 }): Promise<{ status: string | null; error_code: string | null; conversation_id: string | null; provider_date_at: Date | null }> {
   if (!db || !params.capture.assignment_id) throw new Error("qualification_capture_invalid");
+  if (params.commandType === "ai_assistant_start") throw new Error("ai_start_requires_one_shot_dispatch");
   if (params.commandType === "hangup") {
     const result = await endCaptureCall({ captureId: params.capture.id, expectedAccountId: params.capture.account_id, expectedProviderCallId: params.capture.provider_call_id, generation: params.capture.generation });
     return { status: result.disconnection.confirmed ? "succeeded" : result.commandStatus, error_code: "telnyx_hangup_unconfirmed", conversation_id: null, provider_date_at: null };
@@ -99,7 +101,6 @@ async function executeCommand(params: {
   const body = { ...params.request, command_id: intent.command_id };
   if (params.commandType !== "ai_assistant_stop" && await providerCallHasWithdrawal(params.capture.account_id, params.capture.provider_call_id, params.authorizationClient)) throw new Error("withdrawal_is_terminal");
   const result = await sendTelnyxCallCommand({ callControlId: params.capture.provider_call_id, action: params.action, body });
-  const missingStartTime = params.commandType === "ai_assistant_start" && result.ok && !result.providerDate;
   // Intent and response observation use the database clock; provider_date_at remains provider evidence.
   const respondedAt = result.status > 0
     ? (await db.$queryRaw<{ responded_at: Date }[]>`SELECT date_trunc('milliseconds', clock_timestamp() AT TIME ZONE 'UTC') AS responded_at`)[0].responded_at
@@ -107,13 +108,13 @@ async function executeCommand(params: {
   await db.telnyxCallCommand.updateMany({
     where: { id: intent.id, status: { not: "succeeded" } },
     data: {
-      status: missingStartTime ? "uncertain" : result.ok ? "succeeded" : result.errorCode === "telnyx_response_uncertain" ? "uncertain" : "failed",
+      status: result.ok ? "succeeded" : result.errorCode === "telnyx_response_uncertain" ? "uncertain" : "failed",
       provider_responded_at: respondedAt,
       provider_response_status: result.status,
       provider_date_at: result.providerDate,
       conversation_id: result.conversationId,
-      error_code: missingStartTime ? "telnyx_start_time_unconfirmed" : result.errorCode,
-      reconciliation_state: result.ok && !missingStartTime ? null : "operator_review_required",
+      error_code: result.errorCode,
+      reconciliation_state: result.ok ? null : "operator_review_required",
     },
   });
   return db.telnyxCallCommand.findUniqueOrThrow({ where: { id: intent.id } });
@@ -484,33 +485,11 @@ export async function ingestCallControlEvent(params: { verifiedBytes: Uint8Array
   }
 }
 
-export async function runOperatorConsentEffect(params: { captureId: string; action: "grant" | "refuse" | "withdraw" }) {
+export async function runOperatorConsentEffect(params: { captureId: string; action: "grant" | "refuse" | "withdraw"; startTarget?: AiStartTarget }) {
   if (!db) throw new Error("database_unavailable");
   const capture = await db.callCaptureSession.findUnique({ where: { id: params.captureId } });
   if (!capture?.assignment_id) throw new Error("qualification_capture_not_found");
-  if (params.action === "grant") {
-    // A saved receipt denies a new start; an already authorized effect finishes before drain.
-    await withCaptureLock(capture.account_id, capture.provider_call_id, async (client) => {
-      const current = await client.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } });
-      if (await providerCallHasWithdrawal(current.account_id, current.provider_call_id, client)) throw new Error("withdrawal_is_terminal");
-      if (current.content_admission_closed_at) throw new Error("capture_closed");
-      const completed = await client.telnyxCallCommand.findFirst({ where: { capture_session_id: current.id, command_type: "ai_assistant_start", generation: current.generation, status: "succeeded" } });
-      if (completed?.conversation_id && completed.provider_date_at) {
-        if (!current.conversation_id) await client.callCaptureSession.update({ where: { id: current.id }, data: { conversation_id: completed.conversation_id } });
-        return;
-      }
-      if (current.control_state !== "START_PENDING" || current.dtmf_decision !== "affirmative") throw new Error("affirmative_dtmf_required");
-      const dtmf = current.dtmf_event_id ? await client.webhookEvent.findUnique({ where: { provider_provider_event_id: { provider: "telnyx", provider_event_id: current.dtmf_event_id } } }) : null;
-      if (!dtmf || dtmf.account_id !== current.account_id || dtmf.provider_call_id !== current.provider_call_id) throw new Error("webhook_fingerprint_unavailable");
-      await assertStoredWebhookIdentity(dtmf.id, client);
-      const assignment = await client.telephonyNumberAssignment.findUnique({ where: { id: capture.assignment_id! } });
-      if (!assignment || assignment.status !== "qualification") throw new Error("qualification_assignment_mismatch");
-      const result = await executeCommand({ capture: current, authorizationClient: client, commandType: "ai_assistant_start", action: "ai_assistant_start", request: { assistant: { id: assignment.provider_assistant_id }, send_message_history_updates: true, client_state: clientState(current.id, current.generation) } });
-      if (result.status !== "succeeded" || !result.conversation_id || !result.provider_date_at) throw new Error(result.error_code ?? "telnyx_start_unconfirmed");
-      if (!await providerCallHasWithdrawal(current.account_id, current.provider_call_id, client)) await client.callCaptureSession.updateMany({ where: { id: current.id, withdrawal_received_at: null }, data: { conversation_id: result.conversation_id } });
-    });
-    return;
-  }
+  if (params.action === "grant") return startCaptureAi(params.startTarget ?? capture);
   if (params.action === "refuse") {
     const completed = await db.telnyxCallCommand.findFirst({ where: { capture_session_id: capture.id, command_type: "refusal_ack", generation: capture.generation, status: "succeeded" } });
     if (completed) return;

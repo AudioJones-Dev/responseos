@@ -50,3 +50,11 @@ test("database continuation is labelled separately from effect-capable withdrawa
 test("without an existing receipt the console offers no database continuation", () => {
   expect(renderToStaticMarkup(createElement(ConsentControls, { id: "capture", callReference: "call", terminal: true }))).not.toContain("Continue database processing (no provider action)");
 });
+
+test("a consumed AI start disables grant and requires verified operator termination on uncertainty", () => {
+  const html = renderToStaticMarkup(createElement(ConsentControls, { id: "capture", callReference: "call", startAttemptConsumed: true }));
+  expect(html).toMatch(/disabled="">Record grant/);
+  expect(html).toContain("AI start attempt consumed: no retry or claim reset");
+  expect(html).toContain("use eligible End call");
+  expect(html).toContain("stop the demo if termination is unverified");
+});

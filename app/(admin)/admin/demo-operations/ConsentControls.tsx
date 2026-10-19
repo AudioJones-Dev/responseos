@@ -6,7 +6,7 @@ import type { WithdrawalRecoveryTarget } from "@/lib/callReview/withdrawalRecove
 
 type Action = "grant" | "refuse" | "withdraw";
 
-export function ConsentControls({ id, callReference, terminal = false, databaseRecoveryTarget }: { id: string; callReference: string; terminal?: boolean; databaseRecoveryTarget?: WithdrawalRecoveryTarget }) {
+export function ConsentControls({ id, callReference, terminal = false, startAttemptConsumed = false, databaseRecoveryTarget }: { id: string; callReference: string; terminal?: boolean; startAttemptConsumed?: boolean; databaseRecoveryTarget?: WithdrawalRecoveryTarget }) {
   const [disclosure, setDisclosure] = useState("");
   const [evidence, setEvidence] = useState("");
   const [jurisdiction, setJurisdiction] = useState("");
@@ -35,7 +35,7 @@ export function ConsentControls({ id, callReference, terminal = false, databaseR
         pending.current = null;
         setStatus(action === "withdraw" ? `Withdrawal received at ${result.data.recordedAt}. Source time: ${result.data.sourceTimeStatus}. Activity requires review.` : `Recorded ${result.data.action} at ${result.data.occurredAt}.`);
       } else if (result.error === "consent_effect_incomplete") {
-        setStatus(`Consent recorded. Provider command incomplete; retry the same decision. This is not provider cessation proof.`);
+        setStatus(action === "grant" ? "AI start is unconfirmed. A consumed start attempt cannot be retried. Use eligible End call and verify exact-call disconnection and observed termination; otherwise stop the demo." : "Consent recorded. Provider command incomplete; retry the same decision. This is not provider cessation proof.");
       } else if (result.error === "withdrawal_recording_incomplete") {
         setStatus("Withdrawal result uncertain. A processing fence may already be recorded. Retry withdrawal may send AI stop; review the activity evidence.");
       } else {
@@ -43,7 +43,7 @@ export function ConsentControls({ id, callReference, terminal = false, databaseR
         setStatus(result.error === "idempotency_conflict" ? "This decision was already recorded with different references." : "Consent event was not recorded.");
       }
       router.refresh();
-    } catch { setStatus(`Result uncertain. Repeating ${action} may send a provider command; review the recorded state.`); }
+    } catch { setStatus(action === "grant" ? "AI start outcome unknown. Inspect the recorded state; do not retry a consumed start. Use eligible End call and verify termination, or stop the demo." : `Result uncertain. Repeating ${action} may send a provider command; review the recorded state.`); }
     finally { setBusy(false); }
   }
   async function continueDatabase() {
@@ -64,8 +64,9 @@ export function ConsentControls({ id, callReference, terminal = false, databaseR
     <label className="block">Disclosure version/reference<input className="m-2 rounded border p-2" value={disclosure} onChange={(event) => setDisclosure(event.target.value)} /></label>
     <label className="block">Evidence reference<input className="m-2 rounded border p-2" value={evidence} onChange={(event) => setEvidence(event.target.value)} /></label>
     <label className="block">Jurisdiction basis<input className="m-2 rounded border p-2" value={jurisdiction} onChange={(event) => setJurisdiction(event.target.value)} /></label>
-    <label className="block">Withdrawal source time (UTC, YYYY-MM-DDTHH:mm:ss.sssZ)<input className="m-2 rounded border p-2" value={sourceTime} onChange={event => setSourceTime(event.target.value)} /></label><label className="block"><input type="checkbox" checked={witnessed} onChange={event => setWitnessed(event.target.checked)} /> I personally witnessed this withdrawal at the stated time; the evidence reference supports it.</label><p>Unknown or disputed source time requires review. Receipt, content drain and AI stop are separate; in-flight activity may finish after receipt.</p><div className="flex gap-3">{(["grant", "refuse", "withdraw"] as const).map((action) => <button key={action} className="rounded border px-3 py-2 disabled:cursor-not-allowed disabled:opacity-40" disabled={busy || ((terminal || withdrawalAttempted) && action !== "withdraw") || (action !== "withdraw" && (!disclosure.trim() || !evidence.trim() || !jurisdiction.trim()))} onClick={() => record(action)}>{action === "withdraw" ? terminal || withdrawalAttempted ? "Retry withdrawal (may send AI stop)" : "Record withdraw (may send AI stop)" : `Record ${action}`}</button>)}</div>
+    <label className="block">Withdrawal source time (UTC, YYYY-MM-DDTHH:mm:ss.sssZ)<input className="m-2 rounded border p-2" value={sourceTime} onChange={event => setSourceTime(event.target.value)} /></label><label className="block"><input type="checkbox" checked={witnessed} onChange={event => setWitnessed(event.target.checked)} /> I personally witnessed this withdrawal at the stated time; the evidence reference supports it.</label><p>Unknown or disputed source time requires review. Receipt, content drain and AI stop are separate; in-flight activity may finish after receipt.</p><div className="flex gap-3">{(["grant", "refuse", "withdraw"] as const).map((action) => <button key={action} className="rounded border px-3 py-2 disabled:cursor-not-allowed disabled:opacity-40" disabled={busy || (action === "grant" && startAttemptConsumed) || ((terminal || withdrawalAttempted) && action !== "withdraw") || (action !== "withdraw" && (!disclosure.trim() || !evidence.trim() || !jurisdiction.trim()))} onClick={() => record(action)}>{action === "withdraw" ? terminal || withdrawalAttempted ? "Retry withdrawal (may send AI stop)" : "Record withdraw (may send AI stop)" : `Record ${action}`}</button>)}</div>
     {databaseRecoveryTarget && <><button className="mt-3 rounded border px-3 py-2 disabled:opacity-40" disabled={busy} onClick={continueDatabase}>Continue database processing (no provider action)</button><p>Use the original form inputs above. The event key comes from the saved receipt. Missing or mismatched inputs require review; a valid drain can still complete. New evidence is classified using the current call state; existing evidence is preserved. Another withdrawal request may independently send AI stop.</p></>}
+    {startAttemptConsumed && <p>AI start attempt consumed: no retry or claim reset. On withdrawal or uncertainty, use eligible End call and verify authenticated exact-call disconnection and observed termination. Command acceptance does not prove silence; stop the demo if termination is unverified.</p>}
     <p role="status">{status}</p>
   </details>;
 }

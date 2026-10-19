@@ -61,7 +61,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
     if (data.action !== value.action || data.disclosure_ref !== value.disclosureRef || data.evidence_ref !== value.evidenceRef || data.jurisdiction_basis !== value.jurisdictionBasis) return Response.json({ ok: false, error: "idempotency_conflict" }, { status: 409 });
     const recorded = { id: data.id, action: data.action, occurredAt: data.occurred_at };
     try {
-      await runOperatorConsentEffect({ captureId: capture.id, action: value.action });
+      await runOperatorConsentEffect({ captureId: capture.id, action: value.action, ...(value.action === "grant" ? { startTarget: capture } : {}) });
     } catch {
       // The event and control state are already committed; retrying with the
       // same eventKey reaches the idempotent branch and re-drives the effect.

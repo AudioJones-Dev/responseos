@@ -1800,7 +1800,7 @@
       "priority": "High",
       "start": "2026-10-19",
       "blocked": true,
-      "blockedReason": "Local counterexample probes underway. One-shot start ownership and operator End call fallback decision pending; no provider ordering guarantee or live activation inferred."
+      "blockedReason": "Conditional one-shot policy approved at 18:52 UTC; implementation and exact-tree isolated validation underway. Remote termination qualification and independent review remain required."
     }
   ],
   "liveIssues": [

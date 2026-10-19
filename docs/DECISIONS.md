@@ -1924,3 +1924,7 @@ Owner-approved local implementation only. Final validation durably binds one exa
 
 ## ADR-0077 - Recover withdrawal database stages without provider effects
 Owner-approved local successor. Existing receipt and exact original input hash govern DB-only drain/evidence continuation; receipt owns event key. Original consent route and command retry semantics remain unchanged. End call origin/witness presentation adds no authority. Migration0023 uses the DB clock at drain update, not receipt or exact commit time. [Contract and Doctrine21](readiness/FRL_WITHDRAWAL_DATABASE_RECOVERY_2026-10-19.md).
+
+
+## ADR-0078 - Conditional one-shot AI start with a fresh withdrawal veto
+Owner-approved local implementation. A committed exact start claim is consumed permanently, but does not confer irrevocable send authority: fresh pre-send consent/identity/withdrawal checks can veto. No locks span provider I/O, no start resend after uncertainty/veto/crash, and no claim reset. Supersedes earlier AI-start retry semantics only; withdrawal/stop and End-call policies are unchanged. Eventual independently verified termination is the supervised criterion, not zero post-withdrawal audio. [Contract and Doctrine21](readiness/FRL_AI_START_WITHDRAWAL_SAFETY_2026-10-19.md).

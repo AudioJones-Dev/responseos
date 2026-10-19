@@ -167,3 +167,7 @@ Owner approved the pinned final authorization boundary and isolated tests; no mi
 
 ### Narrow local withdrawal recovery — October19
 [Database-only continuation and read-only End call phases](readiness/FRL_WITHDRAWAL_DATABASE_RECOVERY_2026-10-19.md) implement the owner-approved recovery scope. No milestone/activation gate moves. Provider start-stop ordering, provider-stop continuation and broader retry changes remain unresolved and out of scope.
+
+
+### Bounded supervised AI-start safety — October19
+[Conditional one-shot AI start](readiness/FRL_AI_START_WITHDRAWAL_SAFETY_2026-10-19.md) is owner-approved for local implementation and isolated validation against the reviewed trim pair. No milestone, provider or activation gate moves. Carrier terminal behavior and two observed rehearsals remain live-demo prerequisites; CRM/email effects are deferred.
