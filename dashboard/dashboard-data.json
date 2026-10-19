@@ -1789,6 +1789,19 @@
       "blocked": true,
       "blockedReason": "Claude acceptance with one Low whitespace finding relayed by owner. Matching reference trim and regression added; exact successor validation and focused review tracked externally. No provider or activation change."
     }
+    ,
+    {
+      "id": "FRL-AI-START-WITHDRAWAL-SAFETY",
+      "phase": "Integrations",
+      "title": "Bound AI start dispatch and preserve withdrawal safety for supervised demo",
+      "owner": "Codex",
+      "status": "In Progress",
+      "progress": 10,
+      "priority": "High",
+      "start": "2026-10-19",
+      "blocked": true,
+      "blockedReason": "Local counterexample probes underway. One-shot start ownership and operator End call fallback decision pending; no provider ordering guarantee or live activation inferred."
+    }
   ],
   "liveIssues": [
     {

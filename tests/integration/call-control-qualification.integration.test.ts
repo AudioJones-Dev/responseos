@@ -511,6 +511,53 @@ describe("FRL Call Control qualification", () => {
     expect(await prisma.callConsentEvent.count({ where: { provider_call_id: capture.provider_call_id, action: "withdraw" } })).toBe(1);
   });
 
+  test("ordering probe: synthetic delayed start can apply after an accepted withdrawal stop", async () => {
+    await setupQualification();
+    await ingest(event("call.initiated", "ordering-delayed-init", { to: NUMBER }, 1_000));
+    const capture = await prisma.callCaptureSession.findFirstOrThrow();
+    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "CONSENT_PENDING_OPERATOR", dtmf_decision: "affirmative", dtmf_event_id: await dtmfProof(capture) } });
+    const route = await import("@/app/api/admin/call-capture/[id]/consent/route");
+    let syntheticRemoteActive = false;
+    let applyDelayedStart: (() => void) | undefined;
+    sendCommand.mockReset().mockImplementation(async ({ action }: { action: string }) => {
+      if (action === "ai_assistant_start") {
+        applyDelayedStart = () => { syntheticRemoteActive = true; };
+        return { status: 0, providerDate: null, conversationId: null, ok: false, errorCode: "telnyx_response_uncertain" };
+      }
+      expect(action).toBe("ai_assistant_stop");
+      syntheticRemoteActive = false;
+      return { status: 200, providerDate: new Date(), conversationId: null, ok: true, errorCode: null };
+    });
+    const post = (action: "grant" | "withdraw", eventKey: string) => route.POST(new Request("http://localhost", { method: "POST", body: JSON.stringify({ action, eventKey, disclosureRef: "synthetic", evidenceRef: "synthetic", jurisdictionBasis: "synthetic" }) }), { params: Promise.resolve({ id: capture.id }) });
+    expect((await post("grant", "00000000-0000-4000-8000-000000000081")).status).toBe(409);
+    const withdrawal = await post("withdraw", "00000000-0000-4000-8000-000000000082");
+    expect(withdrawal.status).toBe(200);
+    expect(await withdrawal.json()).toMatchObject({ withdrawal: { receipt: "recorded", drain: "confirmed", providerCessationConfirmed: false } });
+    expect(syntheticRemoteActive).toBe(false);
+    expect(applyDelayedStart).toBeDefined();
+    applyDelayedStart!();
+    expect(syntheticRemoteActive).toBe(true);
+    expect(await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } })).toMatchObject({ control_state: "STOPPED", conversation_id: null });
+    expect(sendCommand.mock.calls.map(([command]) => command.action)).toEqual(["ai_assistant_start", "ai_assistant_stop"]);
+    console.info("SYNTHETIC COUNTEREXAMPLE: local drained/STOPPED and accepted stop do not exclude a remotely delayed start; no provider behavior is asserted.");
+  });
+
+  test("ordering probe: an uncertain start is currently resent with the same command identity", async () => {
+    await setupQualification();
+    await ingest(event("call.initiated", "ordering-retry-init", { to: NUMBER }, 1_000));
+    const capture = await prisma.callCaptureSession.findFirstOrThrow();
+    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: "CONSENT_PENDING_OPERATOR", dtmf_decision: "affirmative", dtmf_event_id: await dtmfProof(capture) } });
+    const route = await import("@/app/api/admin/call-capture/[id]/consent/route");
+    sendCommand.mockReset().mockResolvedValue({ status: 0, providerDate: null, conversationId: null, ok: false, errorCode: "telnyx_response_uncertain" });
+    const post = () => route.POST(new Request("http://localhost", { method: "POST", body: JSON.stringify({ action: "grant", eventKey: "00000000-0000-4000-8000-000000000083", disclosureRef: "synthetic", evidenceRef: "synthetic", jurisdictionBasis: "synthetic" }) }), { params: Promise.resolve({ id: capture.id }) });
+    expect((await post()).status).toBe(409);
+    expect((await post()).status).toBe(409);
+    expect(sendCommand).toHaveBeenCalledTimes(2);
+    expect(sendCommand.mock.calls[0][0].body.command_id).toBe(sendCommand.mock.calls[1][0].body.command_id);
+    expect(await prisma.telnyxCallCommand.count({ where: { capture_session_id: capture.id, command_type: "ai_assistant_start" } })).toBe(1);
+    console.info("CURRENT RETRY POLICY: two application dispatch invocations share one start UUID; provider deduplication is not proved.");
+  });
+
   test("AI start remains uncertain without a provider response timestamp", async () => {
     await setupQualification();
     await ingest(event("call.initiated", "cc-start-time-init", { to: NUMBER }, 1_000));
