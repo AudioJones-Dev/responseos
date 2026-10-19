@@ -88,7 +88,7 @@ export function createGrokMediaServer(config: { streamUrl: string; publicKey: st
           } else if (next.source === "carrier") await bridge!.carrier(next.raw);
           else await bridge!.xai(next.raw);
         }
-      } catch { fail(); }
+      } catch { onFault(); fail(); }
       finally { pumping = false; }
     }
   }

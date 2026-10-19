@@ -40,7 +40,7 @@ async function unusedPort() {
   const port = (server.address() as AddressInfo).port; await new Promise<void>(resolve => server.close(() => resolve())); return port;
 }
 
-async function networkFixture() {
+async function networkFixture(malformedCarrierResponse = false) {
   const f = await fixture(), requests: { url: string; body: Record<string, unknown>; authorization: string | undefined; consentSaved: boolean }[] = [];
   const sessions: WebSocket[] = [], audio: string[] = [], urls: string[] = [];
   const peer = httpsServer(tls, (request, response) => {
@@ -48,7 +48,7 @@ async function networkFixture() {
     request.on("end", () => { void (async () => {
       const consentSaved = (await prisma.callConsentEvent.count({ where: { account_id: f.capture.account_id, provider_call_id: f.capture.provider_call_id, action: "grant" } })) > 0;
       requests.push({ url: request.url!, body: JSON.parse(raw), authorization: request.headers.authorization, consentSaved });
-      response.writeHead(200, { "Content-Type": "application/json" }); response.end(JSON.stringify({ data: { result: "ok" } }));
+      response.writeHead(200, { "Content-Type": "application/json" }); response.end(malformedCarrierResponse ? "not-json" : JSON.stringify({ data: { result: "ok" } }));
     })().catch(() => { response.writeHead(500); response.end(); }); });
   });
   const xai = new WebSocketServer({ server: peer, path: "/v1/realtime", perMessageDeflate: false });
@@ -79,8 +79,8 @@ async function networkFixture() {
   const timestamp = String(Math.floor(Date.now() / 1000));
   const headers = { "telnyx-timestamp": timestamp, "telnyx-signature-ed25519": sign(null, Buffer.from(`${timestamp}|${streamUrl}`), keys.privateKey).toString("base64"), "x-telnyx-streaming-auth-token": token };
   const streamId = randomUUID(), received: Record<string, unknown>[] = [];
-  async function connect(extraHeaders = {}) {
-    const socket = new WebSocket(streamUrl, { ca: tls.cert, rejectUnauthorized: true, headers: { ...headers, ...extraHeaders }, perMessageDeflate: false });
+  async function connect(extraHeaders = {}, ca = tls.cert) {
+    const socket = new WebSocket(streamUrl, { ca, rejectUnauthorized: true, headers: { ...headers, ...extraHeaders }, perMessageDeflate: false });
     socket.on("message", raw => {
       const frame = JSON.parse(raw.toString()); received.push(frame);
       if (frame.event === "mark") socket.send(JSON.stringify({ ...frame, stream_id: streamId }));
@@ -118,6 +118,23 @@ test("real WSS listener rejects forged upgrade before xAI socket creation", asyn
   const f = await networkFixture();
   try { await expect(f.connect({ "telnyx-signature-ed25519": Buffer.alloc(64).toString("base64") })).rejects.toThrow(); expect(f.sessions).toHaveLength(0); }
   finally { await f.close(); }
+});
+
+test("real local TLS rejects an untrusted certificate without opening xAI", async () => {
+  const f = await networkFixture();
+  try { await expect(f.connect({}, Buffer.from("not-a-trusted-ca"))).rejects.toThrow(); expect(f.sessions).toHaveLength(0); }
+  finally { await f.close(); }
+});
+
+test("malformed real carrier HTTP result remains uncertain and cannot release a consumed command", async () => {
+  const f = await networkFixture(true);
+  try {
+    expect((await prisma.grokCallCommand.findFirstOrThrow({ where: { session_id: f.id, kind: "handoff" } })).status).toBe("uncertain");
+    await expect(beginGrokHandoff(f.capture)).rejects.toThrow("grok_handoff_consumed");
+    await watchdogGrokSweep(); await watchdogGrokSweep();
+    expect(f.requests).toHaveLength(2); expect(f.sessions).toHaveLength(0);
+    expect((await prisma.grokCallCommand.findFirstOrThrow({ where: { session_id: f.id, kind: "telnyx_hangup" } })).status).toBe("uncertain");
+  } finally { await f.close(); }
 });
 
 test("real socket replay cannot join an already consumed stream", async () => {

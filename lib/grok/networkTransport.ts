@@ -56,9 +56,13 @@ export function createCarrierTransport(config: TransportConfig) {
       const bytes = Buffer.from(JSON.stringify(body));
       const req = request(target.url, { method: "POST", ca: target.ca, rejectUnauthorized: true, headers: { Authorization: `Bearer ${target.key}`, "Content-Type": "application/json", "Content-Length": bytes.length } }, response => {
         let size = 0;
-        response.on("data", chunk => { size += chunk.length; if (size > 65536) { response.destroy(); finish("uncertain"); } });
+        const chunks: Buffer[] = [];
+        response.on("data", chunk => { size += chunk.length; if (size > 65536) { response.destroy(); finish("uncertain"); } else chunks.push(chunk); });
         response.on("error", () => finish("uncertain"));
-        response.on("end", () => finish(response.statusCode && response.statusCode >= 200 && response.statusCode < 300 ? "accepted" : "uncertain"));
+        response.on("end", () => {
+          try { const body = JSON.parse(Buffer.concat(chunks).toString("utf8")); finish(response.statusCode && response.statusCode >= 200 && response.statusCode < 300 && body?.data?.result === "ok" ? "accepted" : "uncertain"); }
+          catch { finish("uncertain"); }
+        });
       });
       const timer = setTimeout(() => { req.destroy(); finish("uncertain"); }, 4000);
       req.on("close", () => clearTimeout(timer));
