@@ -1,8 +1,8 @@
-# Grok listener P2 preparation — execution held
+# Grok listener P2 validation successor
 
 EXPERIMENTAL. Source edits and regression cases are prepared against reviewed checkpoint `3dba2bab3e9f323efe404e297775ee6df8acc2b3`. That worktree and its 895-entry evidence manifest are unchanged. Review excerpts were supplied by the owner liaison from the owner-uploaded `Pasted text(20261019-213656).txt`, Library ID `libfile_33decd67e5bc8191b7d1f898bebd471e`; the reported local review filename was not actually a local file. These changes address the supplied three P2 excerpts. The review's suggestion to check live behavior is not authorization for live tests. No further file search is needed.
 
-## Dependency-use hold
+## Dependency-use approval and prior hold
 
 The owner's relay approval explicitly excludes retaining/using the already fetched `ws@8.22.0` and `@types/ws@8.18.2`. Their use remains unresolved. No dependency download, installation, test, typecheck, lint, build, listener, harness or model execution is authorized by this preparation. Existing artifacts are preserved, not copied into this worktree or removed. No new passing validation or frozen successor is claimed. Git diff inspection is a text check only.
 
@@ -19,3 +19,5 @@ The watchdog loop treats returned session failures as alerts while retaining its
 ## Preserved boundaries
 
 These corrections stay in the selected provider/control layers and reuse existing retained command/audit authority. The doctrine section21 answers in the transport reassessment remain applicable: no new product capability, provider selection, business tool or claim is introduced. No schema/migration changes, consent reopening, cross-call retargeting, command retry, credentials, provider calls, hosting, hosted writes or activation. CRM, email, recording and automatic transfer remain disabled. The demo-only media-fault termination approval remains bounded as recorded in the preceding readiness note.
+
+On 2026-10-19 at 22:03 UTC (6:03 p.m. America/New_York), the owner prospectively approved retaining and using the already-downloaded ws@8.22.0 and @types/ws@8.18.2. Assistant message Sentinel_45037f615c8c8191ad52a078ade98d7d asked: "No new files or technical deliverables needed from you right now. One yes/no is blocking test execution: do you approve retaining and using ws@8.22.0 and @types/ws@8.18.2, the two already-downloaded WebSocket dependencies?" User message Sentinel_6eaa59aefb3c8191bce26335330b2069 answered: "i approve". This lifts only the dependency-use hold described above, prospectively; it does not retroactively approve the original download. No additional downloads, provider calls, credentials, hosted changes or activation are authorized. Focused tests precede candidate freeze and sequential final-tree validation. Passing results are recorded externally, not assumed here.
