@@ -1655,6 +1655,42 @@
       "start": "2026-10-19",
       "blocked": true,
       "blockedReason": "Local synthetic candidate; independent review and separate activation approval remain required."
+    },
+    {
+      "id": "FRL-LOCAL-COMMISSIONING-CONTROL",
+      "phase": "Integrations",
+      "title": "Disabled pinned commissioning tooling and trusted qualification mode",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-10-19",
+      "blocked": true,
+      "blockedReason": "Local synthetic candidate; independent Claude review and separate activation approval remain required."
+    },
+    {
+      "id": "FRL-COMMISSIONING-INTEGRITY-CONTROL",
+      "phase": "Integrations",
+      "title": "Locked commissioning tooling and exact pair validation",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-10-19",
+      "blocked": true,
+      "blockedReason": "Local synthetic candidate; independent review and separate activation approval remain required."
+    },
+    {
+      "id": "FRL-COMMISSIONING-ELIGIBILITY",
+      "phase": "Integrations",
+      "title": "Fail-closed End call eligibility, operator clarity and reconciled split-pair documentation",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-10-19",
+      "blocked": true,
+      "blockedReason": "Local synthetic successor; exact-commit Claude review pending. Activation and operational use remain separately gated."
     }
   ],
   "liveIssues": [

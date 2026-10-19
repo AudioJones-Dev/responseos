@@ -147,3 +147,5 @@ Source-time withdrawal5.8 is a local review candidate: [contract](readiness/FRL_
 Restricted post-withdrawal transfer: local preflight/simulation under review; hosted execution blocked on qualified cessation and recording evidence. [Scope](readiness/FRL_WITHDRAWAL_TRANSFER_2026-10-19.md).
 
 Local commissioning successor in review: operator End call and exact-call authenticated disconnection evidence, including withdrawn calls. EXPERIMENTAL; no milestone or activation change. [Contract](readiness/FRL_LOCAL_COMMISSIONING_2026-10-19.md).
+
+Disabled commissioning control remains in review with pinned locked tooling and trusted qualification modes. Bounded eligibility/operator-clarity successor is EXPERIMENTAL and in review; no milestone or activation change. [Shared contract](readiness/FRL_END_CALL_ELIGIBILITY_2026-10-19.md).

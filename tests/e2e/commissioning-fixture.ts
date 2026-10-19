@@ -27,16 +27,26 @@ async function main() {
     const account=await db.account.findUniqueOrThrow({where:{slug:'browser-synthetic'}});
     const assignment=await db.telephonyNumberAssignment.findFirstOrThrow({where:{account_id:account.id}});
     const snapshot=await db.businessMemorySnapshot.findFirstOrThrow({where:{account_id:account.id,status:'approved'}});
-    for(const name of ['repeat','stale','stopped']) {
-      const capture=await db.callCaptureSession.create({data:{account_id:account.id,provider_call_id:'synthetic-browser-'+name,snapshot_id:snapshot.id,snapshot_json:snapshot.memory_json!,assignment_id:assignment.id,call_session_id:'session',call_leg_id:'leg',conversation_id:'conversation',control_state:name==='repeat'?'STOP_PENDING':'STOPPED',withdrawal_received_at:new Date(),content_admission_closed_at:new Date()}});
+    for(const name of ['repeat','stale','stopped','expired','ended']) {
+      const capture=await db.callCaptureSession.create({data:{account_id:account.id,provider_call_id:'synthetic-browser-'+name,snapshot_id:snapshot.id,snapshot_json:snapshot.memory_json!,assignment_id:assignment.id,call_session_id:'session',call_leg_id:'leg',conversation_id:'conversation',capture_ended_at:name==='ended'?new Date():null,control_state:name==='repeat'?'STOP_PENDING':'STOPPED',withdrawal_received_at:new Date(),content_admission_closed_at:new Date()}});
       await db.call.create({data:{account_id:account.id,provider:'telnyx',provider_call_id:capture.provider_call_id,direction:'inbound',status:'completed',from_number:'+15555550111',to_number:'+15555550188',started_at:new Date()}});
-      if(name==='stopped') {
-        const id='synthetic-browser-hangup';
+      const activeId='synthetic-browser-active-'+name;
+      const activeRaw=JSON.stringify({data:{id:activeId,event_type:'call.answered',occurred_at:new Date().toISOString(),payload:{call_control_id:capture.provider_call_id,call_session_id:'session',call_leg_id:'leg',client_state:Buffer.from(JSON.stringify({captureId:capture.id,generation:1})).toString('base64')}}});
+      const active=await recordWebhookEvent({account_id:account.id,provider:'telnyx',provider_call_id:capture.provider_call_id,provider_event_id:activeId,event_type:'call.answered',raw_body:activeRaw,verifiedBytes:Buffer.from(activeRaw),signature_valid:true});
+      if(!active.ok) throw Error(active.error.code);
+      if(name==='stopped'||name==='expired') {
+        const id='synthetic-browser-hangup-'+name;
+        const retention=process.env.RESPONSEOS_WEBHOOK_FINGERPRINT_RETENTION_SECONDS;
+        if(name==='expired') process.env.RESPONSEOS_WEBHOOK_FINGERPRINT_RETENTION_SECONDS='1';
         const raw=JSON.stringify({data:{id,event_type:'call.hangup',occurred_at:new Date().toISOString(),payload:{call_control_id:capture.provider_call_id,call_session_id:'session',call_leg_id:'leg',client_state:Buffer.from(JSON.stringify({captureId:capture.id,generation:1})).toString('base64')}}});
         const stored=await recordWebhookEvent({account_id:account.id,provider:'telnyx',provider_call_id:capture.provider_call_id,provider_event_id:id,event_type:'call.hangup',raw_body:raw,verifiedBytes:Buffer.from(raw),signature_valid:true});
+        process.env.RESPONSEOS_WEBHOOK_FINGERPRINT_RETENTION_SECONDS=retention;
         if(!stored.ok) throw Error(stored.error.code);
       }
     }
+  } else if(action==='erase') {
+    const row=await db.webhookEvent.findFirstOrThrow({where:{provider_event_id:'synthetic-browser-hangup-stopped'}});
+    await db.$executeRaw`SELECT erase_webhook_early(${row.id}, ${row.account_id}, 'synthetic-approval', 'authorized_deletion')`;
   } else if(action==='bump') {
     await db.callCaptureSession.updateMany({where:{provider_call_id:'synthetic-browser-stale'},data:{generation:2}});
   } else if(action==='inspect') {

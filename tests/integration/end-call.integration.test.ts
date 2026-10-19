@@ -7,6 +7,8 @@ import { POST } from '@/app/api/admin/call-capture/[id]/end-call/route';
 import { loadCallReviewConsole } from '@/lib/callReview/service';
 import { recordWebhookEvent } from '@/lib/data/webhookEvents';
 import { callHasWithdrawal } from '@/lib/callReview/withdrawal';
+import { ingestCallControlEvent } from '@/lib/callControl/service';
+import { parseCallControlEvent } from '@/lib/providers/telnyx/callControl';
 
 
 const send = vi.hoisted(() => { vi.resetModules(); return vi.fn(); });
@@ -34,6 +36,10 @@ async function fixture() {
   const snapshot = await prisma.businessMemorySnapshot.findFirstOrThrow({ where:{account_id:account.id,status:'approved'} });
   const capture = await prisma.callCaptureSession.create({ data:{account_id:account.id,provider_call_id:randomUUID(),snapshot_id:snapshot.id,snapshot_json:snapshot.memory_json!,assignment_id:assignment.id,call_session_id:'session',call_leg_id:'leg',conversation_id:'conversation',control_state:'STOPPED',withdrawal_received_at:new Date(),content_admission_closed_at:new Date()} });
   const call = await prisma.call.create({data:{account_id:account.id,provider:'telnyx',provider_call_id:capture.provider_call_id,direction:'inbound',status:'completed',from_number:'+15555550111',to_number:'+15555550188',started_at:new Date()}});
+  const activeId=randomUUID();
+  const activeBody=JSON.stringify({data:{id:activeId,event_type:'call.answered',occurred_at:new Date().toISOString(),payload:{call_control_id:capture.provider_call_id,call_session_id:'session',call_leg_id:'leg',client_state:Buffer.from(JSON.stringify({captureId:capture.id,generation:1})).toString('base64')}}});
+  const active=await recordWebhookEvent({account_id:account.id,provider:'telnyx',provider_call_id:capture.provider_call_id,provider_event_id:activeId,event_type:'call.answered',raw_body:activeBody,verifiedBytes:Buffer.from(activeBody),signature_valid:true});
+  if(!active.ok) throw Error(active.error.code);
   const input = {expectedAccountId:account.id,expectedProviderCallId:capture.provider_call_id,generation:1};
   const post = (body:unknown=input) => POST(new Request('http://localhost',{method:'POST',body:JSON.stringify(body)}),{params:Promise.resolve({id:capture.id})});
   return {capture,call,input,post};
@@ -122,4 +128,72 @@ test('provider acceptance followed by database failure leaves durable uncertaint
     await prisma.$executeRawUnsafe(`DROP TRIGGER synthetic_reject_end_result ON "TelnyxCallCommand"`);
     await prisma.$executeRawUnsafe(`DROP FUNCTION synthetic_reject_end_result()`);
   }
+});
+
+test('expired hangup cannot enable a dispatch and does not return historical proof details', async () => {
+  const f=await fixture();
+  const prior=process.env.RESPONSEOS_WEBHOOK_FINGERPRINT_RETENTION_SECONDS;
+  process.env.RESPONSEOS_WEBHOOK_FINGERPRINT_RETENTION_SECONDS='1';
+  try { await hangup(f); } finally { process.env.RESPONSEOS_WEBHOOK_FINGERPRINT_RETENTION_SECONDS=prior; }
+  await prisma.$executeRaw`SELECT pg_sleep(1.1)`;
+  const row=(await loadCallReviewConsole()).captures.find(c=>c.id===f.capture.id)!;
+  expect(row.disconnection).toMatchObject({state:'expired',confirmed:false,eventId:null,occurredAt:null});
+  expect(row.endCall.allowed).toBe(false);
+  expect((await f.post()).status).toBe(409); expect(send).not.toHaveBeenCalled();
+});
+
+test('erased unidentifiable hangup blocks account calls without restoring erased correlation', async () => {
+  const f=await fixture(); const id=await hangup(f);
+  await prisma.$executeRaw`SELECT erase_webhook_early(${id}, ${f.capture.account_id}, 'synthetic-approval', 'authorized_deletion')`;
+  const erased=await prisma.webhookEvent.findUniqueOrThrow({where:{id}});
+  expect(erased.provider_call_id).toBeNull();
+  const row=(await loadCallReviewConsole()).captures.find(c=>c.id===f.capture.id)!;
+  expect(row.disconnection).toMatchObject({state:'erased',confirmed:false,eventId:null});
+  expect(row.endCall.allowed).toBe(false);
+  expect((await f.post()).status).toBe(409); expect(send).not.toHaveBeenCalled();
+});
+
+test('stored lifecycle end blocks a new hangup even with absent proof and fresh active evidence', async () => {
+  const f=await fixture();
+  await prisma.callCaptureSession.update({where:{id:f.capture.id},data:{capture_ended_at:new Date()}});
+  const row=(await loadCallReviewConsole()).captures.find(c=>c.id===f.capture.id)!;
+  expect(row.disconnection.state).toBe('absent');
+  expect(row.endCall).toEqual({allowed:false,reason:'lifecycle_ended'});
+  expect((await f.post()).status).toBe(409); expect(send).not.toHaveBeenCalled();
+});
+
+test('missing fresh active identity fails closed; normalized completed is not disconnection proof', async () => {
+  const f=await fixture();
+  expect((await loadCallReviewConsole()).captures.find(c=>c.id===f.capture.id)?.disconnection.confirmed).toBe(false);
+  await prisma.webhookEvent.updateMany({where:{event_type:'call.answered'},data:{raw_body:'{}'}});
+  expect((await f.post()).status).toBe(409); expect(send).not.toHaveBeenCalled();
+});
+
+test('a prior generation hangup claim cannot be resent after generation changes', async () => {
+  const f=await fixture(); await f.post();
+  await prisma.callCaptureSession.update({where:{id:f.capture.id},data:{generation:2}});
+  expect((await f.post({...f.input,generation:2})).status).toBe(409);
+  expect(send).toHaveBeenCalledTimes(1); expect(await prisma.telnyxCallCommand.count()).toBe(1);
+});
+
+test('verified hangup preserves a lifecycle veto for already withdrawn STOPPED calls', async () => {
+  const f=await fixture();
+  const raw=JSON.stringify({data:{id:randomUUID(),event_type:'call.hangup',occurred_at:new Date().toISOString(),payload:{call_control_id:f.capture.provider_call_id,call_session_id:'session',call_leg_id:'leg',client_state:Buffer.from(JSON.stringify({captureId:f.capture.id,generation:1})).toString('base64')}}});
+  await ingestCallControlEvent({event:parseCallControlEvent(raw)!,rawBody:raw,verifiedBytes:Buffer.from(raw),signature:'synthetic'});
+  const ended=await prisma.callCaptureSession.findUniqueOrThrow({where:{id:f.capture.id}});
+  expect(ended.capture_ended_at).not.toBeNull();
+  expect(ended.control_state).toBe('STOPPED');
+  expect(ended.withdrawal_received_at).toEqual(f.capture.withdrawal_received_at);
+  expect(send).not.toHaveBeenCalled();
+});
+
+test('proof expiry after a claim never releases the claim for retry', async () => {
+  const f=await fixture(); await f.post();
+  const prior=process.env.RESPONSEOS_WEBHOOK_FINGERPRINT_RETENTION_SECONDS;
+  process.env.RESPONSEOS_WEBHOOK_FINGERPRINT_RETENTION_SECONDS='1';
+  try { await hangup(f); } finally { process.env.RESPONSEOS_WEBHOOK_FINGERPRINT_RETENTION_SECONDS=prior; }
+  await prisma.$executeRaw`SELECT pg_sleep(1.1)`;
+  expect((await f.post()).status).toBe(202);
+  expect(send).toHaveBeenCalledTimes(1);
+  expect(await prisma.telnyxCallCommand.count()).toBe(1);
 });

@@ -12,18 +12,33 @@ export default async function verifyConsole({page, origin, fixture, evidence}) {
   for(const row of [repeat,stale,stopped]) {
     await row.locator('summary').first().click();
     for(const label of ['Disclosure version/reference','Evidence reference','Jurisdiction basis']) await row.getByLabel(label,{exact:true}).fill('synthetic');
-    for(const action of ['grant','refuse']) assert.equal(await row.getByRole('button',{name:'Record '+action,exact:true}).isDisabled(),true);
+    for(const action of ['grant','refuse']) {
+      const button=row.getByRole('button',{name:'Record '+action,exact:true});
+      assert.equal(await button.isDisabled(),true);
+      assert.equal(await button.evaluate(e=>getComputedStyle(e).opacity),'0.4');
+      assert.equal(await button.evaluate(e=>getComputedStyle(e).cursor),'not-allowed');
+    }
   }
   assert.equal(await stopped.getByRole('button',{name:'End call',exact:true}).isDisabled(),true);
   assert.match(await stopped.innerText(),/confirmed by authenticated exact-call hangup/);
+  assert.equal(await card('expired').getByRole('button',{name:'End call',exact:true}).isDisabled(),true);
+  assert.match(await card('expired').innerText(),/not confirmed — expired/);
+  assert.equal(await card('ended').getByRole('button',{name:'End call',exact:true}).isDisabled(),true);
+  assert.match(await card('ended').innerText(),/lifecycle_ended/);
+  assert.match(await page.locator('body').innerText(),/Normalized call records — not disconnection proof/);
+  const normalized=page.locator('tr').filter({hasText:'synthetic-browser-repeat'});
+  assert.match(await normalized.innerText(),/completed/);
   const first=page.waitForResponse(r=>r.url().includes('/end-call'));
   await repeat.getByRole('button',{name:'End call',exact:true}).evaluate(button=>{button.click();button.click();});
   assert.equal((await first).status(),202);
   await page.waitForFunction(()=>Array.from(document.querySelectorAll('[role=status]')).some(e=>e.textContent.includes('Repeated requests do not resend')));
   assert.equal(responses.length,1);
-  const second=page.waitForResponse(r=>r.url().includes('/end-call'));
-  await repeat.getByRole('button',{name:'End call',exact:true}).click();
-  assert.equal((await second).status(),202);
+  await page.waitForFunction(()=>Array.from(document.querySelectorAll('button')).filter(e=>e.textContent==='End call'&&!e.disabled).length===1);
+  assert.equal(await repeat.getByRole('button',{name:'End call',exact:true}).isDisabled(),true);
+  await repeat.getByRole('button',{name:'End call',exact:true}).evaluate(button=>button.click());
+  assert.equal(responses.length,1);
+  assert.match(await repeat.innerText(),/Operator fallback: do not retry/);
+  assert.match(await repeat.innerText(),/Carrier console capabilities have not been verified/);
   await fixture('bump');
   const rejected=page.waitForResponse(r=>r.url().includes('/end-call'));
   await stale.getByRole('button',{name:'End call',exact:true}).click();
@@ -37,9 +52,16 @@ export default async function verifyConsole({page, origin, fixture, evidence}) {
   assert.equal(state.commands,1);
   assert.equal(state.staleCommands,0);
   assert.equal(state.consentEvents,0);
-  assert.equal(state.withdrawn,3);
+  assert.equal(state.withdrawn,5);
   assert.equal(state.commandsByType.every(row=>row.command_type==='hangup'),true);
   assert.match(await repeat.innerText(),/Disconnection: not confirmed/);
   await page.screenshot({path:evidence+'/console.png',fullPage:true});
-  return {responses,state,checks:['terminal consent remains disabled with filled inputs','STOPPED exact proof disables End call','STOP_PENDING End call','same-turn double click sends once','later duplicate persists one intent','stale generation rejected 409','refresh GET only','no consent reopening']};
+  await fixture('erase');
+  await page.reload();
+  assert.match(await stopped.innerText(),/not confirmed — erased/);
+  assert.equal(await stopped.getByRole('button',{name:'End call',exact:true}).isDisabled(),true);
+  assert.match(await stale.innerText(),/account-level/);
+  assert.equal(await stale.getByRole('button',{name:'End call',exact:true}).isDisabled(),true);
+  await page.screenshot({path:evidence+'/erased.png',fullPage:true});
+  return {responses,state,checks:['terminal consent visibly disabled with filled inputs','STOPPED exact proof disables End call','STOP_PENDING End call','same-turn double click sends once','later click disabled after claim','stale generation rejected 409','refresh GET only','no consent reopening','expired proof blocks dispatch','erased proof blocks account ambiguity','lifecycle end blocks dispatch','normalized completed is not disconnection proof','explicit unverified carrier fallback']};
 };

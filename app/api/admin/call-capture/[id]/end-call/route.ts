@@ -12,7 +12,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
     return Response.json({ ok: true, data }, { status: data.disconnection.confirmed ? 200 : 202, headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     const reason = error instanceof Error ? error.message : "end_call_unavailable";
-    const safe = ["operator_required", "end_call_target_mismatch", "end_call_identity_incomplete", "qualification_assignment_required"];
+    const safe = ["operator_required", "end_call_target_mismatch", "end_call_identity_incomplete", "qualification_assignment_required", "end_call_ineligible"];
     return Response.json({ ok: false, error: safe.includes(reason) ? reason : "end_call_result_uncertain" }, { status: reason === "operator_required" ? 403 : safe.includes(reason) ? 409 : 503 });
   }
 }

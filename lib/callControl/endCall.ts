@@ -9,28 +9,58 @@ import { parseCallControlEvent, sendTelnyxCallCommand } from "@/lib/providers/te
 
 export type EndCallTarget = { captureId: string; expectedAccountId: string; expectedProviderCallId: string; generation: number };
 
-export async function disconnectionEvidence(capture: CallCaptureSession, client: Prisma.TransactionClient) {
-  const events = await client.webhookEvent.findMany({ where: {
-    account_id: capture.account_id, provider: "telnyx", provider_call_id: capture.provider_call_id,
-    event_type: "call.hangup", signature_valid: true,
-  }, orderBy: { received_at: "desc" } });
-  for (const candidate of events) {
-    let row;
-    try { row = await assertStoredWebhookIdentity(candidate.id, client); } catch { continue; }
-    if (row.account_id !== capture.account_id || row.provider !== "telnyx" || row.provider_call_id !== capture.provider_call_id || !row.signature_valid || row.event_type !== "call.hangup") continue;
-    const event = parseCallControlEvent(row.raw_body);
-    if (!event || event.data.id !== row.provider_event_id || event.data.event_type !== "call.hangup") continue;
-    const p = event.data.payload;
-    if (!capture.call_session_id || !capture.call_leg_id || p.call_control_id !== capture.provider_call_id || p.call_session_id !== capture.call_session_id || p.call_leg_id !== capture.call_leg_id) continue;
-    try {
-      const state = JSON.parse(Buffer.from(p.client_state ?? "", "base64").toString("utf8"));
-      if (state.captureId !== capture.id || state.generation !== capture.generation) continue;
-    } catch { continue; }
-    return { confirmed: true, eventId: row.provider_event_id, occurredAt: event.data.occurred_at, receivedAt: row.received_at.toISOString() };
-  }
-  return { confirmed: false, eventId: null, occurredAt: null, receivedAt: null };
+export type DisconnectionState = "fresh" | "expired" | "erased" | "absent" | "unverifiable";
+
+async function exactEvent(capture: CallCaptureSession, id: string, client: Prisma.TransactionClient, types: string[]) {
+  const row = await assertStoredWebhookIdentity(id, client);
+  if (row.account_id !== capture.account_id || row.provider !== "telnyx" || row.provider_call_id !== capture.provider_call_id || !row.signature_valid || !types.includes(row.event_type)) return null;
+  const event = parseCallControlEvent(row.raw_body);
+  if (!event || event.data.id !== row.provider_event_id || event.data.event_type !== row.event_type) return null;
+  const p = event.data.payload;
+  if (!capture.call_session_id || !capture.call_leg_id || p.call_control_id !== capture.provider_call_id || p.call_session_id !== capture.call_session_id || p.call_leg_id !== capture.call_leg_id) return null;
+  try {
+    const state = JSON.parse(Buffer.from(p.client_state ?? "", "base64").toString("utf8"));
+    if (state.captureId !== capture.id || state.generation !== capture.generation) return null;
+  } catch { return null; }
+  return { row, event };
 }
 
+export async function disconnectionEvidence(capture: CallCaptureSession, client: Prisma.TransactionClient) {
+  const events = await client.webhookEvent.findMany({ where: {
+    account_id: capture.account_id, provider: "telnyx", event_type: "call.hangup",
+    OR: [{ provider_call_id: capture.provider_call_id }, { provider_call_id: null }],
+  }, select: { id: true }, orderBy: { received_at: "desc" } });
+  let state: DisconnectionState = events.length ? "unverifiable" : "absent";
+  for (const candidate of events) {
+    await client.$queryRaw`SELECT id FROM "WebhookEvent" WHERE id = ${candidate.id} FOR UPDATE`;
+    const metadata = await client.webhookEvent.findUnique({ where: { id: candidate.id }, select: { account_id: true, provider: true, provider_call_id: true, event_type: true, payload_purged_at: true, payload_erasure_required_at: true, payload_expires_at: true } });
+    if (!metadata || metadata.account_id !== capture.account_id || metadata.provider !== "telnyx" || metadata.event_type !== "call.hangup") continue;
+    if (metadata.payload_purged_at || metadata.payload_erasure_required_at) { state = "erased"; continue; }
+    const now = (await client.$queryRaw<{ now: Date }[]>`SELECT clock_timestamp() AS now`)[0].now;
+    if (metadata.payload_expires_at && metadata.payload_expires_at <= now) { if (state !== "erased") state = "expired"; continue; }
+    try {
+      const verified = await exactEvent(capture, candidate.id, client, ["call.hangup"]);
+      if (verified) return { state: "fresh" as const, confirmed: true, eventId: verified.row.provider_event_id, occurredAt: verified.event.data.occurred_at, receivedAt: verified.row.received_at.toISOString() };
+    } catch { /* Unverifiable identity is a dispatch veto, never an absence of evidence. */ }
+  }
+  return { state, confirmed: false, eventId: null, occurredAt: null, receivedAt: null };
+}
+
+export async function endCallEligibility(capture: CallCaptureSession, client: Prisma.TransactionClient, evidence: Awaited<ReturnType<typeof disconnectionEvidence>>, ignoreClaimId?: string) {
+  if (evidence.confirmed) return { allowed: false, reason: "disconnection_confirmed" };
+  if (capture.capture_ended_at || ["FINALIZING", "EVIDENCE_FROZEN", "TRANSFER_PENDING", "TRANSFERRED"].includes(capture.control_state)) return { allowed: false, reason: "lifecycle_ended" };
+  if (evidence.state !== "absent") return { allowed: false, reason: "disconnection_evidence_unavailable" };
+  const claim = await client.telnyxCallCommand.findFirst({ where: { account_id: capture.account_id, capture_session_id: capture.id, command_type: "hangup", ...(ignoreClaimId ? { id: { not: ignoreClaimId } } : {}) } });
+  if (claim) return { allowed: false, reason: "hangup_already_claimed" };
+  const assignment = capture.assignment_id && await client.telephonyNumberAssignment.findFirst({ where: { id: capture.assignment_id, account_id: capture.account_id, status: "qualification" } });
+  if (!assignment) return { allowed: false, reason: "qualification_assignment_required" };
+  const types = ["call.initiated", "call.answered", "call.speak.ended", "call.gather.ended"];
+  const active = await client.webhookEvent.findMany({ where: { account_id: capture.account_id, provider: "telnyx", provider_call_id: capture.provider_call_id, event_type: { in: types }, signature_valid: true }, select: { id: true } });
+  for (const row of active) {
+    try { if (await exactEvent(capture, row.id, client, types)) return { allowed: true, reason: "fresh_exact_active_evidence" }; } catch { /* Missing retained identity cannot authorize a command. */ }
+  }
+  return { allowed: false, reason: "active_evidence_unavailable" };
+}
 // The committed uncertain intent is a one-shot claim. A crash never permits an automatic resend.
 export async function endCaptureCall(input: EndCallTarget, actor?: { id: string; role: UserRole }) {
   if (!db) throw new Error("database_unavailable");
@@ -46,6 +76,8 @@ export async function endCaptureCall(input: EndCallTarget, actor?: { id: string;
     if (!assignment) throw new Error("qualification_assignment_required");
     const existing = await client.telnyxCallCommand.findUnique({ where: { capture_session_id_command_type_generation: { capture_session_id: capture.id, command_type: "hangup", generation: capture.generation } } });
     if (existing) return { dispatch: false as const, capture, command: existing, evidence };
+    const eligibility = await endCallEligibility(capture, client, evidence);
+    if (!eligibility.allowed) throw new Error("end_call_ineligible");
     const command = await client.telnyxCallCommand.create({ data: {
       account_id: capture.account_id, capture_session_id: capture.id, assignment_id: capture.assignment_id,
       generation: capture.generation, command_type: "hangup", command_id: randomUUID(), provider_resource: capture.provider_call_id,
@@ -65,7 +97,7 @@ export async function endCaptureCall(input: EndCallTarget, actor?: { id: string;
     const capture = await client.callCaptureSession.findUniqueOrThrow({ where: { id: located.id, account_id: located.account_id } });
     if (capture.generation !== input.generation || capture.provider_call_id !== input.expectedProviderCallId || capture.assignment_id !== claimed.capture.assignment_id) throw new Error("end_call_target_mismatch");
     const evidence = await disconnectionEvidence(capture, client);
-    if (evidence.confirmed) return { commandStatus: "uncertain", disconnection: evidence };
+    if (evidence.confirmed || !(await endCallEligibility(capture, client, evidence, claimed.command.id)).allowed) return { commandStatus: "uncertain", disconnection: evidence };
     const result = await sendTelnyxCallCommand({ callControlId: capture.provider_call_id, action: "hangup", body: { ...claimed.command.request_json as Record<string, unknown>, command_id: claimed.command.command_id } });
     const status = result.ok ? "succeeded" : result.errorCode === "telnyx_response_uncertain" || result.status >= 500 ? "uncertain" : "failed";
     const respondedAt = result.status > 0 ? (await client.$queryRaw<{ now: Date }[]>`SELECT date_trunc('milliseconds', clock_timestamp() AT TIME ZONE 'UTC') AS now`)[0].now : null;

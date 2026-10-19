@@ -1899,3 +1899,6 @@ Owner-authorized local implementation, October 19. Persist one-shot uncertain ha
 Owner-authorized local tooling and explicit trusted qualification modes. No installation or activation authorization. [Contract and Doctrine21](readiness/FRL_LOCAL_COMMISSIONING_CONTROL_2026-10-19.md).
 
 ADR-0072 integrity addendum: reproducible locked tooling, verified full action SHA, and exact split-checkout local validation. See [shared pair contract](readiness/FRL_COMMISSIONING_PAIR_2026-10-19.md). Installation and activation remain disabled.
+
+## ADR-0073 - Fail closed on unavailable disconnection evidence
+Owner-approved bounded local successor, October 19. Require retained exact active identity and absence of lifecycle/claim/ambiguous hangup vetoes for a new qualification hangup. Erasure does not preserve forbidden correlation or enable dispatch. No new schema. [Eligibility contract and Doctrine21](readiness/FRL_END_CALL_ELIGIBILITY_2026-10-19.md).

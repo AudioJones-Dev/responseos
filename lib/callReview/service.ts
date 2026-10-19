@@ -1,4 +1,4 @@
-import { disconnectionEvidence } from "@/lib/callControl/endCall";
+import { disconnectionEvidence, endCallEligibility } from "@/lib/callControl/endCall";
 import "@/lib/serverOnlyGuard";
 import { callHasWithdrawal, withdrawalActivity } from "./withdrawal";
 import { Prisma } from "@prisma/client";
@@ -43,8 +43,8 @@ export async function loadCallReviewConsole() {
     ]);
     const withdrawals = await db!.callConsentEvent.findMany({ where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, action: 'withdraw' }, orderBy: { recorded_at: 'asc' } });
     const withdrawalReview = capture.withdrawal_received_at ? await withdrawalActivity(db! as unknown as Prisma.TransactionClient, capture, withdrawals.some(w => w.source_time_status !== 'verified') ? new Date(Math.min(call?.started_at.getTime() ?? Infinity, capture.capture_started_at?.getTime() ?? Infinity, capture.created_at.getTime())) : withdrawals.find(w => w.source_time_status === 'verified')?.source_occurred_at ?? capture.capture_started_at ?? capture.created_at, capture.withdrawal_received_at) : null;
-    const disconnection = await db!.$transaction(client => disconnectionEvidence(capture, client));
-    return { ...capture, disconnection, consentAction: capture.withdrawal_received_at ? 'withdraw' : consent?.action ?? null, commands, call, accountName: account?.name ?? capture.account_id, withdrawals, withdrawalReview };
+    const { disconnection, endCall } = await db!.$transaction(async client => { const disconnection = await disconnectionEvidence(capture, client); return { disconnection, endCall: await endCallEligibility(capture, client, disconnection) }; });
+    return { ...capture, disconnection, endCall, consentAction: capture.withdrawal_received_at ? 'withdraw' : consent?.action ?? null, commands, call, accountName: account?.name ?? capture.account_id, withdrawals, withdrawalReview };
   }));
   const latest = await db.callReview.groupBy({
     by: ["account_id", "call_id"], _max: { revision: true, created_at: true },
