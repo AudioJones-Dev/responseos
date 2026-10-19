@@ -1,8 +1,8 @@
 import "@/lib/serverOnlyGuard";
 import { createServer, type ServerOptions } from "node:https";
 import WebSocket, { WebSocketServer } from "ws";
-import { authenticateStream } from "./mediaContract";
-import { startMediaBridge } from "./mediaBridge";
+import { authenticateStream, startFrame } from "./mediaContract";
+import { startMediaBridge, startupMediaCursor, type StartupCursor } from "./mediaBridge";
 import { openRealtimeSocket, socketPort, type TransportConfig } from "./networkTransport";
 import { assertGrokQualified } from "./provider";
 
@@ -34,7 +34,8 @@ export function createGrokMediaServer(config: { streamUrl: string; publicKey: st
   });
   function connect(carrier: WebSocket, headers: Headers) {
     let closed = false, pumping = false, bytes = 0, connectedToken: unknown;
-    let phase: "connected" | "start" | "active" = "connected";
+    let phase: "connected" | "start" | "starting" | "active" = "connected";
+    let startup: StartupCursor | undefined, streamId: string | undefined;
     let bridge: Awaited<ReturnType<typeof startMediaBridge>> | undefined, realtime: WebSocket | undefined;
     let carrierPong = performance.now(), realtimePong = performance.now();
     const queue: { source: "carrier" | "xai"; raw: string }[] = [];
@@ -58,7 +59,18 @@ export function createGrokMediaServer(config: { streamUrl: string; publicKey: st
     function enqueue(source: "carrier" | "xai", raw: string) {
       if (closed) return;
       const size = Buffer.byteLength(raw);
-      if (size > 16384 || bytes + size > 32768 || queue.length >= 64) { fail(); return; }
+      if (size > 16384) { fail(); return; }
+      if (source === "carrier" && (phase === "starting" || (phase === "active" && !bridge!.acceptingAudio))) {
+        try {
+          if (JSON.parse(raw).event === "media") {
+            const cursor = startupMediaCursor(raw, streamId!);
+            if (bridge) bridge.discardStartup(cursor);
+            else startup = { chunk: Math.max(startup?.chunk ?? 0, cursor.chunk), timestamp: Math.max(startup?.timestamp ?? -1, cursor.timestamp), sequence: Math.max(startup?.sequence ?? -1, cursor.sequence) };
+            return;
+          }
+        } catch { fail(); return; }
+      }
+      if (bytes + size > 32768 || queue.length >= 64) { fail(); return; }
       bytes += size; queue.push({ source, raw }); track(pump());
     }
     async function pump() {
@@ -73,6 +85,7 @@ export function createGrokMediaServer(config: { streamUrl: string; publicKey: st
             connectedToken = frame["x-telnyx-streaming-auth-token"]; phase = "start";
           } else if (phase === "start") {
             if (next.source !== "carrier") throw Error("stream_start_required");
+            streamId = startFrame.parse(JSON.parse(next.raw)).stream_id; phase = "starting";
             bridge = await startMediaBridge({ headers, connectedToken, rawStart: next.raw, trusted: config }, {
               carrier: socketPort(carrier, fail),
               openRealtime: async () => {
@@ -84,6 +97,8 @@ export function createGrokMediaServer(config: { streamUrl: string; publicKey: st
               },
             });
             if (closed) { await bridge.stop("listener_closed_during_start"); break; }
+            if (startup) bridge.discardStartup(startup);
+            startup = undefined;
             phase = "active"; clearTimeout(startDeadline); connectedToken = undefined;
           } else if (next.source === "carrier") await bridge!.carrier(next.raw);
           else await bridge!.xai(next.raw);

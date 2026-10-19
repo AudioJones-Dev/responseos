@@ -11,6 +11,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, expect, test, vi } from "vi
 import { prisma, resetAndSeedTestDb, disconnectTestDb, setDevSession } from "./setup";
 import { db } from "@/lib/db/client";
 import * as operatorService from "@/lib/callReview/service";
+import * as grokService from "@/lib/grok/service";
 import { recordWebhookEvent } from "@/lib/data/webhookEvents";
 import { persistWithdrawalReceipt, withdrawalReceiptDb } from "@/lib/callReview/withdrawalReceipt";
 import { beginGrokHandoff, acceptGrokIncoming, claimGrokWorker, heartbeatGrok, requestGrokStop, dispatchGrokTermination, watchdogGrokSweep } from "@/lib/grok/service";
@@ -121,6 +122,28 @@ test("real WSS listener rejects forged upgrade before xAI socket creation", asyn
   const f = await networkFixture();
   try { await expect(f.connect({ "telnyx-signature-ed25519": Buffer.alloc(64).toString("base64") })).rejects.toThrow(); expect(f.sessions).toHaveLength(0); }
   finally { await f.close(); }
+});
+
+test.each(["claim", "configuration"])("real startup audio during delayed %s is discarded without filling the control queue or replay", async stage => {
+  const f = await networkFixture();
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  const claimed = grokService.claimGrokMedia, configured = grokService.bindGrokRealtime;
+  const spy = stage === "claim"
+    ? vi.spyOn(grokService, "claimGrokMedia").mockImplementation(async (...args) => { await gate; return claimed(...args); })
+    : vi.spyOn(grokService, "bindGrokRealtime").mockImplementation(async (...args) => { await gate; return configured(...args); });
+  try {
+    const caller = await f.connect();
+    await vi.waitFor(() => expect(spy).toHaveBeenCalledTimes(1));
+    const packet = (chunk: number, value: number) => JSON.stringify({ event: "media", stream_id: f.streamId, sequence_number: String(chunk + 1), media: { track: "inbound", chunk: String(chunk), timestamp: String(chunk * 20), payload: Buffer.alloc(160, value).toString("base64") } });
+    for (let chunk = 1; chunk <= 100; chunk++) { caller.send(packet(chunk, 17)); await new Promise(resolve => setTimeout(resolve, 20)); }
+    expect(caller.readyState).toBe(WebSocket.OPEN); expect(f.audio).toHaveLength(0);
+    release(); await f.ready();
+    caller.send(packet(101, 34));
+    await vi.waitFor(() => expect(f.audio).toHaveLength(1));
+    expect(Buffer.from(f.audio[0], "base64")).toEqual(Buffer.alloc(160, 34));
+    expect(caller.readyState).toBe(WebSocket.OPEN);
+  } finally { release(); spy.mockRestore(); await f.close(); }
 });
 
 test("real local TLS rejects an untrusted certificate without opening xAI", async () => {
@@ -456,6 +479,71 @@ test("watchdog isolates a session transaction failure and does not scan settled 
   expect(await watchdogGrokSweep()).toMatchObject({ inspected: 1, failed: 0 });
   expect(transport.terminate).toHaveBeenCalledTimes(4);
   expect(await watchdogGrokSweep()).toEqual({ inspected: 0, failed: 0 });
+});
+
+test.each(["lifecycle", "unverifiable-hangup", "expired-active-proof"])("refused operator %s leaves automatic termination available without an operator reservation", async reason => {
+  if (reason === "expired-active-proof") vi.stubEnv("RESPONSEOS_WEBHOOK_FINGERPRINT_RETENTION_SECONDS", "3");
+  const f = await mediaFixture();
+  if (reason === "lifecycle") await prisma.callCaptureSession.update({ where: { id: f.capture.id }, data: { control_state: "EVIDENCE_FROZEN" } });
+  if (reason === "unverifiable-hangup") await prisma.webhookEvent.create({ data: { account_id: f.capture.account_id, provider: "telnyx", provider_call_id: f.capture.provider_call_id, provider_event_id: randomUUID(), event_type: "call.hangup", raw_body: "{}", dedupe_hash: randomUUID(), signature_valid: false } });
+  if (reason === "expired-active-proof") await prisma.$executeRaw`SELECT pg_sleep(3.1)`;
+  await expect(grokService.operatorEndGrok(f.capture)).rejects.toThrow("end_call_ineligible");
+  expect(await prisma.telnyxCallCommand.count({ where: { capture_session_id: f.capture.id, command_type: "hangup" } })).toBe(0);
+  await watchdogGrokSweep(); await watchdogGrokSweep();
+  expect(transport.operatorEnd).not.toHaveBeenCalled();
+  expect(transport.terminate).toHaveBeenCalledExactlyOnceWith("telnyx", f.capture.provider_call_id, expect.any(String));
+});
+
+test("capture lock timeout before operator reservation cannot suppress the automatic safety claim", async () => {
+  const f = await mediaFixture();
+  let release!: () => void, entered!: () => void;
+  const held = new Promise<void>(resolve => { entered = resolve; }), gate = new Promise<void>(resolve => { release = resolve; });
+  const holder = prisma.$transaction(async tx => { await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${"capture:" + f.capture.account_id + ":" + f.capture.provider_call_id}))`; entered(); await gate; }, { timeout: 10000 });
+  try {
+    await held;
+    await expect(grokService.operatorEndGrok(f.capture)).rejects.toThrow();
+    expect(await prisma.telnyxCallCommand.count({ where: { capture_session_id: f.capture.id, command_type: "hangup" } })).toBe(0);
+    await watchdogGrokSweep(); await watchdogGrokSweep();
+    expect(transport.operatorEnd).not.toHaveBeenCalled(); expect(transport.terminate).toHaveBeenCalledTimes(1);
+  } finally { release(); await holder; }
+});
+
+test("committed operator reservation fences queued automatic hangup during concurrent dispatch without resending", async () => {
+  const f = await mediaFixture(); await requestGrokStop(f.id, "control_loss");
+  let entered!: () => void, release!: () => void;
+  const sent = new Promise<void>(resolve => { entered = resolve; }), gate = new Promise<void>(resolve => { release = resolve; });
+  transport.operatorEnd.mockImplementation(async () => { entered(); await gate; return { ok: false, status: 0, errorCode: "telnyx_response_uncertain", providerDate: null }; });
+  const operator = grokService.operatorEndGrok(f.capture);
+  try {
+    await sent;
+    await Promise.all([dispatchGrokTermination(f.id), watchdogGrokSweep(), grokService.operatorEndGrok(f.capture)]);
+    expect(transport.terminate).not.toHaveBeenCalled();
+    expect(transport.operatorEnd).toHaveBeenCalledTimes(1);
+    expect((await prisma.grokCallCommand.findFirstOrThrow({ where: { session_id: f.id, kind: "telnyx_hangup" } })).status).toBe("disabled");
+  } finally { release(); await operator; }
+  await watchdogGrokSweep(); await grokService.operatorEndGrok(f.capture);
+  expect(transport.operatorEnd).toHaveBeenCalledTimes(1); expect(transport.terminate).not.toHaveBeenCalled();
+});
+
+test("authenticated terminal proof before any operator reservation cannot create a second carrier send", async () => {
+  const f = await mediaFixture(), eventId = randomUUID();
+  const body = JSON.stringify({ data: { id: eventId, event_type: "call.hangup", occurred_at: new Date().toISOString(), payload: { call_control_id: f.capture.provider_call_id, call_session_id: f.capture.call_session_id, call_leg_id: f.capture.call_leg_id, client_state: mediaClientState(f.capture.id, f.capture.generation) } } });
+  await recordWebhookEvent({ account_id: f.capture.account_id, provider: "telnyx", provider_call_id: f.capture.provider_call_id, provider_event_id: eventId, event_type: "call.hangup", raw_body: body, verifiedBytes: Buffer.from(body), signature_valid: true });
+  expect((await grokService.operatorEndGrok(f.capture)).disconnection.confirmed).toBe(true);
+  await watchdogGrokSweep(); await dispatchGrokTermination(f.id);
+  expect(transport.operatorEnd).not.toHaveBeenCalled(); expect(transport.terminate).not.toHaveBeenCalled();
+  expect(await prisma.telnyxCallCommand.count({ where: { capture_session_id: f.capture.id, command_type: "hangup" } })).toBe(0);
+});
+
+test("operator reservation rollback leaves no suppression authority", async () => {
+  const f = await mediaFixture();
+  await prisma.$executeRawUnsafe(`CREATE FUNCTION grok_test_operator_audit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.action='grok_operator_end' THEN RAISE EXCEPTION 'synthetic_operator_audit_failure'; END IF; RETURN NEW; END $$`);
+  await prisma.$executeRawUnsafe(`CREATE TRIGGER grok_test_operator_audit BEFORE INSERT ON "AuditLog" FOR EACH ROW EXECUTE FUNCTION grok_test_operator_audit()`);
+  try { await expect(grokService.operatorEndGrok(f.capture)).rejects.toThrow(); }
+  finally { await prisma.$executeRawUnsafe(`DROP TRIGGER grok_test_operator_audit ON "AuditLog"`); await prisma.$executeRawUnsafe(`DROP FUNCTION grok_test_operator_audit()`); }
+  expect(await prisma.telnyxCallCommand.count({ where: { capture_session_id: f.capture.id, command_type: "hangup" } })).toBe(0);
+  await watchdogGrokSweep(); await watchdogGrokSweep();
+  expect(transport.operatorEnd).not.toHaveBeenCalled(); expect(transport.terminate).toHaveBeenCalledTimes(1);
 });
 
 test("Grok operator route requires authenticated exact-call evidence to report disconnection", async () => {

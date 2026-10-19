@@ -74,7 +74,7 @@ export async function endCallEligibility(capture: CallCaptureSession, client: Pr
   return { allowed: false, reason: "active_evidence_unavailable" };
 }
 // The committed uncertain intent is a one-shot claim. A crash never permits an automatic resend.
-export async function endCaptureCall(input: EndCallTarget, actor?: { id: string; role: UserRole }) {
+export async function endCaptureCall(input: EndCallTarget, actor?: { id: string; role: UserRole }, onReserved?: (client: Prisma.TransactionClient) => Promise<void>) {
   if (!db) throw new Error("database_unavailable");
   const located = await db.callCaptureSession.findUnique({ where: { id: input.captureId } });
   if (!located || located.account_id !== input.expectedAccountId || located.provider_call_id !== input.expectedProviderCallId) throw new Error("end_call_target_mismatch");
@@ -103,6 +103,7 @@ export async function endCaptureCall(input: EndCallTarget, actor?: { id: string;
       control_state: await providerCallHasWithdrawal(capture.account_id, capture.provider_call_id, client) || capture.control_state === "FINALIZING" ? capture.control_state : "SAFE_FALLBACK",
     } });
     await client.auditLog.create({ data: { account_id: capture.account_id, actor_type: actor ? "user" : "system", ...(actor ? { actor_user_id: actor.id, actor_role: actor.role } : {}), action: "call_end_requested", category: "workflow", target_type: "CallCaptureSession", target_id: capture.id, metadata_json: { generation: capture.generation, commandId: command.command_id } } });
+    if (onReserved) await onReserved(client);
     return { dispatch: true as const, capture, command, evidence };
   });
   if (!claimed.dispatch) return { commandStatus: claimed.command?.status ?? null, disconnection: claimed.evidence };
@@ -166,7 +167,7 @@ export async function endCaptureCall(input: EndCallTarget, actor?: { id: string;
   });
 }
 
-export async function requestOperatorEndCall(input: EndCallTarget) {
+export async function requestOperatorEndCall(input: EndCallTarget, onReserved?: (client: Prisma.TransactionClient) => Promise<void>) {
   const operator = await requireReviewOperator();
-  return endCaptureCall(input, { id: operator.user.id, role: operator.user.role });
+  return endCaptureCall(input, { id: operator.user.id, role: operator.user.role }, onReserved);
 }

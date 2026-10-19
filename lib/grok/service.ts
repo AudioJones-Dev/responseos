@@ -26,11 +26,20 @@ async function authority(t: AiStartTarget, tx: Prisma.TransactionClient) {
   if (!e.capture.disclosure_completed_at) throw Error("disclosure_completion_required");
   return hash(JSON.stringify([e.grantId, e.grantHash, e.proofId, e.proofHash, e.snapshotHash, e.capture.disclosure_completed_at]));
 }
-async function stop(tx: Prisma.TransactionClient, s: GrokCallSession, reason: string) {
+async function operatorReservation(tx: Prisma.TransactionClient, s: GrokCallSession) {
+  const command = await tx.telnyxCallCommand.findFirst({ where: { account_id: s.account_id, capture_session_id: s.capture_id, assignment_id: s.assignment_id, generation: s.generation, command_type: "hangup", provider_resource: s.provider_call_id } });
+  if (!command) return false;
+  return Boolean(await tx.auditLog.findFirst({ where: { account_id: s.account_id, actor_type: "user", actor_role: { in: ["operator", "aj_admin"] }, action: "call_end_requested", target_type: "CallCaptureSession", target_id: s.capture_id, metadata_json: { path: ["commandId"], equals: command.command_id } } }));
+}
+async function stop(tx: Prisma.TransactionClient, s: GrokCallSession, reason: string, carrierConfirmed = false) {
   if (!s.stopped_at) s = await tx.grokCallSession.update({ where: { id: s.id }, data: { stopped_at: await clock(tx), stop_reason: reason } });
   for (const [kind, resource] of [["telnyx_hangup", s.provider_call_id], ["xai_hangup", s.xai_call_id]] as const) {
-    if (kind === "telnyx_hangup" && s.stop_reason === "operator_end") continue;
+    if (kind === "telnyx_hangup" && await operatorReservation(tx, s)) continue;
     if (resource) await tx.grokCallCommand.upsert({ where: { session_id_kind: { session_id: s.id, kind } }, create: { session_id: s.id, kind, resource }, update: {} });
+    if (kind === "telnyx_hangup" && carrierConfirmed) {
+      const now = await clock(tx);
+      await tx.grokCallCommand.updateMany({ where: { session_id: s.id, kind, status: "queued", consumed_at: null }, data: { status: "disabled", consumed_at: now, result_at: now } });
+    }
   }
   return s;
 }
@@ -100,11 +109,15 @@ export async function operatorEndGrok(t: AiStartTarget) {
   const actor = await requireReviewOperator();
   const s = await database().grokCallSession.findUnique({ where: { capture_id: t.id } });
   if (!s || !same(s, t)) throw Error("grok_target_mismatch");
-  await database().$transaction(async tx => {
-    await stop(tx, await lock(tx, s.id), "operator_end");
-    await tx.auditLog.create({ data: { account_id: s.account_id, actor_type: "user", actor_user_id: actor.user.id, actor_role: actor.user.role, action: "grok_operator_end", category: "workflow", target_type: "GrokCallSession", target_id: s.id } });
-  });
-  return requestOperatorEndCall({ captureId: s.capture_id, expectedAccountId: s.account_id, expectedProviderCallId: s.provider_call_id, generation: s.generation });
+  let carrierConfirmed = false;
+  try {
+    const result = await requestOperatorEndCall({ captureId: s.capture_id, expectedAccountId: s.account_id, expectedProviderCallId: s.provider_call_id, generation: s.generation }, async tx => {
+      await stop(tx, await lock(tx, s.id), "operator_end");
+      await tx.auditLog.create({ data: { account_id: s.account_id, actor_type: "user", actor_user_id: actor.user.id, actor_role: actor.user.role, action: "grok_operator_end", category: "workflow", target_type: "GrokCallSession", target_id: s.id } });
+    });
+    carrierConfirmed = result.disconnection.confirmed;
+    return result;
+  } finally { await database().$transaction(async tx => stop(tx, await lock(tx, s.id), "operator_end_unreserved", carrierConfirmed)); }
 }
 
 export async function dispatchGrokTermination(id: string) {
@@ -114,6 +127,11 @@ export async function dispatchGrokTermination(id: string) {
       if (!s.stopped_at) return null;
       const c = await tx.grokCallCommand.findUnique({ where: { session_id_kind: { session_id: id, kind } } });
       if (!c || c.status !== "queued" || c.consumed_at || c.resource !== (kind === "telnyx_hangup" ? s.provider_call_id : s.xai_call_id)) return null;
+      if (kind === "telnyx_hangup" && await operatorReservation(tx, s)) {
+        const now = await clock(tx);
+        await tx.grokCallCommand.update({ where: { id: c.id }, data: { status: "disabled", consumed_at: now, result_at: now } });
+        return null;
+      }
       return tx.grokCallCommand.update({ where: { id: c.id }, data: { status: "uncertain", consumed_at: await clock(tx) } });
     });
     if (!claimed) return;

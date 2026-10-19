@@ -13,6 +13,12 @@ const object = z.record(z.string(), z.unknown());
 const identity = z.string().min(1).max(128);
 const number = z.string().regex(/^\d{1,12}$/).transform(Number);
 const media = z.object({ event: z.literal("media"), stream_id: z.string(), sequence_number: number, media: z.object({ track: z.literal("inbound"), chunk: number, timestamp: number, payload: z.string() }) });
+export type StartupCursor = { chunk: number; timestamp: number; sequence: number };
+export function startupMediaCursor(raw: string, streamId: string): StartupCursor {
+  const frame = media.parse(JSON.parse(raw));
+  if (frame.stream_id !== streamId || pcmu(frame.media.payload, 160).length !== 160) throw Error("startup_media_invalid");
+  return { chunk: frame.media.chunk, timestamp: frame.media.timestamp, sequence: frame.sequence_number };
+}
 const configuration = z.object({ id: identity, model: z.literal(GROK_MODEL), tools: z.array(z.never()), resumption: z.object({ enabled: z.literal(false) }), turn_detection: z.object({ type: z.literal("server_vad") }), audio: z.object({ input: z.object({ format: z.object({ type: z.literal("audio/pcmu") }), transport: z.literal("json") }), output: z.object({ format: z.object({ type: z.literal("audio/pcmu") }), transport: z.literal("json") }) }) });
 
 export async function startMediaBridge(input: { headers: Headers; connectedToken: unknown; rawStart: string; trusted: { streamUrl: string; publicKey: string } }, ports: BridgePorts) {
@@ -154,5 +160,11 @@ export async function startMediaBridge(input: { headers: Headers; connectedToken
       if (now >= nextCheck) { nextCheck = now + 1000; void check().catch(() => {}); }
     } catch { void stop("media_deadline_or_backpressure").catch(() => {}); }
   }, 20);
-  return { carrier, xai, stop, disconnected: () => stop("media_socket_closed"), sessionId: id, disconnectionConfirmed: false as const };
+  function discardStartup(cursor: StartupCursor) {
+    if (closed) return;
+    if (ready) throw Error("startup_discard_after_admission");
+    nextChunk = Math.max(nextChunk, cursor.chunk + 1);
+    lastTimestamp = Math.max(lastTimestamp, cursor.timestamp); lastSequence = Math.max(lastSequence, cursor.sequence);
+  }
+  return { carrier, xai, stop, discardStartup, get acceptingAudio() { return ready && !closed; }, disconnected: () => stop("media_socket_closed"), sessionId: id, disconnectionConfirmed: false as const };
 }
