@@ -1805,14 +1805,14 @@
     {
       "id": "FRL-GROK-DIRECT-SIP-LOCAL",
       "phase": "Integrations",
-      "title": "Model approved Grok SIP consent and independent termination safety",
+      "title": "Implement disabled durable Grok authority; reassess media transport",
       "owner": "Codex",
       "status": "In Progress",
-      "progress": 20,
+      "progress": 35,
       "priority": "High",
       "start": "2026-10-19",
       "blocked": true,
-      "blockedReason": "Local safety choices approved; synthetic checkpoint passes. Durable binding/claims, signature contract, independent hosting/termination, retention, budgets and live qualification unresolved."
+      "blockedReason": "Durable application claims and disabled worker/watchdog implemented; local validation underway. SIP expansion paused for media-bridge review. Hosting, retention, budgets and live qualification unresolved."
     }
   ],
   "liveIssues": [

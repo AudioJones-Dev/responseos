@@ -105,7 +105,7 @@ export async function operatorEndGrok(t: AiStartTarget) {
 }
 
 export async function dispatchGrokTermination(id: string) {
-  for (const kind of ["telnyx_hangup", "xai_hangup"] as const) {
+  const results = await Promise.allSettled((["telnyx_hangup", "xai_hangup"] as const).map(async kind => {
     const claimed = await database().$transaction(async tx => {
       const s = await lock(tx, id);
       if (!s.stopped_at) return null;
@@ -113,10 +113,15 @@ export async function dispatchGrokTermination(id: string) {
       if (!c || c.status !== "queued" || c.consumed_at || c.resource !== (kind === "telnyx_hangup" ? s.provider_call_id : s.xai_call_id)) return null;
       return tx.grokCallCommand.update({ where: { id: c.id }, data: { status: "uncertain", consumed_at: await clock(tx) } });
     });
-    if (!claimed) continue;
-    const result = await provider.terminateGrokCall(kind === "telnyx_hangup" ? "telnyx" : "xai", claimed.resource, claimed.id).catch(() => "uncertain" as const);
+    if (!claimed) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const result = await Promise.race([
+      provider.terminateGrokCall(kind === "telnyx_hangup" ? "telnyx" : "xai", claimed.resource, claimed.id).catch(() => "uncertain" as const),
+      new Promise<"uncertain">(resolve => { timer = setTimeout(() => resolve("uncertain"), 5000); }),
+    ]).finally(() => { if (timer) clearTimeout(timer); });
     await saveResult(claimed.id, id, claimed.resource, result);
-  }
+  }));
+  if (results.some(result => result.status === "rejected")) throw Error("grok_termination_persistence_uncertain");
 }
 
 export async function watchdogGrokSweep() {
@@ -169,7 +174,7 @@ export async function runGrokWorker(id: string) {
     timer = setInterval(() => {
       if (ticking) return;
       ticking = true;
-      void heartbeatGrok(id, claimed.session.worker_token!).then(async alive => { if (!alive) await connection?.close(); }).catch(async () => { await connection?.close(); }).finally(() => { ticking = false; });
+      void heartbeatGrok(id, claimed.session.worker_token!).then(async alive => { if (!alive) await connection?.close(); }).catch(async () => { await connection?.close().catch(() => {}); }).finally(() => { ticking = false; });
     }, 3000);
     await connection.closed;
   } finally {

@@ -257,3 +257,6 @@ Operator-only. Strict body: receiptId, expectedAccountId, expectedProviderCallId
 
 
 AI-start grant effect amendment (ADR-0078): the consent route passes its stored target to the conditional one-shot start path. Existing consumed/uncertain/legacy claims cannot resend. HTTP409 consent_effect_incomplete is not permission to retry a consumed start; the operator must inspect state and verify eligible exact-call termination or stop the demo. Withdrawal/stop retries and DB-only continuation are unchanged.
+
+### Disabled Grok application boundary
+POST /api/webhooks/xai/sip is body-bounded and fails closed until the real signature/correlation adapter is qualified; no client-supplied authentication is accepted. GET /api/admin/call-capture/[id]/grok requires operator authority and returns redacted command/stop status with disconnectionConfirmed=false. Existing consent/End-call routes branch on explicit Grok selection or stored Grok authority, respectively. Model selection cannot enable the disabled provider. Carrier termination and xAI processing completion remain distinct. See readiness/FRL_GROK_TRANSPORT_REASSESSMENT_2026-10-19.md.

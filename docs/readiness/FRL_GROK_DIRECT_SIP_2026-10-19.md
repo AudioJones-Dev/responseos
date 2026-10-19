@@ -1,5 +1,7 @@
 # Full Grok Voice 3.0: local feasibility and approval scope
 
+> Superseded current-state note: application durable authority and disabled worker/watchdog paths now exist. Transport expansion is paused for the [Telnyx media-bridge reassessment](FRL_GROK_TRANSPORT_REASSESSMENT_2026-10-19.md). The model-only status below records the earlier checkpoint.
+
 Status: EXPERIMENTAL offline protocol scaffold. No deployed integration, webhook verifier, durable cross-provider binding or call worker is implemented by this slice. Audio chose full Grok Voice 3.0, not TTS, and authorized local work only. Preserve application 5a3f0fd159afd0fd738b2241bee1221f179ba5cb and disabled control 8c28377230717d94e25d3888739dbe4b42c43eb5. This branch starts from that application, per the explicit isolation request, rather than rebasing the reviewed pair onto master.
 
 ## Feasibility and current evidence

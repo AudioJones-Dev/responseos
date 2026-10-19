@@ -150,6 +150,36 @@ test("concurrent watchdog and operator dispatch consume each termination once", 
   expect((await response.json()).data.disconnectionConfirmed).toBe(false);
 });
 
+test("stalled carrier hangup does not block the independent xAI termination attempt", async () => {
+  const f = await bound(); await requestGrokStop(f.id, "control_lost");
+  let release!: () => void, xaiSent!: () => void;
+  const stalled = new Promise<void>(r => { release = r; }), ready = new Promise<void>(r => { xaiSent = r; });
+  transport.terminate.mockImplementation(async (provider: string) => { if (provider === "telnyx") await stalled; else xaiSent(); return "accepted"; });
+  const dispatch = dispatchGrokTermination(f.id);
+  try { await ready; expect(transport.terminate).toHaveBeenCalledTimes(2); }
+  finally { release(); }
+  await dispatch;
+});
+
+test("audit failure rolls back durable handoff authority without sending", async () => {
+  const f = await fixture();
+  await prisma.$executeRawUnsafe(`CREATE FUNCTION grok_test_audit_failure() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.action='grok_handoff_consumed' THEN RAISE EXCEPTION 'test audit failure'; END IF; RETURN NEW; END $$`);
+  await prisma.$executeRawUnsafe(`CREATE TRIGGER grok_test_audit_failure BEFORE INSERT ON "AuditLog" FOR EACH ROW EXECUTE FUNCTION grok_test_audit_failure()`);
+  try { await expect(beginGrokHandoff(f.capture)).rejects.toThrow(); }
+  finally { await prisma.$executeRawUnsafe(`DROP TRIGGER grok_test_audit_failure ON "AuditLog"`); await prisma.$executeRawUnsafe(`DROP FUNCTION grok_test_audit_failure()`); }
+  expect(await prisma.grokCallSession.count()).toBe(0); expect(transport.handoff).not.toHaveBeenCalled();
+});
+
+test("result persistence failure after provider acceptance never permits a second handoff", async () => {
+  const f = await fixture();
+  await prisma.$executeRawUnsafe(`CREATE FUNCTION grok_test_result_failure() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.kind='handoff' AND NEW.result_at IS NOT NULL THEN RAISE EXCEPTION 'test result failure'; END IF; RETURN NEW; END $$`);
+  await prisma.$executeRawUnsafe(`CREATE TRIGGER grok_test_result_failure BEFORE UPDATE ON "GrokCallCommand" FOR EACH ROW EXECUTE FUNCTION grok_test_result_failure()`);
+  try { await expect(beginGrokHandoff(f.capture)).rejects.toThrow(); }
+  finally { await prisma.$executeRawUnsafe(`DROP TRIGGER grok_test_result_failure ON "GrokCallCommand"`); await prisma.$executeRawUnsafe(`DROP FUNCTION grok_test_result_failure()`); }
+  await expect(beginGrokHandoff(f.capture)).rejects.toThrow("grok_handoff_consumed");
+  expect(transport.handoff).toHaveBeenCalledTimes(1);
+});
+
 test("expired worker cannot renew, acquire replacement ownership or reopen stopped session", async () => {
   const f = await bound(), claimed = await claimGrokWorker(f.id);
   await prisma.grokCallSession.update({ where: { id: f.id }, data: { lease_expires_at: new Date(0) } });
