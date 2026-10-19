@@ -1931,3 +1931,5 @@ Owner-approved local implementation. A committed exact start claim is consumed p
 
 ## ADR-0079 - Isolate full Grok Voice 3.0 local feasibility work
 Owner chose full Grok Voice 3.0 and authorized bounded local work. This adds an offline protocol scaffold, not a provider promotion or activated integration. Consent-gated SIP handoff and whole-call termination policies remain pending explicit choices. Preserve the frozen Telnyx pair and all migrations. [Scope, approval packets and Doctrine21](readiness/FRL_GROK_DIRECT_SIP_2026-10-19.md).
+
+ADR-0079 local safety approval: owner explicitly approved carrier disclosure/durable keypad consent before xAI handoff, and whole-call termination on withdrawal/control loss with independent operator fallback. The isolated model and separate-process watchdog fixture implement the local contract; durable runtime and real provider correlation remain unimplemented. No live approval or automatic business transfer. See the linked scope for evidence limits.

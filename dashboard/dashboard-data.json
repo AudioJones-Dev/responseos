@@ -1805,14 +1805,14 @@
     {
       "id": "FRL-GROK-DIRECT-SIP-LOCAL",
       "phase": "Integrations",
-      "title": "Assess full Grok Voice 3.0 Direct SIP with offline protocol scaffolding",
+      "title": "Model approved Grok SIP consent and independent termination safety",
       "owner": "Codex",
       "status": "In Progress",
-      "progress": 10,
+      "progress": 20,
       "priority": "High",
       "start": "2026-10-19",
       "blocked": true,
-      "blockedReason": "Offline scaffold only. Consent-gated handoff and whole-call termination decisions pending; provider binding, signature contract, hosting, retention, budgets and live qualification unresolved."
+      "blockedReason": "Local safety choices approved; synthetic checkpoint passes. Durable binding/claims, signature contract, independent hosting/termination, retention, budgets and live qualification unresolved."
     }
   ],
   "liveIssues": [

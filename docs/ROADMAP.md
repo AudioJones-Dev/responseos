@@ -174,3 +174,5 @@ Owner approved the pinned final authorization boundary and isolated tests; no mi
 
 ### Full Grok Voice 3.0 local experiment — October19
 Owner-selected Direct SIP feasibility and offline scaffolding only; no milestone or activation gate moves. [Blocking decisions and exact action-time scopes](readiness/FRL_GROK_DIRECT_SIP_2026-10-19.md). Existing Telnyx qualification is not xAI qualification.
+
+Grok local checkpoint: both safety decisions approved; thirty protocol/model tests include a separate watchdog process after simulated worker death. Runtime wiring, durable binding, provider evidence and independent hosting remain blockers; no live gate advances.
