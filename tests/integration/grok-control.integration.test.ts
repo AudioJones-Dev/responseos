@@ -572,3 +572,15 @@ test("separate real watchdog process consumes durable hangups after heartbeat pr
     expect(transport.terminate).not.toHaveBeenCalled();
   } finally { if (worker.exitCode === null && worker.signalCode === null) worker.kill(); }
 });
+
+test("watchdog loop survives repeated database failures and emits intervention alerts", async () => {
+  const watcher = spawn(process.execPath, [path.resolve("node_modules/tsx/dist/cli.mjs"), "scripts/grok-watchdog.ts", "--loop"], {
+    stdio: ["ignore", "pipe", "pipe"],
+    env: { ...process.env, RESPONSEOS_GROK_WATCHDOG_ENABLED: "true", DATABASE_URL: "postgresql://missing_watchdog_role@127.0.0.1:5432/responseos_test" },
+  });
+  let alerts = ""; watcher.stderr.on("data", bytes => { alerts += bytes.toString(); });
+  try {
+    await vi.waitFor(() => expect(alerts.match(/Grok watchdog sweep incomplete/g)?.length ?? 0).toBeGreaterThanOrEqual(2), { timeout: 12000 });
+    expect(watcher.exitCode).toBeNull(); expect(alerts).toContain("Consumed commands will not be retried");
+  } finally { watcher.kill("SIGTERM"); await once(watcher, "exit"); }
+});
