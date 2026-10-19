@@ -36,7 +36,7 @@ async function fixture(kind: "normal" | "missing" | "legacy" = "normal") {
 
 test("existing receipt drives concurrent idempotent drain and exact-key evidence without provider calls", async () => {
   const f = await fixture();
-  await prisma.$queryRaw`SELECT pg_sleep(0.02)`;
+  await prisma.$queryRaw`SELECT 1 AS waited FROM pg_sleep(0.02)`;
   const results = await Promise.all([f.post(), f.post(), f.post()]);
   for (const result of results) { expect(result.status).toBe(200); expect(await result.json()).toMatchObject({ ok: true, data: { evidence: { state: "recorded" }, providerAction: "none", withdrawal: { receipt: "recorded", drain: "confirmed", providerCessationConfirmed: false } } }); }
   const current = await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: f.capture.id } });
