@@ -1812,7 +1812,7 @@
       "priority": "High",
       "start": "2026-10-19",
       "blocked": true,
-        "blockedReason": "Injected bridge checkpoint frozen. Real TLS successor and Claude operator/watchdog review corrections under final-tree validation. Fault policy, hosting, retention, budgets and live qualification remain gated."
+        "blockedReason": "Injected bridge checkpoint frozen. Real TLS successor and Claude operator/watchdog review corrections under final-tree validation. Demo fault policy approved; hosting, retention, budgets and live qualification remain gated."
     }
   ],
   "liveIssues": [

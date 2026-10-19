@@ -248,7 +248,7 @@ test("withdrawn media capability cannot open xAI or reopen consent", async () =>
 
 test.each(["denied", "expired-proof", "expired-lease"])("%s media authority permits zero xAI socket or audio", async reason => {
   const f = await mediaFixture();
-  if (reason === "denied") await prisma.callConsentEvent.create({ data: { account_id: f.capture.account_id, provider_call_id: f.capture.provider_call_id, event_key: randomUUID(), action: "refuse", artifact: "transcript", disclosure_ref: "fixture", evidence_ref: "fixture", jurisdiction_basis: "fixture", source_channel: "call", occurred_at: new Date(Date.now() + 1000) } });
+  if (reason === "denied") await prisma.callConsentEvent.create({ data: { account_id: f.capture.account_id, provider_call_id: f.capture.provider_call_id, event_key: randomUUID(), action: "refuse", artifact: "transcript", disclosure_ref: "fixture", evidence_ref: "fixture", jurisdiction_basis: "fixture", source_channel: "call", actor_user_id: "user_operator_mock", occurred_at: new Date(Date.now() + 1000) } });
   if (reason === "expired-proof") await prisma.webhookEvent.updateMany({ where: { account_id: f.capture.account_id, provider_call_id: f.capture.provider_call_id }, data: { payload_expires_at: new Date(0) } });
   if (reason === "expired-lease") await prisma.grokCallSession.update({ where: { id: f.id }, data: { lease_expires_at: new Date(0) } });
   await expect(startMediaBridge(f.input, f)).rejects.toThrow();
