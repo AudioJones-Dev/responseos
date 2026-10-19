@@ -1728,6 +1728,18 @@
       "due": "2026-10-19",
       "blocked": true,
       "blockedReason": "Local candidate; final-tree validation and independent exact-commit Claude review required. Activation remains disabled."
+    },
+    {
+      "id": "FRL-BOUNDED-RECEIPT-CORRECTION",
+      "phase": "Integrations",
+      "title": "Receipt state guards; dispatch and continuation decisions pending",
+      "owner": "Codex",
+      "status": "In Progress",
+      "progress": 30,
+      "priority": "High",
+      "start": "2026-10-19",
+      "blocked": true,
+      "blockedReason": "Partial local candidate: receipt guards and SQL-only PG16/17/18 checks. End-call dispatch authority, withdrawal continuation scope and isolated Node runtime validation remain unresolved. Activation disabled."
     }
   ],
   "liveIssues": [

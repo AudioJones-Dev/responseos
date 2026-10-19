@@ -75,7 +75,9 @@ async function matureTerminalEvidence(providerCallId: string) {
 }
 
 describe("FRL Call Control qualification", () => {
+  let environmentBeforeCase: NodeJS.ProcessEnv;
   beforeEach(async () => {
+    environmentBeforeCase = { ...process.env };
     await resetAndSeedTestDb();
     setDevSession("operator");
     delete process.env.RESPONSEOS_AUTHORIZED_EXECUTION_GATES;
@@ -86,9 +88,14 @@ describe("FRL Call Control qualification", () => {
   });
   afterAll(disconnectTestDb);
   afterEach(() => {
-    for (const [command] of sendCommand.mock.calls) {
-      expect(command.action).not.toMatch(/^record/);
-      expect(JSON.stringify(command.body ?? {})).not.toMatch(/"recording(?:_enabled)?":(?:true|"true")/);
+    try {
+      for (const [command] of sendCommand.mock.calls) {
+        expect(command.action).not.toMatch(/^record/);
+        expect(JSON.stringify(command.body ?? {})).not.toMatch(/"recording(?:_enabled)?":(?:true|"true")/);
+      }
+    } finally {
+      for (const name of Object.keys(process.env)) if (!(name in environmentBeforeCase)) delete process.env[name];
+      Object.assign(process.env, environmentBeforeCase);
     }
   });
 
@@ -540,6 +547,28 @@ describe("FRL Call Control qualification", () => {
     await ingest(event("call.gather.ended", `cc-gather-${decision}-${digits}`, { status, digits, client_state: state(capture.id) }, 3_000));
     expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } })).dtmf_decision).toBe(decision);
     expect(await prisma.telnyxCallCommand.count({ where: { command_type: "ai_assistant_start" } })).toBe(0);
+  });
+
+  test.each([
+    ["call.answered", "CALL_RECEIVED"],
+    ["call.speak.ended", "DISCLOSURE_PLAYING"],
+    ["call.gather.ended", "AWAITING_DTMF"],
+    ["call.ai_gather.message_history_updated", "START_PENDING"],
+  ] as const)("receipt alone prevents %s from reactivating %s", async (type, controlState) => {
+    await setupQualification();
+    await ingest(event("call.initiated", "receipt-only-init", { to: NUMBER }, 1_000));
+    const capture = await prisma.callCaptureSession.findFirstOrThrow();
+    await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { control_state: controlState, conversation_id: "conversation-1", dtmf_decision: "affirmative" } });
+    if (type === "call.ai_gather.message_history_updated") {
+      await prisma.callConsentEvent.create({ data: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, event_key: "grant-before-receipt", action: "grant", artifact: "transcript", disclosure_ref: "test", evidence_ref: "test", jurisdiction_basis: "test", source_channel: "call", actor_user_id: "user_operator_mock", occurred_at: new Date(NOW.getTime() + 3_000) } });
+      await prisma.telnyxCallCommand.create({ data: { account_id: capture.account_id, capture_session_id: capture.id, assignment_id: capture.assignment_id!, command_type: "ai_assistant_start", generation: 1, command_id: "start-before-receipt", provider_resource: capture.provider_call_id, request_json: {}, status: "succeeded", provider_responded_at: new Date(NOW.getTime() + 4_000), provider_response_status: 200, provider_date_at: new Date(NOW.getTime() + 4_000), conversation_id: "conversation-1" } });
+    }
+    await persistWithdrawalReceipt(capture, "user_operator_mock", { eventKey: "receipt-only", disclosureRef: "test", evidenceRef: "test", jurisdictionBasis: "test" });
+    sendCommand.mockClear();
+    await ingest(event(type, "receipt-only-event", { client_state: state(capture.id), conversation_id: "conversation-1", status: "valid", digits: "1", message_history: [{ role: "user", content: "Synthetic withdrawn content" }] }, 5_000));
+    expect(await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } })).toMatchObject({ control_state: controlState, capture_started_at: null, withdrawal_received_at: null, withdrawal_drained_at: null });
+    expect(sendCommand).not.toHaveBeenCalled();
+    expect(await prisma.callTranscriptRevision.count()).toBe(0);
   });
 
   test("signed cumulative history qualifies the boundary once, deduplicates revisions, and withdrawal rejects later content", async () => {

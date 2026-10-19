@@ -1911,3 +1911,5 @@ ADR-0074 withdrawal correctness addendum: preserve receipt-only withdrawal throu
 ## ADR-0075 - Independent withdrawal receipt with explicit content drain
 
 Owner-approved Option B, local only. A saved receipt blocks new authorizations; previously authorized content may finish and remain stored. Receipt, drain and AI-stop status are separate. Additive migration 0023 preserves earlier migration bytes and chronology. Supersedes ADR-0069/0074 complete-fence-at-receipt claims. [Contract and Doctrine21](readiness/FRL_WITHDRAWAL_RECEIPT_B_2026-10-19.md). No activation or retention duration change.
+
+ADR-0075 bounded correction: additive migration 0024 skips receipt-visible state reactivation without rolling back preauthorized content. It is best-effort snapshot defense, not a concurrency fence. End-call lock refactor and explicit continuation remain blocked on separate decisions; runtime validation is unavailable under the enforced isolation requirement. [Partial candidate and limitations](readiness/FRL_BOUNDED_CORRECTION_2026-10-19.md).

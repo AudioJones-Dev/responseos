@@ -370,7 +370,7 @@ export async function ingestCallControlEvent(params: { verifiedBytes: Uint8Array
       }
       try {
         await client.webhookEvent.update({ where: { id: ledger.id }, data: { raw_body: params.rawBody } });
-        if (!current.capture_started_at) {
+        if (!current.capture_started_at && !await providerCallHasWithdrawal(current.account_id, current.provider_call_id, client)) {
           await client.callCaptureSession.updateMany({ where: { id: capture.id, control_state: "START_PENDING", generation: capture.generation, content_admission_closed_at: null }, data: { control_state: "AI_ACTIVE", capture_started_at: start.provider_date_at, conversation_id: start.conversation_id } });
         }
         const refreshed = await client.callCaptureSession.findUnique({ where: { id: capture.id } });
@@ -393,6 +393,10 @@ export async function ingestCallControlEvent(params: { verifiedBytes: Uint8Array
   const ledger = await record(params.rawBody);
   if (ledger.duplicate) return { duplicate: true };
   try {
+    if (["call.answered", "call.speak.ended", "call.gather.ended"].includes(event.data.event_type) && await providerCallHasWithdrawal(capture.account_id, capture.provider_call_id)) {
+      await setWebhookProcessStatus({ id: ledger.id, process_status: "processed" });
+      return { duplicate: false, captureId: capture.id };
+    }
     if (event.data.event_type === "call.initiated") {
       await normalizeMetadata(event, capture, ledger.id, numberE164, params.verifiedBytes);
       if (capture.control_state === "CALL_RECEIVED") {

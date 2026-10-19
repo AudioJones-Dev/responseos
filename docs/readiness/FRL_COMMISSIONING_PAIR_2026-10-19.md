@@ -41,3 +41,7 @@ Frozen F1 pair application 0752de433a2ea1fde0c5ae52d86f240a91a0ec7f / control 7a
 ## Independent receipt successor
 
 Frozen pair 44e45c21e925510c1f9563f7c9f0d63bb2b6744b / 905091b9707bba33d2f376d7ac27bf9666c61b4d is preserved. [Accepted Option B](FRL_WITHDRAWAL_RECEIPT_B_2026-10-19.md) supersedes complete serialization at receipt: preauthorized content may finish, drain is separate. Schema/migration0023 and shared documentation match across the split pair; deployment control remains disabled. External evidence is commissioning-receipt-b-evidence-20261019.
+
+## Partial bounded correction
+
+Frozen application afa127e6efc9c56065d4d52abf6ed1ae9b5fcdef and control 83f5a6c4c1dda2360e2998c59a39df17ccc7ae73 are preserved. [Partial correction](FRL_BOUNDED_CORRECTION_2026-10-19.md) adds application state guards and per-case environment restoration, with shared migration 0024 and documentation. Control runtime sources retain their existing split-checkout baseline; they are not the application source. End-call dispatch and continuation remain pending policy decisions. Only isolated SQL PG16/17/18 checks have run for this successor; full final-tree runtime and pair-script validation remain NOT RUN. External evidence: commissioning-bounded-correction-evidence-20261019. Activation remains disabled.
