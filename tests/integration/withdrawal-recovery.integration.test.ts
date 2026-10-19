@@ -9,28 +9,17 @@ import { persistWithdrawalReceipt, withdrawalReceiptDb } from "@/lib/callReview/
 import { loadCallReviewConsole } from "@/lib/callReview/service";
 import { withCaptureLock } from "@/lib/callReview/consent";
 
-const hooks = vi.hoisted(() => { vi.resetModules(); return { drain: undefined as (() => Promise<void>) | undefined, evidence: undefined as (() => Promise<void>) | undefined, send: vi.fn() }; });
+const hooks = vi.hoisted(() => { vi.resetModules(); return { send: vi.fn() }; });
 vi.mock("@/lib/providers/telnyx/callControl", async original => ({ ...await original<typeof import("@/lib/providers/telnyx/callControl")>(), sendTelnyxCallCommand: hooks.send }));
-vi.mock("@/lib/callReview/consent", async original => {
-  const actual = await original<typeof import("@/lib/callReview/consent")>();
-  return { ...actual, withCaptureLock: async (...args: Parameters<typeof actual.withCaptureLock>) => {
-    const result = await actual.withCaptureLock(...args);
-    if (result && typeof result === "object") {
-      const key = "event" in result ? "evidence" : "withdrawal_drained_at" in result ? "drain" : null;
-      if (key && hooks[key]) { const hook = hooks[key]!; hooks[key] = undefined; await hook(); }
-    }
-    return result;
-  } };
-});
 const origin = new AsyncLocalStorage<string>();
 const providerOrigins: Array<string | undefined> = [];
 beforeEach(async () => {
-  await resetAndSeedTestDb(); setDevSession("operator"); hooks.drain = undefined; hooks.evidence = undefined; providerOrigins.length = 0;
+  await resetAndSeedTestDb(); setDevSession("operator"); providerOrigins.length = 0;
   hooks.send.mockReset().mockImplementation(async () => { providerOrigins.push(origin.getStore()); if (origin.getStore() !== "original") throw Error("continuation provider effect forbidden"); return { ok: true, status: 200, providerDate: new Date(), conversationId: null, errorCode: null }; });
   vi.stubGlobal("fetch", vi.fn(() => { throw Error("external effect forbidden"); }));
 });
 afterEach(() => { expect(fetch).not.toHaveBeenCalled(); expect(providerOrigins).not.toContain("continuation"); vi.unstubAllGlobals(); });
-afterAll(async () => { await withdrawalReceiptDb?.$disconnect(); await disconnectTestDb(); vi.doUnmock("@/lib/callReview/consent"); vi.doUnmock("@/lib/providers/telnyx/callControl"); vi.resetModules(); });
+afterAll(async () => { await withdrawalReceiptDb?.$disconnect(); await disconnectTestDb(); vi.doUnmock("@/lib/providers/telnyx/callControl"); vi.resetModules(); });
 function barrier() { let resolve!: () => void; const promise = new Promise<void>(r => { resolve = r; }); return { promise, resolve }; }
 async function fixture(kind: "normal" | "missing" | "legacy" = "normal") {
   const account = await prisma.account.findFirstOrThrow();
@@ -115,14 +104,17 @@ test("new evidence is classified using current call state; later retries preserv
   await f.post(); expect(await prisma.callConsentEvent.findUniqueOrThrow({ where: { id: evidence.id } })).toEqual(evidence); expect(await prisma.callWithdrawalReceipt.findUniqueOrThrow({ where: { id: f.receipt!.id } })).toEqual(f.receipt);
 });
 
-test.each(["drain", "evidence"] as const)("lost %s acknowledgement can be retried without effects or duplicate history", async boundary => {
-  const f = await fixture(); hooks[boundary] = async () => { throw Error("synthetic lost commit acknowledgement"); };
-  const first = await f.post(); expect(first.status).toBe(boundary === "drain" ? 200 : 503);
+test("a lost response acknowledgement can be retried without effects or duplicate history", async () => {
+  const f = await fixture();
+  await f.post();
+  const firstDrain = (await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: f.capture.id } })).withdrawal_drained_at;
+  const firstEvidence = await prisma.callConsentEvent.findFirstOrThrow({ where: { action: "withdraw" } });
   expect((await f.post()).status).toBe(200);
   expect(await prisma.callConsentEvent.count({ where: { action: "withdraw" } })).toBe(1);
+  expect(await prisma.callConsentEvent.findUniqueOrThrow({ where: { id: firstEvidence.id } })).toEqual(firstEvidence);
+  expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: f.capture.id } })).withdrawal_drained_at).toEqual(firstDrain);
   expect(await prisma.callWithdrawalReceipt.findUniqueOrThrow({ where: { id: f.receipt!.id } })).toEqual(f.receipt); expect(hooks.send).not.toHaveBeenCalled();
 });
-
 test("locked preauthorized work leaves drain pending; a later continuation completes", async () => {
   const f = await fixture(), held = barrier(), release = barrier();
   const writer = withCaptureLock(f.capture.account_id, f.capture.provider_call_id, async () => { held.resolve(); await release.promise; });
@@ -132,11 +124,14 @@ test("locked preauthorized work leaves drain pending; a later continuation compl
   expect((await f.post()).status).toBe(200); expect(hooks.send).not.toHaveBeenCalled();
 });
 
-test("generation mutation after drain vetoes evidence without retargeting", async () => {
-  const f = await fixture(); hooks.drain = async () => { await prisma.callCaptureSession.update({ where: { id: f.capture.id }, data: { generation: 2 } }); };
-  expect((await f.post()).status).toBe(409); expect(await prisma.callConsentEvent.count({ where: { action: "withdraw" } })).toBe(0); expect(await prisma.callWithdrawalReceipt.findUniqueOrThrow({ where: { id: f.receipt!.id } })).toEqual(f.receipt);
+test("generation changed at the drain boundary vetoes evidence without retargeting", async () => {
+  const f = await fixture();
+  await prisma.$executeRawUnsafe(`CREATE FUNCTION synthetic_recovery_generation() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN NEW.generation := OLD.generation + 1; RETURN NEW; END $$`);
+  await prisma.$executeRawUnsafe(`CREATE TRIGGER zz_recovery_generation BEFORE UPDATE ON "CallCaptureSession" FOR EACH ROW WHEN (OLD.withdrawal_drained_at IS NULL AND NEW.withdrawal_drained_at IS NOT NULL) EXECUTE FUNCTION synthetic_recovery_generation()`);
+  try { expect((await f.post()).status).toBe(409); }
+  finally { await prisma.$executeRawUnsafe('DROP TRIGGER zz_recovery_generation ON "CallCaptureSession"'); await prisma.$executeRawUnsafe('DROP FUNCTION synthetic_recovery_generation()'); }
+  expect(await prisma.callConsentEvent.count({ where: { action: "withdraw" } })).toBe(0); expect(await prisma.callWithdrawalReceipt.findUniqueOrThrow({ where: { id: f.receipt!.id } })).toEqual(f.receipt);
 });
-
 test("concurrent original withdrawal may send stop independently; continuation never does", async () => {
   const f = await fixture(), entered = barrier(), release = barrier();
   hooks.send.mockImplementationOnce(async () => { providerOrigins.push(origin.getStore()); entered.resolve(); await release.promise; return { ok: true, status: 200, providerDate: new Date(), conversationId: null, errorCode: null }; });
