@@ -175,6 +175,19 @@ test("media output is paced as PCMU and termination evidence remains unconfirmed
     expect(transport.terminate).toHaveBeenCalledTimes(1); expect(bridge.disconnectionConfirmed).toBe(false);
   } finally { await bridge.stop("test_complete"); }
 });
+
+test("audio discarded during negotiation is never replayed and advances the input cursor", async () => {
+  const f = await mediaFixture(), bridge = await startMediaBridge(f.input, f);
+  try {
+    const packet = (chunk: number) => JSON.stringify({ event: "media", stream_id: f.frame.stream_id, sequence_number: String(chunk + 1), media: { track: "inbound", chunk: String(chunk), timestamp: String(chunk * 20), payload: Buffer.alloc(160, 255).toString("base64") } });
+    await bridge.carrier(packet(1)); await bridge.carrier(packet(2));
+    expect(f.realtime.send.mock.calls.filter(c => JSON.parse(c[0]).type === "input_audio_buffer.append")).toHaveLength(0);
+    await bridge.xai(JSON.stringify({ type: "session.updated", session: { ...realtimeConfig.session, id: "session_fixture", model: "grok-voice-3.0" } }));
+    await bridge.carrier(packet(3));
+    expect(f.realtime.send.mock.calls.filter(c => JSON.parse(c[0]).type === "input_audio_buffer.append")).toHaveLength(1);
+    expect(f.realtime.close).not.toHaveBeenCalled();
+  } finally { await bridge.stop("test_complete"); }
+});
 async function bound() {
   const f = await fixture(); const started = await beginGrokHandoff(f.capture);
   const message = incoming(transport.handoff.mock.calls.at(-1)![1]);

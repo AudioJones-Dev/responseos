@@ -71,8 +71,12 @@ export async function startMediaBridge(input: { headers: Headers; connectedToken
       if (frame.event === "stop" || frame.event === "error") { await stop("carrier_stream_lost"); return; }
       if (frame.event === "mark") { marks.delete(z.object({ name: z.string() }).parse(frame.mark).name); return; }
       if (frame.event === "dtmf") return;
-      if (!ready) return;
       const m = media.parse(frame), bytes = pcmu(m.media.payload, 8000);
+      if (!ready) {
+        nextChunk = Math.max(nextChunk, m.media.chunk + 1);
+        lastTimestamp = Math.max(lastTimestamp, m.media.timestamp); lastSequence = Math.max(lastSequence, m.sequence_number);
+        return;
+      }
       if (bytes.length !== 160 || m.media.chunk < nextChunk || m.media.chunk > nextChunk + 5 || inbound.has(m.media.chunk)) throw Error("media_order_invalid");
       inbound.set(m.media.chunk, m);
       while (inbound.has(nextChunk)) {
