@@ -25,6 +25,7 @@ async function eligible(target: AiStartTarget, client: Prisma.TransactionClient)
   const proof = await client.webhookEvent.findUnique({ where: { provider_provider_event_id: { provider: "telnyx", provider_event_id: capture.dtmf_event_id } } });
   if (!proof || proof.account_id !== capture.account_id || proof.provider_call_id !== capture.provider_call_id || proof.event_type !== "call.gather.ended" || !proof.signature_valid) throw Error("webhook_fingerprint_unavailable");
   const verified = await assertStoredWebhookIdentity(proof.id, client);
+  if (verified.account_id !== capture.account_id || verified.provider !== "telnyx" || verified.provider_call_id !== capture.provider_call_id || verified.provider_event_id !== capture.dtmf_event_id || verified.event_type !== "call.gather.ended" || !verified.signature_valid) throw Error("ai_start_dtmf_identity_mismatch");
   const event = parseCallControlEvent(verified.raw_body);
   const payload = event?.data.payload;
   if (event?.data.id !== capture.dtmf_event_id || event.data.event_type !== "call.gather.ended" || payload?.call_control_id !== capture.provider_call_id || payload.call_session_id !== capture.call_session_id || payload.call_leg_id !== capture.call_leg_id || payload.status !== "valid" || payload.digits !== "1") throw Error("ai_start_dtmf_identity_mismatch");
@@ -53,7 +54,7 @@ export async function startCaptureAi(target: AiStartTarget) {
     }
     const authority = await eligible(target, client);
     const frozen = Object.freeze({ id: current.id, account_id: current.account_id, provider_call_id: current.provider_call_id, assignment_id: current.assignment_id!, generation: current.generation, call_session_id: current.call_session_id!, call_leg_id: current.call_leg_id! });
-    const request = { assistant: { id: authority.assistantId }, send_message_history_updates: true, client_state: Buffer.from(JSON.stringify({ captureId: frozen.id, generation: frozen.generation })).toString("base64") };
+    const request = Object.freeze({ assistant: Object.freeze({ id: authority.assistantId }), send_message_history_updates: true, client_state: Buffer.from(JSON.stringify({ captureId: frozen.id, generation: frozen.generation })).toString("base64") });
     const command = await client.telnyxCallCommand.create({ data: { account_id: frozen.account_id, capture_session_id: frozen.id, assignment_id: frozen.assignment_id, generation: frozen.generation, command_type: "ai_assistant_start", command_id: randomUUID(), provider_resource: frozen.provider_call_id, request_json: request, status: "uncertain", reconciliation_state: "ai_start_attempt_consumed" } });
     await client.auditLog.create({ data: { account_id: frozen.account_id, actor_type: "user", actor_user_id: operator.user.id, actor_role: operator.user.role, action: "ai_start_attempt_consumed", category: "workflow", target_type: "CallCaptureSession", target_id: frozen.id, metadata_json: { commandRowId: command.id, commandId: command.command_id, ...frozen, consentId: authority.grantId, dtmfProofId: authority.proofId, authority: "conditional_one_shot_presend_veto" } } });
     return { phase: "claimed" as const, target: frozen, request, command, authority };

@@ -17,12 +17,12 @@ beforeEach(async () => { await resetAndSeedTestDb(); setDevSession("operator"); 
 afterEach(() => { expect(fetch).not.toHaveBeenCalled(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 afterAll(async () => { await withdrawalReceiptDb?.$disconnect(); await disconnectTestDb(); vi.doUnmock("@/lib/providers/telnyx/callControl"); vi.resetModules(); });
 function barrier() { let resolve!: () => void; const promise = new Promise<void>(r => { resolve = r; }); return { promise, resolve }; }
-async function fixture() {
+async function fixture(proofOverrides: Record<string, unknown> = {}) {
   const account = await prisma.account.findFirstOrThrow();
   const assignment = await prisma.telephonyNumberAssignment.create({ data: { account_id: account.id, telephony_number_id: randomUUID(), provider_assistant_id: "synthetic-assistant", status: "qualification" } });
   const capture = await prisma.callCaptureSession.create({ data: { account_id: account.id, provider_call_id: randomUUID(), assignment_id: assignment.id, snapshot_id: "synthetic", snapshot_json: {}, call_session_id: randomUUID(), call_leg_id: randomUUID(), control_state: "CONSENT_PENDING_OPERATOR", dtmf_decision: "affirmative" } });
   const proofId = randomUUID(), clientState = Buffer.from(JSON.stringify({ captureId: capture.id, generation: capture.generation })).toString("base64");
-  const body = JSON.stringify({ data: { id: proofId, event_type: "call.gather.ended", occurred_at: new Date().toISOString(), payload: { call_control_id: capture.provider_call_id, call_session_id: capture.call_session_id, call_leg_id: capture.call_leg_id, client_state: clientState, status: "valid", digits: "1" } } });
+  const body = JSON.stringify({ data: { id: proofId, event_type: "call.gather.ended", occurred_at: new Date().toISOString(), payload: { call_control_id: capture.provider_call_id, call_session_id: capture.call_session_id, call_leg_id: capture.call_leg_id, client_state: clientState, status: "valid", digits: "1", ...proofOverrides } } });
   const saved = await recordWebhookEvent({ account_id: account.id, provider: "telnyx", provider_call_id: capture.provider_call_id, provider_event_id: proofId, event_type: "call.gather.ended", raw_body: body, verifiedBytes: Buffer.from(body), signature_valid: true });
   if (!saved.ok) throw Error(saved.error.code);
   await prisma.callCaptureSession.update({ where: { id: capture.id }, data: { dtmf_event_id: proofId } });
@@ -49,6 +49,11 @@ test("successful start consumes one exact attempt and duplicates only read its r
   const command = await prisma.telnyxCallCommand.findFirstOrThrow({ where: { command_type: "ai_assistant_start" } });
   expect(command).toMatchObject({ account_id: f.capture.account_id, capture_session_id: f.capture.id, assignment_id: f.assignment.id, generation: 1, provider_resource: f.capture.provider_call_id, status: "succeeded" });
   expect(await prisma.auditLog.findFirstOrThrow({ where: { action: "ai_start_attempt_consumed" } })).toMatchObject({ actor_type: "user", metadata_json: { commandId: command.command_id, authority: "conditional_one_shot_presend_veto", call_session_id: f.capture.call_session_id, call_leg_id: f.capture.call_leg_id } });
+});
+
+test.each([{ digits: "2" }, { status: "invalid" }, { call_control_id: "other" }, { call_session_id: "other" }, { call_leg_id: "other" }, { client_state: Buffer.from(JSON.stringify({ captureId: "other", generation: 2 })).toString("base64") }])("signed but nonmatching affirmative proof %j cannot authorize a start", async override => {
+  const f = await fixture(override);
+  expect((await f.post()).status).toBe(409); expect(send).not.toHaveBeenCalled(); expect(await prisma.telnyxCallCommand.count()).toBe(0);
 });
 
 test.each(["timeout", "throw", "400", "500", "missing_date", "missing_conversation"])("%s consumes the start permanently", async kind => {
@@ -81,6 +86,26 @@ test.each(["account_id", "provider_call_id", "generation"] as const)("wrong init
   const f = await fixture();
   await expect(startCaptureAi({ ...f.capture, [key]: key === "generation" ? 2 : "wrong" })).rejects.toThrow("ai_start_target_mismatch");
   expect(await prisma.telnyxCallCommand.count()).toBe(0); expect(send).not.toHaveBeenCalled();
+});
+
+test("the consent route's original generation cannot be silently retargeted after consent commit", async () => {
+  const f = await fixture(), original = db!.$transaction.bind(db);
+  vi.spyOn(db!, "$transaction").mockImplementationOnce((async (...args: unknown[]) => {
+    const result = await Reflect.apply(original, db, args);
+    await prisma.callCaptureSession.update({ where: { id: f.capture.id }, data: { generation: 2 } });
+    return result;
+  }) as NonNullable<typeof db>["$transaction"]);
+  expect((await f.post()).status).toBe(409);
+  expect(await prisma.callConsentEvent.count({ where: { action: "grant" } })).toBe(1);
+  expect(await prisma.telnyxCallCommand.count()).toBe(0); expect(send).not.toHaveBeenCalled();
+});
+
+test.each(["request", "uuid", "resource"])("changed command %s after claim cannot authorize or retarget a send", async kind => {
+  const f = await fixture();
+  afterClaim(async () => { await prisma.telnyxCallCommand.updateMany({ where: { capture_session_id: f.capture.id }, data: kind === "request" ? { request_json: { assistant: { id: "changed" } } } : kind === "uuid" ? { command_id: randomUUID() } : { provider_resource: "changed" } }); });
+  expect((await f.post()).status).toBe(409); expect((await f.post()).status).toBe(409); expect(send).not.toHaveBeenCalled();
+  expect(await prisma.telnyxCallCommand.count()).toBe(1);
+  expect(await prisma.telnyxCallCommand.findFirstOrThrow()).toMatchObject({ status: "uncertain", reconciliation_state: "ai_start_attempt_consumed" });
 });
 
 test("audit failure rolls back claim and provides no dispatch authority", async () => {

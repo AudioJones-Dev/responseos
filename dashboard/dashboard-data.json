@@ -1795,12 +1795,12 @@
       "phase": "Integrations",
       "title": "Bound AI start dispatch and preserve withdrawal safety for supervised demo",
       "owner": "Codex",
-      "status": "In Progress",
-      "progress": 10,
+      "status": "Review",
+      "progress": 90,
       "priority": "High",
       "start": "2026-10-19",
       "blocked": true,
-      "blockedReason": "Conditional one-shot policy approved at 18:52 UTC; implementation and exact-tree isolated validation underway. Remote termination qualification and independent review remain required."
+      "blockedReason": "Conditional one-shot implementation complete for exact-tree local validation and Claude review. External evidence binds final commits. Carrier terminal behavior, hosted authentication and rehearsals remain separately gated."
     }
   ],
   "liveIssues": [
