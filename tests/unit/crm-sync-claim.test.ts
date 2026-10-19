@@ -1,3 +1,4 @@
+vi.mock("@/lib/callReview/withdrawal", () => ({ callHasWithdrawal: async () => false }));
 import { beforeEach, expect, test, vi } from "vitest";
 import type { CrmSyncOperation } from "@prisma/client";
 import { runCrmSyncForCall, reconcileCrmOperation } from "@/lib/crm/syncFinalizedCall";

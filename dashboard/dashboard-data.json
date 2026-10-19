@@ -1623,7 +1623,7 @@
     {
       "id": "FRL-RETENTION-20261019",
       "phase": "Integrations",
-      "title": "Local fingerprint retention authority, cleanup and UTC correction",
+      "title": "Local retention and source-time withdrawal correction",
       "owner": "Codex",
       "status": "Review",
       "progress": 90,

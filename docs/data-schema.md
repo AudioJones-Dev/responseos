@@ -358,3 +358,5 @@ Migration 0015 also adds `WebhookEvent.provider_call_ids`, an empty-by-default a
 Migration0019 local successor adds a pending-erasure marker and bounded content-free erasure audit plus restricted maintenance functions. See [retention authority](readiness/FRL_RETENTION_REMEDIATION_2026-10-19.md). No hosted migration.
 
 Migration 0020 replaces retention functions only: UTC clock expressions compare with existing TIMESTAMP(3) UTC wall-clock fields. No stored value, schema type, legacy deadline or grant is transformed. See [UTC correction](readiness/FRL_RETENTION_UTC_2026-10-19.md).
+
+Migration0021 adds nullable source/receipt/provenance/review evidence on CallConsentEvent and a terminal withdrawal_received_at fence on CallCaptureSession. No historical backfill. See [source-time contract](readiness/FRL_WITHDRAWAL_SOURCE_2026-10-19.md).

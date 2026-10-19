@@ -1884,3 +1884,7 @@ Doctrine review: (1) evidence boundary; (2) app-owned integrity logic; (3) exist
 Owner-authorized local successor October 19; no hosted activation. Supersedes ADR-0067 only for the expiry-shortening and cleanup-block behavior described in [retention remediation](readiness/FRL_RETENTION_REMEDIATION_2026-10-19.md), including its Doctrine21 analysis. Earlier content deadlines scrub and block immediately; only separately granted maintenance erases proof early. Cleanup continues past expected account blocks and reports partial failure.
 
 ADR-0068 correctness addendum (October 19): migration 0020 makes retention clocks explicitly UTC without transforming stored timestamps or changing retention/authority policy. See [local UTC correction](readiness/FRL_RETENTION_UTC_2026-10-19.md). Hosted legacy timestamp provenance remains unverified.
+
+## ADR-0069 - Preserve withdrawal source and receipt evidence
+
+Owner-authorized local successor October19 (Sentinel_3b2f888768cc8191bab1c5cb95f69599). Supported operator-witness source time and server receipt time remain separate; receipt permanently fences processing even while source time needs review. Actual intervening activity is flagged without claiming prevention or automatic remediation. See [contract and Doctrine21](readiness/FRL_WITHDRAWAL_SOURCE_2026-10-19.md). Supersedes recording-time-only checklist5.8 for this local candidate; no hosted authority.

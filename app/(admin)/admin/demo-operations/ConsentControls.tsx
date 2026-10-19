@@ -9,6 +9,8 @@ export function ConsentControls({ id, callReference }: { id: string; callReferen
   const [disclosure, setDisclosure] = useState("");
   const [evidence, setEvidence] = useState("");
   const [jurisdiction, setJurisdiction] = useState("");
+  const [sourceTime, setSourceTime] = useState("");
+  const [witnessed, setWitnessed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
   // A decision keeps its key until it completes, so a retry reaches the
@@ -20,13 +22,15 @@ export function ConsentControls({ id, callReference }: { id: string; callReferen
     if (pending.current?.action !== action) pending.current = { action, eventKey: crypto.randomUUID() };
     const { eventKey } = pending.current;
     try {
-      const response = await fetch(`/api/admin/call-capture/${id}/consent`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action, disclosureRef: disclosure, evidenceRef: evidence, jurisdictionBasis: jurisdiction, eventKey }) });
+      const response = await fetch(`/api/admin/call-capture/${id}/consent`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action, disclosureRef: disclosure, evidenceRef: evidence, jurisdictionBasis: jurisdiction, eventKey, ...(action === "withdraw" ? { withdrawalSourceTime: { occurredAt: sourceTime, attestation: witnessed ? "operator_witness" : "unverified" } } : {}) }) });
       const result = await response.json();
       if (result.ok) {
         pending.current = null;
-        setStatus(`Recorded ${result.data.action} at ${result.data.occurredAt}.`);
+        setStatus(action === "withdraw" ? `Withdrawal received at ${result.data.recordedAt}. Source time: ${result.data.sourceTimeStatus}. Activity requires review.` : `Recorded ${result.data.action} at ${result.data.occurredAt}.`);
       } else if (result.error === "consent_effect_incomplete") {
-        setStatus(`Recorded ${result.data.action} at ${result.data.occurredAt}, but the provider command did not complete. Record ${action} again to retry it.`);
+        setStatus(`Withdrawal/consent recorded; source status ${result.data.sourceTimeStatus ?? "recorded"}. Provider command incomplete. Processing is fenced for withdrawal; retry the same decision.`);
+      } else if (result.error === "withdrawal_recording_incomplete") {
+        setStatus("Withdrawal result uncertain. A processing fence may already be recorded. Retry the same decision and review the activity evidence.");
       } else {
         pending.current = null;
         setStatus(result.error === "idempotency_conflict" ? "This decision was already recorded with different references." : "Consent event was not recorded.");
@@ -41,7 +45,7 @@ export function ConsentControls({ id, callReference }: { id: string; callReferen
     <label className="block">Disclosure version/reference<input className="m-2 rounded border p-2" value={disclosure} onChange={(event) => setDisclosure(event.target.value)} /></label>
     <label className="block">Evidence reference<input className="m-2 rounded border p-2" value={evidence} onChange={(event) => setEvidence(event.target.value)} /></label>
     <label className="block">Jurisdiction basis<input className="m-2 rounded border p-2" value={jurisdiction} onChange={(event) => setJurisdiction(event.target.value)} /></label>
-    <div className="flex gap-3">{(["grant", "refuse", "withdraw"] as const).map((action) => <button key={action} className="rounded border px-3 py-2" disabled={busy || !disclosure.trim() || !evidence.trim() || !jurisdiction.trim()} onClick={() => record(action)}>Record {action}</button>)}</div>
+    <label className="block">Withdrawal source time (UTC, YYYY-MM-DDTHH:mm:ss.sssZ)<input className="m-2 rounded border p-2" value={sourceTime} onChange={event => setSourceTime(event.target.value)} /></label><label className="block"><input type="checkbox" checked={witnessed} onChange={event => setWitnessed(event.target.checked)} /> I personally witnessed this withdrawal at the stated time; the evidence reference supports it.</label><p>Unknown or disputed time still stops processing and requires review. Activity before receipt may already have occurred.</p><div className="flex gap-3">{(["grant", "refuse", "withdraw"] as const).map((action) => <button key={action} className="rounded border px-3 py-2" disabled={busy || (action !== "withdraw" && (!disclosure.trim() || !evidence.trim() || !jurisdiction.trim()))} onClick={() => record(action)}>Record {action}</button>)}</div>
     <p role="status">{status}</p>
   </details>;
 }

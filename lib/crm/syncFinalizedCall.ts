@@ -1,3 +1,4 @@
+import { callHasWithdrawal } from "@/lib/callReview/withdrawal";
 import { z } from "zod";
 import { Prisma, type UserRole } from "@prisma/client";
 import { contentHash } from "@/lib/prospectBootstrap/memory";
@@ -105,6 +106,7 @@ export async function runCrmSyncForCall(params: {
   requireLiveProvider?: boolean; structuredActivity?: boolean; reviewId?: string;
 }): Promise<Result<CrmSyncOperationView>> {
   if (!db) return err("no_database", "CRM synchronization requires a database connection.");
+  if (await callHasWithdrawal(params.accountId, params.callId)) return err("withdrawal_is_terminal", "Withdrawn calls require review and cannot dispatch CRM effects.");
   if (await supervisedCallWasQualification(params.accountId, params.callId)) {
     return err("qualification_business_effects_forbidden", "Qualification evidence cannot create or dispatch CRM operations.");
   }
@@ -234,6 +236,7 @@ export async function runCrmSyncForCall(params: {
       else if (!id && effect === "task_create") id = (await provider.findFollowUpTask(evidenceReference))?.providerTaskId;
       if (!id) {
         await transition(`crm_intent:${effect}`, {}, "crm_effect_intent");
+        if (await callHasWithdrawal(params.accountId, params.callId)) throw new Error("withdrawal_is_terminal");
         if (effect === "contact_create") id = (await provider.createContact({ phone, verifiedEmail: !approved && contact?.email_verified ? contact.email ?? undefined : undefined, firstName: approved ? sanitizeCrmText(approved.caller) : contact?.first_name ?? undefined, lastName: approved ? undefined : contact?.last_name ?? undefined })).providerContactId;
         else if (effect === "activity_create") id = (await provider.createCallActivity({ contactId: operation!.provider_contact_id!, occurredAt: call.started_at.toISOString(), durationSeconds: call.duration_seconds ?? undefined, sanitizedSummary, qualification: qualificationLabel, nextAction, evidenceReference, detail })).providerActivityId;
         else if (effect === "task_create") id = (await provider.createFollowUpTask({ contactId: operation!.provider_contact_id!, dueAt: new Date((review?.reviewed_at ?? operation!.created_at).getTime() + 86400000).toISOString(), sanitizedSummary, nextAction: nextAction ?? "Review and contact the caller.", evidenceReference })).providerTaskId;

@@ -331,6 +331,7 @@ model CallCaptureSession {
   dtmf_event_id               String?
   disclosure_completed_at     DateTime?
   content_admission_closed_at DateTime?
+  withdrawal_received_at     DateTime?
   capture_started_at          DateTime?
   capture_ended_at            DateTime?
   created_at                  DateTime          @default(now())
@@ -353,6 +354,14 @@ model CallConsentEvent {
   source_channel     String
   actor_user_id    String
   occurred_at      DateTime @default(now())
+  recorded_at      DateTime?
+  source_occurred_at DateTime?
+  source_time_claim String?
+  source_time_status String?
+  source_time_reason String?
+  source_provenance String?
+  request_hash     String?
+  review_activity_json Json?
   @@index([account_id, provider_call_id, occurred_at])
 }
 

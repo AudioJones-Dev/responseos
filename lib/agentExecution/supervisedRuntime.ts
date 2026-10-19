@@ -1,3 +1,4 @@
+import { callHasWithdrawal } from "@/lib/callReview/withdrawal";
 import "@/lib/serverOnlyGuard";
 import type { TelephonyNumberAssignmentStatus } from "@prisma/client";
 import { db } from "@/lib/db/client";
@@ -200,7 +201,7 @@ export async function findSupervisedNumberOwner(
  */
 export async function supervisedExecutionAuthorized(accountId: string, callId?: string): Promise<boolean> {
   if (!db) return false;
-  if (callId && await supervisedCallWasQualification(accountId, callId)) return false;
+  if (callId && (await callHasWithdrawal(accountId, callId) || await supervisedCallWasQualification(accountId, callId))) return false;
   const profile = await db.agentProfile.findFirst({
     where: { account_id: accountId, type: "supervised_receptionist", enabled: true },
     orderBy: { created_at: "asc" },

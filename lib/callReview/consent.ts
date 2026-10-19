@@ -26,6 +26,7 @@ export function orderConsentEvents<T extends { action: string; occurred_at: Date
 }
 
 export function consentAllowsCapture(events: { action: string; occurred_at: Date }[], startedAt: Date, endedAt: Date): boolean {
+  if (events.some(event => event.action === "withdraw")) return false;
   if (!Number.isFinite(startedAt.getTime()) || !Number.isFinite(endedAt.getTime()) || endedAt < startedAt) return false;
   const ordered = orderConsentEvents(events);
   const before = ordered.filter((event) => event.occurred_at <= startedAt);
@@ -36,6 +37,7 @@ export async function canRetainCallContent(accountId: string, providerCallId: st
   if (!client) return false;
   const session = await client.callCaptureSession.findUnique({ where: { account_id_provider_call_id: { account_id: accountId, provider_call_id: providerCallId } } });
   if (!session) return false;
+  if (session.withdrawal_received_at) return false;
   const memory = BusinessMemorySnapshotSchema.safeParse(session.snapshot_json);
   if (!memory.success || !readOperatingConfigurationValue(memory.data, "policy.consent")?.transcription.enabled) return false;
   // A cumulative transcript is safe only if its entire interval is authorized.
@@ -45,7 +47,7 @@ export async function canRetainCallContent(accountId: string, providerCallId: st
   if (typeof start !== "string" || typeof end !== "string") return false;
   if (new Date(end).getTime() > Date.now()) return false;
   const events = await client.callConsentEvent.findMany({ where: { account_id: accountId, provider_call_id: providerCallId, artifact: "transcript" }, orderBy: { occurred_at: "asc" } });
-  if (orderConsentEvents(events).at(-1)?.action !== "grant") return false;
+  if (events.some(event => event.action === "withdraw") || orderConsentEvents(events).at(-1)?.action !== "grant") return false;
   return consentAllowsCapture(events, new Date(start), new Date(end));
 }
 

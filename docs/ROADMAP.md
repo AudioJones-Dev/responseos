@@ -141,3 +141,5 @@ Local-only fingerprint runtime successor is under review: [scope, limits and app
 Local L1/L2 remediation is in review: [retention authority](readiness/FRL_RETENTION_REMEDIATION_2026-10-19.md). No milestone promotion or hosted authority.
 
 Local UTC retention correction is in review: [scope and verification](readiness/FRL_RETENTION_UTC_2026-10-19.md). No readiness promotion.
+
+Source-time withdrawal5.8 is a local review candidate: [contract](readiness/FRL_WITHDRAWAL_SOURCE_2026-10-19.md). Hosted and rehearsal gates remain open.

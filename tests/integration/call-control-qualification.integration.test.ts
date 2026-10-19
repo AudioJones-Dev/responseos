@@ -558,7 +558,7 @@ describe("FRL Call Control qualification", () => {
     const route = await import("@/app/api/admin/call-capture/[id]/consent/route");
     const response = await route.POST(new Request("https://example.test", { method: "POST", body: JSON.stringify({ action: "withdraw", disclosureRef: "approved:v1", evidenceRef: "witness:withdraw", jurisdictionBasis: "commissioning:test", eventKey: "00000000-0000-4000-8000-000000000002" }) }), { params: Promise.resolve({ id: capture.id }) });
     expect(response.status).toBe(200);
-    expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } })).control_state).toBe("STOP_PENDING");
+    expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } })).control_state).toBe("STOPPED");
     await ingest(event("call.ai_gather.message_history_updated", "cc-history-after", { ...payload, message_history: [...payload.message_history, { role: "user", content: "Protected after withdrawal" }] }, 7_000));
     expect(await prisma.callTranscriptRevision.count()).toBe(1);
     expect((await prisma.webhookEvent.findUniqueOrThrow({ where: { provider_provider_event_id: { provider: "telnyx", provider_event_id: "cc-history-after" } } })).process_status).toBe("rejected");
@@ -824,7 +824,7 @@ describe("FRL Call Control qualification", () => {
     expect(await prisma.callTranscriptRevision.count({ where: { capture_session_id: capture.id } })).toBe(0);
   });
 
-  test("a reconciled uncertain stop resumes terminal evidence finalization", async () => {
+  test("a reconciled uncertain stop preserves the terminal withdrawal review hold", async () => {
     await setupQualification();
     await ingest(event("call.initiated", "cc-stop-init", { to: NUMBER }, 1_000));
     const capture = await prisma.callCaptureSession.findFirstOrThrow();
@@ -844,14 +844,15 @@ describe("FRL Call Control qualification", () => {
     expect(uncertain.status).toBe("uncertain");
     await ingest(event("call.conversation.ended", "cc-stop-ended", { conversation_id: "conversation-1", client_state: state(capture.id) }, 7_000));
     const hangup = event("call.hangup", "cc-stop-hangup", { conversation_id: "conversation-1" }, 8_000);
-    await expect(ingest(hangup)).rejects.toThrow("awaiting_final_history_settlement");
+    await expect(ingest(hangup)).resolves.toMatchObject({ duplicate: false });
     expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } })).control_state).toBe("STOP_PENDING");
     await matureTerminalEvidence(capture.provider_call_id);
     sendCommand.mockResolvedValueOnce({ status: 200, providerDate: new Date(NOW.getTime() + 9_000), conversationId: null, ok: true, errorCode: null });
     expect((await route.POST(request(), { params: Promise.resolve({ id: capture.id }) })).status).toBe(200);
     expect((await prisma.telnyxCallCommand.findUniqueOrThrow({ where: { id: uncertain.id } }))).toMatchObject({ status: "succeeded", command_id: uncertain.command_id });
     expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } })).control_state).toBe("STOPPED");
-    expect(await prisma.callReview.count()).toBe(1);
+    expect(await prisma.callReview.count()).toBe(0);
+    expect(await prisma.callPostCallAnalysis.count()).toBe(0);
     expect((await route.POST(request(), { params: Promise.resolve({ id: capture.id }) })).status).toBe(200);
     expect(await prisma.telnyxCallCommand.count({ where: { capture_session_id: capture.id, command_type: "ai_assistant_stop" } })).toBe(1);
   });

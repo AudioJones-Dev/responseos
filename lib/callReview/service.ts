@@ -1,4 +1,5 @@
 import "@/lib/serverOnlyGuard";
+import { callHasWithdrawal, withdrawalActivity } from "./withdrawal";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
 import { getCurrentSession } from "@/lib/auth/session";
@@ -39,7 +40,9 @@ export async function loadCallReviewConsole() {
       db!.call.findFirst({ where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id }, select: { from_number: true, to_number: true, started_at: true } }),
       db!.account.findUnique({ where: { id: capture.account_id }, select: { name: true } }),
     ]);
-    return { ...capture, consentAction: consent?.action ?? null, commands, call, accountName: account?.name ?? capture.account_id };
+    const withdrawals = await db!.callConsentEvent.findMany({ where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, action: 'withdraw' }, orderBy: { recorded_at: 'asc' } });
+    const withdrawalReview = capture.withdrawal_received_at ? await withdrawalActivity(db! as unknown as Prisma.TransactionClient, capture, withdrawals.some(w => w.source_time_status !== 'verified') ? new Date(Math.min(call?.started_at.getTime() ?? Infinity, capture.capture_started_at?.getTime() ?? Infinity, capture.created_at.getTime())) : withdrawals.find(w => w.source_time_status === 'verified')?.source_occurred_at ?? capture.capture_started_at ?? capture.created_at, capture.withdrawal_received_at) : null;
+    return { ...capture, consentAction: capture.withdrawal_received_at ? 'withdraw' : consent?.action ?? null, commands, call, accountName: account?.name ?? capture.account_id, withdrawals, withdrawalReview };
   }));
   const latest = await db.callReview.groupBy({
     by: ["account_id", "call_id"], _max: { revision: true, created_at: true },
@@ -167,6 +170,7 @@ export async function decideCallReview(id: string, revision: number, action: "ap
     const call = await tx.call.findFirst({ where: { id: row.call_id, account_id: row.account_id } });
     const evidence = row.evidence_json as { transcript?: string; summary?: string };
     if (action === "approve" && (evidence.transcript !== call?.transcript || evidence.summary !== call?.summary)) throw new Error("stale_review");
+    if (action === "approve" && await callHasWithdrawal(row.account_id, row.call_id, tx)) throw new Error("withdrawal_is_terminal");
     if (action === "approve" && !call?.transcript) throw new Error("consented_transcript_required");
     if (action === "approve" && !row.recipient) throw new Error("recipient_not_configured");
     const data = action === "approve" ? ReviewPayloadSchema.parse(payload) : undefined;
@@ -278,6 +282,7 @@ export async function dispatchCallReview(id: string) {
     const fenced = await db.callReview.updateMany({ where: { id, account_id: row.account_id, status: "approved", dispatch_at: claimedAt }, data: { email_attempt_at: row.email_attempt_at ?? new Date(), email_status: "sending" } });
     if (!fenced.count) throw new Error("dispatch_claim_lost");
     const message = reviewMessage(value, row.call_id);
+    if (await callHasWithdrawal(row.account_id, row.call_id)) throw new Error("withdrawal_is_terminal");
     sent = await provider.send({ to: row.recipient, ...message, idempotencyKey: `review:${id}` });
     await db.callReview.update({ where: { id, account_id: row.account_id }, data: { email_status: "accepted", email_message_id: sent.providerMessageId } });
     await audit("call_review_dispatch_outcome", { revision: row.revision, outcome: "accepted" });

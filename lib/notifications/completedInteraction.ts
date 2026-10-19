@@ -1,3 +1,4 @@
+import { callHasWithdrawal } from "@/lib/callReview/withdrawal";
 import "@/lib/serverOnlyGuard";
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
@@ -130,6 +131,8 @@ async function sendNotificationRow(params: {
     // The stored subject and body are resent verbatim. Rebuilding them would
     // change the payload behind an unchanged idempotency key, which the
     // provider rejects.
+    const notification = await db.notification.findUniqueOrThrow({ where: { id: params.notificationId } });
+    if (notification.call_id && await callHasWithdrawal(notification.account_id, notification.call_id)) throw new Error("withdrawal_is_terminal");
     const sent = await params.provider.send({
       to: params.recipient,
       subject: params.subject,
@@ -187,6 +190,7 @@ export async function dispatchCompletedInteractionNotification(params: {
 
   try {
     if (await supervisedCallWasQualification(params.accountId, params.callId)) return err("qualification_business_effects_forbidden", "Qualification calls cannot dispatch business notifications.");
+    if (await callHasWithdrawal(params.accountId, params.callId)) return err("withdrawal_is_terminal", "Withdrawn calls require review and cannot dispatch email.");
     const protectedCall = await db.call.findFirst({ where: { id: params.callId, account_id: params.accountId } });
     if (protectedCall?.review_required) return err("approval_required", "Use the approved call review dispatch.");
     const existing = await db.notification.findUnique({ where: { dedupe_key: dedupeKey } });

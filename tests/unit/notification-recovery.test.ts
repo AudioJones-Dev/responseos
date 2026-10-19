@@ -1,8 +1,9 @@
+vi.mock("@/lib/callReview/withdrawal", () => ({ callHasWithdrawal: async () => false }));
 import { beforeEach, expect, test, vi } from "vitest";
 import { dispatchCompletedInteractionNotification, retryCompletedInteractionNotification } from "@/lib/notifications/completedInteraction";
 const mocks = vi.hoisted(() => ({ call: vi.fn(), find: vi.fn(), update: vi.fn(), send: vi.fn(), audit: vi.fn() }));
 vi.mock("@/lib/auth/session", () => ({ requireRole: async () => ({ user: { id: "operator", role: "operator" } }) }));
-vi.mock("@/lib/db/client", () => ({ db: { call: { findFirst: mocks.call }, notification: { findUnique: mocks.find, update: mocks.update }, auditLog: { create: mocks.audit } } }));
+vi.mock("@/lib/db/client", () => ({ db: { call: { findFirst: mocks.call }, notification: { findUnique: mocks.find, findUniqueOrThrow: mocks.find, update: mocks.update }, auditLog: { create: mocks.audit } } }));
 const provider = { providerId: "resend" as const, send: mocks.send };
 const row = { id: "notification", account_id: "account", call_id: "call", recipient: "owner@example.test", subject: "Callback", message: "Approved summary", status: "failed", provider: "resend", attempt_count: 1, last_error_code: "email_request_failed", provider_message_id: null };
 beforeEach(() => {

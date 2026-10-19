@@ -1,3 +1,4 @@
+vi.mock("@/lib/callReview/withdrawal", () => ({ callHasWithdrawal: async () => false }));
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { consentAllowsCapture, metadataOnly } from "@/lib/callReview/consent";
 import { ReviewPayloadSchema, reviewMessage } from "@/lib/callReview/contracts";
@@ -56,8 +57,8 @@ describe("capture authorization", () => {
     const withdraw = { action: "withdraw", occurred_at: time(0) };
     expect(consentAllowsCapture([grant, withdraw], time(1), time(3))).toBe(false);
     expect(consentAllowsCapture([withdraw, grant], time(1), time(3))).toBe(false);
-    // A grant that is strictly later than the withdrawal still authorizes.
-    expect(consentAllowsCapture([withdraw, { action: "grant", occurred_at: time(0.001) }], time(1), time(3))).toBe(true);
+    // Withdrawal remains terminal even if a later grant row exists.
+    expect(consentAllowsCapture([withdraw, { action: "grant", occurred_at: time(0.001) }], time(1), time(3))).toBe(false);
   });
   test("rejects invalid or reversed intervals", () => {
     expect(consentAllowsCapture([{ action: "grant", occurred_at: time(0) }], time(4), time(1))).toBe(false);
