@@ -1894,3 +1894,8 @@ Owner authorized local implementation/tests on 2026-10-19. Implement a non-effec
 
 ## ADR-0071 - Local operator End call and authenticated disconnection
 Owner-authorized local implementation, October 19. Persist one-shot uncertain hangup intent before dispatch; never infer disconnection from command acceptance or reopen consent. No schema or activation expansion. [Contract and Doctrine21](readiness/FRL_LOCAL_COMMISSIONING_2026-10-19.md).
+
+## ADR-0072 - Disabled pinned commissioning control
+Owner-authorized local tooling and explicit trusted qualification modes. No installation or activation authorization. [Contract and Doctrine21](readiness/FRL_LOCAL_COMMISSIONING_CONTROL_2026-10-19.md).
+
+ADR-0072 integrity addendum: reproducible locked tooling, verified full action SHA, and exact split-checkout local validation. See [shared pair contract](readiness/FRL_COMMISSIONING_PAIR_2026-10-19.md). Installation and activation remain disabled.

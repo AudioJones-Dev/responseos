@@ -1643,6 +1643,18 @@
       "start": "2026-10-19",
       "blocked": true,
       "blockedReason": "Local synthetic candidate; independent Claude review and separate activation approval remain required."
+    },
+    {
+      "id": "FRL-COMMISSIONING-INTEGRITY-APPLICATION",
+      "phase": "Integrations",
+      "title": "Synthetic commissioning browser QA and shared pair contract",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-10-19",
+      "blocked": true,
+      "blockedReason": "Local synthetic candidate; independent review and separate activation approval remain required."
     }
   ],
   "liveIssues": [
