@@ -1,0 +1,27 @@
+# Restricted withdrawal transfer: local experiment, hosted disabled
+
+Approval: Sentinel_91d60ca80a8c819182c11503d25e5530, 2026-10-19 04:02:14 UTC. Owner approved only non-AI transfer after confirmed AI/transcription stop, recording off, approved destination, approved fixed wording only, fail closed on uncertainty, terminal consent. Local implementation/tests only. Baselines 9a1e29c / 4abd040 remain frozen.
+
+## Evidence decision before implementation
+
+The supported repository TelnyxCommandResult has HTTP status/ok, Date and conversation ID. None is an independent cessation or recording-state observation. Supported signed call.conversation.ended provides a conversation boundary; its parsed contract does not establish separate transcription termination and recording-off. STOPPED currently reflects a command response, not this stronger assurance. A configured recording.enabled=false is policy, not provider readback. Therefore the existing contracts supply no sufficient authoritative proof for this new exception.
+
+Before a hosted implementation can be enabled, engineering and the operator must qualify a documented provider observation contract that independently covers assistant cessation, transcription/capture cessation and recording-off, bound to exact tenant/call/session/leg/conversation/capture/generation, with trusted source authentication, freshness, ordering and contradiction handling. Connection evidence must additionally identify the exact approved destination and transfer attempt. A command acceptance or local fixture is insufficient. No new provider events or semantics are invented here. Provider contract research, adapter/persistence design, supervised qualification and activation remain subsequent gates.
+
+## Implemented scope
+
+POST /api/admin/call-capture/:id/withdrawal-transfer is a non-effecting operator-only preflight. Input is strict: expectedAccountId, expectedSnapshotId, positive generation and E.164 destination. Expected values confirm the displayed target; tenant authority comes from the authenticated operator and stored capture. It locks and rereads that capture, requires terminal withdrawal, matching frozen snapshot/account without conflicts, matching escalation destination, recording-off policy, complete identifiers and an open qualification assignment. Request identity hashes the exact capture/generation/snapshot content/destination binding. It is a preflight correlation ID, not a persisted command or authorization token.
+
+Every otherwise valid request returns 423 qualified_stop_recording_evidence_adapter_unavailable, enabled=false, attempted=false, connected=false. No provider call, command intent, audit claim, consent change, capture mutation, new schema, credential or environment activation switch exists. General command denial remains unchanged. No announcement is implemented: no fixed post-withdrawal wording was approved. No UI transfer button is exposed.
+
+withdrawalTransferSimulation.ts is a pure non-I/O executable local protocol. No route imports it. Explicit synthetic_only evidence is accepted only by this simulation, never by the HTTP input. It exercises exact binding, bounded authority times, stopped assistant/transcription, recording off and absence of contradictions. One attempt ID emits one synthetic command intent; duplicates and lost acknowledgements cannot issue another. Acceptance is not connection; exact correlated connection observations are separate. Hangup/conflict block further progress. It neither persists nor implements a distributed command dispatcher: crash recovery and durable CAS must be designed and tested with the eventual qualified adapter. Simulation success establishes no provider behavior.
+
+## Acceptance and remaining dependencies
+
+Local checks: operator denial, tenant/snapshot/generation/destination mismatch, strict request rejection of caller evidence/wording, concurrent stable preflight, successful stop still blocked, no provider fetch or command mutation, terminal consent. Simulation covers unknown/on recording, missing/uncertain/conflicting/stale/future evidence, mismatched identities, duplicate/concurrent/lost-ack attempts, out-of-order connection and hangup. Existing source-time and Call Control regressions continue to cover late content and regrant rejection.
+
+Full local quality and PostgreSQL regression evidence plus independent exact-SHA review are saved separately in transfer-evidence-20261019. No hosted readiness claim. The current hard gate is a qualification dependency, not a missing approval to be bypassed.
+
+Companion checklist stays separate: unify future grant/refuse recording on DB UTC (preserve history); verify runtime cannot DELETE/TRUNCATE or bypass fence protection while maintaining an authorized deletion process, bounded retention and replay safety; confirm exact UI target before irreversible withdrawal without delaying a received withdrawal. No companion implementation or hosted privilege change is included.
+
+Doctrine section 21: (1) call-control safety layer; (2) app-specific bounded guard, provider execution remains purchased; (3) preserves evidence; (4) no recovery/outcome claim; (5) no learning claim; (6) no commodity replacement; (7) no CRM duplication; (8) no carrier duplication; (9) no new infrastructure; (10) server-derived tenant binding; (11) explicit blocked status reduces ambiguity; (12) EXPERIMENTAL, not operational; (13) existing operator authority; (14) no new caller content; (15) only approved local protocol, with qualification required before expansion.

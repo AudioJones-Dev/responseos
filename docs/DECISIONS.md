@@ -1888,3 +1888,6 @@ ADR-0068 correctness addendum (October 19): migration 0020 makes retention clock
 ## ADR-0069 - Preserve withdrawal source and receipt evidence
 
 Owner-authorized local successor October19 (Sentinel_3b2f888768cc8191bab1c5cb95f69599). Supported operator-witness source time and server receipt time remain separate; receipt permanently fences processing even while source time needs review. Actual intervening activity is flagged without claiming prevention or automatic remediation. See [contract and Doctrine21](readiness/FRL_WITHDRAWAL_SOURCE_2026-10-19.md). Supersedes recording-time-only checklist5.8 for this local candidate; no hosted authority.
+
+## ADR-0070: restricted withdrawal transfer stays disabled without qualified stop evidence
+Owner authorized local implementation/tests on 2026-10-19. Implement a non-effecting operator preflight and explicit synthetic lifecycle; current provider contracts cannot prove independent cessation and recording-off. No command-guard exception, new migration, announcement or activation switch. [Scope and evidence requirements](readiness/FRL_WITHDRAWAL_TRANSFER_2026-10-19.md).

@@ -1623,7 +1623,7 @@
     {
       "id": "FRL-RETENTION-20261019",
       "phase": "Integrations",
-      "title": "Local retention and source-time withdrawal correction",
+      "title": "Local withdrawal transfer preflight (execution blocked)",
       "owner": "Codex",
       "status": "Review",
       "progress": 90,

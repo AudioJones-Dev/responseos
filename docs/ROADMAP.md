@@ -143,3 +143,5 @@ Local L1/L2 remediation is in review: [retention authority](readiness/FRL_RETENT
 Local UTC retention correction is in review: [scope and verification](readiness/FRL_RETENTION_UTC_2026-10-19.md). No readiness promotion.
 
 Source-time withdrawal5.8 is a local review candidate: [contract](readiness/FRL_WITHDRAWAL_SOURCE_2026-10-19.md). Hosted and rehearsal gates remain open.
+
+Restricted post-withdrawal transfer: local preflight/simulation under review; hosted execution blocked on qualified cessation and recording evidence. [Scope](readiness/FRL_WITHDRAWAL_TRANSFER_2026-10-19.md).
