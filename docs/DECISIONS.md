@@ -1882,3 +1882,5 @@ Doctrine review: (1) evidence boundary; (2) app-owned integrity logic; (3) exist
 ## ADR-0068 - Local immutable proof deadlines and explicit erasure authority
 
 Owner-authorized local successor October 19; no hosted activation. Supersedes ADR-0067 only for the expiry-shortening and cleanup-block behavior described in [retention remediation](readiness/FRL_RETENTION_REMEDIATION_2026-10-19.md), including its Doctrine21 analysis. Earlier content deadlines scrub and block immediately; only separately granted maintenance erases proof early. Cleanup continues past expected account blocks and reports partial failure.
+
+ADR-0068 correctness addendum (October 19): migration 0020 makes retention clocks explicitly UTC without transforming stored timestamps or changing retention/authority policy. See [local UTC correction](readiness/FRL_RETENTION_UTC_2026-10-19.md). Hosted legacy timestamp provenance remains unverified.

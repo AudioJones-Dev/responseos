@@ -1,0 +1,11 @@
+# Local UTC retention correction — 2026-10-19
+
+Owner-authorized local correctness continuation. Frozen application 00cd809 and control 42e7d2b remain unchanged. Migration 0020 replaces the three retention functions with explicit `clock_timestamp() AT TIME ZONE 'UTC'` expressions. Prisma TIMESTAMP(3) fields retain their existing UTC wall-clock interpretation. No row update, column conversion, deadline shortening, retention-policy change, role change or hosted activation is included. CREATE OR REPLACE retains owners and explicit grants; PUBLIC execution remains revoked on maintenance functions.
+
+Validation covers positive and negative session offsets for insertion, deletion, future-purge rejection, authorized erasure timestamps and audit expiry. A separate upgrade probe inserts pre-0020 rows under 0018/0019, including a 72-hour legacy deadline, and compares complete row snapshots before/after migration in both offset sessions. Legacy rows are not assumed to satisfy the new synthetic 24-hour cap. Historical rows actually written in local wall time cannot be corrected from TIMESTAMP alone: provenance and hosted inventory remain commissioning requirements.
+
+The intended full local checks are lint, typecheck, unit, build, configuration, control scripts, and PG16/17/18 integration/migrate/seed/restore/build. Exact results and successor SHAs are recorded externally in utc-retention-evidence-20261019. Green local checks are not hosted or Mike-demo readiness.
+
+Hosted role restrictions, approval reference resolution, audit lifetime, maintenance cadence, key custody and the older control-interval review remain separate gates. No policy choice is made here. Rollback must not reinstall timezone-dependent functions for active ingestion; pause commissioning and use a reviewed corrective successor. Frozen historical migrations are unchanged.
+
+Doctrine21: (1) data/evidence layer; (2) correct existing SQL; (3) required before commissioning; (4) preserve evidence and timestamps; (5) no outcome claim; (6) no learning; (7) no service replacement; (8) no CRM/telecom duplication; (9) standard SQL; (10) account checks unchanged; (11) no attribution change; (12) local experimental status only; (13) existing authority unchanged; (14) no real data or keys; (15) closes a demonstrated correctness gap.

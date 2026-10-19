@@ -139,3 +139,5 @@ Local FRL hardening scope (in review): additive webhook fingerprint migration001
 Local-only fingerprint runtime successor is under review: [scope, limits and approval gates](readiness/FRL_FINGERPRINT_RUNTIME_2026-10-18.md). This is no milestone promotion or deployment authority; retention conflict and real key policy remain open.
 
 Local L1/L2 remediation is in review: [retention authority](readiness/FRL_RETENTION_REMEDIATION_2026-10-19.md). No milestone promotion or hosted authority.
+
+Local UTC retention correction is in review: [scope and verification](readiness/FRL_RETENTION_UTC_2026-10-19.md). No readiness promotion.
