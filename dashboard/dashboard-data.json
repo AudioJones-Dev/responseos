@@ -1739,19 +1739,43 @@
       "priority": "High",
       "start": "2026-10-19",
       "blocked": true,
-      "blockedReason": "Partial local candidate: receipt guards and SQL-only PG16/17/18 checks. End-call dispatch authority, withdrawal continuation scope and isolated Node runtime validation remain unresolved. Activation disabled."
+      "blockedReason": "Prior isolated runtime validation completed; operator authority approved for local successor. Continuation and other command waits remain out of scope. Activation disabled."
     },
     {
       "id": "FRL-TERMINAL-ERROR",
       "phase": "Integrations",
       "title": "Restore exact post-marker withdrawal terminal error",
       "owner": "Codex",
+      "status": "Done",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-10-19",
+      "blocked": false,
+      "blockedReason": "Prior isolated runtime matrix completed; Claude acceptance relayed by owner. Low post-drain DB-state gap tracked separately. Activation disabled."
+    },
+    {
+      "id": "FRL-OPERATOR-ENDCALL-UNLOCKED",
+      "phase": "Integrations",
+      "title": "Commit exact operator hangup authority before unlocked one-shot send",
+      "owner": "Codex",
       "status": "Review",
-      "progress": 80,
+      "progress": 90,
       "priority": "High",
       "start": "2026-10-19",
       "blocked": true,
-      "blockedReason": "Narrow migration0025 correction only; isolated SQL evidence recorded externally. Runtime validation and Claude exact-commit review remain outstanding. Activation disabled."
+      "blockedReason": "Local successor awaiting exact-commit validation and Claude review. Other callers remain unchanged; activation disabled."
+    },
+    {
+      "id": "FRL-POST-DRAIN-DB-STATES",
+      "phase": "Integrations",
+      "title": "Review Low post-drain database-state gap",
+      "owner": "Codex",
+      "status": "Backlog",
+      "progress": 0,
+      "priority": "Low",
+      "start": "2026-10-19",
+      "blocked": true,
+      "blockedReason": "Bounded follow-up only: CALL_RECEIVED, DISCLOSURE_PLAYING and TRANSFER_PENDING remain DB-permitted after drain; application denies them. No migration change authorized here."
     }
   ],
   "liveIssues": [

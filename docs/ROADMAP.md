@@ -159,3 +159,7 @@ Disconnection-fact successor (F1, local migration 0022) is EXPERIMENTAL and awai
 Local EXPERIMENTAL withdrawal correction under review: [raw-ledger admission race](readiness/FRL_WITHDRAWAL_LEDGER_RACE_2026-10-19.md). No milestone or activation gate moves; F2 remains unimplemented.
 
 Independent withdrawal receipt/drain is a local review candidate under accepted Option B. [Scope](readiness/FRL_WITHDRAWAL_RECEIPT_B_2026-10-19.md). No milestone or hosted readiness promotion.
+
+
+### Local operator End call successor — October 19
+Owner approved the pinned final authorization boundary and isolated tests; no milestone or activation gate moves. [Contract](readiness/FRL_OPERATOR_END_CALL_2026-10-19.md). Prior frozen-pair runtime validation is complete and accepted as relayed; this successor needs its own exact-tree evidence. Other command waits, continuation, F2 and the Low post-drain DB state gap remain separate.

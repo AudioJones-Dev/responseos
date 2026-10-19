@@ -1915,3 +1915,8 @@ Owner-approved Option B, local only. A saved receipt blocks new authorizations; 
 ADR-0075 bounded correction: additive migration 0024 skips receipt-visible state reactivation without rolling back preauthorized content. It is best-effort snapshot defense, not a concurrency fence. End-call lock refactor and explicit continuation remain blocked on separate decisions; runtime validation is unavailable under the enforced isolation requirement. [Partial candidate and limitations](readiness/FRL_BOUNDED_CORRECTION_2026-10-19.md).
 
 ADR-0075 terminal-error correction: migration0025 restricts0024's silent veto to OLD.withdrawal_received_at IS NULL, allowing the original0021 terminal exception once the compatibility marker exists. No broader state or command policy change. [Narrow scope and verification](readiness/FRL_TERMINAL_ERROR_2026-10-19.md).
+
+
+## ADR-0076 - Commit exact operator hangup authority before sending without locks
+
+Owner-approved local implementation only. Final validation durably binds one exact operator hangup, then releases locks before the single send. Later changes do not cancel or retarget it; no replay after uncertainty. Actorless callers retain existing behavior. No schema change. [Contract, prior accepted runtime evidence, remaining Low gap and Doctrine21](readiness/FRL_OPERATOR_END_CALL_2026-10-19.md). This supersedes the operator dispatch decision blocker in ADR-0075; continuation and other callers remain out of scope.

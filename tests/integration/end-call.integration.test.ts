@@ -8,14 +8,28 @@ import { loadCallReviewConsole } from '@/lib/callReview/service';
 import { recordWebhookEvent } from '@/lib/data/webhookEvents';
 import { callHasWithdrawal } from '@/lib/callReview/withdrawal';
 import { ingestCallControlEvent } from '@/lib/callControl/service';
+import { endCaptureCall } from '@/lib/callControl/endCall';
+import { persistWithdrawalReceipt, drainWithdrawal, withdrawalProgress, withdrawalReceiptDb } from '@/lib/callReview/withdrawalReceipt';
 import { parseCallControlEvent } from '@/lib/providers/telnyx/callControl';
 
 
+const boundaries = vi.hoisted(() => ({ claimed: undefined as (() => Promise<void>) | undefined, authorized: undefined as (() => Promise<void>) | undefined }));
 const send = vi.hoisted(() => { vi.resetModules(); return vi.fn(); });
 vi.mock('@/lib/providers/telnyx/callControl', async original => ({ ...await original<typeof import('@/lib/providers/telnyx/callControl')>(), sendTelnyxCallCommand: send }));
-beforeEach(async () => { await resetAndSeedTestDb(); send.mockReset().mockResolvedValue({ok:true,status:200,providerDate:null,errorCode:null}); setDevSession('operator'); vi.stubGlobal('fetch', vi.fn(() => { throw Error('provider/network effect forbidden'); })); });
+vi.mock('@/lib/callReview/consent', async original => {
+  const actual = await original<typeof import('@/lib/callReview/consent')>();
+  return { ...actual, withCaptureLock: async (...args: Parameters<typeof actual.withCaptureLock>) => {
+    const result = await actual.withCaptureLock(...args);
+    if (result && typeof result === 'object' && 'dispatch' in result && result.dispatch) {
+      const key = 'target' in result ? 'authorized' : 'command' in result ? 'claimed' : null;
+      if (key && boundaries[key]) { const hook = boundaries[key]!; boundaries[key] = undefined; await hook(); }
+    }
+    return result;
+  } };
+});
+beforeEach(async () => { boundaries.claimed = undefined; boundaries.authorized = undefined; await resetAndSeedTestDb(); send.mockReset().mockResolvedValue({ok:true,status:200,providerDate:null,errorCode:null}); setDevSession('operator'); vi.stubGlobal('fetch', vi.fn(() => { throw Error('provider/network effect forbidden'); })); });
 afterEach(() => { expect(fetch).not.toHaveBeenCalled(); vi.unstubAllGlobals(); });
-afterAll(async () => { await disconnectTestDb(); vi.doUnmock("@/lib/providers/telnyx/callControl"); vi.resetModules(); });
+afterAll(async () => { await withdrawalReceiptDb?.$disconnect(); await disconnectTestDb(); vi.doUnmock("@/lib/providers/telnyx/callControl"); vi.doUnmock("@/lib/callReview/consent"); vi.resetModules(); });
 const CONFIGURATION = [
   { key: "business.knowledge", value: { facts: [{ topic: "services", statement: "VPL evaluations are available.", sourceRef: "test-approval" }], fictionalScenarios: [] } },
   { key: "notification.completed_interaction.recipient", value: { channel: "email", recipient: "owner@example.test", event: "completed_interaction", enabled: true, temporary: true } },
@@ -123,11 +137,11 @@ test('mutated signed body cannot confirm disconnection', async () => {
 test('provider acceptance followed by database failure leaves durable uncertainty and cannot resend', async () => {
   const f=await fixture();
   await prisma.$executeRawUnsafe(`CREATE FUNCTION synthetic_reject_end_result() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'synthetic result persistence failure'; END $$`);
-  await prisma.$executeRawUnsafe(`CREATE TRIGGER synthetic_reject_end_result BEFORE UPDATE ON "TelnyxCallCommand" FOR EACH ROW EXECUTE FUNCTION synthetic_reject_end_result()`);
+  await prisma.$executeRawUnsafe(`CREATE TRIGGER synthetic_reject_end_result BEFORE UPDATE ON "TelnyxCallCommand" FOR EACH ROW WHEN (NEW.reconciliation_state = 'awaiting_authenticated_disconnection') EXECUTE FUNCTION synthetic_reject_end_result()`);
   try {
     expect((await f.post()).status).toBe(503);
     expect(send).toHaveBeenCalledTimes(1);
-    expect(await prisma.telnyxCallCommand.findFirstOrThrow({where:{capture_session_id:f.capture.id}})).toMatchObject({status:'uncertain',reconciliation_state:'end_call_dispatch_claimed'});
+    expect(await prisma.telnyxCallCommand.findFirstOrThrow({where:{capture_session_id:f.capture.id}})).toMatchObject({status:'uncertain',reconciliation_state:'operator_end_call_authorized'});
     expect((await f.post()).status).toBe(202); expect(send).toHaveBeenCalledTimes(1);
   } finally {
     await prisma.$executeRawUnsafe(`DROP TRIGGER synthetic_reject_end_result ON "TelnyxCallCommand"`);
@@ -264,4 +278,119 @@ test('recorded disconnection cannot be cleared, changed or overwritten by a late
   await expect(prisma.callCaptureSession.update({where:{id:f.capture.id},data:{call_disconnected_at:null}})).rejects.toThrow(/call_disconnection_is_permanent/);
   await expect(prisma.callCaptureSession.update({where:{id:f.capture.id},data:{call_disconnected_at:new Date()}})).rejects.toThrow(/call_disconnection_is_permanent/);
   expect((await prisma.callCaptureSession.findUniqueOrThrow({where:{id:f.capture.id}})).call_disconnected_at).toEqual(first);
+});
+
+function barrier() { let resolve!: () => void; const promise = new Promise<void>(r => { resolve = r; }); return { promise, resolve }; }
+
+test('operator authorization commits before send and pins destination across later mutation', async () => {
+  const f = await fixture();
+  boundaries.authorized = async () => {
+    const command = await prisma.telnyxCallCommand.findFirstOrThrow({ where: { capture_session_id: f.capture.id } });
+    expect(command).toMatchObject({ status: 'uncertain', reconciliation_state: 'operator_end_call_authorized' });
+    const audit = await prisma.auditLog.findFirstOrThrow({ where: { action: 'call_end_authorized', target_id: f.capture.id } });
+    expect(audit.metadata_json).toMatchObject({ accountId: f.capture.account_id, captureId: f.capture.id, callControlId: f.capture.provider_call_id, callSessionId: 'session', callLegId: 'leg', generation: 1, commandId: command.command_id, authority: 'one_shot_after_commit' });
+    await prisma.callCaptureSession.update({ where: { id: f.capture.id }, data: { generation: 2, call_session_id: 'later-session', call_leg_id: 'later-leg', assignment_id: 'later-assignment' } });
+    await prisma.telephonyNumberAssignment.update({ where: { id: f.capture.assignment_id! }, data: { status: 'active' } });
+  };
+  expect((await f.post()).status).toBe(202);
+  expect(send).toHaveBeenCalledTimes(1);
+  const sent = send.mock.calls[0][0];
+  expect(sent.callControlId).toBe(f.capture.provider_call_id);
+  expect(JSON.parse(Buffer.from(sent.body.client_state, 'base64').toString())).toEqual({ captureId: f.capture.id, generation: 1 });
+  expect(await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: f.capture.id } })).toMatchObject({ generation: 2, control_state: 'STOPPED', withdrawal_received_at: f.capture.withdrawal_received_at });
+  await f.post({ ...f.input, generation: 2 });
+  expect(send).toHaveBeenCalledTimes(1);
+});
+
+test.each(['generation', 'session', 'leg', 'assignment', 'qualification', 'hangup', 'active-proof', 'command'] as const)('final validation vetoes changed %s after reservation and never resends', async field => {
+  const f = await fixture();
+  boundaries.claimed = async () => {
+    if (field === 'generation') await prisma.callCaptureSession.update({ where: { id: f.capture.id }, data: { generation: 2 } });
+    if (field === 'session') await prisma.callCaptureSession.update({ where: { id: f.capture.id }, data: { call_session_id: 'other' } });
+    if (field === 'leg') await prisma.callCaptureSession.update({ where: { id: f.capture.id }, data: { call_leg_id: 'other' } });
+    if (field === 'assignment') await prisma.callCaptureSession.update({ where: { id: f.capture.id }, data: { assignment_id: 'other' } });
+    if (field === 'qualification') await prisma.telephonyNumberAssignment.update({ where: { id: f.capture.assignment_id! }, data: { status: 'active' } });
+    if (field === 'hangup') await ingest(f, 'call.hangup');
+    if (field === 'active-proof') await prisma.webhookEvent.updateMany({ where: { event_type: 'call.answered' }, data: { raw_body: '{}' } });
+    if (field === 'command') await prisma.telnyxCallCommand.updateMany({ where: { capture_session_id: f.capture.id }, data: { provider_resource: 'other' } });
+  };
+  await f.post(); await f.post();
+  expect(send).not.toHaveBeenCalled();
+  expect(await prisma.telnyxCallCommand.count()).toBe(1);
+  expect(await prisma.auditLog.count({ where: { action: 'call_end_authorized' } })).toBe(0);
+});
+
+test.each(['claimed', 'authorized'] as const)('lost %s commit acknowledgement leaves a permanent claim with no replay', async boundary => {
+  const f = await fixture();
+  boundaries[boundary] = async () => { throw Error('synthetic lost commit acknowledgement'); };
+  expect((await f.post()).status).toBe(503);
+  expect((await f.post()).status).toBe(202);
+  expect(send).not.toHaveBeenCalled();
+  expect(await prisma.telnyxCallCommand.findFirstOrThrow()).toMatchObject({ status: 'uncertain', reconciliation_state: boundary === 'authorized' ? 'operator_end_call_authorized' : 'end_call_dispatch_claimed' });
+  expect(await prisma.auditLog.count({ where: { action: 'call_end_authorized' } })).toBe(boundary === 'authorized' ? 1 : 0);
+});
+
+test('historical qualification remains eligible after assignment end', async () => {
+  const f = await fixture();
+  boundaries.claimed = async () => { await prisma.telephonyNumberAssignment.update({ where: { id: f.capture.assignment_id! }, data: { unassigned_at: new Date(), number_exclusivity_key: null } }); };
+  expect((await f.post()).status).toBe(202);
+  expect(send).toHaveBeenCalledTimes(1);
+});
+
+test('stalled operator send holds no transaction or locks; duplicates, exact hangup and receipt/drain proceed', async () => {
+  const f = await fixture(), entered = barrier(), release = barrier();
+  send.mockImplementationOnce(async () => { entered.resolve(); await release.promise; return { ok: true, status: 200, providerDate: null, errorCode: null }; });
+  const pending = f.post();
+  await entered.promise;
+  try {
+    expect((await f.post()).status).toBe(202);
+    const transactions = await prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid() AND xact_start IS NOT NULL`;
+    expect(Number(transactions[0].count)).toBe(0);
+    const locks = await prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) FROM pg_locks l JOIN pg_stat_activity a ON a.pid=l.pid WHERE a.datname=current_database() AND a.pid<>pg_backend_pid() AND l.locktype IN ('advisory','tuple','relation')`;
+    expect(Number(locks[0].count)).toBe(0);
+    await persistWithdrawalReceipt(f.capture, 'operator', { eventKey: randomUUID(), disclosureRef: 'synthetic', evidenceRef: 'synthetic', jurisdictionBasis: 'synthetic' });
+    await drainWithdrawal(f.capture);
+    expect(await withdrawalProgress(f.capture)).toMatchObject({ receipt: 'recorded', drain: 'confirmed' });
+    await ingest(f, 'call.hangup');
+    const disconnected = await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: f.capture.id } });
+    expect(disconnected.call_disconnected_at).not.toBeNull();
+    expect(disconnected.withdrawal_drained_at).not.toBeNull();
+    expect((await f.post()).status).toBe(200);
+    expect(send).toHaveBeenCalledTimes(1);
+  } finally { release.resolve(); }
+  expect((await pending).status).toBe(202);
+  const final = await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: f.capture.id } });
+  expect(final).toMatchObject({ control_state: 'STOPPED', withdrawal_received_at: f.capture.withdrawal_received_at });
+  expect(final.call_disconnected_at).not.toBeNull();
+  expect(final.withdrawal_drained_at).not.toBeNull();
+  await expect(prisma.callCaptureSession.update({ where: { id: f.capture.id }, data: { call_disconnected_at: null } })).rejects.toThrow('call_disconnection_is_permanent');
+  await expect(prisma.callCaptureSession.update({ where: { id: f.capture.id }, data: { withdrawal_drained_at: null } })).rejects.toThrow('withdrawal_drain_is_permanent');
+});
+
+test('result persistence fails closed if the command identity changes during send', async () => {
+  const f = await fixture();
+  send.mockImplementationOnce(async () => {
+    await prisma.telnyxCallCommand.updateMany({ where: { capture_session_id: f.capture.id }, data: { provider_resource: 'tampered' } });
+    return { ok: true, status: 200, providerDate: null, errorCode: null };
+  });
+  expect((await f.post()).status).toBe(503);
+  expect(await prisma.telnyxCallCommand.findFirstOrThrow()).toMatchObject({ status: 'uncertain', reconciliation_state: 'operator_end_call_authorized' });
+  await f.post(); expect(send).toHaveBeenCalledTimes(1);
+});
+
+test('actorless automatic End call retains its existing locked dispatch without operator authority', async () => {
+  const f = await fixture(), entered = barrier(), release = barrier();
+  send.mockImplementationOnce(async () => { entered.resolve(); await release.promise; return { ok: true, status: 200, providerDate: null, errorCode: null }; });
+  const pending = endCaptureCall({ captureId: f.capture.id, ...f.input });
+  await entered.promise;
+  try {
+    expect(await prisma.auditLog.count({ where: { action: 'call_end_authorized' } })).toBe(0);
+    expect(await prisma.telnyxCallCommand.findFirstOrThrow()).toMatchObject({ reconciliation_state: 'end_call_dispatch_claimed' });
+    await persistWithdrawalReceipt(f.capture, 'operator', { eventKey: randomUUID(), disclosureRef: 'synthetic', evidenceRef: 'synthetic', jurisdictionBasis: 'synthetic' });
+    await expect(drainWithdrawal(f.capture)).rejects.toThrow();
+    expect((await withdrawalProgress(f.capture)).drain).toBe('pending');
+  } finally { release.resolve(); }
+  await pending; await drainWithdrawal(f.capture);
+  expect(send).toHaveBeenCalledTimes(1);
+  expect((await withdrawalProgress(f.capture)).drain).toBe('confirmed');
 });

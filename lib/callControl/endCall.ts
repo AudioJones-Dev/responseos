@@ -106,6 +106,50 @@ export async function endCaptureCall(input: EndCallTarget, actor?: { id: string;
     return { dispatch: true as const, capture, command, evidence };
   });
   if (!claimed.dispatch) return { commandStatus: claimed.command?.status ?? null, disconnection: claimed.evidence };
+  if (actor) {
+    const authorization = await withCaptureLock(located.account_id, located.provider_call_id, async client => {
+      await client.$queryRaw`SELECT id FROM "CallCaptureSession" WHERE id = ${located.id} AND account_id = ${located.account_id} FOR NO KEY UPDATE`;
+      await client.$queryRaw`SELECT id FROM "TelnyxCallCommand" WHERE id = ${claimed.command.id} AND account_id = ${located.account_id} FOR UPDATE`;
+      await client.$queryRaw`SELECT id FROM "TelephonyNumberAssignment" WHERE id = ${claimed.capture.assignment_id} AND account_id = ${located.account_id} FOR SHARE`;
+      const capture = await client.callCaptureSession.findUniqueOrThrow({ where: { id: located.id, account_id: located.account_id } });
+      if (capture.generation !== claimed.capture.generation || capture.provider_call_id !== claimed.capture.provider_call_id || capture.assignment_id !== claimed.capture.assignment_id || capture.call_session_id !== claimed.capture.call_session_id || capture.call_leg_id !== claimed.capture.call_leg_id) throw new Error("end_call_target_mismatch");
+      const evidence = await disconnectionEvidence(capture, client);
+      if (evidence.confirmed || !(await endCallEligibility(capture, client, evidence, claimed.command.id)).allowed) return { dispatch: false as const, evidence };
+      const identity = {
+        id: claimed.command.id, account_id: capture.account_id, capture_session_id: capture.id,
+        assignment_id: capture.assignment_id, generation: capture.generation, command_type: "hangup",
+        command_id: claimed.command.command_id, provider_resource: capture.provider_call_id,
+        request_json: { equals: claimed.command.request_json as Prisma.InputJsonValue },
+      };
+      const authorized = await client.telnyxCallCommand.updateMany({ where: { ...identity, status: "uncertain", reconciliation_state: "end_call_dispatch_claimed" }, data: { reconciliation_state: "operator_end_call_authorized" } });
+      if (authorized.count !== 1) throw new Error("end_call_target_mismatch");
+      const target = Object.freeze({
+        accountId: capture.account_id, captureId: capture.id, assignmentId: capture.assignment_id,
+        callControlId: capture.provider_call_id, callSessionId: capture.call_session_id, callLegId: capture.call_leg_id,
+        generation: capture.generation, commandId: claimed.command.command_id,
+        clientState: Buffer.from(JSON.stringify({ captureId: capture.id, generation: capture.generation })).toString("base64"),
+      });
+      await client.auditLog.create({ data: {
+        account_id: capture.account_id, actor_type: "user", actor_user_id: actor.id, actor_role: actor.role,
+        action: "call_end_authorized", category: "workflow", target_type: "CallCaptureSession", target_id: capture.id,
+        metadata_json: { ...target, commandRowId: claimed.command.id, authority: "one_shot_after_commit" },
+      } });
+      return { dispatch: true as const, target, identity, evidence };
+    });
+    if (!authorization.dispatch) return { commandStatus: "uncertain", disconnection: authorization.evidence };
+    // Only this invocation may send after commit; later eligibility changes cannot revoke or retarget it.
+    const result = await sendTelnyxCallCommand({ callControlId: authorization.target.callControlId, action: "hangup", body: { client_state: authorization.target.clientState, command_id: authorization.target.commandId } });
+    const status = result.ok ? "succeeded" : result.errorCode === "telnyx_response_uncertain" || result.status >= 500 ? "uncertain" : "failed";
+    await db.$transaction(async client => {
+      const respondedAt = result.status > 0 ? (await client.$queryRaw<{ now: Date }[]>`SELECT date_trunc('milliseconds', clock_timestamp() AT TIME ZONE 'UTC') AS now`)[0].now : null;
+      const updated = await client.telnyxCallCommand.updateMany({ where: { ...authorization.identity, status: "uncertain", reconciliation_state: "operator_end_call_authorized" }, data: {
+        status, provider_response_status: result.status, provider_date_at: result.providerDate, provider_responded_at: respondedAt,
+        error_code: result.errorCode, reconciliation_state: "awaiting_authenticated_disconnection",
+      } });
+      if (updated.count !== 1) throw new Error("end_call_result_identity_mismatch");
+    });
+    return { commandStatus: status, disconnection: authorization.evidence };
+  }
   return withCaptureLock(located.account_id, located.provider_call_id, async client => {
     const capture = await client.callCaptureSession.findUniqueOrThrow({ where: { id: located.id, account_id: located.account_id } });
     if (capture.generation !== input.generation || capture.provider_call_id !== input.expectedProviderCallId || capture.assignment_id !== claimed.capture.assignment_id) throw new Error("end_call_target_mismatch");
