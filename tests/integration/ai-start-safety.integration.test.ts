@@ -8,6 +8,7 @@ import { recordWebhookEvent } from "@/lib/data/webhookEvents";
 import { ingestCallControlEvent } from "@/lib/callControl/service";
 import { parseCallControlEvent } from "@/lib/providers/telnyx/callControl";
 import { loadCallReviewConsole } from "@/lib/callReview/service";
+import { startCaptureAi } from "@/lib/callControl/startAi";
 import { persistWithdrawalReceipt, withdrawalReceiptDb } from "@/lib/callReview/withdrawalReceipt";
 
 const send = vi.hoisted(() => { vi.resetModules(); return vi.fn(); });
@@ -38,7 +39,7 @@ function afterClaim(effect: () => Promise<void>) {
     const result = await Reflect.apply(original, db, args);
     if (result && typeof result === "object" && "phase" in result && result.phase === "claimed") { spy.mockRestore(); await effect(); }
     return result;
-  }) as typeof db.$transaction);
+  }) as NonNullable<typeof db>["$transaction"]);
 }
 
 test("successful start consumes one exact attempt and duplicates only read its result", async () => {
@@ -64,18 +65,75 @@ test("lost claim commit acknowledgement consumes the attempt without sending or 
   expect(await prisma.telnyxCallCommand.findFirstOrThrow()).toMatchObject({ status: "uncertain", reconciliation_state: "ai_start_attempt_consumed" });
 });
 
-test.each(["receipt", "generation", "call", "session", "leg", "assistant", "assignment", "grant", "snapshot", "proof", "read_failure", "end_call"])("fresh %s veto after claim consumes without dispatch", async kind => {
+test("database identity guard survives a post-claim abort without releasing the claim", async () => {
+  const f = await fixture(); let guarded = false;
+  afterClaim(async () => {
+    await expect(prisma.callCaptureSession.update({ where: { id: f.capture.id }, data: { provider_call_id: randomUUID() } })).rejects.toThrow("capture_identity_is_immutable");
+    guarded = true; throw Error("synthetic_abort_after_rejected_identity_change");
+  });
+  expect((await f.post()).status).toBe(409); expect(guarded).toBe(true); expect((await f.post()).status).toBe(409);
+  expect(send).not.toHaveBeenCalled();
+  expect(await prisma.telnyxCallCommand.findFirstOrThrow()).toMatchObject({ status: "uncertain", reconciliation_state: "ai_start_attempt_consumed" });
+  expect(await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: f.capture.id } })).toMatchObject({ provider_call_id: f.capture.provider_call_id });
+});
+
+test.each(["account_id", "provider_call_id", "generation"] as const)("wrong initial %s cannot consume authority", async key => {
+  const f = await fixture();
+  await expect(startCaptureAi({ ...f.capture, [key]: key === "generation" ? 2 : "wrong" })).rejects.toThrow("ai_start_target_mismatch");
+  expect(await prisma.telnyxCallCommand.count()).toBe(0); expect(send).not.toHaveBeenCalled();
+});
+
+test("audit failure rolls back claim and provides no dispatch authority", async () => {
+  const f = await fixture();
+  await prisma.$executeRawUnsafe(`CREATE FUNCTION synthetic_start_audit_failure() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.action = 'ai_start_attempt_consumed' THEN RAISE EXCEPTION 'synthetic claim audit failure'; END IF; RETURN NEW; END $$`);
+  await prisma.$executeRawUnsafe(`CREATE TRIGGER synthetic_start_audit_failure BEFORE INSERT ON "AuditLog" FOR EACH ROW EXECUTE FUNCTION synthetic_start_audit_failure()`);
+  try { expect((await f.post()).status).toBe(409); }
+  finally { await prisma.$executeRawUnsafe('DROP TRIGGER synthetic_start_audit_failure ON "AuditLog"'); await prisma.$executeRawUnsafe('DROP FUNCTION synthetic_start_audit_failure()'); }
+  expect(await prisma.telnyxCallCommand.count()).toBe(0); expect(send).not.toHaveBeenCalled();
+  expect((await f.post()).status).toBe(200); expect(send).toHaveBeenCalledTimes(1);
+});
+
+test("provider acceptance followed by result persistence failure never resends", async () => {
+  const f = await fixture();
+  await prisma.$executeRawUnsafe(`CREATE FUNCTION synthetic_start_result_failure() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'synthetic result failure'; END $$`);
+  await prisma.$executeRawUnsafe(`CREATE TRIGGER synthetic_start_result_failure BEFORE UPDATE ON "TelnyxCallCommand" FOR EACH ROW EXECUTE FUNCTION synthetic_start_result_failure()`);
+  try { expect((await f.post()).status).toBe(409); }
+  finally { await prisma.$executeRawUnsafe('DROP TRIGGER synthetic_start_result_failure ON "TelnyxCallCommand"'); await prisma.$executeRawUnsafe('DROP FUNCTION synthetic_start_result_failure()'); }
+  expect((await f.post()).status).toBe(409); expect(send).toHaveBeenCalledTimes(1);
+  expect(await prisma.telnyxCallCommand.findFirstOrThrow()).toMatchObject({ status: "uncertain", reconciliation_state: "ai_start_attempt_consumed" });
+});
+
+test("lost result commit acknowledgement is resolved by readback without resend", async () => {
+  const f = await fixture();
+  send.mockImplementationOnce(async () => {
+    const original = db!.$transaction.bind(db);
+    vi.spyOn(db!, "$transaction").mockImplementationOnce((async (...args: unknown[]) => { await Reflect.apply(original, db, args); throw Error("synthetic_result_ack_lost"); }) as NonNullable<typeof db>["$transaction"]);
+    return { ok: true, status: 200, providerDate: new Date(), conversationId: "synthetic", errorCode: null };
+  });
+  expect((await f.post()).status).toBe(409); expect((await f.post()).status).toBe(200); expect(send).toHaveBeenCalledTimes(1);
+  expect(await prisma.telnyxCallCommand.findFirstOrThrow()).toMatchObject({ status: "succeeded" });
+});
+
+test.each(["receipt", "generation", "session", "leg", "assistant", "assignment", "future_assignment", "grant", "snapshot", "proof", "read_failure", "end_call", "hangup_ledger", "ended_ledger", "operator"])("fresh %s veto after claim consumes without dispatch", async kind => {
   const f = await fixture(); let reached = false;
   afterClaim(async () => {
     reached = true;
     if (kind === "receipt") await f.receipt();
     else if (kind === "assistant") await prisma.telephonyNumberAssignment.update({ where: { id: f.assignment.id }, data: { provider_assistant_id: "changed" } });
     else if (kind === "assignment") await prisma.telephonyNumberAssignment.update({ where: { id: f.assignment.id }, data: { unassigned_at: new Date() } });
+    else if (kind === "future_assignment") await prisma.telephonyNumberAssignment.update({ where: { id: f.assignment.id }, data: { assigned_at: new Date(Date.now() + 60_000) } });
+    else if (kind === "operator") setDevSession("client_viewer@org_mock_1");
+    else if (kind === "hangup_ledger" || kind === "ended_ledger") {
+      const type = kind === "hangup_ledger" ? "call.hangup" : "call.conversation.ended";
+      const id = randomUUID(), raw = JSON.stringify({ data: { id, event_type: type, occurred_at: new Date().toISOString(), payload: { call_control_id: f.capture.provider_call_id, call_session_id: f.capture.call_session_id, call_leg_id: f.capture.call_leg_id, client_state: f.clientState } } });
+      const recorded = await recordWebhookEvent({ account_id: f.capture.account_id, provider: "telnyx", provider_call_id: f.capture.provider_call_id, provider_event_id: id, event_type: type, raw_body: raw, verifiedBytes: Buffer.from(raw), signature_valid: true });
+      expect(recorded.ok).toBe(true);
+    }
     else if (kind === "grant") await prisma.callConsentEvent.updateMany({ where: { provider_call_id: f.capture.provider_call_id }, data: { evidence_ref: "changed" } });
     else if (kind === "proof") await prisma.webhookEvent.update({ where: { id: f.proofId }, data: { payload_erasure_required_at: new Date() } });
     else if (kind === "read_failure") vi.spyOn(db!.callCaptureSession, "findUnique").mockRejectedValueOnce(Error("synthetic_read_failure"));
     else if (kind === "end_call") expect((await f.end()).status).toBe(202);
-    else await prisma.callCaptureSession.update({ where: { id: f.capture.id }, data: kind === "generation" ? { generation: 2 } : kind === "call" ? { provider_call_id: randomUUID() } : kind === "session" ? { call_session_id: "changed" } : kind === "leg" ? { call_leg_id: "changed" } : { snapshot_id: "changed" } });
+    else await prisma.callCaptureSession.update({ where: { id: f.capture.id }, data: kind === "generation" ? { generation: 2 } : kind === "session" ? { call_session_id: "changed" } : kind === "leg" ? { call_leg_id: "changed" } : { snapshot_id: "changed" } });
   });
   expect((await f.post()).status).toBe(409); expect(reached).toBe(true);
   expect(send.mock.calls.filter(([command]) => command.action === "ai_assistant_start")).toHaveLength(0);

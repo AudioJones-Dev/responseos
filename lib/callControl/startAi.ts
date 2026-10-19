@@ -17,6 +17,7 @@ async function eligible(target: AiStartTarget, client: Prisma.TransactionClient)
   if (!capture || !sameTarget(capture, target)) throw Error("ai_start_target_mismatch");
   if (await providerCallHasWithdrawal(capture.account_id, capture.provider_call_id, client)) throw Error("withdrawal_is_terminal");
   if (capture.content_admission_closed_at || capture.capture_ended_at || capture.call_disconnected_at) throw Error("capture_closed");
+  if (await client.webhookEvent.findFirst({ where: { account_id: capture.account_id, provider: "telnyx", provider_call_id: capture.provider_call_id, event_type: { in: ["call.hangup", "call.conversation.ended"] } }, select: { id: true } })) throw Error("capture_closed");
   if (!capture.assignment_id || !capture.call_session_id || !capture.call_leg_id || capture.control_state !== "START_PENDING" || capture.dtmf_decision !== "affirmative" || !capture.dtmf_event_id) throw Error("affirmative_dtmf_required");
   const grants = await client.callConsentEvent.findMany({ where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, artifact: "transcript" } });
   const grant = orderConsentEvents(grants).at(-1);
@@ -32,6 +33,8 @@ async function eligible(target: AiStartTarget, client: Prisma.TransactionClient)
   if (!state || state.captureId !== capture.id || state.generation !== capture.generation) throw Error("ai_start_dtmf_identity_mismatch");
   const assignment = await client.telephonyNumberAssignment.findFirst({ where: { id: capture.assignment_id, account_id: capture.account_id, status: "qualification", unassigned_at: null } });
   if (!assignment?.provider_assistant_id) throw Error("qualification_assignment_mismatch");
+  const now = (await client.$queryRaw<{ now: Date }[]>`SELECT clock_timestamp() AS now`)[0].now;
+  if (assignment.assigned_at > now) throw Error("qualification_assignment_mismatch");
   return { capture, assistantId: assignment.provider_assistant_id, grantId: grant.id, grantHash: digest(grant), proofId: proof.id, proofHash: verified.content_fingerprint, snapshotHash: digest([capture.snapshot_id, capture.snapshot_json]) };
 }
 
@@ -59,6 +62,8 @@ export async function startCaptureAi(target: AiStartTarget) {
   const identity = { id: claimed.command.id, account_id: claimed.target.account_id, capture_session_id: claimed.target.id, assignment_id: claimed.target.assignment_id, generation: claimed.target.generation, command_type: "ai_assistant_start" as const, command_id: claimed.command.command_id, provider_resource: claimed.target.provider_call_id, request_json: { equals: claimed.command.request_json as Prisma.InputJsonValue } };
   try {
     // These fresh autocommit reads hold no transaction across provider I/O. A later withdrawal remains a remote race.
+    const currentOperator = await requireReviewOperator();
+    if (currentOperator.user.id !== operator.user.id || currentOperator.user.role !== operator.user.role) throw Error("operator_required");
     const fresh = await eligible(claimed.target, db as unknown as Prisma.TransactionClient);
     if (fresh.assistantId !== claimed.authority.assistantId || fresh.grantId !== claimed.authority.grantId || fresh.grantHash !== claimed.authority.grantHash || fresh.proofId !== claimed.authority.proofId || fresh.proofHash !== claimed.authority.proofHash || fresh.snapshotHash !== claimed.authority.snapshotHash) throw Error("ai_start_authority_changed");
     const command = await db.telnyxCallCommand.findFirst({ where: { ...identity, status: "uncertain", reconciliation_state: "ai_start_attempt_consumed" } });
@@ -78,6 +83,7 @@ export async function startCaptureAi(target: AiStartTarget) {
   });
   if (!complete) throw Error(error ?? "ai_start_unconfirmed");
   await withCaptureLock(claimed.target.account_id, claimed.target.provider_call_id, async client => {
+    await client.$queryRaw`SELECT id FROM "CallCaptureSession" WHERE id = ${claimed.target.id} AND account_id = ${claimed.target.account_id} FOR NO KEY UPDATE`;
     const current = await client.callCaptureSession.findUnique({ where: { id: claimed.target.id, account_id: claimed.target.account_id } });
     if (!current || !sameTarget(current, claimed.target) || current.content_admission_closed_at || current.capture_ended_at || current.call_disconnected_at || await providerCallHasWithdrawal(claimed.target.account_id, claimed.target.provider_call_id, client)) throw Error("ai_start_termination_required");
     await client.callCaptureSession.updateMany({ where: { id: current.id, account_id: current.account_id, provider_call_id: claimed.target.provider_call_id, generation: claimed.target.generation, control_state: "START_PENDING", withdrawal_received_at: null, content_admission_closed_at: null, call_disconnected_at: null }, data: { conversation_id: result.conversationId } });

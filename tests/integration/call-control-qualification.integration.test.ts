@@ -450,7 +450,7 @@ describe("FRL Call Control qualification", () => {
 
     // Either attempt may reach the provider first, so the test orders the
     // responses, not the attempts: success lands, then the late uncertainty.
-    const attempts = Promise.allSettled([
+    const attempts = Promise.all([
       runOperatorConsentEffect({ captureId: capture.id, action: "withdraw" }),
       runOperatorConsentEffect({ captureId: capture.id, action: "withdraw" }),
     ]);
@@ -458,9 +458,7 @@ describe("FRL Call Control qualification", () => {
     resolveFirst({ status: 200, providerDate: new Date(NOW.getTime() + 4_000), conversationId: null, ok: true, errorCode: null });
     await vi.waitFor(async () => expect((await prisma.telnyxCallCommand.findFirstOrThrow({ where: { capture_session_id: capture.id, command_type: "ai_assistant_stop" } })).status).toBe("succeeded"));
     resolveSecond({ status: 0, providerDate: null, conversationId: null, ok: false, errorCode: "telnyx_response_uncertain" });
-    const outcomes = await attempts;
-    expect(outcomes.filter(outcome => outcome.status === "fulfilled")).toHaveLength(1);
-    expect(outcomes.filter(outcome => outcome.status === "rejected")).toHaveLength(1);
+    await attempts;
 
     expect(await prisma.telnyxCallCommand.findFirstOrThrow({ where: { capture_session_id: capture.id, command_type: "ai_assistant_stop" } })).toMatchObject({ status: "succeeded", error_code: null });
   });
