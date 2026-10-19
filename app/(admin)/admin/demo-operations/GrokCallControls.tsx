@@ -13,7 +13,8 @@ export function GrokCallControls({ captureId, accountId, providerCallId, generat
     setBusy(true);
     try {
       const response = await fetch(`/api/admin/call-capture/${captureId}/end-call`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ expectedAccountId: accountId, expectedProviderCallId: providerCallId, generation }) });
-      setMessage(response.ok ? "Termination requested. Disconnection remains unconfirmed; repeated requests do not resend consumed commands." : "Termination request unavailable. Use the separately approved carrier fallback or halt the demo.");
+      const result = await response.json();
+      setMessage(response.ok ? result.data.disconnection.confirmed ? "Authenticated exact-call disconnection confirmed." : `Operator command status: ${result.data.commandStatus ?? "unavailable"}. Disconnection remains unconfirmed; repeated requests do not resend consumed commands.` : "Termination request unavailable. Use the separately approved carrier fallback or halt the demo.");
     } catch { setMessage("Termination result uncertain. Do not assume the call ended."); }
     finally { setBusy(false); router.refresh(); }
   }

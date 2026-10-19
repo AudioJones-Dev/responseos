@@ -10,6 +10,7 @@ import path from "node:path";
 import { afterAll, afterEach, beforeAll, beforeEach, expect, test, vi } from "vitest";
 import { prisma, resetAndSeedTestDb, disconnectTestDb, setDevSession } from "./setup";
 import { db } from "@/lib/db/client";
+import * as operatorService from "@/lib/callReview/service";
 import { recordWebhookEvent } from "@/lib/data/webhookEvents";
 import { persistWithdrawalReceipt, withdrawalReceiptDb } from "@/lib/callReview/withdrawalReceipt";
 import { beginGrokHandoff, acceptGrokIncoming, claimGrokWorker, heartbeatGrok, requestGrokStop, dispatchGrokTermination, watchdogGrokSweep } from "@/lib/grok/service";
@@ -23,7 +24,8 @@ import { startMediaBridge } from "@/lib/grok/mediaBridge";
 import { createGrokMediaServer } from "@/lib/grok/mediaServer";
 import { createCarrierTransport } from "@/lib/grok/networkTransport";
 
-const transport = vi.hoisted(() => ({ handoff: vi.fn(), terminate: vi.fn(), verify: vi.fn(), qualified: vi.fn() }));
+const transport = vi.hoisted(() => { vi.resetModules(); return { handoff: vi.fn(), terminate: vi.fn(), verify: vi.fn(), qualified: vi.fn(), operatorEnd: vi.fn() }; });
+vi.mock("@/lib/providers/telnyx/callControl", async original => ({ ...await original<typeof import("@/lib/providers/telnyx/callControl")>(), sendTelnyxCallCommand: transport.operatorEnd }));
 vi.mock("@/lib/grok/provider", async original => ({ ...await original<typeof import("@/lib/grok/provider")>(), assertGrokQualified: transport.qualified, handoffToGrok: transport.handoff, terminateGrokCall: transport.terminate, verifyIncomingSip: transport.verify }));
 const hash = (s: string) => createHash("sha256").update(s).digest("hex");
 const syntheticMac = (s: string) => createHmac("sha256", "local-test-only-not-provider-signing").update(s).digest("hex");
@@ -75,6 +77,7 @@ async function networkFixture(malformedCarrierResponse = false) {
   runtime.server.listen(port, "127.0.0.1"); await once(runtime.server, "listening");
   transport.handoff.mockImplementation((session, token, commandId) => carrierTransport.start(session, token, streamUrl, commandId));
   transport.terminate.mockImplementation((provider, call, commandId) => provider === "telnyx" ? carrierTransport.hangup(call, commandId) : "disabled");
+  transport.operatorEnd.mockImplementation(async ({ callControlId, body }) => ({ ok: await carrierTransport.hangup(callControlId, body.command_id) === "accepted", status: 200, errorCode: null, providerDate: null }));
   const started = await beginGrokHandoff(f.capture), token = requests[0].body.stream_auth_token as string;
   const timestamp = String(Math.floor(Date.now() / 1000));
   const headers = { "telnyx-timestamp": timestamp, "telnyx-signature-ed25519": sign(null, Buffer.from(`${timestamp}|${streamUrl}`), keys.privateKey).toString("base64"), "x-telnyx-streaming-auth-token": token };
@@ -161,6 +164,7 @@ test.each(["network-loss", "binary-frame", "withdrawal"])("real socket %s closes
 beforeEach(async () => {
   await resetAndSeedTestDb(); setDevSession("operator");
   transport.qualified.mockReset(); transport.handoff.mockReset().mockResolvedValue("accepted"); transport.terminate.mockReset().mockResolvedValue("accepted");
+  transport.operatorEnd.mockReset().mockResolvedValue({ ok: true, status: 200, errorCode: null, providerDate: null });
   transport.verify.mockReset().mockImplementation(async (raw: string, headers: Headers) => {
     if (headers.get("x-synthetic-signature") !== syntheticMac(raw)) throw Error("unverified_fixture");
     const payload = JSON.parse(raw);
@@ -169,7 +173,7 @@ beforeEach(async () => {
   vi.stubGlobal("fetch", vi.fn(() => { throw Error("network_forbidden"); }));
 });
 afterEach(() => { expect(fetch).not.toHaveBeenCalled(); vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
-afterAll(async () => { await withdrawalReceiptDb?.$disconnect(); await disconnectTestDb(); vi.doUnmock("@/lib/grok/provider"); vi.resetModules(); });
+afterAll(async () => { await withdrawalReceiptDb?.$disconnect(); await disconnectTestDb(); vi.doUnmock("@/lib/grok/provider"); vi.doUnmock("@/lib/providers/telnyx/callControl"); vi.resetModules(); });
 async function fixture() {
   const account = await prisma.account.findFirstOrThrow();
   const assignment = await prisma.telephonyNumberAssignment.create({ data: { account_id: account.id, telephony_number_id: randomUUID(), provider_assistant_id: "fixture", status: "qualification" } });
@@ -382,6 +386,43 @@ test("withdrawal committed after claim vetoes send without releasing claim", asy
   expect((await prisma.grokCallSession.findFirstOrThrow()).stopped_at).not.toBeNull();
 });
 
+test("same operator ID with a changed privileged role vetoes postcommit handoff", async () => {
+  const f = await fixture(), actor = await operatorService.requireReviewOperator();
+  afterCommit(async () => { vi.spyOn(operatorService, "requireReviewOperator").mockResolvedValue({ ...actor, user: { ...actor.user, role: "aj_admin" } }); });
+  await expect(beginGrokHandoff(f.capture)).rejects.toThrow("grok_presend_veto");
+  expect(transport.handoff).not.toHaveBeenCalled();
+});
+
+test("retained Grok authority trigger pins its search path", async () => {
+  const rows = await prisma.$queryRaw<{ proconfig: string[] }[]>`SELECT proconfig FROM pg_proc WHERE oid='public.grok_authority_guard()'::regprocedure`;
+  expect(rows[0].proconfig).toContain("search_path=pg_catalog");
+});
+
+test.each(["accepted", "uncertain"])("operator fallback stays distinct after %s automatic termination and never resends either claim", async status => {
+  const f = await bound(); await f.receipt();
+  transport.terminate.mockResolvedValue(status);
+  await requestGrokStop(f.id, "withdrawal_or_control_loss"); await dispatchGrokTermination(f.id);
+  transport.operatorEnd.mockResolvedValue({ ok: false, status: 0, errorCode: "telnyx_response_uncertain", providerDate: null });
+  const invoke = () => endPost(new Request("http://localhost", { method: "POST", body: JSON.stringify({ expectedAccountId: f.capture.account_id, expectedProviderCallId: f.capture.provider_call_id, generation: f.capture.generation }) }), { params: Promise.resolve({ id: f.capture.id }) });
+  const responses = await Promise.all([invoke(), invoke()]);
+  for (const response of responses) { expect(response.status).toBe(202); expect((await response.json()).data).toMatchObject({ commandStatus: "uncertain", disconnection: { confirmed: false } }); }
+  await invoke(); await watchdogGrokSweep();
+  expect(transport.operatorEnd).toHaveBeenCalledTimes(1); expect(transport.terminate).toHaveBeenCalledTimes(2);
+  expect((await prisma.grokCallSession.findUniqueOrThrow({ where: { id: f.id } })).stopped_at).not.toBeNull();
+  expect(await prisma.callWithdrawalReceipt.count()).toBe(1);
+});
+
+test("watchdog isolates a session transaction failure and does not scan settled history", async () => {
+  const first = await bound(), second = await bound();
+  await requestGrokStop(first.id, "test_control_loss"); await requestGrokStop(second.id, "test_control_loss");
+  vi.spyOn(db!, "$transaction").mockRejectedValueOnce(Error("synthetic_database_fault"));
+  expect(await watchdogGrokSweep()).toMatchObject({ inspected: 2, failed: 1 });
+  expect(transport.terminate).toHaveBeenCalledTimes(2);
+  expect(await watchdogGrokSweep()).toMatchObject({ inspected: 1, failed: 0 });
+  expect(transport.terminate).toHaveBeenCalledTimes(4);
+  expect(await watchdogGrokSweep()).toEqual({ inspected: 0, failed: 0 });
+});
+
 test("lost claim commit acknowledgement permits no later resend", async () => {
   const f = await fixture(); afterCommit(async () => { throw Error("lost_commit_ack"); });
   await expect(beginGrokHandoff(f.capture)).rejects.toThrow("lost_commit_ack");
@@ -507,7 +548,7 @@ test("operator End call rejects stale generation; client and anonymous cannot in
   setDevSession("client_admin@org_mock_1"); expect((await endPost(request(1), params)).status).toBe(403); expect((await statusGet(new Request("http://localhost"), params)).status).toBe(403);
   vi.stubEnv("RESPONSEOS_REQUIRE_AUTH", "true"); vi.stubEnv("RESPONSEOS_DEV_SESSION", ""); expect((await endPost(request(1), params)).status).toBe(403);
   vi.stubEnv("RESPONSEOS_REQUIRE_AUTH", "false"); setDevSession("operator"); expect((await endPost(request(1), params)).status).toBe(202);
-  expect(transport.terminate).toHaveBeenCalledTimes(2);
+  expect(transport.operatorEnd).toHaveBeenCalledTimes(1);
 });
 
 test("ingestion route rejects oversized body and unauthenticated fixture", async () => {
