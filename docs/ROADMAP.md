@@ -171,3 +171,6 @@ Owner approved the pinned final authorization boundary and isolated tests; no mi
 
 ### Bounded supervised AI-start safety — October19
 [Conditional one-shot AI start](readiness/FRL_AI_START_WITHDRAWAL_SAFETY_2026-10-19.md) is owner-approved for local implementation and isolated validation against the reviewed trim pair. No milestone, provider or activation gate moves. Carrier terminal behavior and two observed rehearsals remain live-demo prerequisites; CRM/email effects are deferred.
+
+### Full Grok Voice 3.0 local experiment — October19
+Owner-selected Direct SIP feasibility and offline scaffolding only; no milestone or activation gate moves. [Blocking decisions and exact action-time scopes](readiness/FRL_GROK_DIRECT_SIP_2026-10-19.md). Existing Telnyx qualification is not xAI qualification.

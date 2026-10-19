@@ -1801,6 +1801,18 @@
       "start": "2026-10-19",
       "blocked": true,
       "blockedReason": "Conditional one-shot implementation complete for exact-tree local validation and Claude review. External evidence binds final commits. Carrier terminal behavior, hosted authentication and rehearsals remain separately gated."
+    },
+    {
+      "id": "FRL-GROK-DIRECT-SIP-LOCAL",
+      "phase": "Integrations",
+      "title": "Assess full Grok Voice 3.0 Direct SIP with offline protocol scaffolding",
+      "owner": "Codex",
+      "status": "In Progress",
+      "progress": 10,
+      "priority": "High",
+      "start": "2026-10-19",
+      "blocked": true,
+      "blockedReason": "Offline scaffold only. Consent-gated handoff and whole-call termination decisions pending; provider binding, signature contract, hosting, retention, budgets and live qualification unresolved."
     }
   ],
   "liveIssues": [

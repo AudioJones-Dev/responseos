@@ -1928,3 +1928,6 @@ Owner-approved local successor. Existing receipt and exact original input hash g
 
 ## ADR-0078 - Conditional one-shot AI start with a fresh withdrawal veto
 Owner-approved local implementation. A committed exact start claim is consumed permanently, but does not confer irrevocable send authority: fresh pre-send consent/identity/withdrawal checks can veto. No locks span provider I/O, no start resend after uncertainty/veto/crash, and no claim reset. Supersedes earlier AI-start retry semantics only; withdrawal/stop and End-call policies are unchanged. Eventual independently verified termination is the supervised criterion, not zero post-withdrawal audio. [Contract and Doctrine21](readiness/FRL_AI_START_WITHDRAWAL_SAFETY_2026-10-19.md).
+
+## ADR-0079 - Isolate full Grok Voice 3.0 local feasibility work
+Owner chose full Grok Voice 3.0 and authorized bounded local work. This adds an offline protocol scaffold, not a provider promotion or activated integration. Consent-gated SIP handoff and whole-call termination policies remain pending explicit choices. Preserve the frozen Telnyx pair and all migrations. [Scope, approval packets and Doctrine21](readiness/FRL_GROK_DIRECT_SIP_2026-10-19.md).
