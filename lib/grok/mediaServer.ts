@@ -1,18 +1,38 @@
 import "@/lib/serverOnlyGuard";
-import { createServer, type ServerOptions } from "node:https";
+import { createServer as createHttpsServer, type ServerOptions } from "node:https";
+import { createServer as createHttpServer } from "node:http";
+import { z } from "zod";
 import WebSocket, { WebSocketServer } from "ws";
 import { authenticateStream, startFrame } from "./mediaContract";
 import { startMediaBridge, startupMediaCursor, type StartupCursor } from "./mediaBridge";
 import { openRealtimeSocket, socketPort, type TransportConfig } from "./networkTransport";
 import { assertGrokQualified } from "./provider";
 
-export function createGrokMediaServer(config: { streamUrl: string; publicKey: string; tls: Pick<ServerOptions, "key" | "cert">; realtime: TransportConfig; fault?: () => void }) {
+type Ingress = { ingress?: "direct-tls"; tls: Pick<ServerOptions, "key" | "cert"> } | { ingress: "managed-edge-http"; tls?: never };
+export function parseMediaListenerConfig(raw: unknown, envPort: string | undefined) {
+  const common = { mode: z.literal("production"), streamUrl: z.string().url(), publicKey: z.string() };
+  const config = z.union([
+    z.object({ ...common, ingress: z.literal("direct-tls").default("direct-tls"), certificatePath: z.string().min(1), privateKeyPath: z.string().min(1), port: z.number().int().min(1024).max(65535) }).strict(),
+    z.object({ ...common, ingress: z.literal("managed-edge-http") }).strict(),
+  ]).parse(raw);
+  if (config.ingress === "direct-tls") return config;
+  const port = z.string().regex(/^[1-9]\d{0,4}$/).transform(Number).pipe(z.number().int().min(1024).max(65535)).parse(envPort);
+  return { ...config, port };
+}
+
+export function createGrokMediaServer(config: { streamUrl: string; publicKey: string; realtime: TransportConfig; fault?: () => void } & Ingress) {
   const origin = new URL(config.streamUrl);
   if (origin.protocol !== "wss:" || origin.username || origin.password || origin.hash) throw Error("media_listener_url_invalid");
   if (config.realtime.mode === "production") assertGrokQualified();
   else if (config.realtime.mode !== "local-synthetic" || origin.hostname !== "127.0.0.1") throw Error("listener_mode_required");
-  if (!config.tls.key || !config.tls.cert) throw Error("listener_tls_required");
-  const server = createServer({ ...config.tls, minVersion: "TLSv1.2", maxHeaderSize: 8192 }, (_request, response) => { response.writeHead(404); response.end(); });
+  const ingress = config.ingress ?? "direct-tls";
+  if (ingress !== "direct-tls" && ingress !== "managed-edge-http") throw Error("listener_ingress_invalid");
+  if (ingress === "direct-tls" && (!config.tls?.key || !config.tls?.cert)) throw Error("listener_tls_required");
+  if (ingress === "managed-edge-http" && (config.tls !== undefined || origin.href !== config.streamUrl)) throw Error("listener_edge_config_invalid");
+  const server = ingress === "direct-tls"
+    ? createHttpsServer({ ...config.tls, minVersion: "TLSv1.2", maxHeaderSize: 8192 })
+    : createHttpServer({ maxHeaderSize: 8192 });
+  server.on("request", (_request, response) => { response.writeHead(404); response.end(); });
   server.requestTimeout = 5000; server.headersTimeout = 5000;
   const limits = { noServer: true, perMessageDeflate: false, maxPayload: 16384, maxFragments: 64, maxBufferedChunks: 64, closeTimeout: 1000 };
   const wss = new WebSocketServer(limits);
@@ -23,6 +43,7 @@ export function createGrokMediaServer(config: { streamUrl: string; publicKey: st
     socket.on("error", () => {});
     try {
       if (request.url !== origin.pathname + origin.search || request.headers.host !== origin.host || wss.clients.size >= 4) throw Error("stream_destination_invalid");
+      if (request.rawHeaders.filter((v, i) => i % 2 === 0 && v.toLowerCase() === "host").length !== 1) throw Error("stream_host_invalid");
       const headers = new Headers();
       for (const name of ["telnyx-timestamp", "telnyx-signature-ed25519", "x-telnyx-streaming-auth-token"]) {
         if (request.rawHeaders.filter((v, i) => i % 2 === 0 && v.toLowerCase() === name).length !== 1) throw Error("stream_header_invalid");

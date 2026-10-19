@@ -3,7 +3,8 @@ import { execFileSync, spawn, spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { createServer as httpsServer } from "node:https";
-import { createServer as netServer, type AddressInfo } from "node:net";
+import { createServer as netServer, connect as tcpConnect, type AddressInfo } from "node:net";
+import { connect as tlsConnect } from "node:tls";
 import WebSocket, { WebSocketServer } from "ws";
 import { once } from "node:events";
 import path from "node:path";
@@ -43,7 +44,7 @@ async function unusedPort() {
   const port = (server.address() as AddressInfo).port; await new Promise<void>(resolve => server.close(() => resolve())); return port;
 }
 
-async function networkFixture(malformedCarrierResponse = false) {
+async function networkFixture(malformedCarrierResponse = false, managedEdge = false) {
   const f = await fixture(), requests: { url: string; body: Record<string, unknown>; authorization: string | undefined; consentSaved: boolean }[] = [];
   const sessions: WebSocket[] = [], audio: string[] = [], urls: string[] = [];
   const peer = httpsServer(tls, (request, response) => {
@@ -74,8 +75,25 @@ async function networkFixture(malformedCarrierResponse = false) {
   const peerOrigin = `https://127.0.0.1:${(peer.address() as AddressInfo).port}`;
   const carrierTransport = createCarrierTransport({ mode: "local-synthetic", origin: peerOrigin, ca: tls.cert });
   const keys = generateKeyPairSync("ed25519"), port = await unusedPort(), streamUrl = `wss://127.0.0.1:${port}/media?version=1`;
-  const runtime = createGrokMediaServer({ streamUrl, publicKey: keys.publicKey.export({ format: "der", type: "spki" }).subarray(-32).toString("base64"), tls, realtime: { mode: "local-synthetic", origin: peerOrigin, ca: tls.cert } });
-  runtime.server.listen(port, "127.0.0.1"); await once(runtime.server, "listening");
+  const runtime = createGrokMediaServer({ streamUrl, publicKey: keys.publicKey.export({ format: "der", type: "spki" }).subarray(-32).toString("base64"), ...(managedEdge ? { ingress: "managed-edge-http" as const } : { tls }), realtime: { mode: "local-synthetic", origin: peerOrigin, ca: tls.cert } });
+  runtime.server.listen(managedEdge ? 0 : port, "127.0.0.1"); await once(runtime.server, "listening");
+  const proxy = managedEdge ? httpsServer(tls) : undefined;
+  const tunnels = new Set<import("node:stream").Duplex>();
+  if (proxy) {
+    proxy.on("upgrade", (request, socket, head) => {
+      const upstream = tcpConnect({ host: "127.0.0.1", port: (runtime.server.address() as AddressInfo).port });
+      tunnels.add(socket); tunnels.add(upstream);
+      socket.on("error", () => upstream.destroy()); upstream.on("error", () => socket.destroy());
+      socket.on("close", () => { tunnels.delete(socket); upstream.destroy(); }); upstream.on("close", () => { tunnels.delete(upstream); socket.destroy(); });
+      upstream.once("connect", () => {
+        const lines = request.rawHeaders.flatMap((value, index) => index % 2 === 0 ? [value + ": " + request.rawHeaders[index + 1]] : []);
+        upstream.write(request.method + " " + request.url + " HTTP/1.1\r\n" + lines.join("\r\n") + "\r\n\r\n");
+        if (head.length) upstream.write(head);
+        socket.pipe(upstream); upstream.pipe(socket);
+      });
+    });
+    proxy.listen(port, "127.0.0.1"); await once(proxy, "listening");
+  }
   transport.handoff.mockImplementation((session, token, commandId) => carrierTransport.start(session, token, streamUrl, commandId));
   transport.terminate.mockImplementation((provider, call, commandId) => provider === "telnyx" ? carrierTransport.hangup(call, commandId) : "disabled");
   transport.operatorEnd.mockImplementation(async ({ callControlId, body }) => ({ ok: await carrierTransport.hangup(callControlId, body.command_id) === "accepted", status: 200, errorCode: null, providerDate: null }));
@@ -83,7 +101,7 @@ async function networkFixture(malformedCarrierResponse = false) {
   const timestamp = String(Math.floor(Date.now() / 1000));
   const headers = { "telnyx-timestamp": timestamp, "telnyx-signature-ed25519": sign(null, Buffer.from(`${timestamp}|${streamUrl}`), keys.privateKey).toString("base64"), "x-telnyx-streaming-auth-token": token };
   const streamId = randomUUID(), received: Record<string, unknown>[] = [];
-  async function connect(extraHeaders = {}, ca = tls.cert) {
+  async function connect(extraHeaders = {}, ca = tls.cert, startOverrides = {}) {
     const socket = new WebSocket(streamUrl, { ca, rejectUnauthorized: true, headers: { ...headers, ...extraHeaders }, perMessageDeflate: false });
     socket.on("message", raw => {
       const frame = JSON.parse(raw.toString()); received.push(frame);
@@ -91,16 +109,22 @@ async function networkFixture(malformedCarrierResponse = false) {
     });
     await once(socket, "open");
     socket.send(JSON.stringify({ event: "connected", version: "1.0.0", "x-telnyx-streaming-auth-token": token }));
-    socket.send(JSON.stringify({ event: "start", stream_id: streamId, start: { call_control_id: f.capture.provider_call_id, call_session_id: f.capture.call_session_id, client_state: mediaClientState(f.capture.id, f.capture.generation), media_format: { encoding: "PCMU", sample_rate: 8000, channels: 1 } } }));
+    socket.send(JSON.stringify({ event: "start", stream_id: streamId, start: { call_control_id: f.capture.provider_call_id, call_session_id: f.capture.call_session_id, client_state: mediaClientState(f.capture.id, f.capture.generation), media_format: { encoding: "PCMU", sample_rate: 8000, channels: 1 }, ...startOverrides } }));
     return socket;
   }
   const ready = () => vi.waitFor(async () => expect(await prisma.grokIncomingReceipt.count({ where: { session_id: started.sessionId, event_id: { startsWith: "realtime:" } } })).toBe(1), { timeout: 4000 });
-  async function close() { await runtime.close(); for (const socket of sessions) socket.terminate(); await new Promise<void>(resolve => xai.close(() => resolve())); await new Promise<void>(resolve => peer.close(() => resolve())); }
-  return { ...f, id: started.sessionId, requests, sessions, audio, urls, received, connect, ready, close, streamId };
+  async function probe(target: string, extra: string[] = [], host = new URL(streamUrl).host, proof = headers) {
+    const socket = tlsConnect({ host: "127.0.0.1", port, ca: tls.cert, rejectUnauthorized: true });
+    await once(socket, "secureConnect");
+    socket.write(["GET " + target + " HTTP/1.1", "Host: " + host, "Connection: Upgrade", "Upgrade: websocket", "Sec-WebSocket-Version: 13", "Sec-WebSocket-Key: AAECAwQFBgcICQoLDA0ODw==", ...Object.entries(proof).map(([k,v]) => k + ": " + v), ...extra, "", ""].join("\r\n"));
+    const [data] = await once(socket, "data"); socket.destroy(); return String(data).split("\r\n")[0];
+  }
+  async function close() { await runtime.close(); for (const socket of tunnels) socket.destroy(); if (proxy) await new Promise<void>(resolve => proxy.close(() => resolve())); for (const socket of sessions) socket.terminate(); await new Promise<void>(resolve => xai.close(() => resolve())); await new Promise<void>(resolve => peer.close(() => resolve())); }
+  return { ...f, id: started.sessionId, requests, sessions, audio, urls, received, connect, ready, close, streamId, probe, headers, runtime };
 }
 
-test("real local TLS sockets carry post-consent PCMU and operator End call reaches exact carrier HTTP target", async () => {
-  const f = await networkFixture();
+test.each([false, true])("real local TLS path (managed edge %s) carries post-consent PCMU and exact operator End", async managedEdge => {
+  const f = await networkFixture(false, managedEdge);
   try {
     const caller = await f.connect(); await f.ready();
     caller.send(JSON.stringify({ event: "media", stream_id: f.streamId, sequence_number: "2", media: { track: "inbound", chunk: "1", timestamp: "20", payload: Buffer.alloc(160, 255).toString("base64") } }));
@@ -118,8 +142,8 @@ test("real local TLS sockets carry post-consent PCMU and operator End call reach
   } finally { await f.close(); }
 });
 
-test("real WSS listener rejects forged upgrade before xAI socket creation", async () => {
-  const f = await networkFixture();
+test.each([false, true])("real WSS listener (managed edge %s) rejects forged upgrade before xAI socket creation", async managedEdge => {
+  const f = await networkFixture(false, managedEdge);
   try { await expect(f.connect({ "telnyx-signature-ed25519": Buffer.alloc(64).toString("base64") })).rejects.toThrow(); expect(f.sessions).toHaveLength(0); }
   finally { await f.close(); }
 });
@@ -163,11 +187,61 @@ test("malformed real carrier HTTP result remains uncertain and cannot release a 
   } finally { await f.close(); }
 });
 
-test("real socket replay cannot join an already consumed stream", async () => {
-  const f = await networkFixture();
+test.each([false, true])("real socket replay (managed edge %s) cannot join an already consumed stream", async managedEdge => {
+  const f = await networkFixture(false, managedEdge);
   try {
     const caller = await f.connect(); await f.ready(); const duplicate = await f.connect(); await once(duplicate, "close");
     expect(f.sessions).toHaveLength(1); expect(caller.readyState).toBe(WebSocket.OPEN);
+  } finally { await f.close(); }
+});
+
+test.each(["telnyx-timestamp", "telnyx-signature-ed25519", "x-telnyx-streaming-auth-token", "Host"])("managed edge rejects duplicate %s before upstream creation", async name => {
+  const f = await networkFixture(false, true);
+  try { expect(await f.probe("/media?version=1", [name + ": hostile"])).not.toContain("101"); expect(f.sessions).toHaveLength(0); }
+  finally { await f.close(); }
+});
+
+test.each(["/media?version=%31", "/media?%76ersion=1", "/media?version=1&", "/a/../media?version=1", "/%6dedia?version=1"])("managed edge rejects URL normalization alias %s", async target => {
+  const f = await networkFixture(false, true);
+  try { expect(await f.probe(target)).not.toContain("101"); expect(f.sessions).toHaveLength(0); }
+  finally { await f.close(); }
+});
+
+test("managed edge ignores forwarded authority, rejects hostile Host and stale signatures", async () => {
+  const f = await networkFixture(false, true);
+  try {
+    expect(await f.probe("/media?version=1", ["X-Forwarded-Host: " + new URL(f.requests[0].body.stream_url as string).host], "evil.invalid")).not.toContain("101");
+    await expect(f.connect({ "telnyx-timestamp": "1000000000" })).rejects.toThrow();
+    expect(f.sessions).toHaveLength(0);
+    const caller = await f.connect({ "x-forwarded-host": "evil.invalid", "x-forwarded-proto": "http", forwarded: "host=evil.invalid;proto=http" });
+    await f.ready(); expect(caller.readyState).toBe(WebSocket.OPEN); expect(f.sessions).toHaveLength(1);
+  } finally { await f.close(); }
+});
+
+test.each(["call", "generation"])("managed edge rejects wrong %s binding before xAI creation", async field => {
+  const f = await networkFixture(false, true);
+  try {
+    const caller = await f.connect({}, tls.cert, field === "call" ? { call_control_id: "foreign-call" } : { client_state: mediaClientState(f.capture.id, f.capture.generation + 1) });
+    await once(caller, "close"); expect(f.sessions).toHaveLength(0);
+  } finally { await f.close(); }
+});
+
+test.each(["withdrawal", "shutdown"])("managed edge %s closes admission and suppresses late output", async fault => {
+  const f = await networkFixture(false, true);
+  try {
+    const caller = await f.connect(); await f.ready(); const closed = once(caller, "close");
+    if (fault === "withdrawal") {
+      await f.receipt();
+      f.sessions[0].send(JSON.stringify({ type: "response.created", response: { id: "late_edge" } }));
+      f.sessions[0].send(JSON.stringify({ type: "response.output_audio.delta", response_id: "late_edge", delta: Buffer.alloc(320, 255).toString("base64") }));
+    } else await f.runtime.close();
+    await closed;
+    await vi.waitFor(() => expect(f.requests.filter(r => r.url.endsWith("/hangup"))).toHaveLength(1), { timeout: 4000 });
+    expect(f.received.filter(frame => frame.event === "media")).toHaveLength(0);
+    expect((await prisma.grokCallSession.findUniqueOrThrow({ where: { id: f.id } })).stopped_at).not.toBeNull();
+    const replay = await f.connect().catch(() => null);
+    if (replay) await once(replay, "close");
+    expect(f.sessions).toHaveLength(1);
   } finally { await f.close(); }
 });
 
