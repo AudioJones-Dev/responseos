@@ -60,7 +60,7 @@ export async function beginGrokHandoff(t: AiStartTarget) {
     await requestGrokStop(claim.session.id, "presend_veto");
     throw Error("grok_presend_veto");
   }
-  const result = await provider.handoffToGrok(claim.session, token).catch(() => "uncertain" as const);
+  const result = await provider.handoffToGrok(claim.session, token, claim.command.id).catch(() => "uncertain" as const);
   await saveResult(claim.command.id, claim.session.id, claim.command.resource, result);
   if (result !== "accepted") await requestGrokStop(claim.session.id, "handoff_unconfirmed");
   return { sessionId: claim.session.id, handoff: result, disconnectionConfirmed: false };

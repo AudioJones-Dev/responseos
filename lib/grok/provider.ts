@@ -22,14 +22,17 @@ export async function verifyIncomingSip(_raw: string, _headers: Headers): Promis
   throw Error("grok_signature_and_correlation_contract_unqualified");
 }
 
-export async function handoffToGrok(_session: GrokCallSession, _token: string): Promise<CommandResult> {
-  void _session; void _token;
-  return "disabled";
+export async function handoffToGrok(session: GrokCallSession, token: string, commandId: string): Promise<CommandResult> {
+  try { assertGrokQualified(); } catch { return "disabled"; }
+  const { createCarrierTransport } = await import("./networkTransport");
+  return createCarrierTransport({ mode: "production", apiKey: () => process.env.TELNYX_API_KEY ?? "" }).start(session, token, process.env.RESPONSEOS_GROK_STREAM_URL ?? "", commandId);
 }
 
-export async function terminateGrokCall(_provider: "telnyx" | "xai", _resource: string, _commandId: string): Promise<CommandResult> {
-  void _provider; void _resource; void _commandId;
-  return "disabled";
+export async function terminateGrokCall(provider: "telnyx" | "xai", resource: string, commandId: string): Promise<CommandResult> {
+  if (provider !== "telnyx") return "disabled";
+  try { assertGrokQualified(); } catch { return "disabled"; }
+  const { createCarrierTransport } = await import("./networkTransport");
+  return createCarrierTransport({ mode: "production", apiKey: () => process.env.TELNYX_API_KEY ?? "" }).hangup(resource, commandId);
 }
 
 export async function connectGrokControl(_session: GrokCallSession): Promise<ControlConnection> {

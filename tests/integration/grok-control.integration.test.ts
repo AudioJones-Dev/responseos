@@ -1,8 +1,13 @@
 import { createHash, createHmac, generateKeyPairSync, randomUUID, sign } from "node:crypto";
-import { spawn, spawnSync } from "node:child_process";
+import { execFileSync, spawn, spawnSync } from "node:child_process";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { createServer as httpsServer } from "node:https";
+import { createServer as netServer, type AddressInfo } from "node:net";
+import WebSocket, { WebSocketServer } from "ws";
 import { once } from "node:events";
 import path from "node:path";
-import { afterAll, afterEach, beforeEach, expect, test, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, expect, test, vi } from "vitest";
 import { prisma, resetAndSeedTestDb, disconnectTestDb, setDevSession } from "./setup";
 import { db } from "@/lib/db/client";
 import { recordWebhookEvent } from "@/lib/data/webhookEvents";
@@ -15,11 +20,127 @@ import { POST as incomingPost } from "@/app/api/webhooks/xai/sip/route";
 import { claimGrokMedia, bindGrokRealtime } from "@/lib/grok/service";
 import { mediaClientState, realtimeConfig, REALTIME_URL } from "@/lib/grok/mediaContract";
 import { startMediaBridge } from "@/lib/grok/mediaBridge";
+import { createGrokMediaServer } from "@/lib/grok/mediaServer";
+import { createCarrierTransport } from "@/lib/grok/networkTransport";
 
 const transport = vi.hoisted(() => ({ handoff: vi.fn(), terminate: vi.fn(), verify: vi.fn(), qualified: vi.fn() }));
 vi.mock("@/lib/grok/provider", async original => ({ ...await original<typeof import("@/lib/grok/provider")>(), assertGrokQualified: transport.qualified, handoffToGrok: transport.handoff, terminateGrokCall: transport.terminate, verifyIncomingSip: transport.verify }));
 const hash = (s: string) => createHash("sha256").update(s).digest("hex");
 const syntheticMac = (s: string) => createHmac("sha256", "local-test-only-not-provider-signing").update(s).digest("hex");
+let tlsDirectory: string, tls: { key: Buffer; cert: Buffer };
+beforeAll(() => {
+  tlsDirectory = mkdtempSync(path.join(tmpdir(), "grok-tls-"));
+  execFileSync("openssl", ["req", "-x509", "-newkey", "rsa:2048", "-nodes", "-keyout", path.join(tlsDirectory, "key.pem"), "-out", path.join(tlsDirectory, "cert.pem"), "-days", "1", "-subj", "/CN=127.0.0.1", "-addext", "subjectAltName=IP:127.0.0.1"], { stdio: "ignore" });
+  tls = { key: readFileSync(path.join(tlsDirectory, "key.pem")), cert: readFileSync(path.join(tlsDirectory, "cert.pem")) };
+});
+afterAll(() => { if (tlsDirectory && path.dirname(tlsDirectory) === path.resolve(tmpdir()) && path.basename(tlsDirectory).startsWith("grok-tls-")) rmSync(tlsDirectory, { recursive: true }); });
+
+async function unusedPort() {
+  const server = netServer(); server.listen(0, "127.0.0.1"); await once(server, "listening");
+  const port = (server.address() as AddressInfo).port; await new Promise<void>(resolve => server.close(() => resolve())); return port;
+}
+
+async function networkFixture() {
+  const f = await fixture(), requests: { url: string; body: Record<string, unknown>; authorization: string | undefined; consentSaved: boolean }[] = [];
+  const sessions: WebSocket[] = [], audio: string[] = [], urls: string[] = [];
+  const peer = httpsServer(tls, (request, response) => {
+    let raw = ""; request.on("data", bytes => { raw += bytes.toString(); });
+    request.on("end", () => { void (async () => {
+      const consentSaved = (await prisma.callConsentEvent.count({ where: { account_id: f.capture.account_id, provider_call_id: f.capture.provider_call_id, action: "grant" } })) > 0;
+      requests.push({ url: request.url!, body: JSON.parse(raw), authorization: request.headers.authorization, consentSaved });
+      response.writeHead(200, { "Content-Type": "application/json" }); response.end(JSON.stringify({ data: { result: "ok" } }));
+    })().catch(() => { response.writeHead(500); response.end(); }); });
+  });
+  const xai = new WebSocketServer({ server: peer, path: "/v1/realtime", perMessageDeflate: false });
+  xai.on("connection", (socket, request) => {
+    sessions.push(socket); urls.push(request.url!);
+    socket.on("error", () => {});
+    socket.on("message", raw => {
+      const frame = JSON.parse(raw.toString());
+      if (frame.type === "session.update") socket.send(JSON.stringify({ type: "session.updated", session: { ...frame.session, id: `session_${randomUUID()}`, model: "grok-voice-3.0" } }));
+      if (frame.type === "input_audio_buffer.append") {
+        audio.push(frame.audio);
+        socket.send(JSON.stringify({ type: "response.created", response: { id: "response_local" } }));
+        socket.send(JSON.stringify({ type: "response.output_audio.delta", response_id: "response_local", delta: Buffer.alloc(320, 255).toString("base64") }));
+        socket.send(JSON.stringify({ type: "response.done", response: { id: "response_local" } }));
+      }
+    });
+    socket.send(JSON.stringify({ type: "session.created", session: { id: "initial" } }));
+  });
+  peer.listen(0, "127.0.0.1"); await once(peer, "listening");
+  const peerOrigin = `https://127.0.0.1:${(peer.address() as AddressInfo).port}`;
+  const carrierTransport = createCarrierTransport({ mode: "local-synthetic", origin: peerOrigin, ca: tls.cert });
+  const keys = generateKeyPairSync("ed25519"), port = await unusedPort(), streamUrl = `wss://127.0.0.1:${port}/media?version=1`;
+  const runtime = createGrokMediaServer({ streamUrl, publicKey: keys.publicKey.export({ format: "der", type: "spki" }).subarray(-32).toString("base64"), tls, realtime: { mode: "local-synthetic", origin: peerOrigin, ca: tls.cert } });
+  runtime.server.listen(port, "127.0.0.1"); await once(runtime.server, "listening");
+  transport.handoff.mockImplementation((session, token, commandId) => carrierTransport.start(session, token, streamUrl, commandId));
+  transport.terminate.mockImplementation((provider, call, commandId) => provider === "telnyx" ? carrierTransport.hangup(call, commandId) : "disabled");
+  const started = await beginGrokHandoff(f.capture), token = requests[0].body.stream_auth_token as string;
+  const timestamp = String(Math.floor(Date.now() / 1000));
+  const headers = { "telnyx-timestamp": timestamp, "telnyx-signature-ed25519": sign(null, Buffer.from(`${timestamp}|${streamUrl}`), keys.privateKey).toString("base64"), "x-telnyx-streaming-auth-token": token };
+  const streamId = randomUUID(), received: Record<string, unknown>[] = [];
+  async function connect(extraHeaders = {}) {
+    const socket = new WebSocket(streamUrl, { ca: tls.cert, rejectUnauthorized: true, headers: { ...headers, ...extraHeaders }, perMessageDeflate: false });
+    socket.on("message", raw => {
+      const frame = JSON.parse(raw.toString()); received.push(frame);
+      if (frame.event === "mark") socket.send(JSON.stringify({ ...frame, stream_id: streamId }));
+    });
+    await once(socket, "open");
+    socket.send(JSON.stringify({ event: "connected", version: "1.0.0", "x-telnyx-streaming-auth-token": token }));
+    socket.send(JSON.stringify({ event: "start", stream_id: streamId, start: { call_control_id: f.capture.provider_call_id, call_session_id: f.capture.call_session_id, client_state: mediaClientState(f.capture.id, f.capture.generation), media_format: { encoding: "PCMU", sample_rate: 8000, channels: 1 } } }));
+    return socket;
+  }
+  const ready = () => vi.waitFor(async () => expect(await prisma.grokIncomingReceipt.count({ where: { session_id: started.sessionId, event_id: { startsWith: "realtime:" } } })).toBe(1), { timeout: 4000 });
+  async function close() { await runtime.close(); for (const socket of sessions) socket.terminate(); await new Promise<void>(resolve => xai.close(() => resolve())); await new Promise<void>(resolve => peer.close(() => resolve())); }
+  return { ...f, id: started.sessionId, requests, sessions, audio, urls, received, connect, ready, close, streamId };
+}
+
+test("real local TLS sockets carry post-consent PCMU and operator End call reaches exact carrier HTTP target", async () => {
+  const f = await networkFixture();
+  try {
+    const caller = await f.connect(); await f.ready();
+    caller.send(JSON.stringify({ event: "media", stream_id: f.streamId, sequence_number: "2", media: { track: "inbound", chunk: "1", timestamp: "20", payload: Buffer.alloc(160, 255).toString("base64") } }));
+    await vi.waitFor(() => expect(f.received.filter(frame => frame.event === "media")).toHaveLength(2));
+    expect(f.audio).toHaveLength(1); expect(f.urls).toEqual(["/v1/realtime?model=grok-voice-3.0"]);
+    expect(f.requests[0].consentSaved).toBe(true); expect(f.requests[0].authorization).toBe("Bearer local-synthetic-only");
+    expect(f.requests[0].url).toBe(`/v2/calls/${encodeURIComponent(f.capture.provider_call_id)}/actions/streaming_start`);
+    expect(f.requests[0].body).toMatchObject({ stream_track: "inbound_track", stream_bidirectional_target_legs: "self", stream_bidirectional_codec: "PCMU", stream_bidirectional_sampling_rate: 8000 });
+    const closed = once(caller, "close");
+    const response = await endPost(new Request("http://localhost", { method: "POST", body: JSON.stringify({ expectedAccountId: f.capture.account_id, expectedProviderCallId: f.capture.provider_call_id, generation: f.capture.generation }) }), { params: Promise.resolve({ id: f.capture.id }) });
+    expect(response.status).toBe(202); await closed;
+    expect(f.requests.filter(r => r.url.endsWith("/hangup"))).toHaveLength(1);
+    expect(f.requests.at(-1)!.url).toBe(`/v2/calls/${encodeURIComponent(f.capture.provider_call_id)}/actions/hangup`);
+    expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: f.capture.id } })).call_disconnected_at).toBeNull();
+  } finally { await f.close(); }
+});
+
+test("real WSS listener rejects forged upgrade before xAI socket creation", async () => {
+  const f = await networkFixture();
+  try { await expect(f.connect({ "telnyx-signature-ed25519": Buffer.alloc(64).toString("base64") })).rejects.toThrow(); expect(f.sessions).toHaveLength(0); }
+  finally { await f.close(); }
+});
+
+test("real socket replay cannot join an already consumed stream", async () => {
+  const f = await networkFixture();
+  try {
+    const caller = await f.connect(); await f.ready(); const duplicate = await f.connect(); await once(duplicate, "close");
+    expect(f.sessions).toHaveLength(1); expect(caller.readyState).toBe(WebSocket.OPEN);
+  } finally { await f.close(); }
+});
+
+test.each(["network-loss", "binary-frame", "withdrawal"])("real socket %s closes admission and requests exact hangup without terminal proof", async fault => {
+  const f = await networkFixture();
+  try {
+    const caller = await f.connect(); await f.ready(); const closed = once(caller, "close");
+    if (fault === "network-loss") f.sessions[0].terminate();
+    if (fault === "binary-frame") caller.send(Buffer.alloc(20000));
+    if (fault === "withdrawal") await f.receipt();
+    await closed;
+    await vi.waitFor(() => expect(f.requests.filter(r => r.url.endsWith("/hangup"))).toHaveLength(1), { timeout: 4000 });
+    expect((await prisma.grokCallSession.findUniqueOrThrow({ where: { id: f.id } })).stopped_at).not.toBeNull();
+    expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: f.capture.id } })).call_disconnected_at).toBeNull();
+  } finally { await f.close(); }
+});
 beforeEach(async () => {
   await resetAndSeedTestDb(); setDevSession("operator");
   transport.qualified.mockReset(); transport.handoff.mockReset().mockResolvedValue("accepted"); transport.terminate.mockReset().mockResolvedValue("accepted");

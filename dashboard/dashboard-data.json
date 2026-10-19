@@ -1805,14 +1805,14 @@
     {
       "id": "FRL-GROK-DIRECT-SIP-LOCAL",
       "phase": "Integrations",
-      "title": "Implement disabled Grok media bridge and durable call authority",
+      "title": "Wire disabled Grok TLS listener and qualify real local sockets",
       "owner": "Codex",
       "status": "In Progress",
       "progress": 35,
       "priority": "High",
       "start": "2026-10-19",
       "blocked": true,
-      "blockedReason": "Signed stream claims and injected-socket media bridge implemented; final local validation underway. Production listener composition, hosting, retention, budgets and live qualification unresolved."
+      "blockedReason": "Injected bridge checkpoint passed PG16/17/18. Real TLS listener/client composition implemented on local successor; validation underway. Hosting, retention, budgets and live qualification remain gated."
     }
   ],
   "liveIssues": [

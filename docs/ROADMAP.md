@@ -180,3 +180,5 @@ Grok local checkpoint: both safety decisions approved; thirty protocol/model tes
 Grok application checkpoint: durable claims and disabled application paths implemented for local testing. Transport reassessment recommends retaining Telnyx Call Control with a post-consent media bridge; no material transport change yet. Hosted qualification and matching control successor remain gated.
 
 Local Grok checkpoint now includes the injected-socket media bridge, exact signed stream binding and bounded audio/withdrawal tests. Production listener/hosting and live qualification remain out of scope for this checkpoint; no activation gate moves.
+
+Grok local socket successor adds actual TLS/WebSocket/HTTPS adapter composition and loopback end-to-end qualification. Status remains EXPERIMENTAL; hosted activation and real-provider qualification are not authorized.
