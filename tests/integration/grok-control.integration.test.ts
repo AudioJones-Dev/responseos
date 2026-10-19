@@ -184,9 +184,9 @@ test("operator End call rejects stale generation; client and anonymous cannot in
   const request = (generation: number) => new Request("http://localhost", { method: "POST", body: JSON.stringify({ expectedAccountId: f.capture.account_id, expectedProviderCallId: f.capture.provider_call_id, generation }) });
   const params = { params: Promise.resolve({ id: f.capture.id }) };
   expect((await endPost(request(2), params)).status).toBe(409);
-  setDevSession("client_admin"); expect((await endPost(request(1), params)).status).toBe(403); expect((await statusGet(new Request("http://localhost"), params)).status).toBe(403);
-  setDevSession("none"); expect((await endPost(request(1), params)).status).toBe(403);
-  setDevSession("operator"); expect((await endPost(request(1), params)).status).toBe(202);
+  setDevSession("client_admin@org_mock_1"); expect((await endPost(request(1), params)).status).toBe(403); expect((await statusGet(new Request("http://localhost"), params)).status).toBe(403);
+  vi.stubEnv("RESPONSEOS_REQUIRE_AUTH", "true"); vi.stubEnv("RESPONSEOS_DEV_SESSION", ""); expect((await endPost(request(1), params)).status).toBe(403);
+  vi.stubEnv("RESPONSEOS_REQUIRE_AUTH", "false"); setDevSession("operator"); expect((await endPost(request(1), params)).status).toBe(202);
   expect(transport.terminate).toHaveBeenCalledTimes(2);
 });
 

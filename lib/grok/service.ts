@@ -50,11 +50,11 @@ export async function beginGrokHandoff(t: AiStartTarget) {
     const currentActor = await requireReviewOperator();
     if (currentActor.user.id !== actor.user.id) throw Error("operator_changed");
     const fresh = await database().grokCallSession.findUniqueOrThrow({ where: { id: claim.session.id } });
-    const now = await clock(database());
-    if (fresh.stopped_at || fresh.lease_expires_at <= now || !same(fresh, t) || await authority(t, database()) !== fresh.authority_digest) throw Error("grok_presend_veto");
+    const now = await clock(database() as unknown as Prisma.TransactionClient);
+    if (fresh.stopped_at || fresh.lease_expires_at <= now || !same(fresh, t) || await authority(t, database() as unknown as Prisma.TransactionClient) !== fresh.authority_digest) throw Error("grok_presend_veto");
     const command = await database().grokCallCommand.findUniqueOrThrow({ where: { id: claim.command.id } });
     if (command.session_id !== fresh.id || command.resource !== fresh.provider_call_id || command.status !== "uncertain" || command.result_at) throw Error("grok_claim_changed");
-    if (await providerCallHasWithdrawal(t.account_id, t.provider_call_id, database())) throw Error("grok_presend_veto");
+    if (await providerCallHasWithdrawal(t.account_id, t.provider_call_id, database() as unknown as Prisma.TransactionClient)) throw Error("grok_presend_veto");
   } catch {
     await requestGrokStop(claim.session.id, "presend_veto");
     throw Error("grok_presend_veto");
@@ -66,7 +66,7 @@ export async function beginGrokHandoff(t: AiStartTarget) {
 }
 
 async function saveResult(id: string, sessionId: string, resource: string, result: provider.CommandResult) {
-  const updated = await database().grokCallCommand.updateMany({ where: { id, session_id: sessionId, resource, status: "uncertain", result_at: null, consumed_at: { not: null } }, data: { status: result, result_at: await clock(database()) } });
+  const updated = await database().grokCallCommand.updateMany({ where: { id, session_id: sessionId, resource, status: "uncertain", result_at: null, consumed_at: { not: null } }, data: { status: result, result_at: await clock(database() as unknown as Prisma.TransactionClient) } });
   if (updated.count !== 1) throw Error("grok_result_identity_mismatch");
 }
 
@@ -162,7 +162,7 @@ export async function runGrokWorker(id: string) {
   let timer: ReturnType<typeof setInterval> | undefined;
   let ticking = false;
   try {
-    if (await authority(target(claimed.session), database()) !== claimed.session.authority_digest) throw Error("grok_join_presend_veto");
+    if (await authority(target(claimed.session), database() as unknown as Prisma.TransactionClient) !== claimed.session.authority_digest) throw Error("grok_join_presend_veto");
     connection = await provider.connectGrokControl(claimed.session);
     if (!await heartbeatGrok(id, claimed.session.worker_token!)) return;
     await saveResult(claimed.command.id, id, claimed.command.resource, "accepted");
