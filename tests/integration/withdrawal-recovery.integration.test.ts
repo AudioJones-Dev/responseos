@@ -34,6 +34,32 @@ async function fixture(kind: "normal" | "missing" | "legacy" = "normal") {
   return { capture, receipt, original, eventKey, body, source, post };
 }
 
+test("recovery matches the original route's trimmed references but rejects different evidence", async () => {
+  const f = await fixture("missing");
+  const original = { ...f.original, disclosureRef: `  ${f.original.disclosureRef} `, evidenceRef: `\t${f.original.evidenceRef}  `, jurisdictionBasis: ` ${f.original.jurisdictionBasis}\n` };
+  await prisma.$executeRawUnsafe(`CREATE FUNCTION synthetic_trim_evidence_failure() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'synthetic trim evidence failure'; END $$`);
+  await prisma.$executeRawUnsafe(`CREATE TRIGGER synthetic_trim_evidence_failure BEFORE INSERT ON "CallConsentEvent" FOR EACH ROW EXECUTE FUNCTION synthetic_trim_evidence_failure()`);
+  try {
+    const response = await origin.run("original", () => originalPost(new Request("http://localhost", { method: "POST", body: JSON.stringify({ action: "withdraw", ...original, eventKey: f.eventKey }) }), { params: Promise.resolve({ id: f.capture.id }) }));
+    expect(response.status).toBe(202);
+  } finally {
+    await prisma.$executeRawUnsafe('DROP TRIGGER synthetic_trim_evidence_failure ON "CallConsentEvent"');
+    await prisma.$executeRawUnsafe('DROP FUNCTION synthetic_trim_evidence_failure()');
+  }
+  const receipt = await prisma.callWithdrawalReceipt.findUniqueOrThrow({ where: { account_id_provider_call_id: { account_id: f.capture.account_id, provider_call_id: f.capture.provider_call_id } } });
+  const body = { ...f.body, receiptId: receipt.id, original };
+  expect(await (await f.post({ ...body, original: { ...original, evidenceRef: "  different evidence  " } })).json()).toMatchObject({ data: { withdrawal: { drain: "confirmed" }, evidence: { state: "review_required", reason: "original_inputs_mismatch" } } });
+  expect(await prisma.callConsentEvent.count({ where: { action: "withdraw" } })).toBe(0);
+  expect(await (await f.post(body)).json()).toMatchObject({ data: { evidence: { state: "recorded" }, providerAction: "none" } });
+  const evidence = await prisma.callConsentEvent.findFirstOrThrow({ where: { action: "withdraw" } });
+  expect(evidence).toMatchObject({ event_key: `${f.capture.id}:${f.eventKey}`, disclosure_ref: f.original.disclosureRef, evidence_ref: f.original.evidenceRef, jurisdiction_basis: f.original.jurisdictionBasis });
+  await f.post(body);
+  expect(await prisma.callConsentEvent.count({ where: { action: "withdraw" } })).toBe(1);
+  expect(await prisma.callConsentEvent.findUniqueOrThrow({ where: { id: evidence.id } })).toEqual(evidence);
+  expect(await prisma.callWithdrawalReceipt.findUniqueOrThrow({ where: { id: receipt.id } })).toEqual(receipt);
+  expect(hooks.send).not.toHaveBeenCalled();
+});
+
 test("existing receipt drives concurrent idempotent drain and exact-key evidence without provider calls", async () => {
   const f = await fixture();
   await prisma.$queryRaw`SELECT 1 AS waited FROM pg_sleep(0.02)`;

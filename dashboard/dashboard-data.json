@@ -1780,7 +1780,7 @@
     {
       "id": "FRL-WITHDRAWAL-DB-RECOVERY",
       "phase": "Integrations",
-      "title": "Continue existing withdrawal database stages and clarify hangup origin",
+      "title": "Match withdrawal recovery reference trimming after accepted implementation review",
       "owner": "Codex",
       "status": "Review",
       "progress": 90,
