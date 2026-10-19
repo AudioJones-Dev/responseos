@@ -5,6 +5,8 @@ import { requireReviewOperator } from "@/lib/callReview/service";
 import { runOperatorConsentEffect } from "@/lib/callControl/service";
 import { providerCallHasWithdrawal, recordWithdrawal } from "@/lib/callReview/withdrawal";
 import { withdrawalFailure, withdrawalProgress } from "@/lib/callReview/withdrawalReceipt";
+import { beginGrokHandoff, requestGrokStop, dispatchGrokTermination } from "@/lib/grok/service";
+import { grokSelected } from "@/lib/grok/provider";
 
 const references = { disclosureRef: z.string().trim().min(1).max(200), evidenceRef: z.string().trim().min(1).max(200), jurisdictionBasis: z.string().trim().min(1).max(100), eventKey: z.string().uuid() };
 const Input = z.discriminatedUnion("action", [
@@ -32,7 +34,11 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
       withdrawalCapture = capture;
       const { event, conflict } = await recordWithdrawal(capture, operator.user.id, value);
       const recorded = { id: event.id, action: event.action, occurredAt: event.occurred_at, recordedAt: event.recorded_at, sourceOccurredAt: event.source_occurred_at, sourceTimeStatus: event.source_time_status, reviewRequired: true };
-      try { await runOperatorConsentEffect({ captureId: capture.id, action: "withdraw" }); }
+      try {
+        const grok = await db.grokCallSession.findUnique({ where: { capture_id: capture.id } });
+        if (grok) { await requestGrokStop(grok.id, "withdrawal"); await dispatchGrokTermination(grok.id); }
+        else await runOperatorConsentEffect({ captureId: capture.id, action: "withdraw" });
+      }
       catch { return Response.json({ ok: false, error: "consent_effect_incomplete", data: recorded, withdrawal: await withdrawalProgress(capture) }, { status: 409 }); }
       return Response.json({ ok: !conflict, ...(conflict ? { error: "idempotency_conflict" } : {}), data: recorded, withdrawal: await withdrawalProgress(capture) }, { status: conflict ? 409 : 200 });
     }
@@ -61,7 +67,8 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
     if (data.action !== value.action || data.disclosure_ref !== value.disclosureRef || data.evidence_ref !== value.evidenceRef || data.jurisdiction_basis !== value.jurisdictionBasis) return Response.json({ ok: false, error: "idempotency_conflict" }, { status: 409 });
     const recorded = { id: data.id, action: data.action, occurredAt: data.occurred_at };
     try {
-      await runOperatorConsentEffect({ captureId: capture.id, action: value.action, ...(value.action === "grant" ? { startTarget: capture } : {}) });
+      if (value.action === "grant" && grokSelected()) await beginGrokHandoff(capture);
+      else await runOperatorConsentEffect({ captureId: capture.id, action: value.action, ...(value.action === "grant" ? { startTarget: capture } : {}) });
     } catch {
       // The event and control state are already committed; retrying with the
       // same eventKey reaches the idempotent branch and re-drives the effect.

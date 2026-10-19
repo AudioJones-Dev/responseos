@@ -1,0 +1,181 @@
+import "@/lib/serverOnlyGuard";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
+import type { GrokCallSession, Prisma } from "@prisma/client";
+import { db } from "@/lib/db/client";
+import { requireReviewOperator } from "@/lib/callReview/service";
+import { providerCallHasWithdrawal } from "@/lib/callReview/withdrawal";
+import { validateCaptureAiEligibility, type AiStartTarget } from "@/lib/callControl/startAi";
+import * as provider from "./provider";
+
+const LEASE_MS = 15000;
+const hash = (value: string) => createHash("sha256").update(value).digest("hex");
+const target = (s: GrokCallSession): AiStartTarget => ({ id: s.capture_id, account_id: s.account_id, provider_call_id: s.provider_call_id, assignment_id: s.assignment_id, generation: s.generation, call_session_id: s.call_session_id, call_leg_id: s.call_leg_id });
+const clock = async (tx: Prisma.TransactionClient) => (await tx.$queryRaw<{ now: Date }[]>`SELECT date_trunc('milliseconds', clock_timestamp() AT TIME ZONE 'UTC') AS now`)[0].now;
+function database() { if (!db) throw Error("database_unavailable"); return db; }
+async function lock(tx: Prisma.TransactionClient, id: string) {
+  await tx.$queryRaw`SELECT id FROM "GrokCallSession" WHERE id=${id} FOR UPDATE`;
+  return tx.grokCallSession.findUniqueOrThrow({ where: { id } });
+}
+function same(s: GrokCallSession, t: AiStartTarget) {
+  return JSON.stringify(target(s)) === JSON.stringify({ id: t.id, account_id: t.account_id, provider_call_id: t.provider_call_id, assignment_id: t.assignment_id, generation: t.generation, call_session_id: t.call_session_id, call_leg_id: t.call_leg_id });
+}
+async function authority(t: AiStartTarget, tx: Prisma.TransactionClient) {
+  const e = await validateCaptureAiEligibility(t, tx);
+  if (!e.capture.disclosure_completed_at) throw Error("disclosure_completion_required");
+  return hash(JSON.stringify([e.grantId, e.grantHash, e.proofId, e.proofHash, e.snapshotHash, e.capture.disclosure_completed_at]));
+}
+async function stop(tx: Prisma.TransactionClient, s: GrokCallSession, reason: string) {
+  if (!s.stopped_at) s = await tx.grokCallSession.update({ where: { id: s.id }, data: { stopped_at: await clock(tx), stop_reason: reason } });
+  for (const [kind, resource] of [["telnyx_hangup", s.provider_call_id], ["xai_hangup", s.xai_call_id]] as const) {
+    if (resource) await tx.grokCallCommand.upsert({ where: { session_id_kind: { session_id: s.id, kind } }, create: { session_id: s.id, kind, resource }, update: {} });
+  }
+  return s;
+}
+
+export async function beginGrokHandoff(t: AiStartTarget) {
+  const actor = await requireReviewOperator();
+  provider.assertGrokQualified();
+  const token = randomBytes(32).toString("hex");
+  const claim = await database().$transaction(async tx => {
+    await tx.$queryRaw`SELECT id FROM "CallCaptureSession" WHERE id=${t.id} AND account_id=${t.account_id} FOR NO KEY UPDATE`;
+    if (await tx.grokCallSession.findUnique({ where: { capture_id: t.id } })) throw Error("grok_handoff_consumed");
+    if (await tx.telnyxCallCommand.findFirst({ where: { capture_session_id: t.id, command_type: "ai_assistant_start" } })) throw Error("voice_engine_already_claimed");
+    const digest = await authority(t, tx), now = await clock(tx);
+    const session = await tx.grokCallSession.create({ data: { capture_id: t.id, account_id: t.account_id, provider_call_id: t.provider_call_id, assignment_id: t.assignment_id!, generation: t.generation, call_session_id: t.call_session_id!, call_leg_id: t.call_leg_id!, authority_digest: digest, correlation_hash: hash(token), lease_expires_at: new Date(now.getTime() + LEASE_MS) } });
+    const command = await tx.grokCallCommand.create({ data: { session_id: session.id, kind: "handoff", resource: session.provider_call_id, status: "uncertain", consumed_at: now } });
+    await tx.auditLog.create({ data: { account_id: t.account_id, actor_type: "user", actor_user_id: actor.user.id, actor_role: actor.user.role, action: "grok_handoff_consumed", category: "workflow", target_type: "GrokCallSession", target_id: session.id, metadata_json: { commandId: command.id, captureId: t.id, generation: t.generation } } });
+    return { session, command };
+  });
+  try {
+    const currentActor = await requireReviewOperator();
+    if (currentActor.user.id !== actor.user.id) throw Error("operator_changed");
+    const fresh = await database().grokCallSession.findUniqueOrThrow({ where: { id: claim.session.id } });
+    const now = await clock(database());
+    if (fresh.stopped_at || fresh.lease_expires_at <= now || !same(fresh, t) || await authority(t, database()) !== fresh.authority_digest) throw Error("grok_presend_veto");
+    const command = await database().grokCallCommand.findUniqueOrThrow({ where: { id: claim.command.id } });
+    if (command.session_id !== fresh.id || command.resource !== fresh.provider_call_id || command.status !== "uncertain" || command.result_at) throw Error("grok_claim_changed");
+    if (await providerCallHasWithdrawal(t.account_id, t.provider_call_id, database())) throw Error("grok_presend_veto");
+  } catch {
+    await requestGrokStop(claim.session.id, "presend_veto");
+    throw Error("grok_presend_veto");
+  }
+  const result = await provider.handoffToGrok(claim.session, token).catch(() => "uncertain" as const);
+  await saveResult(claim.command.id, claim.session.id, claim.command.resource, result);
+  if (result !== "accepted") await requestGrokStop(claim.session.id, "handoff_unconfirmed");
+  return { sessionId: claim.session.id, handoff: result, disconnectionConfirmed: false };
+}
+
+async function saveResult(id: string, sessionId: string, resource: string, result: provider.CommandResult) {
+  const updated = await database().grokCallCommand.updateMany({ where: { id, session_id: sessionId, resource, status: "uncertain", result_at: null, consumed_at: { not: null } }, data: { status: result, result_at: await clock(database()) } });
+  if (updated.count !== 1) throw Error("grok_result_identity_mismatch");
+}
+
+export async function acceptGrokIncoming(raw: string, headers: Headers) {
+  if (Buffer.byteLength(raw) > 65536) throw Error("grok_payload_too_large");
+  const proof = await provider.verifyIncomingSip(raw, headers);
+  if (!/^[0-9a-f]{64}$/.test(proof.correlationToken) || proof.bodyDigest !== hash(raw) || !/^[A-Za-z0-9_-]{1,128}$/.test(proof.eventId) || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(proof.callId)) throw Error("grok_verified_identity_invalid");
+  const found = await database().grokCallSession.findUnique({ where: { correlation_hash: hash(proof.correlationToken) } });
+  if (!found) throw Error("grok_correlation_unknown");
+  return database().$transaction(async tx => {
+    let s = await lock(tx, found.id);
+    if (s.xai_call_id && s.xai_call_id !== proof.callId) throw Error("grok_call_retarget_denied");
+    const receipt = await tx.grokIncomingReceipt.findUnique({ where: { event_id: proof.eventId } });
+    if (receipt && (receipt.session_id !== s.id || receipt.call_id !== proof.callId || receipt.body_digest !== proof.bodyDigest)) throw Error("grok_replay_conflict");
+    if (!receipt) await tx.grokIncomingReceipt.create({ data: { event_id: proof.eventId, session_id: s.id, call_id: proof.callId, body_digest: proof.bodyDigest } });
+    if (!s.xai_call_id) s = await tx.grokCallSession.update({ where: { id: s.id }, data: { xai_call_id: proof.callId } });
+    if (s.stopped_at || s.lease_expires_at <= await clock(tx) || await providerCallHasWithdrawal(s.account_id, s.provider_call_id, tx)) s = await stop(tx, s, "late_incoming_after_stop");
+    return { sessionId: s.id, stopped: Boolean(s.stopped_at), disconnectionConfirmed: false };
+  });
+}
+
+export async function requestGrokStop(id: string, reason: string) {
+  return database().$transaction(async tx => stop(tx, await lock(tx, id), reason));
+}
+
+export async function operatorEndGrok(t: AiStartTarget) {
+  const actor = await requireReviewOperator();
+  const s = await database().grokCallSession.findUnique({ where: { capture_id: t.id } });
+  if (!s || !same(s, t)) throw Error("grok_target_mismatch");
+  await database().$transaction(async tx => {
+    await stop(tx, await lock(tx, s.id), "operator_end");
+    await tx.auditLog.create({ data: { account_id: s.account_id, actor_type: "user", actor_user_id: actor.user.id, actor_role: actor.user.role, action: "grok_operator_end", category: "workflow", target_type: "GrokCallSession", target_id: s.id } });
+  });
+  await dispatchGrokTermination(s.id);
+  return { disconnectionConfirmed: false, terminationRequested: true };
+}
+
+export async function dispatchGrokTermination(id: string) {
+  for (const kind of ["telnyx_hangup", "xai_hangup"] as const) {
+    const claimed = await database().$transaction(async tx => {
+      const s = await lock(tx, id);
+      if (!s.stopped_at) return null;
+      const c = await tx.grokCallCommand.findUnique({ where: { session_id_kind: { session_id: id, kind } } });
+      if (!c || c.status !== "queued" || c.consumed_at || c.resource !== (kind === "telnyx_hangup" ? s.provider_call_id : s.xai_call_id)) return null;
+      return tx.grokCallCommand.update({ where: { id: c.id }, data: { status: "uncertain", consumed_at: await clock(tx) } });
+    });
+    if (!claimed) continue;
+    const result = await provider.terminateGrokCall(kind === "telnyx_hangup" ? "telnyx" : "xai", claimed.resource, claimed.id).catch(() => "uncertain" as const);
+    await saveResult(claimed.id, id, claimed.resource, result);
+  }
+}
+
+export async function watchdogGrokSweep() {
+  const sessions = await database().grokCallSession.findMany({ orderBy: { created_at: "asc" }, select: { id: true } });
+  for (const { id } of sessions) {
+    await database().$transaction(async tx => {
+      const s = await lock(tx, id);
+      const capture = await tx.callCaptureSession.findUnique({ where: { id: s.capture_id } });
+      if (s.stopped_at || !capture || !same(s, capture) || capture.content_admission_closed_at || capture.call_disconnected_at || s.lease_expires_at <= await clock(tx) || await providerCallHasWithdrawal(s.account_id, s.provider_call_id, tx)) await stop(tx, s, "withdrawal_or_control_loss");
+    });
+    await dispatchGrokTermination(id);
+  }
+}
+
+export async function claimGrokWorker(id: string) {
+  provider.assertGrokQualified();
+  return database().$transaction(async tx => {
+    const s = await lock(tx, id), now = await clock(tx);
+    if (!s.xai_call_id || s.worker_token || s.stopped_at || s.lease_expires_at <= now || await authority(target(s), tx) !== s.authority_digest) throw Error("grok_worker_not_eligible");
+    const session = await tx.grokCallSession.update({ where: { id }, data: { worker_token: randomUUID(), lease_expires_at: new Date(now.getTime() + LEASE_MS) } });
+    const command = await tx.grokCallCommand.create({ data: { session_id: id, kind: "join", resource: s.xai_call_id, status: "uncertain", consumed_at: now } });
+    return { session, command };
+  });
+}
+
+export async function heartbeatGrok(id: string, workerToken: string) {
+  return database().$transaction(async tx => {
+    const s = await lock(tx, id), now = await clock(tx);
+    const capture = await tx.callCaptureSession.findUnique({ where: { id: s.capture_id } });
+    if (!capture || !same(s, capture) || capture.content_admission_closed_at || capture.call_disconnected_at || s.worker_token !== workerToken || s.stopped_at || s.lease_expires_at <= now || await providerCallHasWithdrawal(s.account_id, s.provider_call_id, tx)) {
+      await stop(tx, s, "worker_lease_invalid");
+      return false;
+    }
+    await tx.grokCallSession.update({ where: { id }, data: { lease_expires_at: new Date(now.getTime() + LEASE_MS) } });
+    return true;
+  });
+}
+
+export async function runGrokWorker(id: string) {
+  const claimed = await claimGrokWorker(id);
+  if (!await heartbeatGrok(id, claimed.session.worker_token!)) return;
+  let connection: provider.ControlConnection | undefined;
+  let timer: ReturnType<typeof setInterval> | undefined;
+  let ticking = false;
+  try {
+    if (await authority(target(claimed.session), database()) !== claimed.session.authority_digest) throw Error("grok_join_presend_veto");
+    connection = await provider.connectGrokControl(claimed.session);
+    if (!await heartbeatGrok(id, claimed.session.worker_token!)) return;
+    await saveResult(claimed.command.id, id, claimed.command.resource, "accepted");
+    timer = setInterval(() => {
+      if (ticking) return;
+      ticking = true;
+      void heartbeatGrok(id, claimed.session.worker_token!).then(async alive => { if (!alive) await connection?.close(); }).catch(async () => { await connection?.close(); }).finally(() => { ticking = false; });
+    }, 3000);
+    await connection.closed;
+  } finally {
+    if (timer) clearInterval(timer);
+    await connection?.close().catch(() => {});
+    await requestGrokStop(id, "control_connection_lost");
+    await dispatchGrokTermination(id);
+  }
+}

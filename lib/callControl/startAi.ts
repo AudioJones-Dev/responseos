@@ -12,7 +12,7 @@ export type AiStartTarget = Pick<CallCaptureSession, "id" | "account_id" | "prov
 const digest = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 const sameTarget = (current: AiStartTarget, target: AiStartTarget) => current.id === target.id && current.account_id === target.account_id && current.provider_call_id === target.provider_call_id && current.assignment_id === target.assignment_id && current.generation === target.generation && current.call_session_id === target.call_session_id && current.call_leg_id === target.call_leg_id;
 
-async function eligible(target: AiStartTarget, client: Prisma.TransactionClient) {
+export async function validateCaptureAiEligibility(target: AiStartTarget, client: Prisma.TransactionClient) {
   const capture = await client.callCaptureSession.findUnique({ where: { id: target.id, account_id: target.account_id } });
   if (!capture || !sameTarget(capture, target)) throw Error("ai_start_target_mismatch");
   if (await providerCallHasWithdrawal(capture.account_id, capture.provider_call_id, client)) throw Error("withdrawal_is_terminal");
@@ -46,13 +46,14 @@ export async function startCaptureAi(target: AiStartTarget) {
     await client.$queryRaw`SELECT id FROM "CallCaptureSession" WHERE id = ${target.id} AND account_id = ${target.account_id} FOR NO KEY UPDATE`;
     const current = await client.callCaptureSession.findUnique({ where: { id: target.id, account_id: target.account_id } });
     if (!current || !sameTarget(current, target)) throw Error("ai_start_target_mismatch");
+    if (await client.grokCallSession.findUnique({ where: { capture_id: target.id } })) throw Error("voice_engine_already_claimed");
     if (await providerCallHasWithdrawal(target.account_id, target.provider_call_id, client)) throw Error("withdrawal_is_terminal");
     const existing = await client.telnyxCallCommand.findFirst({ where: { capture_session_id: target.id, command_type: "ai_assistant_start" }, orderBy: { intended_at: "asc" } });
     if (existing) {
       if (existing.account_id === target.account_id && existing.provider_resource === target.provider_call_id && existing.assignment_id === target.assignment_id && existing.generation === target.generation && existing.status === "succeeded" && existing.conversation_id && existing.provider_date_at) return { phase: "readback" as const };
       throw Error("ai_start_attempt_consumed");
     }
-    const authority = await eligible(target, client);
+    const authority = await validateCaptureAiEligibility(target, client);
     const frozen = Object.freeze({ id: current.id, account_id: current.account_id, provider_call_id: current.provider_call_id, assignment_id: current.assignment_id!, generation: current.generation, call_session_id: current.call_session_id!, call_leg_id: current.call_leg_id! });
     const request = Object.freeze({ assistant: Object.freeze({ id: authority.assistantId }), send_message_history_updates: true, client_state: Buffer.from(JSON.stringify({ captureId: frozen.id, generation: frozen.generation })).toString("base64") });
     const command = await client.telnyxCallCommand.create({ data: { account_id: frozen.account_id, capture_session_id: frozen.id, assignment_id: frozen.assignment_id, generation: frozen.generation, command_type: "ai_assistant_start", command_id: randomUUID(), provider_resource: frozen.provider_call_id, request_json: request, status: "uncertain", reconciliation_state: "ai_start_attempt_consumed" } });
@@ -65,7 +66,7 @@ export async function startCaptureAi(target: AiStartTarget) {
     // These fresh autocommit reads hold no transaction across provider I/O. A later withdrawal remains a remote race.
     const currentOperator = await requireReviewOperator();
     if (currentOperator.user.id !== operator.user.id || currentOperator.user.role !== operator.user.role) throw Error("operator_required");
-    const fresh = await eligible(claimed.target, db as unknown as Prisma.TransactionClient);
+    const fresh = await validateCaptureAiEligibility(claimed.target, db as unknown as Prisma.TransactionClient);
     if (fresh.assistantId !== claimed.authority.assistantId || fresh.grantId !== claimed.authority.grantId || fresh.grantHash !== claimed.authority.grantHash || fresh.proofId !== claimed.authority.proofId || fresh.proofHash !== claimed.authority.proofHash || fresh.snapshotHash !== claimed.authority.snapshotHash) throw Error("ai_start_authority_changed");
     const command = await db.telnyxCallCommand.findFirst({ where: { ...identity, status: "uncertain", reconciliation_state: "ai_start_attempt_consumed" } });
     if (!command) throw Error("ai_start_command_mismatch");
