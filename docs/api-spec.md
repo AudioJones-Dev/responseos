@@ -260,3 +260,5 @@ AI-start grant effect amendment (ADR-0078): the consent route passes its stored 
 
 ### Disabled Grok application boundary
 POST /api/webhooks/xai/sip is body-bounded and fails closed until the real signature/correlation adapter is qualified; no client-supplied authentication is accepted. GET /api/admin/call-capture/[id]/grok requires operator authority and returns redacted command/stop status with disconnectionConfirmed=false. Existing consent/End-call routes branch on explicit Grok selection or stored Grok authority, respectively. Model selection cannot enable the disabled provider. Carrier termination and xAI processing completion remain distinct. See readiness/FRL_GROK_TRANSPORT_REASSESSMENT_2026-10-19.md.
+
+Grok media bridge is an internal injected-socket runtime only, with no public ingress route or enabled network adapter in this checkpoint. Telnyx upgrade verification uses timestamp|exact configured URL, separate from webhook body signatures. Existing SIP ingress remains disabled.

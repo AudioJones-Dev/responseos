@@ -178,3 +178,5 @@ Owner-selected Direct SIP feasibility and offline scaffolding only; no milestone
 Grok local checkpoint: both safety decisions approved; thirty protocol/model tests include a separate watchdog process after simulated worker death. Runtime wiring, durable binding, provider evidence and independent hosting remain blockers; no live gate advances.
 
 Grok application checkpoint: durable claims and disabled application paths implemented for local testing. Transport reassessment recommends retaining Telnyx Call Control with a post-consent media bridge; no material transport change yet. Hosted qualification and matching control successor remain gated.
+
+Local Grok checkpoint now includes the injected-socket media bridge, exact signed stream binding and bounded audio/withdrawal tests. Production listener/hosting and live qualification remain out of scope for this checkpoint; no activation gate moves.

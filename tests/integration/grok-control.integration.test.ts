@@ -1,4 +1,4 @@
-import { createHash, createHmac, randomUUID } from "node:crypto";
+import { createHash, createHmac, generateKeyPairSync, randomUUID, sign } from "node:crypto";
 import { spawn, spawnSync } from "node:child_process";
 import { once } from "node:events";
 import path from "node:path";
@@ -12,6 +12,9 @@ import { POST as consentPost } from "@/app/api/admin/call-capture/[id]/consent/r
 import { POST as endPost } from "@/app/api/admin/call-capture/[id]/end-call/route";
 import { GET as statusGet } from "@/app/api/admin/call-capture/[id]/grok/route";
 import { POST as incomingPost } from "@/app/api/webhooks/xai/sip/route";
+import { claimGrokMedia, bindGrokRealtime } from "@/lib/grok/service";
+import { mediaClientState, realtimeConfig, REALTIME_URL } from "@/lib/grok/mediaContract";
+import { startMediaBridge } from "@/lib/grok/mediaBridge";
 
 const transport = vi.hoisted(() => ({ handoff: vi.fn(), terminate: vi.fn(), verify: vi.fn(), qualified: vi.fn() }));
 vi.mock("@/lib/grok/provider", async original => ({ ...await original<typeof import("@/lib/grok/provider")>(), assertGrokQualified: transport.qualified, handoffToGrok: transport.handoff, terminateGrokCall: transport.terminate, verifyIncomingSip: transport.verify }));
@@ -45,6 +48,99 @@ function incoming(token: string, overrides = {}) {
   const raw = JSON.stringify({ eventId: randomUUID(), callId: randomUUID(), correlationToken: token, ...overrides });
   return { raw, headers: new Headers({ "x-synthetic-signature": syntheticMac(raw) }) };
 }
+
+async function mediaFixture() {
+  const f = await fixture(), result = await beginGrokHandoff(f.capture);
+  const token = transport.handoff.mock.calls.at(-1)![1] as string;
+  const keys = generateKeyPairSync("ed25519"), streamUrl = "wss://synthetic.invalid/media?version=1";
+  const timestamp = String(Math.floor(Date.now() / 1000));
+  const headers = new Headers({ "telnyx-timestamp": timestamp, "telnyx-signature-ed25519": sign(null, Buffer.from(`${timestamp}|${streamUrl}`), keys.privateKey).toString("base64"), "x-telnyx-streaming-auth-token": token });
+  const trusted = { streamUrl, publicKey: keys.publicKey.export({ format: "der", type: "spki" }).subarray(-32).toString("base64") };
+  const frame = { event: "start", stream_id: randomUUID(), start: { call_control_id: f.capture.provider_call_id, call_session_id: f.capture.call_session_id, client_state: mediaClientState(f.capture.id, f.capture.generation), media_format: { encoding: "PCMU", sample_rate: 8000, channels: 1 } } };
+  const input = { headers, connectedToken: token, rawStart: JSON.stringify(frame), trusted };
+  const carrier = { bufferedAmount: 0, send: vi.fn(), close: vi.fn() }, realtime = { bufferedAmount: 0, send: vi.fn(), close: vi.fn() };
+  const openRealtime = vi.fn().mockResolvedValue(realtime);
+  return { ...f, id: result.sessionId, input, frame, carrier, realtime, openRealtime };
+}
+
+test("signed media binding consumes one capability under concurrency and keeps realtime separate from SIP", async () => {
+  const f = await mediaFixture();
+  const claims = await Promise.allSettled([claimGrokMedia(f.input.headers, f.input.rawStart, f.input.trusted), claimGrokMedia(f.input.headers, f.input.rawStart, f.input.trusted)]);
+  expect(claims.filter(c => c.status === "fulfilled")).toHaveLength(1);
+  const session = await prisma.grokCallSession.findUniqueOrThrow({ where: { id: f.id } });
+  await bindGrokRealtime(f.id, session.worker_token!, "session_synthetic");
+  expect((await prisma.grokCallSession.findUniqueOrThrow({ where: { id: f.id } })).xai_call_id).toBeNull();
+  await expect(bindGrokRealtime(f.id, session.worker_token!, "other")).rejects.toThrow();
+  await requestGrokStop(f.id, "test"); await dispatchGrokTermination(f.id);
+  expect(transport.terminate).toHaveBeenCalledExactlyOnceWith("telnyx", f.capture.provider_call_id, expect.any(String));
+});
+
+test.each(["signature", "url", "token", "call", "generation", "codec"])("media rejects %s mismatch before socket or claim", async kind => {
+  const f = await mediaFixture();
+  if (kind === "signature") f.input.headers.set("telnyx-signature-ed25519", Buffer.alloc(64).toString("base64"));
+  if (kind === "url") f.input.trusted.streamUrl += "&changed=1";
+  if (kind === "token") { f.input.headers.set("x-telnyx-streaming-auth-token", "f".repeat(64)); f.input.connectedToken = "f".repeat(64); }
+  if (kind === "call") f.frame.start.call_control_id = "another-call";
+  if (kind === "generation") f.frame.start.client_state = mediaClientState(f.capture.id, 99);
+  if (kind === "codec") f.frame.start.media_format.sample_rate = 16000;
+  f.input.rawStart = JSON.stringify(f.frame);
+  await expect(startMediaBridge(f.input, f)).rejects.toThrow();
+  expect(f.openRealtime).not.toHaveBeenCalled();
+  expect((await prisma.grokCallSession.findUniqueOrThrow({ where: { id: f.id } })).worker_token).toBeNull();
+});
+
+test("withdrawn media capability cannot open xAI or reopen consent", async () => {
+  const f = await mediaFixture(); await f.receipt();
+  await expect(startMediaBridge(f.input, f)).rejects.toThrow(); expect(f.openRealtime).not.toHaveBeenCalled();
+});
+
+test("bridge pins model, negotiates PCMU, reorders bounded input and fences interrupted output", async () => {
+  const f = await mediaFixture(), bridge = await startMediaBridge(f.input, f);
+  try {
+    expect(f.openRealtime).toHaveBeenCalledExactlyOnceWith(REALTIME_URL);
+    expect(JSON.parse(f.realtime.send.mock.calls[0][0])).toEqual(realtimeConfig);
+    await bridge.xai(JSON.stringify({ type: "session.updated", session: { ...realtimeConfig.session, id: "session_fixture", model: "grok-voice-3.0" } }));
+    const audio = Buffer.alloc(160, 255).toString("base64");
+    const packet = (chunk: number) => JSON.stringify({ event: "media", stream_id: f.frame.stream_id, sequence_number: String(chunk + 1), media: { track: "inbound", chunk: String(chunk), timestamp: String(chunk * 20), payload: audio } });
+    await bridge.carrier(packet(2)); await bridge.carrier(packet(1));
+    expect(f.realtime.send.mock.calls.filter(c => JSON.parse(c[0]).type === "input_audio_buffer.append")).toHaveLength(2);
+    await bridge.xai(JSON.stringify({ type: "response.created", response: { id: "response_one" } }));
+    await bridge.xai(JSON.stringify({ type: "response.output_audio.delta", response_id: "response_one", delta: audio }));
+    await bridge.xai(JSON.stringify({ type: "input_audio_buffer.speech_started" }));
+    await bridge.xai(JSON.stringify({ type: "response.output_audio.delta", response_id: "response_one", delta: audio }));
+    await new Promise(resolve => setTimeout(resolve, 60));
+    expect(f.carrier.send.mock.calls.filter(c => JSON.parse(c[0]).event === "media")).toHaveLength(0);
+    expect(f.carrier.send.mock.calls.some(c => JSON.parse(c[0]).event === "clear")).toBe(true);
+    await f.receipt(); await bridge.disconnected();
+    await bridge.xai(JSON.stringify({ type: "response.created", response: { id: "late" } }));
+    expect(bridge.disconnectionConfirmed).toBe(false);
+    expect((await prisma.grokCallSession.findUniqueOrThrow({ where: { id: f.id } })).stopped_at).not.toBeNull();
+  } finally { await bridge.stop("test_complete"); }
+});
+
+test.each(["model", "tools", "format", "event", "gap", "backpressure"])("bridge closes admission and requests exact hangup on %s fault", async kind => {
+  const f = await mediaFixture(), bridge = await startMediaBridge(f.input, f);
+  try {
+    const session = JSON.parse(JSON.stringify({ ...realtimeConfig.session, id: "session_fixture", model: "grok-voice-3.0" }));
+    if (kind === "model") session.model = "grok-voice-latest";
+    if (kind === "tools") session.tools = [{ type: "web_search" }];
+    if (kind === "format") session.audio.output.format.type = "audio/pcm";
+    await bridge.xai(JSON.stringify({ type: "session.updated", session }));
+    if (kind === "event") await bridge.xai(JSON.stringify({ type: "response.function_call_arguments.done" }));
+    if (kind === "backpressure") f.realtime.bufferedAmount = 20000;
+    if (kind === "gap" || kind === "backpressure") await bridge.carrier(JSON.stringify({ event: "media", stream_id: f.frame.stream_id, sequence_number: "3", media: { track: "inbound", chunk: kind === "gap" ? "99" : "1", timestamp: "20", payload: Buffer.alloc(160).toString("base64") } }));
+    expect((await prisma.grokCallSession.findUniqueOrThrow({ where: { id: f.id } })).stopped_at).not.toBeNull();
+    expect(transport.terminate).toHaveBeenCalledExactlyOnceWith("telnyx", f.capture.provider_call_id, expect.any(String));
+    expect(f.realtime.close).toHaveBeenCalledTimes(1);
+  } finally { await bridge.stop("test_complete"); }
+});
+
+test("withdrawal during socket open closes late connection without configuring it", async () => {
+  const f = await mediaFixture();
+  f.openRealtime.mockImplementation(async () => { await f.receipt(); return f.realtime; });
+  await expect(startMediaBridge(f.input, f)).rejects.toThrow("media_open_failed");
+  expect(f.realtime.send).not.toHaveBeenCalled(); expect(f.realtime.close).toHaveBeenCalledTimes(1);
+});
 async function bound() {
   const f = await fixture(); const started = await beginGrokHandoff(f.capture);
   const message = incoming(transport.handoff.mock.calls.at(-1)![1]);

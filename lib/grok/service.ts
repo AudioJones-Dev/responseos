@@ -6,6 +6,7 @@ import { requireReviewOperator } from "@/lib/callReview/service";
 import { providerCallHasWithdrawal } from "@/lib/callReview/withdrawal";
 import { validateCaptureAiEligibility, type AiStartTarget } from "@/lib/callControl/startAi";
 import * as provider from "./provider";
+import { authenticateStream, mediaClientState, mediaHash, startFrame } from "./mediaContract";
 
 const LEASE_MS = 15000;
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -183,4 +184,35 @@ export async function runGrokWorker(id: string) {
     await requestGrokStop(id, "control_connection_lost");
     await dispatchGrokTermination(id);
   }
+}
+
+export async function claimGrokMedia(headers: Headers, rawStart: string, trusted: { streamUrl: string; publicKey: string }) {
+  provider.assertGrokQualified();
+  const proof = authenticateStream(headers, trusted.streamUrl, trusted.publicKey);
+  if (Buffer.byteLength(rawStart) > 16384) throw Error("stream_start_too_large");
+  const frame = startFrame.parse(JSON.parse(rawStart));
+  const found = await database().grokCallSession.findUnique({ where: { correlation_hash: proof.tokenHash } });
+  if (!found) throw Error("stream_binding_unknown");
+  return database().$transaction(async tx => {
+    const s = await lock(tx, found.id), now = await clock(tx);
+    if (s.worker_token || s.xai_call_id || s.stopped_at || s.lease_expires_at <= now) throw Error("stream_binding_consumed_or_stopped");
+    if (frame.start.call_control_id !== s.provider_call_id || frame.start.call_session_id !== s.call_session_id || frame.start.client_state !== mediaClientState(s.capture_id, s.generation)) throw Error("stream_target_mismatch");
+    if (await authority(target(s), tx) !== s.authority_digest) throw Error("stream_authority_changed");
+    await tx.grokIncomingReceipt.create({ data: { event_id: `stream:${frame.stream_id}`, session_id: s.id, call_id: frame.stream_id, body_digest: mediaHash(`${proof.upgradeDigest}|${rawStart}`) } });
+    const session = await tx.grokCallSession.update({ where: { id: s.id }, data: { worker_token: randomUUID(), lease_expires_at: new Date(now.getTime() + LEASE_MS) } });
+    await tx.grokCallCommand.create({ data: { session_id: s.id, kind: "join", resource: frame.stream_id, status: "uncertain", consumed_at: now } });
+    return { session, streamId: frame.stream_id };
+  });
+}
+
+export async function bindGrokRealtime(id: string, workerToken: string, realtimeSessionId: string) {
+  if (!/^[A-Za-z0-9_-]{1,128}$/.test(realtimeSessionId)) throw Error("realtime_identity_invalid");
+  return database().$transaction(async tx => {
+    const s = await lock(tx, id);
+    if (s.worker_token !== workerToken || s.stopped_at || s.lease_expires_at <= await clock(tx) || await authority(target(s), tx) !== s.authority_digest) throw Error("realtime_authority_closed");
+    await tx.grokIncomingReceipt.create({ data: { event_id: `realtime:${id}`, session_id: id, call_id: realtimeSessionId, body_digest: hash(`${id}|${workerToken}|${realtimeSessionId}|${provider.GROK_MODEL}`) } });
+    const command = await tx.grokCallCommand.findUniqueOrThrow({ where: { session_id_kind: { session_id: id, kind: "join" } } });
+    if (command.result_at || command.status !== "uncertain") throw Error("realtime_join_consumed");
+    await tx.grokCallCommand.update({ where: { id: command.id }, data: { status: "accepted", result_at: await clock(tx) } });
+  });
 }

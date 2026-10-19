@@ -365,3 +365,5 @@ Migration 0022 adds nullable `call_disconnected_at` on CallCaptureSession. It is
 
 ### Local Grok authority candidate (0026)
 GrokCallSession binds one capture/account/call/generation with correlation hash, optional authenticated xAI call ID, one worker token, lease and terminal stop. GrokCallCommand consumes each kind once and never resets uncertain sends. GrokIncomingReceipt binds event/body digest to that session. Composite foreign keys and SQL immutable guards preserve authority. No hosted migration; frozen control is intentionally unchanged pending a new reviewed pair. See readiness/FRL_GROK_TRANSPORT_REASSESSMENT_2026-10-19.md.
+
+Grok media stream bindings use immutable GrokIncomingReceipt keys prefixed stream: and realtime:, sharing the stored GrokCallSession authority. A stream consumes worker_token atomically; realtime identity does not populate xai_call_id. No new migration is needed and no prior migration is amended.
