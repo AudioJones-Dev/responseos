@@ -384,7 +384,7 @@ describe("FRL Call Control qualification", () => {
       // This independent connection must see committed authority and intent before dispatch.
       expect(await prisma.callConsentEvent.findFirstOrThrow({ where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, action: "grant" } })).toMatchObject({ evidence_ref: "witness:test" });
       expect(await prisma.telnyxCallCommand.findFirstOrThrow({ where: { account_id: capture.account_id, command_id: body.command_id } })).toMatchObject({ status: "intent_recorded", provider_responded_at: null });
-      const [clock] = await prisma.$queryRaw<{ at: Date }[]>`SELECT clock_timestamp()::timestamp(3) AS at`;
+      const [clock] = await prisma.$queryRaw<{ at: Date }[]>`SELECT date_trunc('milliseconds', clock_timestamp() AT TIME ZONE 'UTC') AS at`;
       dispatchObservedAt = clock.at;
       vi.useFakeTimers({ toFake: ["Date"] });
       vi.setSystemTime(new Date(clock.at.getTime() + clockOffset));
@@ -397,7 +397,7 @@ describe("FRL Call Control qualification", () => {
       vi.useRealTimers();
     }
     expect(response.status).toBe(200);
-    const [responseObserved] = await prisma.$queryRaw<{ at: Date }[]>`SELECT clock_timestamp()::timestamp(3) AS at`;
+    const [responseObserved] = await prisma.$queryRaw<{ at: Date }[]>`SELECT date_trunc('milliseconds', clock_timestamp() AT TIME ZONE 'UTC') AS at`;
     const start = await prisma.telnyxCallCommand.findFirstOrThrow({ where: { command_type: "ai_assistant_start" } });
     expect(start.status).toBe("succeeded");
     expect(start.conversation_id).toBe("conversation-1");
