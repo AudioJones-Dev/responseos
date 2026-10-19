@@ -77,11 +77,12 @@ async function networkFixture(malformedCarrierResponse = false, managedEdge = fa
   const keys = generateKeyPairSync("ed25519"), port = await unusedPort(), streamUrl = `wss://127.0.0.1:${port}/media?version=1`;
   const runtime = createGrokMediaServer({ streamUrl, publicKey: keys.publicKey.export({ format: "der", type: "spki" }).subarray(-32).toString("base64"), ...(managedEdge ? { ingress: "managed-edge-http" as const } : { tls }), realtime: { mode: "local-synthetic", origin: peerOrigin, ca: tls.cert } });
   runtime.server.listen(managedEdge ? 0 : port, "127.0.0.1"); await once(runtime.server, "listening");
+  const backendPort = (runtime.server.address() as AddressInfo).port;
   const proxy = managedEdge ? httpsServer(tls) : undefined;
   const tunnels = new Set<import("node:stream").Duplex>();
   if (proxy) {
     proxy.on("upgrade", (request, socket, head) => {
-      const upstream = tcpConnect({ host: "127.0.0.1", port: (runtime.server.address() as AddressInfo).port });
+      const upstream = tcpConnect({ host: "127.0.0.1", port: backendPort });
       tunnels.add(socket); tunnels.add(upstream);
       socket.on("error", () => upstream.destroy()); upstream.on("error", () => socket.destroy());
       socket.on("close", () => { tunnels.delete(socket); upstream.destroy(); }); upstream.on("close", () => { tunnels.delete(upstream); socket.destroy(); });
