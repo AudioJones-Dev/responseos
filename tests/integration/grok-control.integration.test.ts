@@ -246,6 +246,40 @@ test("withdrawn media capability cannot open xAI or reopen consent", async () =>
   await expect(startMediaBridge(f.input, f)).rejects.toThrow(); expect(f.openRealtime).not.toHaveBeenCalled();
 });
 
+test.each(["denied", "expired-proof", "expired-lease"])("%s media authority permits zero xAI socket or audio", async reason => {
+  const f = await mediaFixture();
+  if (reason === "denied") await prisma.callConsentEvent.create({ data: { account_id: f.capture.account_id, provider_call_id: f.capture.provider_call_id, event_key: randomUUID(), action: "refuse", artifact: "transcript", disclosure_ref: "fixture", evidence_ref: "fixture", jurisdiction_basis: "fixture", source_channel: "call", occurred_at: new Date(Date.now() + 1000) } });
+  if (reason === "expired-proof") await prisma.webhookEvent.updateMany({ where: { account_id: f.capture.account_id, provider_call_id: f.capture.provider_call_id }, data: { payload_expires_at: new Date(0) } });
+  if (reason === "expired-lease") await prisma.grokCallSession.update({ where: { id: f.id }, data: { lease_expires_at: new Date(0) } });
+  await expect(startMediaBridge(f.input, f)).rejects.toThrow();
+  expect(f.openRealtime).not.toHaveBeenCalled(); expect(f.realtime.send).not.toHaveBeenCalled();
+});
+
+test.each(["stop", "barge-in"])("%s during queued playback fences every subsequent old-turn frame", async action => {
+  const f = await mediaFixture(), bridge = await startMediaBridge(f.input, f);
+  const mediaFrames = () => f.carrier.send.mock.calls.map(c => JSON.parse(c[0])).filter(frame => frame.event === "media");
+  try {
+    await bridge.xai(JSON.stringify({ type: "session.updated", session: { ...realtimeConfig.session, id: "session_fixture", model: "grok-voice-3.0" } }));
+    await bridge.xai(JSON.stringify({ type: "response.created", response: { id: "old_turn" } }));
+    await bridge.xai(JSON.stringify({ type: "response.output_audio.delta", response_id: "old_turn", delta: Buffer.alloc(8000, 17).toString("base64") }));
+    await vi.waitFor(() => expect(mediaFrames().length).toBeGreaterThan(0));
+    if (action === "stop") await bridge.stop("operator_end");
+    else await bridge.xai(JSON.stringify({ type: "input_audio_buffer.speech_started" }));
+    const sent = mediaFrames().length;
+    expect(sent).toBeLessThan(50);
+    expect(f.carrier.send.mock.calls.some(c => JSON.parse(c[0]).event === "clear")).toBe(true);
+    await bridge.xai(JSON.stringify({ type: "response.output_audio.delta", response_id: "old_turn", delta: Buffer.alloc(160, 17).toString("base64") }));
+    await new Promise(resolve => setTimeout(resolve, 80)); expect(mediaFrames()).toHaveLength(sent);
+    if (action === "barge-in") {
+      await bridge.xai(JSON.stringify({ type: "input_audio_buffer.speech_stopped" }));
+      await bridge.xai(JSON.stringify({ type: "response.created", response: { id: "new_turn" } }));
+      await bridge.xai(JSON.stringify({ type: "response.output_audio.delta", response_id: "new_turn", delta: Buffer.alloc(160, 34).toString("base64") }));
+      await vi.waitFor(() => expect(mediaFrames()).toHaveLength(sent + 1));
+      expect(Buffer.from(mediaFrames().at(-1).media.payload, "base64")).toEqual(Buffer.alloc(160, 34));
+    }
+  } finally { await bridge.stop("test_complete"); }
+});
+
 test("bridge pins model, negotiates PCMU, reorders bounded input and fences interrupted output", async () => {
   const f = await mediaFixture(), bridge = await startMediaBridge(f.input, f);
   try {
