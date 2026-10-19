@@ -16,7 +16,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
       const capture = await db!.callCaptureSession.findUniqueOrThrow({ where: { id: captureId } });
       if (capture.account_id !== parsed.data.expectedAccountId || capture.provider_call_id !== parsed.data.expectedProviderCallId || capture.generation !== parsed.data.generation) throw Error("end_call_target_mismatch");
       const data = await operatorEndGrok(capture);
-      return Response.json({ ok: true, data }, { status: 202, headers: { "Cache-Control": "no-store" } });
+      return Response.json({ ok: true, data }, { status: data.disconnection.confirmed ? 200 : 202, headers: { "Cache-Control": "no-store" } });
     }
     const data = await requestOperatorEndCall({ ...parsed.data, captureId });
     return Response.json({ ok: true, data }, { status: data.disconnection.confirmed ? 200 : 202, headers: { "Cache-Control": "no-store" } });
