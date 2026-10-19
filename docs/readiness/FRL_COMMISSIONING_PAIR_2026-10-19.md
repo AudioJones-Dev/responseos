@@ -51,3 +51,7 @@ Frozen application afa127e6efc9c56065d4d52abf6ed1ae9b5fcdef and control 83f5a6c4
 
 ## Operator send boundary successor
 Frozen application 7bef9f11a1d3bd0111121d532a2da65e63890bac / control 67c2c65ae6405485f5929fcccc145793c26228c0 remain preserved. Their isolated runtime checks are complete in isolated-runtime-validation-20261019/CONTINUATION_RESULT.md; previous NOT RUN statements above are historical. [Owner-approved operator-only successor](FRL_OPERATOR_END_CALL_2026-10-19.md) preserves all migrations and disabled control policy. External successor evidence: operator-endcall-evidence-20261019.
+
+
+## Database-only recovery successor
+Preserve frozen app45a4ade0cbd6e9a31b28e94d862b093a3e08d205/control dc6ad87dc7f2dad5efd5d1eba21643fa61527ff4. [Narrow recovery](FRL_WITHDRAWAL_DATABASE_RECOVERY_2026-10-19.md) changes app database stages and presentation only; shared docs/dashboard match, Prisma and all25 migrations remain identical, control remains disabled. Exact successor evidence is external in withdrawal-recovery-evidence-20261019.

@@ -250,3 +250,7 @@ Withdrawal Option B addendum: POST consent with action=withdraw first persists a
 
 ### Operator End call final authorization
 The existing operator End call route now commits exact one-shot authority before sending outside database locks. Later eligibility changes do not retarget/cancel the authorized send. Duplicate, uncertain and lost-acknowledgement requests never replay. Response acceptance remains distinct from disconnection; withdrawal is terminal. [Detailed local contract](readiness/FRL_OPERATOR_END_CALL_2026-10-19.md).
+
+
+### POST /api/admin/call-capture/[id]/withdrawal-recovery
+Operator-only. Strict body: receiptId, expectedAccountId, expectedProviderCallId, positive generation; optional original={disclosureRef,evidenceRef,jurisdictionBasis,withdrawalSourceTime?}. No caller eventKey. Existing stored receipt required; identity/generation mismatch returns409, unauthorized403, malformed422. Returns data={withdrawal,evidence:{state:recorded|review_required,reason,eventId},providerAction:none};200 means drain confirmed,202 means pending, not provider cessation. Missing/mismatched inputs can leave evidence review_required after successful drain. Unknown DB outcome returns503 and may be resolved by DB-only readback/retry. New evidence is classified using current call state; existing evidence/receipt preserved. Original consent retry may still send AI stop. [Contract](readiness/FRL_WITHDRAWAL_DATABASE_RECOVERY_2026-10-19.md).

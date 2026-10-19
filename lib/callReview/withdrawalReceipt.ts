@@ -47,11 +47,13 @@ export async function persistWithdrawalReceipt(capture: Capture, actorId: string
   });
 }
 
-export async function drainWithdrawal(capture: Capture) {
+export async function drainWithdrawal(capture: Capture, expectedGeneration?: number) {
   return withCaptureLock(capture.account_id, capture.provider_call_id, async tx => {
     const receipt = await tx.callWithdrawalReceipt.findUniqueOrThrow({ where: { account_id_provider_call_id: { account_id: capture.account_id, provider_call_id: capture.provider_call_id } } });
     if (receipt.capture_id !== capture.id) throw Error("withdrawal_target_conflict");
+    if (expectedGeneration !== undefined) await tx.$queryRaw`SELECT id FROM "CallCaptureSession" WHERE id = ${capture.id} AND account_id = ${capture.account_id} FOR NO KEY UPDATE`;
     const current = await tx.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id, account_id: capture.account_id } });
+    if (expectedGeneration !== undefined && (receipt.generation !== expectedGeneration || current.generation !== expectedGeneration)) throw Error("withdrawal_target_mismatch");
     if (current.withdrawal_drained_at) return current;
     const boundary = new Date(Math.min(receipt.received_at.getTime(), current.content_admission_closed_at?.getTime() ?? Infinity));
     return tx.callCaptureSession.update({ where: { id: capture.id, account_id: capture.account_id }, data: {

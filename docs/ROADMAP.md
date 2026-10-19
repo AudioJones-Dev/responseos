@@ -163,3 +163,7 @@ Independent withdrawal receipt/drain is a local review candidate under accepted 
 
 ### Local operator End call successor — October 19
 Owner approved the pinned final authorization boundary and isolated tests; no milestone or activation gate moves. [Contract](readiness/FRL_OPERATOR_END_CALL_2026-10-19.md). Prior frozen-pair runtime validation is complete and accepted as relayed; this successor needs its own exact-tree evidence. Other command waits, continuation, F2 and the Low post-drain DB state gap remain separate.
+
+
+### Narrow local withdrawal recovery — October19
+[Database-only continuation and read-only End call phases](readiness/FRL_WITHDRAWAL_DATABASE_RECOVERY_2026-10-19.md) implement the owner-approved recovery scope. No milestone/activation gate moves. Provider start-stop ordering, provider-stop continuation and broader retry changes remain unresolved and out of scope.

@@ -1758,12 +1758,12 @@
       "phase": "Integrations",
       "title": "Commit exact operator hangup authority before unlocked one-shot send",
       "owner": "Codex",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "High",
       "start": "2026-10-19",
-      "blocked": true,
-      "blockedReason": "Local successor awaiting exact-commit validation and Claude review. Other callers remain unchanged; activation disabled."
+      "blocked": false,
+      "blockedReason": "Exact-pair isolated validation completed; Claude acceptance relayed. Automatic callers and remote ordering remain outside this fix."
     },
     {
       "id": "FRL-POST-DRAIN-DB-STATES",
@@ -1776,6 +1776,18 @@
       "start": "2026-10-19",
       "blocked": true,
       "blockedReason": "Bounded follow-up only: CALL_RECEIVED, DISCLOSURE_PLAYING and TRANSFER_PENDING remain DB-permitted after drain; application denies them. No migration change authorized here."
+    },
+    {
+      "id": "FRL-WITHDRAWAL-DB-RECOVERY",
+      "phase": "Integrations",
+      "title": "Continue existing withdrawal database stages and clarify hangup origin",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-10-19",
+      "blocked": true,
+      "blockedReason": "Local synthetic validation evidence is maintained externally against exact commits; independent Claude review required. No provider recovery or activation."
     }
   ],
   "liveIssues": [

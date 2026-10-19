@@ -1,9 +1,10 @@
 "use client";
+import type { EndCallAttemptStatus } from "@/lib/callReview/endCallStatus";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { EndCallTarget } from "@/lib/callControl/endCall";
 
-export function EndCallControls({ target, confirmed, disconnectedAt = null, eligibility, commandStatus }: { target: EndCallTarget; confirmed: boolean; disconnectedAt?: string | null; eligibility: { allowed: boolean; reason: string }; commandStatus?: string }) {
+export function EndCallControls({ target, confirmed, disconnectedAt = null, eligibility, commandStatus, attempts = [] }: { target: EndCallTarget; confirmed: boolean; disconnectedAt?: string | null; eligibility: { allowed: boolean; reason: string }; commandStatus?: string; attempts?: EndCallAttemptStatus[] }) {
   const pending = useRef(false);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
@@ -20,5 +21,5 @@ export function EndCallControls({ target, confirmed, disconnectedAt = null, elig
     } catch { setStatus("End call result uncertain. Refresh evidence; do not assume disconnection."); }
     finally { pending.current = false; setBusy(false); router.refresh(); }
   }
-  return <div className="my-3"><button className="rounded border px-3 py-2 disabled:cursor-not-allowed disabled:opacity-40" disabled={busy || confirmed || disconnectedAt !== null || !eligibility.allowed} onClick={end}>End call</button><button className="ml-3 rounded border px-3 py-2" onClick={() => router.refresh()}>Refresh disconnection evidence</button><p role="status">{status}</p><p>End-call eligibility: {eligibility.reason}. Exact call: {target.expectedProviderCallId}; generation {target.generation}.</p>{!confirmed && disconnectedAt === null && (!eligibility.allowed || status || commandStatus === "failed" || commandStatus === "uncertain") && <p>Operator fallback: do not retry or assume disconnection. Using independently approved carrier tooling, locate this exact call and verify its state; if supported and authorized, end it there. Carrier console capabilities have not been verified by this application. If unavailable, contact the designated carrier operator. Keep consent closed and refresh this capture card for authenticated evidence.</p>}<p>Command acceptance is not confirmed disconnection. Consent is never reopened.</p></div>;
+  return <div className="my-3"><button className="rounded border px-3 py-2 disabled:cursor-not-allowed disabled:opacity-40" disabled={busy || confirmed || disconnectedAt !== null || !eligibility.allowed} onClick={end}>End call</button><button className="ml-3 rounded border px-3 py-2" onClick={() => router.refresh()}>Refresh disconnection evidence</button><p role="status">{status}</p>{attempts.map((attempt, index) => <p key={index}>End call generation {attempt.generation}: {attempt.message}</p>)}<p>End-call eligibility: {eligibility.reason}. Exact call: {target.expectedProviderCallId}; generation {target.generation}.</p>{!confirmed && disconnectedAt === null && (!eligibility.allowed || status || commandStatus === "failed" || commandStatus === "uncertain") && <p>Operator fallback: do not retry or assume disconnection. Using independently approved carrier tooling, locate this exact call and verify its state; if supported and authorized, end it there. Carrier console capabilities have not been verified by this application. If unavailable, contact the designated carrier operator. Keep consent closed and refresh this capture card for authenticated evidence.</p>}<p>Command acceptance is not confirmed disconnection. Consent is never reopened.</p></div>;
 }

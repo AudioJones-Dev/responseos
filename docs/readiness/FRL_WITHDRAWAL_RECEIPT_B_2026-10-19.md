@@ -35,3 +35,7 @@ No new retention duration is chosen. Insert-only/FK restrictions intentionally p
 ## Doctrine section21 review
 
 1. Evidence/admission layer. 2. Build the bounded receipt/drain contract. 3. Reuse PostgreSQL. 4. Preserve original evidence and chronology. 5. No cessation claim from receipt or acceptance. 6. No learning expansion. 7. No carrier replacement. 8. No CRM duplication. 9. No provider activation. 10. Stored account plus exact capture FK and shared lock. 11. No inferred cross-leg identity. 12. EXPERIMENTAL only. 13. Separate hosted approval. 14. Synthetic data; no retention policy expansion. 15. Resolves the observed receipt latency/atomicity conflict under the explicitly accepted in-flight rule.
+
+
+## Database recovery successor and clock clarification
+Migration0023 overwrites the passed drain timestamp with the database clock at the drain UPDATE; this is neither receipt time nor exact transaction commit time. The [DB-only continuation](FRL_WITHDRAWAL_DATABASE_RECOVERY_2026-10-19.md) resumes existing receipt drain and exact-input evidence, never provider effects. Original withdrawal retries may still send AI stop; Option B is unchanged.

@@ -1,3 +1,4 @@
+import { endCallAttemptStatus } from "./endCallStatus";
 import { disconnectionEvidence, endCallEligibility } from "@/lib/callControl/endCall";
 import "@/lib/serverOnlyGuard";
 import { callHasWithdrawal, withdrawalActivity } from "./withdrawal";
@@ -36,18 +37,23 @@ export async function loadCallReviewConsole() {
       orderBy: [{ occurred_at: "desc" }, { id: "desc" }], select: { action: true },
       }),
       db!.telnyxCallCommand.findMany({
-      where: { capture_session_id: capture.id },
+      where: { capture_session_id: capture.id, account_id: capture.account_id },
       orderBy: { intended_at: "asc" },
-      select: { command_type: true, status: true, error_code: true, intended_at: true, provider_responded_at: true },
+      select: { id: true, account_id: true, capture_session_id: true, assignment_id: true, provider_resource: true, command_id: true, generation: true, provider_response_status: true, command_type: true, status: true, error_code: true, intended_at: true, provider_responded_at: true },
       }),
       db!.call.findFirst({ where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id }, select: { from_number: true, to_number: true, started_at: true } }),
       db!.account.findUnique({ where: { id: capture.account_id }, select: { name: true } }),
     ]);
+    const [withdrawalReceipt, endAudits] = await Promise.all([
+      db!.callWithdrawalReceipt.findFirst({ where: { capture_id: capture.id, account_id: capture.account_id, provider_call_id: capture.provider_call_id }, select: { id: true, generation: true } }),
+      db!.auditLog.findMany({ where: { account_id: capture.account_id, target_type: "CallCaptureSession", target_id: capture.id, action: { in: ["call_end_requested", "call_end_authorized"] } }, select: { action: true, actor_type: true, actor_user_id: true, metadata_json: true } }),
+    ]);
+    const displayedCommands = commands.map(command => ({ ...command, endCallStatus: command.command_type === "hangup" ? endCallAttemptStatus(command, endAudits) : null }));
     const withdrawals = await db!.callConsentEvent.findMany({ where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id, action: 'withdraw' }, orderBy: { recorded_at: 'asc' } });
     const withdrawal = await withdrawalProgress(capture).catch(error => withdrawalFailure(capture, error));
     const withdrawalReview = withdrawal.receivedAt ? await withdrawalActivity(db! as unknown as Prisma.TransactionClient, capture, withdrawals.some(w => w.source_time_status !== 'verified') ? new Date(Math.min(call?.started_at.getTime() ?? Infinity, capture.capture_started_at?.getTime() ?? Infinity, capture.created_at.getTime())) : withdrawals.find(w => w.source_time_status === 'verified')?.source_occurred_at ?? capture.capture_started_at ?? capture.created_at, withdrawal.receivedAt) : null;
     const { disconnection, endCall } = await db!.$transaction(async client => { const disconnection = await disconnectionEvidence(capture, client); return { disconnection, endCall: await endCallEligibility(capture, client, disconnection) }; });
-    return { ...capture, withdrawal, disconnection, endCall, consentAction: withdrawal.receipt !== "not_recorded" ? 'withdraw' : consent?.action ?? null, commands, call, accountName: account?.name ?? capture.account_id, withdrawals, withdrawalReview };
+    return { ...capture, withdrawal, disconnection, endCall, consentAction: withdrawal.receipt !== "not_recorded" ? 'withdraw' : consent?.action ?? null, commands: displayedCommands, withdrawalReceipt, call, accountName: account?.name ?? capture.account_id, withdrawals, withdrawalReview };
   }));
   const latest = await db.callReview.groupBy({
     by: ["account_id", "call_id"], _max: { revision: true, created_at: true },

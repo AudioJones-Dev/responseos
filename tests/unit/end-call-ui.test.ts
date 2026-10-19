@@ -15,7 +15,7 @@ test('End call distinguishes acceptance from evidence and uses server eligibilit
 test('withdrawn or closed capture never offers enabled grant or refusal', () => {
   const html=renderToStaticMarkup(createElement(ConsentControls,{id:target.captureId,callReference:target.expectedProviderCallId,terminal:true}));
   expect(html).toMatch(/disabled="">Record grant/); expect(html).toMatch(/disabled="">Record refuse/);
-  expect(html).toContain('>Record withdraw</button>');
+  expect(html).toContain('>Retry withdrawal (may send AI stop)</button>');
 });
 
 test('ineligible controls explain independent carrier fallback and visibly disable consent', () => {

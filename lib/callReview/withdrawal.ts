@@ -56,9 +56,15 @@ export async function recordWithdrawal(capture: { id: string; account_id: string
   const receipt = await persistWithdrawalReceipt(capture, actorId, value);
   const received = receipt.received_at;
   await drainWithdrawal(capture);
+  return recordWithdrawalEvidence(capture, actorId, value, received);
+}
+
+export async function recordWithdrawalEvidence(capture: { id: string; account_id: string; provider_call_id: string }, actorId: string, value: { eventKey: string; disclosureRef: string; evidenceRef: string; jurisdictionBasis: string; withdrawalSourceTime?: unknown }, received: Date, expectedGeneration?: number) {
   const requestHash = withdrawalRequestHash(value);
   return withCaptureLock(capture.account_id, capture.provider_call_id, async client => {
+    if (expectedGeneration !== undefined) await client.$queryRaw`SELECT id FROM "CallCaptureSession" WHERE id = ${capture.id} AND account_id = ${capture.account_id} FOR NO KEY UPDATE`;
     const current = await client.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id, account_id: capture.account_id } });
+    if (expectedGeneration !== undefined && current.generation !== expectedGeneration) throw Error("withdrawal_target_mismatch");
     const key = `${capture.id}:${value.eventKey}`;
     const existing = await client.callConsentEvent.findUnique({ where: { event_key: key } });
     if (existing?.action === 'withdraw' && existing.request_hash === requestHash) return { event: existing, conflict: false };

@@ -1920,3 +1920,7 @@ ADR-0075 terminal-error correction: migration0025 restricts0024's silent veto to
 ## ADR-0076 - Commit exact operator hangup authority before sending without locks
 
 Owner-approved local implementation only. Final validation durably binds one exact operator hangup, then releases locks before the single send. Later changes do not cancel or retarget it; no replay after uncertainty. Actorless callers retain existing behavior. No schema change. [Contract, prior accepted runtime evidence, remaining Low gap and Doctrine21](readiness/FRL_OPERATOR_END_CALL_2026-10-19.md). This supersedes the operator dispatch decision blocker in ADR-0075; continuation and other callers remain out of scope.
+
+
+## ADR-0077 - Recover withdrawal database stages without provider effects
+Owner-approved local successor. Existing receipt and exact original input hash govern DB-only drain/evidence continuation; receipt owns event key. Original consent route and command retry semantics remain unchanged. End call origin/witness presentation adds no authority. Migration0023 uses the DB clock at drain update, not receipt or exact commit time. [Contract and Doctrine21](readiness/FRL_WITHDRAWAL_DATABASE_RECOVERY_2026-10-19.md).
