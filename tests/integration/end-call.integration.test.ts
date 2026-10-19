@@ -412,7 +412,7 @@ test('authorization and its audit witness commit atomically; a failed witness le
 
 test('exact hangup after final authorization cannot cancel the pinned send or erase disconnection', async () => {
   const f = await fixture();
-  boundaries.authorized = () => ingest(f, 'call.hangup');
+  boundaries.authorized = async () => { await ingest(f, 'call.hangup'); };
   expect((await f.post()).status).toBe(202);
   expect(send).toHaveBeenCalledTimes(1);
   expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: f.capture.id } })).call_disconnected_at).not.toBeNull();

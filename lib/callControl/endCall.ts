@@ -117,7 +117,7 @@ export async function endCaptureCall(input: EndCallTarget, actor?: { id: string;
       if (evidence.confirmed || !(await endCallEligibility(capture, client, evidence, claimed.command.id)).allowed) return { dispatch: false as const, evidence };
       const identity = {
         id: claimed.command.id, account_id: capture.account_id, capture_session_id: capture.id,
-        assignment_id: capture.assignment_id, generation: capture.generation, command_type: "hangup",
+        assignment_id: capture.assignment_id, generation: capture.generation, command_type: "hangup" as const,
         command_id: claimed.command.command_id, provider_resource: capture.provider_call_id,
         request_json: { equals: claimed.command.request_json as Prisma.InputJsonValue },
       };
