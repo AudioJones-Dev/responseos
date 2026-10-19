@@ -5,7 +5,7 @@ import { continueWithdrawalDatabase } from "@/lib/callReview/withdrawalRecovery"
 const Input = z.strictObject({
   receiptId: z.string().min(1).max(200), expectedAccountId: z.string().min(1).max(200),
   expectedProviderCallId: z.string().min(1).max(500), generation: z.number().int().positive(),
-  original: z.strictObject({ disclosureRef: z.string().max(200), evidenceRef: z.string().max(200), jurisdictionBasis: z.string().max(100), withdrawalSourceTime: z.unknown().optional() }).optional(),
+  original: z.strictObject({ disclosureRef: z.string().trim().max(200), evidenceRef: z.string().trim().max(200), jurisdictionBasis: z.string().trim().max(100), withdrawalSourceTime: z.unknown().optional() }).optional(),
 });
 
 export async function POST(req: Request, context: { params: Promise<{ id: string }> }) {

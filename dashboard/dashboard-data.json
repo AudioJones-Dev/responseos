@@ -1783,11 +1783,11 @@
       "title": "Match withdrawal recovery reference trimming after accepted implementation review",
       "owner": "Codex",
       "status": "Review",
-      "progress": 90,
+      "progress": 95,
       "priority": "High",
       "start": "2026-10-19",
       "blocked": true,
-      "blockedReason": "Local synthetic validation evidence is maintained externally against exact commits; independent Claude review required. No provider recovery or activation."
+      "blockedReason": "Claude acceptance with one Low whitespace finding relayed by owner. Matching reference trim and regression added; exact successor validation and focused review tracked externally. No provider or activation change."
     }
   ],
   "liveIssues": [
