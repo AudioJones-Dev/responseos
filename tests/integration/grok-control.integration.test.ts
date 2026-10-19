@@ -423,6 +423,18 @@ test("watchdog isolates a session transaction failure and does not scan settled 
   expect(await watchdogGrokSweep()).toEqual({ inspected: 0, failed: 0 });
 });
 
+test("Grok operator route requires authenticated exact-call evidence to report disconnection", async () => {
+  const f = await bound(); await f.receipt();
+  const invoke = () => endPost(new Request("http://localhost", { method: "POST", body: JSON.stringify({ expectedAccountId: f.capture.account_id, expectedProviderCallId: f.capture.provider_call_id, generation: f.capture.generation }) }), { params: Promise.resolve({ id: f.capture.id }) });
+  const accepted = await invoke(); expect(accepted.status).toBe(202);
+  expect((await accepted.json()).data).toMatchObject({ commandStatus: "succeeded", disconnection: { confirmed: false } });
+  const eventId = randomUUID(), body = JSON.stringify({ data: { id: eventId, event_type: "call.hangup", occurred_at: new Date().toISOString(), payload: { call_control_id: f.capture.provider_call_id, call_session_id: f.capture.call_session_id, call_leg_id: f.capture.call_leg_id, client_state: mediaClientState(f.capture.id, f.capture.generation) } } });
+  await recordWebhookEvent({ account_id: f.capture.account_id, provider: "telnyx", provider_call_id: f.capture.provider_call_id, provider_event_id: eventId, event_type: "call.hangup", raw_body: body, verifiedBytes: Buffer.from(body), signature_valid: true });
+  const confirmed = await invoke(); expect(confirmed.status).toBe(200);
+  expect((await confirmed.json()).data.disconnection).toMatchObject({ confirmed: true, eventId });
+  expect(transport.operatorEnd).toHaveBeenCalledTimes(1); expect(await prisma.callWithdrawalReceipt.count()).toBe(1);
+});
+
 test("lost claim commit acknowledgement permits no later resend", async () => {
   const f = await fixture(); afterCommit(async () => { throw Error("lost_commit_ack"); });
   await expect(beginGrokHandoff(f.capture)).rejects.toThrow("lost_commit_ack");
