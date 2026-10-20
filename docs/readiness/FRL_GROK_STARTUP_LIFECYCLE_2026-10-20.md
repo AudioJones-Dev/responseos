@@ -33,12 +33,12 @@ PORT=3000 node scripts/run-linux-package.mjs watchdog-inactive-service
 
 The package launcher discards inherited credentials and activation flags.
 Only PORT is forwarded to this mode. The native Node entrypoint requires exact
-`RESPONSEOS_GROK_WATCHDOG_MODE=inactive` and a valid port from1024 through65535.
+`RESPONSEOS_GROK_WATCHDOG_MODE=inactive` and a valid port from 1024 through 65535.
 It imports no DB, provider, watchdog sweep, or application-service module.
 
-This mode listens on0.0.0.0 for hosting health probes. GET/HEAD `/healthz`
-returns200 with explicit inactive, monitoring=false, callsEnabled=false and
-disconnectionEvidence=false. Other paths/methods return404. It provides no
+This mode listens on 0.0.0.0 for hosting health probes. GET/HEAD `/healthz`
+returns 200 with explicit inactive, monitoring=false, callsEnabled=false and
+disconnectionEvidence=false. Other paths/methods return 404. It provides no
 call-ready endpoint. Inbound health traffic is permitted; database/provider and
 outbound network actions are absent. It cannot transition to active mode.
 
@@ -59,11 +59,11 @@ after user sign-in; a prepared handoff is not a completed review.
 
 Order: exact-release acceptance, authorized hosted safety checks, controlled
 calls, then two consecutive rehearsals. None of those future gates is satisfied
-by this local change. At10:30a.m. Miami on2026-10-20, if hosted safety checks are
+by this local change. At 10:30 a.m. Miami on 2026-10-20, if hosted safety checks are
 not passing, use a clearly labeled local walkthrough as the presentation
-fallback. A live call by2:41p.m. is not promised.
+fallback. A live call by 2:41 p.m. is not promised.
 
-## Doctrine section21 review
+## Doctrine section 21 review
 
 1. Communications safety verification and operational lifecycle.
 2. Build repository-specific tests and a small inactive health entrypoint.

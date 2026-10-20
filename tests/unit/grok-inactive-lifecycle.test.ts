@@ -46,6 +46,7 @@ test("inactive lifecycle stays healthy, drains SIGTERM/SIGINT and restarts witho
         child.once("error", reject);
       });
       for (let index = 0; index < 3; index++) {
+        if (index > 0) await new Promise(resolve => setTimeout(resolve, 550));
         const health = await fetch(`http://127.0.0.1:${port}/healthz`);
         expect(health.status).toBe(200);
         expect(await health.json()).toEqual({ status: "inactive", monitoring: false, callsEnabled: false, disconnectionEvidence: false });
