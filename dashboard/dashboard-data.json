@@ -1872,6 +1872,18 @@
       "start": "2026-10-20",
       "blocked": true,
       "blockedReason": "Claude cleared original readiness P2 on frozen f7ea48b/958fda6. Caller-impact documentation/test successor requires review and explicit owner acceptance of abrupt call termination; hosted layout/timing and live gates remain open."
+    },
+    {
+      "id": "FRL-GROK-CROSS-HOST-READINESS",
+      "phase": "Integrations",
+      "title": "Review authenticated cross-host watchdog readiness",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-10-20",
+      "blocked": true,
+      "blockedReason": "Local implementation prepared for final-tree validation; Claude frozen-pair review and explicit release/hosting/credential approvals remain pending."
     }
   ],
   "liveIssues": [
