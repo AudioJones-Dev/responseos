@@ -33,7 +33,7 @@ function matches(expected: string, supplied: string | null | undefined) {
     timingSafeEqual(Buffer.from(expected, "hex"), Buffer.from(supplied!, "hex"));
 }
 
-export async function remoteWatchdogReady() {
+export async function remoteWatchdogDeadline() {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), WATCHDOG_REQUEST_MS);
   try {
@@ -63,10 +63,11 @@ export async function remoteWatchdogReady() {
     const raw = bytes.toString("utf8");
     if (!signedByWatchdog(raw, response.headers.get("x-watchdog-signature"), trusted)) return false;
     const proof = JSON.parse(raw);
-    return proof.version === 1 && proof.nonce === nonce && proof.ready === true &&
+    const valid = proof.version === 1 && proof.nonce === nonce && proof.ready === true &&
       proof.applicationSha === expected.applicationSha && proof.controlSha === expected.controlSha &&
       proof.instanceId === expected.instanceId && Number.isFinite(proof.ageMs) && proof.ageMs >= 0 &&
       proof.ageMs + elapsed < WATCHDOG_FRESHNESS_MS;
+    return valid ? started + WATCHDOG_FRESHNESS_MS - proof.ageMs : false;
   } catch { return false; }
   finally { clearTimeout(timer); controller.abort(); }
 }

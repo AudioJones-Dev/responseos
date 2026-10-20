@@ -13,6 +13,7 @@ import { ingestCallControlEvent } from "@/lib/callControl/service";
 import { parseCallControlEvent } from "@/lib/providers/telnyx/callControl";
 import { mediaClientState, realtimeConfig } from "@/lib/grok/mediaContract";
 import { createWatchdogReadinessWriter, watchdogReady, WATCHDOG_FRESHNESS_MS } from "@/lib/grok/watchdogReadiness";
+import * as readiness from "@/lib/grok/watchdogReadiness";
 import { runGrokWatchdog } from "@/lib/grok/watchdogLoop";
 import { startMediaBridge } from "@/lib/grok/mediaBridge";
 import { db } from "@/lib/db/client";
@@ -211,6 +212,47 @@ test("transport authority rechecks readiness after its final database wait", asy
   await prisma.grokCallSession.update({ where: { id: started.sessionId }, data: { worker_token: "synthetic-worker" } });
   vi.spyOn(db!.telephonyNumberAssignment, "count").mockImplementationOnce(async () => { f.stopReadiness(); return 1; });
   await expect(authorizeQualificationTransport("realtime_audio", started.sessionId)).rejects.toThrow("unqualified");
+});
+test("withdrawal received during the final reservation proof wait prevents reservation and I/O", async () => {
+  const c = await capture(), original = readiness.watchdogReadinessDeadline;
+  let observed = false;
+  vi.spyOn(readiness, "watchdogReadinessDeadline").mockImplementationOnce(async () => {
+    await prisma.callWithdrawalReceipt.create({ data: {
+      account_id: c.account_id, capture_id: c.id, provider_call_id: c.provider_call_id,
+      generation: c.generation, source_provenance: "synthetic",
+    } });
+    observed = true;
+    return original();
+  });
+  await expect(beginGrokHandoff(c)).rejects.toThrow("unqualified");
+  expect(observed).toBe(true);
+  expect(await prisma.grokQualificationReservation.count()).toBe(0);
+  expect(io.handoff).not.toHaveBeenCalled();
+});
+test.each(["withdrawal", "stopped", "disabled", "expired", "proof-expired", "retargeted"])("transport rejects %s committed during the final readiness wait", async reason => {
+  const c = await capture(), started = await beginGrokHandoff(c);
+  await prisma.grokCallSession.update({ where: { id: started.sessionId }, data: { worker_token: "synthetic-worker" } });
+  const original = readiness.watchdogReadinessDeadline;
+  let observed = false;
+  vi.spyOn(readiness, "watchdogReadinessDeadline").mockImplementationOnce(async () => {
+    observed = true;
+    if (reason === "withdrawal") await prisma.callWithdrawalReceipt.create({ data: {
+      account_id: c.account_id, capture_id: c.id, provider_call_id: c.provider_call_id,
+      generation: c.generation, source_provenance: "synthetic",
+    } });
+    if (reason === "stopped") await requestGrokStop(started.sessionId, "synthetic_wait_stop");
+    if (reason === "disabled") vi.stubEnv("RESPONSEOS_QUALIFICATION_ACTIVATION", "DISABLED");
+    if (reason === "expired") f.save({ ...f.policy, expiresAt: new Date(0).toISOString() });
+    if (reason === "retargeted") await prisma.telephonyNumberAssignment.update({ where: { id: f.policy.assignmentId }, data: { status: "quarantined" } });
+    return reason === "proof-expired" ? performance.now() - 1 : original();
+  });
+  await expect(authorizeQualificationTransport("realtime_audio", started.sessionId)).rejects.toThrow();
+  expect(observed).toBe(true);
+  await requestGrokStop(started.sessionId, "synthetic_wait_cleanup");
+  await dispatchGrokTermination(started.sessionId);
+  await dispatchGrokTermination(started.sessionId);
+  expect(io.terminate).toHaveBeenCalledTimes(1);
+  expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: c.id } })).call_disconnected_at).toBeNull();
 });
 test("a separate active watchdog must finish a sweep; a killed process loses readiness", async () => {
   f.stopReadiness();

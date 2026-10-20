@@ -18,15 +18,17 @@ export function watchdogBinding(requireFile = true) {
   return { file: file!, applicationSha: applicationSha!, controlSha: controlSha!, instanceId: instanceId! };
 }
 
-export function localWatchdogReady(now = Date.now()) {
+function localWatchdogDeadline(now = Date.now()) {
+  const started = performance.now();
   try {
     const expected = watchdogBinding(), bytes = readFileSync(expected.file, "utf8");
     if (bytes.length > 1024) return false;
     const proof = JSON.parse(bytes);
-    return proof.version === 1 && proof.mode === "active" && proof.loop === true &&
+    const valid = proof.version === 1 && proof.mode === "active" && proof.loop === true &&
       proof.applicationSha === expected.applicationSha && proof.controlSha === expected.controlSha &&
       proof.instanceId === expected.instanceId && Number.isSafeInteger(proof.completedAt) &&
       Number.isFinite(now) && now >= proof.completedAt && now - proof.completedAt < WATCHDOG_FRESHNESS_MS;
+    return valid ? started + WATCHDOG_FRESHNESS_MS - (now - proof.completedAt) : false;
   } catch { return false; }
 }
 
@@ -51,10 +53,19 @@ export function createWatchdogReadinessWriter() {
   };
 }
 
-export async function watchdogReady(now = Date.now()) {
+export async function watchdogReadinessDeadline(now = Date.now()) {
   const transport = process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_TRANSPORT ?? "local-file";
-  if (transport === "local-file") return localWatchdogReady(now);
+  if (transport === "local-file") return localWatchdogDeadline(now);
   if (transport !== "signed-https") return false;
-  const { remoteWatchdogReady } = await import("./watchdogRemoteReadiness");
-  return remoteWatchdogReady();
+  const { remoteWatchdogDeadline } = await import("./watchdogRemoteReadiness");
+  return remoteWatchdogDeadline();
+}
+
+export function localWatchdogReady(now = Date.now()) {
+  const deadline = localWatchdogDeadline(now);
+  return deadline !== false && performance.now() < deadline;
+}
+export async function watchdogReady(now = Date.now()) {
+  const deadline = await watchdogReadinessDeadline(now);
+  return deadline !== false && performance.now() < deadline;
 }

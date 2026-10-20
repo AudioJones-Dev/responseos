@@ -116,7 +116,7 @@ test("round trip consumes freshness, and remote timestamps do not depend on the 
   clock.mockReturnValueOnce(100).mockReturnValueOnce(102);
   vi.stubGlobal("fetch", vi.fn(async (_url, options) => signed(options.headers, { ageMs: 2999 })));
   expect(await watchdogReady()).toBe(false);
-  clock.mockReturnValueOnce(100).mockReturnValueOnce(101);
+  clock.mockReturnValueOnce(100).mockReturnValueOnce(101).mockReturnValueOnce(101);
   vi.stubGlobal("fetch", vi.fn(async (_url, options) => signed(options.headers, { ageMs: 100 })));
   expect(await watchdogReady(-1000000)).toBe(true);
   clock.mockReturnValueOnce(100).mockReturnValueOnce(600);

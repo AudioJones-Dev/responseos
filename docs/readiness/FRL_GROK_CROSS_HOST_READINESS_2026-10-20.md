@@ -36,6 +36,12 @@ the total must remain strictly below the unchanged 3,000 ms expiry. Requests
 are uncached. Remote host clock offsets do not enter this calculation. The
 watchdog still uses its local clock/file for sweep age; future local timestamps
 fail closed. No grace interval, automatic replay, or freshness extension exists.
+The proof's remaining lifetime is carried as a local monotonic deadline through
+final database reads. Reservation rechecks withdrawal after the proof wait.
+Provider authorization then rechecks stored session/capture identity, termination,
+withdrawal receipts, qualification deadline/configuration and target assignment;
+the proof must still be fresh after those reads. An asynchronous readiness
+request cannot grandfather a withdrawal or disabled/expired authority.
 
 The HTTP listener is intended to sit behind an approved TLS edge; direct
 unencrypted cross-host consumers are rejected. `/readiness` requires the HMAC

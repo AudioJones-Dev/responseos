@@ -38,6 +38,7 @@ test.each([
   await expect(readQualification()).rejects.toThrow("unqualified");
 });
 test("freshness boundary, future timestamps, malformed/missing files fail closed", async () => {
+  vi.spyOn(performance, "now").mockReturnValue(100);
   const writer = setup(); writer.completed(true);
   const file = process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_FILE!;
   const proof = JSON.parse(readFileSync(file, "utf8"));
