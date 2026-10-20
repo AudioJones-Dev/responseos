@@ -103,6 +103,19 @@ test.each(["withdrawal", "stopped", "disabled", "expired", "retargeted", "proof-
   expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: c.id } })).call_disconnected_at).toBeNull();
   expect(await prisma.grokQualificationReservation.findUnique({ where: { session_id: started.sessionId } })).toMatchObject({ active_slot: "qualification", released_at: null });
 });
+test.each([502, 503, 504])("gateway %s preserves a current call only until original proof expiry", async status => {
+  remoteProof();
+  const c = await capture(), started = await beginGrokHandoff(c), token = randomUUID();
+  await prisma.grokCallSession.update({ where: { id: started.sessionId }, data: { worker_token: token } });
+  expect(await heartbeatGrok(started.sessionId, token)).toBe(true);
+  vi.stubGlobal("fetch", vi.fn(async () => new Response("synthetic gateway", { status })));
+  expect(await heartbeatGrok(started.sessionId, token)).toBe(true);
+  vi.spyOn(performance, "now").mockReturnValue(performance.now() + 3000);
+  expect(await heartbeatGrok(started.sessionId, token)).toBe(false);
+  await Promise.all([dispatchGrokTermination(started.sessionId), dispatchGrokTermination(started.sessionId)]);
+  expect(io.terminate).toHaveBeenCalledTimes(1);
+  expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: c.id } })).call_disconnected_at).toBeNull();
+});
 test.each(["missing", "expired", "failed-sweep", "withdrawal"])("writer-owned sweep ignores public edge but still stops for %s", async reason => {
   remoteProof();
   const c = await capture(), started = await beginGrokHandoff(c);
@@ -178,10 +191,9 @@ test.each(["missing", "expired", "failed-sweep", "remote-unavailable"])("active 
     vi.stubEnv("RESPONSEOS_GROK_WATCHDOG_READINESS_PUBLIC_KEY", signer.publicKey.export({ format: "der", type: "spki" }).toString("base64"));
     f.policy.configSha256 = qualificationConfigHash(); f.save();
     vi.stubGlobal("fetch", vi.fn(async (_url, options) => {
-      if (!remoteReady) return new Response(null, { status: 503 });
       const raw = JSON.stringify({ version: 1, applicationSha: f.policy.applicationSha, controlSha: f.policy.controlSha,
-        instanceId: process.env.RESPONSEOS_GROK_WATCHDOG_INSTANCE, nonce: options.headers["x-watchdog-challenge"], ready: true, ageMs: 0 });
-      return new Response(raw, { headers: { "content-type": "application/json",
+        instanceId: process.env.RESPONSEOS_GROK_WATCHDOG_INSTANCE, nonce: options.headers["x-watchdog-challenge"], ready: remoteReady, ageMs: 0 });
+      return new Response(raw, { status: remoteReady ? 200 : 503, headers: { "content-type": "application/json",
         "x-watchdog-signature": sign(null, Buffer.from("response-v1\n" + raw), signer.privateKey).toString("base64") } });
     }));
   }

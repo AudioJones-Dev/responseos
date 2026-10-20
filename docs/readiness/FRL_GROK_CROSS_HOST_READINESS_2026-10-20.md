@@ -33,7 +33,7 @@ Consumers reject invalid signatures, mismatched nonces/bindings, redirects,
 oversize/malformed bodies, errors, or requests taking 500 ms or more. They add
 the entire locally measured round trip to the watchdog's reported proof age;
 the total must remain strictly below the unchanged 3,000 ms expiry. Requests
-always request fresh proof (concurrent readers share one in-flight challenge). On transport failure only, a previously verified proof may be reused until its original monotonic deadline; no failure renews it. Explicit non-200 responses, invalid signatures/bindings/nonces/bodies, or changed release/instance/URL/key/authority digest revoke retained proof. Responses and redirects are never followed or HTTP-cached. Remote host clock offsets do not enter this calculation. The
+always request fresh proof (concurrent readers share one in-flight challenge). On transport failure only, a previously verified proof may be reused until its original monotonic deadline; no failure renews it. Authenticated watchdog denial, invalid signatures/bindings/nonces/bodies, redirects, authorization rejection, or changed release/instance/URL/key/authority digest revoke retained proof. Unsigned 502/503/504 responses are transport uncertainty and can reuse only existing unexpired proof. Responses and redirects are never followed or HTTP-cached. Remote host clock offsets do not enter this calculation. The
 watchdog still uses its local clock/file for sweep age; future local timestamps
 fail closed. No grace interval, automatic replay, or freshness extension exists.
 The proof's remaining lifetime is carried as a local monotonic deadline through
@@ -141,3 +141,15 @@ hosted verification. No deployment, credentials or live activation are authorize
 Doctrine section 21 above still applies: this narrows an existing safety protocol,
 adds no provider/CRM/retention capability, preserves exact evidence and tenant
 boundaries, buys hosting/TLS, and claims only local synthetic validation.
+### Authenticated denial versus gateway errors
+
+The watchdog signs its 503 not-ready envelope with the same nonce, exact release
+and instance binding and watchdog-only Ed25519 key. A valid negative response
+revokes retained proof immediately; a present but invalid signature also fails
+closed. A positive proof qualifies only with status 200. Unsigned 502/503/504
+responses can originate at a hosting gateway, so they are treated like transport
+failure: reuse only an already verified deadline, never create or extend proof.
+Other status codes and redirects remain denial. An unsigned error cannot turn
+an unready consumer ready. Authenticated negative replay still fails nonce binding.
+The source-reviewed 43ae9e6/8eec93c candidate is preserved; this correction closes
+its remaining edge-error P2 locally without granting hosting or activation.

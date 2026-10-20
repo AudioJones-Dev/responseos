@@ -80,7 +80,12 @@ async function requestDeadline(expected: ReturnType<typeof identity>, secret: Bu
       method: "GET", redirect: "manual", cache: "no-store", signal: controller.signal,
       headers: { "x-watchdog-challenge": nonce, "x-watchdog-auth": mac(secret, "request-v1", challenge) },
     }).catch(error => { transportFailure = true; throw error; });
-    if (response.status !== 200 || response.headers.get("content-type") !== "application/json" || !response.body) return false;
+    if ([502, 503, 504].includes(response.status) && !response.headers.has("x-watchdog-signature")) {
+      transportFailure = true;
+      await response.body?.cancel();
+      throw Error("watchdog_gateway_unavailable");
+    }
+    if (![200, 503].includes(response.status) || response.headers.get("content-type") !== "application/json" || !response.body) return false;
     const reader = response.body.getReader();
     let bytes = Buffer.alloc(0);
     try {
@@ -97,7 +102,7 @@ async function requestDeadline(expected: ReturnType<typeof identity>, secret: Bu
     const raw = bytes.toString("utf8");
     if (!signedByWatchdog(raw, response.headers.get("x-watchdog-signature"), trusted)) return false;
     const proof = JSON.parse(raw);
-    const valid = proof.version === 1 && proof.nonce === nonce && proof.ready === true &&
+    const valid = response.status === 200 && proof.version === 1 && proof.nonce === nonce && proof.ready === true &&
       proof.applicationSha === expected.applicationSha && proof.controlSha === expected.controlSha &&
       proof.instanceId === expected.instanceId && Number.isFinite(proof.ageMs) && proof.ageMs >= 0 &&
       proof.ageMs + elapsed < WATCHDOG_FRESHNESS_MS;
@@ -144,7 +149,12 @@ export function createWatchdogReadinessServer() {
       response.writeHead(200, { "content-type": "application/json",
         "x-watchdog-signature": sign(null, Buffer.from(`response-v1\n${body}`), privateKey).toString("base64") });
       response.end(body);
-    } catch { response.writeHead(503); response.end(); }
+    } catch {
+      const body = JSON.stringify({ version: 1, ...expected, nonce, ready: false });
+      response.writeHead(503, { "content-type": "application/json",
+        "x-watchdog-signature": sign(null, Buffer.from(`response-v1\n${body}`), privateKey).toString("base64") });
+      response.end(body);
+    }
   });
   server.requestTimeout = 1000; server.headersTimeout = 1000; server.keepAliveTimeout = 5000;
   return server;

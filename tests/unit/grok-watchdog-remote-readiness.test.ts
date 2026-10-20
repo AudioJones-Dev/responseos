@@ -194,11 +194,44 @@ test("transport failure uses only the original monotonic deadline, never a new g
   at = 2000; expect(await watchdogReady()).toBe(false);
   at = 3000; expect(await watchdogReady()).toBe(false);
 });
-test.each([503, 403, 302])("explicit response %s immediately revokes retained proof", async status => {
+test.each([403, 302])("explicit response %s immediately revokes retained proof", async status => {
   setup();
   vi.stubGlobal("fetch", vi.fn(async (_url, options) => signed(options.headers)));
   expect(await watchdogReady()).toBe(true);
   vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status })));
+  expect(await watchdogReady()).toBe(false);
+  vi.stubGlobal("fetch", vi.fn(async () => { throw Error("offline"); }));
+  expect(await watchdogReady()).toBe(false);
+});
+test("signed watchdog denial immediately revokes proof even when the edge later fails", async () => {
+  setup();
+  vi.stubGlobal("fetch", vi.fn(async (_url, options) => signed(options.headers)));
+  expect(await watchdogReady()).toBe(true);
+  vi.stubGlobal("fetch", vi.fn(async (_url, options) => {
+    const denied = signed(options.headers, { ready: false });
+    return new Response(await denied.text(), { status: 503, headers: denied.headers });
+  }));
+  expect(await watchdogReady()).toBe(false);
+  vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 503 })));
+  expect(await watchdogReady()).toBe(false);
+});
+test.each([502, 503, 504])("unsigned gateway %s can reuse proof only through the original deadline", async status => {
+  setup(); let at = 100;
+  vi.spyOn(performance, "now").mockImplementation(() => at);
+  vi.stubGlobal("fetch", vi.fn(async (_url, options) => signed(options.headers, { ageMs: 1000 })));
+  expect(await watchdogReady()).toBe(true);
+  vi.stubGlobal("fetch", vi.fn(async () => new Response("synthetic gateway", { status })));
+  at = 2099; expect(await watchdogReady()).toBe(true);
+  at = 2100; expect(await watchdogReady()).toBe(false);
+});
+test("a forged signed 503 cannot be treated as a gateway failure", async () => {
+  setup();
+  vi.stubGlobal("fetch", vi.fn(async (_url, options) => signed(options.headers)));
+  expect(await watchdogReady()).toBe(true);
+  vi.stubGlobal("fetch", vi.fn(async (_url, options) => {
+    const denied = signed(options.headers, { ready: false }, "wrong");
+    return new Response(await denied.text(), { status: 503, headers: denied.headers });
+  }));
   expect(await watchdogReady()).toBe(false);
   vi.stubGlobal("fetch", vi.fn(async () => { throw Error("offline"); }));
   expect(await watchdogReady()).toBe(false);
