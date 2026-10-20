@@ -1836,8 +1836,8 @@
       "start": "2026-10-20",
       "blocked": true,
       "blockedReason": "Local candidate awaiting exact-tree validation and independent review; accepted pair unchanged. No live authority, hosting, credentials or calls authorized."
-    }
-    ,{
+    },
+    {
       "id": "FRL-GROK-LINUX-PACKAGE",
       "phase": "Integrations",
       "title": "Review local Linux package and inactive watchdog",

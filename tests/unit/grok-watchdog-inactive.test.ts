@@ -3,6 +3,7 @@ import { expect, test } from "vitest";
 
 function run(mode: string | undefined, enabled = "true", loop = false) {
   const env = {
+    NODE_ENV: "test" as const,
     PATH: process.env.PATH, SystemRoot: process.env.SystemRoot, TEMP: process.env.TEMP,
     RESPONSEOS_GROK_WATCHDOG_MODE: mode, RESPONSEOS_GROK_WATCHDOG_ENABLED: enabled,
     DATABASE_URL: "postgresql://synthetic@127.0.0.1:1/never",
