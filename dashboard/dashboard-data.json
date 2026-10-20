@@ -1864,14 +1864,14 @@
     {
       "id": "FRL-GROK-WATCHDOG-READINESS",
       "phase": "Integrations",
-      "title": "Review active watchdog readiness P2 successor",
+      "title": "Review watchdog readiness caller impact and regressions",
       "owner": "Codex",
       "status": "Review",
       "progress": 90,
       "priority": "High",
       "start": "2026-10-20",
       "blocked": true,
-      "blockedReason": "Exact successor requires independent Claude review and human acceptance; hosted topology, safety checks and live activation remain unapproved."
+      "blockedReason": "Claude cleared original readiness P2 on frozen f7ea48b/958fda6. Caller-impact documentation/test successor requires review and explicit owner acceptance of abrupt call termination; hosted layout/timing and live gates remain open."
     }
   ],
   "liveIssues": [

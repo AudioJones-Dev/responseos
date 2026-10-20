@@ -33,6 +33,57 @@ With activation disabled, ordinary application liveness remains 200.
 `node --import tsx scripts/grok-watchdog-readiness.ts` is a non-mutating local
 readiness probe (exit 0 ready; exit 1 otherwise), never a watchdog starter.
 
+## Caller impact and release acceptance
+
+Readiness loss is a whole-call stop condition for an already admitted call,
+not only a barrier to new calls. The media heartbeat and watchdog sweep reuse
+the qualification gate. When either observes invalid readiness, the session
+becomes terminal; the media bridge clears queued audio, closes both sockets and
+requests exact carrier hangup through the existing consumed-once command path.
+The caller can experience an abrupt interruption. No spoken warning, graceful
+drain, transparent restart or automatic reconnection is implemented.
+
+This can happen when:
+
+- The watchdog restarts/redeploys: it deletes prior proof before its first
+  sweep, so that sweep stops an otherwise healthy active session before it
+  publishes new proof. A rolling restart is not call-preserving.
+- Any sweep reports a failed session, including an unrelated session: the
+  global readiness proof is removed even though per-session work is isolated.
+- The gap between successful sweep completions reaches 3000 ms. The normal
+  one-second pause leaves less than two seconds for the next sweep, scheduling
+  and I/O. A carrier termination wait can take five seconds; do not infer a
+  safe sweep budget from the nominal polling interval.
+- The watchdog dies, stalls, loses access to its proof file, or the proof's
+  release/instance binding no longer matches.
+
+Proof expiry is not an exact three-second carrier-disconnection guarantee.
+Observation, database availability, dispatch and provider completion add delay;
+provider requests can fail or have uncertain results. A stopped session or an
+accepted hangup is not authenticated disconnection. The global reservation
+remains occupied until the existing exact authenticated terminal evidence
+arrives. Operator fallback and monitoring remain necessary.
+
+Restoring proof permits subsequent qualification checks; it never revives a
+stopped call, restores consumed commands or reopens consent. Recovery requires
+the existing operator and exact-call lifecycle, not replay of the old call.
+
+The owner requested this documentation and regression successor. That request
+is not release acceptance of abrupt caller termination or live activation.
+Before release acceptance, the owner must explicitly accept this caller impact.
+Before any authorized live call, measure successful-completion gaps under the
+chosen hosted topology, restart/failure/load and slow-provider scenarios, with
+margin below 3000 ms. If that cannot be demonstrated, keep calls disabled and
+return for a separately reviewed timing/design change. This successor does not
+raise the threshold or introduce a startup grace period.
+
+Local regression coverage exercises active media with missing/expired proof
+and failed-sweep publication, expiry during a blocked sweep, and a real loop
+process restart's first sweep. It checks terminal state, both socket closures,
+no later audio/revival, consumed-once hangup, and the distinction between stop
+intent and confirmed disconnection. These synthetic tests do not measure hosted
+sweep times or qualify a hosting layout.
+
 ## Trusted local transport and hosted limits
 
 The proof is an atomic file on a trusted shared local filesystem:
@@ -48,6 +99,12 @@ silently reusable. The watchdog needs directory write permission; consumers
 must have read-only access. Files are written mode 0600 and atomically renamed.
 No HTTP caller can publish proof. A trusted operator with filesystem write
 access can forge it, so consumer write access must not be granted.
+
+Mode 0600 requires the same effective owner identity for the watchdog writer
+and readers (absent a separately reviewed permission design), plus a shared
+host clock and filesystem. Use a read-only consumer mount to enforce the stated
+boundary; same-user mode bits alone do not prevent consumers writing the file.
+Co-location provides process-level separation, not independent-host resilience.
 
 This mechanism requires same-host filesystem/clock visibility between watchdog
 and consumers. It does not establish a shared mount across independent Render

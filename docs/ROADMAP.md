@@ -190,3 +190,5 @@ Local Linux packaging and inactive watchdog successor is under review; accepted 
 Local startup-readiness regression and inactive hosting lifecycle are under review; no release acceptance or hosting approval. The October20 10:30a.m. America/New_York checkpoint favors a labeled local walkthrough if hosted safety evidence is incomplete. [Review scope](readiness/FRL_GROK_STARTUP_LIFECYCLE_2026-10-20.md).
 
 Local EXPERIMENTAL watchdog-readiness P2 successor requires fresh active-loop sweep proof before qualification; inactive liveness cannot authorize calls. See [contract](readiness/FRL_GROK_WATCHDOG_READINESS_2026-10-20.md). No hosted or activation gate advances.
+
+Local caller-impact successor documents and tests termination of active calls on watchdog readiness loss, including restart. Reviewed f7ea48b/958fda6 remains frozen. Caller-impact acceptance, hosted timing/layout and live gates remain open; no runtime or milestone expansion. [Contract](readiness/FRL_GROK_WATCHDOG_READINESS_2026-10-20.md#caller-impact-and-release-acceptance).

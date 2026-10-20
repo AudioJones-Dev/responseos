@@ -1,4 +1,5 @@
-import { randomUUID } from "node:crypto";
+import { generateKeyPairSync, randomUUID, sign } from "node:crypto";
+import { readFileSync, writeFileSync } from "node:fs";
 import { spawn, spawnSync } from "node:child_process";
 import { once } from "node:events";
 import path from "node:path";
@@ -10,8 +11,10 @@ import { authorizeQualificationTransport } from "@/lib/grok/qualification";
 import { recordWebhookEvent } from "@/lib/data/webhookEvents";
 import { ingestCallControlEvent } from "@/lib/callControl/service";
 import { parseCallControlEvent } from "@/lib/providers/telnyx/callControl";
-import { mediaClientState } from "@/lib/grok/mediaContract";
-import { watchdogReady, WATCHDOG_FRESHNESS_MS } from "@/lib/grok/watchdogReadiness";
+import { mediaClientState, realtimeConfig } from "@/lib/grok/mediaContract";
+import { createWatchdogReadinessWriter, watchdogReady, WATCHDOG_FRESHNESS_MS } from "@/lib/grok/watchdogReadiness";
+import { runGrokWatchdog } from "@/lib/grok/watchdogLoop";
+import { startMediaBridge } from "@/lib/grok/mediaBridge";
 import { db } from "@/lib/db/client";
 import type { Prisma } from "@prisma/client";
 
@@ -74,6 +77,99 @@ test("lost watchdog readiness denies audio authority but preserves one-shot term
   await dispatchGrokTermination(started.sessionId);
   expect(io.terminate).toHaveBeenCalledTimes(1);
 });
+test.each(["missing", "expired", "failed-sweep"])("active media readiness loss (%s) closes both sockets and consumes one hangup without confirming disconnection", async reason => {
+  const c = await capture(), started = await beginGrokHandoff(c);
+  const token = io.handoff.mock.calls.at(-1)![1] as string;
+  const keys = generateKeyPairSync("ed25519"), streamUrl = process.env.RESPONSEOS_GROK_STREAM_URL!;
+  const timestamp = String(Math.floor(Date.now() / 1000)), streamId = randomUUID();
+  const headers = new Headers({ "telnyx-timestamp": timestamp, "telnyx-signature-ed25519": sign(null, Buffer.from(`${timestamp}|${streamUrl}`), keys.privateKey).toString("base64"), "x-telnyx-streaming-auth-token": token });
+  const carrier = { bufferedAmount: 0, send: vi.fn(), close: vi.fn() }, realtime = { bufferedAmount: 0, send: vi.fn(), close: vi.fn() };
+  const bridge = await startMediaBridge({
+    headers, connectedToken: token,
+    trusted: { streamUrl, publicKey: keys.publicKey.export({ format: "der", type: "spki" }).subarray(-32).toString("base64") },
+    rawStart: JSON.stringify({ event: "start", stream_id: streamId, start: { call_control_id: c.provider_call_id, call_session_id: c.call_session_id, client_state: mediaClientState(c.id, c.generation), media_format: { encoding: "PCMU", sample_rate: 8000, channels: 1 } } }),
+  }, { carrier, openRealtime: vi.fn().mockResolvedValue(realtime) });
+  try {
+    await bridge.xai(JSON.stringify({ type: "session.updated", session: { ...realtimeConfig.session, id: "readiness-impact", model: "grok-voice-3.0" } }));
+    expect(bridge.acceptingAudio).toBe(true);
+    f.stopReadiness();
+    const writer = createWatchdogReadinessWriter();
+    if (reason === "expired") {
+      writer.completed(true);
+      const file = process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_FILE!;
+      const proof = JSON.parse(readFileSync(file, "utf8"));
+      writeFileSync(file, JSON.stringify({ ...proof, completedAt: Date.now() - WATCHDOG_FRESHNESS_MS }));
+    }
+    if (reason === "failed-sweep") {
+      writer.completed(true);
+      await runGrokWatchdog({ loop: false, sweep: async () => ({ inspected: 1, failed: 1 }), completed: writer.completed, pause: vi.fn(), alert: vi.fn() });
+    }
+    expect(watchdogReady()).toBe(false);
+    await vi.waitFor(() => expect(io.terminate).toHaveBeenCalledTimes(1), { timeout: 5000 });
+    expect(carrier.close).toHaveBeenCalledTimes(1); expect(realtime.close).toHaveBeenCalledTimes(1);
+    expect(bridge.acceptingAudio).toBe(false);
+    expect(carrier.send.mock.calls.some(([raw]) => JSON.parse(raw).event === "clear")).toBe(true);
+    const mediaCount = carrier.send.mock.calls.filter(([raw]) => JSON.parse(raw).event === "media").length;
+    writer.completed(true);
+    await bridge.xai(JSON.stringify({ type: "response.output_audio.delta", response_id: "late", delta: Buffer.alloc(160).toString("base64") }));
+    expect(carrier.send.mock.calls.filter(([raw]) => JSON.parse(raw).event === "media")).toHaveLength(mediaCount);
+    const session = await prisma.grokCallSession.findUniqueOrThrow({ where: { id: started.sessionId } });
+    expect(session.stopped_at).not.toBeNull();
+    expect(await heartbeatGrok(session.id, session.worker_token!)).toBe(false);
+    await dispatchGrokTermination(session.id);
+    expect(io.terminate).toHaveBeenCalledExactlyOnceWith("telnyx", c.provider_call_id, expect.any(String));
+    expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: c.id } })).call_disconnected_at).toBeNull();
+    expect(await prisma.grokQualificationReservation.findUnique({ where: { session_id: session.id } })).toMatchObject({ active_slot: "qualification", released_at: null });
+    expect(await prisma.callConsentEvent.count({ where: { provider_call_id: c.provider_call_id } })).toBe(1);
+  } finally { await bridge.stop("test_cleanup"); }
+});
+test("active readiness expires while a sweep is blocked and later success cannot revive the stopped call", async () => {
+  const started = await beginGrokHandoff(await capture()), token = randomUUID();
+  await prisma.grokCallSession.update({ where: { id: started.sessionId }, data: { worker_token: token } });
+  expect(await heartbeatGrok(started.sessionId, token)).toBe(true);
+  f.stopReadiness();
+  const writer = createWatchdogReadinessWriter(); writer.completed(true);
+  let finish!: (value: { inspected: number; failed: number }) => void;
+  const sweep = runGrokWatchdog({ loop: false, sweep: () => new Promise(resolve => { finish = resolve; }), completed: writer.completed, pause: vi.fn(), alert: vi.fn() });
+  try {
+    const file = process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_FILE!;
+    const proof = JSON.parse(readFileSync(file, "utf8"));
+    writeFileSync(file, JSON.stringify({ ...proof, completedAt: Date.now() - WATCHDOG_FRESHNESS_MS }));
+    expect(await heartbeatGrok(started.sessionId, token)).toBe(false);
+    await dispatchGrokTermination(started.sessionId);
+    expect(io.terminate).toHaveBeenCalledTimes(1);
+  } finally { finish({ inspected: 1, failed: 0 }); await sweep; }
+  expect(watchdogReady()).toBe(true);
+  expect(await heartbeatGrok(started.sessionId, token)).toBe(false);
+  await dispatchGrokTermination(started.sessionId);
+  expect(io.terminate).toHaveBeenCalledTimes(1);
+});
+test("restarted active watchdog first sweep stops a previously healthy call before republishing readiness", async () => {
+  const c = await capture(), started = await beginGrokHandoff(c), token = randomUUID();
+  await prisma.grokCallSession.update({ where: { id: started.sessionId }, data: { worker_token: token } });
+  expect(await heartbeatGrok(started.sessionId, token)).toBe(true);
+  f.stopReadiness();
+  const writer = createWatchdogReadinessWriter(); writer.completed(true);
+  const before = JSON.parse(readFileSync(process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_FILE!, "utf8")).completedAt;
+  const child = spawn(process.execPath, ["--import", "tsx", "scripts/grok-watchdog.ts", "--loop"], { env: { ...process.env, TELNYX_API_KEY: "", XAI_API_KEY: "" }, stdio: "ignore" });
+  const exited = once(child, "exit");
+  try {
+    await vi.waitFor(async () => {
+      const session = await prisma.grokCallSession.findUniqueOrThrow({ where: { id: started.sessionId } });
+      expect(session.stopped_at).not.toBeNull();
+      expect(session.stop_reason).toBe("withdrawal_or_control_loss");
+      expect(watchdogReady()).toBe(true);
+      expect(JSON.parse(readFileSync(process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_FILE!, "utf8")).completedAt).toBeGreaterThan(before);
+    }, { timeout: 10000 });
+    child.kill("SIGKILL"); await exited;
+    expect(await prisma.grokCallCommand.findFirst({ where: { session_id: started.sessionId, kind: "telnyx_hangup" } })).toMatchObject({ status: "uncertain", consumed_at: expect.any(Date) });
+    expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: c.id } })).call_disconnected_at).toBeNull();
+    expect(await prisma.grokQualificationReservation.findUnique({ where: { session_id: started.sessionId } })).toMatchObject({ active_slot: "qualification" });
+    expect(await heartbeatGrok(started.sessionId, token)).toBe(false);
+    await dispatchGrokTermination(started.sessionId);
+    expect(io.terminate).not.toHaveBeenCalled();
+  } finally { if (child.exitCode === null && child.signalCode === null) { child.kill("SIGKILL"); await exited; } }
+}, 15000);
 test("readiness revoked during target lookup cannot reserve or dispatch", async () => {
   const c = await capture();
   const original = db!.$transaction.bind(db!);
