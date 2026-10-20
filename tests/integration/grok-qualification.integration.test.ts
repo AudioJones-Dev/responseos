@@ -74,11 +74,10 @@ test("lost watchdog readiness denies audio authority but preserves one-shot term
 });
 test("a separate active watchdog must finish a sweep; a killed process loses readiness", async () => {
   f.stopReadiness();
-  const tsx = path.resolve("node_modules/tsx/dist/cli.mjs");
-  const oneShot = spawnSync(process.execPath, [tsx, "scripts/grok-watchdog.ts"], { env: { ...process.env }, encoding: "utf8", timeout: 15000 });
+  const oneShot = spawnSync(process.execPath, ["--import", "tsx", "scripts/grok-watchdog.ts"], { env: { ...process.env }, encoding: "utf8", timeout: 15000 });
   expect(oneShot.status).toBe(0);
   expect(watchdogReady()).toBe(false);
-  const child = spawn(process.execPath, [tsx, "scripts/grok-watchdog.ts", "--loop"], { env: { ...process.env }, stdio: "ignore" });
+  const child = spawn(process.execPath, ["--import", "tsx", "scripts/grok-watchdog.ts", "--loop"], { env: { ...process.env }, stdio: "ignore" });
   const exited = once(child, "exit");
   try {
     await vi.waitFor(() => expect(watchdogReady()).toBe(true), { timeout: 10000 });

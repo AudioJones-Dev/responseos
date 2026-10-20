@@ -822,15 +822,23 @@ test("separate processes reject an unqualified legacy heartbeat and consume disa
 });
 
 test("watchdog loop survives repeated database failures and emits intervention alerts", async () => {
-  const watcher = spawn(process.execPath, [path.resolve("node_modules/tsx/dist/cli.mjs"), "scripts/grok-watchdog.ts", "--loop"], {
+  const directory = mkdtempSync(path.join(tmpdir(), "watchdog-unhealthy-"));
+  const watcher = spawn(process.execPath, ["--import", "tsx", "scripts/grok-watchdog.ts", "--loop"], {
     stdio: ["ignore", "pipe", "pipe"],
-    env: { ...process.env, RESPONSEOS_GROK_WATCHDOG_MODE: "active", RESPONSEOS_GROK_WATCHDOG_ENABLED: "true", DATABASE_URL: "postgresql://missing_watchdog_role@127.0.0.1:5432/responseos_test" },
+    env: { ...process.env, RESPONSEOS_GROK_WATCHDOG_MODE: "active", RESPONSEOS_GROK_WATCHDOG_ENABLED: "true",
+      RESPONSEOS_GROK_WATCHDOG_READINESS_FILE: path.join(directory, "proof.json"), RESPONSEOS_GROK_WATCHDOG_INSTANCE: "synthetic-unhealthy-watchdog",
+      RESPONSEOS_APPLICATION_SHA: "a".repeat(40), RESPONSEOS_CONTROL_SHA: "b".repeat(40),
+      DATABASE_URL: "postgresql://missing_watchdog_role@127.0.0.1:5432/responseos_test" },
   });
+  const exited = once(watcher, "exit");
   let alerts = ""; watcher.stderr.on("data", bytes => { alerts += bytes.toString(); });
   try {
     await vi.waitFor(() => expect(alerts.match(/Grok watchdog sweep incomplete/g)?.length ?? 0).toBe(1), { timeout: 12000 });
     await new Promise(resolve => setTimeout(resolve, 2500));
     expect(alerts.match(/Grok watchdog sweep incomplete/g)).toHaveLength(1);
     expect(watcher.exitCode).toBeNull(); expect(alerts).toContain("Consumed commands will not be retried");
-  } finally { watcher.kill("SIGTERM"); await once(watcher, "exit"); }
+  } finally {
+    if (watcher.exitCode === null && watcher.signalCode === null) watcher.kill("SIGTERM");
+    await exited; rmSync(directory, { recursive: true });
+  }
 });
