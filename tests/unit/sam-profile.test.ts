@@ -36,13 +36,13 @@ test("unknown profile or freeform voice cannot enter the trusted packet", () => 
 test("pre-consent carrier prefix requires exact tenant, assignment, packet and fresh qualification", async () => {
   const { q, k, capture } = fixture();
   expect(await samDisclosurePrefix(capture)).toBe(SAM_GREETING + " ");
-  await expect(samDisclosurePrefix({ ...capture, account_id: "other" })).rejects.toThrow("unqualified");
-  await expect(samDisclosurePrefix({ ...capture, assignment_id: "other" })).rejects.toThrow("unqualified");
+  await expect(samDisclosurePrefix({ ...capture, account_id: "other" })).resolves.toBe("");
+  await expect(samDisclosurePrefix({ ...capture, assignment_id: "other" })).resolves.toBe("");
   k.packet.facts[0].statement = "Changed synthetic knowledge"; k.save();
-  await expect(samDisclosurePrefix(capture)).rejects.toThrow("unqualified");
+  await expect(samDisclosurePrefix(capture)).resolves.toBe("");
   q.policy.knowledge = k.save(); q.policy.configSha256 = qualificationConfigHash(); q.save();
   vi.stubEnv("RESPONSEOS_QUALIFICATION_ACTIVATION", "DISABLED");
-  await expect(samDisclosurePrefix(capture)).rejects.toThrow("unqualified");
+  await expect(samDisclosurePrefix(capture)).resolves.toBe("");
 });
 test("no Sam prefix leaks into non-Grok or generic baseline calls", async () => {
   const { k, capture } = fixture();
@@ -52,3 +52,13 @@ test("no Sam prefix leaks into non-Grok or generic baseline calls", async () => 
   delete k.packet.agentProfile; k.save();
   expect(await samDisclosurePrefix(capture)).toBe("");
 });
+
+ test.each(["expired", "future", "hash", "missing"])("invalid %s packet preserves baseline disclosure", async failure => {
+  const { k, capture } = fixture();
+  if (failure === "expired") { k.packet.expiresAt = new Date(Date.now() - 1).toISOString(); k.save(); }
+  if (failure === "future") { k.packet.notBefore = new Date(Date.now() + 10000).toISOString(); k.save(); }
+  if (failure === "hash") vi.stubEnv("RESPONSEOS_DEMO_KNOWLEDGE_SHA256", "0".repeat(64));
+  if (failure === "missing") vi.stubEnv("RESPONSEOS_DEMO_KNOWLEDGE_FILE", k.file + ".missing");
+  expect(await samDisclosurePrefix(capture)).toBe("");
+  expect(() => readDemoKnowledge(capture.account_id)).toThrow("unqualified");
+ });

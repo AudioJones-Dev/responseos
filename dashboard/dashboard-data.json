@@ -1900,14 +1900,14 @@
     {
       "id": "FRL-SAM-RUNTIME",
       "phase": "Integrations",
-      "title": "Bind approved Sam and Ara profile to exact-call runtime",
+      "title": "Harden Sam disclosure fallback and supervised withdrawal contract",
       "owner": "Codex",
       "status": "Review",
       "progress": 90,
       "priority": "High",
       "start": "2026-10-20",
       "blocked": true,
-      "blockedReason": "Local successor; independent review, hosting, credential, routing and activation approvals remain pending."
+      "blockedReason": "Local hardening successor requires independent review; provider voice echo, hosted safety and exact activation approvals remain open."
     }
   ],
   "liveIssues": [
