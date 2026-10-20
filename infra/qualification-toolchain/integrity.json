@@ -1,0 +1,10 @@
+{
+  "lockSha256": "b4bf8ee19508c46272022dd18ad1c3b5d14a58ceed286667477e7933e5242a9f",
+  "packageSha256": "b90bcb0a59e7a5f77aea5a18ade52119918e0b1b3a8d797f4ed34232c6d365c8",
+  "entrypoints": {
+    "node_modules/npm/package.json": "60ff022e32b5d8291d3e09849fd0cee6bbbff4e4d8352ad258214b1adf070714",
+    "node_modules/npm/bin/npm-cli.js": "8e5f6f3429f8cdbe693cdc29904e9d5a7b127a494bd15c804bd54c7403bfcbe7",
+    "node_modules/vercel/package.json": "107c4b2288c13555da0c3408d5549b4dd1edd2bdb3d8a53a859981385e77da88",
+    "node_modules/vercel/dist/index.js": "99704229bc1e6d01a446669186c910fdf88e421ccb56143928cdd8fd0e8c2ac6"
+  }
+}

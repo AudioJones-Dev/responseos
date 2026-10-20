@@ -1,3 +1,4 @@
+import { pinnedCli, pinnedNpm, validateToolchain } from "./qualification-tooling.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -11,8 +12,8 @@ const application = path.resolve(process.argv[2] ?? "application");
 const policy = JSON.parse(fs.readFileSync(path.join(control, "infra/qualification-deployment.json"), "utf8"));
 const safeEnv = Object.fromEntries(["PATH", "HOME", "TMPDIR", "SystemRoot", "TEMP", "TMP"].filter(k => process.env[k]).map(k => [k, process.env[k]]));
 safeEnv.NEXT_TELEMETRY_DISABLED = "1";
-function command(bin, args, cwd, env = safeEnv) {
-  const result = spawnSync(bin, args, { cwd, env, encoding: "utf8", maxBuffer: 8 * 1024 * 1024, timeout: 20 * 60_000 });
+function command(bin, args, cwd, env = safeEnv, input) {
+  const result = spawnSync(bin, args, { cwd, env, input, encoding: "utf8", maxBuffer: 8 * 1024 * 1024, timeout: 20 * 60_000 });
   if (result.status !== 0) throw new Error("command_failed_values_withheld");
   return result.stdout.trim();
 }
@@ -40,21 +41,26 @@ try {
   if (process.argv.includes("--gate-only")) {
     console.log("Reviewed qualification dispatch gate passed.");
   } else {
-    if (process.version !== "v24.18.0" || command("npm", ["--version"], application) !== "11.16.0") throw new Error("runtime_version_mismatch");
+    const npm = pinnedNpm(control);
+    if (process.version !== "v24.18.0" || command(process.execPath, [npm, "--version"], application) !== "11.16.0") throw new Error("runtime_version_mismatch");
+    const cli = pinnedCli(control);
+    const versions = { node: process.version, npm: command(process.execPath, [npm, "--version"], application), vercel: command(process.execPath, [cli, "--version"], application) };
+    if (validateToolchain(versions).length) throw new Error("toolchain_version_mismatch");
     const env = process.env;
-    const cliEnv = { ...safeEnv, VERCEL_ORG_ID: env.VERCEL_ORG_ID, VERCEL_PROJECT_ID: env.VERCEL_PROJECT_ID };
+    const cliEnv = { ...safeEnv, PATH: path.join(control, ".qualification-tools/node_modules/.bin") + path.delimiter + safeEnv.PATH, VERCEL_ORG_ID: env.VERCEL_ORG_ID, VERCEL_PROJECT_ID: env.VERCEL_PROJECT_ID };
     const result = await runQualificationDeployment(input, policy, env, {
-      cliVersion: () => command("vercel", ["--version"], application),
+      toolVersions: () => versions,
+      cliVersion: () => versions.vercel,
       get: resource => {
         const url = new URL(resource, "https://api.vercel.com");
         url.searchParams.set("teamId", target.orgId);
         return json(url, { Authorization: `Bearer ${env.VERCEL_TOKEN}` });
       },
-      cli: (args, extra = {}) => command("vercel", [...args, "--token", env.VERCEL_TOKEN], application, { ...cliEnv, ...extra }),
+      cli: (args, extra = {}) => command(process.execPath, [path.join(control, "scripts/qualification-cli.mjs"), ...args], application, { ...cliEnv, ...extra }, env.VERCEL_TOKEN),
       readPulledEnvironment: slug => parseEnv(fs.readFileSync(path.join(application, `.vercel/.env.${slug}.local`), "utf8")),
       readProjectLink: () => JSON.parse(fs.readFileSync(path.join(application, ".vercel/project.json"), "utf8")),
       prepareApplication: () => {
-        command("npm", ["ci", "--ignore-scripts", "--no-audit", "--no-fund"], application);
+        command(process.execPath, [pinnedNpm(control), "ci", "--ignore-scripts", "--no-audit", "--no-fund"], application);
         command(process.execPath, ["scripts/patch-minimatch-cjs-compat.mjs"], application);
         command(process.execPath, ["node_modules/prisma/build/index.js", "generate"], application);
       },

@@ -1,8 +1,10 @@
+import { validateToolchain } from "./qualification-tooling.mjs";
 import { LIVE_DEMO_TARGET as target, validateLiveDemoIdentity, validateQualificationPreflight } from "./live-demo-commissioning-contract.mjs";
 
 const fullSha = value => typeof value === "string" && /^[0-9a-f]{40}$/.test(value);
 export function validateQualificationDispatch(input, policy) {
   const errors = [];
+  if (!["offline", "carrier-qualification"].includes(policy?.qualificationMode)) errors.push("qualification_mode_required");
   if (policy?.enabled !== true) errors.push("qualification_deployment_not_authorized");
   if (!/^refs\/heads\/[A-Za-z0-9][A-Za-z0-9/_-]*$/.test(policy?.trustedControlRef ?? "") || input.ref !== policy.trustedControlRef) errors.push("unapproved_control_ref");
   if (!fullSha(input.controlSha) || input.controlSha !== input.workflowSha || input.controlSha !== input.controlHead || input.controlSha !== input.controlTip) errors.push("control_revision_mismatch");
@@ -37,6 +39,8 @@ export function deploymentHost(output) {
 /** All I/O is explicit so the complete sequence can run against synthetic adapters. */
 export async function runQualificationDeployment(input, policy, env, io) {
   requireValid(validateQualificationDispatch(input, policy));
+  if (policy.dependencyInstallationApproved !== true) throw new Error("dependency_installation_not_authorized");
+  requireValid(validateToolchain(await io.toolVersions()));
   if (env.VERCEL_ORG_ID !== target.orgId || env.VERCEL_PROJECT_ID !== target.projectId || !env.VERCEL_TOKEN || !env.VERCEL_AUTOMATION_BYPASS_SECRET) throw new Error("configured_target_or_token_missing");
   if ((await io.cliVersion()).trim() !== "41.7.0") throw new Error("vercel_cli_version_mismatch");
   const projectPath = `/v9/projects/${target.projectId}`;
@@ -48,7 +52,7 @@ export async function runQualificationDeployment(input, policy, env, io) {
   const link = await io.readProjectLink();
   if (link?.orgId !== target.orgId || link?.projectId !== target.projectId) throw new Error("pulled_project_link_mismatch");
   const pulled = await io.readPulledEnvironment(target.environmentSlug);
-  requireValid(validateQualificationPreflight(pulled, policy.qualificationEvidence));
+  requireValid(validateQualificationPreflight(pulled, policy.qualificationEvidence, policy.qualificationMode));
   if (pulled.NEXT_PUBLIC_APP_URL !== `https://${target.alias}`) throw new Error("application_origin_mismatch");
   for (const name of ["DATABASE_URL", "DIRECT_URL"]) {
     if (!env[name] || pulled[name] !== env[name]) throw new Error("database_binding_mismatch");

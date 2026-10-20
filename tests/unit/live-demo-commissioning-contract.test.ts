@@ -29,14 +29,29 @@ const env = {
   CLERK_WEBHOOK_SECRET: "whsec_synthetic",
   AJ_DIGITAL_CLERK_ORG_ID: "org_synthetic",
   RESPONSEOS_LIVE_HUBSPOT_ENABLED: "false", RESPONSEOS_LIVE_EMAIL_ENABLED: "false",
-  RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED: "false",
+  RESPONSEOS_WEBHOOK_FINGERPRINT_KEY_ID: "synthetic-local-v1", RESPONSEOS_WEBHOOK_FINGERPRINT_KEYS_JSON: JSON.stringify({ "synthetic-local-v1": "42".repeat(32) }), RESPONSEOS_WEBHOOK_FINGERPRINT_RETENTION_SECONDS: "86400", RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED: "false",
 };
 const policy = { consent: { recording: { enabled: false } }, qualificationAssignmentActive: true, crmEmailPermanentlyBlocked: true };
 
 describe("closed FRL commissioning contract", () => {
+  test("fingerprint policy is explicit, bounded and never reflected in errors", () => {
+    for (const invalid of [
+      { RESPONSEOS_WEBHOOK_FINGERPRINT_KEYS_JSON: "synthetic-sensitive-marker" },
+      { RESPONSEOS_WEBHOOK_FINGERPRINT_KEY_ID: "missing" },
+      { RESPONSEOS_WEBHOOK_FINGERPRINT_KEY_ID: undefined, RESPONSEOS_WEBHOOK_FINGERPRINT_KEYS_JSON: JSON.stringify({ undefined: "42".repeat(32) }) },
+      { RESPONSEOS_WEBHOOK_FINGERPRINT_RETENTION_SECONDS: "86401" },
+      { RESPONSEOS_WEBHOOK_FINGERPRINT_RETENTION_SECONDS: "0" },
+      { RESPONSEOS_WEBHOOK_FINGERPRINT_RETENTION_SECONDS: "1.5" },
+    ]) {
+      const errors = validateQualificationPreflight({ ...env, ...invalid }, policy, "offline");
+      expect(errors.length).toBeGreaterThan(0);
+      expect(JSON.stringify(errors)).not.toContain("synthetic-sensitive-marker");
+    }
+    expect(validateQualificationPreflight({ ...env, RESPONSEOS_WEBHOOK_FINGERPRINT_RETENTION_SECONDS: "60" }, policy, "offline")).toEqual([]);
+  });
   test("accepts complete synthetic target evidence without granting execution", () => {
     expect(validateLiveDemoIdentity(evidence())).toEqual([]);
-    expect(validateQualificationPreflight(env, policy)).toEqual([]);
+    expect(validateQualificationPreflight(env, policy, "offline")).toEqual([]);
   });
   test("separate qualification entrypoint accepts synthetic disabled input and rejects enabled effects", () => {
     const directory = mkdtempSync(join(tmpdir(), "frl-qualification-"));
@@ -50,7 +65,7 @@ describe("closed FRL commissioning contract", () => {
       };
       const positive = run(env);
       expect(positive.status).toBe(0);
-      expect(positive.stdout).toContain("Effects-disabled offline qualification preflight passed");
+      expect(positive.stdout).toContain("Trusted-mode qualification preflight passed");
       expect(positive.stdout).toContain("attested, unverified");
       expect(run({ ...env, RESPONSEOS_LIVE_EMAIL_ENABLED: "true" }).status).toBe(1);
       writeFileSync(policyPath, "{synthetic-sensitive-marker");
@@ -96,15 +111,15 @@ describe("closed FRL commissioning contract", () => {
     }
   });
   test.each(["false", "0", "", "yes", " true "])("rejects ambiguous/disabled auth %s", value => {
-    expect(validateQualificationPreflight({ ...env, RESPONSEOS_REQUIRE_AUTH: value }, policy).length).toBeGreaterThan(0);
+    expect(validateQualificationPreflight({ ...env, RESPONSEOS_REQUIRE_AUTH: value }, policy, "offline").length).toBeGreaterThan(0);
   });
   test.each(["true", "1", "TRUE", " true ", undefined])("fails closed for CRM/email flag value %s", value => {
     for (const key of ["RESPONSEOS_LIVE_HUBSPOT_ENABLED", "RESPONSEOS_LIVE_EMAIL_ENABLED"]) {
-      expect(validateQualificationPreflight({ ...env, [key]: value }, policy).length).toBeGreaterThan(0);
+      expect(validateQualificationPreflight({ ...env, [key]: value }, policy, "offline").length).toBeGreaterThan(0);
     }
   });
   test.each([...LIVE_DEMO_FORBIDDEN, "HUBSPOT_ACCESS_TOKEN", "RESEND_API_KEY", "TELNYX_API_KEY", "RESPONSEOS_AUTHORIZED_EXECUTION_GATES"])("rejects %s without disclosing its value", key => {
-    const errors = validateQualificationPreflight({ ...env, [key]: "sensitive-synthetic-value" }, policy);
+    const errors = validateQualificationPreflight({ ...env, [key]: "sensitive-synthetic-value" }, policy, "offline");
     expect(errors.length).toBeGreaterThan(0);
     expect(errors.join(" ")).not.toContain("sensitive-synthetic-value");
   });
@@ -129,18 +144,20 @@ describe("closed FRL commissioning contract", () => {
   });
   test("rejects invalid Clerk, recording and incomplete permanent prohibition evidence", () => {
     for (const key of ["CLERK_SECRET_KEY", "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "CLERK_WEBHOOK_SECRET", "AJ_DIGITAL_CLERK_ORG_ID"]) {
-      expect(validateQualificationPreflight({ ...env, [key]: undefined }, policy).length).toBeGreaterThan(0);
+      expect(validateQualificationPreflight({ ...env, [key]: undefined }, policy, "offline").length).toBeGreaterThan(0);
     }
-    expect(validateQualificationPreflight({ ...env, RESPONSEOS_DEV_SESSION: " " }, policy).length).toBeGreaterThan(0);
-    expect(validateQualificationPreflight({ ...env, CLERK_SECRET_KEY: "placeholder" }, policy).length).toBeGreaterThan(0);
-    expect(validateQualificationPreflight({ ...env, CLERK_SECRET_KEY: "sk_live_synthetic" }, policy).length).toBeGreaterThan(0);
-    expect(validateQualificationPreflight(env, { ...policy, consent: { recording: { enabled: true } } }).length).toBeGreaterThan(0);
-    expect(validateQualificationPreflight(env, { ...policy, crmEmailPermanentlyBlocked: false }).length).toBeGreaterThan(0);
+    expect(validateQualificationPreflight({ ...env, RESPONSEOS_DEV_SESSION: " " }, policy, "offline").length).toBeGreaterThan(0);
+    expect(validateQualificationPreflight({ ...env, CLERK_SECRET_KEY: "placeholder" }, policy, "offline").length).toBeGreaterThan(0);
+    expect(validateQualificationPreflight({ ...env, CLERK_SECRET_KEY: "sk_live_synthetic" }, policy, "offline").length).toBeGreaterThan(0);
+    expect(validateQualificationPreflight(env, { ...policy, consent: { recording: { enabled: true } } }, "offline").length).toBeGreaterThan(0);
+    expect(validateQualificationPreflight(env, { ...policy, crmEmailPermanentlyBlocked: false }, "offline").length).toBeGreaterThan(0);
   });
-  test("workflow keeps activation disabled and has no migration or CLI installation", () => {
+  test("workflow keeps activation disabled and gates pinned tooling installation", () => {
     const workflow = readFileSync(".github/workflows/deploy-live-demo.yml", "utf8");
     expect(workflow).toContain("needs: commissioning-gate");
-    expect(workflow).not.toMatch(/prisma migrate|npm install|uses:/);
+    expect(workflow).not.toMatch(/prisma migrate/);
+    expect(workflow.indexOf("Require explicit tooling install approval")).toBeLessThan(workflow.indexOf("uses: actions/setup-node"));
+    expect(workflow).toContain("node-version: 24.18.0");
     expect(JSON.parse(readFileSync("infra/qualification-deployment.json", "utf8")).enabled).toBe(false);
   });
 });

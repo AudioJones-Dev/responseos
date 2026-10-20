@@ -4,5 +4,7 @@
   "approvedApplicationSha": null,
   "approvalReference": null,
   "dependencyInstallationApproved": false,
-  "qualificationEvidence": null
+  "qualificationEvidence": null,
+  "qualificationMode": "offline",
+  "toolingInstallationApproved": false
 }

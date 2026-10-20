@@ -4,6 +4,12 @@ import fs from "node:fs";
 import { validateDopplerPlan } from "../../scripts/validate-doppler-plan.mjs";
 const fixture = () => JSON.parse(fs.readFileSync(new URL("../../infra/doppler-plan.json", import.meta.url), "utf8"));
 test("repository-backed dormant plan is valid", () => assert.deepEqual(validateDopplerPlan(fixture()), []));
+
+test("isolated roots and fingerprint names are mandatory without sync authority", () => {
+  for (const mutate of [p => p.qualificationRuntime.source.inheritance.push("dev"), p => p.qualificationRuntime.source.personalConfigs = true, p => p.qualificationRelease.source.root = false, p => p.qualificationRuntime.secretNames = p.qualificationRuntime.secretNames.filter(n => n !== "RESPONSEOS_WEBHOOK_FINGERPRINT_KEYS_JSON")]) {
+    const plan = fixture(); mutate(plan); assert.ok(validateDopplerPlan(plan).length);
+  }
+});
 test("activation and guessed source mappings fail closed", () => {
   for (const mutate of [p => p.executionEnabled = true, p => p.syncEnabled = true, p => p.productionIncluded = true, p => p.approvalReference = "claimed", p => p.qualificationRuntime.source = { project: "response-os", config: "dev" }, p => p.qualificationRelease.source = { project: "response-os", config: "prod" }, p => p.historicalDemo.reuseForQualification = true]) {
     const plan = fixture(); mutate(plan); assert.ok(validateDopplerPlan(plan).length);

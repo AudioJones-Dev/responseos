@@ -58,6 +58,14 @@ jobs:
           git -C application fetch --depth=1 https://github.com/AudioJones-Dev/responseos.git "$APPLICATION_SHA"
           git -C application checkout --detach FETCH_HEAD
           node control/scripts/run-qualification-deployment.mjs application --gate-only
+      - name: Require explicit tooling install approval before setup
+        run: node --input-type=module -e 'import fs from "node:fs"; import {requireToolingInstallation} from "./control/scripts/qualification-tooling.mjs"; requireToolingInstallation(JSON.parse(fs.readFileSync("control/infra/qualification-deployment.json","utf8")));'
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0; verified official commit
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+      - name: Prepare approved pinned npm and Vercel CLI without credentials
+        run: node control/scripts/install-qualification-tools.mjs
       - name: Verify installed runtime and run protected qualification sequence
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}

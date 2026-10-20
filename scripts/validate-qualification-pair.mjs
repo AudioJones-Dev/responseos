@@ -1,0 +1,40 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { execFileSync } from "node:child_process";
+import { lockedTools } from "./qualification-tooling.mjs";
+import { runQualificationDeployment } from "./qualification-deployment.mjs";
+
+const control = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const [directory, expectedApp, expectedControl] = process.argv.slice(2);
+assert.ok(directory);
+const application = path.resolve(directory);
+assert.notEqual(application, control);
+const git = (root, ...args) => execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
+const scope = JSON.parse(fs.readFileSync(path.join(control, "infra/grok-disabled-pair.json")));
+assert.equal(expectedApp, scope.applicationSha);
+assert.equal(scope.activation, false);
+for (const [root, expected] of [[application, expectedApp], [control, expectedControl]]) {
+  assert.match(expected, /^[0-9a-f]{40}$/);
+  assert.equal(git(root, "rev-parse", "HEAD"), expected);
+  assert.equal(git(root, "status", "--porcelain"), "");
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(root, "package.json"))).engines, { node: "24.18.0", npm: "11.16.0" });
+  assert.equal(JSON.parse(fs.readFileSync(path.join(root, "vercel.json"))).git.deploymentEnabled, false);
+}
+const differences = git(control, "diff", "--name-only", expectedApp, expectedControl).split("\n").filter(Boolean);
+const allowed = new Set([...scope.importedControlFiles, ...scope.controlOnlyFiles]);
+assert.equal(allowed.size, scope.importedControlFiles.length + scope.controlOnlyFiles.length);
+for (const file of differences) assert.ok(allowed.has(file), `unexpected pair difference: ${file}`);
+for (const file of scope.importedControlFiles) assert.equal(git(control, "rev-parse", `${expectedControl}:${file}`), git(control, "rev-parse", `${scope.frozenControlSha}:${file}`), `control import changed: ${file}`);
+for (const file of ["app", "lib", "prisma", "package.json", "package-lock.json"]) assert.equal(git(application, "rev-parse", `HEAD:${file}`), git(control, "rev-parse", `HEAD:${file}`), `runtime drift: ${file}`);
+const policy = JSON.parse(fs.readFileSync(path.join(control, "infra/qualification-deployment.json")));
+for (const key of ["enabled", "dependencyInstallationApproved", "toolingInstallationApproved"]) assert.equal(policy[key], false);
+for (const key of ["trustedControlRef", "approvedApplicationSha", "approvalReference", "qualificationEvidence"]) assert.equal(policy[key], null);
+assert.equal(policy.qualificationMode, "offline");
+const lock = lockedTools(control);
+let calls = 0;
+const io = new Proxy({}, { get() { return () => { calls++; throw Error("I/O forbidden"); }; } });
+await assert.rejects(runQualificationDeployment({ applicationSha: expectedApp, controlSha: expectedControl }, policy, {}, io), /not_authorized/);
+assert.equal(calls, 0);
+console.log(JSON.stringify({ applicationSha: expectedApp, controlSha: expectedControl, clean: true, runtimeAndMigrationsIdentical: true, reviewedControlImportsIdentical: true, differences, lockedPackages: Object.keys(lock.lock.packages).length, disabledPairIOCalls: calls, activation: false }, null, 2));

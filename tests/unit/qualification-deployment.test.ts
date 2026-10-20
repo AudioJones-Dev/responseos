@@ -6,14 +6,15 @@ import { deploymentHost, runQualificationDeployment, validateQualificationDispat
 const control = "a".repeat(40), app = "b".repeat(40);
 function fixture() {
   const input = { controlSha: control, workflowSha: control, controlHead: control, controlTip: control, applicationSha: app, applicationHead: app, ref: "refs/heads/reviewed-control" };
-  const policy = { enabled: true, trustedControlRef: input.ref, approvedApplicationSha: app, approvalReference: "synthetic-approval", dependencyInstallationApproved: true, qualificationEvidence: { consent: { recording: { enabled: false } }, qualificationAssignmentActive: true, crmEmailPermanentlyBlocked: true } };
+  const policy = { enabled: true, qualificationMode: "offline", trustedControlRef: input.ref, approvedApplicationSha: app, approvalReference: "synthetic-approval", dependencyInstallationApproved: true, qualificationEvidence: { consent: { recording: { enabled: false } }, qualificationAssignmentActive: true, crmEmailPermanentlyBlocked: true } };
   const env = { VERCEL_ORG_ID: String(t.orgId), VERCEL_PROJECT_ID: String(t.projectId), VERCEL_TOKEN: "synthetic", VERCEL_AUTOMATION_BYPASS_SECRET: "synthetic", DATABASE_URL: "synthetic-db", DIRECT_URL: "synthetic-direct" };
-  const pulled = { DATABASE_URL: env.DATABASE_URL, DIRECT_URL: env.DIRECT_URL, NEXT_PUBLIC_APP_URL: `https://${t.alias}`, RESPONSEOS_DEPLOYMENT_LANE: "live-demo", RESPONSEOS_REQUIRE_AUTH: "true", CLERK_SECRET_KEY: "sk_test_synthetic", NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_synthetic", CLERK_WEBHOOK_SECRET: "whsec_synthetic", AJ_DIGITAL_CLERK_ORG_ID: "org_synthetic", RESPONSEOS_LIVE_HUBSPOT_ENABLED: "false", RESPONSEOS_LIVE_EMAIL_ENABLED: "false", RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED: "false" };
+  const pulled = { DATABASE_URL: env.DATABASE_URL, DIRECT_URL: env.DIRECT_URL, NEXT_PUBLIC_APP_URL: `https://${t.alias}`, RESPONSEOS_DEPLOYMENT_LANE: "live-demo", RESPONSEOS_REQUIRE_AUTH: "true", CLERK_SECRET_KEY: "sk_test_synthetic", NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_synthetic", CLERK_WEBHOOK_SECRET: "whsec_synthetic", AJ_DIGITAL_CLERK_ORG_ID: "org_synthetic", RESPONSEOS_LIVE_HUBSPOT_ENABLED: "false", RESPONSEOS_LIVE_EMAIL_ENABLED: "false", RESPONSEOS_WEBHOOK_FINGERPRINT_KEY_ID: "synthetic-local-v1", RESPONSEOS_WEBHOOK_FINGERPRINT_KEYS_JSON: JSON.stringify({ "synthetic-local-v1": "42".repeat(32) }), RESPONSEOS_WEBHOOK_FINGERPRINT_RETENTION_SECONDS: "86400", RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED: "false" };
   const project = { id: String(t.projectId), name: String(t.projectName), accountId: String(t.orgId), framework: "nextjs", rootDirectory: null, outputDirectory: null, installCommand: "npm --version", buildCommand: "npm run build", nodeVersion: "24.x", ssoProtection: { deploymentType: "all_except_custom_domains" } };
   const environment = { id: String(t.environmentId), slug: String(t.environmentSlug) };
   const deployment = { id: "dpl_synthetic", url: "immutable-test.vercel.app", readyState: "READY", target: null, projectId: String(t.projectId), ownerId: String(t.orgId), customEnvironment: { id: String(t.environmentId) }, meta: { responseosApplicationSha: app, responseosControlSha: control }, alias: [...t.aliases], automaticAliases: [t.alias], userAliases: [] };
   const alias = { alias: t.alias, projectId: String(t.projectId), deploymentId: deployment.id, deployment: { id: deployment.id, url: deployment.url } };
   const io = {
+    toolVersions: vi.fn(async () => ({ node: "v24.18.0", npm: "11.16.0", vercel: "41.7.0" })),
     cliVersion: vi.fn(async () => "41.7.0"),
     get: vi.fn(async (resource: string): Promise<unknown> => resource.includes("custom-environments") ? environment : resource.startsWith("/v9/projects") ? project : resource.startsWith("/v13/") ? deployment : resource.includes(t.alias) ? alias : { ...alias, alias: t.aliases[1] }),
     cli: vi.fn(async (args: string[]) => args[0] === "deploy" ? `https://${deployment.url}` : ""),
@@ -25,6 +26,19 @@ function fixture() {
   return { input, policy, env, pulled, project, environment, deployment, alias, io, run: () => runQualificationDeployment(input, policy, env, io) };
 }
 describe("qualification deployment orchestration with synthetic I/O only", () => {
+  test("missing or unknown trusted mode rejects before any I/O", async () => {
+    for (const mode of [undefined, "", "unknown"]) {
+      const f=fixture(); Object.assign(f.policy,{qualificationMode:mode});
+      await expect(f.run()).rejects.toThrow("qualification_mode_required");
+      expect(f.io.toolVersions).not.toHaveBeenCalled(); expect(f.io.cli).not.toHaveBeenCalled();
+    }
+  });
+  test("wrong runtime or missing application install approval rejects before credentialed I/O", async () => {
+    const f=fixture(); f.io.toolVersions.mockResolvedValue({node:"v24.21.0",npm:"11.16.0",vercel:"41.7.0"});
+    await expect(f.run()).rejects.toThrow("node_version_mismatch"); expect(f.io.cli).not.toHaveBeenCalled();
+    const g=fixture(); g.policy.dependencyInstallationApproved=false;
+    await expect(g.run()).rejects.toThrow("dependency_installation_not_authorized"); expect(g.io.toolVersions).not.toHaveBeenCalled();
+  });
   test("checked-in disabled policy stops before any I/O", async () => {
     const f = fixture();
     await expect(runQualificationDeployment(f.input, JSON.parse(readFileSync("infra/qualification-deployment.json", "utf8")), f.env, f.io)).rejects.toThrow("not_authorized");

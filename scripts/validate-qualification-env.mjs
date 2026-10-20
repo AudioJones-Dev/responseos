@@ -9,13 +9,14 @@ if (!envPath || !policyPath) {
 }
 try {
   const env = parseEnv(fs.readFileSync(envPath, "utf8"));
+  const control = JSON.parse(fs.readFileSync(new URL("../infra/qualification-deployment.json", import.meta.url), "utf8"));
   const policy = JSON.parse(fs.readFileSync(policyPath, "utf8"));
-  const errors = validateQualificationPreflight(env, policy);
+  const errors = validateQualificationPreflight(env, policy, control.qualificationMode);
   if (errors.length) {
-    console.error(["Effects-disabled offline qualification preflight failed:", ...errors].join("\n"));
+    console.error(["Trusted-mode qualification preflight failed:", ...errors].join("\n"));
     process.exitCode = 1;
   } else {
-    console.log("Effects-disabled offline qualification preflight passed; policy evidence is attested, unverified. Hosted identity, live carrier authorization and authenticated durable assignment verification remain separate gates.");
+    console.log("Trusted-mode qualification preflight passed; policy evidence is attested, unverified. Hosted identity, live carrier authorization and authenticated durable assignment verification remain separate gates.");
   }
 } catch {
   console.error("Qualification input could not be read or parsed; values withheld.");

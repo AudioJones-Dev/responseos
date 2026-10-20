@@ -1,0 +1,32 @@
+{
+  "frozenControlSha": "8c28377230717d94e25d3888739dbe4b42c43eb5",
+  "applicationSha": "56abcff3bc8fdb2b06a8b63af7e79096fbfddc1c",
+  "activation": false,
+  "controlOnlyFiles": [
+    "infra/grok-disabled-pair.json",
+    "scripts/validate-qualification-pair.mjs",
+    "docs/readiness/FRL_GROK_COMMISSIONING_PLAN_2026-10-19.md",
+    "dashboard/dashboard-data.json"
+  ],
+  "importedControlFiles": [
+    ".github/workflows/deploy-live-demo.yml",
+    ".gitignore",
+    "infra/doppler-plan.json",
+    "infra/qualification-deployment.json",
+    "infra/qualification-toolchain/integrity.json",
+    "infra/qualification-toolchain/package-lock.json",
+    "infra/qualification-toolchain/package.json",
+    "scripts/install-qualification-tools.mjs",
+    "scripts/qualification-cli.mjs",
+    "scripts/qualification-deployment.mjs",
+    "scripts/qualification-tooling.mjs",
+    "scripts/run-qualification-deployment.mjs",
+    "scripts/live-demo-commissioning-contract.mjs",
+    "scripts/validate-doppler-plan.mjs",
+    "scripts/validate-qualification-env.mjs",
+    "tests/scripts/doppler-plan.test.mjs",
+    "tests/unit/live-demo-commissioning-contract.test.ts",
+    "tests/unit/qualification-deployment.test.ts",
+    "tests/unit/qualification-tooling.test.ts"
+  ]
+}

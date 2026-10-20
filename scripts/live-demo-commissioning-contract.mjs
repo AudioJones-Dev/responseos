@@ -38,8 +38,13 @@ export function validateLiveDemoIdentity(evidence) {
   return errors;
 }
 
-export function validateQualificationPreflight(env, policy) {
+export function validateQualificationPreflight(env, policy, mode) {
   const errors = [];
+  try {
+    const keys = JSON.parse(env.RESPONSEOS_WEBHOOK_FINGERPRINT_KEYS_JSON ?? "null");
+    const id = env.RESPONSEOS_WEBHOOK_FINGERPRINT_KEY_ID;
+    if (!keys || typeof keys !== "object" || Array.isArray(keys) || typeof id !== "string" || !/^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$/.test(id) || !Object.hasOwn(keys, id) || Object.entries(keys).some(([key, value]) => !/^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$/.test(key) || typeof value !== "string" || !/^[0-9a-f]{64}$/.test(value)) || !Number.isSafeInteger(Number(env.RESPONSEOS_WEBHOOK_FINGERPRINT_RETENTION_SECONDS)) || Number(env.RESPONSEOS_WEBHOOK_FINGERPRINT_RETENTION_SECONDS) <= 0 || Number(env.RESPONSEOS_WEBHOOK_FINGERPRINT_RETENTION_SECONDS) > 86400) throw new Error();
+  } catch { errors.push("Qualification fingerprint policy must have valid keys and the approved 86400-second maximum"); }
   for (const key of LIVE_DEMO_FORBIDDEN) if (present(env[key])) errors.push(`${key} forbidden in qualification`);
   if (env.RESPONSEOS_DEPLOYMENT_LANE !== "live-demo") errors.push("Wrong deployment lane");
   if (!["1", "true"].includes(env.RESPONSEOS_REQUIRE_AUTH)) errors.push("Explicit authentication required");
@@ -57,6 +62,8 @@ export function validateQualificationPreflight(env, policy) {
   }
   if (policy?.consent?.recording?.enabled !== false) errors.push("Recording must be disabled in tenant consent policy");
   if (policy?.qualificationAssignmentActive !== true || policy?.crmEmailPermanentlyBlocked !== true) errors.push("Qualification assignment and permanent CRM/email prohibition evidence required");
-  if (env.RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED !== "false" || present(env.TELNYX_API_KEY)) errors.push("Offline qualification preflight requires carrier effects disabled");
+  if (!["offline", "carrier-qualification"].includes(mode)) errors.push("Missing or unknown trusted qualification mode");
+  if (mode === "offline" && (env.RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED !== "false" || present(env.TELNYX_API_KEY))) errors.push("Offline qualification preflight requires carrier effects disabled");
+  if (mode === "carrier-qualification" && (env.RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED !== "true" || !present(env.TELNYX_API_KEY) || !present(env.TELNYX_PUBLIC_KEY))) errors.push("Carrier qualification requires explicit ingest and carrier credentials");
   return errors;
 }
