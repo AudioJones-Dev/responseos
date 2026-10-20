@@ -41,7 +41,7 @@ The proof is an atomic file on a trusted shared local filesystem:
 - RESPONSEOS_GROK_WATCHDOG_INSTANCE: new 16–128 character alphanumeric/underscore/
   hyphen deployment identifier, changed on each commissioned deployment.
 - Existing exact RESPONSEOS_APPLICATION_SHA / RESPONSEOS_CONTROL_SHA.
-- Exact RESPONSEOS_GROK_WATCHDOG_MODE=active and WATCHDOG_ENABLED=true.
+- Exact RESPONSEOS_GROK_WATCHDOG_MODE=active and RESPONSEOS_GROK_WATCHDOG_ENABLED=true.
 
 These values are included in qualificationConfigHash. No old authority is
 silently reusable. The watchdog needs directory write permission; consumers

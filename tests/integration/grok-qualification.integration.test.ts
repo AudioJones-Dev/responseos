@@ -12,6 +12,7 @@ import { ingestCallControlEvent } from "@/lib/callControl/service";
 import { parseCallControlEvent } from "@/lib/providers/telnyx/callControl";
 import { mediaClientState } from "@/lib/grok/mediaContract";
 import { watchdogReady, WATCHDOG_FRESHNESS_MS } from "@/lib/grok/watchdogReadiness";
+import { db } from "@/lib/db/client";
 
 const io = vi.hoisted(() => { vi.resetModules(); return { handoff: vi.fn(), terminate: vi.fn() }; });
 vi.mock("@/lib/grok/provider", async original => ({ ...await original<typeof import("@/lib/grok/provider")>(), handoffToGrok: io.handoff, terminateGrokCall: io.terminate }));
@@ -71,6 +72,19 @@ test("lost watchdog readiness denies audio authority but preserves one-shot term
   await dispatchGrokTermination(started.sessionId);
   await dispatchGrokTermination(started.sessionId);
   expect(io.terminate).toHaveBeenCalledTimes(1);
+});
+test("readiness revoked during target lookup cannot reserve or dispatch", async () => {
+  const c = await capture();
+  vi.spyOn(db!.telephonyNumberAssignment, "count").mockImplementationOnce(async () => { f.stopReadiness(); return 1; });
+  await expect(beginGrokHandoff(c)).rejects.toThrow("unqualified");
+  expect(await prisma.grokQualificationReservation.count()).toBe(0);
+  expect(io.handoff).not.toHaveBeenCalled();
+});
+test("transport authority rechecks readiness after its final database wait", async () => {
+  const started = await beginGrokHandoff(await capture());
+  await prisma.grokCallSession.update({ where: { id: started.sessionId }, data: { worker_token: "synthetic-worker" } });
+  vi.spyOn(db!.telephonyNumberAssignment, "count").mockImplementationOnce(async () => { f.stopReadiness(); return 1; });
+  await expect(authorizeQualificationTransport("realtime_audio", started.sessionId)).rejects.toThrow("unqualified");
 });
 test("a separate active watchdog must finish a sweep; a killed process loses readiness", async () => {
   f.stopReadiness();
