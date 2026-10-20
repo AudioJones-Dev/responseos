@@ -188,3 +188,5 @@ Local EXPERIMENTAL Grok qualification candidate: immutable GrokQualificationRese
 Local Linux packaging and inactive watchdog successor is under review; accepted app8bdd184/control1ff5e37 are preserved and published only to dedicated branches. No milestone or activation gate advances. [Local scope](readiness/FRL_GROK_LINUX_PACKAGE_2026-10-20.md).
 
 Local startup-readiness regression and inactive hosting lifecycle are under review; no release acceptance or hosting approval. The October20 10:30a.m. America/New_York checkpoint favors a labeled local walkthrough if hosted safety evidence is incomplete. [Review scope](readiness/FRL_GROK_STARTUP_LIFECYCLE_2026-10-20.md).
+
+Local EXPERIMENTAL watchdog-readiness P2 successor requires fresh active-loop sweep proof before qualification; inactive liveness cannot authorize calls. See [contract](readiness/FRL_GROK_WATCHDOG_READINESS_2026-10-20.md). No hosted or activation gate advances.

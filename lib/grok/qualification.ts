@@ -6,6 +6,7 @@ import type { GrokCallSession, Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
 import { assertStoredWebhookIdentity } from "@/lib/data/webhookEvents";
 import { parseCallControlEvent } from "@/lib/providers/telnyx/callControl";
+import { watchdogReady } from "./watchdogReadiness";
 
 const id = z.string().regex(/^[A-Za-z0-9_-]{1,128}$/);
 const sha = z.string().regex(/^[0-9a-f]{64}$/);
@@ -29,12 +30,15 @@ export function qualificationConfigHash() {
     process.env.TELNYX_PUBLIC_KEY, process.env.RESPONSEOS_GROK_MEDIA_CONFIG ? readFileSync(process.env.RESPONSEOS_GROK_MEDIA_CONFIG, "utf8") : null, process.env.PORT,
     process.env.RESPONSEOS_QUALIFICATION_TELNYX_ACCOUNT, process.env.RESPONSEOS_QUALIFICATION_CONNECTION,
     process.env.RESPONSEOS_QUALIFICATION_XAI_TEAM, process.env.RESPONSEOS_QUALIFICATION_XAI_PROJECT, process.env.RESPONSEOS_LIVE_HUBSPOT_ENABLED, process.env.RESPONSEOS_LIVE_EMAIL_ENABLED,
+    process.env.RESPONSEOS_GROK_WATCHDOG_MODE, process.env.RESPONSEOS_GROK_WATCHDOG_ENABLED,
+    process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_FILE, process.env.RESPONSEOS_GROK_WATCHDOG_INSTANCE,
   ]));
 }
 
 export function readQualification(now = new Date()): Qualification {
   try {
     if (process.env.RESPONSEOS_QUALIFICATION_ACTIVATION !== "ENABLED" || process.env.RESPONSEOS_REQUIRE_AUTH !== "true") throw Error();
+    if (!watchdogReady(now.getTime())) throw Error();
     if (process.env.RESPONSEOS_LIVE_HUBSPOT_ENABLED !== "false" || process.env.RESPONSEOS_LIVE_EMAIL_ENABLED !== "false") throw Error();
     const file = process.env.RESPONSEOS_QUALIFICATION_FILE, digest = process.env.RESPONSEOS_QUALIFICATION_SHA256;
     if (!file || !digest || !sha.safeParse(digest).success) throw Error();

@@ -7,11 +7,17 @@ async function main() {
   if (mode !== "active") throw Error("grok_watchdog_unknown_mode");
   if (process.env.RESPONSEOS_GROK_WATCHDOG_ENABLED !== "true") throw Error("grok_watchdog_disabled");
   const { db } = await import("../lib/db/client");
+  const loop = process.argv.includes("--loop");
+  let readiness: ReturnType<typeof import("../lib/grok/watchdogReadiness").createWatchdogReadinessWriter> | undefined;
   try {
+    if (loop) {
+      const { createWatchdogReadinessWriter } = await import("../lib/grok/watchdogReadiness");
+      readiness = createWatchdogReadinessWriter();
+    }
     const { watchdogGrokSweep } = await import("../lib/grok/service");
     const { runGrokWatchdog } = await import("../lib/grok/watchdogLoop");
     const healthy = await runGrokWatchdog({
-      loop: process.argv.includes("--loop"), sweep: watchdogGrokSweep,
+      loop, sweep: watchdogGrokSweep, completed: readiness?.completed,
       pause: milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds)),
       alert: (scope, event, occurrences) => console.error(event === "recovered"
         ? `Grok watchdog ${scope} reporting recovered after ${occurrences} observations; this is not disconnection evidence.`
@@ -19,6 +25,7 @@ async function main() {
     });
     if (!healthy) throw Error("grok_watchdog_sweep_failed");
   } finally {
+    readiness?.clear();
     await db?.$disconnect();
   }
 }

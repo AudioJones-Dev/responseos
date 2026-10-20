@@ -1860,6 +1860,18 @@
       "start": "2026-10-20",
       "blocked": true,
       "blockedReason": "Local tests and exact successor review pending. Render exposes only Michael workspace; Audio authorization required. Claude Code login required. No release acceptance or live activation."
+    },
+    {
+      "id": "FRL-GROK-WATCHDOG-READINESS",
+      "phase": "Integrations",
+      "title": "Review active watchdog readiness P2 successor",
+      "owner": "Codex",
+      "status": "In Progress",
+      "progress": 50,
+      "priority": "High",
+      "start": "2026-10-20",
+      "blocked": true,
+      "blockedReason": "Local final-tree validation and Claude successor review pending; no hosted topology or activation approval."
     }
   ],
   "liveIssues": [

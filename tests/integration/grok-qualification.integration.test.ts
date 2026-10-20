@@ -11,6 +11,7 @@ import { recordWebhookEvent } from "@/lib/data/webhookEvents";
 import { ingestCallControlEvent } from "@/lib/callControl/service";
 import { parseCallControlEvent } from "@/lib/providers/telnyx/callControl";
 import { mediaClientState } from "@/lib/grok/mediaContract";
+import { watchdogReady, WATCHDOG_FRESHNESS_MS } from "@/lib/grok/watchdogReadiness";
 
 const io = vi.hoisted(() => { vi.resetModules(); return { handoff: vi.fn(), terminate: vi.fn() }; });
 vi.mock("@/lib/grok/provider", async original => ({ ...await original<typeof import("@/lib/grok/provider")>(), handoffToGrok: io.handoff, terminateGrokCall: io.terminate }));
@@ -52,6 +53,42 @@ test.each(["disabled", "expired", "missing", "malformed"])("%s authority sends n
   await expect(beginGrokHandoff(c)).rejects.toThrow(); expect(io.handoff).not.toHaveBeenCalled();
   expect(await prisma.grokCallSession.count()).toBe(0);
 });
+test.each(["missing", "inactive", "disabled", "wrong-instance"])("watchdog %s cannot reserve or send a qualification call", async reason => {
+  const c = await capture();
+  if (reason === "missing") f.stopReadiness();
+  if (reason === "inactive") vi.stubEnv("RESPONSEOS_GROK_WATCHDOG_MODE", "inactive");
+  if (reason === "disabled") vi.stubEnv("RESPONSEOS_GROK_WATCHDOG_ENABLED", "false");
+  if (reason === "wrong-instance") vi.stubEnv("RESPONSEOS_GROK_WATCHDOG_INSTANCE", "another-instance-id");
+  await expect(beginGrokHandoff(c)).rejects.toThrow();
+  expect(io.handoff).not.toHaveBeenCalled();
+  expect(await prisma.grokQualificationReservation.count()).toBe(0);
+});
+test("lost watchdog readiness denies audio authority but preserves one-shot termination", async () => {
+  const started = await beginGrokHandoff(await capture());
+  f.stopReadiness();
+  await expect(authorizeQualificationTransport("realtime_audio", started.sessionId)).rejects.toThrow("unqualified");
+  await requestGrokStop(started.sessionId, "synthetic_readiness_loss");
+  await dispatchGrokTermination(started.sessionId);
+  await dispatchGrokTermination(started.sessionId);
+  expect(io.terminate).toHaveBeenCalledTimes(1);
+});
+test("a separate active watchdog must finish a sweep; a killed process loses readiness", async () => {
+  f.stopReadiness();
+  const tsx = path.resolve("node_modules/tsx/dist/cli.mjs");
+  const oneShot = spawnSync(process.execPath, [tsx, "scripts/grok-watchdog.ts"], { env: { ...process.env }, encoding: "utf8", timeout: 15000 });
+  expect(oneShot.status).toBe(0);
+  expect(watchdogReady()).toBe(false);
+  const child = spawn(process.execPath, [tsx, "scripts/grok-watchdog.ts", "--loop"], { env: { ...process.env }, stdio: "ignore" });
+  const exited = once(child, "exit");
+  try {
+    await vi.waitFor(() => expect(watchdogReady()).toBe(true), { timeout: 10000 });
+    child.kill("SIGKILL"); await exited;
+    await new Promise(resolve => setTimeout(resolve, WATCHDOG_FRESHNESS_MS + 50));
+    expect(watchdogReady()).toBe(false);
+    await expect(beginGrokHandoff(await capture())).rejects.toThrow("unqualified");
+    expect(io.handoff).not.toHaveBeenCalled();
+  } finally { if (child.exitCode === null && child.signalCode === null) { child.kill("SIGKILL"); await exited; } }
+}, 20000);
 test.each([{ connection_id: "wrong" }, { to: "+15555550199" }])("authenticated but wrong provider target denies %j", async extra => {
   await expect(beginGrokHandoff(await capture(extra))).rejects.toThrow("identity_mismatch"); expect(io.handoff).not.toHaveBeenCalled();
 });

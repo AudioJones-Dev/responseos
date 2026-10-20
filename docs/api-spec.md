@@ -53,6 +53,11 @@ Mock-safe mutation routes may include a `mock: true` flag inside the success env
 ### Health
 `GET /api/health` → `{ status: 'ok', service: 'responseos', version: '0.2.0', build_sha: '<reviewed commit or local>', environment: '<preview|production|local>' }`. Build and environment identity are non-secret release evidence; the staging workflow rejects a deployed SHA that differs from the reviewed workflow SHA.
 
+When Grok qualification activation is `ENABLED`, this uncached endpoint also
+reports `watchdogReady`; absent valid recent active-loop evidence returns 503
+with `status: 'not_ready'`. A 200 proves neither full call qualification nor
+disconnection. Inactive service `/healthz` is a separate liveness-only surface.
+
 ### Accounts
 - `GET /api/accounts` → account list
 - `GET /api/accounts/:id` → single account
