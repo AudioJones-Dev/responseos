@@ -56,7 +56,7 @@ export function readQualification(now = new Date()): Qualification {
 export async function reserveQualification(tx: Prisma.TransactionClient, s: GrokCallSession, now: Date) {
   const p = readQualification(now);
   if (s.account_id !== p.accountId || s.assignment_id !== p.assignmentId) throw Error("qualification_target_mismatch");
-  await tx.$queryRaw`SELECT pg_advisory_xact_lock(194822, 1)`;
+  await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(194822, 1)`;
   const active = await tx.grokQualificationReservation.findFirst({ where: { active_slot: "qualification" }, include: { session: { include: { capture: true } } } });
   if (active) {
     if (!active.session.capture.call_disconnected_at) throw Error("qualification_call_in_progress");
