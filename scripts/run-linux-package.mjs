@@ -6,9 +6,9 @@ if (!["watchdog-inactive", "web-offline"].includes(mode) || process.argv.length 
 const env = {
   PATH: process.env.PATH, HOME: process.env.HOME, TMPDIR: process.env.TMPDIR,
   NODE_ENV: "production", NEXT_TELEMETRY_DISABLED: "1", DO_NOT_TRACK: "1",
-  RESPONSEOS_REQUIRE_AUTH: "true", RESPONSEOS_GROK_ENABLED: "false",
+  RESPONSEOS_REQUIRE_AUTH: "true", RESPONSEOS_QUALIFICATION_ACTIVATION: "DISABLED",
   RESPONSEOS_GROK_WATCHDOG_ENABLED: "false", RESPONSEOS_GROK_WATCHDOG_MODE: "inactive",
-  RESPONSEOS_CRM_ENABLED: "false", RESPONSEOS_EMAIL_ENABLED: "false",
+  RESPONSEOS_LIVE_HUBSPOT_ENABLED: "false", RESPONSEOS_LIVE_EMAIL_ENABLED: "false",
 };
 const args = mode === "web-offline"
   ? ["node_modules/next/dist/bin/next", "start", "--hostname", "127.0.0.1", "--port", "3000"]
