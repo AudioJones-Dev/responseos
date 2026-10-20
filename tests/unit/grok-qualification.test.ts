@@ -19,7 +19,7 @@ test.each([
   const f = qualificationFixture(); cleanup = f.cleanup; f.save({ ...f.policy, ...change });
   expect(() => readQualification()).toThrow("unqualified");
 });
-test.each(["RESPONSEOS_QUALIFICATION_FILE", "RESPONSEOS_QUALIFICATION_SHA256", "RESPONSEOS_APPLICATION_SHA", "RESPONSEOS_CONTROL_SHA", "RESPONSEOS_QUALIFICATION_ACTIVATION"])("missing %s denies admission", name => {
+test.each(["RESPONSEOS_QUALIFICATION_FILE", "RESPONSEOS_QUALIFICATION_SHA256", "RESPONSEOS_APPLICATION_SHA", "RESPONSEOS_CONTROL_SHA", "RESPONSEOS_QUALIFICATION_ACTIVATION", "RESPONSEOS_REQUIRE_AUTH", "RESPONSEOS_LIVE_HUBSPOT_ENABLED", "RESPONSEOS_LIVE_EMAIL_ENABLED"])("missing %s denies admission", name => {
   const f = qualificationFixture(); cleanup = f.cleanup; vi.stubEnv(name, undefined);
   expect(() => readQualification()).toThrow("unqualified");
 });
@@ -28,3 +28,5 @@ test("config file edits and expiry are detected on every read", () => {
   expect(() => readQualification(new Date(f.policy.expiresAt))).toThrow("unqualified");
   writeFileSync(f.config, "{}"); expect(() => readQualification()).toThrow("unqualified");
 });
+
+test.each(["RESPONSEOS_LIVE_HUBSPOT_ENABLED", "RESPONSEOS_LIVE_EMAIL_ENABLED"])("%s cannot be enabled during qualification", name => { const f=qualificationFixture();cleanup=f.cleanup;vi.stubEnv(name,"true");expect(()=>readQualification()).toThrow("unqualified"); });

@@ -10,7 +10,7 @@ export function qualificationFixture(overrides: Partial<Qualification> = {}) {
   const listener = { mode: "production", ingress: "managed-edge-http", streamUrl: "wss://synthetic.invalid/media", publicKey: "synthetic-public-key" };
   writeFileSync(config, JSON.stringify(listener));
   for (const [name, value] of Object.entries({
-    RESPONSEOS_REQUIRE_AUTH: "true", RESPONSEOS_QUALIFICATION_ACTIVATION: "ENABLED", RESPONSEOS_QUALIFICATION_FILE: file,
+    RESPONSEOS_LIVE_HUBSPOT_ENABLED: "false", RESPONSEOS_LIVE_EMAIL_ENABLED: "false", RESPONSEOS_REQUIRE_AUTH: "true", RESPONSEOS_QUALIFICATION_ACTIVATION: "ENABLED", RESPONSEOS_QUALIFICATION_FILE: file,
     RESPONSEOS_APPLICATION_SHA: "a".repeat(40), RESPONSEOS_CONTROL_SHA: "b".repeat(40),
     RESPONSEOS_VOICE_ENGINE: "grok-voice-3.0", RESPONSEOS_GROK_STREAM_URL: listener.streamUrl,
     TELNYX_PUBLIC_KEY: listener.publicKey, RESPONSEOS_GROK_MEDIA_CONFIG: config, PORT: "9000",

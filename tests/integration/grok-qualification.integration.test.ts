@@ -114,6 +114,13 @@ test("retained termination rejects changed credentials without releasing the con
 });
 
 test.each(["client", "anonymous"])("%s cannot admit a qualification call", async role => {
- const c=await capture();if(role==="anonymous")delete process.env.RESPONSEOS_DEV_SESSION;else setDevSession(role);
+ const c=await capture();if(role==="anonymous")delete process.env.RESPONSEOS_DEV_SESSION;else setDevSession("client_admin@org_mock_1");
  await expect(beginGrokHandoff(c)).rejects.toThrow("operator_required");expect(io.handoff).not.toHaveBeenCalled();
+});
+
+test("changed dedicated assignment closes admission but retains original termination", async () => {
+ const c=await capture(), started=await beginGrokHandoff(c);
+ await prisma.telephonyNumberAssignment.update({where:{id:f.policy.assignmentId},data:{status:"quarantined"}});
+ await watchdogGrokSweep();expect(io.terminate).toHaveBeenCalledTimes(1);
+ expect(await prisma.grokQualificationReservation.findUnique({where:{session_id:started.sessionId}})).toMatchObject({active_slot:"qualification"});
 });
