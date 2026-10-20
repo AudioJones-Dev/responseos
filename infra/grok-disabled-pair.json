@@ -1,6 +1,6 @@
 {
   "frozenControlSha": "8c28377230717d94e25d3888739dbe4b42c43eb5",
-  "applicationSha": "56abcff3bc8fdb2b06a8b63af7e79096fbfddc1c",
+  "applicationSha": "529d518d8f1143728b0be6df57cb305233182350",
   "activation": false,
   "controlOnlyFiles": [
     "infra/grok-disabled-pair.json",
