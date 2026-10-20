@@ -771,21 +771,17 @@ test("ingestion route rejects oversized body and unauthenticated fixture", async
   expect((await incomingPost(new Request("http://localhost", { method: "POST", headers: { "content-type": "application/json" }, body: "{}" }))).status).toBe(503);
 });
 
-test("separate real watchdog process consumes durable hangups after heartbeat process death", async () => {
+test("separate processes reject an unqualified legacy heartbeat and consume disabled hangups", async () => {
   const f = await bound(), claim = await claimGrokWorker(f.id);
   const tsx = path.resolve("node_modules/tsx/dist/cli.mjs");
-  const worker = spawn(process.execPath, [tsx, "tests/integration/fixtures/grok-heartbeat-worker.ts", f.id, claim.session.worker_token!], { stdio: ["ignore", "pipe", "pipe"], env: process.env });
-  try {
-    await once(worker.stdout, "data");
-    const exited = once(worker, "exit"); worker.kill(); await exited;
-    await prisma.grokCallSession.update({ where: { id: f.id }, data: { lease_expires_at: new Date(0) } });
-    const watcher = spawnSync(process.execPath, [tsx, "scripts/grok-watchdog.ts"], { env: { ...process.env, RESPONSEOS_GROK_WATCHDOG_ENABLED: "true" }, encoding: "utf8", timeout: 15000 });
-    expect(watcher.status, watcher.stderr).toBe(0);
-    expect((await prisma.grokCallSession.findUniqueOrThrow({ where: { id: f.id } })).stopped_at).not.toBeNull();
-    const commands = await prisma.grokCallCommand.findMany({ where: { session_id: f.id, kind: { endsWith: "hangup" } } });
-    expect(commands).toHaveLength(2); expect(commands.every(c => c.status === "disabled" && c.consumed_at)).toBe(true);
-    expect(transport.terminate).not.toHaveBeenCalled();
-  } finally { if (worker.exitCode === null && worker.signalCode === null) worker.kill(); }
+  const worker = spawnSync(process.execPath, [tsx, "tests/integration/fixtures/grok-heartbeat-worker.ts", f.id, claim.session.worker_token!], { encoding: "utf8", env: process.env, timeout: 5000 });
+  expect(worker.status, worker.stderr).toBe(1); expect(worker.stdout).not.toContain("ready");
+  const watcher = spawnSync(process.execPath, [tsx, "scripts/grok-watchdog.ts"], { env: { ...process.env, RESPONSEOS_GROK_WATCHDOG_ENABLED: "true" }, encoding: "utf8", timeout: 15000 });
+  expect(watcher.status, watcher.stderr).toBe(0);
+  expect((await prisma.grokCallSession.findUniqueOrThrow({ where: { id: f.id } })).stopped_at).not.toBeNull();
+  const commands = await prisma.grokCallCommand.findMany({ where: { session_id: f.id, kind: { endsWith: "hangup" } } });
+  expect(commands).toHaveLength(2); expect(commands.every(c => c.status === "disabled" && c.consumed_at)).toBe(true);
+  expect(transport.terminate).not.toHaveBeenCalled();
 });
 
 test("watchdog loop survives repeated database failures and emits intervention alerts", async () => {
