@@ -2,6 +2,7 @@ import "@/lib/serverOnlyGuard";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { z } from "zod";
+import { SAM_INSTRUCTIONS, SAM_PROFILE, SAM_VOICE } from "./samProfile";
 
 const identifier = z.string().regex(/^[A-Za-z0-9_-]{1,128}$/);
 const digest = z.string().regex(/^[0-9a-f]{64}$/);
@@ -11,6 +12,7 @@ export const demoKnowledgeSchema = z.object({
   version: identifier, approvalId: identifier, accountId: identifier,
   notBefore: z.string().datetime(), expiresAt: z.string().datetime(),
   facts: z.array(z.object({ id: identifier, statement }).strict()).length(7),
+  agentProfile: z.literal(SAM_PROFILE).optional(),
 }).strict().refine(value => new Set(value.facts.map(fact => fact.id)).size === 7);
 export const knowledgeHash = (value: string) => createHash("sha256").update(value).digest("hex");
 export const unknownKnowledgeAnswer = "I do not have approved information for that. The demo operator can review the question. This demonstration cannot book, send a message, or arrange a callback.";
@@ -36,8 +38,9 @@ export function readDemoKnowledge(accountId: string, now = Date.now()) {
       "CRM, email, recording, booking, dispatch and automatic transfer are disabled. No tools are available. Do not promise actions or follow-up.",
       `For unknown questions say: ${unknownKnowledgeAnswer}`,
       `Knowledge version: ${packet.version}. SHA256: ${sha256}.`,
+      ...(packet.agentProfile ? [SAM_INSTRUCTIONS] : []),
       ...packet.facts.map(fact => `${fact.id}: ${fact.statement}`),
     ].join("\n");
-    return { version: packet.version, sha256, approvalId: packet.approvalId, expiresAt: Date.parse(packet.expiresAt), instructions, instructionsSha256: knowledgeHash(instructions) };
+    return { version: packet.version, sha256, approvalId: packet.approvalId, expiresAt: Date.parse(packet.expiresAt), instructions, instructionsSha256: knowledgeHash(instructions), agentProfile: packet.agentProfile, voice: packet.agentProfile ? SAM_VOICE : "eve" };
   } catch { throw Error("demo_knowledge_unqualified"); }
 }

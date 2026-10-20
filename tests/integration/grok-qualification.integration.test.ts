@@ -45,8 +45,8 @@ async function capture(extra = {}) {
   await prisma.callConsentEvent.create({ data: { account_id: c.account_id, provider_call_id: c.provider_call_id, event_key: randomUUID(), action: "grant", artifact: "transcript", disclosure_ref: "synthetic", evidence_ref: "synthetic", jurisdiction_basis: "synthetic", source_channel: "call", actor_user_id: "user_operator_mock" } });
   return c;
 }
-test.each(["acknowledged", "missing", "different", "withdrawn", "changed-after-send"])("knowledge session %s is bound to the exact call before audio", async outcome => {
-  const knowledge = knowledgeFixture(f.policy.accountId);
+test.each(["acknowledged", "missing", "different", "withdrawn", "changed-after-send", "voice-missing", "voice-different", "profile-changed"])("knowledge session %s is bound to the exact call before audio", async outcome => {
+  const knowledge = knowledgeFixture(f.policy.accountId, "frl-sam-ara-v1");
   f.policy.knowledge = knowledge.binding; f.policy.configSha256 = qualificationConfigHash(); f.save();
   let bridge: Awaited<ReturnType<typeof startMediaBridge>> | undefined;
   try {
@@ -66,9 +66,14 @@ test.each(["acknowledged", "missing", "different", "withdrawn", "changed-after-s
     expect(sent.session.instructions).toContain(knowledge.binding.sha256);
     expect(sent.session.instructions).toContain("Fictional test item");
     expect(sent.session.tools).toEqual([]);
+    expect(sent.session.voice).toBe("ara");
+    expect(sent.session.instructions).toContain("You are Sam");
     const session = { ...sent.session, id: `knowledge-${outcome}`, model: "grok-voice-3.0" };
     if (outcome === "missing") delete session.instructions;
     if (outcome === "different") session.instructions = "Unapproved instructions";
+    if (outcome === "voice-missing") delete session.voice;
+    if (outcome === "voice-different") session.voice = "eve";
+    if (outcome === "profile-changed") { delete knowledge.packet.agentProfile; knowledge.save(); }
     if (outcome === "withdrawn") await prisma.callCaptureSession.update({ where: { id: c.id }, data: { content_admission_closed_at: new Date() } });
     if (outcome === "changed-after-send") { knowledge.packet.facts[0].statement = "Changed fictional statement."; knowledge.save(); }
     await bridge.xai(JSON.stringify({ type: "session.updated", session }));
@@ -76,7 +81,7 @@ test.each(["acknowledged", "missing", "different", "withdrawn", "changed-after-s
     if (outcome === "acknowledged") {
       expect(bridge.acceptingAudio).toBe(true);
       expect(receipts).toHaveLength(1);
-      expect(receipts[0].metadata_json).toMatchObject({ captureId: c.id, generation: c.generation, providerCallId: c.provider_call_id, realtimeSessionId: session.id, ...knowledge.binding });
+      expect(receipts[0].metadata_json).toMatchObject({ captureId: c.id, generation: c.generation, providerCallId: c.provider_call_id, realtimeSessionId: session.id, ...knowledge.binding, voice: "ara", agentProfile: "frl-sam-ara-v1" });
       knowledge.packet.expiresAt = new Date(0).toISOString(); knowledge.save();
       await expect(heartbeatGrok(started.sessionId, (await prisma.grokCallSession.findUniqueOrThrow({ where: { id: started.sessionId } })).worker_token!)).resolves.toBe(false);
       await dispatchGrokTermination(started.sessionId);

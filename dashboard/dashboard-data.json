@@ -1896,6 +1896,18 @@
       "start": "2026-10-20",
       "blocked": true,
       "blockedReason": "P2 successor under local validation; preserve fd4562f/7d433a6. Claude frozen-pair review, bounded detection acceptance and hosted/credential approvals remain pending."
+    },
+    {
+      "id": "FRL-SAM-RUNTIME",
+      "phase": "Integrations",
+      "title": "Bind approved Sam and Ara profile to exact-call runtime",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-10-20",
+      "blocked": true,
+      "blockedReason": "Local successor; independent review, hosting, credential, routing and activation approvals remain pending."
     }
   ],
   "liveIssues": [

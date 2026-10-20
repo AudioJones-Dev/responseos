@@ -17,6 +17,7 @@ import { providerCallHasWithdrawal, recordContentActivity } from "@/lib/callRevi
 import { BusinessMemorySnapshotSchema } from "@/lib/prospectBootstrap/contracts";
 import { readOperatingConfigurationValue } from "@/lib/agentExecution/operatingConfiguration";
 import type { Prisma } from "@prisma/client";
+import { samDisclosurePrefix } from "@/lib/grok/samDisclosure";
 
 const DISCLOSURE_PROMPT = " To continue, press 1. To decline, press 2.";
 const GATHER_PROMPT = "Press 1 to continue, or press 2 to decline.";
@@ -408,8 +409,9 @@ export async function ingestCallControlEvent(params: { verifiedBytes: Uint8Array
       if (["CALL_RECEIVED", "DISCLOSURE_PLAYING"].includes(capture.control_state)) {
         if (!runtime) throw new Error("qualification_runtime_unavailable");
         const context = buildSupervisedAgentContext({ businessName: runtime.accountName, agentName: runtime.agentName, memory: runtime.memory, policy: runtime.contextPolicy });
+        const greeting = await samDisclosurePrefix(capture);
         await db.callCaptureSession.updateMany({ where: { id: capture.id, control_state: "CALL_RECEIVED" }, data: { control_state: "DISCLOSURE_PLAYING" } });
-        const result = await executeCommand({ capture, commandType: "disclosure", action: "speak", request: { payload: context.ai_disclosure + DISCLOSURE_PROMPT, voice: "female", service_level: "basic", language: "en-US", client_state: clientState(capture.id, capture.generation) } });
+        const result = await executeCommand({ capture, commandType: "disclosure", action: "speak", request: { payload: greeting + context.ai_disclosure + DISCLOSURE_PROMPT, voice: "female", service_level: "basic", language: "en-US", client_state: clientState(capture.id, capture.generation) } });
         if (result.status !== "succeeded") throw new Error(result.error_code ?? "telnyx_disclosure_unconfirmed");
       } else {
         await setWebhookProcessStatus({ id: ledger.id, process_status: "processed" });

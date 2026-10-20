@@ -1,0 +1,43 @@
+{
+  "artifactType": "approved-facts-only",
+  "version": "frl_facts_20261020_v1",
+  "factualApproval": "Owner approved all seven statements in this chat on 2026-10-20",
+  "runtimeReady": false,
+  "pendingBindings": [
+    "stored accountId",
+    "approved activation notBefore/expiresAt",
+    "runtime envelope SHA256",
+    "trusted qualification policy"
+  ],
+  "facts": [
+    {
+      "id": "frl_fact_1",
+      "statement": "FRL works on accessibility and mobility solutions."
+    },
+    {
+      "id": "frl_fact_2",
+      "statement": "Service categories include ramps, stair lifts, vertical platform lifts, vehicle lifts, installation and service/repair; this does not promise acceptance of a specific job."
+    },
+    {
+      "id": "frl_fact_3",
+      "statement": "For vertical platform lift and ramp/commercial projects only, the proposed area is Tampa/Melbourne south to the Keys, including Key West, subject to project review."
+    },
+    {
+      "id": "frl_fact_4",
+      "statement": "Projects outside that corridor may be considered individually, with no guaranteed service."
+    },
+    {
+      "id": "frl_fact_5",
+      "statement": "Intake categories are residential, builder/general contractor, architect/specification planning, commercial accessibility and service/repair."
+    },
+    {
+      "id": "frl_fact_6",
+      "statement": "Residential intake normally includes contact/project information and site images; the demo will describe this only and collect no real details or photos."
+    },
+    {
+      "id": "frl_fact_7",
+      "statement": "Service/repair requires team qualification and acceptance, with no dispatch, timing or parts promise."
+    }
+  ],
+  "authorization": "Factual wording only. No release, hosting, credentials, routing, spending or live activation approval."
+}

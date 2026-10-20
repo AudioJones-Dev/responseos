@@ -68,7 +68,7 @@ export async function startMediaBridge(input: { headers: Headers; connectedToken
     realtime = await Promise.race([opening, new Promise<never>((_, reject) => { timer = setTimeout(() => reject(Error("realtime_open_timeout")), 5000); })]).finally(() => { if (timer) clearTimeout(timer); });
     if (!await heartbeatGrok(id, worker)) throw Error("media_postsocket_veto");
     verifiedAt = performance.now();
-    send(realtime, knowledge ? { ...realtimeConfig, session: { ...realtimeConfig.session, instructions: knowledge.instructions } } : realtimeConfig);
+    send(realtime, knowledge ? { ...realtimeConfig, session: { ...realtimeConfig.session, voice: knowledge.voice, instructions: knowledge.instructions } } : realtimeConfig);
   } catch { await stop("media_open_failed"); throw Error("media_open_failed"); }
   const openedAt = performance.now();
   async function carrier(raw: string) {
@@ -111,8 +111,8 @@ export async function startMediaBridge(input: { headers: Headers; connectedToken
         if (ready || configuring) throw Error("realtime_reconfiguration_denied");
         configuring = true;
         const session = configuration.parse(frame.session);
-        if (knowledge && z.object({ instructions: z.literal(knowledge.instructions) }).safeParse(frame.session).success === false) throw Error("realtime_knowledge_not_acknowledged");
-        await bindGrokRealtime(id, worker, session.id, knowledge && { version: knowledge.version, sha256: knowledge.sha256, instructionsSha256: knowledge.instructionsSha256 });
+        if (knowledge && z.object({ instructions: z.literal(knowledge.instructions), voice: z.literal(knowledge.voice) }).safeParse(frame.session).success === false) throw Error("realtime_knowledge_not_acknowledged");
+        await bindGrokRealtime(id, worker, session.id, knowledge && { version: knowledge.version, sha256: knowledge.sha256, instructionsSha256: knowledge.instructionsSha256, voice: knowledge.voice });
         if (closed || !await heartbeatGrok(id, worker)) { await stop("realtime_binding_closed"); return; }
         verifiedAt = performance.now(); ready = true; return;
       }

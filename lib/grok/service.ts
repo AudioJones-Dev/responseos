@@ -243,7 +243,7 @@ export async function claimGrokMedia(headers: Headers, rawStart: string, trusted
   });
 }
 
-export async function bindGrokRealtime(id: string, workerToken: string, realtimeSessionId: string, acknowledgedKnowledge?: { version: string; sha256: string; instructionsSha256: string }) {
+export async function bindGrokRealtime(id: string, workerToken: string, realtimeSessionId: string, acknowledgedKnowledge?: { version: string; sha256: string; instructionsSha256: string; voice: string }) {
   if (!/^[A-Za-z0-9_-]{1,128}$/.test(realtimeSessionId)) throw Error("realtime_identity_invalid");
   return database().$transaction(async tx => {
     const s = await lock(tx, id);
@@ -251,7 +251,7 @@ export async function bindGrokRealtime(id: string, workerToken: string, realtime
     const knowledge = readDemoKnowledge(s.account_id);
     if (Boolean(knowledge) !== Boolean(acknowledgedKnowledge) || (knowledge &&
       (knowledge.version !== acknowledgedKnowledge?.version || knowledge.sha256 !== acknowledgedKnowledge?.sha256 ||
-        knowledge.instructionsSha256 !== acknowledgedKnowledge?.instructionsSha256))) throw Error("realtime_knowledge_changed");
+        knowledge.instructionsSha256 !== acknowledgedKnowledge?.instructionsSha256 || knowledge.voice !== acknowledgedKnowledge?.voice))) throw Error("realtime_knowledge_changed");
     await tx.grokIncomingReceipt.create({ data: { event_id: `realtime:${realtimeSessionId}`, session_id: id, call_id: realtimeSessionId, body_digest: hash(`${id}|${workerToken}|${realtimeSessionId}|${provider.GROK_MODEL}`) } });
     const command = await tx.grokCallCommand.findUniqueOrThrow({ where: { session_id_kind: { session_id: id, kind: "join" } } });
     if (command.result_at || command.status !== "uncertain") throw Error("realtime_join_consumed");
@@ -260,7 +260,7 @@ export async function bindGrokRealtime(id: string, workerToken: string, realtime
       target_type: "GrokCallSession", target_id: s.id,
       metadata_json: { captureId: s.capture_id, generation: s.generation, providerCallId: s.provider_call_id,
         realtimeSessionId, version: knowledge.version, sha256: knowledge.sha256, approvalId: knowledge.approvalId,
-        instructionsSha256: knowledge.instructionsSha256 },
+        instructionsSha256: knowledge.instructionsSha256, voice: knowledge.voice, agentProfile: knowledge.agentProfile ?? null },
     } });
     await tx.grokCallCommand.update({ where: { id: command.id }, data: { status: "accepted", result_at: await clock(tx) } });
   });

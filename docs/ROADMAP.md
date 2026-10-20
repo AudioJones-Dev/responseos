@@ -198,3 +198,5 @@ Local cross-host watchdog readiness successor is in implementation under ADR-008
 Local ADR-0080 P2 successor preserves fd4562f/7d433a6 and addresses transient transport failure and watchdog self-routing. Frozen-pair review, hosted measurements and owner release acceptance remain open.
 
 Local ADR-0081 knowledge successor preserves35920b5/653265f. Synthetic-only validation of approved packet loading and exact realtime acknowledgement is in progress. No hosted gate advances. Owner now requires a real inbound FRL demo; the earlier local-walkthrough fallback does not fulfill that deliverable. $10 target/$20 maximum new incremental spending, no new recurring subscription authorized. [Contract](readiness/FRL_APPROVED_KNOWLEDGE_2026-10-20.md).
+
+Sam/Ara local successor is in review under ADR-0081. No live-demo milestone advances. [Scope](readiness/FRL_SAM_RUNTIME_2026-10-20.md).
