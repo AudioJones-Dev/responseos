@@ -264,3 +264,5 @@ POST /api/webhooks/xai/sip is body-bounded and fails closed until the real signa
 Grok media bridge is an internal injected-socket runtime only, with no public ingress route or enabled network adapter in this checkpoint. Telnyx upgrade verification uses timestamp|exact configured URL, separate from webhook body signatures. Existing SIP ingress remains disabled.
 
 The Grok listener is a separately run direct-TLS WSS service, not a Next.js route. Its production entry point rejects before startup while the qualification gate is closed. Incoming upgrades must match the configured URL and authenticate before protocol processing. No public listener was activated.
+
+Local EXPERIMENTAL Grok qualification candidate: immutable GrokQualificationReservation (migration0028), one global slot released only by authenticated exact disconnection; no new public authority API or activation. [Contract](readiness/FRL_GROK_QUALIFICATION_2026-10-20.md).

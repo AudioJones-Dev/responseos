@@ -1,13 +1,15 @@
 import "@/lib/serverOnlyGuard";
 import type { GrokCallSession } from "@prisma/client";
 
+import { readQualification } from "./qualification";
+
 export const GROK_MODEL = "grok-voice-3.0";
 export type CommandResult = "accepted" | "failed" | "uncertain" | "disabled";
 export type VerifiedIncoming = { eventId: string; callId: string; correlationToken: string; bodyDigest: string };
 export type ControlConnection = { closed: Promise<void>; close: () => Promise<void> };
 
 export function assertGrokQualified(): void {
-  throw Error("grok_provider_contract_unqualified");
+  readQualification();
 }
 
 export function grokSelected(): boolean {
@@ -30,7 +32,6 @@ export async function handoffToGrok(session: GrokCallSession, token: string, com
 
 export async function terminateGrokCall(provider: "telnyx" | "xai", resource: string, commandId: string): Promise<CommandResult> {
   if (provider !== "telnyx") return "disabled";
-  try { assertGrokQualified(); } catch { return "disabled"; }
   const { createCarrierTransport } = await import("./networkTransport");
   return createCarrierTransport({ mode: "production", apiKey: () => process.env.TELNYX_API_KEY ?? "" }).hangup(resource, commandId);
 }

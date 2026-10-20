@@ -7,7 +7,7 @@ import { matchConnectedToken, pcmu, REALTIME_URL, realtimeConfig } from "./media
 export type MediaSocket = { readonly bufferedAmount: number; send: (data: string) => void; close: () => void };
 export type BridgePorts = {
   carrier: MediaSocket;
-  openRealtime: (url: string) => Promise<MediaSocket>;
+  openRealtime: (url: string, sessionId: string) => Promise<MediaSocket>;
 };
 const object = z.record(z.string(), z.unknown());
 const identity = z.string().min(1).max(128);
@@ -46,7 +46,7 @@ export async function startMediaBridge(input: { headers: Headers; connectedToken
     return stopResult;
   }
   function localGate() {
-    if (closed || performance.now() - verifiedAt > 3000) throw Error("media_authority_stale");
+    if (closed || (binding.deadline && Date.now() >= binding.deadline.getTime()) || performance.now() - verifiedAt > 3000) throw Error("media_authority_stale");
   }
   async function check() {
     if (checking || closed) return;
@@ -60,7 +60,7 @@ export async function startMediaBridge(input: { headers: Headers; connectedToken
   try {
     if (!await heartbeatGrok(id, worker)) throw Error("media_presocket_veto");
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const opening = ports.openRealtime(REALTIME_URL).then(socket => { if (closed) socket.close(); return socket; });
+    const opening = ports.openRealtime(REALTIME_URL, id).then(socket => { if (closed) socket.close(); return socket; });
     realtime = await Promise.race([opening, new Promise<never>((_, reject) => { timer = setTimeout(() => reject(Error("realtime_open_timeout")), 5000); })]).finally(() => { if (timer) clearTimeout(timer); });
     if (!await heartbeatGrok(id, worker)) throw Error("media_postsocket_veto");
     verifiedAt = performance.now();

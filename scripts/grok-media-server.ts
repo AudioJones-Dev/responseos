@@ -5,6 +5,7 @@ import { db } from "../lib/db/client";
 
 async function main() {
   assertGrokQualified();
+  if (process.argv[2] !== process.env.RESPONSEOS_GROK_MEDIA_CONFIG) throw Error("qualification_config_mismatch");
   const config = parseMediaListenerConfig(JSON.parse(await readFile(process.argv[2], "utf8")), process.env.PORT);
   const ingress = config.ingress === "direct-tls"
     ? { ingress: config.ingress, tls: { cert: await readFile(config.certificatePath), key: await readFile(config.privateKeyPath) } }

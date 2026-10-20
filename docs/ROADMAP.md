@@ -182,3 +182,5 @@ Grok application checkpoint: durable claims and disabled application paths imple
 Local Grok checkpoint now includes the injected-socket media bridge, exact signed stream binding and bounded audio/withdrawal tests. Production listener/hosting and live qualification remain out of scope for this checkpoint; no activation gate moves.
 
 Grok local socket successor adds actual TLS/WebSocket/HTTPS adapter composition and loopback end-to-end qualification. Status remains EXPERIMENTAL; hosted activation and real-provider qualification are not authorized.
+
+Local EXPERIMENTAL Grok qualification candidate: immutable GrokQualificationReservation (migration0028), one global slot released only by authenticated exact disconnection; no new public authority API or activation. [Contract](readiness/FRL_GROK_QUALIFICATION_2026-10-20.md).

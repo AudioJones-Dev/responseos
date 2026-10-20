@@ -2,17 +2,19 @@ import "@/lib/serverOnlyGuard";
 import { request } from "node:https";
 import WebSocket from "ws";
 import type { GrokCallSession } from "@prisma/client";
-import { assertGrokQualified, type CommandResult } from "./provider";
+import { type CommandResult } from "./provider";
 import { REALTIME_URL, streamingStartBody } from "./mediaContract";
 import type { MediaSocket } from "./mediaBridge";
 
+import { authorizeQualificationTransport, qualificationHash } from "./qualification";
+
 export type TransportConfig = { mode: "production"; apiKey: () => string } | { mode: "local-synthetic"; origin: string; ca: Buffer };
 
-function endpoint(config: TransportConfig, production: string) {
+async function endpoint(config: TransportConfig, production: string, action: "streaming_start" | "realtime_audio" | "hangup", resource?: string, commandId?: string) {
   if (config.mode === "production") {
-    assertGrokQualified();
+    const expected = await authorizeQualificationTransport(action, resource, commandId);
     const key = config.apiKey();
-    if (!key || /[\s\r\n]/.test(key)) throw Error("transport_credential_invalid");
+    if (!key || qualificationHash(key) !== expected || /[\s\r\n]/.test(key)) throw Error("transport_credential_invalid");
     return { url: new URL(production), key, ca: undefined };
   }
   if (config.mode !== "local-synthetic") throw Error("transport_mode_required");
@@ -33,8 +35,8 @@ export function socketPort(socket: WebSocket, lost: () => void): MediaSocket {
   };
 }
 
-export function openRealtimeSocket(config: TransportConfig, message: (raw: string) => void, lost: () => void): Promise<WebSocket> {
-  const target = endpoint(config, REALTIME_URL);
+export async function openRealtimeSocket(config: TransportConfig, message: (raw: string) => void, lost: () => void, sessionId?: string): Promise<WebSocket> {
+  const target = await endpoint(config, REALTIME_URL, "realtime_audio", sessionId);
   target.url.protocol = "wss:";
   return new Promise((resolve, reject) => {
     const options = { headers: { Authorization: `Bearer ${target.key}` }, ca: target.ca, rejectUnauthorized: true, followRedirects: false, perMessageDeflate: false, maxPayload: 16384, maxFragments: 64, maxBufferedChunks: 64, handshakeTimeout: 4000, closeTimeout: 1000 };
@@ -49,7 +51,7 @@ export function openRealtimeSocket(config: TransportConfig, message: (raw: strin
 
 export function createCarrierTransport(config: TransportConfig) {
   async function command(call: string, action: "streaming_start" | "hangup", body: unknown): Promise<CommandResult> {
-    const target = endpoint(config, `https://api.telnyx.com/v2/calls/${encodeURIComponent(call)}/actions/${action}`);
+    const target = await endpoint(config, `https://api.telnyx.com/v2/calls/${encodeURIComponent(call)}/actions/${action}`, action, call, (body as { command_id: string }).command_id);
     return new Promise(resolve => {
       let settled = false;
       const finish = (value: CommandResult) => { if (!settled) { settled = true; resolve(value); } };

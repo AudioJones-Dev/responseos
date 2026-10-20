@@ -29,6 +29,7 @@ import { createCarrierTransport } from "@/lib/grok/networkTransport";
 const transport = vi.hoisted(() => { vi.resetModules(); return { handoff: vi.fn(), terminate: vi.fn(), verify: vi.fn(), qualified: vi.fn(), operatorEnd: vi.fn() }; });
 vi.mock("@/lib/providers/telnyx/callControl", async original => ({ ...await original<typeof import("@/lib/providers/telnyx/callControl")>(), sendTelnyxCallCommand: transport.operatorEnd }));
 vi.mock("@/lib/grok/provider", async original => ({ ...await original<typeof import("@/lib/grok/provider")>(), assertGrokQualified: transport.qualified, handoffToGrok: transport.handoff, terminateGrokCall: transport.terminate, verifyIncomingSip: transport.verify }));
+vi.mock("@/lib/grok/qualification", async original => ({ ...await original<typeof import("@/lib/grok/qualification")>(), reserveQualification: vi.fn(), qualificationAlive: vi.fn().mockResolvedValue(true) }));
 const hash = (s: string) => createHash("sha256").update(s).digest("hex");
 const syntheticMac = (s: string) => createHmac("sha256", "local-test-only-not-provider-signing").update(s).digest("hex");
 let tlsDirectory: string, tls: { key: Buffer; cert: Buffer };
@@ -275,7 +276,7 @@ beforeEach(async () => {
   vi.stubGlobal("fetch", vi.fn(() => { throw Error("network_forbidden"); }));
 });
 afterEach(() => { expect(fetch).not.toHaveBeenCalled(); vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
-afterAll(async () => { await withdrawalReceiptDb?.$disconnect(); await disconnectTestDb(); vi.doUnmock("@/lib/grok/provider"); vi.doUnmock("@/lib/providers/telnyx/callControl"); vi.resetModules(); });
+afterAll(async () => { await withdrawalReceiptDb?.$disconnect(); await disconnectTestDb(); vi.doUnmock("@/lib/grok/qualification"); vi.doUnmock("@/lib/grok/provider"); vi.doUnmock("@/lib/providers/telnyx/callControl"); vi.resetModules(); });
 async function fixture() {
   const account = await prisma.account.findFirstOrThrow();
   const assignment = await prisma.telephonyNumberAssignment.create({ data: { account_id: account.id, telephony_number_id: randomUUID(), provider_assistant_id: "fixture", status: "qualification" } });
@@ -794,7 +795,7 @@ test("watchdog loop survives repeated database failures and emits intervention a
   });
   let alerts = ""; watcher.stderr.on("data", bytes => { alerts += bytes.toString(); });
   try {
-    await vi.waitFor(() => expect(alerts.match(/Grok watchdog sweep incomplete/g)?.length ?? 0).toBeGreaterThanOrEqual(2), { timeout: 12000 });
+    await vi.waitFor(() => expect(alerts.match(/Grok watchdog sweep incomplete/g)?.length ?? 0).toBe(1), { timeout: 12000 });
     expect(watcher.exitCode).toBeNull(); expect(alerts).toContain("Consumed commands will not be retried");
   } finally { watcher.kill("SIGTERM"); await once(watcher, "exit"); }
 });

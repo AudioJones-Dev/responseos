@@ -4,7 +4,7 @@ import { createGrokMediaServer, parseMediaListenerConfig } from "@/lib/grok/medi
 
 test("production network transports reject before reading credentials or opening sockets", async () => {
   const apiKey = vi.fn(() => "must-not-be-read"), config = { mode: "production" as const, apiKey };
-  expect(() => openRealtimeSocket(config, vi.fn(), vi.fn())).toThrow("unqualified");
+  await expect(openRealtimeSocket(config, vi.fn(), vi.fn())).rejects.toThrow("unqualified");
   await expect(createCarrierTransport(config).hangup("call", "command")).rejects.toThrow("unqualified");
   expect(() => createGrokMediaServer({ streamUrl: "wss://example.invalid/media", publicKey: "", tls: {}, realtime: config })).toThrow("unqualified");
   expect(() => createGrokMediaServer({ streamUrl: "wss://example.invalid/media", publicKey: "", ingress: "managed-edge-http", realtime: config })).toThrow("unqualified");
@@ -18,9 +18,9 @@ test("listener defaults to direct TLS; managed edge requires explicit ingress an
   for (const port of [undefined, "", "0", "443", "65536", "01", "3000x", " 3000"]) expect(() => parseMediaListenerConfig({ ...common, ingress: "managed-edge-http" }, port)).toThrow();
   for (const extra of [{}, { ingress: "unknown" }, { ingress: "managed-edge-http", port: 9000 }, { ingress: "managed-edge-http", certificatePath: "/cert" }]) expect(() => parseMediaListenerConfig({ ...common, ...extra }, "9000")).toThrow();
 });
-test.each(["https://example.com", "http://127.0.0.1:1234", "https://localhost:1234", "https://127.0.0.1:1234/path"])("synthetic mode rejects nonliteral loopback TLS origin %s", origin => {
-  expect(() => openRealtimeSocket({ mode: "local-synthetic", origin, ca: Buffer.from("synthetic") }, vi.fn(), vi.fn())).toThrow("loopback_tls");
+test.each(["https://example.com", "http://127.0.0.1:1234", "https://localhost:1234", "https://127.0.0.1:1234/path"])("synthetic mode rejects nonliteral loopback TLS origin %s", async origin => {
+  await expect(openRealtimeSocket({ mode: "local-synthetic", origin, ca: Buffer.from("synthetic") }, vi.fn(), vi.fn())).rejects.toThrow("loopback_tls");
 });
-test("missing or unknown transport mode fails closed", () => {
-  expect(() => openRealtimeSocket({ mode: "unknown" } as unknown as TransportConfig, vi.fn(), vi.fn())).toThrow("transport_mode_required");
+test("missing or unknown transport mode fails closed", async () => {
+  await expect(openRealtimeSocket({ mode: "unknown" } as unknown as TransportConfig, vi.fn(), vi.fn())).rejects.toThrow("transport_mode_required");
 });

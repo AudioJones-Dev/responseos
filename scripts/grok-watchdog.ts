@@ -7,7 +7,9 @@ async function main() {
   const healthy = await runGrokWatchdog({
     loop: process.argv.includes("--loop"), sweep: watchdogGrokSweep,
     pause: milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds)),
-    alert: scope => console.error(`Grok watchdog ${scope === "session" ? "session failed; healthy sessions retain cadence" : "sweep incomplete"}; independent operator intervention required. Consumed commands will not be retried.`),
+    alert: (scope, event, occurrences) => console.error(event === "recovered"
+      ? `Grok watchdog ${scope} reporting recovered after ${occurrences} observations; this is not disconnection evidence.`
+      : `Grok watchdog ${scope === "session" ? "session failed; healthy sessions retain cadence" : "sweep incomplete"}; ${event}, ${occurrences} observations; independent operator intervention required. Consumed commands will not be retried.`),
   });
   if (!healthy) throw Error("grok_watchdog_sweep_failed");
 }

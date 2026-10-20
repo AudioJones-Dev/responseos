@@ -366,6 +366,7 @@ model GrokCallSession {
   stop_reason          String?
   created_at           DateTime @default(now())
   capture              CallCaptureSession @relation(fields: [capture_id, account_id, provider_call_id], references: [id, account_id, provider_call_id], onDelete: Restrict, onUpdate: Restrict)
+  qualification        GrokQualificationReservation?
   commands             GrokCallCommand[]
   receipts             GrokIncomingReceipt[]
   @@unique([capture_id, account_id, provider_call_id])
@@ -1601,4 +1602,15 @@ model WebhookErasureAudit {
   erased_at               DateTime
   expires_at              DateTime
   transaction_id          BigInt
+}
+
+model GrokQualificationReservation {
+  session_id String @id
+  policy_json Json
+  policy_hash String
+  admitted_at DateTime
+  deadline DateTime
+  active_slot String? @unique
+  released_at DateTime?
+  session GrokCallSession @relation(fields: [session_id], references: [id], onDelete: Restrict, onUpdate: Restrict)
 }

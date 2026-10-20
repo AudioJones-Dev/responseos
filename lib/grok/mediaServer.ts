@@ -1,6 +1,7 @@
 import "@/lib/serverOnlyGuard";
 import { createServer as createHttpsServer, type ServerOptions } from "node:https";
 import { createServer as createHttpServer } from "node:http";
+import { readFileSync } from "node:fs";
 import { z } from "zod";
 import WebSocket, { WebSocketServer } from "ws";
 import { authenticateStream, startFrame } from "./mediaContract";
@@ -23,7 +24,11 @@ export function parseMediaListenerConfig(raw: unknown, envPort: string | undefin
 export function createGrokMediaServer(config: { streamUrl: string; publicKey: string; realtime: TransportConfig; fault?: () => void } & Ingress) {
   const origin = new URL(config.streamUrl);
   if (origin.protocol !== "wss:" || origin.username || origin.password || origin.hash) throw Error("media_listener_url_invalid");
-  if (config.realtime.mode === "production") assertGrokQualified();
+  if (config.realtime.mode === "production") {
+    assertGrokQualified();
+    const approved = JSON.parse(readFileSync(process.env.RESPONSEOS_GROK_MEDIA_CONFIG!, "utf8"));
+    if (approved.streamUrl !== config.streamUrl || approved.publicKey !== config.publicKey || (approved.ingress ?? "direct-tls") !== (config.ingress ?? "direct-tls")) throw Error("qualification_listener_mismatch");
+  }
   else if (config.realtime.mode !== "local-synthetic" || origin.hostname !== "127.0.0.1") throw Error("listener_mode_required");
   const ingress = config.ingress ?? "direct-tls";
   if (ingress !== "direct-tls" && ingress !== "managed-edge-http") throw Error("listener_ingress_invalid");
@@ -42,6 +47,7 @@ export function createGrokMediaServer(config: { streamUrl: string; publicKey: st
   server.on("upgrade", (request, socket, head) => {
     socket.on("error", () => {});
     try {
+      if (config.realtime.mode === "production") assertGrokQualified();
       if (request.url !== origin.pathname + origin.search || request.headers.host !== origin.host || wss.clients.size >= 4) throw Error("stream_destination_invalid");
       if (request.rawHeaders.filter((v, i) => i % 2 === 0 && v.toLowerCase() === "host").length !== 1) throw Error("stream_host_invalid");
       const headers = new Headers();
@@ -109,9 +115,9 @@ export function createGrokMediaServer(config: { streamUrl: string; publicKey: st
             streamId = startFrame.parse(JSON.parse(next.raw)).stream_id; phase = "starting";
             bridge = await startMediaBridge({ headers, connectedToken, rawStart: next.raw, trusted: config }, {
               carrier: socketPort(carrier, fail),
-              openRealtime: async () => {
+              openRealtime: async (_url, sessionId) => {
                 if (closed) throw Error("carrier_closed_before_realtime");
-                realtime = await openRealtimeSocket(config.realtime, raw => enqueue("xai", raw), fail);
+                realtime = await openRealtimeSocket(config.realtime, raw => enqueue("xai", raw), fail, sessionId);
                 if (closed) { realtime.terminate(); throw Error("carrier_closed_during_realtime"); }
                 realtimePong = performance.now(); realtime.on("pong", () => { realtimePong = performance.now(); });
                 return socketPort(realtime, fail);

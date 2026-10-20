@@ -1824,6 +1824,18 @@
       "start": "2026-10-19",
       "blocked": true,
       "blockedReason": "Owner-approved local adapter prepared for exact-tree tests and review. Accepted app547c804 and control0623aba frozen. Qualification, hosting, retention, credentials and activation remain gated; external evidence records validation."
+    },
+    {
+      "id": "FRL-GROK-QUALIFICATION",
+      "phase": "Integrations",
+      "title": "Validate bounded local qualification candidate",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-10-20",
+      "blocked": true,
+      "blockedReason": "Local candidate awaiting exact-tree validation and independent review; accepted pair unchanged. No live authority, hosting, credentials or calls authorized."
     }
   ],
   "liveIssues": [
