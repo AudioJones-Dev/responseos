@@ -1,5 +1,5 @@
 import { createHmac } from "node:crypto";
-import type { Server } from "node:http";
+import { createServer, type Server } from "node:http";
 import { afterEach, expect, test, vi } from "vitest";
 import { qualificationFixture } from "../qualificationFixture";
 import { createWatchdogReadinessWriter, watchdogReady } from "@/lib/grok/watchdogReadiness";
@@ -78,6 +78,24 @@ test("wrong key, replay, malformed, oversize, redirects, and unavailable respons
   }
   vi.stubGlobal("fetch", vi.fn(async () => { throw Error("synthetic network failure"); }));
   expect(await watchdogReady()).toBe(false);
+});
+test("a current exact-binding response signed by the wrong key is rejected", async () => {
+  setup();
+  vi.stubGlobal("fetch", vi.fn(async (_url, options) => signed(options.headers, {}, "b8".repeat(32))));
+  expect(await watchdogReady()).toBe(false);
+});
+test("a stalled response body is aborted within the request budget", async () => {
+  setup(); const originalFetch = globalThis.fetch;
+  server = createServer((_request, response) => {
+    response.writeHead(200, { "content-type": "application/json" });
+    response.write("{");
+  });
+  await new Promise<void>(resolve => server!.listen(0, "127.0.0.1", resolve));
+  const port = (server.address() as { port: number }).port;
+  vi.stubGlobal("fetch", vi.fn((_url, options) => originalFetch(`http://127.0.0.1:${port}/readiness`, options)));
+  const started = performance.now();
+  expect(await watchdogReady()).toBe(false);
+  expect(performance.now() - started).toBeLessThan(1500);
 });
 test("round trip consumes freshness, and remote timestamps do not depend on the reader clock", async () => {
   setup();

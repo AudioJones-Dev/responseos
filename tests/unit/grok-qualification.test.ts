@@ -7,7 +7,7 @@ afterEach(() => { cleanup?.(); cleanup = undefined; vi.unstubAllEnvs(); });
 test("default activation is disabled and a trusted synthetic policy binds exact identities", async () => {
   await expect(readQualification()).rejects.toThrow("unqualified");
   const f = qualificationFixture(); cleanup = f.cleanup;
-  expect(readQualification()).toEqual(f.policy);
+  expect(await readQualification()).toEqual(f.policy);
 });
 test.each([
   { enabled: false }, { mode: "unknown" }, { mode: undefined }, { maxConcurrentCalls: 2 }, { maxDurationMs: 300001 }, { maxDurationMs: 0 },
