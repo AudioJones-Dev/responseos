@@ -184,3 +184,5 @@ Local Grok checkpoint now includes the injected-socket media bridge, exact signe
 Grok local socket successor adds actual TLS/WebSocket/HTTPS adapter composition and loopback end-to-end qualification. Status remains EXPERIMENTAL; hosted activation and real-provider qualification are not authorized.
 
 Local EXPERIMENTAL Grok qualification candidate: immutable GrokQualificationReservation (migration0028), one global slot released only by authenticated exact disconnection; no new public authority API or activation. [Contract](readiness/FRL_GROK_QUALIFICATION_2026-10-20.md).
+
+Local Linux packaging and inactive watchdog successor is under review; accepted app8bdd184/control1ff5e37 are preserved and published only to dedicated branches. No milestone or activation gate advances. [Local scope](readiness/FRL_GROK_LINUX_PACKAGE_2026-10-20.md).

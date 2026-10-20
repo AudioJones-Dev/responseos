@@ -776,7 +776,7 @@ test("separate processes reject an unqualified legacy heartbeat and consume disa
   const tsx = path.resolve("node_modules/tsx/dist/cli.mjs");
   const worker = spawnSync(process.execPath, [tsx, "tests/integration/fixtures/grok-heartbeat-worker.ts", f.id, claim.session.worker_token!], { encoding: "utf8", env: process.env, timeout: 5000 });
   expect(worker.status, worker.stderr).toBe(1); expect(worker.stdout).not.toContain("ready");
-  const watcher = spawnSync(process.execPath, [tsx, "scripts/grok-watchdog.ts"], { env: { ...process.env, RESPONSEOS_GROK_WATCHDOG_ENABLED: "true" }, encoding: "utf8", timeout: 15000 });
+  const watcher = spawnSync(process.execPath, [tsx, "scripts/grok-watchdog.ts"], { env: { ...process.env, RESPONSEOS_GROK_WATCHDOG_MODE: "active", RESPONSEOS_GROK_WATCHDOG_ENABLED: "true" }, encoding: "utf8", timeout: 15000 });
   expect(watcher.status, watcher.stderr).toBe(0);
   expect((await prisma.grokCallSession.findUniqueOrThrow({ where: { id: f.id } })).stopped_at).not.toBeNull();
   const commands = await prisma.grokCallCommand.findMany({ where: { session_id: f.id, kind: { endsWith: "hangup" } } });
@@ -787,7 +787,7 @@ test("separate processes reject an unqualified legacy heartbeat and consume disa
 test("watchdog loop survives repeated database failures and emits intervention alerts", async () => {
   const watcher = spawn(process.execPath, [path.resolve("node_modules/tsx/dist/cli.mjs"), "scripts/grok-watchdog.ts", "--loop"], {
     stdio: ["ignore", "pipe", "pipe"],
-    env: { ...process.env, RESPONSEOS_GROK_WATCHDOG_ENABLED: "true", DATABASE_URL: "postgresql://missing_watchdog_role@127.0.0.1:5432/responseos_test" },
+    env: { ...process.env, RESPONSEOS_GROK_WATCHDOG_MODE: "active", RESPONSEOS_GROK_WATCHDOG_ENABLED: "true", DATABASE_URL: "postgresql://missing_watchdog_role@127.0.0.1:5432/responseos_test" },
   });
   let alerts = ""; watcher.stderr.on("data", bytes => { alerts += bytes.toString(); });
   try {
