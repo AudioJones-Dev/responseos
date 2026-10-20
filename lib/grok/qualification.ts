@@ -8,6 +8,7 @@ import { assertStoredWebhookIdentity } from "@/lib/data/webhookEvents";
 import { providerCallHasWithdrawal } from "@/lib/callReview/withdrawal";
 import { parseCallControlEvent } from "@/lib/providers/telnyx/callControl";
 import { watchdogReady, watchdogReadinessDeadline } from "./watchdogReadiness";
+import { readDemoKnowledge } from "./demoKnowledge";
 
 const id = z.string().regex(/^[A-Za-z0-9_-]{1,128}$/);
 const sha = z.string().regex(/^[0-9a-f]{64}$/);
@@ -17,6 +18,7 @@ export const qualificationSchema = z.object({
   accountId: id, assignmentId: id, numberId: id, providerNumberId: id, e164: z.string().regex(/^\+[1-9][0-9]{7,14}$/),
   telnyxAccountId: id, connectionId: id, xaiTeamId: id, xaiProjectId: id,
   telnyxKeySha256: sha, xaiKeySha256: sha,
+  knowledge: z.object({ version: id, sha256: sha }).strict().optional(),
   notBefore: z.string().datetime(), expiresAt: z.string().datetime(),
   maxConcurrentCalls: z.literal(1), maxDurationMs: z.number().int().min(1000).max(300000),
   actions: z.tuple([z.literal("streaming_start"), z.literal("realtime_audio"), z.literal("hangup")]),
@@ -37,6 +39,7 @@ export function qualificationConfigHash() {
     process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_TRANSPORT, process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_URL,
     qualificationHash(process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_KEY ?? ""),
     process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_PUBLIC_KEY,
+    process.env.RESPONSEOS_DEMO_KNOWLEDGE_SHA256,
   ]));
 }
 
@@ -62,6 +65,9 @@ function readQualificationContract(now = new Date()): Qualification {
     if (url.protocol !== "wss:" || url.username || url.password || url.hash || url.href !== listener.streamUrl) throw Error();
     if (listener.mode !== "production" || listener.streamUrl !== process.env.RESPONSEOS_GROK_STREAM_URL || listener.publicKey !== process.env.TELNYX_PUBLIC_KEY) throw Error();
     const p = qualificationSchema.parse(JSON.parse(bytes.toString("utf8")));
+    const knowledge = readDemoKnowledge(p.accountId, now.getTime());
+    if (Boolean(p.knowledge) !== Boolean(knowledge) || (p.knowledge &&
+      (p.knowledge.version !== knowledge?.version || p.knowledge.sha256 !== knowledge?.sha256))) throw Error();
     if (p.applicationSha !== process.env.RESPONSEOS_APPLICATION_SHA || p.controlSha !== process.env.RESPONSEOS_CONTROL_SHA || p.configSha256 !== qualificationConfigHash()
       || p.telnyxAccountId !== process.env.RESPONSEOS_QUALIFICATION_TELNYX_ACCOUNT || p.connectionId !== process.env.RESPONSEOS_QUALIFICATION_CONNECTION
       || p.xaiTeamId !== process.env.RESPONSEOS_QUALIFICATION_XAI_TEAM || p.xaiProjectId !== process.env.RESPONSEOS_QUALIFICATION_XAI_PROJECT

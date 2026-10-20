@@ -1964,3 +1964,7 @@ Owner-authorized local successor only. Use fresh challenge-bound signed HTTPS pr
 ADR-0080 P2 correction: retain a verified remote proof only through its original monotonic deadline on transport failure; explicit denial or invalid proof revokes it. Active watchdog sweeps use writer-owned local readiness scope, removing public-edge requests under session locks. No consent/withdrawal/termination checks are cached. Detection during an edge outage remains bounded by the unchanged 3000 ms proof lifetime; explicit release acceptance and hosted measurement remain required. See the linked cross-host contract.
 
 ADR-0080 denial-authentication correction: sign exact-challenge not-ready responses. Only unsigned gateway502/503/504 may use the original retained deadline; authenticated denial or invalid signed proof revokes immediately. The unchanged three-second maximum bounds edge uncertainty. Preserve source-reviewed43ae9e6/8eec93c; no hosting or activation.
+
+## ADR-0081 — Bind approved demo knowledge to the exact realtime session
+
+Local owner-requested successor only. A strict expiring packet is bound to stored tenant, qualification version/hash and release pair. Exact provider instruction acknowledgement precedes audio, with existing audit metadata retaining call/capture/generation and payload hashes. No migration, retrieval system or business action. Synthetic fixtures are not factual approval. [Contract and Doctrine21](readiness/FRL_APPROVED_KNOWLEDGE_2026-10-20.md).

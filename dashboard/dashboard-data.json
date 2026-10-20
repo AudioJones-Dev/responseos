@@ -1874,6 +1874,18 @@
       "blockedReason": "Claude cleared original readiness P2 on frozen f7ea48b/958fda6. Caller-impact documentation/test successor requires review and explicit owner acceptance of abrupt call termination; hosted layout/timing and live gates remain open."
     },
     {
+      "id": "FRL-GROK-APPROVED-KNOWLEDGE",
+      "phase": "Integrations",
+      "title": "Validate approved demo knowledge and exact session acknowledgement",
+      "owner": "Codex",
+      "status": "In Progress",
+      "progress": 50,
+      "priority": "High",
+      "start": "2026-10-20",
+      "blocked": true,
+      "blockedReason": "Synthetic local successor only. Seven facts, exact release, hosting costs, credentials, routing and bounded live activation require owner approval; $20 maximum new incremental spending."
+    },
+    {
       "id": "FRL-GROK-CROSS-HOST-READINESS",
       "phase": "Integrations",
       "title": "Review bounded readiness reuse and local watchdog sweep",

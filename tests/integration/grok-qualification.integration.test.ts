@@ -18,6 +18,7 @@ import { runGrokWatchdog } from "@/lib/grok/watchdogLoop";
 import { startMediaBridge } from "@/lib/grok/mediaBridge";
 import { db } from "@/lib/db/client";
 import type { Prisma } from "@prisma/client";
+import { knowledgeFixture } from "../knowledgeFixture";
 
 const io = vi.hoisted(() => { vi.resetModules(); return { handoff: vi.fn(), terminate: vi.fn() }; });
 vi.mock("@/lib/grok/provider", async original => ({ ...await original<typeof import("@/lib/grok/provider")>(), handoffToGrok: io.handoff, terminateGrokCall: io.terminate }));
@@ -44,6 +45,50 @@ async function capture(extra = {}) {
   await prisma.callConsentEvent.create({ data: { account_id: c.account_id, provider_call_id: c.provider_call_id, event_key: randomUUID(), action: "grant", artifact: "transcript", disclosure_ref: "synthetic", evidence_ref: "synthetic", jurisdiction_basis: "synthetic", source_channel: "call", actor_user_id: "user_operator_mock" } });
   return c;
 }
+test.each(["acknowledged", "missing", "different", "withdrawn", "changed-after-send"])("knowledge session %s is bound to the exact call before audio", async outcome => {
+  const knowledge = knowledgeFixture(f.policy.accountId);
+  f.policy.knowledge = knowledge.binding; f.policy.configSha256 = qualificationConfigHash(); f.save();
+  let bridge: Awaited<ReturnType<typeof startMediaBridge>> | undefined;
+  try {
+    const c = await capture(), started = await beginGrokHandoff(c);
+    const token = io.handoff.mock.calls.at(-1)![1] as string;
+    const keys = generateKeyPairSync("ed25519"), streamUrl = process.env.RESPONSEOS_GROK_STREAM_URL!;
+    const timestamp = String(Math.floor(Date.now() / 1000)), streamId = randomUUID();
+    const headers = new Headers({ "telnyx-timestamp": timestamp, "telnyx-signature-ed25519": sign(null, Buffer.from(`${timestamp}|${streamUrl}`), keys.privateKey).toString("base64"), "x-telnyx-streaming-auth-token": token });
+    const carrier = { bufferedAmount: 0, send: vi.fn(), close: vi.fn() }, realtime = { bufferedAmount: 0, send: vi.fn(), close: vi.fn() };
+    bridge = await startMediaBridge({
+      headers, connectedToken: token,
+      trusted: { streamUrl, publicKey: keys.publicKey.export({ format: "der", type: "spki" }).subarray(-32).toString("base64") },
+      rawStart: JSON.stringify({ event: "start", stream_id: streamId, start: { call_control_id: c.provider_call_id, call_session_id: c.call_session_id, client_state: mediaClientState(c.id, c.generation), media_format: { encoding: "PCMU", sample_rate: 8000, channels: 1 } } }),
+    }, { carrier, openRealtime: vi.fn().mockResolvedValue(realtime) });
+    expect(bridge.acceptingAudio).toBe(false);
+    const sent = JSON.parse(realtime.send.mock.calls[0][0]);
+    expect(sent.session.instructions).toContain(knowledge.binding.sha256);
+    expect(sent.session.instructions).toContain("Fictional test item");
+    expect(sent.session.tools).toEqual([]);
+    const session = { ...sent.session, id: `knowledge-${outcome}`, model: "grok-voice-3.0" };
+    if (outcome === "missing") delete session.instructions;
+    if (outcome === "different") session.instructions = "Unapproved instructions";
+    if (outcome === "withdrawn") await prisma.callCaptureSession.update({ where: { id: c.id }, data: { content_admission_closed_at: new Date() } });
+    if (outcome === "changed-after-send") { knowledge.packet.facts[0].statement = "Changed fictional statement."; knowledge.save(); }
+    await bridge.xai(JSON.stringify({ type: "session.updated", session }));
+    const receipts = await prisma.auditLog.findMany({ where: { account_id: c.account_id, target_id: started.sessionId, action: "grok_demo_knowledge_acknowledged" } });
+    if (outcome === "acknowledged") {
+      expect(bridge.acceptingAudio).toBe(true);
+      expect(receipts).toHaveLength(1);
+      expect(receipts[0].metadata_json).toMatchObject({ captureId: c.id, generation: c.generation, providerCallId: c.provider_call_id, realtimeSessionId: session.id, ...knowledge.binding });
+      knowledge.packet.expiresAt = new Date(0).toISOString(); knowledge.save();
+      await expect(heartbeatGrok(started.sessionId, (await prisma.grokCallSession.findUniqueOrThrow({ where: { id: started.sessionId } })).worker_token!)).resolves.toBe(false);
+      await dispatchGrokTermination(started.sessionId);
+      expect(io.terminate).toHaveBeenCalledTimes(1);
+    } else {
+      expect(bridge.acceptingAudio).toBe(false); expect(receipts).toHaveLength(0);
+      expect(carrier.close).toHaveBeenCalled(); expect(realtime.close).toHaveBeenCalled();
+      expect(io.terminate).toHaveBeenCalledTimes(1);
+    }
+    expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: c.id } })).call_disconnected_at).toBeNull();
+  } finally { await bridge?.stop("synthetic_cleanup"); knowledge.cleanup(); }
+});
 function remoteProof() {
   const signer = generateKeyPairSync("ed25519");
   vi.stubEnv("RESPONSEOS_GROK_WATCHDOG_READINESS_TRANSPORT", "signed-https");
