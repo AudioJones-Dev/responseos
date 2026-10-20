@@ -25,15 +25,17 @@ export type Qualification = z.infer<typeof qualificationSchema>;
 export const qualificationHash = (value: string) => createHash("sha256").update(value).digest("hex");
 
 export function qualificationConfigHash() {
+  const remote = process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_TRANSPORT === "signed-https";
   return qualificationHash(JSON.stringify([
     process.env.RESPONSEOS_VOICE_ENGINE, process.env.RESPONSEOS_GROK_STREAM_URL,
-    process.env.TELNYX_PUBLIC_KEY, process.env.RESPONSEOS_GROK_MEDIA_CONFIG ? readFileSync(process.env.RESPONSEOS_GROK_MEDIA_CONFIG, "utf8") : null, process.env.PORT,
+    process.env.TELNYX_PUBLIC_KEY, process.env.RESPONSEOS_GROK_MEDIA_CONFIG ? readFileSync(process.env.RESPONSEOS_GROK_MEDIA_CONFIG, "utf8") : null, remote ? null : process.env.PORT,
     process.env.RESPONSEOS_QUALIFICATION_TELNYX_ACCOUNT, process.env.RESPONSEOS_QUALIFICATION_CONNECTION,
     process.env.RESPONSEOS_QUALIFICATION_XAI_TEAM, process.env.RESPONSEOS_QUALIFICATION_XAI_PROJECT, process.env.RESPONSEOS_LIVE_HUBSPOT_ENABLED, process.env.RESPONSEOS_LIVE_EMAIL_ENABLED,
     process.env.RESPONSEOS_GROK_WATCHDOG_MODE, process.env.RESPONSEOS_GROK_WATCHDOG_ENABLED,
-    process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_FILE, process.env.RESPONSEOS_GROK_WATCHDOG_INSTANCE,
+    remote ? null : process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_FILE, process.env.RESPONSEOS_GROK_WATCHDOG_INSTANCE,
     process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_TRANSPORT, process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_URL,
     qualificationHash(process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_KEY ?? ""),
+    process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_PUBLIC_KEY,
   ]));
 }
 

@@ -1,4 +1,4 @@
-import { createHmac, generateKeyPairSync, randomUUID, sign } from "node:crypto";
+import { generateKeyPairSync, randomUUID, sign } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import { spawn, spawnSync } from "node:child_process";
 import { once } from "node:events";
@@ -84,13 +84,15 @@ test.each(["missing", "expired", "failed-sweep", "remote-unavailable"])("active 
     vi.stubEnv("RESPONSEOS_GROK_WATCHDOG_READINESS_TRANSPORT", "signed-https");
     vi.stubEnv("RESPONSEOS_GROK_WATCHDOG_READINESS_URL", "https://watchdog.invalid/readiness");
     vi.stubEnv("RESPONSEOS_GROK_WATCHDOG_READINESS_KEY", key);
+    const signer = generateKeyPairSync("ed25519");
+    vi.stubEnv("RESPONSEOS_GROK_WATCHDOG_READINESS_PUBLIC_KEY", signer.publicKey.export({ format: "der", type: "spki" }).toString("base64"));
     f.policy.configSha256 = qualificationConfigHash(); f.save();
     vi.stubGlobal("fetch", vi.fn(async (_url, options) => {
       if (!remoteReady) return new Response(null, { status: 503 });
       const raw = JSON.stringify({ version: 1, applicationSha: f.policy.applicationSha, controlSha: f.policy.controlSha,
         instanceId: process.env.RESPONSEOS_GROK_WATCHDOG_INSTANCE, nonce: options.headers["x-watchdog-challenge"], ready: true, ageMs: 0 });
       return new Response(raw, { headers: { "content-type": "application/json",
-        "x-watchdog-signature": createHmac("sha256", Buffer.from(key, "hex")).update("response-v1\n" + raw).digest("hex") } });
+        "x-watchdog-signature": sign(null, Buffer.from("response-v1\n" + raw), signer.privateKey).toString("base64") } });
     }));
   }
   const c = await capture(), started = await beginGrokHandoff(c);

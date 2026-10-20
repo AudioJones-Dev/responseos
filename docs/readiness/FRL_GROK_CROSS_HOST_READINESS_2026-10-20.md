@@ -15,12 +15,16 @@ Consumers need a trusted HTTPS URL ending exactly in `/readiness`, the exact
 application/control SHAs and deployment instance, and a dedicated 32-byte
 random authentication key encoded as 64 lowercase hex characters. The key is
 supplied through `RESPONSEOS_GROK_WATCHDOG_READINESS_KEY`; it is never returned
-or logged. URL and key hash join the qualification configuration hash. No
+or logged. Consumers also pin `RESPONSEOS_GROK_WATCHDOG_READINESS_PUBLIC_KEY`
+(base64 Ed25519 SPKI). The watchdog alone receives the corresponding PEM
+private key through an absolute `RESPONSEOS_GROK_WATCHDOG_READINESS_SIGNING_KEY_FILE`,
+mounted owner-readable and inaccessible to consumer services. URL, public key
+and request-key hash join the qualification configuration hash. No
 previous qualification authority is silently reusable.
 
 Every request uses a fresh 256-bit nonce and a domain-separated HMAC of the
 nonce and release/instance binding. The watchdog authenticates it and returns
-a signed response with the same nonce/binding and the age of its last healthy
+a domain-separated Ed25519-signed response with the same nonce/binding and the age of its last healthy
 sweep. Only its active continuous loop starts this listener. Inactive mode
 returns before database, readiness listener, or provider imports. A one-shot
 sweep cannot serve or publish readiness.
@@ -37,13 +41,17 @@ The HTTP listener is intended to sit behind an approved TLS edge; direct
 unencrypted cross-host consumers are rejected. `/readiness` requires the HMAC
 request, so an ordinary hosting health probe must not be interpreted as
 readiness. The proof carries no tenant, call, transcript, or provider key.
-Every holder of the shared readiness key is trusted to attest readiness;
-this is not isolation from a compromised consumer. Scope the key to this
-one deployment and rotate it with a newly approved qualification configuration.
+The request key cannot sign readiness responses. Only the watchdog has the
+private signing key. Scope both keys to this one deployment and rotate them
+with a newly approved qualification configuration.
 
 The watchdog alone requires its local writable proof file. Other hosts need
 no shared filesystem or matching UID. Its own qualification checks use the
-same HTTPS endpoint. A restart clears proof before the first sweep. Missing,
+same HTTPS endpoint. Cross-host qualification hashes omit the host-local proof
+path and listener `PORT`; those differ per service. The signed public media URL,
+listener configuration contents, exact release/instance, HTTPS readiness URL,
+request-key hash and public signing key remain bound. Local-file mode retains
+its original port/path binding. A restart clears proof before the first sweep. Missing,
 failed, expired, or unreachable proof still ends active calls on the existing
 heartbeat/sweep path. Network interruption is an additional cause of abrupt
 termination. Recovery cannot revive consent, restart a stopped session, retry
@@ -63,7 +71,7 @@ hangup authorization does not depend on readiness.
 3. Approve an isolated hosted database and least-privilege runtime identities,
    its exact database/role readback, migrations and recovery validation.
 4. Approve generation and narrowly scoped secret-manager delivery of the
-   readiness key, database connection, Clerk configuration, retained-webhook
+   readiness request key and watchdog-only Ed25519 signing key, database connection, Clerk configuration, retained-webhook
    integrity keys, and later the exact Telnyx/xAI qualification credentials.
    Values must stay out of chat, source, logs and review packets. Installation,
    login, broad secret inheritance and provider key creation are not implicit.
@@ -91,5 +99,5 @@ hangup authorization does not depend on readiness.
 11. No command acceptance is promoted to disconnection evidence.
 12. Local experimental capability; hosted validation remains open.
 13. Explicit release, spending, hosting, credential and activation approvals.
-14. One narrowly scoped secret; no customer payload or compliance claim.
+14. Scoped request/signing keys; no customer payload or compliance claim.
 15. Required now for the owner's cross-host readiness request.

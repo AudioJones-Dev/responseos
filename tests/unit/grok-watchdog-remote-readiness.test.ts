@@ -1,12 +1,18 @@
-import { createHmac } from "node:crypto";
+import { generateKeyPairSync, sign, type KeyObject } from "node:crypto";
+import { writeFileSync } from "node:fs";
+import path from "node:path";
 import { createServer, type Server } from "node:http";
+import { spawn } from "node:child_process";
+import { once } from "node:events";
 import { afterEach, expect, test, vi } from "vitest";
 import { qualificationFixture } from "../qualificationFixture";
 import { createWatchdogReadinessWriter, watchdogReady } from "@/lib/grok/watchdogReadiness";
 import { createWatchdogReadinessServer } from "@/lib/grok/watchdogRemoteReadiness";
+import { qualificationConfigHash } from "@/lib/grok/qualification";
 
 const secret = "a7".repeat(32);
 let fixture: ReturnType<typeof qualificationFixture> | undefined, server: Server | undefined;
+let privateKey: KeyObject;
 afterEach(async () => {
   server?.closeAllConnections();
   if (server) await new Promise<void>(resolve => server!.close(() => resolve()));
@@ -18,6 +24,12 @@ function setup() {
   vi.stubEnv("RESPONSEOS_GROK_WATCHDOG_READINESS_TRANSPORT", "signed-https");
   vi.stubEnv("RESPONSEOS_GROK_WATCHDOG_READINESS_URL", "https://watchdog.invalid/readiness");
   vi.stubEnv("RESPONSEOS_GROK_WATCHDOG_READINESS_KEY", secret);
+  const keys = generateKeyPairSync("ed25519");
+  privateKey = keys.privateKey;
+  const signingFile = path.join(path.dirname(fixture.config), "synthetic-signing.pem");
+  writeFileSync(signingFile, privateKey.export({ format: "pem", type: "pkcs8" }), { mode: 0o600 });
+  vi.stubEnv("RESPONSEOS_GROK_WATCHDOG_READINESS_SIGNING_KEY_FILE", signingFile);
+  vi.stubEnv("RESPONSEOS_GROK_WATCHDOG_READINESS_PUBLIC_KEY", keys.publicKey.export({ format: "der", type: "spki" }).toString("base64"));
   return createWatchdogReadinessWriter();
 }
 function signed(headers: Record<string, string>, change: object = {}, signingKey = secret) {
@@ -28,7 +40,8 @@ function signed(headers: Record<string, string>, change: object = {}, signingKey
   });
   return new Response(raw, { headers: {
     "content-type": "application/json",
-    "x-watchdog-signature": createHmac("sha256", Buffer.from(signingKey, "hex")).update(`response-v1\n${raw}`).digest("hex"),
+    "x-watchdog-signature": sign(null, Buffer.from(`response-v1\n${raw}`),
+      signingKey === secret ? privateKey : generateKeyPairSync("ed25519").privateKey).toString("base64"),
   } });
 }
 test("independent HTTP listener authenticates fresh challenges; loss, recovery, and restart remain fail closed", async () => {
@@ -126,4 +139,39 @@ test("missing key or unknown transport cannot fall back to a fresh file", async 
   expect(await watchdogReady()).toBe(false);
   vi.stubEnv("RESPONSEOS_GROK_WATCHDOG_READINESS_TRANSPORT", "unknown");
   expect(await watchdogReady()).toBe(false); expect(fetch).not.toHaveBeenCalled();
+});
+test("remote consumer needs neither the watchdog filesystem nor its private signing key", async () => {
+  setup();
+  const originalFetch = globalThis.fetch;
+  const child = spawn(process.execPath, ["--import", "tsx", "tests/fixtures/watchdog-readiness-peer.ts"], {
+    env: { ...process.env }, stdio: ["ignore", "pipe", "ignore", "ipc"],
+  });
+  const exited = once(child, "exit");
+  try {
+    const [message] = await Promise.race([
+      once(child, "message"),
+      exited.then(() => { throw Error("synthetic_peer_exited"); }),
+      new Promise<never>((_, reject) => { const timer = setTimeout(() => reject(Error("synthetic_peer_timeout")), 3000); timer.unref(); }),
+    ]);
+    const before = qualificationConfigHash();
+    vi.stubEnv("RESPONSEOS_GROK_WATCHDOG_READINESS_FILE", undefined);
+    vi.stubEnv("RESPONSEOS_GROK_WATCHDOG_READINESS_SIGNING_KEY_FILE", undefined);
+    vi.stubEnv("PORT", "10000");
+    expect(qualificationConfigHash()).toBe(before);
+    vi.stubGlobal("fetch", vi.fn((_url, options) => originalFetch(`http://127.0.0.1:${message.port}/readiness`, options)));
+    expect(await watchdogReady()).toBe(true);
+    child.kill("SIGKILL"); await exited;
+    expect(await watchdogReady()).toBe(false);
+  } finally {
+    if (child.exitCode === null && child.signalCode === null) { child.kill("SIGKILL"); await exited; }
+  }
+});
+test("changing the pinned signer denies proof and changes qualification identity", async () => {
+  setup(); const before = qualificationConfigHash();
+  vi.stubGlobal("fetch", vi.fn(async (_url, options) => signed(options.headers)));
+  vi.stubEnv("RESPONSEOS_GROK_WATCHDOG_READINESS_PUBLIC_KEY",
+    generateKeyPairSync("ed25519").publicKey.export({ format: "der", type: "spki" }).toString("base64"));
+  expect(await watchdogReady()).toBe(false);
+  expect(qualificationConfigHash()).not.toBe(before);
+  expect(() => createWatchdogReadinessServer()).toThrow("signer_mismatch");
 });

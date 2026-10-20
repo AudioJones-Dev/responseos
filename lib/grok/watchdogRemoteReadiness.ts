@@ -1,6 +1,7 @@
-import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHmac, createPrivateKey, createPublicKey, randomBytes, sign, timingSafeEqual, verify } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
+import { isAbsolute } from "node:path";
 import { localWatchdogReady, watchdogBinding, WATCHDOG_FRESHNESS_MS } from "./watchdogReadiness";
 
 export const WATCHDOG_REQUEST_MS = 500;
@@ -12,6 +13,17 @@ function key() {
 function identity() {
   const { applicationSha, controlSha, instanceId } = watchdogBinding(false);
   return { applicationSha, controlSha, instanceId };
+}
+function publicKey() {
+  const value = process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_PUBLIC_KEY ?? "";
+  if (!/^[A-Za-z0-9+/]{59}=$/.test(value)) throw Error("watchdog_signer_unconfigured");
+  const result = createPublicKey({ key: Buffer.from(value, "base64"), format: "der", type: "spki" });
+  if (result.asymmetricKeyType !== "ed25519") throw Error("watchdog_signer_invalid");
+  return result;
+}
+function signedByWatchdog(raw: string, signature: string | null, trusted: ReturnType<typeof publicKey>) {
+  if (!signature || !/^[A-Za-z0-9+/]{86}==$/.test(signature)) return false;
+  return verify(null, Buffer.from(`response-v1\n${raw}`), trusted, Buffer.from(signature, "base64"));
 }
 function mac(secret: Buffer, purpose: string, value: string) {
   return createHmac("sha256", secret).update(`${purpose}\n${value}`).digest("hex");
@@ -25,7 +37,7 @@ export async function remoteWatchdogReady() {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), WATCHDOG_REQUEST_MS);
   try {
-    const expected = identity(), secret = key();
+    const expected = identity(), secret = key(), trusted = publicKey();
     const url = new URL(process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_URL ?? "");
     if (url.protocol !== "https:" || url.username || url.password || url.hash || url.search || url.pathname !== "/readiness") return false;
     const nonce = randomBytes(32).toString("hex");
@@ -49,7 +61,7 @@ export async function remoteWatchdogReady() {
     const elapsed = performance.now() - started;
     if (controller.signal.aborted || elapsed < 0 || elapsed >= WATCHDOG_REQUEST_MS) return false;
     const raw = bytes.toString("utf8");
-    if (!matches(mac(secret, "response-v1", raw), response.headers.get("x-watchdog-signature"))) return false;
+    if (!signedByWatchdog(raw, response.headers.get("x-watchdog-signature"), trusted)) return false;
     const proof = JSON.parse(raw);
     return proof.version === 1 && proof.nonce === nonce && proof.ready === true &&
       proof.applicationSha === expected.applicationSha && proof.controlSha === expected.controlSha &&
@@ -62,6 +74,14 @@ export async function remoteWatchdogReady() {
 // Only the active loop owns this listener; health probes cannot publish sweep proof.
 export function createWatchdogReadinessServer() {
   const expected = identity(), secret = key(), file = watchdogBinding().file;
+  const signingFile = process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_SIGNING_KEY_FILE ?? "";
+  if (!isAbsolute(signingFile)) throw Error("watchdog_signer_unconfigured");
+  const signingBytes = readFileSync(signingFile);
+  if (signingBytes.length > 1024) throw Error("watchdog_signer_invalid");
+  const privateKey = createPrivateKey(signingBytes);
+  const trusted = publicKey();
+  if (privateKey.asymmetricKeyType !== "ed25519" ||
+      !createPublicKey(privateKey).equals(trusted)) throw Error("watchdog_signer_mismatch");
   const server = createServer({ maxHeaderSize: 4096 }, (request, response) => {
     response.setHeader("cache-control", "no-store");
     const nonce = request.headers["x-watchdog-challenge"], auth = request.headers["x-watchdog-auth"];
@@ -82,7 +102,8 @@ export function createWatchdogReadinessServer() {
           proof.instanceId !== expected.instanceId || proof.mode !== "active" || proof.loop !== true ||
           proof.version !== 1 || !Number.isSafeInteger(proof.completedAt) || ageMs < 0 || ageMs >= WATCHDOG_FRESHNESS_MS) throw Error();
       const body = JSON.stringify({ version: 1, ...expected, nonce, ready: true, ageMs });
-      response.writeHead(200, { "content-type": "application/json", "x-watchdog-signature": mac(secret, "response-v1", body) });
+      response.writeHead(200, { "content-type": "application/json",
+        "x-watchdog-signature": sign(null, Buffer.from(`response-v1\n${body}`), privateKey).toString("base64") });
       response.end(body);
     } catch { response.writeHead(503); response.end(); }
   });
