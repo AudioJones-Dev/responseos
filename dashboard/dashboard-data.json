@@ -1866,12 +1866,12 @@
       "phase": "Integrations",
       "title": "Review active watchdog readiness P2 successor",
       "owner": "Codex",
-      "status": "In Progress",
-      "progress": 50,
+      "status": "Review",
+      "progress": 90,
       "priority": "High",
       "start": "2026-10-20",
       "blocked": true,
-      "blockedReason": "Local final-tree validation and Claude successor review pending; no hosted topology or activation approval."
+      "blockedReason": "Exact successor requires independent Claude review and human acceptance; hosted topology, safety checks and live activation remain unapproved."
     }
   ],
   "liveIssues": [
