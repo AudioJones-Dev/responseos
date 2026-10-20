@@ -139,7 +139,7 @@ test("independent watchdog consumes termination after a qualified heartbeat proc
     clearTimeout(timer);
     const exited = once(worker, "exit"); worker.kill(); await exited;
     await prisma.grokCallSession.update({ where: { id: started.sessionId }, data: { lease_expires_at: new Date(0) } });
-    const watcher = spawnSync(process.execPath, [tsx, "scripts/grok-watchdog.ts"], { env: { ...process.env, TELNYX_API_KEY: "", XAI_API_KEY: "", RESPONSEOS_GROK_WATCHDOG_ENABLED: "true" }, encoding: "utf8", timeout: 15000 });
+    const watcher = spawnSync(process.execPath, [tsx, "scripts/grok-watchdog.ts"], { env: { ...process.env, TELNYX_API_KEY: "", XAI_API_KEY: "", RESPONSEOS_GROK_WATCHDOG_MODE: "active", RESPONSEOS_GROK_WATCHDOG_ENABLED: "true" }, encoding: "utf8", timeout: 15000 });
     expect(watcher.status, watcher.stderr).toBe(0);
     expect(await prisma.grokCallCommand.findFirst({ where: { session_id: started.sessionId, kind: "telnyx_hangup" } })).toMatchObject({ status: "uncertain", consumed_at: expect.any(Date) });
     expect(await prisma.grokQualificationReservation.findUnique({ where: { session_id: started.sessionId } })).toMatchObject({ active_slot: "qualification" });
