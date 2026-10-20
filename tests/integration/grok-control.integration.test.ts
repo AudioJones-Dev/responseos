@@ -387,7 +387,7 @@ test.each(["stop", "barge-in"])("%s during queued playback fences every subseque
 test("bridge pins model, negotiates PCMU, reorders bounded input and fences interrupted output", async () => {
   const f = await mediaFixture(), bridge = await startMediaBridge(f.input, f);
   try {
-    expect(f.openRealtime).toHaveBeenCalledExactlyOnceWith(REALTIME_URL);
+    expect(f.openRealtime).toHaveBeenCalledExactlyOnceWith(REALTIME_URL, f.id);
     expect(JSON.parse(f.realtime.send.mock.calls[0][0])).toEqual(realtimeConfig);
     await bridge.xai(JSON.stringify({ type: "session.updated", session: { ...realtimeConfig.session, id: "session_fixture", model: "grok-voice-3.0" } }));
     const audio = Buffer.alloc(160, 255).toString("base64");
@@ -796,6 +796,8 @@ test("watchdog loop survives repeated database failures and emits intervention a
   let alerts = ""; watcher.stderr.on("data", bytes => { alerts += bytes.toString(); });
   try {
     await vi.waitFor(() => expect(alerts.match(/Grok watchdog sweep incomplete/g)?.length ?? 0).toBe(1), { timeout: 12000 });
+    await new Promise(resolve => setTimeout(resolve, 2500));
+    expect(alerts.match(/Grok watchdog sweep incomplete/g)).toHaveLength(1);
     expect(watcher.exitCode).toBeNull(); expect(alerts).toContain("Consumed commands will not be retried");
   } finally { watcher.kill("SIGTERM"); await once(watcher, "exit"); }
 });

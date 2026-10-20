@@ -33,7 +33,10 @@ export async function handoffToGrok(session: GrokCallSession, token: string, com
 export async function terminateGrokCall(provider: "telnyx" | "xai", resource: string, commandId: string): Promise<CommandResult> {
   if (provider !== "telnyx") return "disabled";
   const { createCarrierTransport } = await import("./networkTransport");
-  return createCarrierTransport({ mode: "production", apiKey: () => process.env.TELNYX_API_KEY ?? "" }).hangup(resource, commandId);
+  return createCarrierTransport({ mode: "production", apiKey: () => process.env.TELNYX_API_KEY ?? "" }).hangup(resource, commandId).catch(error => {
+    if (error instanceof Error && ["qualification_termination_unbound", "grok_provider_contract_unqualified"].includes(error.message)) return "disabled";
+    throw error;
+  });
 }
 
 export async function connectGrokControl(_session: GrokCallSession): Promise<ControlConnection> {

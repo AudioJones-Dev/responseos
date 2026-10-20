@@ -5,6 +5,8 @@ import { qualificationFixture } from "../qualificationFixture";
 import { beginGrokHandoff, requestGrokStop, dispatchGrokTermination, heartbeatGrok, watchdogGrokSweep, operatorEndGrok } from "@/lib/grok/service";
 import { authorizeQualificationTransport } from "@/lib/grok/qualification";
 import { recordWebhookEvent } from "@/lib/data/webhookEvents";
+import { ingestCallControlEvent } from "@/lib/callControl/service";
+import { parseCallControlEvent } from "@/lib/providers/telnyx/callControl";
 import { mediaClientState } from "@/lib/grok/mediaContract";
 
 const io = vi.hoisted(() => { vi.resetModules(); return { handoff: vi.fn(), terminate: vi.fn() }; });
@@ -83,7 +85,7 @@ test("uncertain result and stopped state do not release concurrency or permit re
 test("only authenticated exact terminal evidence releases the old slot for a distinct call", async () => {
   const c = await capture(), started = await beginGrokHandoff(c), eventId = randomUUID();
   const raw = JSON.stringify({ data: { id: eventId, event_type: "call.hangup", occurred_at: new Date().toISOString(), payload: { call_control_id: c.provider_call_id, call_session_id: c.call_session_id, call_leg_id: c.call_leg_id, client_state: mediaClientState(c.id, c.generation) } } });
-  await recordWebhookEvent({ account_id: c.account_id, provider: "telnyx", provider_call_id: c.provider_call_id, provider_event_id: eventId, event_type: "call.hangup", signature_valid: true, raw_body: raw, verifiedBytes: Buffer.from(raw) });
+  await ingestCallControlEvent({ event: parseCallControlEvent(raw)!, rawBody: raw, verifiedBytes: Buffer.from(raw), signature: "synthetic" });
   expect((await operatorEndGrok(c)).disconnection.confirmed).toBe(true);
   await beginGrokHandoff(await capture());
   const old = await prisma.grokQualificationReservation.findUniqueOrThrow({ where: { session_id: started.sessionId } });
@@ -109,4 +111,9 @@ test("retained termination rejects changed credentials without releasing the con
   vi.stubEnv("TELNYX_API_KEY", "different-synthetic-key"); await dispatchGrokTermination(started.sessionId);
   expect(await prisma.grokCallCommand.findFirst({ where: { session_id: started.sessionId, kind: "telnyx_hangup" } })).toMatchObject({ status: "uncertain" });
   await dispatchGrokTermination(started.sessionId); expect(io.terminate).toHaveBeenCalledTimes(1);
+});
+
+test.each(["client", "anonymous"])("%s cannot admit a qualification call", async role => {
+ const c=await capture();if(role==="anonymous")delete process.env.RESPONSEOS_DEV_SESSION;else setDevSession(role);
+ await expect(beginGrokHandoff(c)).rejects.toThrow("operator_required");expect(io.handoff).not.toHaveBeenCalled();
 });
