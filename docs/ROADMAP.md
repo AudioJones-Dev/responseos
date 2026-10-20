@@ -186,3 +186,5 @@ Grok local socket successor adds actual TLS/WebSocket/HTTPS adapter composition 
 Local EXPERIMENTAL Grok qualification candidate: immutable GrokQualificationReservation (migration0028), one global slot released only by authenticated exact disconnection; no new public authority API or activation. [Contract](readiness/FRL_GROK_QUALIFICATION_2026-10-20.md).
 
 Local Linux packaging and inactive watchdog successor is under review; accepted app8bdd184/control1ff5e37 are preserved and published only to dedicated branches. No milestone or activation gate advances. [Local scope](readiness/FRL_GROK_LINUX_PACKAGE_2026-10-20.md).
+
+Local startup-readiness regression and inactive hosting lifecycle are under review; no release acceptance or hosting approval. The October20 10:30a.m. America/New_York checkpoint favors a labeled local walkthrough if hosted safety evidence is incomplete. [Review scope](readiness/FRL_GROK_STARTUP_LIFECYCLE_2026-10-20.md).

@@ -1848,6 +1848,18 @@
       "start": "2026-10-20",
       "blocked": true,
       "blockedReason": "Local successor prepared for exact-tree validation and independent review. Accepted pair published unchanged to dedicated branches. No hosting, credentials, merge or activation authorized."
+    },
+    {
+      "id": "FRL-GROK-STARTUP-LIFECYCLE",
+      "phase": "Integrations",
+      "title": "Review deterministic startup readiness and inactive lifecycle",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-10-20",
+      "blocked": true,
+      "blockedReason": "Local tests and exact successor review pending. Render exposes only Michael workspace; Audio authorization required. Claude Code login required. No release acceptance or live activation."
     }
   ],
   "liveIssues": [

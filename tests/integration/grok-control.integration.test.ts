@@ -23,6 +23,7 @@ import { POST as incomingPost } from "@/app/api/webhooks/xai/sip/route";
 import { claimGrokMedia, bindGrokRealtime } from "@/lib/grok/service";
 import { mediaClientState, realtimeConfig, REALTIME_URL } from "@/lib/grok/mediaContract";
 import { startMediaBridge } from "@/lib/grok/mediaBridge";
+import * as mediaBridge from "@/lib/grok/mediaBridge";
 import { createGrokMediaServer } from "@/lib/grok/mediaServer";
 import { createCarrierTransport } from "@/lib/grok/networkTransport";
 
@@ -46,6 +47,13 @@ async function unusedPort() {
 }
 
 async function networkFixture(malformedCarrierResponse = false, managedEdge = false) {
+  const originalStart = startMediaBridge;
+  let admittedBridge: Awaited<ReturnType<typeof startMediaBridge>> | undefined;
+  vi.spyOn(mediaBridge, "startMediaBridge").mockImplementation(async (...args) => {
+    const bridge = await originalStart(...args);
+    admittedBridge = bridge;
+    return bridge;
+  });
   const f = await fixture(), requests: { url: string; body: Record<string, unknown>; authorization: string | undefined; consentSaved: boolean }[] = [];
   const sessions: WebSocket[] = [], audio: string[] = [], urls: string[] = [];
   const peer = httpsServer(tls, (request, response) => {
@@ -114,7 +122,7 @@ async function networkFixture(malformedCarrierResponse = false, managedEdge = fa
     socket.send(JSON.stringify({ event: "start", stream_id: streamId, start: { call_control_id: f.capture.provider_call_id, call_session_id: f.capture.call_session_id, client_state: mediaClientState(f.capture.id, f.capture.generation), media_format: { encoding: "PCMU", sample_rate: 8000, channels: 1 }, ...startOverrides } }));
     return socket;
   }
-  const ready = () => vi.waitFor(async () => expect(await prisma.grokIncomingReceipt.count({ where: { session_id: started.sessionId, event_id: { startsWith: "realtime:" } } })).toBe(1), { timeout: 4000 });
+  const ready = (timeout = 4000) => vi.waitFor(() => expect(admittedBridge?.acceptingAudio).toBe(true), { timeout });
   async function probe(target: string, extra: string[] = [], host = new URL(streamUrl).host, proof = headers) {
     const socket = tlsConnect({ host: "127.0.0.1", port, ca: tls.cert, rejectUnauthorized: true });
     await once(socket, "secureConnect");
@@ -176,6 +184,35 @@ test("real local TLS rejects an untrusted certificate without opening xAI", asyn
   const f = await networkFixture();
   try { await expect(f.connect({}, Buffer.from("not-a-trusted-ca"))).rejects.toThrow(); expect(f.sessions).toHaveLength(0); }
   finally { await f.close(); }
+});
+
+test.each([false, true])("startup receipt cannot signal audio admission before post-binding heartbeat (managed edge %s)", async managedEdge => {
+  const f = await networkFixture(false, managedEdge);
+  const originalBind = grokService.bindGrokRealtime, originalHeartbeat = grokService.heartbeatGrok;
+  let bound = false, held = false, release!: () => void, entered!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  const waiting = new Promise<void>(resolve => { entered = resolve; });
+  vi.spyOn(grokService, "bindGrokRealtime").mockImplementation(async (...args) => {
+    const result = await originalBind(...args); bound = true; return result;
+  });
+  vi.spyOn(grokService, "heartbeatGrok").mockImplementation(async (...args) => {
+    if (bound && !held) { held = true; entered(); await gate; }
+    return originalHeartbeat(...args);
+  });
+  try {
+    const caller = await f.connect();
+    await waiting;
+    expect(await prisma.grokIncomingReceipt.count({ where: { session_id: f.id, event_id: { startsWith: "realtime:" } } })).toBe(1);
+    await expect(f.ready(100)).rejects.toThrow();
+    const packet = (chunk: number, value: number) => JSON.stringify({ event: "media", stream_id: f.streamId, sequence_number: String(chunk + 1), media: { track: "inbound", chunk: String(chunk), timestamp: String(chunk * 20), payload: Buffer.alloc(160, value).toString("base64") } });
+    caller.send(packet(1, 17));
+    const acknowledged = once(caller, "pong"); caller.ping("startup-frame-barrier"); await acknowledged;
+    expect(f.audio).toEqual([]);
+    release(); await f.ready();
+    caller.send(packet(2, 34));
+    await vi.waitFor(() => expect(f.audio).toHaveLength(1));
+    expect(Buffer.from(f.audio[0], "base64")).toEqual(Buffer.alloc(160, 34));
+  } finally { release(); await f.close(); }
 });
 
 test("malformed real carrier HTTP result remains uncertain and cannot release a consumed command", async () => {
