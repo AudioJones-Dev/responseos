@@ -81,11 +81,11 @@ test("readiness revoked during target lookup cannot reserve or dispatch", async 
   vi.spyOn(db!, "$transaction").mockImplementationOnce((async (callback: (tx: Prisma.TransactionClient) => Promise<unknown>) =>
     original(async tx => {
       const count = tx.telephonyNumberAssignment.count.bind(tx.telephonyNumberAssignment);
-      vi.spyOn(tx.telephonyNumberAssignment, "count").mockImplementationOnce(async args => {
+      vi.spyOn(tx.telephonyNumberAssignment, "count").mockImplementationOnce((async (args: Parameters<typeof count>[0]) => {
         const result = await count(args);
         f.stopReadiness(); revoked = true;
         return result;
-      });
+      }) as typeof count);
       return callback(tx);
     })) as NonNullable<typeof db>["$transaction"]);
   await expect(beginGrokHandoff(c)).rejects.toThrow("unqualified");
