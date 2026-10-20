@@ -110,6 +110,20 @@ test("a stalled response body is aborted within the request budget", async () =>
   expect(await watchdogReady()).toBe(false);
   expect(performance.now() - started).toBeLessThan(1500);
 });
+test("a stalled refresh reuses verified proof without extending its deadline", async () => {
+  setup(); const originalFetch = globalThis.fetch;
+  vi.stubGlobal("fetch", vi.fn(async (_url, options) => signed(options.headers)));
+  expect(await watchdogReady()).toBe(true);
+  server = createServer((_request, response) => {
+    response.writeHead(200, { "content-type": "application/json" }); response.write("{");
+  });
+  await new Promise<void>(resolve => server!.listen(0, "127.0.0.1", resolve));
+  const port = (server.address() as { port: number }).port;
+  vi.stubGlobal("fetch", vi.fn((_url, options) => originalFetch(`http://127.0.0.1:${port}/readiness`, options)));
+  expect(await watchdogReady()).toBe(true);
+  vi.spyOn(performance, "now").mockReturnValue(performance.now() + 3000);
+  expect(await watchdogReady()).toBe(false);
+});
 test("round trip consumes freshness, and remote timestamps do not depend on the reader clock", async () => {
   setup();
   let at = 100;

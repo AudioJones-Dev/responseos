@@ -57,7 +57,30 @@ function remoteProof() {
     return new Response(raw, { headers: { "content-type": "application/json",
       "x-watchdog-signature": sign(null, Buffer.from("response-v1\n" + raw), signer.privateKey).toString("base64") } });
   }));
+  return signer;
 }
+test("separate signed-https watchdog maintains a call without routing through its public edge", async () => {
+  const signer = remoteProof();
+  const signingFile = path.join(path.dirname(f.config), "synthetic-watchdog.pem");
+  writeFileSync(signingFile, signer.privateKey.export({ format: "pem", type: "pkcs8" }), { mode: 0o600 });
+  vi.stubEnv("RESPONSEOS_GROK_WATCHDOG_READINESS_SIGNING_KEY_FILE", signingFile);
+  f.stopReadiness();
+  const child = spawn(process.execPath, ["--import", "tsx", "scripts/grok-watchdog.ts", "--loop"], {
+    env: { ...process.env, TELNYX_API_KEY: "", XAI_API_KEY: "" }, stdio: "ignore",
+  });
+  const exited = once(child, "exit");
+  const file = process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_FILE!;
+  try {
+    await vi.waitFor(() => expect(JSON.parse(readFileSync(file, "utf8")).loop).toBe(true), { timeout: 10000 });
+    const c = await capture(), started = await beginGrokHandoff(c);
+    const first = JSON.parse(readFileSync(file, "utf8")).completedAt;
+    await vi.waitFor(async () => {
+      expect(JSON.parse(readFileSync(file, "utf8")).completedAt).toBeGreaterThan(first + 1100);
+      expect((await prisma.grokCallSession.findUniqueOrThrow({ where: { id: started.sessionId } })).stopped_at).toBeNull();
+    }, { timeout: 5000 });
+    expect(await prisma.grokCallCommand.count({ where: { session_id: started.sessionId, kind: "telnyx_hangup" } })).toBe(0);
+  } finally { if (child.exitCode === null && child.signalCode === null) { child.kill("SIGKILL"); await exited; } }
+}, 15000);
 test.each(["withdrawal", "stopped", "disabled", "expired", "retargeted", "proof-expired"])("retained proof never overrides %s and termination remains one-shot", async reason => {
   remoteProof();
   const c = await capture(), started = await beginGrokHandoff(c), token = randomUUID();
