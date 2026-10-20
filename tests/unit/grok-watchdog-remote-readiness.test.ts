@@ -112,14 +112,15 @@ test("a stalled response body is aborted within the request budget", async () =>
 });
 test("round trip consumes freshness, and remote timestamps do not depend on the reader clock", async () => {
   setup();
-  const clock = vi.spyOn(performance, "now");
-  clock.mockReturnValueOnce(100).mockReturnValueOnce(102);
-  vi.stubGlobal("fetch", vi.fn(async (_url, options) => signed(options.headers, { ageMs: 2999 })));
+  let at = 100;
+  vi.spyOn(performance, "now").mockImplementation(() => at);
+  vi.stubGlobal("fetch", vi.fn(async (_url, options) => { at = 102; return signed(options.headers, { ageMs: 2999 }); }));
   expect(await watchdogReady()).toBe(false);
-  clock.mockReturnValueOnce(100).mockReturnValueOnce(101).mockReturnValueOnce(101);
+  at = 100;
   vi.stubGlobal("fetch", vi.fn(async (_url, options) => signed(options.headers, { ageMs: 100 })));
   expect(await watchdogReady(-1000000)).toBe(true);
-  clock.mockReturnValueOnce(100).mockReturnValueOnce(600);
+  at = 3000;
+  vi.stubGlobal("fetch", vi.fn(async (_url, options) => { at += 500; return signed(options.headers); }));
   expect(await watchdogReady()).toBe(false);
 });
 test.each(["http://watchdog.invalid/readiness", "https://user:password@watchdog.invalid/readiness", "https://watchdog.invalid/readiness?x=1", "https://watchdog.invalid/other"])("untrusted endpoint form %s makes no request", async url => {
@@ -161,10 +162,87 @@ test("remote consumer needs neither the watchdog filesystem nor its private sign
     vi.stubGlobal("fetch", vi.fn((_url, options) => originalFetch(`http://127.0.0.1:${message.port}/readiness`, options)));
     expect(await watchdogReady()).toBe(true);
     child.kill("SIGKILL"); await exited;
+    expect(await watchdogReady()).toBe(true);
+    vi.spyOn(performance, "now").mockReturnValue(performance.now() + 3000);
     expect(await watchdogReady()).toBe(false);
   } finally {
     if (child.exitCode === null && child.signalCode === null) { child.kill("SIGKILL"); await exited; }
   }
+});
+
+test("transport failure uses only the original monotonic deadline, never a new grace period", async () => {
+  setup(); let at = 100;
+  vi.spyOn(performance, "now").mockImplementation(() => at);
+  vi.stubGlobal("fetch", vi.fn(async (_url, options) => signed(options.headers, { ageMs: 1000 })));
+  expect(await watchdogReady()).toBe(true);
+  vi.stubGlobal("fetch", vi.fn(async () => { at += 100; throw Error("offline"); }));
+  at = 1900; expect(await watchdogReady()).toBe(true);
+  at = 2000; expect(await watchdogReady()).toBe(false);
+  at = 3000; expect(await watchdogReady()).toBe(false);
+});
+test.each([503, 403, 302])("explicit response %s immediately revokes retained proof", async status => {
+  setup();
+  vi.stubGlobal("fetch", vi.fn(async (_url, options) => signed(options.headers)));
+  expect(await watchdogReady()).toBe(true);
+  vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status })));
+  expect(await watchdogReady()).toBe(false);
+  vi.stubGlobal("fetch", vi.fn(async () => { throw Error("offline"); }));
+  expect(await watchdogReady()).toBe(false);
+});
+test("invalid signature revokes prior proof even if transport later fails", async () => {
+  setup();
+  vi.stubGlobal("fetch", vi.fn(async (_url, options) => signed(options.headers)));
+  expect(await watchdogReady()).toBe(true);
+  vi.stubGlobal("fetch", vi.fn(async (_url, options) => signed(options.headers, {}, "wrong")));
+  expect(await watchdogReady()).toBe(false);
+  vi.stubGlobal("fetch", vi.fn(async () => { throw Error("offline"); }));
+  expect(await watchdogReady()).toBe(false);
+});
+test.each(["RESPONSEOS_APPLICATION_SHA", "RESPONSEOS_CONTROL_SHA", "RESPONSEOS_GROK_WATCHDOG_INSTANCE",
+  "RESPONSEOS_GROK_WATCHDOG_READINESS_KEY", "RESPONSEOS_GROK_WATCHDOG_READINESS_PUBLIC_KEY",
+  "RESPONSEOS_GROK_WATCHDOG_READINESS_URL", "RESPONSEOS_QUALIFICATION_SHA256"])("changed %s cannot inherit proof", async name => {
+  setup();
+  vi.stubGlobal("fetch", vi.fn(async (_url, options) => signed(options.headers)));
+  expect(await watchdogReady()).toBe(true);
+  vi.stubEnv(name, name.endsWith("URL") ? "https://other.invalid/readiness" : "c".repeat(64));
+  vi.stubGlobal("fetch", vi.fn(async () => { throw Error("offline"); }));
+  expect(await watchdogReady()).toBe(false);
+});
+test("concurrent requests share one challenge; denial cannot race with an older success", async () => {
+  setup(); let finish!: (response: Response) => void;
+  const fetch = vi.fn(() => new Promise<Response>(resolve => { finish = resolve; }));
+  vi.stubGlobal("fetch", fetch);
+  const a = watchdogReady(), b = watchdogReady();
+  await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+  finish(new Response(null, { status: 503 }));
+  expect(await Promise.all([a, b])).toEqual([false, false]);
+});
+test("a late request for a replaced binding cannot restore its old proof", async () => {
+  setup(); let finish!: (response: Response) => void;
+  let headers!: Record<string, string>;
+  vi.stubGlobal("fetch", vi.fn((_url, options) => { headers = options.headers; return new Promise<Response>(resolve => { finish = resolve; }); }));
+  const pending = watchdogReady();
+  await vi.waitFor(() => expect(finish).toBeTypeOf("function"));
+  vi.stubEnv("RESPONSEOS_GROK_WATCHDOG_READINESS_URL", "https://other.invalid/readiness");
+  vi.stubGlobal("fetch", vi.fn(async () => { throw Error("offline"); }));
+  expect(await watchdogReady()).toBe(false);
+  finish(signed(headers));
+  expect(await pending).toBe(false);
+});
+test("only the writer-owned sweep uses local proof and never leaks that scope to consumers", async () => {
+  const writer = setup(); writer.completed(true);
+  const fetch = vi.fn(async () => { throw Error("public edge unavailable"); });
+  vi.stubGlobal("fetch", fetch);
+  await writer.sweep(async () => {
+    await Promise.resolve();
+    expect(await watchdogReady()).toBe(true);
+    expect(fetch).not.toHaveBeenCalled();
+    writer.clear();
+    expect(await watchdogReady()).toBe(false);
+    writer.completed(true);
+  });
+  expect(await watchdogReady()).toBe(false);
+  expect(fetch).toHaveBeenCalledTimes(1);
 });
 test("changing the pinned signer denies proof and changes qualification identity", async () => {
   setup(); const before = qualificationConfigHash();

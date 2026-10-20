@@ -1,4 +1,4 @@
-import { createHmac, createPrivateKey, createPublicKey, randomBytes, sign, timingSafeEqual, verify } from "node:crypto";
+import { createHash, createHmac, createPrivateKey, createPublicKey, randomBytes, sign, timingSafeEqual, verify } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { isAbsolute } from "node:path";
@@ -33,33 +33,67 @@ function matches(expected: string, supplied: string | null | undefined) {
     timingSafeEqual(Buffer.from(expected, "hex"), Buffer.from(supplied!, "hex"));
 }
 
-export async function remoteWatchdogDeadline() {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), WATCHDOG_REQUEST_MS);
+type VerifiedProof = { binding: string; deadline: number | false; pending?: Promise<number | false> };
+let retained: VerifiedProof | undefined;
+function proofBinding(expected: ReturnType<typeof identity>, secret: Buffer, trusted: ReturnType<typeof publicKey>, url: URL) {
+  return createHash("sha256").update(JSON.stringify([
+    expected, url.href, secret.toString("hex"), trusted.export({ format: "der", type: "spki" }).toString("base64"),
+    process.env.RESPONSEOS_QUALIFICATION_SHA256,
+  ])).digest("hex");
+}
+
+export async function remoteWatchdogDeadline(): Promise<number | false> {
   try {
     const expected = identity(), secret = key(), trusted = publicKey();
     const url = new URL(process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_URL ?? "");
-    if (url.protocol !== "https:" || url.username || url.password || url.hash || url.search || url.pathname !== "/readiness") return false;
+    if (url.protocol !== "https:" || url.username || url.password || url.hash || url.search || url.pathname !== "/readiness") throw Error();
+    const binding = proofBinding(expected, secret, trusted, url);
+    if (retained?.binding !== binding) retained = { binding, deadline: false };
+    const current = retained;
+    if (!current.pending) {
+      current.pending = requestDeadline(expected, secret, trusted, url, current).then(deadline => {
+        if (retained !== current) return false;
+        current.deadline = deadline;
+        return deadline;
+      }).finally(() => { current.pending = undefined; });
+    }
+    const deadline = await current.pending;
+    if (process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_TRANSPORT !== "signed-https" ||
+        binding !== proofBinding(identity(), key(), publicKey(), new URL(process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_URL ?? ""))) {
+      if (retained === current) retained = undefined;
+      return false;
+    }
+    return retained === current && deadline !== false && performance.now() < deadline ? deadline : false;
+  } catch { retained = undefined; return false; }
+}
+
+async function requestDeadline(expected: ReturnType<typeof identity>, secret: Buffer,
+  trusted: ReturnType<typeof publicKey>, url: URL, current: VerifiedProof): Promise<number | false> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), WATCHDOG_REQUEST_MS);
+  let transportFailure = false;
+  try {
     const nonce = randomBytes(32).toString("hex");
     const challenge = JSON.stringify({ ...expected, nonce });
     const started = performance.now();
     const response = await fetch(url, {
-      method: "GET", redirect: "error", cache: "no-store", signal: controller.signal,
+      method: "GET", redirect: "manual", cache: "no-store", signal: controller.signal,
       headers: { "x-watchdog-challenge": nonce, "x-watchdog-auth": mac(secret, "request-v1", challenge) },
-    });
+    }).catch(error => { transportFailure = true; throw error; });
     if (response.status !== 200 || response.headers.get("content-type") !== "application/json" || !response.body) return false;
     const reader = response.body.getReader();
     let bytes = Buffer.alloc(0);
     try {
       for (;;) {
-        const chunk = await reader.read();
+        const chunk = await reader.read().catch(error => { transportFailure = true; throw error; });
         if (chunk.done) break;
         if (bytes.length + chunk.value.length > 1024) return false;
         bytes = Buffer.concat([bytes, chunk.value]);
       }
     } finally { await reader.cancel(); }
     const elapsed = performance.now() - started;
-    if (controller.signal.aborted || elapsed < 0 || elapsed >= WATCHDOG_REQUEST_MS) return false;
+    if (controller.signal.aborted || elapsed >= WATCHDOG_REQUEST_MS) { transportFailure = true; throw Error(); }
+    if (elapsed < 0) return false;
     const raw = bytes.toString("utf8");
     if (!signedByWatchdog(raw, response.headers.get("x-watchdog-signature"), trusted)) return false;
     const proof = JSON.parse(raw);
@@ -68,7 +102,11 @@ export async function remoteWatchdogDeadline() {
       proof.instanceId === expected.instanceId && Number.isFinite(proof.ageMs) && proof.ageMs >= 0 &&
       proof.ageMs + elapsed < WATCHDOG_FRESHNESS_MS;
     return valid ? started + WATCHDOG_FRESHNESS_MS - proof.ageMs : false;
-  } catch { return false; }
+  } catch {
+    // Transport uncertainty cannot renew proof; explicit or invalid responses revoke it.
+    return transportFailure && retained === current && current.deadline !== false &&
+      performance.now() < current.deadline ? current.deadline : false;
+  }
   finally { clearTimeout(timer); controller.abort(); }
 }
 
@@ -108,6 +146,6 @@ export function createWatchdogReadinessServer() {
       response.end(body);
     } catch { response.writeHead(503); response.end(); }
   });
-  server.requestTimeout = 1000; server.headersTimeout = 1000; server.keepAliveTimeout = 1;
+  server.requestTimeout = 1000; server.headersTimeout = 1000; server.keepAliveTimeout = 5000;
   return server;
 }

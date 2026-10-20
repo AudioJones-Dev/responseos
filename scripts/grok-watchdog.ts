@@ -29,7 +29,7 @@ async function main() {
     const { watchdogGrokSweep } = await import("../lib/grok/service");
     const { runGrokWatchdog } = await import("../lib/grok/watchdogLoop");
     const healthy = await runGrokWatchdog({
-      loop, sweep: watchdogGrokSweep, completed: readiness?.completed,
+      loop, sweep: () => readiness ? readiness.sweep(watchdogGrokSweep) : watchdogGrokSweep(), completed: readiness?.completed,
       pause: milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds)),
       alert: (scope, event, occurrences) => console.error(event === "recovered"
         ? `Grok watchdog ${scope} reporting recovered after ${occurrences} observations; this is not disconnection evidence.`

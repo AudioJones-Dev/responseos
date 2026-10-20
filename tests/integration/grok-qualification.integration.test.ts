@@ -44,6 +44,72 @@ async function capture(extra = {}) {
   await prisma.callConsentEvent.create({ data: { account_id: c.account_id, provider_call_id: c.provider_call_id, event_key: randomUUID(), action: "grant", artifact: "transcript", disclosure_ref: "synthetic", evidence_ref: "synthetic", jurisdiction_basis: "synthetic", source_channel: "call", actor_user_id: "user_operator_mock" } });
   return c;
 }
+function remoteProof() {
+  const signer = generateKeyPairSync("ed25519");
+  vi.stubEnv("RESPONSEOS_GROK_WATCHDOG_READINESS_TRANSPORT", "signed-https");
+  vi.stubEnv("RESPONSEOS_GROK_WATCHDOG_READINESS_URL", "https://watchdog.invalid/readiness");
+  vi.stubEnv("RESPONSEOS_GROK_WATCHDOG_READINESS_KEY", "d4".repeat(32));
+  vi.stubEnv("RESPONSEOS_GROK_WATCHDOG_READINESS_PUBLIC_KEY", signer.publicKey.export({ format: "der", type: "spki" }).toString("base64"));
+  f.policy.configSha256 = qualificationConfigHash(); f.save();
+  vi.stubGlobal("fetch", vi.fn(async (_url, options) => {
+    const raw = JSON.stringify({ version: 1, applicationSha: f.policy.applicationSha, controlSha: f.policy.controlSha,
+      instanceId: process.env.RESPONSEOS_GROK_WATCHDOG_INSTANCE, nonce: options.headers["x-watchdog-challenge"], ready: true, ageMs: 0 });
+    return new Response(raw, { headers: { "content-type": "application/json",
+      "x-watchdog-signature": sign(null, Buffer.from("response-v1\n" + raw), signer.privateKey).toString("base64") } });
+  }));
+}
+test.each(["withdrawal", "stopped", "disabled", "expired", "retargeted", "proof-expired"])("retained proof never overrides %s and termination remains one-shot", async reason => {
+  remoteProof();
+  const c = await capture(), started = await beginGrokHandoff(c), token = randomUUID();
+  await prisma.grokCallSession.update({ where: { id: started.sessionId }, data: { worker_token: token } });
+  expect(await heartbeatGrok(started.sessionId, token)).toBe(true);
+  vi.stubGlobal("fetch", vi.fn(async () => { throw Error("synthetic offline"); }));
+  expect(await heartbeatGrok(started.sessionId, token)).toBe(true);
+  if (reason === "withdrawal") await prisma.callWithdrawalReceipt.create({ data: {
+    account_id: c.account_id, capture_id: c.id, provider_call_id: c.provider_call_id,
+    generation: c.generation, source_provenance: "synthetic",
+  } });
+  if (reason === "stopped") await requestGrokStop(started.sessionId, "synthetic_stop");
+  if (reason === "disabled") vi.stubEnv("RESPONSEOS_QUALIFICATION_ACTIVATION", "DISABLED");
+  if (reason === "expired") f.save({ ...f.policy, expiresAt: new Date(0).toISOString() });
+  if (reason === "retargeted") await prisma.telephonyNumberAssignment.update({ where: { id: f.policy.assignmentId }, data: { status: "quarantined" } });
+  if (reason === "proof-expired") vi.spyOn(performance, "now").mockReturnValue(performance.now() + 3000);
+  expect(await heartbeatGrok(started.sessionId, token)).toBe(false);
+  await Promise.all([dispatchGrokTermination(started.sessionId), dispatchGrokTermination(started.sessionId)]);
+  expect(io.terminate).toHaveBeenCalledTimes(1);
+  expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: c.id } })).call_disconnected_at).toBeNull();
+  expect(await prisma.grokQualificationReservation.findUnique({ where: { session_id: started.sessionId } })).toMatchObject({ active_slot: "qualification", released_at: null });
+});
+test.each(["missing", "expired", "failed-sweep", "withdrawal"])("writer-owned sweep ignores public edge but still stops for %s", async reason => {
+  remoteProof();
+  const c = await capture(), started = await beginGrokHandoff(c);
+  f.stopReadiness();
+  const writer = createWatchdogReadinessWriter(); writer.completed(true);
+  const fetch = vi.fn(async () => { throw Error("public edge unreachable"); });
+  vi.stubGlobal("fetch", fetch);
+  expect(await writer.sweep(watchdogGrokSweep)).toMatchObject({ inspected: 1, failed: 0 });
+  expect((await prisma.grokCallSession.findUniqueOrThrow({ where: { id: started.sessionId } })).stopped_at).toBeNull();
+  expect(fetch).not.toHaveBeenCalled();
+  if (reason === "missing") writer.clear();
+  if (reason === "failed-sweep") writer.completed(false);
+  if (reason === "expired") {
+    const file = process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_FILE!;
+    const proof = JSON.parse(readFileSync(file, "utf8"));
+    writeFileSync(file, JSON.stringify({ ...proof, completedAt: Date.now() - 3000 }));
+  }
+  if (reason === "withdrawal") await prisma.callWithdrawalReceipt.create({ data: {
+    account_id: c.account_id, capture_id: c.id, provider_call_id: c.provider_call_id,
+    generation: c.generation, source_provenance: "synthetic",
+  } });
+  await writer.sweep(watchdogGrokSweep);
+  expect(fetch).not.toHaveBeenCalled();
+  expect(io.terminate).toHaveBeenCalledTimes(1);
+  writer.completed(true);
+  await writer.sweep(watchdogGrokSweep);
+  expect(io.terminate).toHaveBeenCalledTimes(1);
+  expect((await prisma.grokCallSession.findUniqueOrThrow({ where: { id: started.sessionId } })).stopped_at).not.toBeNull();
+  expect((await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: c.id } })).call_disconnected_at).toBeNull();
+});
 test("concurrent distinct calls reserve exactly one global slot before I/O", async () => {
   const a = await capture(), b = await capture();
   const results = await Promise.allSettled([beginGrokHandoff(a), beginGrokHandoff(b), beginGrokHandoff(a)]);

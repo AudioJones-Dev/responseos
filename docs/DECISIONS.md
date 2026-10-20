@@ -1959,3 +1959,6 @@ ADR-0079 caller-impact clarification: the local readiness gate also stops active
 ## ADR-0080 - Authenticate cross-host watchdog readiness without extending freshness
 
 Owner-authorized local successor only. Use fresh challenge-bound signed HTTPS proof with exact release/instance binding, bounded round trip, and unchanged expiry. Preserve active-call termination on readiness loss and independent retained hangup authority. Hosting, credentials and supervised-demo release acceptance remain pending. [Contract, approval queue and Doctrine21](readiness/FRL_GROK_CROSS_HOST_READINESS_2026-10-20.md).
+
+
+ADR-0080 P2 correction: retain a verified remote proof only through its original monotonic deadline on transport failure; explicit denial or invalid proof revokes it. Active watchdog sweeps use writer-owned local readiness scope, removing public-edge requests under session locks. No consent/withdrawal/termination checks are cached. Detection during an edge outage remains bounded by the unchanged 3000 ms proof lifetime; explicit release acceptance and hosted measurement remain required. See the linked cross-host contract.

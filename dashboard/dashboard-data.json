@@ -1876,14 +1876,14 @@
     {
       "id": "FRL-GROK-CROSS-HOST-READINESS",
       "phase": "Integrations",
-      "title": "Review authenticated cross-host watchdog readiness",
+      "title": "Review bounded readiness reuse and local watchdog sweep",
       "owner": "Codex",
       "status": "Review",
       "progress": 90,
       "priority": "High",
       "start": "2026-10-20",
       "blocked": true,
-      "blockedReason": "Local implementation prepared for final-tree validation; Claude frozen-pair review and explicit release/hosting/credential approvals remain pending."
+      "blockedReason": "P2 successor under local validation; preserve fd4562f/7d433a6. Claude frozen-pair review, bounded detection acceptance and hosted/credential approvals remain pending."
     }
   ],
   "liveIssues": [

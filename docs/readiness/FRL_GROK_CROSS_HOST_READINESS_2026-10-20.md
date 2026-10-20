@@ -1,6 +1,6 @@
 # Cross-host watchdog readiness
 
-EXPERIMENTAL local successor to frozen application fc504ef / control 570f22b.
+EXPERIMENTAL local P2 successor to frozen application fd4562f / control 7d433a6.
 Codex builds; Claude reviews frozen pairs independently. Grok is the voice
 runtime. The owner supplies the FRL knowledge packet. No release acceptance,
 hosting, credential injection, deployment, or live activation is implied.
@@ -33,7 +33,7 @@ Consumers reject invalid signatures, mismatched nonces/bindings, redirects,
 oversize/malformed bodies, errors, or requests taking 500 ms or more. They add
 the entire locally measured round trip to the watchdog's reported proof age;
 the total must remain strictly below the unchanged 3,000 ms expiry. Requests
-are uncached. Remote host clock offsets do not enter this calculation. The
+always request fresh proof (concurrent readers share one in-flight challenge). On transport failure only, a previously verified proof may be reused until its original monotonic deadline; no failure renews it. Explicit non-200 responses, invalid signatures/bindings/nonces/bodies, or changed release/instance/URL/key/authority digest revoke retained proof. Responses and redirects are never followed or HTTP-cached. Remote host clock offsets do not enter this calculation. The
 watchdog still uses its local clock/file for sweep age; future local timestamps
 fail closed. No grace interval, automatic replay, or freshness extension exists.
 The proof's remaining lifetime is carried as a local monotonic deadline through
@@ -53,13 +53,13 @@ with a newly approved qualification configuration.
 
 The watchdog alone requires its local writable proof file. Other hosts need
 no shared filesystem or matching UID. Its own qualification checks use the
-same HTTPS endpoint. Cross-host qualification hashes omit the host-local proof
+writer-owned local proof within an async scope installed only around the active loop sweep. They do not call the public edge while holding session locks. Consumer requests outside that scope still require signed HTTPS; no environment switch grants this local role. Unknown transport, inactive mode, mismatched binding, startup, missing/failed/expired local proof still fail closed. Cross-host qualification hashes omit the host-local proof
 path and listener `PORT`; those differ per service. The signed public media URL,
 listener configuration contents, exact release/instance, HTTPS readiness URL,
 request-key hash and public signing key remain bound. Local-file mode retains
 its original port/path binding. A restart clears proof before the first sweep. Missing,
-failed, expired, or unreachable proof still ends active calls on the existing
-heartbeat/sweep path. Network interruption is an additional cause of abrupt
+failed or expired proof still ends active calls on the existing
+heartbeat/sweep path. Transport failure without an unexpired verified proof remains an additional cause of abrupt
 termination. Recovery cannot revive consent, restart a stopped session, retry
 a consumed command, or establish carrier disconnection. Retained exact-call
 hangup authorization does not depend on readiness.
@@ -107,3 +107,37 @@ hangup authorization does not depend on readiness.
 13. Explicit release, spending, hosting, credential and activation approvals.
 14. Scoped request/signing keys; no customer payload or compliance claim.
 15. Required now for the owner's cross-host readiness request.
+
+## P2 transport resilience and local sweep correction
+
+The first failed remote request no longer discards a still-valid proof. This is
+not a retry or a grace period: the original signed age plus complete RTT fixes
+one deadline, strictly below 3000 ms. A 500 ms timeout can consume the last of
+that lifetime and still cause immediate denial. A stalled response body has the
+same bound. Single-flight requests prevent an older concurrent success from
+undoing a denial. Binding changes isolate pending work and retained proof.
+HTTP keep-alive is 5000 ms, avoiding deliberately closing every connection.
+
+A failed watchdog sweep clears its local proof immediately. A reachable consumer
+receives denial and clears retained proof immediately. If the edge is unreachable,
+a consumer can continue only until previously verified proof expires (at most
+three seconds from its originating successful sweep, including network age).
+The watchdog's own next sweep reads local proof and can still terminate affected
+sessions independently of the edge. This bounded detection difference requires
+explicit supervised-demo release acceptance; it is not customer-ready behavior.
+Restart still clears proof and the first sweep still terminates existing calls.
+No consent, withdrawal, stopped-state, authority, lease, identity or termination
+check is cached. Final qualification checks retain the proof deadline across
+DB waits. No consumed command is retried or concurrency slot released without
+exact authenticated disconnection evidence.
+
+Local regressions cover transport failure then expiry, explicit denial and invalid
+signature revocation, concurrent readers, binding changes, isolated local sweep
+scope, active withdrawal/stop/expiry/retargeting under retained proof, and local
+sweep termination despite an unavailable public edge. Real TLS/connection reuse,
+network latency, clock discipline and sweep timing still need separately approved
+hosted verification. No deployment, credentials or live activation are authorized.
+
+Doctrine section 21 above still applies: this narrows an existing safety protocol,
+adds no provider/CRM/retention capability, preserves exact evidence and tenant
+boundaries, buys hosting/TLS, and claims only local synthetic validation.

@@ -106,10 +106,14 @@ export async function qualificationAlive(tx: Prisma.TransactionClient, s: GrokCa
   const reservation = await tx.grokQualificationReservation.findUnique({ where: { session_id: s.id } });
   if (!reservation || reservation.released_at || reservation.deadline <= now) return false;
   try {
-    const policy = await readQualification(now);
+    const readyUntil = await watchdogReadinessDeadline();
+    if (readyUntil === false) return false;
+    const policy = readQualificationContract(now);
     if (reservation.policy_hash !== qualificationHash(JSON.stringify(policy))) return false;
     await assertQualificationTarget(tx, s, policy);
-    return true;
+    return performance.now() < readyUntil &&
+      reservation.deadline.getTime() > Date.now() &&
+      qualificationHash(JSON.stringify(readQualificationContract())) === reservation.policy_hash;
   } catch { return false; }
 }
 

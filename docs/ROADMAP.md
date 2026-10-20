@@ -194,3 +194,5 @@ Local EXPERIMENTAL watchdog-readiness P2 successor requires fresh active-loop sw
 Local caller-impact successor documents and tests termination of active calls on watchdog readiness loss, including restart. Reviewed f7ea48b/958fda6 remains frozen. Caller-impact acceptance, hosted timing/layout and live gates remain open; no runtime or milestone expansion. [Contract](readiness/FRL_GROK_WATCHDOG_READINESS_2026-10-20.md#caller-impact-and-release-acceptance).
 
 Local cross-host watchdog readiness successor is in implementation under ADR-0080. Exact-pair independent review, caller-impact acceptance, hosted timing/safety checks and supervised-demo release acceptance remain open.
+
+Local ADR-0080 P2 successor preserves fd4562f/7d433a6 and addresses transient transport failure and watchdog self-routing. Frozen-pair review, hosted measurements and owner release acceptance remain open.

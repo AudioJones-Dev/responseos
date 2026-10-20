@@ -1,8 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { isAbsolute } from "node:path";
+import { AsyncLocalStorage } from "node:async_hooks";
 
 export const WATCHDOG_FRESHNESS_MS = 3000;
+const sweepReadiness = new AsyncLocalStorage<ReturnType<typeof watchdogBinding>>();
 
 export function watchdogBinding(requireFile = true) {
   const file = process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_FILE;
@@ -38,6 +40,7 @@ export function createWatchdogReadinessWriter() {
   clear();
   return {
     clear,
+    sweep<T>(run: () => Promise<T>) { return sweepReadiness.run(expected, run); },
     completed(healthy: boolean) {
       if (!healthy) { clear(); return; }
       const temporary = `${expected.file}.${randomUUID()}.tmp`;
@@ -55,6 +58,14 @@ export function createWatchdogReadinessWriter() {
 
 export async function watchdogReadinessDeadline(now = Date.now()) {
   const transport = process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_TRANSPORT ?? "local-file";
+  const sweep = sweepReadiness.getStore();
+  if (sweep) {
+    try {
+      if (!["local-file", "signed-https"].includes(transport) ||
+          JSON.stringify(sweep) !== JSON.stringify(watchdogBinding())) return false;
+      return localWatchdogDeadline(now);
+    } catch { return false; }
+  }
   if (transport === "local-file") return localWatchdogDeadline(now);
   if (transport !== "signed-https") return false;
   const { remoteWatchdogDeadline } = await import("./watchdogRemoteReadiness");
