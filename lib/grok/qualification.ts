@@ -28,19 +28,23 @@ export function qualificationConfigHash() {
     process.env.RESPONSEOS_VOICE_ENGINE, process.env.RESPONSEOS_GROK_STREAM_URL,
     process.env.TELNYX_PUBLIC_KEY, process.env.RESPONSEOS_GROK_MEDIA_CONFIG ? readFileSync(process.env.RESPONSEOS_GROK_MEDIA_CONFIG, "utf8") : null, process.env.PORT,
     process.env.RESPONSEOS_QUALIFICATION_TELNYX_ACCOUNT, process.env.RESPONSEOS_QUALIFICATION_CONNECTION,
-    process.env.RESPONSEOS_QUALIFICATION_XAI_TEAM, process.env.RESPONSEOS_QUALIFICATION_XAI_PROJECT,
+    process.env.RESPONSEOS_QUALIFICATION_XAI_TEAM, process.env.RESPONSEOS_QUALIFICATION_XAI_PROJECT, process.env.RESPONSEOS_LIVE_HUBSPOT_ENABLED, process.env.RESPONSEOS_LIVE_EMAIL_ENABLED,
   ]));
 }
 
 export function readQualification(now = new Date()): Qualification {
   try {
     if (process.env.RESPONSEOS_QUALIFICATION_ACTIVATION !== "ENABLED" || process.env.RESPONSEOS_REQUIRE_AUTH !== "true") throw Error();
+    if (process.env.RESPONSEOS_LIVE_HUBSPOT_ENABLED !== "false" || process.env.RESPONSEOS_LIVE_EMAIL_ENABLED !== "false") throw Error();
     const file = process.env.RESPONSEOS_QUALIFICATION_FILE, digest = process.env.RESPONSEOS_QUALIFICATION_SHA256;
     if (!file || !digest || !sha.safeParse(digest).success) throw Error();
     const bytes = readFileSync(file);
     if (bytes.length > 8192 || qualificationHash(bytes.toString("utf8")) !== digest) throw Error();
     if (!process.env.RESPONSEOS_GROK_MEDIA_CONFIG || !process.env.TELNYX_PUBLIC_KEY || !process.env.RESPONSEOS_GROK_STREAM_URL) throw Error();
     const listener = JSON.parse(readFileSync(process.env.RESPONSEOS_GROK_MEDIA_CONFIG, "utf8"));
+    if (!["direct-tls", "managed-edge-http"].includes(listener.ingress ?? "direct-tls")) throw Error();
+    const url = new URL(listener.streamUrl);
+    if (url.protocol !== "wss:" || url.username || url.password || url.hash || url.href !== listener.streamUrl) throw Error();
     if (listener.mode !== "production" || listener.streamUrl !== process.env.RESPONSEOS_GROK_STREAM_URL || listener.publicKey !== process.env.TELNYX_PUBLIC_KEY) throw Error();
     const p = qualificationSchema.parse(JSON.parse(bytes.toString("utf8")));
     if (p.applicationSha !== process.env.RESPONSEOS_APPLICATION_SHA || p.controlSha !== process.env.RESPONSEOS_CONTROL_SHA || p.configSha256 !== qualificationConfigHash()
@@ -53,6 +57,13 @@ export function readQualification(now = new Date()): Qualification {
   } catch { throw Error("grok_provider_contract_unqualified"); }
 }
 
+async function assertQualificationTarget(tx: Prisma.TransactionClient, s: GrokCallSession, p: Qualification) {
+  const account = await tx.account.findUnique({ where: { id: p.accountId } });
+  const assignment = await tx.telephonyNumberAssignment.findFirst({ where: { id: p.assignmentId, account_id: p.accountId, telephony_number_id: p.numberId, status: "qualification", unassigned_at: null } });
+  const number = await tx.telephonyNumber.findFirst({ where: { id: p.numberId, provider: "telnyx", provider_number_id: p.providerNumberId, e164: p.e164, released_at: null, status: "assigned" } });
+  if (s.account_id !== p.accountId || s.assignment_id !== p.assignmentId || account?.account_type !== "internal_demo" || !assignment || assignment.number_exclusivity_key !== p.numberId || !number || await tx.telephonyNumberAssignment.count({ where: { telephony_number_id: p.numberId, unassigned_at: null } }) !== 1) throw Error("qualification_provider_identity_mismatch");
+}
+
 export async function reserveQualification(tx: Prisma.TransactionClient, s: GrokCallSession, now: Date) {
   const p = readQualification(now);
   if (s.account_id !== p.accountId || s.assignment_id !== p.assignmentId) throw Error("qualification_target_mismatch");
@@ -62,22 +73,25 @@ export async function reserveQualification(tx: Prisma.TransactionClient, s: Grok
     if (!active.session.capture.call_disconnected_at) throw Error("qualification_call_in_progress");
     await tx.grokQualificationReservation.update({ where: { session_id: active.session_id }, data: { active_slot: null, released_at: now } });
   }
-  const account = await tx.account.findUnique({ where: { id: p.accountId } });
-  const assignment = await tx.telephonyNumberAssignment.findFirst({ where: { id: p.assignmentId, account_id: p.accountId, telephony_number_id: p.numberId, status: "qualification", unassigned_at: null } });
-  const number = await tx.telephonyNumber.findFirst({ where: { id: p.numberId, provider: "telnyx", provider_number_id: p.providerNumberId, e164: p.e164, released_at: null, status: "assigned" } });
+  await assertQualificationTarget(tx, s, p);
   const capture = await tx.callCaptureSession.findUniqueOrThrow({ where: { id: s.capture_id } });
   const event = await tx.webhookEvent.findUnique({ where: { provider_provider_event_id: { provider: "telnyx", provider_event_id: capture.dtmf_event_id! } } });
   if (!event) throw Error("qualification_proof_missing");
   const verified = await assertStoredWebhookIdentity(event.id, tx);
   const payload = parseCallControlEvent(verified.raw_body)?.data.payload;
-  if (account?.account_type !== "internal_demo" || !assignment || assignment.number_exclusivity_key !== p.numberId || !number || await tx.telephonyNumberAssignment.count({ where: { telephony_number_id: p.numberId, unassigned_at: null } }) !== 1 || payload?.connection_id !== p.connectionId || payload.to !== p.e164) throw Error("qualification_provider_identity_mismatch");
+  if (payload?.connection_id !== p.connectionId || payload.to !== p.e164) throw Error("qualification_provider_identity_mismatch");
   return tx.grokQualificationReservation.create({ data: { session_id: s.id, policy_json: p, policy_hash: qualificationHash(JSON.stringify(p)), admitted_at: now, deadline: new Date(Math.min(Date.parse(p.expiresAt), now.getTime() + p.maxDurationMs)), active_slot: "qualification" } });
 }
 
 export async function qualificationAlive(tx: Prisma.TransactionClient, s: GrokCallSession, now: Date) {
   const reservation = await tx.grokQualificationReservation.findUnique({ where: { session_id: s.id } });
   if (!reservation || reservation.released_at || reservation.deadline <= now) return false;
-  try { return reservation.policy_hash === qualificationHash(JSON.stringify(readQualification(now))); } catch { return false; }
+  try {
+    const policy = readQualification(now);
+    if (reservation.policy_hash !== qualificationHash(JSON.stringify(policy))) return false;
+    await assertQualificationTarget(tx, s, policy);
+    return true;
+  } catch { return false; }
 }
 
 export async function authorizeQualificationTransport(action: "streaming_start" | "realtime_audio" | "hangup", resource?: string, commandId?: string) {
