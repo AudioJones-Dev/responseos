@@ -1,4 +1,7 @@
 import { randomUUID } from "node:crypto";
+import { spawn, spawnSync } from "node:child_process";
+import { once } from "node:events";
+import path from "node:path";
 import { afterAll, afterEach, beforeEach, expect, test, vi } from "vitest";
 import { prisma, resetAndSeedTestDb, disconnectTestDb, setDevSession } from "./setup";
 import { qualificationFixture } from "../qualificationFixture";
@@ -123,4 +126,23 @@ test("changed dedicated assignment closes admission but retains original termina
  await prisma.telephonyNumberAssignment.update({where:{id:f.policy.assignmentId},data:{status:"quarantined"}});
  await watchdogGrokSweep();expect(io.terminate).toHaveBeenCalledTimes(1);
  expect(await prisma.grokQualificationReservation.findUnique({where:{session_id:started.sessionId}})).toMatchObject({active_slot:"qualification"});
+});
+
+test("independent watchdog consumes termination after a qualified heartbeat process dies", async () => {
+  const c = await capture(), started = await beginGrokHandoff(c), token = randomUUID();
+  await prisma.grokCallSession.update({ where: { id: started.sessionId }, data: { worker_token: token } });
+  const tsx = path.resolve("node_modules/tsx/dist/cli.mjs");
+  const worker = spawn(process.execPath, [tsx, "tests/integration/fixtures/grok-heartbeat-worker.ts", started.sessionId, token], { stdio: ["ignore", "pipe", "pipe"], env: process.env });
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([once(worker.stdout, "data"), once(worker, "exit").then(() => { throw Error("synthetic_worker_exited"); }), new Promise<never>((_, reject) => { timer = setTimeout(() => reject(Error("synthetic_worker_timeout")), 5000); })]);
+    clearTimeout(timer);
+    const exited = once(worker, "exit"); worker.kill(); await exited;
+    await prisma.grokCallSession.update({ where: { id: started.sessionId }, data: { lease_expires_at: new Date(0) } });
+    const watcher = spawnSync(process.execPath, [tsx, "scripts/grok-watchdog.ts"], { env: { ...process.env, TELNYX_API_KEY: "", XAI_API_KEY: "", RESPONSEOS_GROK_WATCHDOG_ENABLED: "true" }, encoding: "utf8", timeout: 15000 });
+    expect(watcher.status, watcher.stderr).toBe(0);
+    expect(await prisma.grokCallCommand.findFirst({ where: { session_id: started.sessionId, kind: "telnyx_hangup" } })).toMatchObject({ status: "uncertain", consumed_at: expect.any(Date) });
+    expect(await prisma.grokQualificationReservation.findUnique({ where: { session_id: started.sessionId } })).toMatchObject({ active_slot: "qualification" });
+    expect(io.terminate).not.toHaveBeenCalled();
+  } finally { clearTimeout(timer); if (worker.exitCode === null && worker.signalCode === null) worker.kill(); }
 });
