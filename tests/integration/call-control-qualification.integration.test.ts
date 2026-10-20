@@ -122,7 +122,7 @@ describe("FRL Call Control qualification", () => {
       if (mode === "stale") q.stopReadiness();
       if (mode === "hash") vi.stubEnv("RESPONSEOS_DEMO_KNOWLEDGE_SHA256", "0".repeat(64));
       sendCommand.mockClear();
-      await expect(ingest(event("call.answered", "sam-answer", {}, 2_000))).resolves.toMatchObject({ duplicate: false });
+      await expect(ingest(event("call.answered", "sam-answer", { to: NUMBER }, 2_000))).resolves.toMatchObject({ duplicate: false });
       const speak = sendCommand.mock.calls.filter(([c]) => c.action === "speak");
       expect(speak).toHaveLength(1);
       expect(speak[0][0].body).toMatchObject({ payload: (mode === "qualified" ? SAM_GREETING + " " : "") + "This call uses an AI receptionist and may be transcribed to help with your request." + " To continue, press 1. To decline, press 2.", voice: "female", service_level: "basic", language: "en-US", client_state: state(capture.id) });
