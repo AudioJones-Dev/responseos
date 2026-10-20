@@ -9,10 +9,22 @@ async function main() {
   const { db } = await import("../lib/db/client");
   const loop = process.argv.includes("--loop");
   let readiness: ReturnType<typeof import("../lib/grok/watchdogReadiness").createWatchdogReadinessWriter> | undefined;
+  let server: import("node:http").Server | undefined;
   try {
     if (loop) {
       const { createWatchdogReadinessWriter } = await import("../lib/grok/watchdogReadiness");
       readiness = createWatchdogReadinessWriter();
+      const transport = process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_TRANSPORT ?? "local-file";
+      if (transport === "signed-https") {
+        const port = process.env.PORT;
+        if (!/^[1-9]\d{3,4}$/.test(port ?? "") || Number(port) < 1024 || Number(port) > 65535) throw Error("watchdog_port_invalid");
+        const { createWatchdogReadinessServer } = await import("../lib/grok/watchdogRemoteReadiness");
+        server = createWatchdogReadinessServer();
+        await new Promise<void>((resolve, reject) => {
+          server!.once("error", reject);
+          server!.listen(Number(port), "0.0.0.0", resolve);
+        });
+      } else if (transport !== "local-file") throw Error("watchdog_transport_invalid");
     }
     const { watchdogGrokSweep } = await import("../lib/grok/service");
     const { runGrokWatchdog } = await import("../lib/grok/watchdogLoop");
@@ -26,6 +38,8 @@ async function main() {
     if (!healthy) throw Error("grok_watchdog_sweep_failed");
   } finally {
     readiness?.clear();
+    server?.closeAllConnections();
+    if (server) await new Promise<void>(resolve => server!.close(() => resolve()));
     await db?.$disconnect();
   }
 }

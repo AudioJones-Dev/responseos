@@ -192,3 +192,5 @@ Local startup-readiness regression and inactive hosting lifecycle are under revi
 Local EXPERIMENTAL watchdog-readiness P2 successor requires fresh active-loop sweep proof before qualification; inactive liveness cannot authorize calls. See [contract](readiness/FRL_GROK_WATCHDOG_READINESS_2026-10-20.md). No hosted or activation gate advances.
 
 Local caller-impact successor documents and tests termination of active calls on watchdog readiness loss, including restart. Reviewed f7ea48b/958fda6 remains frozen. Caller-impact acceptance, hosted timing/layout and live gates remain open; no runtime or milestone expansion. [Contract](readiness/FRL_GROK_WATCHDOG_READINESS_2026-10-20.md#caller-impact-and-release-acceptance).
+
+Local cross-host watchdog readiness successor is in implementation under ADR-0080. Exact-pair independent review, caller-impact acceptance, hosted timing/safety checks and supervised-demo release acceptance remain open.

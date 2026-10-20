@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   const required = process.env.RESPONSEOS_QUALIFICATION_ACTIVATION === "ENABLED";
-  const ready = !required || watchdogReady();
+  const ready = !required || await watchdogReady();
   return NextResponse.json({
     status: ready ? "ok" : "not_ready",
     service: "responseos",

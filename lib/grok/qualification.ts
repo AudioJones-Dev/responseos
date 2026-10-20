@@ -32,13 +32,15 @@ export function qualificationConfigHash() {
     process.env.RESPONSEOS_QUALIFICATION_XAI_TEAM, process.env.RESPONSEOS_QUALIFICATION_XAI_PROJECT, process.env.RESPONSEOS_LIVE_HUBSPOT_ENABLED, process.env.RESPONSEOS_LIVE_EMAIL_ENABLED,
     process.env.RESPONSEOS_GROK_WATCHDOG_MODE, process.env.RESPONSEOS_GROK_WATCHDOG_ENABLED,
     process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_FILE, process.env.RESPONSEOS_GROK_WATCHDOG_INSTANCE,
+    process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_TRANSPORT, process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_URL,
+    qualificationHash(process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_KEY ?? ""),
   ]));
 }
 
-export function readQualification(now = new Date()): Qualification {
+export async function readQualification(now = new Date()): Promise<Qualification> {
   try {
     if (process.env.RESPONSEOS_QUALIFICATION_ACTIVATION !== "ENABLED" || process.env.RESPONSEOS_REQUIRE_AUTH !== "true") throw Error();
-    if (!watchdogReady()) throw Error();
+    if (!await watchdogReady()) throw Error();
     if (process.env.RESPONSEOS_LIVE_HUBSPOT_ENABLED !== "false" || process.env.RESPONSEOS_LIVE_EMAIL_ENABLED !== "false") throw Error();
     const file = process.env.RESPONSEOS_QUALIFICATION_FILE, digest = process.env.RESPONSEOS_QUALIFICATION_SHA256;
     if (!file || !digest || !sha.safeParse(digest).success) throw Error();
@@ -69,7 +71,7 @@ async function assertQualificationTarget(tx: Prisma.TransactionClient, s: GrokCa
 }
 
 export async function reserveQualification(tx: Prisma.TransactionClient, s: GrokCallSession, now: Date) {
-  const p = readQualification(now);
+  const p = await readQualification(now);
   if (s.account_id !== p.accountId || s.assignment_id !== p.assignmentId) throw Error("qualification_target_mismatch");
   await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(194822, 1)`;
   const active = await tx.grokQualificationReservation.findFirst({ where: { active_slot: "qualification" }, include: { session: { include: { capture: true } } } });
@@ -84,7 +86,7 @@ export async function reserveQualification(tx: Prisma.TransactionClient, s: Grok
   const verified = await assertStoredWebhookIdentity(event.id, tx);
   const payload = parseCallControlEvent(verified.raw_body)?.data.payload;
   if (payload?.connection_id !== p.connectionId || payload.to !== p.e164) throw Error("qualification_provider_identity_mismatch");
-  if (!watchdogReady()) throw Error("grok_provider_contract_unqualified");
+  if (!await watchdogReady()) throw Error("grok_provider_contract_unqualified");
   return tx.grokQualificationReservation.create({ data: { session_id: s.id, policy_json: p, policy_hash: qualificationHash(JSON.stringify(p)), admitted_at: now, deadline: new Date(Math.min(Date.parse(p.expiresAt), now.getTime() + p.maxDurationMs)), active_slot: "qualification" } });
 }
 
@@ -92,7 +94,7 @@ export async function qualificationAlive(tx: Prisma.TransactionClient, s: GrokCa
   const reservation = await tx.grokQualificationReservation.findUnique({ where: { session_id: s.id } });
   if (!reservation || reservation.released_at || reservation.deadline <= now) return false;
   try {
-    const policy = readQualification(now);
+    const policy = await readQualification(now);
     if (reservation.policy_hash !== qualificationHash(JSON.stringify(policy))) return false;
     await assertQualificationTarget(tx, s, policy);
     return true;
@@ -100,7 +102,7 @@ export async function qualificationAlive(tx: Prisma.TransactionClient, s: GrokCa
 }
 
 export async function authorizeQualificationTransport(action: "streaming_start" | "realtime_audio" | "hangup", resource?: string, commandId?: string) {
-  if (action !== "hangup") readQualification();
+  if (action !== "hangup") await readQualification();
   if (!db) throw Error("grok_provider_contract_unqualified");
   let p: Qualification;
   if (action === "hangup") {
@@ -110,7 +112,7 @@ export async function authorizeQualificationTransport(action: "streaming_start" 
     p = qualificationSchema.parse(reservation.policy_json);
     if (qualificationHash(JSON.stringify(p)) !== reservation.policy_hash || p.accountId !== command.session.account_id || p.assignmentId !== command.session.assignment_id) throw Error("qualification_termination_unbound");
   } else {
-    p = readQualification();
+    p = await readQualification();
     if (action === "realtime_audio") {
       const session = await db.grokCallSession.findUnique({ where: { id: resource ?? "" } });
       if (!session || !session.worker_token || session.stopped_at || !await qualificationAlive(db as unknown as Prisma.TransactionClient, session, new Date())) throw Error("qualification_realtime_unbound");
@@ -122,6 +124,6 @@ export async function authorizeQualificationTransport(action: "streaming_start" 
   }
   const key = action === "realtime_audio" ? process.env.XAI_API_KEY : process.env.TELNYX_API_KEY;
   if (!key || qualificationHash(key) !== (action === "realtime_audio" ? p.xaiKeySha256 : p.telnyxKeySha256)) throw Error("qualification_credential_mismatch");
-  if (action !== "hangup" && !watchdogReady()) throw Error("grok_provider_contract_unqualified");
+  if (action !== "hangup" && !await watchdogReady()) throw Error("grok_provider_contract_unqualified");
   return action === "realtime_audio" ? p.xaiKeySha256 : p.telnyxKeySha256;
 }

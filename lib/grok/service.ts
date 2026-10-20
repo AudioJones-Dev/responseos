@@ -48,7 +48,7 @@ async function stop(tx: Prisma.TransactionClient, s: GrokCallSession, reason: st
 
 export async function beginGrokHandoff(t: AiStartTarget) {
   const actor = await requireReviewOperator();
-  provider.assertGrokQualified();
+  await provider.assertGrokQualified();
   const token = randomBytes(32).toString("hex");
   const claim = await database().$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "CallCaptureSession" WHERE id=${t.id} AND account_id=${t.account_id} FOR NO KEY UPDATE`;
@@ -174,7 +174,7 @@ export async function watchdogGrokSweep() {
 }
 
 export async function claimGrokWorker(id: string) {
-  provider.assertGrokQualified();
+  await provider.assertGrokQualified();
   return database().$transaction(async tx => {
     const s = await lock(tx, id), now = await clock(tx);
     if (!await qualificationAlive(tx, s, now) || !s.xai_call_id || s.worker_token || s.stopped_at || s.lease_expires_at <= now || await authority(target(s), tx) !== s.authority_digest) throw Error("grok_worker_not_eligible");
@@ -223,7 +223,7 @@ export async function runGrokWorker(id: string) {
 }
 
 export async function claimGrokMedia(headers: Headers, rawStart: string, trusted: { streamUrl: string; publicKey: string }) {
-  provider.assertGrokQualified();
+  await provider.assertGrokQualified();
   const proof = authenticateStream(headers, trusted.streamUrl, trusted.publicKey);
   if (Buffer.byteLength(rawStart) > 16384) throw Error("stream_start_too_large");
   const frame = startFrame.parse(JSON.parse(rawStart));

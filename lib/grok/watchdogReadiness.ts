@@ -4,23 +4,23 @@ import { isAbsolute } from "node:path";
 
 export const WATCHDOG_FRESHNESS_MS = 3000;
 
-function binding() {
+export function watchdogBinding(requireFile = true) {
   const file = process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_FILE;
   const applicationSha = process.env.RESPONSEOS_APPLICATION_SHA;
   const controlSha = process.env.RESPONSEOS_CONTROL_SHA;
   const instanceId = process.env.RESPONSEOS_GROK_WATCHDOG_INSTANCE;
   if (process.env.RESPONSEOS_GROK_WATCHDOG_MODE !== "active" ||
       process.env.RESPONSEOS_GROK_WATCHDOG_ENABLED !== "true" ||
-      !file || !isAbsolute(file) || !/^[0-9a-f]{40}$/.test(applicationSha ?? "") ||
+      (requireFile && (!file || !isAbsolute(file))) || !/^[0-9a-f]{40}$/.test(applicationSha ?? "") ||
       !/^[0-9a-f]{40}$/.test(controlSha ?? "") || !/^[A-Za-z0-9_-]{16,128}$/.test(instanceId ?? "")) {
     throw Error("grok_watchdog_not_ready");
   }
-  return { file, applicationSha, controlSha, instanceId };
+  return { file: file!, applicationSha: applicationSha!, controlSha: controlSha!, instanceId: instanceId! };
 }
 
-export function watchdogReady(now = Date.now()) {
+export function localWatchdogReady(now = Date.now()) {
   try {
-    const expected = binding(), bytes = readFileSync(expected.file, "utf8");
+    const expected = watchdogBinding(), bytes = readFileSync(expected.file, "utf8");
     if (bytes.length > 1024) return false;
     const proof = JSON.parse(bytes);
     return proof.version === 1 && proof.mode === "active" && proof.loop === true &&
@@ -31,7 +31,7 @@ export function watchdogReady(now = Date.now()) {
 }
 
 export function createWatchdogReadinessWriter() {
-  const expected = binding();
+  const expected = watchdogBinding();
   function clear() { rmSync(expected.file, { force: true }); }
   clear();
   return {
@@ -49,4 +49,12 @@ export function createWatchdogReadinessWriter() {
       } finally { rmSync(temporary, { force: true }); }
     },
   };
+}
+
+export async function watchdogReady(now = Date.now()) {
+  const transport = process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_TRANSPORT ?? "local-file";
+  if (transport === "local-file") return localWatchdogReady(now);
+  if (transport !== "signed-https") return false;
+  const { remoteWatchdogReady } = await import("./watchdogRemoteReadiness");
+  return remoteWatchdogReady();
 }

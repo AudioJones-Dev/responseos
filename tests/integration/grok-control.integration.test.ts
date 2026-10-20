@@ -84,7 +84,7 @@ async function networkFixture(malformedCarrierResponse = false, managedEdge = fa
   const peerOrigin = `https://127.0.0.1:${(peer.address() as AddressInfo).port}`;
   const carrierTransport = createCarrierTransport({ mode: "local-synthetic", origin: peerOrigin, ca: tls.cert });
   const keys = generateKeyPairSync("ed25519"), port = await unusedPort(), streamUrl = `wss://127.0.0.1:${port}/media?version=1`;
-  const runtime = createGrokMediaServer({ streamUrl, publicKey: keys.publicKey.export({ format: "der", type: "spki" }).subarray(-32).toString("base64"), ...(managedEdge ? { ingress: "managed-edge-http" as const } : { tls }), realtime: { mode: "local-synthetic", origin: peerOrigin, ca: tls.cert } });
+  const runtime = await createGrokMediaServer({ streamUrl, publicKey: keys.publicKey.export({ format: "der", type: "spki" }).subarray(-32).toString("base64"), ...(managedEdge ? { ingress: "managed-edge-http" as const } : { tls }), realtime: { mode: "local-synthetic", origin: peerOrigin, ca: tls.cert } });
   runtime.server.listen(managedEdge ? 0 : port, "127.0.0.1"); await once(runtime.server, "listening");
   const backendPort = (runtime.server.address() as AddressInfo).port;
   const proxy = managedEdge ? httpsServer(tls) : undefined;

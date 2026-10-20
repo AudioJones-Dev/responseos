@@ -13,55 +13,55 @@ function setup() {
   fixture.stopReadiness();
   return createWatchdogReadinessWriter();
 }
-test.each([undefined, "", "inactive", "unknown"])("mode %s cannot qualify even with a recent proof", mode => {
+test.each([undefined, "", "inactive", "unknown"])("mode %s cannot qualify even with a recent proof", async mode => {
   const writer = setup(); writer.completed(true);
   vi.stubEnv("RESPONSEOS_GROK_WATCHDOG_MODE", mode);
-  expect(watchdogReady()).toBe(false);
-  expect(() => readQualification()).toThrow("unqualified");
+  expect(await watchdogReady()).toBe(false);
+  await expect(readQualification()).rejects.toThrow("unqualified");
 });
-test.each(["false", "", undefined])("enabled flag %s cannot qualify", enabled => {
+test.each(["false", "", undefined])("enabled flag %s cannot qualify", async enabled => {
   const writer = setup(); writer.completed(true);
   vi.stubEnv("RESPONSEOS_GROK_WATCHDOG_ENABLED", enabled);
-  expect(watchdogReady()).toBe(false);
-  expect(() => readQualification()).toThrow("unqualified");
+  expect(await watchdogReady()).toBe(false);
+  await expect(readQualification()).rejects.toThrow("unqualified");
 });
 test.each([
   { mode: "inactive" }, { loop: false }, { applicationSha: "c".repeat(40) },
   { controlSha: "c".repeat(40) }, { instanceId: "other-instance-id" },
   { completedAt: "now" }, { completedAt: 0 },
-])("rejects mismatched or invalid proof %j", change => {
+])("rejects mismatched or invalid proof %j", async change => {
   const writer = setup(); writer.completed(true);
   const file = process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_FILE!;
   const proof = JSON.parse(readFileSync(file, "utf8"));
   writeFileSync(file, JSON.stringify({ ...proof, ...change }));
-  expect(watchdogReady()).toBe(false);
-  expect(() => readQualification()).toThrow("unqualified");
+  expect(await watchdogReady()).toBe(false);
+  await expect(readQualification()).rejects.toThrow("unqualified");
 });
-test("freshness boundary, future timestamps, malformed/missing files fail closed", () => {
+test("freshness boundary, future timestamps, malformed/missing files fail closed", async () => {
   const writer = setup(); writer.completed(true);
   const file = process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_FILE!;
   const proof = JSON.parse(readFileSync(file, "utf8"));
-  expect(watchdogReady(proof.completedAt)).toBe(true);
-  expect(watchdogReady(proof.completedAt + WATCHDOG_FRESHNESS_MS - 1)).toBe(true);
-  expect(watchdogReady(proof.completedAt + WATCHDOG_FRESHNESS_MS)).toBe(false);
-  expect(watchdogReady(proof.completedAt - 1)).toBe(false);
-  writeFileSync(file, "{"); expect(watchdogReady()).toBe(false);
-  writer.clear(); expect(watchdogReady()).toBe(false);
+  expect(await watchdogReady(proof.completedAt)).toBe(true);
+  expect(await watchdogReady(proof.completedAt + WATCHDOG_FRESHNESS_MS - 1)).toBe(true);
+  expect(await watchdogReady(proof.completedAt + WATCHDOG_FRESHNESS_MS)).toBe(false);
+  expect(await watchdogReady(proof.completedAt - 1)).toBe(false);
+  writeFileSync(file, "{"); expect(await watchdogReady()).toBe(false);
+  writer.clear(); expect(await watchdogReady()).toBe(false);
 });
 test("only a completed healthy sweep publishes readiness; failures and restart revoke it", async () => {
   const writer = setup();
   let finish!: (value: { inspected: number; failed: number }) => void;
   const pending = runGrokWatchdog({ loop: false, sweep: () => new Promise(resolve => { finish = resolve; }), pause: vi.fn(), alert: vi.fn(), completed: writer.completed });
-  expect(watchdogReady()).toBe(false);
+  expect(await watchdogReady()).toBe(false);
   finish({ inspected: 0, failed: 0 }); await pending;
-  expect(watchdogReady()).toBe(true);
+  expect(await watchdogReady()).toBe(true);
   for (const sweep of [async () => ({ inspected: 1, failed: 1 }), async () => { throw Error("synthetic_failure"); }]) {
     await runGrokWatchdog({ loop: false, sweep, pause: vi.fn(), alert: vi.fn(), completed: writer.completed });
-    expect(watchdogReady()).toBe(false);
+    expect(await watchdogReady()).toBe(false);
     writer.completed(true);
   }
   createWatchdogReadinessWriter();
-  expect(watchdogReady()).toBe(false);
+  expect(await watchdogReady()).toBe(false);
 });
 test("activation health is 503 without active sweep proof and 200 only while proof is fresh", async () => {
   const writer = setup();

@@ -135,3 +135,5 @@ disabled. No authority or live credential is issued.
 13. Existing release and hosting/activation approvals remain required.
 14. No credentials, compliance claims or new retained customer content.
 15. Required now to address Claude's P2 before any live call.
+
+Cross-host successor: [ADR-0080 protocol](FRL_GROK_CROSS_HOST_READINESS_2026-10-20.md) adds an explicit signed-https transport. The local-file mode above retains its same-host constraints; neither mode authorizes hosting or activation.

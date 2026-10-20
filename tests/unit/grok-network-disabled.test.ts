@@ -6,8 +6,8 @@ test("production network transports reject before reading credentials or opening
   const apiKey = vi.fn(() => "must-not-be-read"), config = { mode: "production" as const, apiKey };
   await expect(openRealtimeSocket(config, vi.fn(), vi.fn())).rejects.toThrow("unqualified");
   await expect(createCarrierTransport(config).hangup("call", "command")).rejects.toThrow("unqualified");
-  expect(() => createGrokMediaServer({ streamUrl: "wss://example.invalid/media", publicKey: "", tls: {}, realtime: config })).toThrow("unqualified");
-  expect(() => createGrokMediaServer({ streamUrl: "wss://example.invalid/media", publicKey: "", ingress: "managed-edge-http", realtime: config })).toThrow("unqualified");
+  await expect(createGrokMediaServer({ streamUrl: "wss://example.invalid/media", publicKey: "", tls: {}, realtime: config })).rejects.toThrow("unqualified");
+  await expect(createGrokMediaServer({ streamUrl: "wss://example.invalid/media", publicKey: "", ingress: "managed-edge-http", realtime: config })).rejects.toThrow("unqualified");
   expect(apiKey).not.toHaveBeenCalled();
 });
 

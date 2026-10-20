@@ -8,8 +8,8 @@ export type CommandResult = "accepted" | "failed" | "uncertain" | "disabled";
 export type VerifiedIncoming = { eventId: string; callId: string; correlationToken: string; bodyDigest: string };
 export type ControlConnection = { closed: Promise<void>; close: () => Promise<void> };
 
-export function assertGrokQualified(): void {
-  readQualification();
+export async function assertGrokQualified(): Promise<void> {
+  await readQualification();
 }
 
 export function grokSelected(): boolean {
@@ -25,7 +25,7 @@ export async function verifyIncomingSip(_raw: string, _headers: Headers): Promis
 }
 
 export async function handoffToGrok(session: GrokCallSession, token: string, commandId: string): Promise<CommandResult> {
-  try { assertGrokQualified(); } catch { return "disabled"; }
+  try { await assertGrokQualified(); } catch { return "disabled"; }
   const { createCarrierTransport } = await import("./networkTransport");
   return createCarrierTransport({ mode: "production", apiKey: () => process.env.TELNYX_API_KEY ?? "" }).start(session, token, process.env.RESPONSEOS_GROK_STREAM_URL ?? "", commandId);
 }

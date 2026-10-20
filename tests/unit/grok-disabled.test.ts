@@ -9,7 +9,7 @@ test("environment and credentials cannot enable an unqualified Grok provider", a
   vi.stubEnv("RESPONSEOS_VOICE_ENGINE", "grok-voice-3.0");
   vi.stubEnv("RESPONSEOS_LIVE_GROK_ENABLED", "true");
   expect(grokSelected()).toBe(true);
-  expect(() => assertGrokQualified()).toThrow("unqualified");
+  await expect(assertGrokQualified()).rejects.toThrow("unqualified");
   await expect(verifyIncomingSip("{}", new Headers())).rejects.toThrow("unqualified");
   expect(await terminateGrokCall("xai", "fixture", "fixture-command")).toBe("disabled");
 });

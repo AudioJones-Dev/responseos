@@ -1,4 +1,4 @@
-import { generateKeyPairSync, randomUUID, sign } from "node:crypto";
+import { createHmac, generateKeyPairSync, randomUUID, sign } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import { spawn, spawnSync } from "node:child_process";
 import { once } from "node:events";
@@ -7,7 +7,7 @@ import { afterAll, afterEach, beforeEach, expect, test, vi } from "vitest";
 import { prisma, resetAndSeedTestDb, disconnectTestDb, setDevSession } from "./setup";
 import { qualificationFixture } from "../qualificationFixture";
 import { beginGrokHandoff, requestGrokStop, dispatchGrokTermination, heartbeatGrok, watchdogGrokSweep, operatorEndGrok } from "@/lib/grok/service";
-import { authorizeQualificationTransport } from "@/lib/grok/qualification";
+import { authorizeQualificationTransport, qualificationConfigHash } from "@/lib/grok/qualification";
 import { recordWebhookEvent } from "@/lib/data/webhookEvents";
 import { ingestCallControlEvent } from "@/lib/callControl/service";
 import { parseCallControlEvent } from "@/lib/providers/telnyx/callControl";
@@ -31,7 +31,7 @@ beforeEach(async () => {
   io.handoff.mockReset().mockResolvedValue("accepted");
   io.terminate.mockReset().mockImplementation(async (_provider, resource, command) => { await authorizeQualificationTransport("hangup", resource, command); return "accepted"; });
 });
-afterEach(() => { f?.cleanup(); vi.unstubAllEnvs(); vi.restoreAllMocks(); });
+afterEach(() => { f?.cleanup(); vi.unstubAllEnvs(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 afterAll(async () => { await disconnectTestDb(); vi.doUnmock("@/lib/grok/provider"); vi.resetModules(); });
 async function capture(extra = {}) {
   const c = await prisma.callCaptureSession.create({ data: { account_id: f.policy.accountId, provider_call_id: randomUUID(), assignment_id: f.policy.assignmentId, snapshot_id: "synthetic", snapshot_json: {}, call_session_id: randomUUID(), call_leg_id: randomUUID(), control_state: "START_PENDING", dtmf_decision: "affirmative", disclosure_completed_at: new Date() } });
@@ -77,7 +77,22 @@ test("lost watchdog readiness denies audio authority but preserves one-shot term
   await dispatchGrokTermination(started.sessionId);
   expect(io.terminate).toHaveBeenCalledTimes(1);
 });
-test.each(["missing", "expired", "failed-sweep"])("active media readiness loss (%s) closes both sockets and consumes one hangup without confirming disconnection", async reason => {
+test.each(["missing", "expired", "failed-sweep", "remote-unavailable"])("active media readiness loss (%s) closes both sockets and consumes one hangup without confirming disconnection", async reason => {
+  let remoteReady = true;
+  if (reason === "remote-unavailable") {
+    const key = "d4".repeat(32);
+    vi.stubEnv("RESPONSEOS_GROK_WATCHDOG_READINESS_TRANSPORT", "signed-https");
+    vi.stubEnv("RESPONSEOS_GROK_WATCHDOG_READINESS_URL", "https://watchdog.invalid/readiness");
+    vi.stubEnv("RESPONSEOS_GROK_WATCHDOG_READINESS_KEY", key);
+    f.policy.configSha256 = qualificationConfigHash(); f.save();
+    vi.stubGlobal("fetch", vi.fn(async (_url, options) => {
+      if (!remoteReady) return new Response(null, { status: 503 });
+      const raw = JSON.stringify({ version: 1, applicationSha: f.policy.applicationSha, controlSha: f.policy.controlSha,
+        instanceId: process.env.RESPONSEOS_GROK_WATCHDOG_INSTANCE, nonce: options.headers["x-watchdog-challenge"], ready: true, ageMs: 0 });
+      return new Response(raw, { headers: { "content-type": "application/json",
+        "x-watchdog-signature": createHmac("sha256", Buffer.from(key, "hex")).update("response-v1\n" + raw).digest("hex") } });
+    }));
+  }
   const c = await capture(), started = await beginGrokHandoff(c);
   const token = io.handoff.mock.calls.at(-1)![1] as string;
   const keys = generateKeyPairSync("ed25519"), streamUrl = process.env.RESPONSEOS_GROK_STREAM_URL!;
@@ -92,7 +107,7 @@ test.each(["missing", "expired", "failed-sweep"])("active media readiness loss (
   try {
     await bridge.xai(JSON.stringify({ type: "session.updated", session: { ...realtimeConfig.session, id: "readiness-impact", model: "grok-voice-3.0" } }));
     expect(bridge.acceptingAudio).toBe(true);
-    f.stopReadiness();
+    f.stopReadiness(); remoteReady = false;
     const writer = createWatchdogReadinessWriter();
     if (reason === "expired") {
       writer.completed(true);
@@ -104,13 +119,13 @@ test.each(["missing", "expired", "failed-sweep"])("active media readiness loss (
       writer.completed(true);
       await runGrokWatchdog({ loop: false, sweep: async () => ({ inspected: 1, failed: 1 }), completed: writer.completed, pause: vi.fn(), alert: vi.fn() });
     }
-    expect(watchdogReady()).toBe(false);
+    expect(await watchdogReady()).toBe(false);
     await vi.waitFor(() => expect(io.terminate).toHaveBeenCalledTimes(1), { timeout: 5000 });
     expect(carrier.close).toHaveBeenCalledTimes(1); expect(realtime.close).toHaveBeenCalledTimes(1);
     expect(bridge.acceptingAudio).toBe(false);
     expect(carrier.send.mock.calls.some(([raw]) => JSON.parse(raw).event === "clear")).toBe(true);
     const mediaCount = carrier.send.mock.calls.filter(([raw]) => JSON.parse(raw).event === "media").length;
-    writer.completed(true);
+    writer.completed(true); remoteReady = true;
     await bridge.xai(JSON.stringify({ type: "response.output_audio.delta", response_id: "late", delta: Buffer.alloc(160).toString("base64") }));
     expect(carrier.send.mock.calls.filter(([raw]) => JSON.parse(raw).event === "media")).toHaveLength(mediaCount);
     const session = await prisma.grokCallSession.findUniqueOrThrow({ where: { id: started.sessionId } });
@@ -139,7 +154,7 @@ test("active readiness expires while a sweep is blocked and later success cannot
     await dispatchGrokTermination(started.sessionId);
     expect(io.terminate).toHaveBeenCalledTimes(1);
   } finally { finish({ inspected: 1, failed: 0 }); await sweep; }
-  expect(watchdogReady()).toBe(true);
+  expect(await watchdogReady()).toBe(true);
   expect(await heartbeatGrok(started.sessionId, token)).toBe(false);
   await dispatchGrokTermination(started.sessionId);
   expect(io.terminate).toHaveBeenCalledTimes(1);
@@ -158,7 +173,7 @@ test("restarted active watchdog first sweep stops a previously healthy call befo
       const session = await prisma.grokCallSession.findUniqueOrThrow({ where: { id: started.sessionId } });
       expect(session.stopped_at).not.toBeNull();
       expect(session.stop_reason).toBe("withdrawal_or_control_loss");
-      expect(watchdogReady()).toBe(true);
+      expect(await watchdogReady()).toBe(true);
       expect(JSON.parse(readFileSync(process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_FILE!, "utf8")).completedAt).toBeGreaterThan(before);
     }, { timeout: 10000 });
     child.kill("SIGKILL"); await exited;
@@ -199,14 +214,14 @@ test("a separate active watchdog must finish a sweep; a killed process loses rea
   f.stopReadiness();
   const oneShot = spawnSync(process.execPath, ["--import", "tsx", "scripts/grok-watchdog.ts"], { env: { ...process.env }, encoding: "utf8", timeout: 15000 });
   expect(oneShot.status).toBe(0);
-  expect(watchdogReady()).toBe(false);
+  expect(await watchdogReady()).toBe(false);
   const child = spawn(process.execPath, ["--import", "tsx", "scripts/grok-watchdog.ts", "--loop"], { env: { ...process.env }, stdio: "ignore" });
   const exited = once(child, "exit");
   try {
-    await vi.waitFor(() => expect(watchdogReady()).toBe(true), { timeout: 10000 });
+    await vi.waitFor(async () => expect(await watchdogReady()).toBe(true), { timeout: 10000 });
     child.kill("SIGKILL"); await exited;
     await new Promise(resolve => setTimeout(resolve, WATCHDOG_FRESHNESS_MS + 50));
-    expect(watchdogReady()).toBe(false);
+    expect(await watchdogReady()).toBe(false);
     await expect(beginGrokHandoff(await capture())).rejects.toThrow("unqualified");
     expect(io.handoff).not.toHaveBeenCalled();
   } finally { if (child.exitCode === null && child.signalCode === null) { child.kill("SIGKILL"); await exited; } }
