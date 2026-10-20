@@ -13,6 +13,7 @@ import { parseCallControlEvent } from "@/lib/providers/telnyx/callControl";
 import { mediaClientState } from "@/lib/grok/mediaContract";
 import { watchdogReady, WATCHDOG_FRESHNESS_MS } from "@/lib/grok/watchdogReadiness";
 import { db } from "@/lib/db/client";
+import type { Prisma } from "@prisma/client";
 
 const io = vi.hoisted(() => { vi.resetModules(); return { handoff: vi.fn(), terminate: vi.fn() }; });
 vi.mock("@/lib/grok/provider", async original => ({ ...await original<typeof import("@/lib/grok/provider")>(), handoffToGrok: io.handoff, terminateGrokCall: io.terminate }));
@@ -75,8 +76,20 @@ test("lost watchdog readiness denies audio authority but preserves one-shot term
 });
 test("readiness revoked during target lookup cannot reserve or dispatch", async () => {
   const c = await capture();
-  vi.spyOn(db!.telephonyNumberAssignment, "count").mockImplementationOnce(async () => { f.stopReadiness(); return 1; });
+  const original = db!.$transaction.bind(db!);
+  let revoked = false;
+  vi.spyOn(db!, "$transaction").mockImplementationOnce((async (callback: (tx: Prisma.TransactionClient) => Promise<unknown>) =>
+    original(async tx => {
+      const count = tx.telephonyNumberAssignment.count.bind(tx.telephonyNumberAssignment);
+      vi.spyOn(tx.telephonyNumberAssignment, "count").mockImplementationOnce(async args => {
+        const result = await count(args);
+        f.stopReadiness(); revoked = true;
+        return result;
+      });
+      return callback(tx);
+    })) as NonNullable<typeof db>["$transaction"]);
   await expect(beginGrokHandoff(c)).rejects.toThrow("unqualified");
+  expect(revoked).toBe(true);
   expect(await prisma.grokQualificationReservation.count()).toBe(0);
   expect(io.handoff).not.toHaveBeenCalled();
 });
