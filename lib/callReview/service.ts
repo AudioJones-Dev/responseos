@@ -160,7 +160,7 @@ export async function queueCallReview(accountId: string, callId: string, payload
         ...(preserved ? ["This event carried no analysis; earlier analysis was preserved."] : !extracted.summary ? ["Extraction missing or failed."] : []),
       ],
     };
-    return tx.callReview.create({ data: { account_id: accountId, call_id: callId, revision: (latest?.revision ?? 0) + 1, source_hash: hash, evidence_json: { transcript: call.transcript, summary: call.summary, snapshotId: capture.snapshot_id }, payload_json: draft as Prisma.InputJsonValue, recipient: recipient?.enabled ? recipient.recipient : "" } });
+    return tx.callReview.create({ data: { account_id: accountId, call_id: callId, revision: (latest?.revision ?? 0) + 1, source_hash: hash, evidence_json: { transcript: call.transcript, summary: call.summary, snapshotId: capture.snapshot_id, ...(capture.admission_mode === "pilot" ? { pilot: true } : {}) }, payload_json: draft as Prisma.InputJsonValue, recipient: recipient?.enabled ? recipient.recipient : "" } });
   };
   if (client) return run(client);
   const located = await db.call.findFirst({ where: { id: callId, account_id: accountId }, select: { provider_call_id: true } });
@@ -299,7 +299,7 @@ export async function dispatchCallReview(id: string) {
     if (latestNow?.id !== id && !crmBoundToReview(await db.crmSyncOperation.findUnique({ where: { operation_key: `crm-call:${row.account_id}:${row.call_id}`, account_id: row.account_id } }), id, row.payload_json)) throw new Error("stale_review");
     const fenced = await db.callReview.updateMany({ where: { id, account_id: row.account_id, status: "approved", dispatch_at: claimedAt }, data: { email_attempt_at: row.email_attempt_at ?? new Date(), email_status: "sending" } });
     if (!fenced.count) throw new Error("dispatch_claim_lost");
-    const message = reviewMessage(value, row.call_id);
+    const message = reviewMessage(value, row.call_id, (row.evidence_json as { pilot?: boolean }).pilot === true);
     if (await callHasWithdrawal(row.account_id, row.call_id)) throw new Error("withdrawal_is_terminal");
     sent = await provider.send({ to: row.recipient, ...message, idempotencyKey: `review:${id}` });
     await db.callReview.update({ where: { id, account_id: row.account_id }, data: { email_status: "accepted", email_message_id: sent.providerMessageId } });

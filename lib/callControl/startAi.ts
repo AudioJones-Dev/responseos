@@ -7,6 +7,7 @@ import { providerCallHasWithdrawal } from "@/lib/callReview/withdrawal";
 import { requireReviewOperator } from "@/lib/callReview/service";
 import { assertStoredWebhookIdentity } from "@/lib/data/webhookEvents";
 import { parseCallControlEvent, sendTelnyxCallCommand } from "@/lib/providers/telnyx/callControl";
+import { captureAssignmentStatus } from "./admission";
 
 export type AiStartTarget = Pick<CallCaptureSession, "id" | "account_id" | "provider_call_id" | "assignment_id" | "generation" | "call_session_id" | "call_leg_id">;
 const digest = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
@@ -32,7 +33,7 @@ export async function validateCaptureAiEligibility(target: AiStartTarget, client
   let state: { captureId?: unknown; generation?: unknown };
   try { state = JSON.parse(Buffer.from(payload.client_state ?? "", "base64").toString("utf8")); } catch { throw Error("ai_start_dtmf_identity_mismatch"); }
   if (!state || state.captureId !== capture.id || state.generation !== capture.generation) throw Error("ai_start_dtmf_identity_mismatch");
-  const assignment = await client.telephonyNumberAssignment.findFirst({ where: { id: capture.assignment_id, account_id: capture.account_id, status: "qualification", unassigned_at: null } });
+  const assignment = await client.telephonyNumberAssignment.findFirst({ where: { id: capture.assignment_id, account_id: capture.account_id, status: captureAssignmentStatus(capture), unassigned_at: null } });
   if (!assignment?.provider_assistant_id) throw Error("qualification_assignment_mismatch");
   const now = (await client.$queryRaw<{ now: Date }[]>`SELECT clock_timestamp() AS now`)[0].now;
   if (assignment.assigned_at > now) throw Error("qualification_assignment_mismatch");

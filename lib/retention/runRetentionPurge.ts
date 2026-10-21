@@ -9,6 +9,7 @@ import {
   releaseQuarantinedAssignments,
 } from "@/lib/prospectBootstrap/service";
 import { purgeExpiredDemoCallContent } from "./demoCallContent";
+import { purgeExpiredPilotTranscripts } from "./pilotTranscripts";
 import type { RetentionPurgeMode } from "./purgePolicy";
 
 export type RetentionSweepKey =
@@ -19,6 +20,7 @@ export type RetentionSweepKey =
   | "number_quarantine"
   | "webhook_payloads"
   | "demo_call_content"
+  | "pilot_transcripts"
   | "clerk_payloads";
 
 export interface RetentionSweepReport {
@@ -118,6 +120,12 @@ export async function runRetentionPurge(params: {
         await purgeExpiredDemoCallContent({ accountId: demoAccountId!, now, preview }),
         "calls",
       ),
+    },
+    {
+      key: "pilot_transcripts",
+      label: "Live pilot call transcripts (30 days)",
+      unit: "sessions",
+      run: async (preview) => primary(await purgeExpiredPilotTranscripts({ now, preview }), "sessions"),
     },
     {
       key: "clerk_payloads",

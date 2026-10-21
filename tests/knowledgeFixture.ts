@@ -4,7 +4,7 @@ import path from "node:path";
 import { vi } from "vitest";
 import { knowledgeHash } from "@/lib/grok/demoKnowledge";
 
-export function knowledgeFixture(accountId = "synthetic-demo", agentProfile?: "frl-sam-ara-v1") {
+export function knowledgeFixture(accountId = "synthetic-demo", agentProfile?: "frl-sam-ara-v1" | "frl-sam-ara-pilot-v1") {
   const directory = mkdtempSync(path.join(tmpdir(), "knowledge-test-"));
   const file = path.join(directory, "knowledge.json");
   const packet = { schemaVersion: 1, status: "approved", version: "synthetic-v1", approvalId: "synthetic-not-owner-approval", accountId,

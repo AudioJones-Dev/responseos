@@ -9,21 +9,38 @@ import { providerCallHasWithdrawal } from "@/lib/callReview/withdrawal";
 import { parseCallControlEvent } from "@/lib/providers/telnyx/callControl";
 import { watchdogReady, watchdogReadinessDeadline } from "./watchdogReadiness";
 import { readDemoKnowledge } from "./demoKnowledge";
+import { supervisedExecutionAuthorized } from "@/lib/agentExecution/supervisedRuntime";
 
 const id = z.string().regex(/^[A-Za-z0-9_-]{1,128}$/);
 const sha = z.string().regex(/^[0-9a-f]{64}$/);
-export const qualificationSchema = z.object({
-  version: z.literal(1), mode: z.literal("carrier-qualification"), enabled: z.literal(true),
+const authorityFields = {
+  version: z.literal(1), enabled: z.literal(true),
   authorityId: id, applicationSha: z.string().regex(/^[0-9a-f]{40}$/), controlSha: z.string().regex(/^[0-9a-f]{40}$/), configSha256: sha,
   accountId: id, assignmentId: id, numberId: id, providerNumberId: id, e164: z.string().regex(/^\+[1-9][0-9]{7,14}$/),
   telnyxAccountId: id, connectionId: id, xaiTeamId: id, xaiProjectId: id,
   telnyxKeySha256: sha, xaiKeySha256: sha,
-  knowledge: z.object({ version: id, sha256: sha }).strict().optional(),
   notBefore: z.string().datetime(), expiresAt: z.string().datetime(),
-  maxConcurrentCalls: z.literal(1), maxDurationMs: z.number().int().min(1000).max(300000),
+  maxConcurrentCalls: z.literal(1),
   actions: z.tuple([z.literal("streaming_start"), z.literal("realtime_audio"), z.literal("hangup")]),
-  crm: z.literal(false), email: z.literal(false), recording: z.literal(false), automaticTransfer: z.literal(false),
+  recording: z.literal(false), automaticTransfer: z.literal(false),
+};
+/** Supervised demo with fictional details: no business effects, no transcript. */
+const carrierQualification = z.object({
+  ...authorityFields, mode: z.literal("carrier-qualification"),
+  knowledge: z.object({ version: id, sha256: sha }).strict().optional(),
+  maxDurationMs: z.number().int().min(1000).max(300000),
+  crm: z.literal(false), email: z.literal(false),
 }).strict();
+/** ADR-0082 live supervised pilot: real callers, consented transcript, operator-approved CRM and email. */
+export const PILOT_TRANSCRIPT_RETENTION_DAYS = 30;
+const carrierPilot = z.object({
+  ...authorityFields, mode: z.literal("carrier-pilot"),
+  knowledge: z.object({ version: id, sha256: sha }).strict(),
+  maxDurationMs: z.number().int().min(1000).max(900000),
+  crm: z.literal(true), email: z.literal(true),
+  transcript: z.literal(true), transcriptRetentionDays: z.literal(PILOT_TRANSCRIPT_RETENTION_DAYS),
+}).strict();
+export const qualificationSchema = z.discriminatedUnion("mode", [carrierQualification, carrierPilot]);
 export type Qualification = z.infer<typeof qualificationSchema>;
 export const qualificationHash = (value: string) => createHash("sha256").update(value).digest("hex");
 
@@ -39,8 +56,16 @@ export function qualificationConfigHash() {
     process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_TRANSPORT, process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_URL,
     qualificationHash(process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_KEY ?? ""),
     process.env.RESPONSEOS_GROK_WATCHDOG_READINESS_PUBLIC_KEY,
-    process.env.RESPONSEOS_DEMO_KNOWLEDGE_SHA256,
+    process.env.RESPONSEOS_DEMO_KNOWLEDGE_SHA256, process.env.RESPONSEOS_PILOT_ACTIVATION ?? null,
   ]));
+}
+
+/** The account and assignment a live pilot contract currently admits, if one is in force. */
+export function pilotAuthorityTarget(now = new Date()): { accountId: string; assignmentId: string } | null {
+  try {
+    const p = readQualificationContract(now);
+    return p.mode === "carrier-pilot" ? { accountId: p.accountId, assignmentId: p.assignmentId } : null;
+  } catch { return null; }
 }
 
 export async function readQualification(now = new Date()): Promise<Qualification> {
@@ -53,7 +78,6 @@ function readQualificationContract(now = new Date()): Qualification {
   try {
     if (process.env.RESPONSEOS_QUALIFICATION_ACTIVATION !== "ENABLED" || process.env.RESPONSEOS_REQUIRE_AUTH !== "true") throw Error();
     now = new Date(Math.max(now.getTime(), Date.now()));
-    if (process.env.RESPONSEOS_LIVE_HUBSPOT_ENABLED !== "false" || process.env.RESPONSEOS_LIVE_EMAIL_ENABLED !== "false") throw Error();
     const file = process.env.RESPONSEOS_QUALIFICATION_FILE, digest = process.env.RESPONSEOS_QUALIFICATION_SHA256;
     if (!file || !digest || !sha.safeParse(digest).success) throw Error();
     const bytes = readFileSync(file);
@@ -65,7 +89,12 @@ function readQualificationContract(now = new Date()): Qualification {
     if (url.protocol !== "wss:" || url.username || url.password || url.hash || url.href !== listener.streamUrl) throw Error();
     if (listener.mode !== "production" || listener.streamUrl !== process.env.RESPONSEOS_GROK_STREAM_URL || listener.publicKey !== process.env.TELNYX_PUBLIC_KEY) throw Error();
     const p = qualificationSchema.parse(JSON.parse(bytes.toString("utf8")));
+    const live = [process.env.RESPONSEOS_LIVE_HUBSPOT_ENABLED, process.env.RESPONSEOS_LIVE_EMAIL_ENABLED];
+    if (p.mode === "carrier-qualification" && (live.some(flag => flag !== "false") || process.env.RESPONSEOS_PILOT_ACTIVATION === "ENABLED")) throw Error();
+    if (p.mode === "carrier-pilot" && (live.some(flag => flag !== "true") || process.env.RESPONSEOS_PILOT_ACTIVATION !== "ENABLED")) throw Error();
     const knowledge = readDemoKnowledge(p.accountId, now.getTime());
+    // The pilot script only runs under pilot authority, and the demo script never does.
+    if ((p.mode === "carrier-pilot") !== Boolean(knowledge?.pilot)) throw Error();
     if (Boolean(p.knowledge) !== Boolean(knowledge) || (p.knowledge &&
       (p.knowledge.version !== knowledge?.version || p.knowledge.sha256 !== knowledge?.sha256))) throw Error();
     if (p.applicationSha !== process.env.RESPONSEOS_APPLICATION_SHA || p.controlSha !== process.env.RESPONSEOS_CONTROL_SHA || p.configSha256 !== qualificationConfigHash()
@@ -79,10 +108,11 @@ function readQualificationContract(now = new Date()): Qualification {
 }
 
 async function assertQualificationTarget(tx: Prisma.TransactionClient, s: GrokCallSession, p: Qualification) {
+  const pilot = p.mode === "carrier-pilot";
   const account = await tx.account.findUnique({ where: { id: p.accountId } });
-  const assignment = await tx.telephonyNumberAssignment.findFirst({ where: { id: p.assignmentId, account_id: p.accountId, telephony_number_id: p.numberId, status: "qualification", unassigned_at: null } });
+  const assignment = await tx.telephonyNumberAssignment.findFirst({ where: { id: p.assignmentId, account_id: p.accountId, telephony_number_id: p.numberId, ...(pilot ? { bootstrap_id: null } : {}), status: pilot ? "active" : "qualification", unassigned_at: null } });
   const number = await tx.telephonyNumber.findFirst({ where: { id: p.numberId, provider: "telnyx", provider_number_id: p.providerNumberId, e164: p.e164, released_at: null, status: "assigned" } });
-  if (s.account_id !== p.accountId || s.assignment_id !== p.assignmentId || account?.account_type !== "internal_demo" || !assignment || assignment.number_exclusivity_key !== p.numberId || !number || await tx.telephonyNumberAssignment.count({ where: { telephony_number_id: p.numberId, unassigned_at: null } }) !== 1) throw Error("qualification_provider_identity_mismatch");
+  if (s.account_id !== p.accountId || s.assignment_id !== p.assignmentId || account?.account_type !== (pilot ? "customer" : "internal_demo") || (pilot && !await supervisedExecutionAuthorized(p.accountId)) || !assignment || assignment.number_exclusivity_key !== p.numberId || !number || await tx.telephonyNumberAssignment.count({ where: { telephony_number_id: p.numberId, unassigned_at: null } }) !== 1) throw Error("qualification_provider_identity_mismatch");
 }
 
 export async function reserveQualification(tx: Prisma.TransactionClient, s: GrokCallSession, now: Date) {

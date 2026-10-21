@@ -7,6 +7,7 @@ import { requireReviewOperator } from "@/lib/callReview/service";
 import { providerCallHasWithdrawal } from "@/lib/callReview/withdrawal";
 import { assertStoredWebhookIdentity } from "@/lib/data/webhookEvents";
 import { parseCallControlEvent, sendTelnyxCallCommand } from "@/lib/providers/telnyx/callControl";
+import { captureAssignmentStatus } from "./admission";
 
 export type EndCallTarget = { captureId: string; expectedAccountId: string; expectedProviderCallId: string; generation: number };
 
@@ -64,7 +65,7 @@ export async function endCallEligibility(capture: CallCaptureSession, client: Pr
   if (evidence.state !== "absent") return { allowed: false, reason: "disconnection_evidence_unavailable" };
   const claim = await client.telnyxCallCommand.findFirst({ where: { account_id: capture.account_id, capture_session_id: capture.id, command_type: "hangup", ...(ignoreClaimId ? { id: { not: ignoreClaimId } } : {}) } });
   if (claim) return { allowed: false, reason: "hangup_already_claimed" };
-  const assignment = capture.assignment_id && await client.telephonyNumberAssignment.findFirst({ where: { id: capture.assignment_id, account_id: capture.account_id, status: "qualification" } });
+  const assignment = capture.assignment_id && await client.telephonyNumberAssignment.findFirst({ where: { id: capture.assignment_id, account_id: capture.account_id, status: captureAssignmentStatus(capture) } });
   if (!assignment) return { allowed: false, reason: "qualification_assignment_required" };
   const types = ["call.initiated", "call.answered", "call.speak.ended", "call.gather.ended"];
   const active = await client.webhookEvent.findMany({ where: { account_id: capture.account_id, provider: "telnyx", provider_call_id: capture.provider_call_id, event_type: { in: types }, signature_valid: true }, select: { id: true } });
@@ -84,7 +85,7 @@ export async function endCaptureCall(input: EndCallTarget, actor?: { id: string;
     const evidence = await disconnectionEvidence(capture, client);
     if (evidence.confirmed) return { dispatch: false as const, capture, command: null, evidence };
     if (!capture.assignment_id || !capture.call_session_id || !capture.call_leg_id) throw new Error("end_call_identity_incomplete");
-    const assignment = await client.telephonyNumberAssignment.findFirst({ where: { id: capture.assignment_id, account_id: capture.account_id, status: "qualification" } });
+    const assignment = await client.telephonyNumberAssignment.findFirst({ where: { id: capture.assignment_id, account_id: capture.account_id, status: captureAssignmentStatus(capture) } });
     if (!assignment) throw new Error("qualification_assignment_required");
     const existing = await client.telnyxCallCommand.findUnique({ where: { capture_session_id_command_type_generation: { capture_session_id: capture.id, command_type: "hangup", generation: capture.generation } } });
     if (existing) return { dispatch: false as const, capture, command: existing, evidence };

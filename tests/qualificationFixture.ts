@@ -5,7 +5,7 @@ import { vi } from "vitest";
 import { qualificationConfigHash, qualificationHash, type Qualification } from "@/lib/grok/qualification";
 import { createWatchdogReadinessWriter } from "@/lib/grok/watchdogReadiness";
 
-export function qualificationFixture(overrides: Partial<Qualification> = {}) {
+export function qualificationFixture(overrides: Record<string, unknown> = {}) {
   const directory = mkdtempSync(path.join(tmpdir(), "qualification-test-"));
   const file = path.join(directory, "authority.json"), config = path.join(directory, "listener.json");
   const listener = { mode: "production", ingress: "managed-edge-http", streamUrl: "wss://synthetic.invalid/media", publicKey: "synthetic-public-key" };
@@ -26,7 +26,7 @@ export function qualificationFixture(overrides: Partial<Qualification> = {}) {
   readiness.completed(true);
   const timer = setInterval(() => readiness.completed(true), 500);
   timer.unref();
-  const policy: Qualification = { version: 1, mode: "carrier-qualification", enabled: true, authorityId: "synthetic-only", applicationSha: "a".repeat(40), controlSha: "b".repeat(40), configSha256: qualificationConfigHash(), accountId: "synthetic-demo", assignmentId: "synthetic-assignment", numberId: "synthetic-number", providerNumberId: "synthetic-provider-number", e164: "+15555550188", telnyxAccountId: "synthetic-telnyx", connectionId: "synthetic-connection", xaiTeamId: "synthetic-team", xaiProjectId: "synthetic-project", telnyxKeySha256: qualificationHash("synthetic-carrier-key"), xaiKeySha256: qualificationHash("synthetic-xai-key"), notBefore: new Date(Date.now() - 1000).toISOString(), expiresAt: new Date(Date.now() + 60000).toISOString(), maxConcurrentCalls: 1, maxDurationMs: 30000, actions: ["streaming_start", "realtime_audio", "hangup"], crm: false, email: false, recording: false, automaticTransfer: false, ...overrides };
+  const policy = { version: 1, mode: "carrier-qualification", enabled: true, authorityId: "synthetic-only", applicationSha: "a".repeat(40), controlSha: "b".repeat(40), configSha256: qualificationConfigHash(), accountId: "synthetic-demo", assignmentId: "synthetic-assignment", numberId: "synthetic-number", providerNumberId: "synthetic-provider-number", e164: "+15555550188", telnyxAccountId: "synthetic-telnyx", connectionId: "synthetic-connection", xaiTeamId: "synthetic-team", xaiProjectId: "synthetic-project", telnyxKeySha256: qualificationHash("synthetic-carrier-key"), xaiKeySha256: qualificationHash("synthetic-xai-key"), notBefore: new Date(Date.now() - 1000).toISOString(), expiresAt: new Date(Date.now() + 60000).toISOString(), maxConcurrentCalls: 1, maxDurationMs: 30000, actions: ["streaming_start", "realtime_audio", "hangup"], crm: false, email: false, recording: false, automaticTransfer: false, ...overrides } as Qualification;
   function save(value: unknown = policy) { const bytes = JSON.stringify(value); writeFileSync(file, bytes); vi.stubEnv("RESPONSEOS_QUALIFICATION_SHA256", qualificationHash(bytes)); }
   save();
   return { policy, save, config, stopReadiness: () => { clearInterval(timer); readiness.clear(); }, cleanup: () => { clearInterval(timer); rmSync(directory, { recursive: true }); } };

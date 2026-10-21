@@ -1,5 +1,7 @@
 # Unreleased — supervised FRL demonstration (in review)
 
+- FRL live supervised pilot (ADR-0082): a `carrier-pilot` authority mode alongside the unchanged demo qualification, a separate pilot Sam script, consent-gated Grok transcript capture (`GrokTranscriptTurn`, migration 0029), live transcript and review drafting in the operator console, pilot-labelled email, and a 30-day `pilot_transcripts` retention sweep. Operator approval still gates every HubSpot write and email. Not deployed; hosted commissioning gates are listed in the FRL live pilot runbook.
+
 - Add disabled, non-secret Doppler mapping proposal and offline validator/tests; preserve existing consumers and require separate source selection, scoped-access and sync approval. No credentials, login, token or hosted setting changed.
 
 - Owner-approved local-only fingerprint migration0018 and synthetic migration/recovery/retention tests; no runtime binding or hosted migration. Official isolated CLI41.7 version/help verified without tokens.

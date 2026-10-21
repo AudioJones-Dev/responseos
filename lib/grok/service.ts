@@ -9,7 +9,7 @@ import { validateCaptureAiEligibility, type AiStartTarget } from "@/lib/callCont
 import * as provider from "./provider";
 import { authenticateStream, mediaClientState, mediaHash, startFrame } from "./mediaContract";
 
-import { reserveQualification, qualificationAlive } from "./qualification";
+import { reserveQualification, qualificationAlive, qualificationSchema } from "./qualification";
 import { readDemoKnowledge } from "./demoKnowledge";
 
 const LEASE_MS = 15000;
@@ -263,5 +263,34 @@ export async function bindGrokRealtime(id: string, workerToken: string, realtime
         instructionsSha256: knowledge.instructionsSha256, voice: knowledge.voice, agentProfile: knowledge.agentProfile ?? null },
     } });
     await tx.grokCallCommand.update({ where: { id: command.id }, data: { status: "accepted", result_at: await clock(tx) } });
+  });
+}
+
+const MAX_TRANSCRIPT_TURNS = 400;
+
+/**
+ * ADR-0082: appends one consented pilot transcript turn. Writes only while the
+ * pilot session holds media authority, the latest transcript consent is a
+ * witnessed grant and no withdrawal exists; otherwise it stores nothing.
+ */
+export async function recordGrokTranscriptTurn(id: string, workerToken: string, speaker: "caller" | "agent", text: string) {
+  const clean = text.replace(/[\u0000-\u001f]+/g, " ").trim().slice(0, 4000);
+  if (!clean) return false;
+  return database().$transaction(async tx => {
+    const s = await lock(tx, id), now = await clock(tx);
+    const capture = await tx.callCaptureSession.findUnique({ where: { id: s.capture_id } });
+    const reservation = await tx.grokQualificationReservation.findUnique({ where: { session_id: id } });
+    const policy = reservation ? qualificationSchema.safeParse(reservation.policy_json) : null;
+    if (!capture || capture.admission_mode !== "pilot" || policy?.data?.mode !== "carrier-pilot" || !same(s, capture) ||
+      s.worker_token !== workerToken || s.stopped_at || s.lease_expires_at <= now ||
+      capture.content_admission_closed_at || capture.call_disconnected_at ||
+      !await qualificationAlive(tx, s, now) || await providerCallHasWithdrawal(s.account_id, s.provider_call_id, tx)) return false;
+    const consent = await tx.callConsentEvent.findFirst({ where: { account_id: s.account_id, provider_call_id: s.provider_call_id, artifact: "transcript" }, orderBy: [{ occurred_at: "desc" }, { id: "desc" }], select: { action: true } });
+    if (consent?.action !== "grant") return false;
+    const sequence = await tx.grokTranscriptTurn.count({ where: { session_id: id } }) + 1;
+    if (sequence > MAX_TRANSCRIPT_TURNS) return false;
+    await tx.grokTranscriptTurn.create({ data: { account_id: s.account_id, session_id: id, sequence, speaker, text: clean, occurred_at: now,
+      expires_at: new Date(now.getTime() + policy.data.transcriptRetentionDays * 24 * 60 * 60 * 1000) } });
+    return true;
   });
 }

@@ -6,7 +6,7 @@ import { FRL_INTERACTIONS, FRL_OUTCOMES, reviewMessage, type ReviewPayload } fro
 
 export function CallReviewCard(props: {
   id: string; callId: string; revision: number; status: string; recipient: string;
-  payload: ReviewPayload; transcript: string | null; crmStatus: string; emailStatus: string;
+  payload: ReviewPayload; transcript: string | null; crmStatus: string; emailStatus: string; pilot?: boolean;
 }) {
   const [draft, setDraft] = useState(props.payload);
   const [busy, setBusy] = useState(false);
@@ -16,7 +16,7 @@ export function CallReviewCard(props: {
   const [evidence, setEvidence] = useState("");
   const [workerStopped, setWorkerStopped] = useState(false);
   const router = useRouter();
-  const preview = reviewMessage(draft, props.callId);
+  const preview = reviewMessage(draft, props.callId, props.pilot);
   async function act(action: "approve" | "reject" | "dispatch") {
     setBusy(true); setMessage("");
     try {
