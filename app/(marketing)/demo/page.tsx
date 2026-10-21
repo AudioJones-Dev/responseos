@@ -1,11 +1,14 @@
 import { ButtonLink, Card } from "@/components/ui";
 import { AtmosphereBackground } from "@/components/layout/AtmosphereBackground";
+import { faqJsonLd, pageMetadata } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/JsonLd";
 
-export const metadata = {
+export const metadata = pageMetadata({
   title: "Product demo",
   description:
     "Walk through a fictional, persisted ResponseOS call lifecycle with qualification, follow-up, and illustrative reporting.",
-};
+  path: "/demo",
+});
 
 const PAINS = [
   "Missed calls become missed jobs.",
@@ -78,6 +81,7 @@ const FAQS = [
 export default function DemoPage() {
   return (
     <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-16 sm:px-6">
+      <JsonLd data={faqJsonLd(FAQS)} />
       <section className="relative isolate overflow-hidden">
         <AtmosphereBackground
           family="ledger-depth"

@@ -3,6 +3,8 @@ import Link from "next/link";
 import { ButtonLink } from "@/components/ui";
 import { SocialLinks } from "@/components/layout/SocialLinks";
 import { Logo } from "@/components/layout/Logo";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { organizationJsonLd } from "@/lib/seo";
 
 const NAV = [
   { label: "Platform", href: "/" },
@@ -15,6 +17,7 @@ const NAV = [
 export default function MarketingLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col">
+      <JsonLd data={organizationJsonLd()} />
       {/* Demo-surface labeling (mock-first demo deploy gate, checkpoint 2026-07-04). */}
       <div className="border-b border-line bg-surface px-4 py-1.5 text-center text-xs text-ink-muted">
         Controlled demo environment — surfaces use fictional data or explicitly
@@ -68,6 +71,12 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
               </Link>
               <Link href="/audit" className="hover:text-ink-secondary">
                 Readiness Assessment
+              </Link>
+              <Link href="/industries/home-services" className="hover:text-ink-secondary">
+                Home services
+              </Link>
+              <Link href="/industries/contractors" className="hover:text-ink-secondary">
+                Contractors
               </Link>
               <Link href="/trust" className="hover:text-ink-secondary">
                 Trust

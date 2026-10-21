@@ -8,6 +8,15 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: SEO/AEO foundations for the public marketing surface
+
+- **Crawl:** add `app/robots.ts` (allows the site, disallows `/api/`, `/admin`, `/client`) and `app/sitemap.ts` covering the nine public marketing routes. Both returned 404 in production before this.
+- **Agents:** add `/llms.txt`, a plain-text product summary with the same status language as `/trust` (in development, mock adapters, not HIPAA-certified).
+- **Canonicals and social cards:** `lib/seo.ts` `pageMetadata()` gives each marketing page a canonical URL and its own Open Graph and Twitter title and description. Before, every page shared the homepage card.
+- **Structured data:** Organization and WebSite JSON-LD on every marketing page, FAQPage on `/demo` built from the existing FAQ copy, and Service plus Offer for the $1,000 assessment on `/audit`.
+- **Index hygiene:** the `(demo)` sandbox screens (walkthrough, operator console, client dashboard) are `noindex, follow`. `/industries/contractors` was not linked from anywhere, so the footer now links both industry pages.
+- **Domain moves:** every absolute URL above comes from `NEXT_PUBLIC_APP_URL`. Moving to a new domain means changing that value and redirecting the old host.
+
 ## Unreleased — fix: recognise connection loss reported without an error code (#214)
 
 - **Bug:** `isConnectionLoss` (from #211) missed one of the ways a terminated Postgres backend reaches Prisma. When a batch `$transaction([...])` reads Postgres's `FATAL: terminating connection due to administrator command` before the socket closes, Prisma raises a `PrismaClientUnknownRequestError` with no code. That is neither `P1017` nor `P2010`. The recovering client then did not treat it as connection loss and did not reset the pool.

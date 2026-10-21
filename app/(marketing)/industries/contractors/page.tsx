@@ -1,10 +1,12 @@
 import { ButtonLink, Card } from "@/components/ui";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata = {
+export const metadata = pageMetadata({
   title: "For contractors",
   description:
     "ResponseOS for contractors — win the quote before it goes cold. Designed to capture missed calls, qualify leads, and follow up automatically.",
-};
+  path: "/industries/contractors",
+});
 
 const POINTS = [
   {

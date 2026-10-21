@@ -1,10 +1,12 @@
 import { ButtonLink, Card } from "@/components/ui";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata = {
+export const metadata = pageMetadata({
   title: "For home services",
   description:
     "Missed-call response, intake, and booking for HVAC, roofing, plumbing, electrical, and landscaping businesses — designed around after-hours demand.",
-};
+  path: "/industries/home-services",
+});
 
 const POINTS = [
   {
