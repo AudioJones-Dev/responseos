@@ -19,11 +19,11 @@ export const ReviewPayloadSchema = z.strictObject({
 });
 export type ReviewPayload = z.infer<typeof ReviewPayloadSchema>;
 
-export function reviewMessage(value: ReviewPayload, callId: string) {
+export function reviewMessage(value: ReviewPayload, callId: string, pilot = false) {
   return {
     subject: `FRL CALLBACK REQUIRED — ${value.caller} — ${value.product === "unknown" ? value.interaction : value.product} — ${value.location || "Location unconfirmed"}`,
     text: [
-      "Supervised FRL demonstration — fictional customer scenario.",
+      pilot ? "Supervised FRL pilot — live caller, operator-reviewed intake." : "Supervised FRL demonstration — fictional customer scenario.",
       `Caller: ${value.caller}`, `Callback: ${value.phone}`,
       `Interaction: ${value.interaction}`, `Product: ${value.product}`,
       `Location: ${value.location || "Unconfirmed"}`, `Qualification: ${value.qualification}`,

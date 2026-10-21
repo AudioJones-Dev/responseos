@@ -18,6 +18,9 @@ import { BusinessMemorySnapshotSchema } from "@/lib/prospectBootstrap/contracts"
 import { readOperatingConfigurationValue } from "@/lib/agentExecution/operatingConfiguration";
 import type { Prisma } from "@prisma/client";
 import { samDisclosurePrefix } from "@/lib/grok/samDisclosure";
+import { pilotAuthorityTarget } from "@/lib/grok/qualification";
+import { draftGrokPilotReview } from "@/lib/grok/pilotReview";
+import { captureAssignmentStatus } from "./admission";
 
 const DISCLOSURE_PROMPT = " To continue, press 1. To decline, press 2.";
 const GATHER_PROMPT = "Press 1 to continue, or press 2 to decline.";
@@ -127,7 +130,13 @@ async function createQualificationCapture(event: CallControlEvent) {
   if (!target) throw new Error("destination_required");
   const occurredAt = new Date(event.data.occurred_at);
   const runtime = await resolveSupervisedTenantForNumber(target, occurredAt);
-  if (!runtime || runtime.assignmentStatus !== "qualification" || !runtime.providerEvidenceAuthorized || !runtime.readiness.ready) throw new Error("qualification_runtime_unavailable");
+  const pilot = pilotAuthorityTarget(occurredAt);
+  const pilotAdmitted = runtime?.assignmentStatus === "active" && pilot?.accountId === runtime.accountId && pilot.assignmentId === runtime.assignmentId;
+  if (!runtime || (runtime.assignmentStatus !== "qualification" && !pilotAdmitted) || !runtime.providerEvidenceAuthorized || !runtime.readiness.ready) throw new Error("qualification_runtime_unavailable");
+  if (pilotAdmitted) {
+    const consent = readOperatingConfigurationValue(runtime.memory, "policy.consent");
+    if (consent?.transcription.enabled !== true || consent.recording.enabled !== false || !consent.aiDisclosure) throw new Error("qualification_runtime_unavailable");
+  }
   const capture = await db.callCaptureSession.upsert({
     where: { account_id_provider_call_id: { account_id: runtime.accountId, provider_call_id: event.data.payload.call_control_id } },
     update: {},
@@ -137,6 +146,7 @@ async function createQualificationCapture(event: CallControlEvent) {
       assignment_id: runtime.assignmentId,
       snapshot_id: runtime.snapshotId,
       snapshot_json: asJson(runtime.memory),
+      admission_mode: pilotAdmitted ? "pilot" : "qualification",
       call_session_id: event.data.payload.call_session_id,
       call_leg_id: event.data.payload.call_leg_id,
       control_state: "CALL_RECEIVED",
@@ -296,7 +306,7 @@ export async function ingestCallControlEvent(params: { verifiedBytes: Uint8Array
   const initial = event.data.event_type === "call.initiated" && !existing ? await createQualificationCapture(event) : null;
   const capture = existing ?? initial?.capture ?? await captureForEvent(event);
   if (!capture?.assignment_id) throw new Error("qualification_capture_not_found");
-  const assignment = await db.telephonyNumberAssignment.findFirst({ where: { id: capture.assignment_id, account_id: capture.account_id, status: "qualification" } });
+  const assignment = await db.telephonyNumberAssignment.findFirst({ where: { id: capture.assignment_id, account_id: capture.account_id, status: captureAssignmentStatus(capture) } });
   if (!assignment) throw new Error("qualification_assignment_mismatch");
   const generationBoundEvent = ["call.speak.ended", "call.gather.ended", "call.bridged", "call.ai_gather.message_history_updated", "call.conversation.ended"].includes(event.data.event_type);
   if (generationBoundEvent && !validClientState(event.data.payload.client_state, capture.id, capture.generation)) throw new Error("stale_or_missing_call_control_generation");
@@ -473,6 +483,8 @@ export async function ingestCallControlEvent(params: { verifiedBytes: Uint8Array
       });
       const finalization = await freezeEvidence(capture.id);
       if (finalization === "pending") throw new Error("awaiting_final_history_settlement");
+      // The operator console offers the same draft if this attempt does not land.
+      if (capture.admission_mode === "pilot") await draftGrokPilotReview(capture.id).catch(() => undefined);
     } else {
       await setWebhookProcessStatus({ id: ledger.id, process_status: "processed" });
     }

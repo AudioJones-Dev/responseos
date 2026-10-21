@@ -1,7 +1,7 @@
 import "@/lib/serverOnlyGuard";
 import { z } from "zod";
 import { GROK_MODEL } from "./provider";
-import { bindGrokRealtime, claimGrokMedia, dispatchGrokTermination, heartbeatGrok, requestGrokStop } from "./service";
+import { bindGrokRealtime, claimGrokMedia, dispatchGrokTermination, heartbeatGrok, recordGrokTranscriptTurn, requestGrokStop } from "./service";
 import { matchConnectedToken, pcmu, REALTIME_URL, realtimeConfig } from "./mediaContract";
 import { readDemoKnowledge } from "./demoKnowledge";
 
@@ -33,6 +33,7 @@ export async function startMediaBridge(input: { headers: Headers; connectedToken
   const timers: { clock?: ReturnType<typeof setInterval> } = {};
   let stopResult: Promise<void> | undefined;
   let knowledge: ReturnType<typeof readDemoKnowledge>;
+  let transcripts: Promise<unknown> = Promise.resolve();
   function send(socket: MediaSocket, value: unknown) {
     if (socket.bufferedAmount > 16384) throw Error("media_backpressure");
     socket.send(JSON.stringify(value));
@@ -68,7 +69,9 @@ export async function startMediaBridge(input: { headers: Headers; connectedToken
     realtime = await Promise.race([opening, new Promise<never>((_, reject) => { timer = setTimeout(() => reject(Error("realtime_open_timeout")), 5000); })]).finally(() => { if (timer) clearTimeout(timer); });
     if (!await heartbeatGrok(id, worker)) throw Error("media_postsocket_veto");
     verifiedAt = performance.now();
-    send(realtime, knowledge ? { ...realtimeConfig, session: { ...realtimeConfig.session, voice: knowledge.voice, instructions: knowledge.instructions } } : realtimeConfig);
+    // xAI emits caller transcripts only when input transcription is configured; only the pilot keeps them (ADR-0082).
+    const audio = knowledge?.pilot ? { ...realtimeConfig.session.audio, input: { ...realtimeConfig.session.audio.input, transcription: { model: "grok-transcribe" } } } : realtimeConfig.session.audio;
+    send(realtime, knowledge ? { ...realtimeConfig, session: { ...realtimeConfig.session, audio, voice: knowledge.voice, instructions: knowledge.instructions } } : realtimeConfig);
   } catch { await stop("media_open_failed"); throw Error("media_open_failed"); }
   const openedAt = performance.now();
   async function carrier(raw: string) {
@@ -112,6 +115,8 @@ export async function startMediaBridge(input: { headers: Headers; connectedToken
         configuring = true;
         const session = configuration.parse(frame.session);
         if (knowledge && z.object({ instructions: z.literal(knowledge.instructions), voice: z.literal(knowledge.voice) }).safeParse(frame.session).success === false) throw Error("realtime_knowledge_not_acknowledged");
+        // A pilot call must not run without the transcript the operator reviews; fail before any audio.
+        if (knowledge?.pilot && z.object({ audio: z.object({ input: z.object({ transcription: z.object({ model: z.literal("grok-transcribe") }) }) }) }).safeParse(frame.session).success === false) throw Error("realtime_transcription_not_acknowledged");
         await bindGrokRealtime(id, worker, session.id, knowledge && { version: knowledge.version, sha256: knowledge.sha256, instructionsSha256: knowledge.instructionsSha256, voice: knowledge.voice });
         if (closed || !await heartbeatGrok(id, worker)) { await stop("realtime_binding_closed"); return; }
         verifiedAt = performance.now(); ready = true; return;
@@ -141,6 +146,13 @@ export async function startMediaBridge(input: { headers: Headers; connectedToken
         if (completed !== response) throw Error("realtime_response_mismatch");
         fenced.add(completed); response = undefined;
         if (playback.length % 160) playback = Buffer.concat([playback, Buffer.alloc(160 - playback.length % 160, 255)]);
+        return;
+      }
+      if (knowledge?.pilot && (frame.type === "conversation.item.input_audio_transcription.completed" || frame.type === "response.output_audio_transcript.done")) {
+        const speaker = frame.type === "response.output_audio_transcript.done" ? "agent" : "caller";
+        const text = typeof frame.transcript === "string" ? frame.transcript : "";
+        // Serialized so turns keep arrival order; a refused or failed write stores nothing and never blocks audio.
+        transcripts = transcripts.then(() => recordGrokTranscriptTurn(id, worker, speaker, text)).catch(() => false);
         return;
       }
       if (typeof frame.type === "string" && ["response.output_audio.done", "response.output_audio_transcript.delta", "response.output_audio_transcript.done", "conversation.item.input_audio_transcription.completed", "input_audio_buffer.committed", "response.content_part.added", "response.content_part.done", "response.output_item.done", "conversation.item.added", "conversation.item.created"].includes(frame.type)) return;

@@ -1908,6 +1908,28 @@
       "start": "2026-10-20",
       "blocked": true,
       "blockedReason": "Local hardening successor requires independent review; provider voice echo, hosted safety and exact activation approvals remain open."
+    },
+    {
+      "id": "FRL-LIVE-PILOT",
+      "phase": "Integrations",
+      "title": "FRL live supervised pilot: Sam inbound intake, consented transcript, HubSpot and email",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 70,
+      "priority": "High",
+      "start": "2026-10-21",
+      "blocked": true,
+      "blockedReason": "Repository change in review; hosted migration, tenant activation, credentials, pilot contract, retention run path and two rehearsals remain owner gates."
+    },
+    {
+      "id": "FRL-OUTBOUND-AGENT",
+      "phase": "Integrations",
+      "title": "FRL outbound agent (separate from Sam inbound intake)",
+      "owner": "Audio",
+      "status": "Backlog",
+      "progress": 0,
+      "priority": "Medium",
+      "start": "2026-10-21"
     }
   ],
   "liveIssues": [

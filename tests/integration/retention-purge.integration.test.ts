@@ -192,6 +192,7 @@ const EXPECTED_COUNTS = {
   number_quarantine: 1,
   webhook_payloads: 3,
   demo_call_content: 3,
+  pilot_transcripts: 0,
   clerk_payloads: 1,
 };
 

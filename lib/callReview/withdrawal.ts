@@ -31,7 +31,7 @@ export function sourceTime(claim: unknown, received: Date, lower: Date | null, e
 
 export async function withdrawalActivity(client: Client, capture: { id: string; account_id: string; provider_call_id: string }, from: Date, received: Date) {
   const call = await client.call.findFirst({ where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id }, select: { id: true } });
-  const [commands, transcripts, reviews, crm, notifications, analyses, captureState, rawWrites, normalized, contentWrites] = await Promise.all([
+  const [commands, transcripts, reviews, crm, notifications, analyses, captureState, rawWrites, normalized, contentWrites, pilotTurns] = await Promise.all([
     client.telnyxCallCommand.findMany({ where: { account_id: capture.account_id, capture_session_id: capture.id, OR: [{ intended_at: { gte: from } }, { provider_responded_at: { gte: from } }, { status: { in: ["intent_recorded", "uncertain"] } }] }, select: { id: true, command_type: true, status: true, intended_at: true, provider_responded_at: true, provider_response_status: true, reconciliation_state: true } }),
     client.callTranscriptRevision.findMany({ where: { account_id: capture.account_id, capture_session_id: capture.id, OR: [{ created_at: { gte: from } }, { frozen_at: { gte: from } }] }, select: { id: true, created_at: true, frozen_at: true } }),
     call ? client.callReview.findMany({ where: { account_id: capture.account_id, call_id: call.id }, select: { id: true, status: true, created_at: true, dispatch_at: true, email_attempt_at: true, email_status: true, email_message_id: true, crm_status: true } }) : [],
@@ -42,8 +42,9 @@ export async function withdrawalActivity(client: Client, capture: { id: string; 
     client.webhookEvent.findMany({ where: { account_id: capture.account_id, provider_call_id: capture.provider_call_id }, select: { id: true, event_type: true, received_at: true, processed_at: true, process_status: true, payload_purged_at: true } }),
     client.$queryRaw`SELECT id, created_at, status::text, (transcript IS NOT NULL) AS transcript_present, (summary IS NOT NULL) AS summary_present FROM "Call" WHERE account_id = ${capture.account_id} AND provider_call_id = ${capture.provider_call_id}`,
     client.auditLog.findMany({ where: { account_id: capture.account_id, target_id: capture.provider_call_id, action: "call_content_write_observed" }, select: { id: true, created_at: true, metadata_json: true } }),
+    client.grokTranscriptTurn.findMany({ where: { account_id: capture.account_id, session: { capture_id: capture.id }, occurred_at: { gte: from } }, select: { id: true, sequence: true, speaker: true, occurred_at: true } }),
   ]);
-  return JSON.parse(JSON.stringify({ from, received, classification: "review_required_actual_activity_not_prevented", timing: "timestamps_are_observations_not_commit_times; preauthorized_content_may_commit_until_drain", contentWrites, rawWrites, normalized, commands, transcripts, reviews, crm, notifications, analyses, captureState })) as Prisma.InputJsonValue;
+  return JSON.parse(JSON.stringify({ from, received, classification: "review_required_actual_activity_not_prevented", timing: "timestamps_are_observations_not_commit_times; preauthorized_content_may_commit_until_drain", contentWrites, rawWrites, normalized, commands, transcripts, pilotTurns, reviews, crm, notifications, analyses, captureState })) as Prisma.InputJsonValue;
 }
 
 export async function recordContentActivity(client: Client, accountId: string, providerCallId: string, webhookId: string, outcome: { rawHistory: boolean; normalized: boolean; transcript: boolean | null }) {

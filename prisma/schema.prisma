@@ -341,6 +341,8 @@ model CallCaptureSession {
   /// Migration 0022: set once from a fresh authenticated exact-call hangup;
   /// a database trigger rejects clearing or changing it.
   call_disconnected_at        DateTime?
+  /// "qualification" (demo) or "pilot" (ADR-0082 live supervised pilot on an active assignment).
+  admission_mode              String                  @default("qualification")
   created_at                  DateTime                @default(now())
 
   @@unique([account_id, provider_call_id])
@@ -369,6 +371,7 @@ model GrokCallSession {
   qualification        GrokQualificationReservation?
   commands             GrokCallCommand[]
   receipts             GrokIncomingReceipt[]
+  transcript_turns     GrokTranscriptTurn[]
   @@unique([capture_id, account_id, provider_call_id])
   @@index([stopped_at, lease_expires_at])
 }
@@ -1613,4 +1616,22 @@ model GrokQualificationReservation {
   active_slot String? @unique
   released_at DateTime?
   session GrokCallSession @relation(fields: [session_id], references: [id], onDelete: Restrict, onUpdate: Restrict)
+}
+
+/// ADR-0082: consented pilot transcript, captured only after a witnessed grant
+/// while the Grok session is admitted. Purged at expires_at.
+model GrokTranscriptTurn {
+  id          String          @id @default(cuid())
+  account_id  String
+  session_id  String
+  sequence    Int
+  speaker     String
+  text        String
+  occurred_at DateTime
+  expires_at  DateTime
+  session     GrokCallSession @relation(fields: [session_id], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([session_id, sequence])
+  @@index([account_id])
+  @@index([expires_at])
 }
