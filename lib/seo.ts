@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+let warnedFallback = false;
+
 // The public origin comes from NEXT_PUBLIC_APP_URL, so moving the marketing
 // site to another domain is an env change: canonicals, sitemap, robots,
 // llms.txt and JSON-LD all follow it.
@@ -11,6 +13,12 @@ export function siteUrl(): URL {
     } catch {
       // A malformed value must not crash the build/boot — fall back.
     }
+  }
+  if (process.env.NODE_ENV === "production" && !warnedFallback) {
+    warnedFallback = true;
+    console.warn(
+      "NEXT_PUBLIC_APP_URL is missing or invalid; canonicals, sitemap, robots and llms.txt fall back to http://localhost:3000.",
+    );
   }
   return new URL("http://localhost:3000");
 }
