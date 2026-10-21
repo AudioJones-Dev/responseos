@@ -20,8 +20,13 @@ Status: repository implementation, in review. Not deployed, not commissioned, no
 - [ ] Knowledge packet with `agentProfile: "frl-sam-ara-pilot-v1"` and the seven approved facts, plus a signed `carrier-pilot` contract (`crm`/`email`/`transcript` true, `transcriptRetentionDays: 30`, `maxDurationMs` ≤ 300000). Both expire within one hour, so re-issue them per operating session.
 - [ ] Commissioning tooling: `validate-qualification-env` and `qualification-deployment` still assume effects-off and need a pilot path, or a manual checklist the owner accepts.
 - [ ] Owner sign-off on the pilot greeting and script (`lib/grok/samProfile.ts`).
-- [ ] Retention: decide how `npm run retention:purge -- --apply` runs against the hosted database. ADR-0064 refuses `NODE_ENV=production`. Transcripts must be purged by day 30.
+- [ ] Retention: decide how `npm run retention:purge -- --apply` runs against the hosted database. ADR-0064 refuses `NODE_ENV=production`. Until a hosted purge path is approved, 30-day deletion is not enforced.
 - [ ] Two internal rehearsals on the pilot authority. For each, confirm: caller and Sam turns appear live (this is the first check of xAI's transcript events), withdrawal stops capture, the draft review appears after hangup, the HubSpot records land in the right portal, and the email arrives.
+
+- [ ] Never rotate or re-issue the pilot contract while a call is active. A changed contract ends the call in progress.
+- [ ] Recovery step for a call whose hangup is never verified: it holds the single call slot and blocks every later call until the operator confirms carrier disconnection.
+
+Review status and open findings: [review package](FRL_LIVE_PILOT_REVIEW_PACKAGE_2026-10-21.md).
 
 ## Known limitations
 

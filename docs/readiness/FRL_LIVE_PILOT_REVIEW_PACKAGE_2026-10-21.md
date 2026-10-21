@@ -28,7 +28,31 @@ The 141 commits from `master` to `8bdd184` keep their own path to `master` and a
 
 ## 2. Review
 
-_Filled in below after the review pass._
+**What this review is, and is not.** A fresh-context reviewer agent, the same model family as the builder, reviewed `c0fc7b1` and the inherited code it relies on, read-only. That is an adversarial pass, **not** the independent review you asked for. Under the roles you set (Codex builds, Claude reviews), Codex or a person should review the final pilot commits before any approval. Brief for that reviewer: the focus list in your message, this section, and `git diff 31a58bd f0beedd`.
+
+| # | Finding | Status | Evidence |
+|---|---|---|---|
+| B1 | Pilot ignored the tenant's own consent policy, so transcripts were stored even with transcription off | **Fixed** `f0beedd` | Admission and every write require `policy.consent.transcription.enabled` true and recording off. Test: "a tenant whose consent policy turns transcription off stores no turns" |
+| B2 | Transcript writes didn't serialize with withdrawal/drain, and the withdrawal review didn't list turns | **Fixed** `f0beedd` | Writes take the capture lock (the one drain takes) before the session row. `withdrawalActivity` lists `pilotTurns`, and the console stops showing a withdrawn call's transcript. Test: "a withdrawal stops transcript capture and blocks the review" |
+| M1 | Tenant check used a second pool connection inside a locked transaction (pool starvation could stall the heartbeat past 3 s and drop the caller) | **Fixed** | `supervisedExecutionAuthorized(…, tx)` |
+| M2 | Transcript writes held the session lock across contract and readiness reads | **Fixed** | Writes recheck only row state, under a 250 ms bounded lock. The 1 s heartbeat still enforces contract and readiness, so after readiness loss a turn can still be written for up to about 1 s before the heartbeat stops the session (documented) |
+| M3 | Transcript can be incomplete or out of order: dropped writes are silent, interrupted Sam turns are stored, caller turns arrive late | **Open (mitigated)** | Every pilot draft now carries a "machine transcript; confirm with the caller" flag. A dropped-write counter and xAI item ordering are not built |
+| M4 | "30-day" covers only local transcript copies | **Open (documented)** | §3 inventory lists what stays: payload summary, Contact/Call number, webhook bodies, HubSpot, email, xAI, backups |
+| M5 | Admission mode and turn account were only app-enforced | **Fixed** | 0029 triggers: `admission_mode_is_immutable`, `transcript_turn_requires_pilot_session` (append-only, account must match a pilot session). Tested |
+| M6 | Contract rotation or a late admission cuts a live caller | **Partly fixed** | Admission now refuses if the contract has less than one call's length left. Rotating the contract mid-call still ends the call; the runbook must forbid rotation with a call active |
+| m1 | End call needs the assignment exactly `active`, so quarantine or release mid-call blocks it | **Open** | Recommend allowing End call on assignment id+account regardless of status. Needs care: it touches the inherited end-call contract |
+| m2 | Consent tie-break order | **Fixed** | Uses `orderConsentEvents` |
+| m3 | No `capture_ended_at` check on writes | **Fixed** | |
+| m4 | A pilot capture could be started on the Telnyx assistant | **Fixed** | `pilot_requires_grok` |
+| m5 | xAI echo not checked for transcription | **Fixed** | A pilot session fails before any audio if the echo lacks `grok-transcribe`. Tested. The caller then hears the abrupt cutoff, so this belongs in rehearsal checks |
+| m6 | Limit inconsistency (15 vs 5 min) | **Fixed** | 5 min everywhere; 15 is your separate decision |
+| m7 | Migration lock and scan | **Fixed** | `NOT VALID` + `VALIDATE`. The reservation constraint is no longer touched |
+| m8 | Hangup-path draft can lose a lock race silently | **Open** | Console button is the fallback |
+| m9 | One unverified hangup blocks all later handoffs (global slot) | **Open (inherited)** | Needs a runbook recovery step |
+
+The reviewer also verified as sound, with evidence: no transcript before the grant; no writes after stop; lock order with no cycle; tenant isolation (no client-supplied account); admission matching; hangup authority after contract expiry; no duplicate HubSpot/email dispatch (hash-idempotent revisions, dispatch fences); no transcript text in HubSpot or email; atomic, audited purge.
+
+**Inherited dependencies:** the 29 successor commits were read where the pilot touches them (Grok service, bridge, qualification, withdrawal, end-call, migrations 0026–0028) but **not reviewed as a whole**. They need their own review on the successor PR.
 
 ## 3. Retention and data inventory
 
@@ -123,7 +147,33 @@ In every case, command acceptance and socket closure are **not** disconnection p
 
 ## 6. Test evidence
 
-_Filled in below from the Linux run._
+Final candidate **`f0beeddf95751f670a7c83a3c9e39ed5e3a28162`** (pilot commits `c0fc7b1`, `7ed1ad8`, `f0beedd` on `31a58bd`).
+
+Linux run: Docker `node:24.18.0-bookworm` (Node 24.18.0, npm 11.16.0, as in CI) plus `postgres:16`, x86_64. Built from `git archive` of the exact SHA, copied into the container's filesystem. Archive SHA-256 `3bdf4e1b147cf219851dafb64b7880570f0ddc4bcf3ea8ae32f81e72cd0e1c18`, identical on host and container. The kernel is Docker Desktop's WSL2 VM, not Railway's runtime.
+
+| Gate | Result |
+|---|---|
+| `npm ci` | pass |
+| lint | pass |
+| typecheck | pass |
+| unit (no DB env, as CI `validate`) | **1,282 / 1,282 passed**, 91 files |
+| build | pass |
+| `prisma migrate diff` (migrations ↔ schema) | no drift |
+| `prisma migrate deploy` (all migrations incl. 0029) + seed | pass |
+| integration (Postgres 16 on loopback) | **666 / 666 passed**, 33 files |
+| `seed-determinism` (1 test) | **not run**. It calls `prisma migrate reset`, which Prisma's AI-agent guard blocks without your explicit consent. Excluded, not bypassed. CI runs it |
+
+Harness corrections along the way, none affecting the code under test:
+- Git Bash path rewriting broke the first run.
+- Unit tests with a database URL set produced 3 false failures. CI's validate job has no database.
+- Reaching the database by hostname tripped 9 loopback-only safety tests.
+
+All are fixed in the harness, and the final run above is a single clean run on one SHA.
+
+Not proven by these tests:
+- Real HubSpot and Resend delivery. Mocks prove the sequence and idempotence, not that anything arrives.
+- xAI's transcript event format. It needs a separately approved internal rehearsal.
+- Telnyx carrier behaviour, hosted timing, and the hosted purge.
 
 ## 7. Deployment proposal (pilot-specific; not executed)
 
@@ -143,8 +193,23 @@ _Filled in below from the Linux run._
 
 ## 8. Consolidated approval request
 
-_Filled in below after review and tests._
+Approve or decline each separately. Nothing below has been done.
 
-## 9. Railway status (checked 2026-10-21, ~20:00 UTC)
+1. **Independent review** of the pilot commits (`31a58bd..f0beedd`) by Codex or a person, plus a review of the 29 successor commits on their own PR.
+2. **Publishing for review:** push `work/frl-vercel-authority-files-20261020` and `feat/frl-live-supervised-pilot-20261021`, and open two stacked draft PRs (successor → `accepted/grok-qualification-app-20261020`, pilot → successor). No PR against `master`.
+3. **Decisions needed before any rehearsal:**
+   - a. The FRL disclosure text, without "connect you with a person". Proposed text in §4.
+   - b. Pilot greeting and script wording (§4, `lib/grok/samProfile.ts`).
+   - c. Keep the 5-minute cap, or approve a longer one.
+   - d. The hosted purge path design (§3), as its own ADR. It is not built, and until it exists 30-day deletion is not enforced.
+   - e. Retention for the caller data that never expires today: carrier webhook bodies, the `Contact`/`Call` number, and the review payload.
+   - f. Whether to build the automatic spoken-stop withdrawal (§4).
+   - g. The caller-messaging fallbacks for planned and unplanned stops (§5, items 1–4).
+4. **Build follow-ups** if you approve 3d–3g, plus open findings M3, m1 and m9 and the pilot path in the commissioning tooling. Same review cycle.
+5. **Internal rehearsal window, only after 1–4 and the deployment proposal (§7):** you present and dialling; a dedicated pilot number; HubSpot pointed at a sandbox or test portal; email to your own address, not Mike's; each call confirmed disconnected (authenticated hangup in the console) before the next. Stop on any §7 stop condition.
 
-Major incident still open: builds paused across all regions, and Railway's API, dashboard and support site affected. The latest update (19:55 UTC) expects Enterprise builds back by 20:30 UTC, with Pro, Hobby and Free following in stages. Running compute, deployments and networking show no reported impact. Our services' own health could not be checked from here.
+**Not requested and not approved:** public callers, a Mike or client test window, the outbound agent, any change to the hosted soft-demo agent or number, credentials, hosted migration, number routing.
+
+## 9. Railway status (checked 2026-10-21, 20:00 and 21:05 UTC)
+
+Still a **major outage** at the 21:01 UTC update: builds paused, API and dashboard affected, no estimate for builds. Running compute, deployments and networking show no reported impact. Our services' own health could not be checked: there is no Railway CLI here, the Railway API is down, and the repo records no hosted URL. Do not plan any deploy, including rollback, through Railway until the incident closes.
