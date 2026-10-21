@@ -1,0 +1,2 @@
+# Operator-issued, SHA-pinned, short-lived authority files. Never commit them.
+*.json

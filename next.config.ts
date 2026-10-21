@@ -29,6 +29,12 @@ const nextConfig: NextConfig = {
   },
   // Don't advertise the framework.
   poweredByHeader: false,
+  // Server functions read the operator-issued qualification, knowledge and media
+  // listener files from disk (pinned by SHA256 in env). They are not imported, so
+  // tracing cannot find them; ship this one untracked directory with every route.
+  outputFileTracingIncludes: {
+    "/**": ["./runtime-authority/*.json"],
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
