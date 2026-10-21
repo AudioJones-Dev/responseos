@@ -17,7 +17,7 @@ Status: repository implementation, in review. Not deployed, not commissioned, no
 - [ ] Apply migration 0029 to the hosted database.
 - [ ] FRL tenant: a `customer` account, an enabled supervised profile resolving to `SUPERVISED_PILOT`, an approved operating snapshot with `notification.completed_interaction.recipient` set to the FRL team address, and an `active` assignment for the routed number.
 - [ ] Environment, owner-installed: `RESPONSEOS_PILOT_ACTIVATION=ENABLED`, `RESPONSEOS_LIVE_HUBSPOT_ENABLED=true` with the HubSpot private-app token, `RESPONSEOS_LIVE_EMAIL_ENABLED=true` with the Resend key and sender, `RESPONSEOS_AUTHORIZED_EXECUTION_GATES` including the live-communications gate, and `RESPONSEOS_REQUIRE_AUTH=true`.
-- [ ] Knowledge packet with `agentProfile: "frl-sam-ara-pilot-v1"` and the seven approved facts, plus a signed `carrier-pilot` contract (`crm`/`email`/`transcript` true, `transcriptRetentionDays: 30`, `maxDurationMs` ≤ 900000). Both expire within one hour, so re-issue them per operating session.
+- [ ] Knowledge packet with `agentProfile: "frl-sam-ara-pilot-v1"` and the seven approved facts, plus a signed `carrier-pilot` contract (`crm`/`email`/`transcript` true, `transcriptRetentionDays: 30`, `maxDurationMs` ≤ 300000). Both expire within one hour, so re-issue them per operating session.
 - [ ] Commissioning tooling: `validate-qualification-env` and `qualification-deployment` still assume effects-off and need a pilot path, or a manual checklist the owner accepts.
 - [ ] Owner sign-off on the pilot greeting and script (`lib/grok/samProfile.ts`).
 - [ ] Retention: decide how `npm run retention:purge -- --apply` runs against the hosted database. ADR-0064 refuses `NODE_ENV=production`. Transcripts must be purged by day 30.

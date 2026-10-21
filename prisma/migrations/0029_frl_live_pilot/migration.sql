@@ -31,11 +31,5 @@ ALTER TABLE "GrokTranscriptTurn" ADD CONSTRAINT "GrokTranscriptTurn_session_id_f
 -- ADR-0082: a capture's admission mode is fixed when the call is admitted.
 ALTER TABLE "CallCaptureSession" ADD CONSTRAINT "CallCaptureSession_admission_mode_check" CHECK ("admission_mode" IN ('qualification', 'pilot'));
 
--- Pilot sessions may run up to 15 minutes; demo qualification stays at 5.
-ALTER TABLE "GrokQualificationReservation" DROP CONSTRAINT "qualification_deadline";
-ALTER TABLE "GrokQualificationReservation" ADD CONSTRAINT "qualification_deadline" CHECK (
-  "deadline" > "admitted_at" AND "deadline" <= "admitted_at" + CASE WHEN "policy_json"->>'mode' = 'carrier-pilot' THEN INTERVAL '15 minutes' ELSE INTERVAL '5 minutes' END
-);
-
 ALTER TABLE "GrokTranscriptTurn" ADD CONSTRAINT "GrokTranscriptTurn_speaker_check" CHECK ("speaker" IN ('caller', 'agent'));
 ALTER TABLE "GrokTranscriptTurn" ADD CONSTRAINT "GrokTranscriptTurn_text_check" CHECK (char_length("text") BETWEEN 1 AND 4000);

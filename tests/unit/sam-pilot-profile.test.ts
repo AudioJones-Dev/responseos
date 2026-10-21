@@ -79,7 +79,7 @@ test("demo authority fails closed while pilot activation is switched on", () => 
 
 test("a pilot contract cannot drop transcript retention or business-effect flags", () => {
   const { q } = fixture({ pilot: true });
-  for (const change of [{ transcriptRetentionDays: 90 }, { transcript: false }, { crm: false }, { maxDurationMs: 900001 }, { knowledge: undefined }]) {
+  for (const change of [{ transcriptRetentionDays: 90 }, { transcript: false }, { crm: false }, { maxDurationMs: 300001 }, { knowledge: undefined }]) {
     q.save({ ...q.policy, ...change });
     expect(pilotAuthorityTarget()).toBeNull();
   }

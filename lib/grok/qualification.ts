@@ -36,7 +36,8 @@ export const PILOT_TRANSCRIPT_RETENTION_DAYS = 30;
 const carrierPilot = z.object({
   ...authorityFields, mode: z.literal("carrier-pilot"),
   knowledge: z.object({ version: id, sha256: sha }).strict(),
-  maxDurationMs: z.number().int().min(1000).max(900000),
+  // Same 5-minute cap as demo; a longer pilot limit is a separate owner decision.
+  maxDurationMs: z.number().int().min(1000).max(300000),
   crm: z.literal(true), email: z.literal(true),
   transcript: z.literal(true), transcriptRetentionDays: z.literal(PILOT_TRANSCRIPT_RETENTION_DAYS),
 }).strict();
