@@ -157,6 +157,7 @@ export async function queueCallReview(accountId: string, callId: string, payload
       phone: call.from_number,
       flags: [
         "Confirm interaction, product, outcome and callback details against the transcript.",
+        ...(capture.admission_mode === "pilot" ? ["Machine transcript: turns may be missing, cut off or out of order. Confirm details with the caller before relying on them."] : []),
         ...(preserved ? ["This event carried no analysis; earlier analysis was preserved."] : !extracted.summary ? ["Extraction missing or failed."] : []),
       ],
     };

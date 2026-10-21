@@ -24,6 +24,7 @@ vi.mock("@/lib/grok/provider", async original => ({ ...await original<typeof imp
 let f: ReturnType<typeof qualificationFixture>;
 let k: ReturnType<typeof knowledgeFixture>;
 let memory: unknown;
+const CONSENT = { aiDisclosure: "This call is answered by an automated assistant and is transcribed so our team can follow up.", transcription: { enabled: true }, recording: { enabled: false }, refusal: { acknowledgement: "Understood", stopRecordingWhenSupported: true, offer: "callback_only", minimizeCollection: true } };
 beforeEach(async () => {
   await resetAndSeedTestDb(); setDevSession("operator");
   const account = await prisma.account.findFirstOrThrow();
@@ -41,6 +42,7 @@ beforeEach(async () => {
   const now = new Date();
   memory = buildOperatingConfigurationSnapshot({ accountId: account.id, generatedAt: now, assertion: { sourceId: "fixture", recordRef: "fixture-only", contentHash: "f".repeat(64), assertedBy: "test", assertedAt: now }, entries: [
     { key: "notification.completed_interaction.recipient", value: { channel: "email", recipient: "team@example.test", event: "completed_interaction", enabled: true, temporary: true } },
+    { key: "policy.consent", value: CONSENT },
   ] }).memory;
   io.handoff.mockReset().mockResolvedValue("accepted");
   io.terminate.mockReset().mockImplementation(async (_provider, resource, command) => { await authorizeQualificationTransport("hangup", resource, command); return "accepted"; });
@@ -162,4 +164,46 @@ test("the 30-day purge removes pilot turns and transcript copies but keeps the a
   expect(review.evidence_json).toMatchObject({ transcript: null, pilot: true });
   expect(review.payload_json).toMatchObject({ phone: "+15555550100" });
   expect(await prisma.auditLog.count({ where: { action: "retention.pilot_transcript_purged" } })).toBe(1);
+});
+
+test("a tenant whose consent policy turns transcription off stores no turns", async () => {
+  const now = new Date();
+  memory = buildOperatingConfigurationSnapshot({ accountId: f.policy.accountId, generatedAt: now, assertion: { sourceId: "fixture", recordRef: "fixture-only", contentHash: "f".repeat(64), assertedBy: "test", assertedAt: now }, entries: [
+    { key: "policy.consent", value: { ...CONSENT, transcription: { enabled: false } } },
+  ] }).memory;
+  const c = await capture();
+  const { bridge, sessionId } = await admittedBridge(c);
+  try {
+    await said(bridge, "caller", "Hi, this is Pat Example.");
+    await new Promise(resolve => setTimeout(resolve, 200));
+    expect(await turns(sessionId)).toHaveLength(0);
+  } finally { await bridge.stop("synthetic_cleanup"); }
+});
+
+test("a pilot session whose provider echo drops input transcription never accepts audio", async () => {
+  const c = await capture();
+  const started = await beginGrokHandoff(c);
+  const token = io.handoff.mock.calls.at(-1)![1] as string;
+  const keys = generateKeyPairSync("ed25519"), streamUrl = process.env.RESPONSEOS_GROK_STREAM_URL!;
+  const timestamp = String(Math.floor(Date.now() / 1000));
+  const headers = new Headers({ "telnyx-timestamp": timestamp, "telnyx-signature-ed25519": sign(null, Buffer.from(`${timestamp}|${streamUrl}`), keys.privateKey).toString("base64"), "x-telnyx-streaming-auth-token": token });
+  const carrier = { bufferedAmount: 0, send: vi.fn(), close: vi.fn() }, realtime = { bufferedAmount: 0, send: vi.fn(), close: vi.fn() };
+  const bridge = await startMediaBridge({ headers, connectedToken: token,
+    trusted: { streamUrl, publicKey: keys.publicKey.export({ format: "der", type: "spki" }).subarray(-32).toString("base64") },
+    rawStart: JSON.stringify({ event: "start", stream_id: randomUUID(), start: { call_control_id: c.provider_call_id, call_session_id: c.call_session_id, client_state: mediaClientState(c.id, c.generation), media_format: { encoding: "PCMU", sample_rate: 8000, channels: 1 } } }),
+  }, { carrier, openRealtime: vi.fn().mockResolvedValue(realtime) });
+  const sent = JSON.parse(realtime.send.mock.calls[0][0]);
+  const { transcription: _dropped, ...input } = sent.session.audio.input;
+  await bridge.xai(JSON.stringify({ type: "session.updated", session: { ...sent.session, audio: { ...sent.session.audio, input }, id: "pilot-no-transcription", model: "grok-voice-3.0" } }));
+  expect(bridge.acceptingAudio).toBe(false);
+  expect(realtime.close).toHaveBeenCalled();
+  expect((await prisma.grokCallSession.findUniqueOrThrow({ where: { id: started.sessionId } })).stopped_at).not.toBeNull();
+});
+
+test("the database rejects a changed admission mode and a turn outside a pilot session", async () => {
+  const c = await capture();
+  await expect(prisma.callCaptureSession.update({ where: { id: c.id }, data: { admission_mode: "qualification" } })).rejects.toThrow(/admission_mode_is_immutable/);
+  const { bridge, sessionId } = await admittedBridge(c);
+  await bridge.stop("synthetic_cleanup");
+  await expect(prisma.grokTranscriptTurn.create({ data: { account_id: "other-account", session_id: sessionId, sequence: 1, speaker: "caller", text: "x", occurred_at: new Date(), expires_at: new Date() } })).rejects.toThrow(/transcript_turn_requires_pilot_session/);
 });

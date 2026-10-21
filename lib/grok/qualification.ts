@@ -113,7 +113,7 @@ async function assertQualificationTarget(tx: Prisma.TransactionClient, s: GrokCa
   const account = await tx.account.findUnique({ where: { id: p.accountId } });
   const assignment = await tx.telephonyNumberAssignment.findFirst({ where: { id: p.assignmentId, account_id: p.accountId, telephony_number_id: p.numberId, ...(pilot ? { bootstrap_id: null } : {}), status: pilot ? "active" : "qualification", unassigned_at: null } });
   const number = await tx.telephonyNumber.findFirst({ where: { id: p.numberId, provider: "telnyx", provider_number_id: p.providerNumberId, e164: p.e164, released_at: null, status: "assigned" } });
-  if (s.account_id !== p.accountId || s.assignment_id !== p.assignmentId || account?.account_type !== (pilot ? "customer" : "internal_demo") || (pilot && !await supervisedExecutionAuthorized(p.accountId)) || !assignment || assignment.number_exclusivity_key !== p.numberId || !number || await tx.telephonyNumberAssignment.count({ where: { telephony_number_id: p.numberId, unassigned_at: null } }) !== 1) throw Error("qualification_provider_identity_mismatch");
+  if (s.account_id !== p.accountId || s.assignment_id !== p.assignmentId || account?.account_type !== (pilot ? "customer" : "internal_demo") || (pilot && !await supervisedExecutionAuthorized(p.accountId, undefined, tx)) || !assignment || assignment.number_exclusivity_key !== p.numberId || !number || await tx.telephonyNumberAssignment.count({ where: { telephony_number_id: p.numberId, unassigned_at: null } }) !== 1) throw Error("qualification_provider_identity_mismatch");
 }
 
 export async function reserveQualification(tx: Prisma.TransactionClient, s: GrokCallSession, now: Date) {
@@ -126,6 +126,8 @@ export async function reserveQualification(tx: Prisma.TransactionClient, s: Grok
     await tx.grokQualificationReservation.update({ where: { session_id: active.session_id }, data: { active_slot: null, released_at: now } });
   }
   await assertQualificationTarget(tx, s, p);
+  // A pilot caller is never admitted into a window shorter than a full call.
+  if (p.mode === "carrier-pilot" && Date.parse(p.expiresAt) - now.getTime() < p.maxDurationMs) throw Error("pilot_window_too_short");
   const capture = await tx.callCaptureSession.findUniqueOrThrow({ where: { id: s.capture_id } });
   const event = await tx.webhookEvent.findUnique({ where: { provider_provider_event_id: { provider: "telnyx", provider_event_id: capture.dtmf_event_id! } } });
   if (!event) throw Error("qualification_proof_missing");

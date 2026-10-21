@@ -1,6 +1,6 @@
 import { callHasWithdrawal } from "@/lib/callReview/withdrawal";
 import "@/lib/serverOnlyGuard";
-import type { TelephonyNumberAssignmentStatus } from "@prisma/client";
+import type { Prisma, TelephonyNumberAssignmentStatus } from "@prisma/client";
 import { db } from "@/lib/db/client";
 import { findCallCorrelation } from "@/lib/data/webhookEvents";
 import { BusinessMemorySnapshotSchema, type BusinessMemorySnapshot } from "@/lib/prospectBootstrap/contracts";
@@ -199,10 +199,10 @@ export async function findSupervisedNumberOwner(
  * fails closed when it is revoked, so an external effect approved before the
  * revocation must not be allowed to bypass it afterwards.
  */
-export async function supervisedExecutionAuthorized(accountId: string, callId?: string): Promise<boolean> {
+export async function supervisedExecutionAuthorized(accountId: string, callId?: string, client?: Prisma.TransactionClient): Promise<boolean> {
   if (!db) return false;
   if (callId && (await callHasWithdrawal(accountId, callId) || await supervisedCallWasQualification(accountId, callId))) return false;
-  const profile = await db.agentProfile.findFirst({
+  const profile = await (client ?? db).agentProfile.findFirst({
     where: { account_id: accountId, type: "supervised_receptionist", enabled: true },
     orderBy: { created_at: "asc" },
   });

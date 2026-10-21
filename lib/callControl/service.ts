@@ -133,6 +133,10 @@ async function createQualificationCapture(event: CallControlEvent) {
   const pilot = pilotAuthorityTarget(occurredAt);
   const pilotAdmitted = runtime?.assignmentStatus === "active" && pilot?.accountId === runtime.accountId && pilot.assignmentId === runtime.assignmentId;
   if (!runtime || (runtime.assignmentStatus !== "qualification" && !pilotAdmitted) || !runtime.providerEvidenceAuthorized || !runtime.readiness.ready) throw new Error("qualification_runtime_unavailable");
+  if (pilotAdmitted) {
+    const consent = readOperatingConfigurationValue(runtime.memory, "policy.consent");
+    if (consent?.transcription.enabled !== true || consent.recording.enabled !== false || !consent.aiDisclosure) throw new Error("qualification_runtime_unavailable");
+  }
   const capture = await db.callCaptureSession.upsert({
     where: { account_id_provider_call_id: { account_id: runtime.accountId, provider_call_id: event.data.payload.call_control_id } },
     update: {},

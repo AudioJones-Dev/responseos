@@ -10,6 +10,9 @@ import * as provider from "./provider";
 import { authenticateStream, mediaClientState, mediaHash, startFrame } from "./mediaContract";
 
 import { reserveQualification, qualificationAlive, qualificationSchema } from "./qualification";
+import { orderConsentEvents, withCaptureLock } from "@/lib/callReview/consent";
+import { BusinessMemorySnapshotSchema } from "@/lib/prospectBootstrap/contracts";
+import { readOperatingConfigurationValue } from "@/lib/agentExecution/operatingConfiguration";
 import { readDemoKnowledge } from "./demoKnowledge";
 
 const LEASE_MS = 15000;
@@ -269,28 +272,34 @@ export async function bindGrokRealtime(id: string, workerToken: string, realtime
 const MAX_TRANSCRIPT_TURNS = 400;
 
 /**
- * ADR-0082: appends one consented pilot transcript turn. Writes only while the
- * pilot session holds media authority, the latest transcript consent is a
- * witnessed grant and no withdrawal exists; otherwise it stores nothing.
+ * ADR-0082: appends one consented pilot transcript turn. Runs under the
+ * capture lock that withdrawal and drain take, then the session row lock, so a
+ * committed withdrawal always precedes or follows a whole write. Contract and
+ * readiness checks stay with the 1 s heartbeat, keeping this lock short.
  */
 export async function recordGrokTranscriptTurn(id: string, workerToken: string, speaker: "caller" | "agent", text: string) {
   const clean = text.replace(/[\u0000-\u001f]+/g, " ").trim().slice(0, 4000);
   if (!clean) return false;
-  return database().$transaction(async tx => {
+  const located = await database().grokCallSession.findUnique({ where: { id }, select: { account_id: true, provider_call_id: true } });
+  if (!located) return false;
+  return withCaptureLock(located.account_id, located.provider_call_id, async tx => {
     const s = await lock(tx, id), now = await clock(tx);
     const capture = await tx.callCaptureSession.findUnique({ where: { id: s.capture_id } });
     const reservation = await tx.grokQualificationReservation.findUnique({ where: { session_id: id } });
     const policy = reservation ? qualificationSchema.safeParse(reservation.policy_json) : null;
-    if (!capture || capture.admission_mode !== "pilot" || policy?.data?.mode !== "carrier-pilot" || !same(s, capture) ||
-      s.worker_token !== workerToken || s.stopped_at || s.lease_expires_at <= now ||
-      capture.content_admission_closed_at || capture.call_disconnected_at ||
-      !await qualificationAlive(tx, s, now) || await providerCallHasWithdrawal(s.account_id, s.provider_call_id, tx)) return false;
-    const consent = await tx.callConsentEvent.findFirst({ where: { account_id: s.account_id, provider_call_id: s.provider_call_id, artifact: "transcript" }, orderBy: [{ occurred_at: "desc" }, { id: "desc" }], select: { action: true } });
-    if (consent?.action !== "grant") return false;
+    if (!capture || !reservation || capture.admission_mode !== "pilot" || policy?.data?.mode !== "carrier-pilot" || !same(s, capture) ||
+      s.worker_token !== workerToken || s.stopped_at || s.lease_expires_at <= now || reservation.released_at || reservation.deadline <= now ||
+      capture.content_admission_closed_at || capture.capture_ended_at || capture.call_disconnected_at || capture.withdrawal_received_at ||
+      await providerCallHasWithdrawal(s.account_id, s.provider_call_id, tx)) return false;
+    const memory = BusinessMemorySnapshotSchema.safeParse(capture.snapshot_json);
+    const consentPolicy = memory.success ? readOperatingConfigurationValue(memory.data, "policy.consent") : null;
+    if (consentPolicy?.transcription.enabled !== true || consentPolicy.recording.enabled !== false) return false;
+    const events = await tx.callConsentEvent.findMany({ where: { account_id: s.account_id, provider_call_id: s.provider_call_id, artifact: "transcript" }, select: { action: true, occurred_at: true } });
+    if (events.some(event => event.action === "withdraw") || orderConsentEvents(events).at(-1)?.action !== "grant") return false;
     const sequence = await tx.grokTranscriptTurn.count({ where: { session_id: id } }) + 1;
     if (sequence > MAX_TRANSCRIPT_TURNS) return false;
     await tx.grokTranscriptTurn.create({ data: { account_id: s.account_id, session_id: id, sequence, speaker, text: clean, occurred_at: now,
       expires_at: new Date(now.getTime() + policy.data.transcriptRetentionDays * 24 * 60 * 60 * 1000) } });
     return true;
-  });
+  }, { bounded: true });
 }

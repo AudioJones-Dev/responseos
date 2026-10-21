@@ -48,6 +48,7 @@ export async function startCaptureAi(target: AiStartTarget) {
     const current = await client.callCaptureSession.findUnique({ where: { id: target.id, account_id: target.account_id } });
     if (!current || !sameTarget(current, target)) throw Error("ai_start_target_mismatch");
     if (await client.grokCallSession.findUnique({ where: { capture_id: target.id } })) throw Error("voice_engine_already_claimed");
+    if (current.admission_mode === "pilot") throw Error("pilot_requires_grok");
     if (await providerCallHasWithdrawal(target.account_id, target.provider_call_id, client)) throw Error("withdrawal_is_terminal");
     const existing = await client.telnyxCallCommand.findFirst({ where: { capture_session_id: target.id, command_type: "ai_assistant_start" }, orderBy: { intended_at: "asc" } });
     if (existing) {

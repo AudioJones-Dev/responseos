@@ -115,6 +115,8 @@ export async function startMediaBridge(input: { headers: Headers; connectedToken
         configuring = true;
         const session = configuration.parse(frame.session);
         if (knowledge && z.object({ instructions: z.literal(knowledge.instructions), voice: z.literal(knowledge.voice) }).safeParse(frame.session).success === false) throw Error("realtime_knowledge_not_acknowledged");
+        // A pilot call must not run without the transcript the operator reviews; fail before any audio.
+        if (knowledge?.pilot && z.object({ audio: z.object({ input: z.object({ transcription: z.object({ model: z.literal("grok-transcribe") }) }) }) }).safeParse(frame.session).success === false) throw Error("realtime_transcription_not_acknowledged");
         await bindGrokRealtime(id, worker, session.id, knowledge && { version: knowledge.version, sha256: knowledge.sha256, instructionsSha256: knowledge.instructionsSha256, voice: knowledge.voice });
         if (closed || !await heartbeatGrok(id, worker)) { await stop("realtime_binding_closed"); return; }
         verifiedAt = performance.now(); ready = true; return;
