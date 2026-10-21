@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { expect, test } from "vitest";
@@ -9,9 +10,9 @@ test("every server route traces only the operator-issued runtime authority JSON 
   expect(nextConfig.outputFileTracingIncludes).toEqual({ "/**": ["./runtime-authority/*.json"] });
 });
 
-test("runtime authority files are never committed", () => {
+test("runtime authority files are ignored and never tracked", () => {
   const ignore = fs.readFileSync(path.join(root, "runtime-authority/.gitignore"), "utf8").split(/\r?\n/);
   expect(ignore).toContain("*.json");
-  const tracked = fs.readdirSync(path.join(root, "runtime-authority"));
-  expect(tracked.filter(name => name.endsWith(".json"))).toEqual([]);
+  const tracked = execFileSync("git", ["ls-files", "runtime-authority"], { cwd: root, encoding: "utf8" }).split("\n").filter(Boolean).sort();
+  expect(tracked).toEqual(["runtime-authority/.gitignore", "runtime-authority/README.md"]);
 });
