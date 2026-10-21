@@ -1575,6 +1575,18 @@
       "refType": "pull",
       "refState": "merged",
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/211"
+    },
+    {
+      "id": "SEO-AEO-01",
+      "phase": "Launch / Demo Deploy",
+      "title": "SEO/AEO foundations: robots, sitemap, llms.txt, canonicals, JSON-LD",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "Medium",
+      "start": "2026-10-21",
+      "ref": 220,
+      "refType": "pull"
     }
   ],
   "liveIssues": [
