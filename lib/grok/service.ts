@@ -10,6 +10,7 @@ import * as provider from "./provider";
 import { authenticateStream, mediaClientState, mediaHash, startFrame } from "./mediaContract";
 
 import { reserveQualification, qualificationAlive } from "./qualification";
+import { readDemoKnowledge } from "./demoKnowledge";
 
 const LEASE_MS = 15000;
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -48,7 +49,7 @@ async function stop(tx: Prisma.TransactionClient, s: GrokCallSession, reason: st
 
 export async function beginGrokHandoff(t: AiStartTarget) {
   const actor = await requireReviewOperator();
-  provider.assertGrokQualified();
+  await provider.assertGrokQualified();
   const token = randomBytes(32).toString("hex");
   const claim = await database().$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "CallCaptureSession" WHERE id=${t.id} AND account_id=${t.account_id} FOR NO KEY UPDATE`;
@@ -174,7 +175,7 @@ export async function watchdogGrokSweep() {
 }
 
 export async function claimGrokWorker(id: string) {
-  provider.assertGrokQualified();
+  await provider.assertGrokQualified();
   return database().$transaction(async tx => {
     const s = await lock(tx, id), now = await clock(tx);
     if (!await qualificationAlive(tx, s, now) || !s.xai_call_id || s.worker_token || s.stopped_at || s.lease_expires_at <= now || await authority(target(s), tx) !== s.authority_digest) throw Error("grok_worker_not_eligible");
@@ -223,7 +224,7 @@ export async function runGrokWorker(id: string) {
 }
 
 export async function claimGrokMedia(headers: Headers, rawStart: string, trusted: { streamUrl: string; publicKey: string }) {
-  provider.assertGrokQualified();
+  await provider.assertGrokQualified();
   const proof = authenticateStream(headers, trusted.streamUrl, trusted.publicKey);
   if (Buffer.byteLength(rawStart) > 16384) throw Error("stream_start_too_large");
   const frame = startFrame.parse(JSON.parse(rawStart));
@@ -242,14 +243,25 @@ export async function claimGrokMedia(headers: Headers, rawStart: string, trusted
   });
 }
 
-export async function bindGrokRealtime(id: string, workerToken: string, realtimeSessionId: string) {
+export async function bindGrokRealtime(id: string, workerToken: string, realtimeSessionId: string, acknowledgedKnowledge?: { version: string; sha256: string; instructionsSha256: string; voice: string }) {
   if (!/^[A-Za-z0-9_-]{1,128}$/.test(realtimeSessionId)) throw Error("realtime_identity_invalid");
   return database().$transaction(async tx => {
     const s = await lock(tx, id);
     if (!await qualificationAlive(tx, s, await clock(tx)) || s.worker_token !== workerToken || s.stopped_at || s.lease_expires_at <= await clock(tx) || await authority(target(s), tx) !== s.authority_digest) throw Error("realtime_authority_closed");
+    const knowledge = readDemoKnowledge(s.account_id);
+    if (Boolean(knowledge) !== Boolean(acknowledgedKnowledge) || (knowledge &&
+      (knowledge.version !== acknowledgedKnowledge?.version || knowledge.sha256 !== acknowledgedKnowledge?.sha256 ||
+        knowledge.instructionsSha256 !== acknowledgedKnowledge?.instructionsSha256 || knowledge.voice !== acknowledgedKnowledge?.voice))) throw Error("realtime_knowledge_changed");
     await tx.grokIncomingReceipt.create({ data: { event_id: `realtime:${realtimeSessionId}`, session_id: id, call_id: realtimeSessionId, body_digest: hash(`${id}|${workerToken}|${realtimeSessionId}|${provider.GROK_MODEL}`) } });
     const command = await tx.grokCallCommand.findUniqueOrThrow({ where: { session_id_kind: { session_id: id, kind: "join" } } });
     if (command.result_at || command.status !== "uncertain") throw Error("realtime_join_consumed");
+    if (knowledge) await tx.auditLog.create({ data: {
+      account_id: s.account_id, actor_type: "system", action: "grok_demo_knowledge_acknowledged", category: "workflow",
+      target_type: "GrokCallSession", target_id: s.id,
+      metadata_json: { captureId: s.capture_id, generation: s.generation, providerCallId: s.provider_call_id,
+        realtimeSessionId, version: knowledge.version, sha256: knowledge.sha256, approvalId: knowledge.approvalId,
+        instructionsSha256: knowledge.instructionsSha256, voice: knowledge.voice, agentProfile: knowledge.agentProfile ?? null },
+    } });
     await tx.grokCallCommand.update({ where: { id: command.id }, data: { status: "accepted", result_at: await clock(tx) } });
   });
 }

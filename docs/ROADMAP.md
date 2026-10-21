@@ -184,3 +184,21 @@ Local Grok checkpoint now includes the injected-socket media bridge, exact signe
 Grok local socket successor adds actual TLS/WebSocket/HTTPS adapter composition and loopback end-to-end qualification. Status remains EXPERIMENTAL; hosted activation and real-provider qualification are not authorized.
 
 Local EXPERIMENTAL Grok qualification candidate: immutable GrokQualificationReservation (migration0028), one global slot released only by authenticated exact disconnection; no new public authority API or activation. [Contract](readiness/FRL_GROK_QUALIFICATION_2026-10-20.md).
+
+Local Linux packaging and inactive watchdog successor is under review; accepted app8bdd184/control1ff5e37 are preserved and published only to dedicated branches. No milestone or activation gate advances. [Local scope](readiness/FRL_GROK_LINUX_PACKAGE_2026-10-20.md).
+
+Local startup-readiness regression and inactive hosting lifecycle are under review; no release acceptance or hosting approval. The October20 10:30a.m. America/New_York checkpoint favors a labeled local walkthrough if hosted safety evidence is incomplete. [Review scope](readiness/FRL_GROK_STARTUP_LIFECYCLE_2026-10-20.md).
+
+Local EXPERIMENTAL watchdog-readiness P2 successor requires fresh active-loop sweep proof before qualification; inactive liveness cannot authorize calls. See [contract](readiness/FRL_GROK_WATCHDOG_READINESS_2026-10-20.md). No hosted or activation gate advances.
+
+Local caller-impact successor documents and tests termination of active calls on watchdog readiness loss, including restart. Reviewed f7ea48b/958fda6 remains frozen. Caller-impact acceptance, hosted timing/layout and live gates remain open; no runtime or milestone expansion. [Contract](readiness/FRL_GROK_WATCHDOG_READINESS_2026-10-20.md#caller-impact-and-release-acceptance).
+
+Local cross-host watchdog readiness successor is in implementation under ADR-0080. Exact-pair independent review, caller-impact acceptance, hosted timing/safety checks and supervised-demo release acceptance remain open.
+
+Local ADR-0080 P2 successor preserves fd4562f/7d433a6 and addresses transient transport failure and watchdog self-routing. Frozen-pair review, hosted measurements and owner release acceptance remain open.
+
+Local ADR-0081 knowledge successor preserves35920b5/653265f. Synthetic-only validation of approved packet loading and exact realtime acknowledgement is in progress. No hosted gate advances. Owner now requires a real inbound FRL demo; the earlier local-walkthrough fallback does not fulfill that deliverable. $10 target/$20 original general-demo ceiling; subsequent owner authorization reserves up to $15 additional exclusively for xAI API funding, making $35 combined including the $20 already paid. This is not $35 remaining or generic hosting authority. No new recurring subscription authorized. [Contract](readiness/FRL_APPROVED_KNOWLEDGE_2026-10-20.md).
+
+Sam/Ara local successor is in review under ADR-0081. No live-demo milestone advances. [Scope](readiness/FRL_SAM_RUNTIME_2026-10-20.md).
+
+Sam hardening successor fixes optional greeting failures without weakening media gates, clarifies operator-mediated withdrawal and retains exact provider voice acknowledgment. Local review only; hosted/carrier gates remain open.

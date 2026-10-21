@@ -23,6 +23,7 @@ import { POST as incomingPost } from "@/app/api/webhooks/xai/sip/route";
 import { claimGrokMedia, bindGrokRealtime } from "@/lib/grok/service";
 import { mediaClientState, realtimeConfig, REALTIME_URL } from "@/lib/grok/mediaContract";
 import { startMediaBridge } from "@/lib/grok/mediaBridge";
+import * as mediaBridge from "@/lib/grok/mediaBridge";
 import { createGrokMediaServer } from "@/lib/grok/mediaServer";
 import { createCarrierTransport } from "@/lib/grok/networkTransport";
 
@@ -46,6 +47,13 @@ async function unusedPort() {
 }
 
 async function networkFixture(malformedCarrierResponse = false, managedEdge = false) {
+  const originalStart = startMediaBridge;
+  let admittedBridge: Awaited<ReturnType<typeof startMediaBridge>> | undefined;
+  vi.spyOn(mediaBridge, "startMediaBridge").mockImplementation(async (...args) => {
+    const bridge = await originalStart(...args);
+    admittedBridge = bridge;
+    return bridge;
+  });
   const f = await fixture(), requests: { url: string; body: Record<string, unknown>; authorization: string | undefined; consentSaved: boolean }[] = [];
   const sessions: WebSocket[] = [], audio: string[] = [], urls: string[] = [];
   const peer = httpsServer(tls, (request, response) => {
@@ -76,7 +84,7 @@ async function networkFixture(malformedCarrierResponse = false, managedEdge = fa
   const peerOrigin = `https://127.0.0.1:${(peer.address() as AddressInfo).port}`;
   const carrierTransport = createCarrierTransport({ mode: "local-synthetic", origin: peerOrigin, ca: tls.cert });
   const keys = generateKeyPairSync("ed25519"), port = await unusedPort(), streamUrl = `wss://127.0.0.1:${port}/media?version=1`;
-  const runtime = createGrokMediaServer({ streamUrl, publicKey: keys.publicKey.export({ format: "der", type: "spki" }).subarray(-32).toString("base64"), ...(managedEdge ? { ingress: "managed-edge-http" as const } : { tls }), realtime: { mode: "local-synthetic", origin: peerOrigin, ca: tls.cert } });
+  const runtime = await createGrokMediaServer({ streamUrl, publicKey: keys.publicKey.export({ format: "der", type: "spki" }).subarray(-32).toString("base64"), ...(managedEdge ? { ingress: "managed-edge-http" as const } : { tls }), realtime: { mode: "local-synthetic", origin: peerOrigin, ca: tls.cert } });
   runtime.server.listen(managedEdge ? 0 : port, "127.0.0.1"); await once(runtime.server, "listening");
   const backendPort = (runtime.server.address() as AddressInfo).port;
   const proxy = managedEdge ? httpsServer(tls) : undefined;
@@ -114,7 +122,7 @@ async function networkFixture(malformedCarrierResponse = false, managedEdge = fa
     socket.send(JSON.stringify({ event: "start", stream_id: streamId, start: { call_control_id: f.capture.provider_call_id, call_session_id: f.capture.call_session_id, client_state: mediaClientState(f.capture.id, f.capture.generation), media_format: { encoding: "PCMU", sample_rate: 8000, channels: 1 }, ...startOverrides } }));
     return socket;
   }
-  const ready = () => vi.waitFor(async () => expect(await prisma.grokIncomingReceipt.count({ where: { session_id: started.sessionId, event_id: { startsWith: "realtime:" } } })).toBe(1), { timeout: 4000 });
+  const ready = (timeout = 4000) => vi.waitFor(() => expect(admittedBridge?.acceptingAudio).toBe(true), { timeout });
   async function probe(target: string, extra: string[] = [], host = new URL(streamUrl).host, proof = headers) {
     const socket = tlsConnect({ host: "127.0.0.1", port, ca: tls.cert, rejectUnauthorized: true });
     await once(socket, "secureConnect");
@@ -176,6 +184,35 @@ test("real local TLS rejects an untrusted certificate without opening xAI", asyn
   const f = await networkFixture();
   try { await expect(f.connect({}, Buffer.from("not-a-trusted-ca"))).rejects.toThrow(); expect(f.sessions).toHaveLength(0); }
   finally { await f.close(); }
+});
+
+test.each([false, true])("startup receipt cannot signal audio admission before post-binding heartbeat (managed edge %s)", async managedEdge => {
+  const f = await networkFixture(false, managedEdge);
+  const originalBind = grokService.bindGrokRealtime, originalHeartbeat = grokService.heartbeatGrok;
+  let bound = false, held = false, release!: () => void, entered!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  const waiting = new Promise<void>(resolve => { entered = resolve; });
+  vi.spyOn(grokService, "bindGrokRealtime").mockImplementation(async (...args) => {
+    const result = await originalBind(...args); bound = true; return result;
+  });
+  vi.spyOn(grokService, "heartbeatGrok").mockImplementation(async (...args) => {
+    if (bound && !held) { held = true; entered(); await gate; }
+    return originalHeartbeat(...args);
+  });
+  try {
+    const caller = await f.connect();
+    await waiting;
+    expect(await prisma.grokIncomingReceipt.count({ where: { session_id: f.id, event_id: { startsWith: "realtime:" } } })).toBe(1);
+    await expect(f.ready(100)).rejects.toThrow();
+    const packet = (chunk: number, value: number) => JSON.stringify({ event: "media", stream_id: f.streamId, sequence_number: String(chunk + 1), media: { track: "inbound", chunk: String(chunk), timestamp: String(chunk * 20), payload: Buffer.alloc(160, value).toString("base64") } });
+    caller.send(packet(1, 17));
+    const acknowledged = once(caller, "pong"); caller.ping("startup-frame-barrier"); await acknowledged;
+    expect(f.audio).toEqual([]);
+    release(); await f.ready();
+    caller.send(packet(2, 34));
+    await vi.waitFor(() => expect(f.audio).toHaveLength(1));
+    expect(Buffer.from(f.audio[0], "base64")).toEqual(Buffer.alloc(160, 34));
+  } finally { release(); await f.close(); }
 });
 
 test("malformed real carrier HTTP result remains uncertain and cannot release a consumed command", async () => {
@@ -776,7 +813,7 @@ test("separate processes reject an unqualified legacy heartbeat and consume disa
   const tsx = path.resolve("node_modules/tsx/dist/cli.mjs");
   const worker = spawnSync(process.execPath, [tsx, "tests/integration/fixtures/grok-heartbeat-worker.ts", f.id, claim.session.worker_token!], { encoding: "utf8", env: process.env, timeout: 5000 });
   expect(worker.status, worker.stderr).toBe(1); expect(worker.stdout).not.toContain("ready");
-  const watcher = spawnSync(process.execPath, [tsx, "scripts/grok-watchdog.ts"], { env: { ...process.env, RESPONSEOS_GROK_WATCHDOG_ENABLED: "true" }, encoding: "utf8", timeout: 15000 });
+  const watcher = spawnSync(process.execPath, [tsx, "scripts/grok-watchdog.ts"], { env: { ...process.env, RESPONSEOS_GROK_WATCHDOG_MODE: "active", RESPONSEOS_GROK_WATCHDOG_ENABLED: "true" }, encoding: "utf8", timeout: 15000 });
   expect(watcher.status, watcher.stderr).toBe(0);
   expect((await prisma.grokCallSession.findUniqueOrThrow({ where: { id: f.id } })).stopped_at).not.toBeNull();
   const commands = await prisma.grokCallCommand.findMany({ where: { session_id: f.id, kind: { endsWith: "hangup" } } });
@@ -785,15 +822,23 @@ test("separate processes reject an unqualified legacy heartbeat and consume disa
 });
 
 test("watchdog loop survives repeated database failures and emits intervention alerts", async () => {
-  const watcher = spawn(process.execPath, [path.resolve("node_modules/tsx/dist/cli.mjs"), "scripts/grok-watchdog.ts", "--loop"], {
+  const directory = mkdtempSync(path.join(tmpdir(), "watchdog-unhealthy-"));
+  const watcher = spawn(process.execPath, ["--import", "tsx", "scripts/grok-watchdog.ts", "--loop"], {
     stdio: ["ignore", "pipe", "pipe"],
-    env: { ...process.env, RESPONSEOS_GROK_WATCHDOG_ENABLED: "true", DATABASE_URL: "postgresql://missing_watchdog_role@127.0.0.1:5432/responseos_test" },
+    env: { ...process.env, RESPONSEOS_GROK_WATCHDOG_MODE: "active", RESPONSEOS_GROK_WATCHDOG_ENABLED: "true",
+      RESPONSEOS_GROK_WATCHDOG_READINESS_FILE: path.join(directory, "proof.json"), RESPONSEOS_GROK_WATCHDOG_INSTANCE: "synthetic-unhealthy-watchdog",
+      RESPONSEOS_APPLICATION_SHA: "a".repeat(40), RESPONSEOS_CONTROL_SHA: "b".repeat(40),
+      DATABASE_URL: "postgresql://missing_watchdog_role@127.0.0.1:5432/responseos_test" },
   });
+  const exited = once(watcher, "exit");
   let alerts = ""; watcher.stderr.on("data", bytes => { alerts += bytes.toString(); });
   try {
     await vi.waitFor(() => expect(alerts.match(/Grok watchdog sweep incomplete/g)?.length ?? 0).toBe(1), { timeout: 12000 });
     await new Promise(resolve => setTimeout(resolve, 2500));
     expect(alerts.match(/Grok watchdog sweep incomplete/g)).toHaveLength(1);
     expect(watcher.exitCode).toBeNull(); expect(alerts).toContain("Consumed commands will not be retried");
-  } finally { watcher.kill("SIGTERM"); await once(watcher, "exit"); }
+  } finally {
+    if (watcher.exitCode === null && watcher.signalCode === null) watcher.kill("SIGTERM");
+    await exited; rmSync(directory, { recursive: true });
+  }
 });

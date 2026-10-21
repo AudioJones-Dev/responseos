@@ -1,3 +1,7 @@
+import { qualificationFixture } from "../qualificationFixture";
+import { knowledgeFixture } from "../knowledgeFixture";
+import { qualificationConfigHash, readQualification } from "@/lib/grok/qualification";
+import { SAM_GREETING, SAM_PROFILE } from "@/lib/grok/samProfile";
 import { expireFingerprintFixture } from "./expire-fingerprint-fixture";
 import { afterAll, afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { generateKeyPairSync, sign } from "node:crypto";
@@ -101,6 +105,36 @@ describe("FRL Call Control qualification", () => {
       for (const name of Object.keys(process.env)) if (!(name in environmentBeforeCase)) delete process.env[name];
       Object.assign(process.env, environmentBeforeCase);
     }
+  });
+
+  test.each(["qualified", "disabled", "stale", "expired", "hash", "tenant", "assignment", "generic-expired"])("Sam disclosure %s preserves exact carrier consent payload and decline path", async mode => {
+    await setupQualification();
+    await ingest(event("call.initiated", "sam-init", { to: NUMBER }, 1_000));
+    const capture = await prisma.callCaptureSession.findFirstOrThrow();
+    const q = qualificationFixture({ accountId: capture.account_id, assignmentId: capture.assignment_id! });
+    const k = knowledgeFixture(mode === "tenant" ? "other-account" : capture.account_id, SAM_PROFILE);
+    try {
+      if (mode === "assignment") q.policy.assignmentId = "other-assignment";
+      if (mode === "generic-expired") delete k.packet.agentProfile;
+      if (["expired", "generic-expired"].includes(mode)) k.packet.expiresAt = new Date(Date.now() - 1).toISOString();
+      q.policy.knowledge = k.save(); q.policy.configSha256 = qualificationConfigHash(); q.save();
+      if (mode === "disabled") vi.stubEnv("RESPONSEOS_QUALIFICATION_ACTIVATION", "DISABLED");
+      if (mode === "stale") q.stopReadiness();
+      if (mode === "hash") vi.stubEnv("RESPONSEOS_DEMO_KNOWLEDGE_SHA256", "0".repeat(64));
+      sendCommand.mockClear();
+      await expect(ingest(event("call.answered", "sam-answer", { to: NUMBER }, 2_000))).resolves.toMatchObject({ duplicate: false });
+      const speak = sendCommand.mock.calls.filter(([c]) => c.action === "speak");
+      expect(speak).toHaveLength(1);
+      expect(speak[0][0].body).toMatchObject({ payload: (mode === "qualified" ? SAM_GREETING + " " : "") + "This call uses an AI receptionist and may be transcribed to help with your request." + " To continue, press 1. To decline, press 2.", voice: "female", service_level: "basic", language: "en-US", client_state: state(capture.id) });
+      expect(await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } })).toMatchObject({ control_state: "DISCLOSURE_PLAYING" });
+      if (["disabled", "stale", "expired", "hash", "generic-expired"].includes(mode)) await expect(readQualification()).rejects.toThrow();
+      await ingest(event("call.speak.ended", "sam-spoken", { client_state: state(capture.id) }, 3_000));
+      expect(sendCommand.mock.calls.filter(([c]) => c.action === "gather_using_speak")).toHaveLength(1);
+      await ingest(event("call.gather.ended", "sam-decline", { status: "valid", digits: "2", client_state: state(capture.id) }, 4_000));
+      expect(await prisma.callCaptureSession.findUniqueOrThrow({ where: { id: capture.id } })).toMatchObject({ control_state: "CONSENT_PENDING_OPERATOR", dtmf_decision: "refused" });
+      expect(await prisma.callConsentEvent.count({ where: { action: "grant" } })).toBe(0);
+      expect(sendCommand.mock.calls.some(([c]) => ["streaming_start", "ai_assistant_start"].includes(c.action))).toBe(false);
+    } finally { k.cleanup(); q.cleanup(); vi.unstubAllEnvs(); }
   });
 
   test("reservation-stage failure retries immediately while an unfinished duplicate remains retryable", async () => {

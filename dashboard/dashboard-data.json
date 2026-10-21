@@ -1836,6 +1836,78 @@
       "start": "2026-10-20",
       "blocked": true,
       "blockedReason": "Local candidate awaiting exact-tree validation and independent review; accepted pair unchanged. No live authority, hosting, credentials or calls authorized."
+    },
+    {
+      "id": "FRL-GROK-LINUX-PACKAGE",
+      "phase": "Integrations",
+      "title": "Review local Linux package and inactive watchdog",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-10-20",
+      "blocked": true,
+      "blockedReason": "Local successor prepared for exact-tree validation and independent review. Accepted pair published unchanged to dedicated branches. No hosting, credentials, merge or activation authorized."
+    },
+    {
+      "id": "FRL-GROK-STARTUP-LIFECYCLE",
+      "phase": "Integrations",
+      "title": "Review deterministic startup readiness and inactive lifecycle",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-10-20",
+      "blocked": true,
+      "blockedReason": "Local tests and exact successor review pending. Render exposes only Michael workspace; Audio authorization required. Claude Code login required. No release acceptance or live activation."
+    },
+    {
+      "id": "FRL-GROK-WATCHDOG-READINESS",
+      "phase": "Integrations",
+      "title": "Review watchdog readiness caller impact and regressions",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-10-20",
+      "blocked": true,
+      "blockedReason": "Claude cleared original readiness P2 on frozen f7ea48b/958fda6. Caller-impact documentation/test successor requires review and explicit owner acceptance of abrupt call termination; hosted layout/timing and live gates remain open."
+    },
+    {
+      "id": "FRL-GROK-APPROVED-KNOWLEDGE",
+      "phase": "Integrations",
+      "title": "Validate approved demo knowledge and exact session acknowledgement",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-10-20",
+      "blocked": true,
+      "blockedReason": "Synthetic local successor only. Seven facts, exact release, hosting costs, credentials, routing and bounded live activation require owner approval; $20 maximum new incremental spending."
+    },
+    {
+      "id": "FRL-GROK-CROSS-HOST-READINESS",
+      "phase": "Integrations",
+      "title": "Review bounded readiness reuse and local watchdog sweep",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-10-20",
+      "blocked": true,
+      "blockedReason": "P2 successor under local validation; preserve fd4562f/7d433a6. Claude frozen-pair review, bounded detection acceptance and hosted/credential approvals remain pending."
+    },
+    {
+      "id": "FRL-SAM-RUNTIME",
+      "phase": "Integrations",
+      "title": "Harden Sam disclosure fallback and supervised withdrawal contract",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-10-20",
+      "blocked": true,
+      "blockedReason": "Local hardening successor requires independent review; provider voice echo, hosted safety and exact activation approvals remain open."
     }
   ],
   "liveIssues": [

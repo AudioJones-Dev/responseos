@@ -4,13 +4,13 @@ import { createGrokMediaServer, parseMediaListenerConfig } from "../lib/grok/med
 import { db } from "../lib/db/client";
 
 async function main() {
-  assertGrokQualified();
+  await assertGrokQualified();
   if (process.argv[2] !== process.env.RESPONSEOS_GROK_MEDIA_CONFIG) throw Error("qualification_config_mismatch");
   const config = parseMediaListenerConfig(JSON.parse(await readFile(process.argv[2], "utf8")), process.env.PORT);
   const ingress = config.ingress === "direct-tls"
     ? { ingress: config.ingress, tls: { cert: await readFile(config.certificatePath), key: await readFile(config.privateKeyPath) } }
     : { ingress: config.ingress };
-  const runtime = createGrokMediaServer({ ...ingress, streamUrl: config.streamUrl, publicKey: config.publicKey, realtime: { mode: config.mode, apiKey: () => process.env.XAI_API_KEY ?? "" }, fault: () => console.error("Grok transport failed; inspect call status and operator fallback.") });
+  const runtime = await createGrokMediaServer({ ...ingress, streamUrl: config.streamUrl, publicKey: config.publicKey, realtime: { mode: config.mode, apiKey: () => process.env.XAI_API_KEY ?? "" }, fault: () => console.error("Grok transport failed; inspect call status and operator fallback.") });
   let closing = false;
   const shutdown = async () => { if (closing) return; closing = true; await runtime.close(); await db?.$disconnect(); };
   process.once("SIGINT", () => { void shutdown(); }); process.once("SIGTERM", () => { void shutdown(); });

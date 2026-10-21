@@ -1947,3 +1947,28 @@ ADR-0079 P2 preparation: discard ineligible startup audio with bounded ordering 
 ADR-0079 local managed-edge adapter: explicit HTTP ingress behind a future trusted Railway TLS edge, retaining direct TLS default, exact configured WSS signature authority and unchanged production rejection. No hosted or activation approval. [Scope and validation](readiness/FRL_GROK_MANAGED_EDGE_2026-10-19.md).
 
 ADR-0079 local qualification successor: separately pinned trusted authority, exclusive demo call reservation retained until exact authenticated disconnection, bounded admission and retained one-shot termination after expiry. Additive0028 preserves existing guards. Checked-in authority/deployment remain disabled; no live authority issued. Process-local watchdog reporting deduplicates without changing sweep cadence. [Contract and commissioning addendum](readiness/FRL_GROK_QUALIFICATION_2026-10-20.md).
+
+ADR-0079 local packaging follow-up: explicit inactive watchdog mode gates all business imports; active operation requires both mode and enabled flag. A source-bound Linux archive and offline-only launcher support local review. Existing qualification, termination and deployment gates remain unchanged. [Contract](readiness/FRL_GROK_LINUX_PACKAGE_2026-10-20.md).
+
+ADR-0079 local readiness/lifecycle correction: realtime receipt persistence is not audio admission. Synthetic socket fixtures observe actual bridge admission and gate the post-binding heartbeat. A distinct credential-free inactive health service supports local lifecycle checks; it cannot monitor calls or activate providers. [Scope](readiness/FRL_GROK_STARTUP_LIFECYCLE_2026-10-20.md).
+
+ADR-0079 watchdog-readiness correction: production qualification requires fresh successful active-loop sweep evidence bound to the exact release and deployment instance. Inactive liveness cannot qualify a call; missing readiness fails activation health and admission while retained termination remains available. The local shared-file mechanism does not qualify independent hosted services. [Contract and limitations](readiness/FRL_GROK_WATCHDOG_READINESS_2026-10-20.md).
+
+ADR-0079 caller-impact clarification: the local readiness gate also stops active calls on proof loss, including watchdog startup before its first successful sweep. Abrupt media interruption and consumed-once termination intent are distinct from authenticated disconnection. The owner requested documentation and regressions; explicit caller-impact/release acceptance and measured hosted timing remain outstanding. Runtime behavior and the 3000 ms threshold are unchanged. [Caller-impact contract](readiness/FRL_GROK_WATCHDOG_READINESS_2026-10-20.md#caller-impact-and-release-acceptance).
+
+## ADR-0080 - Authenticate cross-host watchdog readiness without extending freshness
+
+Owner-authorized local successor only. Use fresh challenge-bound signed HTTPS proof with exact release/instance binding, bounded round trip, and unchanged expiry. Preserve active-call termination on readiness loss and independent retained hangup authority. Hosting, credentials and supervised-demo release acceptance remain pending. [Contract, approval queue and Doctrine21](readiness/FRL_GROK_CROSS_HOST_READINESS_2026-10-20.md).
+
+
+ADR-0080 P2 correction: retain a verified remote proof only through its original monotonic deadline on transport failure; explicit denial or invalid proof revokes it. Active watchdog sweeps use writer-owned local readiness scope, removing public-edge requests under session locks. No consent/withdrawal/termination checks are cached. Detection during an edge outage remains bounded by the unchanged 3000 ms proof lifetime; explicit release acceptance and hosted measurement remain required. See the linked cross-host contract.
+
+ADR-0080 denial-authentication correction: sign exact-challenge not-ready responses. Only unsigned gateway502/503/504 may use the original retained deadline; authenticated denial or invalid signed proof revokes immediately. The unchanged three-second maximum bounds edge uncertainty. Preserve source-reviewed43ae9e6/8eec93c; no hosting or activation.
+
+## ADR-0081 — Bind approved demo knowledge to the exact realtime session
+
+Local owner-requested successor only. A strict expiring packet is bound to stored tenant, qualification version/hash and release pair. Exact provider instruction acknowledgement precedes audio, with existing audit metadata retaining call/capture/generation and payload hashes. No migration, retrieval system or business action. Synthetic fixtures are not factual approval. [Contract and Doctrine21](readiness/FRL_APPROVED_KNOWLEDGE_2026-10-20.md).
+
+ADR-0081 Sam follow-up: owner-approved fixed Sam/Ara profile is selected by the hashed knowledge packet, echoed with exact voice/instructions before media, and recorded in existing audit metadata. Carrier-side greeting preserves required disclosure and keypad consent. No console-agent routing or activation. See [runtime binding](readiness/FRL_SAM_RUNTIME_2026-10-20.md).
+
+ADR-0081 hardening: optional Sam personalization failures fall back only to the unchanged carrier disclosure/decline path. They never authorize media or bypass existing consent/readiness/withdrawal checks. Spoken stop remains an operator-mediated commissioning gate; exact provider voice echo stays mandatory.

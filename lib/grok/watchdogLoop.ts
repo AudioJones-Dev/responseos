@@ -4,6 +4,7 @@ export async function runGrokWatchdog(input: {
   pause: (milliseconds: number) => Promise<void>;
   alert: (scope: "session" | "sweep", event: "incident" | "summary" | "recovered", occurrences: number) => void;
   now?: () => number;
+  completed?: (healthy: boolean) => void;
 }) {
   let failures = 0;
   const incidents = new Map<"session" | "sweep", { last: number; count: number }>();
@@ -32,6 +33,7 @@ export async function runGrokWatchdog(input: {
       failures += 1;
       report("sweep", true);
     }
+    input.completed?.(healthy);
     if (!input.loop) return healthy;
     await input.pause(Math.min(30000, 1000 * 2 ** Math.min(failures, 5)));
   } while (true);

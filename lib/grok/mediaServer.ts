@@ -21,11 +21,11 @@ export function parseMediaListenerConfig(raw: unknown, envPort: string | undefin
   return { ...config, port };
 }
 
-export function createGrokMediaServer(config: { streamUrl: string; publicKey: string; realtime: TransportConfig; fault?: () => void } & Ingress) {
+export async function createGrokMediaServer(config: { streamUrl: string; publicKey: string; realtime: TransportConfig; fault?: () => void } & Ingress) {
   const origin = new URL(config.streamUrl);
   if (origin.protocol !== "wss:" || origin.username || origin.password || origin.hash) throw Error("media_listener_url_invalid");
   if (config.realtime.mode === "production") {
-    assertGrokQualified();
+    await assertGrokQualified();
     const approved = JSON.parse(readFileSync(process.env.RESPONSEOS_GROK_MEDIA_CONFIG!, "utf8"));
     if (approved.streamUrl !== config.streamUrl || approved.publicKey !== config.publicKey || (approved.ingress ?? "direct-tls") !== (config.ingress ?? "direct-tls")) throw Error("qualification_listener_mismatch");
   }
@@ -44,10 +44,10 @@ export function createGrokMediaServer(config: { streamUrl: string; publicKey: st
   const shutdowns = new Set<() => void>();
   const pending = new Set<Promise<unknown>>();
   function track(task: Promise<unknown>) { pending.add(task); void task.finally(() => pending.delete(task)).catch(() => {}); }
-  server.on("upgrade", (request, socket, head) => {
+  server.on("upgrade", async (request, socket, head) => {
     socket.on("error", () => {});
     try {
-      if (config.realtime.mode === "production") assertGrokQualified();
+      if (config.realtime.mode === "production") await assertGrokQualified();
       if (request.url !== origin.pathname + origin.search || request.headers.host !== origin.host || wss.clients.size >= 4) throw Error("stream_destination_invalid");
       if (request.rawHeaders.filter((v, i) => i % 2 === 0 && v.toLowerCase() === "host").length !== 1) throw Error("stream_host_invalid");
       const headers = new Headers();

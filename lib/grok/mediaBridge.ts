@@ -3,6 +3,7 @@ import { z } from "zod";
 import { GROK_MODEL } from "./provider";
 import { bindGrokRealtime, claimGrokMedia, dispatchGrokTermination, heartbeatGrok, requestGrokStop } from "./service";
 import { matchConnectedToken, pcmu, REALTIME_URL, realtimeConfig } from "./mediaContract";
+import { readDemoKnowledge } from "./demoKnowledge";
 
 export type MediaSocket = { readonly bufferedAmount: number; send: (data: string) => void; close: () => void };
 export type BridgePorts = {
@@ -31,6 +32,7 @@ export async function startMediaBridge(input: { headers: Headers; connectedToken
   const inbound = new Map<number, z.infer<typeof media>>(), marks = new Map<string, number>(), fenced = new Set<string>();
   const timers: { clock?: ReturnType<typeof setInterval> } = {};
   let stopResult: Promise<void> | undefined;
+  let knowledge: ReturnType<typeof readDemoKnowledge>;
   function send(socket: MediaSocket, value: unknown) {
     if (socket.bufferedAmount > 16384) throw Error("media_backpressure");
     socket.send(JSON.stringify(value));
@@ -46,7 +48,8 @@ export async function startMediaBridge(input: { headers: Headers; connectedToken
     return stopResult;
   }
   function localGate() {
-    if (closed || (binding.deadline && Date.now() >= binding.deadline.getTime()) || performance.now() - verifiedAt > 3000) throw Error("media_authority_stale");
+    if (closed || (binding.deadline && Date.now() >= binding.deadline.getTime()) ||
+      (knowledge && Date.now() >= knowledge.expiresAt) || performance.now() - verifiedAt > 3000) throw Error("media_authority_stale");
   }
   async function check() {
     if (checking || closed) return;
@@ -58,13 +61,14 @@ export async function startMediaBridge(input: { headers: Headers; connectedToken
     finally { checking = false; }
   }
   try {
+    knowledge = readDemoKnowledge(binding.session.account_id);
     if (!await heartbeatGrok(id, worker)) throw Error("media_presocket_veto");
     let timer: ReturnType<typeof setTimeout> | undefined;
     const opening = ports.openRealtime(REALTIME_URL, id).then(socket => { if (closed) socket.close(); return socket; });
     realtime = await Promise.race([opening, new Promise<never>((_, reject) => { timer = setTimeout(() => reject(Error("realtime_open_timeout")), 5000); })]).finally(() => { if (timer) clearTimeout(timer); });
     if (!await heartbeatGrok(id, worker)) throw Error("media_postsocket_veto");
     verifiedAt = performance.now();
-    send(realtime, realtimeConfig);
+    send(realtime, knowledge ? { ...realtimeConfig, session: { ...realtimeConfig.session, voice: knowledge.voice, instructions: knowledge.instructions } } : realtimeConfig);
   } catch { await stop("media_open_failed"); throw Error("media_open_failed"); }
   const openedAt = performance.now();
   async function carrier(raw: string) {
@@ -107,7 +111,8 @@ export async function startMediaBridge(input: { headers: Headers; connectedToken
         if (ready || configuring) throw Error("realtime_reconfiguration_denied");
         configuring = true;
         const session = configuration.parse(frame.session);
-        await bindGrokRealtime(id, worker, session.id);
+        if (knowledge && z.object({ instructions: z.literal(knowledge.instructions), voice: z.literal(knowledge.voice) }).safeParse(frame.session).success === false) throw Error("realtime_knowledge_not_acknowledged");
+        await bindGrokRealtime(id, worker, session.id, knowledge && { version: knowledge.version, sha256: knowledge.sha256, instructionsSha256: knowledge.instructionsSha256, voice: knowledge.voice });
         if (closed || !await heartbeatGrok(id, worker)) { await stop("realtime_binding_closed"); return; }
         verifiedAt = performance.now(); ready = true; return;
       }
