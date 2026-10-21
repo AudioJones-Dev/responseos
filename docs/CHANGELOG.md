@@ -15,6 +15,7 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - **Canonicals and social cards:** `lib/seo.ts` `pageMetadata()` gives each marketing page a canonical URL and its own Open Graph and Twitter title and description. Before, every page shared the homepage card.
 - **Structured data:** Organization and WebSite JSON-LD on every marketing page, FAQPage on `/demo` built from the existing FAQ copy, and Service plus Offer for the $1,000 assessment on `/audit`.
 - **Index hygiene:** the `(demo)` sandbox screens (walkthrough, operator console, client dashboard) are `noindex, follow`. `/industries/contractors` was not linked from anywhere, so the footer now links both industry pages.
+- **Industry pages:** `/industries/home-services` and `/industries/contractors` now share one layout and each adds where leads go missing, how the loop is designed to work, qualification signals, current status, and an FAQ (also emitted as FAQPage JSON-LD). Status language follows doctrine §20; no new statistics or vendor names.
 - **Domain moves:** every absolute URL above comes from `NEXT_PUBLIC_APP_URL`. Moving to a new domain means changing that value and redirecting the old host.
 
 ## Unreleased — fix: recognise connection loss reported without an error code (#214)
