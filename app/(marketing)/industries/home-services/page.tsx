@@ -89,8 +89,8 @@ const CONTENT: IndustryContent = {
       a: "Usually when your average job value is around $300 or more, you miss a meaningful number of calls (often 20 or more a month), and you have a clear booking or quote process. These are signals, not hard cutoffs.",
     },
     {
-      q: "What does it cost?",
-      a: "Every engagement starts with the $1,000 flat Readiness & Revenue Leak Assessment. If it's a fit, you get a proposal for a one-time setup fee plus a monthly retainer, and the full $1,000 is credited if you sign within 30 days.",
+      q: "How is pricing set?",
+      a: "Scope and pricing are set after the Readiness & Revenue Leak Assessment, based on what it finds. Current details are on the pricing page.",
     },
   ],
 };

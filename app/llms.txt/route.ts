@@ -12,8 +12,8 @@ Current status: ResponseOS is an internal-first product in active development. T
 
 ## How to start
 
-- [Readiness & Revenue Leak Assessment](${link("/audit")}): A $1,000 flat paid diagnostic that sizes missed demand, scores readiness, and gives a fit / no-fit answer. The full fee applies toward implementation if signed within 30 days.
-- [Pricing](${link("/pricing")}): Assessment first, then a one-time setup fee plus a monthly retainer. Tiers: Recovery Core, Recovery Pro, Recovery Performance. No performance-only pricing.
+- [Readiness & Revenue Leak Assessment](${link("/audit")}): A diagnostic that sizes missed demand, scores readiness, and gives a fit / no-fit answer before any implementation.
+- [Pricing](${link("/pricing")}): How engagements are scoped and priced.
 
 ## Product
 

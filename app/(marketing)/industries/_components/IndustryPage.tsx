@@ -109,9 +109,8 @@ export function IndustryPage({ content }: { content: IndustryContent }) {
           </p>
           <p className="mt-3 text-sm text-ink-secondary">
             What you can do now is the Readiness &amp; Revenue Leak Assessment:
-            a $1,000 flat diagnostic that sizes your missed demand and gives a
-            straight fit / no-fit answer. The full fee applies toward
-            implementation if you sign within 30 days.
+            a diagnostic that sizes your missed demand and gives a straight
+            fit / no-fit answer before any implementation.
           </p>
         </Card>
       </section>

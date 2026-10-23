@@ -121,15 +121,9 @@ export function assessmentJsonLd() {
     name: "Readiness & Revenue Leak Assessment",
     serviceType: "Business diagnostic",
     description:
-      "A paid diagnostic that sizes missed demand, scores readiness, and returns a fit / no-fit answer before any implementation. The full fee applies toward implementation if signed within 30 days.",
+      "A diagnostic that sizes missed demand, scores readiness, and returns a fit / no-fit answer before any implementation.",
     url: absoluteUrl("/audit"),
     provider: { "@id": `${siteUrl().toString()}#organization` },
     areaServed: "US",
-    offers: {
-      "@type": "Offer",
-      price: "1000",
-      priceCurrency: "USD",
-      url: absoluteUrl("/audit#request"),
-    },
   };
 }

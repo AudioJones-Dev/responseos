@@ -1587,7 +1587,9 @@
       "start": "2026-10-21",
       "due": "2026-10-28",
       "ref": 220,
-      "refType": "pull"
+      "refType": "pull",
+      "blocked": true,
+      "blockedReason": "Human review; assessment price reconciliation (ADR-0054 / PR #184) before any public price markup"
     }
   ],
   "liveIssues": [
