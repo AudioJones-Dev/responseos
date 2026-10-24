@@ -1,9 +1,13 @@
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { DemoNav } from "./_components/DemoNav";
 import { DemoStepFooter } from "./_components/DemoStepFooter";
 import { business } from "./_data/scenario";
 import { LogoMark } from "@/components/layout/Logo";
+
+// Sandbox screens on fictional records: crawlable for links, kept out of the index.
+export const metadata: Metadata = { robots: { index: false, follow: true } };
 
 export default function DemoWalkthroughLayout({ children }: { children: ReactNode }) {
   return (
