@@ -29,6 +29,13 @@ describe("SEO surfaces", () => {
     expect(JSON.stringify(r.rules)).toContain("/admin");
   });
 
+  test("site URL is reduced to an http(s) origin", () => {
+    process.env.NEXT_PUBLIC_APP_URL = "https://user:pw@example.com/app/?q=1#x";
+    expect(sitemap()[0].url).toBe("https://example.com/");
+    process.env.NEXT_PUBLIC_APP_URL = "mailto:ops@example.com";
+    expect(robots().sitemap).toBe("http://localhost:3000/sitemap.xml");
+  });
+
   test("page metadata keeps the shared social image and sets a canonical", () => {
     const m = pageMetadata({ title: "Pricing", description: "d", path: "/pricing" });
     expect(m.alternates?.canonical).toBe("/pricing");

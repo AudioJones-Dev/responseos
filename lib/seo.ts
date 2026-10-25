@@ -9,7 +9,10 @@ export function siteUrl(): URL {
   const fromEnv = process.env.NEXT_PUBLIC_APP_URL;
   if (fromEnv) {
     try {
-      return new URL(fromEnv);
+      const url = new URL(fromEnv);
+      if (url.protocol === "http:" || url.protocol === "https:") {
+        return new URL(url.origin);
+      }
     } catch {
       // A malformed value must not crash the build/boot — fall back.
     }
