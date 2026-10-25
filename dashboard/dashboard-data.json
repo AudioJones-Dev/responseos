@@ -1575,6 +1575,17 @@
       "refType": "pull",
       "refState": "merged",
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/211"
+    },
+    {
+      "id": "SEC-DEPS-01",
+      "phase": "Tech Debt & Hardening",
+      "title": "Bump next 16.4.3 and zod 4.6.6+ past new production audit advisories",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-10-25",
+      "due": "2026-10-27"
     }
   ],
   "liveIssues": [
