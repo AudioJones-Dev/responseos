@@ -8,6 +8,11 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: replace the Recovery tier cards on /pricing with one unnamed scope
+
+- **Why:** `/pricing` still showed Recovery Core, Pro and Performance cards with a "Default offer" badge. ADR-0028 retired those names as the public model, and ADR-0083 left the cards as an open item.
+- **Change:** the three cards become one "What an implementation can include" section in three groups: respond and qualify; book and follow up (marked in development); and measure and support. There are no tier names, packages or prices. Setup and monthly figures still come from the assessment. The page description no longer mentions tiers. `tests/unit/pricing-scope.test.ts` checks that no tier name returns and that the status labels stay.
+
 ## Unreleased — fix: log why the demo receptionist is not answering
 
 - **Problem:** on `responseos.pro`, `/demo/receptionist` says it is not answering because no enabled agent profile governs the internal demo account. The page fails closed by design (ADR-0052), but the profile read swallowed its error. Nothing in the logs said whether the database read failed, the account had no profile rows, or every profile was disabled.

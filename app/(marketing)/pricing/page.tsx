@@ -1,47 +1,41 @@
-import { ButtonLink, Card, StatusBadge, cn } from "@/components/ui";
+import { ButtonLink, Card, StatusBadge } from "@/components/ui";
 import { AtmosphereBackground } from "@/components/layout/AtmosphereBackground";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata = pageMetadata({
   title: "Pricing",
   description:
-    "ResponseOS starts with a paid assessment, then setup and a monthly retainer. Compare the Recovery tiers and what each one includes.",
+    "ResponseOS starts with a paid assessment, then setup and a monthly retainer scoped to what the assessment finds. See what an implementation can include.",
   path: "/pricing",
 });
 
-const tiers = [
+// One scope, sized from the assessment. ADR-0028 retired the named
+// tiers as the public model, so nothing here is a package to pick.
+const scope = [
   {
-    name: "Recovery Core",
-    price: "Setup + monthly",
-    summary: "Missed-call response and monthly reporting for simpler operations.",
-    bullets: [
+    title: "Respond and qualify",
+    items: [
       "Missed-call recovery",
       "AI inbound answering (in development)",
       "Lead qualification scoring",
-      "Monthly ROI report",
     ],
   },
   {
-    name: "Recovery Pro",
-    price: "Setup + monthly",
-    summary: "Intake, booking, quoting, CRM sync, and ROI reporting (in development).",
-    bullets: [
-      "Everything in Core",
-      "Quote + booking flows",
+    title: "Book and follow up",
+    note: "In development",
+    items: [
+      "Quote and booking flows",
       "Outbound recovery campaigns",
       "Client portal access",
     ],
-    featured: true,
   },
   {
-    name: "Recovery Performance",
-    price: "Setup + monthly",
-    summary: "For higher-volume operations that want operator support, with outcome-aligned terms once measurement is verified.",
-    bullets: [
-      "Everything in Pro",
-      "Outcome-aligned terms, once measurement is verified",
+    title: "Measure and support",
+    items: [
+      "Monthly ROI report",
       "AJ Digital operator support",
       "Quarterly business reviews",
+      "Outcome-aligned terms, once measurement is verified",
     ],
   },
 ];
@@ -135,66 +129,31 @@ export default function PricingPage() {
       </section>
 
       <h2 className="mt-14 font-display text-2xl font-semibold text-ink">
-        Choose your tier
+        What an implementation can include
       </h2>
       <p className="mt-2 max-w-2xl text-sm text-ink-secondary">
-        Your setup and monthly figures are tailored from the assessment — that&apos;s
-        what the diagnostic produces. The tiers below show what each scope
-        includes.
+        There are no packages to pick. The assessment decides which of these
+        your business needs, and the setup and monthly figures follow from
+        that scope.
       </p>
 
       <div className="mt-8 grid gap-4 lg:grid-cols-3">
-        {tiers.map((tier) => (
-          <Card
-            key={tier.name}
-            interactive
-            className={cn(
-              "relative isolate flex flex-col overflow-hidden",
-              tier.featured &&
-                "border-accent/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
-            )}
-          >
+        {scope.map((group) => (
+          <Card key={group.title} className="relative isolate flex flex-col overflow-hidden">
             <AtmosphereBackground family="noise-glass" size="1080x1080" intensity={0.7} />
-            {tier.featured ? (
-              <div
-                className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(232,255,90,0.08),transparent_38%)]"
-                aria-hidden
-              />
-            ) : null}
             <div className="relative flex flex-1 flex-col">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-ink">{tier.name}</h2>
-                {tier.featured ? (
-                  <StatusBadge label="Default offer" tone="accent" />
-                ) : null}
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-lg font-semibold text-ink">{group.title}</h3>
+                {group.note ? <StatusBadge label={group.note} tone="neutral" /> : null}
               </div>
-              <p
-                className={cn(
-                  "mt-4 text-sm font-medium uppercase tracking-wide",
-                  tier.featured ? "text-accent" : "text-ink-secondary",
-                )}
-              >
-                {tier.price}
-              </p>
-              <p className="mt-3 text-sm text-ink-secondary">{tier.summary}</p>
               <ul className="mt-5 space-y-2.5 text-sm text-ink-secondary">
-                {tier.bullets.map((b) => (
-                  <li key={b} className="flex gap-2.5">
+                {group.items.map((item) => (
+                  <li key={item} className="flex gap-2.5">
                     <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
-                    {b}
+                    {item}
                   </li>
                 ))}
               </ul>
-              <div className="mt-8 pt-2">
-                <ButtonLink
-                  href="/audit"
-                  variant={tier.featured ? "primary" : "secondary"}
-                  glow={tier.featured}
-                  className="w-full"
-                >
-                  Book the assessment
-                </ButtonLink>
-              </div>
             </div>
           </Card>
         ))}

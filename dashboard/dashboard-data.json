@@ -1645,6 +1645,17 @@
       "priority": "High",
       "start": "2026-10-26",
       "due": "2026-10-29"
+    },
+    {
+      "id": "PRICE-02",
+      "phase": "Launch / Demo Deploy",
+      "title": "Replace the Recovery tier cards on /pricing with one unnamed scope (ADR-0028)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "Med",
+      "start": "2026-10-26",
+      "due": "2026-10-29"
     }
   ],
   "liveIssues": [
