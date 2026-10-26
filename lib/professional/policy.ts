@@ -90,6 +90,25 @@ export function parseAgentProfilePolicy(raw: unknown): AgentProfilePolicy {
 }
 
 /**
+ * Why the receptionist is off, for the server log only. The public page
+ * shows one message for every case. This names the case so an operator
+ * can tell a failed read from a switched-off profile. It returns the
+ * error code, never the message, which can carry connection details.
+ */
+export function receptionistOffReason(
+  profiles:
+    | { ok: true; data: AgentProfile[] }
+    | { ok: false; error: { code: string } },
+): string | null {
+  if (!profiles.ok) return `agent profile read failed (${profiles.error.code})`;
+  if (profiles.data.length === 0) return "no agent profile rows for the internal demo account";
+  if (!profiles.data.some((profile) => profile.enabled)) {
+    return `all ${profiles.data.length} agent profiles are disabled`;
+  }
+  return null;
+}
+
+/**
  * Picks the profile that answers: the requested type when it is
  * enabled, otherwise the account's default, otherwise the first
  * enabled profile. Disabled profiles are never selected.
