@@ -1524,6 +1524,17 @@
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/214"
     },
     {
+      "id": "G-21",
+      "phase": "Tech Debt & Hardening",
+      "title": "Recognise uncoded connection loss on model queries so the pool resets (database-reconnect races)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-10-26",
+      "due": "2026-10-26"
+    },
+    {
       "id": "G-12",
       "phase": "Tech Debt & Hardening",
       "title": "Clear npm audit failures blocking all CI",
