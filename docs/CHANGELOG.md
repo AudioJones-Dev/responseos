@@ -8,6 +8,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — fix: log why the demo receptionist is not answering
+
+- **Problem:** on `responseos.pro`, `/demo/receptionist` says it is not answering because no enabled agent profile governs the internal demo account. The page fails closed by design (ADR-0052), but the profile read swallowed its error. Nothing in the logs said whether the database read failed, the account had no profile rows, or every profile was disabled.
+- **Change:** `receptionistOffReason()` in `lib/professional/policy.ts` names the case, and the page logs it server-side as `[demo/receptionist] not answering: …`. A failed read logs only its error code, never the message, which can carry connection details. What visitors see is unchanged.
+- **Next:** after the next ADR-0053 deploy, one request to the page puts the cause in the Vercel runtime logs. Restoring the receptionist then means either fixing database access or seeding or re-enabling the profile. Both are operator actions against the production database and are not part of this change.
+
 ## Unreleased — chore: recognise responseos.pro as the production domain
 
 - **Staging guard:** `scripts/validate-staging-env.mjs` treats `responseos.pro` and `www.responseos.pro` as production hosts, so a staging `NEXT_PUBLIC_APP_URL` cannot point at them. `responseos.ajdigital.app` stays on the list while it redirects.
