@@ -1614,6 +1614,17 @@
       "refType": "pull"
     },
     {
+      "id": "DOMAIN-01",
+      "phase": "Launch / Demo Deploy",
+      "title": "Move the public site to responseos.pro (code hosts, DNS, env, ADR-0053 deploy, redirect)",
+      "owner": "Claude Code",
+      "status": "In Progress",
+      "progress": 40,
+      "priority": "High",
+      "start": "2026-10-26",
+      "due": "2026-10-28"
+    },
+    {
       "id": "PRICE-01",
       "phase": "Launch / Demo Deploy",
       "title": "Price the Readiness & Revenue Leak Assessment at $1,500 in public copy (ADR-0083)",

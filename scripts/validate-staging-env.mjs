@@ -71,6 +71,8 @@ const FORBIDDEN_NAMES = [
 ];
 
 const PRODUCTION_HOSTS = new Set([
+  "responseos.pro",
+  "www.responseos.pro",
   "responseos.ajdigital.app",
   "responseos.vercel.app",
 ]);
