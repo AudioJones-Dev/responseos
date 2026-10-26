@@ -8,6 +8,13 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — fix: bump next and zod past new security advisories
+
+- **Why:** CI's blocking production audit (`npm audit --omit=dev --audit-level=high`, ADR-0063) started failing on `master` and every open PR after new advisories were published against the pinned versions. `next@16.4.0` is critical: GHSA-2464-fhr4-w9xw, GHSA-p3m5-59mp-jv5r, GHSA-673q-mjm6-r5xr. `zod@4.4.3` is high: GHSA-mrhx-c7xc-m3w5.
+- **Change:** `next` 16.4.0 → 16.4.3 and `eslint-config-next` 16.4.0 → 16.4.3, both still exact pins, plus `zod` `^4.4.3` → `^4.6.6` (resolves to 4.6.7). The lockfile was regenerated with the pinned npm 11.16.0. The diff covers the 12 `next`-family packages and `zod`. It also removes one stale nested entry, `@prisma/config/node_modules/magicast@0.3.5`, which `npm ci` never installed on `master` either. The installed tree is otherwise unchanged.
+- **Unchanged:** `@clerk/nextjs` accepts `next@16.4.3` in its peer range. The `allowScripts` pins (#212/#213) are unaffected, and installs print no install-script warning.
+- **Validation:** the production audit reports 0 vulnerabilities. `npm ci`, `prisma generate`, lint, typecheck, unit tests and build pass locally. The integration suite runs in CI.
+
 ## Unreleased — fix: recognise connection loss reported without an error code (#214)
 
 - **Bug:** `isConnectionLoss` (from #211) missed one of the ways a terminated Postgres backend reaches Prisma. When a batch `$transaction([...])` reads Postgres's `FATAL: terminating connection due to administrator command` before the socket closes, Prisma raises a `PrismaClientUnknownRequestError` with no code. That is neither `P1017` nor `P2010`. The recovering client then did not treat it as connection loss and did not reset the pool.
