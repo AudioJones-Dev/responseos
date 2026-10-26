@@ -6,7 +6,7 @@ import { JsonLd } from "@/components/seo/JsonLd";
 export const metadata = pageMetadata({
   title: "Readiness & Revenue Leak Assessment",
   description:
-    "A $1,000 paid diagnostic that sizes your missed demand, scores your readiness, and gives you a straight fit / no-fit answer before any install. See the eight-part packet you walk away with.",
+    "A $1,500 paid diagnostic that sizes your missed demand, scores your readiness, and gives you a straight fit / no-fit answer before any install. See the eight-part packet you walk away with.",
   path: "/audit",
 });
 
@@ -103,7 +103,7 @@ export default function AuditPage() {
       </p>
       <p className="mt-4 text-sm text-ink-secondary">
         <span className="font-display text-2xl font-semibold text-accent">
-          $1,000
+          $1,500
         </span>
         <span className="ml-2">
           flat. The full fee applies toward implementation if you sign within
@@ -237,7 +237,7 @@ export default function AuditPage() {
             </h3>
             <p className="mt-2 text-sm text-ink-secondary">
               You get a Pricing Proposal for setup plus a monthly retainer.
-              Sign within 30 days and the full $1,000 is credited toward
+              Sign within 30 days and the full $1,500 is credited toward
               implementation.
             </p>
           </Card>

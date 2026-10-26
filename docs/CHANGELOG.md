@@ -8,6 +8,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: price the Readiness & Revenue Leak Assessment at $1,500 (ADR-0083)
+
+- **Price:** the assessment is $1,500 flat on `/`, `/audit` and `/pricing` (was $1,000). The operator confirmed it is the same offer as the $1,500 readiness-assessment baseline. The 30-day credit toward implementation is unchanged.
+- **Copy:** the `/industries/contractors` quote follow-up step no longer names the superseded "Recovery Pro" tier. It now says only that quote follow-up and outbound recovery are in development.
+- **Decision:** ADR-0083 records the price and lists the older planning docs that still quote $1,000.
+
 ## Unreleased — feat: SEO/AEO foundations for the public marketing surface
 
 - **Crawl:** add `app/robots.ts` (allows the site, disallows `/api/`, `/admin`, `/client`) and `app/sitemap.ts` covering the nine public marketing routes. Both returned 404 in production before this.

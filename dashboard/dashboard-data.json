@@ -1601,6 +1601,17 @@
       "due": "2026-10-27",
       "ref": 223,
       "refType": "pull"
+    },
+    {
+      "id": "PRICE-01",
+      "phase": "Launch / Demo Deploy",
+      "title": "Price the Readiness & Revenue Leak Assessment at $1,500 in public copy (ADR-0083)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "Med",
+      "start": "2026-10-26",
+      "due": "2026-10-28"
     }
   ],
   "liveIssues": [
