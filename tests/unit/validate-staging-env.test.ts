@@ -83,6 +83,8 @@ describe("staging environment contract", () => {
 
   test.each([
     "http://responseos-staging.example",
+    "https://responseos.pro",
+    "https://www.responseos.pro",
     "https://responseos.ajdigital.app",
     "https://responseos.vercel.app",
   ])("rejects unsafe staging URL %s", (url) => {

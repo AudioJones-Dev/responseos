@@ -170,7 +170,7 @@ describe("bounded public website acquisition", () => {
     await acquireProspectWebsite({ canonicalUrl: "https://prospect.example/", fetchFn, lookupFn: publicLookup, now });
     expect(userAgents.length).toBeGreaterThan(0);
     for (const userAgent of userAgents) {
-      expect(userAgent).toBe("ResponseOS-ProspectBootstrap/1.0 (+https://responseos.ajdigital.app/trust)");
+      expect(userAgent).toBe("ResponseOS-ProspectBootstrap/1.0 (+https://responseos.pro/trust)");
     }
   });
 
