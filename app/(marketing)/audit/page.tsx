@@ -1,11 +1,14 @@
 import { ButtonLink, Card } from "@/components/ui";
 import { AuditRequestForm } from "./AuditRequestForm";
+import { assessmentJsonLd, pageMetadata } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/JsonLd";
 
-export const metadata = {
+export const metadata = pageMetadata({
   title: "Readiness & Revenue Leak Assessment",
   description:
     "A $1,000 paid diagnostic that sizes your missed demand, scores your readiness, and gives you a straight fit / no-fit answer before any install. See the eight-part packet you walk away with.",
-};
+  path: "/audit",
+});
 
 const STEPS = [
   {
@@ -87,6 +90,7 @@ const NO_FIT_REASONS = [
 export default function AuditPage() {
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-16 sm:px-6">
+      <JsonLd data={assessmentJsonLd()} />
       <p className="text-xs font-semibold uppercase tracking-widest text-ink-muted">
         Readiness & Revenue Leak Assessment
       </p>
