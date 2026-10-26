@@ -1,11 +1,13 @@
 import { ButtonLink, Card, StatusBadge, cn } from "@/components/ui";
 import { AtmosphereBackground } from "@/components/layout/AtmosphereBackground";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata = {
+export const metadata = pageMetadata({
   title: "Pricing",
   description:
     "ResponseOS starts with a paid assessment, then setup and a monthly retainer. Compare the Recovery tiers and what each one includes.",
-};
+  path: "/pricing",
+});
 
 const tiers = [
   {

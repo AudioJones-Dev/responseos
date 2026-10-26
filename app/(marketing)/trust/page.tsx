@@ -1,11 +1,13 @@
 import { Card, StatusBadge, type Tone } from "@/components/ui";
 import { AtmosphereBackground } from "@/components/layout/AtmosphereBackground";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata = {
+export const metadata = pageMetadata({
   title: "Trust & security",
   description:
     "The key ResponseOS security, data, payment, and privacy controls, labeled implemented, partial, planned, or not claimed — plus the certifications we don't hold and an honest read on where the build is today.",
-};
+  path: "/trust",
+});
 
 type Status = "Implemented" | "Partial" | "Planned" | "Not claimed";
 
