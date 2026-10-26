@@ -2,6 +2,24 @@
 
 This file records the load-bearing decisions that constrain how ResponseOS is built. Each ADR is short by design: context, decision, consequences. If a decision is reversed, mark the entry **Superseded by ADR-XXX** rather than deleting it.
 
+## ADR-0083 — The Readiness & Revenue Leak Assessment is $1,500 flat
+
+**Status.** Accepted · 2026-10-26 · Operator-authorized. Sets one public price point. It does not reopen ADR-0028's tier model or ADR-0010's billing gate, and it authorizes no payment collection. Numbered past ADR-0082 because ADR-0071 to ADR-0082 are taken on open branches.
+
+**Context.** The public site listed the assessment at $1,000 flat on `/`, `/audit` and `/pricing`, with the fee credited toward implementation on signing within 30 days. Older product docs carried the same figure inside a $750–$1,500 range. Separately, the readiness-assessment baseline that the operator works from was $1,500. Two prices for one offer kept PR #220 from adding any priced structured data. The operator confirmed the two are the same offer and the price is $1,500.
+
+**Decision.**
+
+1. The Readiness & Revenue Leak Assessment is **$1,500 flat** in all public copy.
+2. The credit terms are unchanged: the full fee applies toward implementation if the client signs within 30 days.
+3. ADR-0028's tier model is untouched. The Recovery Core / Pro / Performance names that still appear on `/pricing` are a separate open item.
+
+**Consequences.** `/`, `/audit` and `/pricing` now show $1,500. Older planning docs (`PRD.md`, `product-spec.md`, `pricing-and-onboarding.md`, `client-facing-offer.md`, `brand/RESPONSEOS_WEBSITE_COPY_SPEC.md`, `research/RESPONSEOS_MARKET_RESEARCH.md`) still quote $1,000 with a $750–$1,500 range. Where they disagree, this ADR governs. Priced structured data (a schema.org `Offer`) may now be added in a separate change.
+
+**§21 checklist.** Layer: commercial packaging; no capability. Build vs. buy: not applicable. Evidence, tenant isolation and attribution are untouched. Public claims: a price is a commitment, not a capability claim, and the copy states it as a flat fee for a manual diagnostic (doctrine §20). Human approval: the operator set the price. Required now: two prices for one offer blocked accurate public copy and structured data.
+
+---
+
 ## ADR-0070 — Neon standardization preserves environment authority and requires restore binding proof
 
 **Status:** Proposed, 2026-10-09. ADR-0026's Neon selection remains accepted; this operational extension awaits human review. Number follows ADR-0065–0069 reserved by the unmerged FRL #209/#210 stack; it does not accept or merge those decisions.
