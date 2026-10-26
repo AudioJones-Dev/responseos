@@ -1528,11 +1528,13 @@
       "phase": "Tech Debt & Hardening",
       "title": "Recognise uncoded connection loss on model queries so the pool resets (database-reconnect races)",
       "owner": "Claude Code",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "High",
       "start": "2026-10-26",
-      "due": "2026-10-26"
+      "due": "2026-10-26",
+      "ref": 227,
+      "refType": "pull"
     },
     {
       "id": "G-12",
@@ -1617,23 +1619,27 @@
       "id": "DOMAIN-01",
       "phase": "Launch / Demo Deploy",
       "title": "Move the public site to responseos.pro (code hosts, DNS, env, ADR-0053 deploy, redirect)",
-      "owner": "Claude Code",
-      "status": "In Progress",
-      "progress": 40,
+      "owner": "Codex",
+      "status": "Done",
+      "progress": 100,
       "priority": "High",
       "start": "2026-10-26",
-      "due": "2026-10-28"
+      "due": "2026-10-28",
+      "ref": 226,
+      "refType": "pull"
     },
     {
       "id": "PRICE-01",
       "phase": "Launch / Demo Deploy",
       "title": "Price the Readiness & Revenue Leak Assessment at $1,500 in public copy (ADR-0083)",
       "owner": "Claude Code",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "Med",
       "start": "2026-10-26",
-      "due": "2026-10-28"
+      "due": "2026-10-28",
+      "ref": 225,
+      "refType": "pull"
     }
   ],
   "liveIssues": [

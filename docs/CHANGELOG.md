@@ -8,6 +8,11 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## 2026-10-26 — ops: verify responseos.pro cutover
+
+- Added DNS-only apex/www records, verified HTTPS, manually deployed the merged #227/#225/#226 source, and configured path-preserving redirects from www and the old host. Automatic deployments remain disabled.
+- [Cutover evidence and rollback](./ops/responseos-pro-cutover-2026-10-26.md) distinguish the verified public marketing release from existing receptionist/profile and pricing-copy limitations. No database writes or live-provider activation.
+
 ## Unreleased — chore: recognise responseos.pro as the production domain
 
 - **Staging guard:** `scripts/validate-staging-env.mjs` treats `responseos.pro` and `www.responseos.pro` as production hosts, so a staging `NEXT_PUBLIC_APP_URL` cannot point at them. `responseos.ajdigital.app` stays on the list while it redirects.
