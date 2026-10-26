@@ -12,6 +12,7 @@ import {
   answerProfessionalQuestion,
   listShareableAssets,
   parseAgentProfilePolicy,
+  receptionistOffReason,
   resolveAgentProfile,
   type ClaimAuthority,
 } from "@/lib/professional";
@@ -113,6 +114,7 @@ export default async function DemoReceptionistPage({
     : [];
 
   if (!policy) {
+    console.warn(`[demo/receptionist] not answering: ${receptionistOffReason(profiles)}`);
     return (
       <>
         <PageHeader

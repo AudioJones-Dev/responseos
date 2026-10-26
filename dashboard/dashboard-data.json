@@ -1636,6 +1636,28 @@
       "due": "2026-10-28"
     },
     {
+      "id": "RECEP-01",
+      "phase": "Launch / Demo Deploy",
+      "title": "Diagnose why /demo/receptionist is not answering on production (log the off reason)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 50,
+      "priority": "High",
+      "start": "2026-10-26",
+      "due": "2026-10-29"
+    },
+    {
+      "id": "PRICE-02",
+      "phase": "Launch / Demo Deploy",
+      "title": "Replace the Recovery tier cards on /pricing with one unnamed scope (ADR-0028)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "Med",
+      "start": "2026-10-26",
+      "due": "2026-10-29"
+    },
+    {
       "id": "G-20",
       "phase": "Tech Debt & Hardening",
       "title": "Add Telnyx voice, AI assistant, and messaging agent skills for Claude Code",
