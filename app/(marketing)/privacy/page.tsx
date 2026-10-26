@@ -6,12 +6,14 @@ import {
   LegalPage,
   LegalSection,
 } from "../_components/Legal";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata = {
+export const metadata = pageMetadata({
   title: "Privacy policy",
   description:
     "What ResponseOS collects, why, who it's shared with, how long it's kept, and how to ask us about it.",
-};
+  path: "/privacy",
+});
 
 const LAST_UPDATED = "October 8, 2026";
 

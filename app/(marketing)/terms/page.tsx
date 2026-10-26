@@ -6,12 +6,14 @@ import {
   LegalPage,
   LegalSection,
 } from "../_components/Legal";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata = {
+export const metadata = pageMetadata({
   title: "Terms of service",
   description:
     "The terms for using the ResponseOS website and its demos, and how they relate to a paid engagement.",
-};
+  path: "/terms",
+});
 
 const LAST_UPDATED = "October 8, 2026";
 

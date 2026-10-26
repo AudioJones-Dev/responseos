@@ -2,6 +2,12 @@ import Link from "next/link";
 import { ButtonLink, Card } from "@/components/ui";
 import { AtmosphereBackground } from "@/components/layout/AtmosphereBackground";
 import { RecoveryRecord } from "./_components/RecoveryRecord";
+import { SITE_OPEN_GRAPH } from "@/lib/seo";
+
+export const metadata = {
+  alternates: { canonical: "/" },
+  openGraph: { ...SITE_OPEN_GRAPH, url: "/" },
+};
 
 const PILLARS = [
   {

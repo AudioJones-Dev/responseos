@@ -8,6 +8,17 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: SEO/AEO foundations for the public marketing surface
+
+- **Crawl:** add `app/robots.ts` (allows the site, disallows `/api/`, `/admin`, `/client`) and `app/sitemap.ts` covering the nine public marketing routes. Both returned 404 in production before this.
+- **Agents:** add `/llms.txt`, a plain-text product summary with the same status language as `/trust` (in development, mock adapters, not HIPAA-certified).
+- **Canonicals and social cards:** `lib/seo.ts` `pageMetadata()` gives each marketing page a canonical URL and its own Open Graph and Twitter title and description. Before, every page shared the homepage card.
+- **Structured data:** Organization and WebSite JSON-LD on every marketing page, FAQPage on `/demo` built from the existing FAQ copy, and an unpriced Service description of the Readiness & Revenue Leak Assessment on `/audit`.
+- **Index hygiene:** the `(demo)` sandbox screens (walkthrough, operator console, client dashboard) are `noindex, follow`. `/industries/contractors` was not linked from anywhere, so the footer now links both industry pages.
+- **Industry pages:** `/industries/home-services` and `/industries/contractors` now share one layout and each adds where leads go missing, how the loop is designed to work, qualification signals, current status, and an FAQ (also emitted as FAQPage JSON-LD). Status language follows doctrine §20; no new statistics or vendor names.
+- **Commercial claims (review fix):** an earlier head of this PR added a USD 1,000 Offer to the `/audit` Service, and repeated the $1,000 price and 30-day credit in `llms.txt`, the industry status box and both industry FAQs. It also listed Recovery Core / Pro / Performance in `llms.txt` as the current tiers, which ADR-0028 superseded as the public model. Doctrine v1.0 (ADR-0054, PR #184) prices the same assessment differently, so this PR states no assessment price or credit terms (the operator has since confirmed $1,500; the existing copy is updated separately), and `llms.txt` no longer lists tier names. One contractors step still says "Recovery Pro scope"; it is outside this fix and left for a separate decision. The industry FAQ asks "How is pricing set?" and points to `/pricing`. Pre-existing pricing copy on `/audit`, `/pricing` and the homepage is unchanged and tracked separately. `tests/unit/seo.test.ts` now covers the absence of price/tier claims, JSON-LD escaping, FAQ schema/visible-text parity and the exact nine-route sitemap.
+- **Domain moves:** every absolute URL above comes from `NEXT_PUBLIC_APP_URL`. Moving to a new domain means changing that value and redirecting the old host.
+
 ## Unreleased — fix: bump next and zod past new security advisories
 
 - **Why:** CI's blocking production audit (`npm audit --omit=dev --audit-level=high`, ADR-0063) started failing on `master` and every open PR after new advisories were published against the pinned versions. `next@16.4.0` is critical: GHSA-2464-fhr4-w9xw, GHSA-p3m5-59mp-jv5r, GHSA-673q-mjm6-r5xr. `zod@4.4.3` is high: GHSA-mrhx-c7xc-m3w5.

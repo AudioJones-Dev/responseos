@@ -1577,6 +1577,19 @@
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/211"
     },
     {
+      "id": "SEO-AEO-01",
+      "phase": "Launch / Demo Deploy",
+      "title": "SEO/AEO foundations: robots, sitemap, llms.txt, canonicals, JSON-LD",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "Med",
+      "start": "2026-10-21",
+      "due": "2026-10-28",
+      "ref": 220,
+      "refType": "pull"
+    },
+    {
       "id": "SEC-DEPS-01",
       "phase": "Tech Debt & Hardening",
       "title": "Bump next 16.4.3 and zod 4.6.6+ past new production audit advisories",
