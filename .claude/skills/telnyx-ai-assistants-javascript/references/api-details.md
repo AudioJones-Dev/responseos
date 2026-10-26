@@ -65,7 +65,7 @@
 | `max_duration_seconds` | integer |
 | `name` | string |
 | `rubric` | array[object] |
-| `telnyx_conversation_channel` | object |
+| `telnyx_conversation_channel` | enum (phone_call, web_call, sms_chat, web_chat) |
 | `test_id` | uuid |
 | `test_suite` | string |
 
@@ -192,7 +192,6 @@
 | `observability_settings` | object |  |
 | `tags` | array[string] | Tags associated with the assistant. |
 | `post_conversation_settings` | object | Configuration for post-conversation processing. |
-| `conversation_flow` | object | Conversation flow as supplied by API clients (create / update). |
 
 ### Import assistants from external provider — `client.ai.assistants.imports()`
 
@@ -205,7 +204,7 @@
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `description` | string | Optional detailed description of what this test evaluates and its purpose. |
-| `telnyx_conversation_channel` | object | The communication channel through which the test will be conducted. |
+| `telnyx_conversation_channel` | enum (phone_call, web_call, sms_chat, web_chat) | The communication channel through which the test will be conducted. |
 | `max_duration_seconds` | integer | Maximum duration in seconds that the test conversation should run before timi... |
 | `test_suite` | string | Optional test suite name to group related tests together. |
 
@@ -266,7 +265,6 @@
 | `tags` | array[string] | Tags associated with the assistant. |
 | `version_name` | string | Human-readable name for the assistant version. |
 | `post_conversation_settings` | object | Configuration for post-conversation processing. |
-| `conversation_flow` | object | Conversation flow as supplied by API clients (create / update). |
 | `promote_to_main` | boolean | Indicates whether the assistant should be promoted to the main version. |
 
 ### Create Canary Deploy — `client.ai.assistants.canaryDeploys.create()`
@@ -295,13 +293,6 @@
 | `conversation_metadata` | object |  |
 | `should_create_conversation` | boolean |  |
 
-### Enhance Assistant Instructions — `client.ai.assistants.instructions.enhance()`
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `enhancement_prompt` | object | Optional guidance describing how the instructions should be enhanced. |
-| `instructions` | object | The instructions to enhance. |
-
 ### Create a scheduled event — `client.ai.assistants.scheduledEvents.create()`
 
 | Parameter | Type | Description |
@@ -311,7 +302,6 @@
 | `dynamic_variables` | object | A map of dynamic variable names to values. |
 | `max_retries_client_errors` | integer | Configure number of retries on client errors: busy, no-answer, failed, cancel... |
 | `retry_interval_secs` | integer |  |
-| `call_settings` | object | Per-call telephony overrides applied when a scheduled phone-call event dispat... |
 
 ### Test Assistant Tool — `client.ai.assistants.tools.test()`
 
@@ -352,7 +342,6 @@
 | `tags` | array[string] | Tags associated with the assistant. |
 | `version_name` | string | Human-readable name for the assistant version. |
 | `post_conversation_settings` | object | Configuration for post-conversation processing. |
-| `conversation_flow` | object | Conversation flow as supplied by API clients (create / update). |
 
 ### Create MCP Server — `client.ai.mcpServers.create()`
 

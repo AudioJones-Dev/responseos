@@ -50,7 +50,7 @@ try {
   if (err instanceof Telnyx.APIConnectionError) {
     console.error('Network error — check connectivity and retry');
   } else if (err instanceof Telnyx.RateLimitError) {
-    const retryAfter = err.headers?.['retry-after'] || 1;
+    const retryAfter = Number(err.headers?.get('retry-after')) || 1;
     await new Promise(r => setTimeout(r, retryAfter * 1000));
     // Retry the request here (bounded), or fall through to rethrow.
   } else if (err instanceof Telnyx.APIError) {
@@ -96,9 +96,9 @@ Primary voice entrypoint. Agents need the async call-control identifiers returne
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `to` | string (E.164) | Yes | The DID or SIP URI to dial out to. |
+| `to` | string (E.164 or SIP URI) | Yes | The DID or SIP URI to dial out to. |
 | `from` | string (E.164) | Yes | The `from` number to be used as the caller id presented to t... |
-| `connection_id` | string (UUID) | Yes | The ID of the Call Control App (formerly ID of the connectio... |
+| `connection_id` | string | Yes | The ID of the Call Control App (formerly ID of the connectio... |
 | `timeout_secs` | integer | No | The number of seconds that Telnyx will wait for the call to ... |
 | `billing_group_id` | string (UUID) | No | Use this field to set the Billing Group ID for the call. |
 | `client_state` | string | No | Use this field to add state to every subsequent webhook. |
@@ -130,7 +130,7 @@ Primary inbound call-control command.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `call_control_id` | string (UUID) | Yes | Unique identifier and token for controlling the call |
+| `call_control_id` | string | Yes | Unique identifier and token for controlling the call |
 | `billing_group_id` | string (UUID) | No | Use this field to set the Billing Group ID for the call. |
 | `client_state` | string | No | Use this field to add state to every subsequent webhook. |
 | `webhook_url` | string (URL) | No | Use this field to override the URL for which Telnyx will sen... |
@@ -154,8 +154,8 @@ Common post-answer control path with downstream webhook implications.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `to` | string (E.164) | Yes | The DID or SIP URI to dial out to. |
-| `call_control_id` | string (UUID) | Yes | Unique identifier and token for controlling the call |
+| `to` | string (E.164 or SIP URI) | Yes | The DID or SIP URI to dial out to. |
+| `call_control_id` | string | Yes | Unique identifier and token for controlling the call |
 | `timeout_secs` | integer | No | The number of seconds that Telnyx will wait for the call to ... |
 | `client_state` | string | No | Use this field to add state to every subsequent webhook. |
 | `webhook_url` | string (URL) | No | Use this field to override the URL for which Telnyx will sen... |
@@ -255,7 +255,7 @@ End a live call from your webhook-driven control flow.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `call_control_id` | string (UUID) | Yes | Unique identifier and token for controlling the call |
+| `call_control_id` | string | Yes | Unique identifier and token for controlling the call |
 | `client_state` | string | No | Use this field to add state to every subsequent webhook. |
 | `command_id` | string (UUID) | No | Use this field to avoid duplicate commands. |
 | `custom_headers` | array[object] | No | Custom headers to be added to the SIP BYE message. |
@@ -277,8 +277,8 @@ Trigger a follow-up action in an existing workflow rather than creating a new to
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `call_control_id_to_bridge_with` | string (UUID) | Yes | The Call Control ID of the call you want to bridge with, can... |
-| `call_control_id` | string (UUID) | Yes | Unique identifier and token for controlling the call |
+| `call_control_id_to_bridge_with` | string | Yes | The Call Control ID of the call you want to bridge with, can... |
+| `call_control_id` | string | Yes | Unique identifier and token for controlling the call |
 | `client_state` | string | No | Use this field to add state to every subsequent webhook. |
 | `command_id` | string (UUID) | No | Use this field to avoid duplicate commands. |
 | `video_room_id` | string (UUID) | No | The ID of the video room you want to bridge with, can't be u... |
@@ -304,7 +304,7 @@ Trigger a follow-up action in an existing workflow rather than creating a new to
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `cause` | enum (CALL_REJECTED, USER_BUSY) | Yes | Cause for call rejection. |
-| `call_control_id` | string (UUID) | Yes | Unique identifier and token for controlling the call |
+| `call_control_id` | string | Yes | Unique identifier and token for controlling the call |
 | `client_state` | string | No | Use this field to add state to every subsequent webhook. |
 | `command_id` | string (UUID) | No | Use this field to avoid duplicate commands. |
 
@@ -325,7 +325,7 @@ Fetch the current state before updating, deleting, or making control-flow decisi
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `call_control_id` | string (UUID) | Yes | Unique identifier and token for controlling the call |
+| `call_control_id` | string | Yes | Unique identifier and token for controlling the call |
 
 ```javascript
 const response = await client.calls.retrieveStatus('v3:550e8400-e29b-41d4-a716-446655440000_gRU1OGRkYQ');
@@ -349,7 +349,7 @@ Fetch the current state before updating, deleting, or making control-flow decisi
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `connection_id` | string (UUID) | Yes | Telnyx connection id |
+| `connection_id` | string | Yes | Telnyx connection id |
 | `page` | object | No | Consolidated page parameter (deepObject style). |
 
 ```javascript
@@ -361,9 +361,9 @@ for await (const connectionListActiveCallsResponse of client.connections.listAct
 }
 ```
 
-Response wrapper:
-- items: `connectionListActiveCallsResponse.data`
-- pagination: `connectionListActiveCallsResponse.meta`
+Response wrapper (on the page object, not the items the loop yields — e.g. `const page = await client.connections.listActiveCalls(id)`):
+- items: `page.data`
+- pagination: `page.meta`
 
 Primary item fields:
 - `call_control_id`

@@ -50,7 +50,7 @@ try {
   if (err instanceof Telnyx.APIConnectionError) {
     console.error('Network error — check connectivity and retry');
   } else if (err instanceof Telnyx.RateLimitError) {
-    const retryAfter = err.headers?.['retry-after'] || 1;
+    const retryAfter = Number(err.headers?.get('retry-after')) || 1;
     await new Promise(r => setTimeout(r, retryAfter * 1000));
     // Retry the request here (bounded), or fall through to rethrow.
   } else if (err instanceof Telnyx.APIError) {
@@ -262,6 +262,7 @@ Force a long-code sending path instead of the generic send endpoint.
 |-----------|------|----------|-------------|
 | `from` | string (E.164) | Yes | Phone number, in +E.164 format, used to send the message. |
 | `to` | string (E.164) | Yes | Receiving address (+E.164 formatted phone number or short co... |
+| `text` | string | Conditional | Message body. Required for SMS. |
 | `media_urls` | array[string] | No | A list of media URLs. |
 | `webhook_url` | string (URL) | No | The URL where webhooks related to this message will be sent. |
 | `webhook_failover_url` | string (URL) | No | The failover URL where webhooks related to this message will... |
@@ -294,6 +295,7 @@ Let a messaging profile or number pool choose the sender for you.
 |-----------|------|----------|-------------|
 | `messaging_profile_id` | string (UUID) | Yes | Unique identifier for a messaging profile. |
 | `to` | string (E.164) | Yes | Receiving address (+E.164 formatted phone number or short co... |
+| `text` | string | Conditional | Message body. Required for SMS. |
 | `media_urls` | array[string] | No | A list of media URLs. |
 | `webhook_url` | string (URL) | No | The URL where webhooks related to this message will be sent. |
 | `webhook_failover_url` | string (URL) | No | The failover URL where webhooks related to this message will... |
@@ -327,6 +329,7 @@ Force a short-code sending path when the sender must be a short code.
 |-----------|------|----------|-------------|
 | `from` | string (E.164) | Yes | Phone number, in +E.164 format, used to send the message. |
 | `to` | string (E.164) | Yes | Receiving address (+E.164 formatted phone number or short co... |
+| `text` | string | Conditional | Message body. Required for SMS. |
 | `media_urls` | array[string] | No | A list of media URLs. |
 | `webhook_url` | string (URL) | No | The URL where webhooks related to this message will be sent. |
 | `webhook_failover_url` | string (URL) | No | The failover URL where webhooks related to this message will... |
@@ -358,6 +361,8 @@ Queue a message for future delivery instead of sending immediately.
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `to` | string (E.164) | Yes | Receiving address (+E.164 formatted phone number or short co... |
+| `from` | string | Conditional | Sending address (phone number, short code, or alphanumeric sender ID). |
+| `text` | string | Conditional | Message body. Required for SMS. |
 | `messaging_profile_id` | string (UUID) | No | Unique identifier for a messaging profile. |
 | `media_urls` | array[string] | No | A list of media URLs. |
 | `webhook_url` | string (URL) | No | The URL where webhooks related to this message will be sent. |

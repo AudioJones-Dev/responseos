@@ -49,7 +49,7 @@ try {
   if (err instanceof Telnyx.APIConnectionError) {
     console.error('Network error — check connectivity and retry');
   } else if (err instanceof Telnyx.RateLimitError) {
-    const retryAfter = err.headers?.['retry-after'] || 1;
+    const retryAfter = Number(err.headers?.get('retry-after')) || 1;
     await new Promise(r => setTimeout(r, retryAfter * 1000));
     // Retry the request here (bounded), or fall through to rethrow.
   } else if (err instanceof Telnyx.APIError) {
@@ -151,7 +151,7 @@ Test creation is the main validation path for production assistant behavior befo
 | `instructions` | string | Yes | Detailed instructions that define the test scenario and what... |
 | `rubric` | array[object] | Yes | Evaluation criteria used to assess the assistant's performan... |
 | `description` | string | No | Optional detailed description of what this test evaluates an... |
-| `telnyx_conversation_channel` | object | No | The communication channel through which the test will be con... |
+| `telnyx_conversation_channel` | enum (phone_call, web_call, sms_chat, web_chat) | No | The communication channel through which the test will be con... |
 | `max_duration_seconds` | integer | No | Maximum duration in seconds that the test conversation shoul... |
 | ... | | | +1 optional params in [references/api-details.md](references/api-details.md) |
 
@@ -193,7 +193,7 @@ Fetch the current state before updating, deleting, or making control-flow decisi
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `assistant_id` | string (UUID) | Yes | Unique identifier of the assistant. |
-| `call_control_id` | string (UUID) | No | Filter results by call control id. |
+| `call_control_id` | string | No | Filter results by call control id. |
 | `fetch_dynamic_variables_from_webhook` | boolean | No | Whether to fetch dynamic variables from the configured webho... |
 | `from` | string (E.164) | No | Start of the filter range. |
 | ... | | | +1 optional params in [references/api-details.md](references/api-details.md) |
@@ -417,7 +417,6 @@ Before using any operation below, read [the optional-parameters section](referen
 | Delete Canary Deploy | `client.ai.assistants.canaryDeploys.delete()` | `DELETE /ai/assistants/{assistant_id}/canary-deploys` | Remove, detach, or clean up an existing resource. | `assistant_id` |
 | Assistant Sms Chat | `client.ai.assistants.sendSMS()` | `POST /ai/assistants/{assistant_id}/chat/sms` | Run assistant chat over SMS instead of direct API chat. | `from`, `to`, `assistant_id` |
 | Clone Assistant | `client.ai.assistants.clone()` | `POST /ai/assistants/{assistant_id}/clone` | Trigger a follow-up action in an existing workflow rather than creating a new top-level resource. | `assistant_id` |
-| Enhance Assistant Instructions | `client.ai.assistants.instructions.enhance()` | `POST /ai/assistants/{assistant_id}/instructions/enhance` | Create or provision an additional resource when the core tasks do not cover this flow. | `assistant_id` |
 | List scheduled events | `client.ai.assistants.scheduledEvents.list()` | `GET /ai/assistants/{assistant_id}/scheduled_events` | Fetch the current state before updating, deleting, or making control-flow decisions. | `assistant_id` |
 | Create a scheduled event | `client.ai.assistants.scheduledEvents.create()` | `POST /ai/assistants/{assistant_id}/scheduled_events` | Create or provision an additional resource when the core tasks do not cover this flow. | `telnyx_conversation_channel`, `telnyx_end_user_target`, `telnyx_agent_target`, `scheduled_at_fixed_datetime`, +1 more |
 | Get a scheduled event | `client.ai.assistants.scheduledEvents.retrieve()` | `GET /ai/assistants/{assistant_id}/scheduled_events/{event_id}` | Fetch the current state before updating, deleting, or making control-flow decisions. | `assistant_id`, `event_id` |
