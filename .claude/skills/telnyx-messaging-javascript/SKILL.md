@@ -50,7 +50,9 @@ try {
   if (err instanceof Telnyx.APIConnectionError) {
     console.error('Network error — check connectivity and retry');
   } else if (err instanceof Telnyx.RateLimitError) {
-    const retryAfter = Number(err.headers?.get('retry-after')) || 1;
+    const raw = err.headers?.get('retry-after');
+    const delay = raw ? Number(raw) : NaN;
+    const retryAfter = Number.isFinite(delay) && delay >= 0 ? delay : 1;
     await new Promise(r => setTimeout(r, retryAfter * 1000));
     // Retry the request here (bounded), or fall through to rethrow.
   } else if (err instanceof Telnyx.APIError) {
