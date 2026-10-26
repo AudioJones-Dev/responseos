@@ -1526,15 +1526,26 @@
     {
       "id": "G-20",
       "phase": "Tech Debt & Hardening",
-      "title": "Recognise connection loss inside an interactive transaction (reconnect test race on PG 16–18)",
+      "title": "Confirm the debug-form connection loss on interactive transactions across PG 16–18; pin P2028 as not connection loss",
       "owner": "Claude Code",
       "status": "Review",
       "progress": 90,
       "priority": "High",
       "start": "2026-10-13",
-      "due": "2026-10-13",
+      "due": "2026-10-26",
       "ref": 218,
       "refType": "pull"
+    },
+    {
+      "id": "G-21",
+      "phase": "Tech Debt & Hardening",
+      "title": "Recognise uncoded connection loss on model queries so the pool resets (database-reconnect races)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-10-26",
+      "due": "2026-10-26"
     },
     {
       "id": "G-12",
@@ -1614,6 +1625,17 @@
       "due": "2026-10-27",
       "ref": 223,
       "refType": "pull"
+    },
+    {
+      "id": "PRICE-01",
+      "phase": "Launch / Demo Deploy",
+      "title": "Price the Readiness & Revenue Leak Assessment at $1,500 in public copy (ADR-0083)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "Med",
+      "start": "2026-10-26",
+      "due": "2026-10-28"
     }
   ],
   "liveIssues": [

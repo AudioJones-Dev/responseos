@@ -60,7 +60,7 @@ const CONTENT: IndustryContent = {
     },
     {
       title: "Follow up on the quote",
-      body: "Quote follow-up and outbound recovery are part of the Recovery Pro scope and are in development.",
+      body: "Quote follow-up and outbound recovery are in development.",
     },
   ],
   signals: [

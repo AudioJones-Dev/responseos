@@ -27,7 +27,7 @@ test("application client recovers after backend loss without replaying the faile
     const [backend] = await client.$queryRaw<{pid:number}[]>`SELECT pg_backend_pid() AS pid`;
     const [terminated] = await controller.$queryRaw<{terminated:boolean}[]>`SELECT pg_terminate_backend(${backend.pid}::integer) AS terminated`;
     expect(terminated.terminated).toBe(true);
-    await expect(client.account.findUnique({where:{id}})).rejects.toThrow();
+    await expectConnectionLoss(client.account.findUnique({where:{id}}));
     expect((await client.account.findUnique({where:{id}}))?.id).toBe(id);
     expect(await controller.account.count({where:{id}})).toBe(1);
   } finally {
