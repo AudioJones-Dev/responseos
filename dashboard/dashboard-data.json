@@ -1601,6 +1601,17 @@
       "due": "2026-10-27",
       "ref": 223,
       "refType": "pull"
+    },
+    {
+      "id": "DOMAIN-01",
+      "phase": "Launch / Demo Deploy",
+      "title": "Move the public site to responseos.pro (code hosts, DNS, env, ADR-0053 deploy, redirect)",
+      "owner": "Claude Code",
+      "status": "In Progress",
+      "progress": 40,
+      "priority": "High",
+      "start": "2026-10-26",
+      "due": "2026-10-28"
     }
   ],
   "liveIssues": [

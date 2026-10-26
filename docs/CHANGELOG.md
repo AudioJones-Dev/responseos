@@ -8,6 +8,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — chore: recognise responseos.pro as the production domain
+
+- **Staging guard:** `scripts/validate-staging-env.mjs` treats `responseos.pro` and `www.responseos.pro` as production hosts, so a staging `NEXT_PUBLIC_APP_URL` cannot point at them. `responseos.ajdigital.app` stays on the list while it redirects.
+- **Crawler identity:** the prospect-bootstrap fetcher's User-Agent now links `https://responseos.pro/trust`.
+- Production canonicals, sitemap, robots and `llms.txt` follow `NEXT_PUBLIC_APP_URL` (#220), so the domain itself moves with that value and a manual ADR-0053 deploy, not with this change.
+
 ## Unreleased — feat: SEO/AEO foundations for the public marketing surface
 
 - **Crawl:** add `app/robots.ts` (allows the site, disallows `/api/`, `/admin`, `/client`) and `app/sitemap.ts` covering the nine public marketing routes. Both returned 404 in production before this.
