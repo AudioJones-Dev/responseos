@@ -29,7 +29,7 @@ const PILLARS = [
 ];
 
 const PROOF = [
-  { value: "$1,000", label: "Flat Readiness & Revenue Leak Assessment" },
+  { value: "$1,500", label: "Flat Readiness & Revenue Leak Assessment" },
   { value: "30 days", label: "To apply the full fee toward implementation" },
   { value: "8 parts", label: "In the written assessment packet when it's a fit" },
 ];

@@ -76,7 +76,7 @@ export default function PricingPage() {
               Readiness & Revenue Leak Assessment
             </h2>
             <p className="mt-3 font-display text-4xl font-semibold text-accent">
-              $1,000
+              $1,500
               <span className="ml-2 align-middle text-sm font-normal text-ink-secondary">
                 flat
               </span>

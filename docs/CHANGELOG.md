@@ -14,6 +14,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - **Crawler identity:** the prospect-bootstrap fetcher's User-Agent now links `https://responseos.pro/trust`.
 - Production canonicals, sitemap, robots and `llms.txt` follow `NEXT_PUBLIC_APP_URL` (#220), so the domain itself moves with that value and a manual ADR-0053 deploy, not with this change.
 
+## Unreleased — feat: price the Readiness & Revenue Leak Assessment at $1,500 (ADR-0083)
+
+- **Price:** the assessment is $1,500 flat on `/`, `/audit` and `/pricing` (was $1,000). The operator confirmed it is the same offer as the $1,500 readiness-assessment baseline. The 30-day credit toward implementation is unchanged.
+- **Copy:** the `/industries/contractors` quote follow-up step no longer names the superseded "Recovery Pro" tier. It now says only that quote follow-up and outbound recovery are in development.
+- **Decision:** ADR-0083 records the price and lists the older planning docs that still quote $1,000.
+
 ## Unreleased — fix: recognise uncoded connection loss on model queries (database-reconnect races)
 
 - **Bug:** a model query (`create`, `findUnique`, …) issued right after `pg_terminate_backend` can fail with a `PrismaClientUnknownRequestError` whose message carries the server's FATAL as the driver's debug struct (`PostgresError { code: "57P01", message: "terminating connection due to administrator command", severity: "FATAL", … }`), not `P1017`. `isConnectionLoss` returned false for it. The recovering client then did not reset the pool, so the dead connection stayed pooled and the next query failed with `P1017`.
