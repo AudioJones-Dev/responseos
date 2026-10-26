@@ -1524,6 +1524,17 @@
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/214"
     },
     {
+      "id": "G-21",
+      "phase": "Tech Debt & Hardening",
+      "title": "Recognise uncoded connection loss on model queries so the pool resets (database-reconnect races)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-10-26",
+      "due": "2026-10-26"
+    },
+    {
       "id": "G-12",
       "phase": "Tech Debt & Hardening",
       "title": "Clear npm audit failures blocking all CI",
@@ -1601,6 +1612,17 @@
       "due": "2026-10-27",
       "ref": 223,
       "refType": "pull"
+    },
+    {
+      "id": "PRICE-01",
+      "phase": "Launch / Demo Deploy",
+      "title": "Price the Readiness & Revenue Leak Assessment at $1,500 in public copy (ADR-0083)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "Med",
+      "start": "2026-10-26",
+      "due": "2026-10-28"
     },
     {
       "id": "G-20",
