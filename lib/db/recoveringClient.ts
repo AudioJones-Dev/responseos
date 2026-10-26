@@ -5,12 +5,25 @@ import { PrismaClient, Prisma } from "@prisma/client";
 // severity it sends each at (src/backend/tcop/postgres.c).
 const SESSION_TERMINATED = /(?:FATAL: terminating connection due to administrator command|WARNING: terminating connection (?:because of crash of another server process|due to immediate shutdown command|because of unexpected SIGQUIT signal))/;
 
+// Model queries and interactive-transaction queries report the same server
+// error as the driver's debug struct instead of "SEVERITY: message".
+const POSTGRES_ERROR_DEBUG = /PostgresError \{ code: "[0-9A-Z]{5}", message: "((?:[^"\\]|\\.)*)", severity: "([A-Z]+)"/;
+
+function reportsSessionTermination(message: string) {
+  if (SESSION_TERMINATED.test(message)) return true;
+  const debug = POSTGRES_ERROR_DEBUG.exec(message);
+  return debug !== null && SESSION_TERMINATED.test(`${debug[2]}: ${debug[1]}`);
+}
+
 // A terminated backend surfaces as a dropped connection (P1017); or, when
 // Postgres's termination message arrives first, as a failed raw query (P2010)
 // carrying the server's admin/crash shutdown or connection-exception SQLSTATE,
-// or as an uncoded request error (seen on batch transactions) whose message is it.
+// or as an uncoded request error whose message is it (batch transactions in
+// "SEVERITY: message" form; model queries and interactive transactions in the
+// driver's debug form). Missing the uncoded forms leaves the dead connection
+// pooled, so the next query fails with P1017 too.
 export function isConnectionLoss(error: unknown): boolean {
-  if (error instanceof Prisma.PrismaClientUnknownRequestError) return SESSION_TERMINATED.test(error.message);
+  if (error instanceof Prisma.PrismaClientUnknownRequestError) return reportsSessionTermination(error.message);
   if (!(error instanceof Error) || !("code" in error)) return false;
   if (error.code === "P1017") return true;
   const sqlState = (error as { meta?: { code?: unknown } }).meta?.code;

@@ -14,6 +14,13 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - **Copy:** the `/industries/contractors` quote follow-up step no longer names the superseded "Recovery Pro" tier. It now says only that quote follow-up and outbound recovery are in development.
 - **Decision:** ADR-0083 records the price and lists the older planning docs that still quote $1,000.
 
+## Unreleased — fix: recognise uncoded connection loss on model queries (database-reconnect races)
+
+- **Bug:** a model query (`create`, `findUnique`, …) issued right after `pg_terminate_backend` can fail with a `PrismaClientUnknownRequestError` whose message carries the server's FATAL as the driver's debug struct (`PostgresError { code: "57P01", message: "terminating connection due to administrator command", severity: "FATAL", … }`), not `P1017`. `isConnectionLoss` returned false for it. The recovering client then did not reset the pool, so the dead connection stayed pooled and the next query failed with `P1017`.
+- **CI failures it explains:** "failed writes are not replayed…" failed at `expectConnectionLoss` because the error was this form. It was not a replay or a `P2002`: the row count right after the failed write was 0 in every local run, and the only duplicate-key lines in the Postgres log come from the test's deliberate second `create` in passing runs. "application client recovers…" failed with `P1017` on its second `findUnique` because the first failure was this form and the pool was never reset. There was no second dead connection, because `connection_limit=1`. The same fix also covers the interactive-transaction case that #218 targets.
+- **Change:** `lib/db/recoveringClient.ts` also reads the debug form. It accepts the error only when the struct's severity and message are one of Postgres's session-ending messages, so a statement timeout, a background worker's shutdown, or the right text at the wrong severity is still not treated as connection loss. The integration test now prints the error when the check fails (same helper as #218), and the first failed `findUnique` must now be a connection loss, not just any error.
+- **Validation:** new unit cases fail without the `lib/` change (3 failed). Locally on PostgreSQL 16, `database-reconnect.integration.test.ts` passed 31/40 runs before the fix, with all three failure modes reproduced, and 100/100 after it. Lint, typecheck and unit tests pass.
+
 ## Unreleased — feat: SEO/AEO foundations for the public marketing surface
 
 - **Crawl:** add `app/robots.ts` (allows the site, disallows `/api/`, `/admin`, `/client`) and `app/sitemap.ts` covering the nine public marketing routes. Both returned 404 in production before this.
