@@ -6,7 +6,13 @@ import { runtimePrincipalQuery } from "../../scripts/database-principal-query.mj
 
 async function expectConnectionLoss(operation: PromiseLike<unknown>) {
   const error = await Promise.resolve(operation).then(() => null, (failure: unknown) => failure);
-  expect(isConnectionLoss(error)).toBe(true);
+  expect(isConnectionLoss(error), describeError(error)).toBe(true);
+}
+
+function describeError(error: unknown) {
+  if (!(error instanceof Error)) return `non-error rejection: ${JSON.stringify(error)}`;
+  const { code, meta } = error as { code?: unknown; meta?: unknown };
+  return `${error.constructor.name} code=${String(code)} meta=${JSON.stringify(meta)} message=${JSON.stringify(error.message)}`;
 }
 
 test("application client recovers after backend loss without replaying the failed query", async () => {
@@ -21,7 +27,7 @@ test("application client recovers after backend loss without replaying the faile
     const [backend] = await client.$queryRaw<{pid:number}[]>`SELECT pg_backend_pid() AS pid`;
     const [terminated] = await controller.$queryRaw<{terminated:boolean}[]>`SELECT pg_terminate_backend(${backend.pid}::integer) AS terminated`;
     expect(terminated.terminated).toBe(true);
-    await expect(client.account.findUnique({where:{id}})).rejects.toThrow();
+    await expectConnectionLoss(client.account.findUnique({where:{id}}));
     expect((await client.account.findUnique({where:{id}}))?.id).toBe(id);
     expect(await controller.account.count({where:{id}})).toBe(1);
   } finally {
@@ -158,7 +164,7 @@ test("pool recovery waits for a concurrent healthy transaction to commit", async
     const [backend] = await client.$queryRaw<{pid:number}[]>`SELECT pg_backend_pid() AS pid`;
     await controller.$queryRaw`SELECT pg_terminate_backend(${backend.pid}::integer)`;
     const lost = await client.$queryRaw`SELECT 1`.then(()=>null,(error:unknown)=>error);
-    expect(isConnectionLoss(lost)).toBe(true);
+    expect(isConnectionLoss(lost), describeError(lost)).toBe(true);
     const later = Promise.resolve(client.account.count({where:{id}}));
     release();
     await transaction;
