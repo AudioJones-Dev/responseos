@@ -101,8 +101,8 @@ Primary outbound messaging flow. Agents need exact request fields and delivery-r
 | `to` | string (E.164) | Yes | Receiving address (+E.164 formatted phone number or short co... |
 | `from` | string (E.164) | Yes | Sending address (+E.164 formatted phone number, alphanumeric... |
 | `text` | string | Yes | Message body (i.e., content) as a non-empty string. |
-| `messaging_profile_id` | string (UUID) | No | Unique identifier for a messaging profile. |
-| `media_urls` | array[string] | No | A list of media URLs. |
+| `messaging_profile_id` | string (UUID) | Conditional | Required if sending via number pool or with an alphanumeric sender ID. |
+| `media_urls` | array[string] | Conditional | A list of media URLs. Required for MMS. |
 | `webhook_url` | string (URL) | No | The URL where webhooks related to this message will be sent. |
 | ... | | | +7 optional params in [references/api-details.md](references/api-details.md) |
 
@@ -265,7 +265,7 @@ Force a long-code sending path instead of the generic send endpoint.
 | `from` | string (E.164) | Yes | Phone number, in +E.164 format, used to send the message. |
 | `to` | string (E.164) | Yes | Receiving address (+E.164 formatted phone number or short co... |
 | `text` | string | Conditional | Message body. Required for SMS. |
-| `media_urls` | array[string] | No | A list of media URLs. |
+| `media_urls` | array[string] | Conditional | A list of media URLs. Required for MMS. |
 | `webhook_url` | string (URL) | No | The URL where webhooks related to this message will be sent. |
 | `webhook_failover_url` | string (URL) | No | The failover URL where webhooks related to this message will... |
 | ... | | | +6 optional params in [references/api-details.md](references/api-details.md) |
@@ -298,7 +298,7 @@ Let a messaging profile or number pool choose the sender for you.
 | `messaging_profile_id` | string (UUID) | Yes | Unique identifier for a messaging profile. |
 | `to` | string (E.164) | Yes | Receiving address (+E.164 formatted phone number or short co... |
 | `text` | string | Conditional | Message body. Required for SMS. |
-| `media_urls` | array[string] | No | A list of media URLs. |
+| `media_urls` | array[string] | Conditional | A list of media URLs. Required for MMS. |
 | `webhook_url` | string (URL) | No | The URL where webhooks related to this message will be sent. |
 | `webhook_failover_url` | string (URL) | No | The failover URL where webhooks related to this message will... |
 | ... | | | +6 optional params in [references/api-details.md](references/api-details.md) |
@@ -332,7 +332,7 @@ Force a short-code sending path when the sender must be a short code.
 | `from` | string (E.164) | Yes | Phone number, in +E.164 format, used to send the message. |
 | `to` | string (E.164) | Yes | Receiving address (+E.164 formatted phone number or short co... |
 | `text` | string | Conditional | Message body. Required for SMS. |
-| `media_urls` | array[string] | No | A list of media URLs. |
+| `media_urls` | array[string] | Conditional | A list of media URLs. Required for MMS. |
 | `webhook_url` | string (URL) | No | The URL where webhooks related to this message will be sent. |
 | `webhook_failover_url` | string (URL) | No | The failover URL where webhooks related to this message will... |
 | ... | | | +6 optional params in [references/api-details.md](references/api-details.md) |
@@ -365,8 +365,8 @@ Queue a message for future delivery instead of sending immediately.
 | `to` | string (E.164) | Yes | Receiving address (+E.164 formatted phone number or short co... |
 | `from` | string | Conditional | Sending address (phone number, short code, or alphanumeric sender ID). |
 | `text` | string | Conditional | Message body. Required for SMS. |
-| `messaging_profile_id` | string (UUID) | No | Unique identifier for a messaging profile. |
-| `media_urls` | array[string] | No | A list of media URLs. |
+| `messaging_profile_id` | string (UUID) | Conditional | Required if sending via number pool or with an alphanumeric sender ID. |
+| `media_urls` | array[string] | Conditional | A list of media URLs. Required for MMS. |
 | `webhook_url` | string (URL) | No | The URL where webhooks related to this message will be sent. |
 | ... | | | +8 optional params in [references/api-details.md](references/api-details.md) |
 

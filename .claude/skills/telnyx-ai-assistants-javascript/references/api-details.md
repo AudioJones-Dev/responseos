@@ -371,7 +371,6 @@
 | `handoff` | object |  |
 | `invite` | object |  |
 | `webhook` | object |  |
-| `client_side_tool` | object |  |
 | `timeout_ms` | integer |  |
 
 ### Update Tool — `client.ai.tools.update()`
@@ -385,5 +384,4 @@
 | `handoff` | object |  |
 | `invite` | object |  |
 | `webhook` | object |  |
-| `client_side_tool` | object |  |
 | `timeout_ms` | integer |  |
