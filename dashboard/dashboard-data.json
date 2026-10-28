@@ -1656,6 +1656,17 @@
       "priority": "Med",
       "start": "2026-10-26",
       "due": "2026-10-29"
+    },
+    {
+      "id": "CLIENT-SETUP-01",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Inactive client setup and synthetic admin/customer review",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "blocked": true,
+      "blockedReason": "Production deployment-to-database mapping unresolved; hosted writes prohibited."
     }
   ],
   "liveIssues": [
