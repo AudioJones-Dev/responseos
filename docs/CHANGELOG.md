@@ -8,6 +8,11 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: add a token-gated check of the production database target
+
+- **Why:** the Neon project and branch behind production `DATABASE_URL` cannot be read from Vercel (the variable is sensitive), from logs, or from any integration record. See `docs/database/production-target-check.md`.
+- **Change:** `GET /api/health/database-target` returns the deployment ID, source SHA, and the hostname and database name parsed in memory from `DATABASE_URL`. It is off (404) unless `RESPONSEOS_DB_TARGET_CHECK_TOKEN_SHA256` is set. It needs a bearer token, never touches the database, never logs, returns no credentials or parser errors, and is not cacheable. Not deployed; the deployment, the token digest variable and the removal each need operator approval.
+
 ## Unreleased — feat: replace the Recovery tier cards on /pricing with one unnamed scope
 
 - **Why:** `/pricing` still showed Recovery Core, Pro and Performance cards with a "Default offer" badge. ADR-0028 retired those names as the public model, and ADR-0083 left the cards as an open item.
