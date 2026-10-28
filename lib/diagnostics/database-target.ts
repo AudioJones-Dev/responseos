@@ -80,24 +80,24 @@ export function describeDatabaseTarget(value: string | undefined): DatabaseTarge
     if (!isIPv6(hostPort[2])) {
       return UNPARSEABLE;
     }
-    hostname = new URL(`http://[${hostPort[2]}]/`).hostname;
+    try {
+      hostname = new URL(`http://[${hostPort[2]}]/`).hostname;
+    } catch {
+      return UNPARSEABLE;
+    }
   }
 
+  // Prisma sends the path segment to Postgres without percent-decoding it,
+  // and a bare "/" sends an empty name (Postgres then uses the user's name).
+  // Report the segment as written, and refuse anything Prisma would encode
+  // or that would not name a database as written.
   let database: string | null = null;
   if (tail.startsWith("/")) {
     const segment = tail.slice(1).split(/[?#]/, 1)[0];
-    if (segment) {
-      let decoded: string;
-      try {
-        decoded = decodeURIComponent(segment);
-      } catch {
-        return UNPARSEABLE;
-      }
-      if (segment.includes("/") || decoded === "." || decoded === ".." || FORBIDDEN_CHARACTERS.test(decoded)) {
-        return UNPARSEABLE;
-      }
-      database = decoded;
+    if (!segment || segment.includes("/") || /[%"<>`{}]/.test(segment) || segment === "." || segment === "..") {
+      return UNPARSEABLE;
     }
+    database = segment;
   }
 
   return { status: "ok", hostname, database };

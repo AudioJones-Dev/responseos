@@ -37,7 +37,7 @@ The value's origin (Neon console, Doppler, a local file) is not recorded anywher
 - **Authenticated** by `Authorization: Bearer <token>`, compared as SHA-256 digests with `timingSafeEqual`. The environment stores only the digest, so the stored value is not a usable credential. Never put the token in a query string, because URLs get logged.
 - **Returns only** `deployment_id` (`VERCEL_DEPLOYMENT_ID`), `deployment_url` (`VERCEL_URL`), `environment`, `build_sha` (inlined at build), `runtime_git_sha`, and `database_url: {status, hostname, database}`. `status` is one of `ok | missing | unparseable | unsupported_scheme`; it never carries parser text.
 - **Never** connects to or queries the database, imports Prisma, logs anything, or returns the username, password, port or query parameters. `DIRECT_URL` is not read.
-- **Not cacheable:** `force-dynamic`, `Cache-Control: no-store, no-cache, must-revalidate, private, max-age=0`, `Pragma: no-cache`, `Expires: 0`, `X-Robots-Tag: noindex`.
+- **Not cacheable:** `force-dynamic`, `Cache-Control: no-store, no-cache, must-revalidate, private, max-age=0`, `Pragma: no-cache`, `Expires: 0`, `X-Robots-Tag: noindex, nofollow`.
 - **Proxy:** the exact path is added to the public list, the same way webhooks self-authenticate. Without that, the auth-required proxy redirects it to `/`. Sub-paths stay protected.
 
 Tests: `tests/unit/database-target-diagnostic.test.ts` covers the rejection cases, disabled versus unauthorized being identical, the exact authorized shape, redaction of synthetic credential fragments, fixed error statuses, no console output, and no database or Prisma imports. `tests/unit/route-protection.test.ts` covers the exact-path public rule.
@@ -47,7 +47,7 @@ Tests: `tests/unit/database-target-diagnostic.test.ts` covers the rejection case
 The parser is deliberately stricter than WHATWG `URL` and works on the raw string. WHATWG parsing resolves dot segments and lets an unencoded `/`, `?` or `#` in a password move the host boundary; an independent review showed both leaking credential fragments. A later review of the strict parser found no leak: 6M random and about 68M exhaustive short inputs, with an exact userinfo-marker oracle and a non-interference check.
 
 - **`missing`:** unset or the empty string.
-- **`unsupported_scheme`:** a scheme other than `postgres`/`postgresql` in any case, e.g. `mysql://`.
+- **`unsupported_scheme`:** a value of the form `scheme://…` whose scheme is not `postgres`/`postgresql` in any case, e.g. `mysql://`. A value with no `://` is `unparseable`.
 - **`ok`:** exactly `postgres://` or `postgresql://` (lowercase, as Prisma requires), then `USERINFO@HOST[:PORT][/DATABASE][?…][#…]`. All of these must hold:
   - **Characters:** printable non-space ASCII only (`0x21`–`0x7E`). No trimming is done.
   - **The `@`:** exactly one `@` in the whole value. It comes before the first `/`, `?` or `#` after `//`.
@@ -56,17 +56,18 @@ The parser is deliberately stricter than WHATWG `URL` and works on the raw strin
     - Either two or more dot-separated labels of letters, digits and `-`, returned as written.
     - Or a bracketed address that Node's `isIPv6` accepts, returned in normalised form (`[::0001]` becomes `[::1]`).
   - **`PORT`:** 0–65535. It is not returned.
-  - **`DATABASE`:** one path segment, percent-decoded once. After decoding it must still be printable non-space ASCII, and it must not be `.` or `..`. With no path, or a bare `/`, `database` is `null`; Prisma then uses its default database.
+  - **`DATABASE`:** one non-empty path segment, returned **as written, not decoded**, because Prisma sends it to Postgres raw. It must not contain `%`, `"`, `<`, `>`, `` ` ``, `{` or `}`, and must not be `.` or `..`. With no path at all, `database` is `null`, and Prisma connects to `postgres`.
   - **Query and fragment:** ignored and not returned.
 - **`unparseable`:** everything else. That includes:
   - An uppercase or mixed-case `postgres` scheme.
   - Leading or trailing whitespace, a trailing newline, a BOM, or any Unicode space or control character.
   - No `@`, more than one `@`, an empty username, or an `@` after the first `/`, `?` or `#`. The last case covers an unencoded `/`, `?` or `#` in the password.
   - A single-label host such as `localhost` or `db`, a percent-encoded host, a comma-separated multi-host list, or an invalid IPv6 such as `[:]` or `[1.2.3.4]`.
-  - More than one path segment, `.`, `..` or `%2e` as the database, invalid percent-encoding, or a decoded database containing a control or non-ASCII character.
+  - A bare `/` (Prisma would send an empty database name, so Postgres uses the user name), more than one path segment, `.` or `..`, or a database containing `%`, `"`, `<`, `>`, `` ` ``, `{` or `}`.
+  - A bracketed IPv6 with a zone ID (`%eth0`).
 - **Encodings:**
   - `%40`, `%2F`, `%3F` and `%23` inside the password are accepted. They stay in the userinfo and are never decoded.
-  - The database is decoded exactly once: `%2540` becomes `%40` and `%2F` becomes `/`.
+  - The database is never decoded. A `%` in it is rejected, because Prisma would send the encoded text unchanged and the name would be ambiguous to read.
   - The host is never decoded.
 - **Strictness fails closed.** Some URLs Prisma would accept come back `unparseable`, such as single-label hosts or a missing username. The check then returns nothing, which is safe.
 

@@ -273,8 +273,29 @@ describe("describeDatabaseTarget strict parsing", () => {
     "postgres://u:p\u00a0w@db.example.com/neondb",
     "postgres://u:p@db.example.com/%00",
     "postgres://u:p@db.example.com/n%C2%85db",
+    // Prisma sends the database segment raw; refuse anything it would not send as written
+    "postgres://u:p@db.example.com/",
+    "postgres://u:p@db.example.com/?x=1",
+    "postgres://u:p@db.example.com/a%2540b",
+    "postgres://u:p@db.example.com/d%41b",
+    "postgres://u:p@db.example.com/a`b",
+    "postgres://u:p@db.example.com/a{b}",
+    "postgres://u:p@db.example.com/a\"b",
+    "postgres://u:p@db.example.com/a<b>",
+    // zone IDs and hosts outside the allowed set
+    "postgres://u:p@[::1%25eth0]/neondb",
+    "postgres://u:p@[fe80::1%eth0]/neondb",
+    "postgres://u:p@a_b.example.com/neondb",
   ])("rejects %j", (value) => {
     expect(describeDatabaseTarget(value)).toEqual(UNPARSEABLE);
+  });
+
+  test("reports another scheme as unsupported", () => {
+    expect(describeDatabaseTarget("postgresql+x://u:p@db.example.com/neondb")).toEqual({
+      status: "unsupported_scheme",
+      hostname: null,
+      database: null,
+    });
   });
 
   test("treats an empty value as missing", () => {
@@ -283,9 +304,10 @@ describe("describeDatabaseTarget strict parsing", () => {
 
   test.each([
     ["postgres://u:p@db.example.com/neondb#frag", "db.example.com", "neondb"],
-    ["postgres://u:p@db.example.com/%2540", "db.example.com", "%40"],
-    ["postgres://u:p@db.example.com/", "db.example.com", null],
     ["postgres://u:p@[::0001]:5432/neondb", "[::1]", "neondb"],
+    ["postgres://u:p@db.example.com", "db.example.com", null],
+    ["postgres://u:p@db.example.com:65535?abc", "db.example.com", null],
+    ["postgres://u:p@db.example.com/a^b|c", "db.example.com", "a^b|c"],
     ["postgres://u:p@[::ffff:1.2.3.4]/neondb", "[::ffff:102:304]", "neondb"],
   ])("reads %s", (value, hostname, database) => {
     expect(describeDatabaseTarget(value)).toEqual({ status: "ok", hostname, database });
