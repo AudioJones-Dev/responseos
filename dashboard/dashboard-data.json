@@ -1656,6 +1656,17 @@
       "priority": "Med",
       "start": "2026-10-26",
       "due": "2026-10-29"
+    },
+    {
+      "id": "DB-TARGET-01",
+      "phase": "Launch / Demo Deploy",
+      "title": "Identify the Neon database behind production DATABASE_URL (token-gated hostname check; not deployed)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 40,
+      "priority": "High",
+      "start": "2026-10-28",
+      "due": "2026-11-04"
     }
   ],
   "liveIssues": [
