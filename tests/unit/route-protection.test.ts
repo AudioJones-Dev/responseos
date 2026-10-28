@@ -13,6 +13,7 @@ describe("isPublicPath", () => {
     "/demo/walkthrough",
     "/demo/walkthrough/call",
     "/api/health",
+    "/api/health/database-target",
     "/sign-in",
     "/sign-in/factor-one",
     "/sign-up",
@@ -35,6 +36,9 @@ describe("isPublicPath", () => {
     "/api/quotes",
     "/api/reports/revenue",
     "/api/auth/session",
+    // only the exact diagnostic path is public, not a health prefix
+    "/api/health/database-target/extra",
+    "/api/health/other",
     // prefix look-alikes must NOT leak public status
     "/sign-in-evil",
     "/industries-x",
