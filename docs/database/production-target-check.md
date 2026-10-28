@@ -42,10 +42,36 @@ The value's origin (Neon console, Doppler, a local file) is not recorded anywher
 
 Tests: `tests/unit/database-target-diagnostic.test.ts` covers the rejection cases, disabled versus unauthorized being identical, the exact authorized shape, redaction of synthetic credential fragments, fixed error statuses, no console output, and no database or Prisma imports. `tests/unit/route-protection.test.ts` covers the exact-path public rule.
 
+### Accepted URL format
+
+The parser is deliberately stricter than WHATWG `URL`. That parser resolves dot segments and lets an unencoded `/`, `?` or `#` in a password move the host boundary; an independent review showed both leaking credential fragments.
+
+- **`missing`:** unset or empty.
+- **`unsupported_scheme`:** a scheme other than `postgres` or `postgresql` (any letter case).
+- **`ok`:** the value has this shape after trimming surrounding whitespace: `postgres[ql]://USERINFO@HOST[:PORT][/DATABASE][?…][#…]`. All of these must hold:
+  - It contains **exactly one** `@`, and that `@` comes before the first `/`, `?` or `#` after `//`.
+  - `USERINFO` is non-empty and does not start with `:`. It is never decoded or returned.
+  - `HOST` is dot-separated labels of letters, digits and `-` (at least two labels), or a bracketed IPv6 address. `PORT` is at most 65535 and is not returned.
+  - `DATABASE` is a single path segment, percent-decoded once. Query and fragment are ignored and not returned.
+- **`unparseable`:** anything else. That includes:
+  - No `@`, or more than one `@`.
+  - An `@` after the first `/`, `?` or `#`. This covers an unencoded `/`, `?` or `#` in the password.
+  - Any space or control character inside the value, including a tab or newline in a password.
+  - `.`, `..`, `%2e`, or more than one path segment as the database.
+  - Bare `localhost`, a percent-encoded host, or a comma-separated multi-host list.
+  - Invalid percent-encoding in the database name.
+- **Encodings:**
+  - Percent-encoded `@`, `/`, `?` and `#` (`%40` `%2F` `%3F` `%23`) inside the password are accepted. They stay in the userinfo and are never decoded.
+  - The database name is decoded exactly once, so `%2540` becomes `%40`.
+  - A host is never decoded; a `%` in the host is rejected.
+- Neon connection strings fit the `ok` shape. The cost of strictness is that some URLs Prisma would accept are reported `unparseable`. That is safe, because the check then returns nothing.
+
+**Limitation:** a `?schema=` (or `?host=`) parameter can change where Prisma actually connects. A `P2021` could come from the schema rather than the database. This check does not report query parameters. Reporting them would be a scope change for the operator to decide.
+
 ## 3. Deployment and access requirements (each needs separate operator approval)
 
 1. **Merge** this change to `master` after CI is green. Git deployments stay disabled (`vercel.json`).
-2. **Generate the token locally** (32 random bytes, e.g. `openssl rand -hex 32`). Keep it in the operator's password manager. Do not paste it into chat, the repo, or a ticket.
+2. **Generate the token locally** (32 random bytes as **hex only**: `openssl rand -hex 32`. If Clerk is ever configured, a token starting `ak_`, `mt_` or `oat_`, or shaped like a JWT, would be sent to Clerk for verification; a hex token is rejected locally first.). Keep it in the operator's password manager. Do not paste it into chat, the repo, or a ticket.
 3. **Add one production variable:** `RESPONSEOS_DB_TARGET_CHECK_TOKEN_SHA256` = the SHA-256 hex of the token (`printf %s "$TOKEN" | shasum -a 256 | cut -d' ' -f1`; paste only the 64 hex characters, or the check stays off), type sensitive, target production only. Add no other variable, and do not touch `DATABASE_URL`/`DIRECT_URL`.
 4. **Accept ADR-0085 first.** It is Proposed. ADR-0053 covers only the public read-only surfaces and does not authorize this route. Then **deploy production manually** the same way as the current production deployment, which Vercel built by cloning `master` from GitHub. In the Vercel dashboard (team `audiojones`, project `responseos`), create a production deployment from `master` at the merged SHA. Pass no `--env`/`--build-env` overrides and edit no other variable, so the deployment uses the saved project variables. The build runs `npm ci` and `next build` only, with no `prisma migrate`. Confirm that "Automatically expose System Environment Variables" is on; otherwise `deployment_id` and `deployment_url` read `null`.
 5. **Call it once from the operator's terminal:** `curl -sS -H "Authorization: Bearer $TOKEN" https://responseos.pro/api/health/database-target`. The `*.vercel.app` URLs sit behind Vercel SSO protection; the custom domain does not.

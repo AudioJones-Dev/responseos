@@ -59,7 +59,7 @@ describe("GET /api/health/database-target authorization", () => {
     ["token with trailing data", `Bearer ${TOKEN} extra`],
     ["the stored digest instead of the token", `Bearer ${TOKEN_SHA256}`],
     ["a lowercase scheme", `bearer ${TOKEN}`],
-    ["a duplicated header", `Bearer ${TOKEN}, Bearer ${TOKEN}`],
+    ["a comma-joined repeated header", `Bearer ${TOKEN}, Bearer ${TOKEN}`],
   ];
 
   test.each(unauthorized)("rejects %s with a metadata-free 404", async (_label, header) => {
@@ -207,5 +207,101 @@ describe("database-target diagnostic isolation", () => {
       hostname: HOST,
       database: DATABASE,
     });
+  });
+});
+
+describe("describeDatabaseTarget strict parsing", () => {
+  const DOTTED_USER = "app.synthetic";
+  const SECRET = "S3cretPw";
+  const UNPARSEABLE = { status: "unparseable", hostname: null, database: null };
+
+  test.each([
+    // dot segments would erase the misplaced "@" under WHATWG parsing
+    `postgres://${DOTTED_USER}:1/${SECRET}/x@db.example.com/../neondb`,
+    `postgres://${DOTTED_USER}:/${SECRET}/x@db.example.com/../neondb`,
+    `postgres://${DOTTED_USER}:1/${SECRET}/x@db.example.com/%2e%2e/neondb`,
+    `postgres://${DOTTED_USER}:1/${SECRET}/x@db.example.com/.%2E/neondb`,
+    `postgres://postgres.abcref:12345/${SECRET}@aws-0-us-east-1.pooler.supabase.com:6543/../postgres`,
+    // no "@": the username would be read as the host
+    `postgres://${DOTTED_USER}:12345/${SECRET}`,
+    `postgres://${DOTTED_USER}.example.com/${SECRET}`,
+    // an "@" after the host: the text after it may be password
+    `postgres://u:p@db.example.com/x@y.example.com`,
+    `postgres://u:p@db.example.com?x@y`,
+    `postgres://u:p@db.example.com#x@y`,
+    // more than one "@"
+    `postgres://${DOTTED_USER}:${SECRET}@x@db.example.com/neondb`,
+    `postgres://${DOTTED_USER}:${SECRET}@@db.example.com/neondb`,
+    // empty username, or credentials split by whitespace the URL parser would strip
+    `postgres://:${SECRET}@db.example.com/neondb`,
+    `postgres://${DOTTED_USER}:${SECRET}\t/x@db.example.com/neondb`,
+    `postgres://${DOTTED_USER}:Sec\nret@db.example.com/neondb`,
+    // database must be one plain segment
+    `postgres://${DOTTED_USER}:${SECRET}@db.example.com/a/b`,
+    `postgres://${DOTTED_USER}:${SECRET}@db.example.com/..`,
+    `postgres://${DOTTED_USER}:${SECRET}@db.example.com/%2e`,
+    // host must be a dotted name or bracketed IPv6, port at most 65535
+    `postgres://${DOTTED_USER}:${SECRET}@localhost/neondb`,
+    `postgres://${DOTTED_USER}:${SECRET}@db%2Eexample.com/neondb`,
+    `postgres://${DOTTED_USER}:${SECRET}@db.example.com:70000/neondb`,
+    `postgres://${DOTTED_USER}:${SECRET}@h1.example.com,h2.example.com/neondb`,
+  ])("rejects %s", (value) => {
+    const result = describeDatabaseTarget(value);
+    expect(result).toEqual(UNPARSEABLE);
+  });
+
+  test("ignores query and fragment values entirely", () => {
+    expect(
+      describeDatabaseTarget(
+        `postgres://${DOTTED_USER}:${SECRET}@db.example.com/neondb?schema=s&host=/tmp#frag`,
+      ),
+    ).toEqual({ status: "ok", hostname: "db.example.com", database: "neondb" });
+  });
+
+  test("trims surrounding whitespace but nothing inside", () => {
+    expect(describeDatabaseTarget(`  postgres://u:p@db.example.com/neondb\n`)).toEqual({
+      status: "ok",
+      hostname: "db.example.com",
+      database: "neondb",
+    });
+  });
+
+  test("never returns a credential fragment for generated inputs", () => {
+    let seed = 0x5eed;
+    const random = () => {
+      seed = (seed + 0x6d2b79f5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    const pick = <T,>(items: readonly T[]) => items[Math.floor(random() * items.length)];
+    const pieces = ["/", "?", "#", "@", ":", ".", "..", "%2e", "%40", "%2F", "-", "_", "1", "65535", "\t", "\n", " "];
+    let counter = 0;
+    const word = () => {
+      let out = "";
+      const length = 2 + Math.floor(random() * 6);
+      for (let i = 0; i < length; i += 1) out += random() < 0.55 ? `Zq${(counter += 1)}Q` : pick(pieces);
+      return out;
+    };
+    const hosts = ["db.example.com", "ep-a-b.us-east-1.aws.neon.tech:5432", "[::1]", "", "localhost"];
+    const paths = ["/neondb", "/../neondb", "/%2e%2e/neondb", "", "/a/b", "?x=1", "#f"];
+
+    let accepted = 0;
+    for (let i = 0; i < 20000; i += 1) {
+      const user = random() < 0.5 ? `app.${word()}` : word();
+      const password = word();
+      const value = `postgres://${user}:${password}${random() < 0.8 ? "@" : ""}${pick(hosts)}${pick(paths)}`;
+      const result = describeDatabaseTarget(value);
+      if (result.status !== "ok") continue;
+      accepted += 1;
+      // Accepted values hold exactly one "@"; the userinfo is everything
+      // between "//" and it, whatever the generator meant by user/password.
+      const userinfo = value.trim().slice("postgres://".length, value.trim().indexOf("@"));
+      const output = `${result.hostname ?? ""} ${result.database ?? ""}`;
+      for (const token of userinfo.match(/Zq[0-9]+Q/g) ?? []) {
+        expect(output).not.toContain(token);
+      }
+    }
+    expect(accepted).toBeGreaterThan(100);
   });
 });
