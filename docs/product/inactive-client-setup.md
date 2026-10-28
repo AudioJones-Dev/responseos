@@ -87,3 +87,21 @@ Base: current master `46eb2150db677a66d49a6ab09e01534efa210278`; branch `codex/i
 - Self-review completed; independent human review and CI have not occurred. No push, deployment, real account, production migration, pilot import, invitation, provider setting or support request.
 
 Production execution remains blocked. This local implementation deliberately has no hosted-write override; approval of a verified destination must precede a separately reviewed production execution mechanism.
+
+## Independent review follow-up — 2026-10-28
+
+Baseline d131ffb94d58e662c9e5005ebcd96b7710c5a1a1 was independently inspected by a separate read-only reviewer before fixes.
+
+- **P1 fixed:** false draft flags did not enforce runtime inactivity. Legacy signed Telnyx mapping could capture a paused setup account's transcript. The new accountRuntimeAllowed guard denies missing accounts, paused accounts and any non-null setup JSON, including malformed drafts. It applies before raw call-payload capture, direct normalization, assistant context compilation, CRM work and website memory ingestion. A missing draft on a paused account still denies. Draft data cannot grant permission.
+- **P3 fixed:** rendered setup sections skipped H1 to H3. Both setup components now use H2 without changing shared components.
+- Independent re-review found no remaining confirmed blocker in runtime/tests/heading changes. Operator/session authorization, strict unknown-field rejection, serializable duplicate refusal, contact separation and published configuration preservation were checked.
+
+Pinned tools: Node 24.18.0 (official archive SHA256 verified), npm 11.16.0, Next 16.4.3, Prisma 6.19.3, Vitest 4.1.11, PostgreSQL 16.14. Final lint/typecheck passed; full unit suite 777 passed; full integration suite 190 passed, then expanded setup suite 21 passed including an additional operator/no-session/role-injection test. Credential-free and disposable-database builds passed. Local schema diff: no difference. An initial unit run inherited REQUIRE_AUTH=1 and disabled test sessions; corrected test environment passed. An initial local database connection used the old port; corrected loopback identity readback preceded passing integration tests.
+
+Runtime evidence: AI business context withheld; call transcript/recording payload normalization denied; CRM follow-up denied; memory ingestion makes no fetch/write. Live record-start, outbound calling and forwarding implementations do not exist in the current carrier/voice mocks; none added. Local tests do not establish external provider state. Unavailable assistant initialization may still retain an unassigned initialization event in the existing ledger; this is not a claim of zero webhook metadata storage.
+
+Browser: synthetic customer viewer is read-only and denied operator setup. Synthetic operator creation and edits survive full reload; a stale second tab is refused and reload shows the latest revision. Labels/status feedback and corrected heading levels were checked. Browser extension kapture-loaded causes a development hydration warning. This is an accessibility smoke check, not an exhaustive assistive-technology audit.
+
+The exact migration ran on a populated transaction-local table: existing values unchanged, new field null, saved JSON retained through old-column reads. This proves additive/data preservation, not full deployment rollback. Keep the column and draft records on rollback. Before reverting the runtime guard in a future hosted release, separately approve a containment plan stopping relevant capture/automation entrypoints; old code does not enforce the new deny marker. No hosted rollback was executed.
+
+CI, branch publication authorization, verified production mapping and target-specific migration/rollback rehearsal remain outstanding. No push, deployment, provider change, production migration, real account, invitation or pilot-history change occurred.

@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Card, CardHeading } from "@/components/ui";
+import { Button, Card } from "@/components/ui";
 import type { SetupView } from "@/lib/clientSetup/service";
 
 export function SetupForm({ setup, writable }: { setup?: SetupView; writable: boolean }) {
@@ -33,7 +33,7 @@ export function SetupForm({ setup, writable }: { setup?: SetupView; writable: bo
     } catch { setMessage("Draft could not be saved. Check your connection and try again."); }
     finally { setBusy(false); }
   }
-  return <Card className="mt-6"><CardHeading>{setup ? "Edit setup draft" : "Create inactive client"}</CardHeading>
+  return <Card className="mt-6"><h2 className="text-lg font-semibold text-ink">{setup ? "Edit setup draft" : "Create inactive client"}</h2>
     {!writable && <p className="mt-3 text-sm text-ink-secondary">Saving is blocked. Use the dedicated local test database and explicit local setup flag. Production destination remains unresolved.</p>}
     <form className="mt-5 space-y-4" onSubmit={submit}>
       <fieldset disabled={!writable || busy} className="grid gap-4 sm:grid-cols-2">

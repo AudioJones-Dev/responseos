@@ -1,3 +1,8 @@
+import { readFileSync } from "node:fs";
+import { Prisma } from "@prisma/client";
+import { accountRuntimeAllowed } from "@/lib/clientSetup/runtime";
+import { normalizeTelnyxEvent } from "@/lib/providers/telnyx/normalize";
+import { runCrmSyncForCall } from "@/lib/crm/syncFinalizedCall";
 import { afterAll, afterEach, beforeEach, describe, expect, test } from "vitest";
 import { createClientSetup, readClientSetup, updateClientSetup } from "@/lib/clientSetup/service";
 import { buildSetupDraft, DraftInputSchema } from "@/lib/clientSetup/contracts";
@@ -114,4 +119,65 @@ describe("inactive setup transaction and authorization", () => {
       await prisma.$executeRawUnsafe(`DROP FUNCTION setup_test_reject_audit()`);
     }
   });
+});
+
+ test.each(["valid", "missing", "malformed"])("%s setup draft cannot permit runtime capture or automation", async (kind) => {
+   if (kind !== "valid") await prisma.account.update({ where: { id: "org_mock_1" }, data: { setup_draft_json: kind === "missing" ? Prisma.DbNull : { recording: true } } });
+   expect(await accountRuntimeAllowed("org_mock_1")).toBe(false);
+   expect(await accountRuntimeAllowed("missing-account")).toBe(false);
+   expect(await normalizeTelnyxEvent({ accountId: "org_mock_1", demoNumber: "+12025550123", webhookEventId: "no-ledger", event: { data: { id: "synthetic", event_type: "call.conversation_insights.generated", payload: { call_control_id: "synthetic", transcript: "Must not persist" } } } })).toEqual({ callId: null, finalized: false });
+   expect(await runCrmSyncForCall({ accountId: "org_mock_1", callId: "no-call" })).toMatchObject({ ok: false, error: { code: "account_inactive" } });
+   expect(await prisma.call.count()).toBe(0);
+   expect(await prisma.callTranscript.count()).toBe(0);
+   expect(await prisma.crmSyncOperation.count()).toBe(0);
+ });
+ test("even active status cannot make a malformed or valid setup draft runtime authority", async () => {
+   await prisma.account.update({ where: { id: "org_mock_1" }, data: { status: "active" } });
+   expect(await accountRuntimeAllowed("org_mock_1")).toBe(false);
+   await prisma.account.update({ where: { id: "org_mock_1" }, data: { setup_draft_json: { capabilities: { aiAnswering: true } } } });
+   expect(await accountRuntimeAllowed("org_mock_1")).toBe(false);
+ });
+
+test("editing drafts preserves published profile and memory byte for byte", async () => {
+  const profile = await prisma.agentProfile.create({ data: { account_id: "org_mock_1", name: "Published synthetic", slug: "published", type: "demo_mode", enabled: false, system_policy_json: { published: "unchanged" } } });
+  const memory = await prisma.businessMemorySnapshot.create({ data: { account_id: "org_mock_1", schema_version: "synthetic", version: 1, memory_json: { approved: "unchanged" }, content_hash: "synthetic", template_version: "synthetic", status: "approved" } });
+  expect(await updateClientSetup("org_mock_1", { revision: 1, draft: draftInput })).toMatchObject({ ok: true });
+  expect(await prisma.agentProfile.findUnique({ where: { id: profile.id } })).toEqual(profile);
+  expect(await prisma.businessMemorySnapshot.findUnique({ where: { id: memory.id } })).toEqual(memory);
+});
+
+test("additive migration preserves existing data and old readers retain setup drafts", async () => {
+  await prisma.$transaction(async (tx) => {
+    await tx.$executeRawUnsafe('CREATE TEMP TABLE "Account" (LIKE public."Account") ON COMMIT DROP');
+    await tx.$executeRawUnsafe('ALTER TABLE pg_temp."Account" DROP COLUMN setup_draft_json');
+    await tx.$executeRawUnsafe(`INSERT INTO pg_temp."Account" (id,name,slug,industry,timezone,status,account_type,created_at,updated_at) VALUES ('synthetic-existing','Existing Example','existing-example','test','UTC','paused','customer',now(),now())`);
+    const before = await tx.$queryRawUnsafe<Array<Record<string, unknown>>>('SELECT row_to_json(a) AS row FROM pg_temp."Account" a');
+    await tx.$executeRawUnsafe(readFileSync('prisma/migrations/20261028_inactive_client_setup/migration.sql', 'utf8'));
+    const after = await tx.$queryRawUnsafe<Array<{ row: Record<string, unknown> }>>('SELECT row_to_json(a) AS row FROM pg_temp."Account" a');
+    expect(after[0].row.setup_draft_json).toBeNull();
+    delete after[0].row.setup_draft_json;
+    expect(after).toEqual(before);
+    await tx.$executeRawUnsafe(`UPDATE pg_temp."Account" SET setup_draft_json = '{"synthetic":"preserve"}'::jsonb`);
+    await tx.$queryRawUnsafe('SELECT id,name,slug FROM pg_temp."Account"');
+    expect(await tx.$queryRawUnsafe('SELECT setup_draft_json FROM pg_temp."Account"')).toEqual([{ setup_draft_json: { synthetic: "preserve" } }]);
+  });
+});
+
+test("operator role may create; absent session and client role injection cannot", async () => {
+  setDevSession("operator");
+  expect(await createClientSetup(fresh)).toMatchObject({ ok: true });
+  setDevSession("client_admin@org_mock_1");
+  expect(await createClientSetup({ ...fresh, role: "aj_admin" })).toMatchObject({ ok: false, error: { code: "role_denied" } });
+  expect(await updateClientSetup("org_mock_2", { revision: 1, draft: draftInput })).toMatchObject({ ok: false, error: { code: "tenant_scope_denied" } });
+  const auth = process.env.RESPONSEOS_REQUIRE_AUTH;
+  const session = process.env.RESPONSEOS_DEV_SESSION;
+  try {
+    delete process.env.RESPONSEOS_DEV_SESSION;
+    process.env.RESPONSEOS_REQUIRE_AUTH = "1";
+    expect(await createClientSetup(fresh)).toMatchObject({ ok: false, error: { code: "no_session" } });
+    expect(await updateClientSetup("org_mock_1", { revision: 1, draft: draftInput })).toMatchObject({ ok: false, error: { code: "no_session" } });
+  } finally {
+    if (auth === undefined) delete process.env.RESPONSEOS_REQUIRE_AUTH; else process.env.RESPONSEOS_REQUIRE_AUTH = auth;
+    if (session === undefined) delete process.env.RESPONSEOS_DEV_SESSION; else process.env.RESPONSEOS_DEV_SESSION = session;
+  }
 });

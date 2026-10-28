@@ -1663,7 +1663,7 @@
       "title": "Inactive client setup and synthetic admin/customer review",
       "owner": "Codex",
       "status": "Review",
-      "progress": 90,
+      "progress": 95,
       "priority": "High",
       "blocked": true,
       "blockedReason": "Production deployment-to-database mapping unresolved; hosted writes prohibited."
