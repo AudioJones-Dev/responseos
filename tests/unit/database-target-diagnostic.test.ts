@@ -58,6 +58,8 @@ describe("GET /api/health/database-target authorization", () => {
     ["token without scheme", TOKEN],
     ["token with trailing data", `Bearer ${TOKEN} extra`],
     ["the stored digest instead of the token", `Bearer ${TOKEN_SHA256}`],
+    ["a lowercase scheme", `bearer ${TOKEN}`],
+    ["a duplicated header", `Bearer ${TOKEN}, Bearer ${TOKEN}`],
   ];
 
   test.each(unauthorized)("rejects %s with a metadata-free 404", async (_label, header) => {
@@ -145,6 +147,33 @@ describe("GET /api/health/database-target authorized response", () => {
     for (const leaked of [HOST, DATABASE, ...SECRET_FRAGMENTS, "Invalid URL", "URIError", "TypeError"]) {
       expect(text).not.toContain(leaked);
     }
+  });
+
+  test.each([
+    `postgresql://${USER}:123/${PASSWORD}@${HOST}/${DATABASE}`,
+    `postgresql://${USER}:/${PASSWORD}@${HOST}/${DATABASE}`,
+    `postgresql://${USER}:?${PASSWORD}@${HOST}/${DATABASE}`,
+    `postgresql://${USER}:#${PASSWORD}@${HOST}/${DATABASE}`,
+    `postgresql://${USER}:Sec@ret/${PASSWORD}@${HOST}/${DATABASE}`,
+  ])("rejects an unencoded password delimiter instead of misreading userinfo as the host (%#)", async (value) => {
+    process.env.DATABASE_URL = value;
+
+    const response = await GET(request(`Bearer ${TOKEN}`));
+    const body = await response.json();
+    const text = JSON.stringify(body);
+
+    expect(body.database_url).toEqual({ status: "unparseable", hostname: null, database: null });
+    for (const leaked of [USER, PASSWORD, "ret", HOST, DATABASE]) {
+      expect(text).not.toContain(leaked);
+    }
+  });
+
+  test.each([
+    [`postgresql://${USER}:${encodeURIComponent("p@ss/w?rd#1")}@${HOST}/${DATABASE}`, HOST],
+    [`postgresql://${USER}:${PASSWORD}@[::1]:5432/${DATABASE}`, "[::1]"],
+    [`POSTGRES://${USER}:${PASSWORD}@${HOST}/${DATABASE}`, HOST],
+  ])("still reads well-formed URLs (%#)", (value, hostname) => {
+    expect(describeDatabaseTarget(value)).toEqual({ status: "ok", hostname, database: DATABASE });
   });
 
   test("writes nothing to the console on any path", async () => {

@@ -19,6 +19,7 @@ export interface DatabaseTarget {
 
 const POSTGRES_PROTOCOLS = new Set(["postgres:", "postgresql:"]);
 const SHA256_HEX = /^[0-9a-f]{64}$/;
+const HOSTNAME = /^(?:[a-z0-9-]+(?:\.[a-z0-9-]+)+|\[[0-9a-f:.]+\])$/i;
 
 export function describeDatabaseTarget(value: string | undefined): DatabaseTarget {
   if (!value) {
@@ -35,7 +36,14 @@ export function describeDatabaseTarget(value: string | undefined): DatabaseTarge
   if (!POSTGRES_PROTOCOLS.has(url.protocol)) {
     return { status: "unsupported_scheme", hostname: null, database: null };
   }
-  if (!url.hostname) {
+  // `postgresql:` is not a special URL scheme, so an unencoded `/`, `?` or `#`
+  // in the password moves the authority boundary and the username or part of
+  // the password lands in `hostname`. The real userinfo `@` then sits in the
+  // path, query or fragment; refuse those, and anything not shaped like a host.
+  if (
+    !HOSTNAME.test(url.hostname) ||
+    `${url.pathname}${url.search}${url.hash}`.includes("@")
+  ) {
     return { status: "unparseable", hostname: null, database: null };
   }
 

@@ -46,8 +46,8 @@ Tests: `tests/unit/database-target-diagnostic.test.ts` covers the rejection case
 
 1. **Merge** this change to `master` after CI is green. Git deployments stay disabled (`vercel.json`).
 2. **Generate the token locally** (32 random bytes, e.g. `openssl rand -hex 32`). Keep it in the operator's password manager. Do not paste it into chat, the repo, or a ticket.
-3. **Add one production variable:** `RESPONSEOS_DB_TARGET_CHECK_TOKEN_SHA256` = the SHA-256 hex of the token (`printf %s "$TOKEN" | shasum -a 256`), type sensitive, target production only. Add no other variable, and do not touch `DATABASE_URL`/`DIRECT_URL`.
-4. **Deploy production manually** under ADR-0053 from the merged SHA, with no `--env`/`--build-env` overrides, so the deployment uses the saved project variables. Confirm that "Automatically expose System Environment Variables" is on; otherwise `deployment_id` and `deployment_url` read `null`.
+3. **Add one production variable:** `RESPONSEOS_DB_TARGET_CHECK_TOKEN_SHA256` = the SHA-256 hex of the token (`printf %s "$TOKEN" | shasum -a 256 | cut -d' ' -f1`; paste only the 64 hex characters, or the check stays off), type sensitive, target production only. Add no other variable, and do not touch `DATABASE_URL`/`DIRECT_URL`.
+4. **Deploy production manually** under ADR-0053 the same way as the current production deployment, which Vercel built by cloning `master` from GitHub. In the Vercel dashboard (team `audiojones`, project `responseos`), create a production deployment from `master` at the merged SHA. Pass no `--env`/`--build-env` overrides and edit no other variable, so the deployment uses the saved project variables. The build runs `npm ci` and `next build` only, with no `prisma migrate`. Confirm that "Automatically expose System Environment Variables" is on; otherwise `deployment_id` and `deployment_url` read `null`.
 5. **Call it once from the operator's terminal:** `curl -sS -H "Authorization: Bearer $TOKEN" https://responseos.pro/api/health/database-target`. The `*.vercel.app` URLs sit behind Vercel SSO protection; the custom domain does not.
 
 No new database credentials, Neon changes, migrations or accounts are involved.
@@ -61,6 +61,7 @@ No new database credentials, Neon changes, migrations or accounts are involved.
 
 ## 5. Disablement and removal
 
-- **Immediate disable (no deploy):** delete `RESPONSEOS_DB_TARGET_CHECK_TOKEN_SHA256` from production and redeploy. Until the redeploy, the running deployment keeps the digest it was built with. For an instant stop, promote or roll back to a deployment built without the digest.
+- **Instant stop:** promote or roll back to a production deployment made before the digest existed (e.g. `dpl_21w6Rad1eWQnF3nCWWdPPNpEv8WY`). The route then no longer exists.
+- **Disable:** delete `RESPONSEOS_DB_TARGET_CHECK_TOKEN_SHA256` from production and redeploy. Vercel fixes environment variables per deployment when it is created, so the running deployment keeps the digest until it is replaced.
 - **Within 7 days of the readout:** open a `chore:` PR that deletes the route, `lib/diagnostics/database-target.ts`, its test, and the `PUBLIC_EXACT` entry, then deploy it. Rotate nothing: the token never left the operator's machine, and the stored digest is useless on its own.
 - If the token may have leaked, remove the digest first, then generate a new token if the check is still needed.
