@@ -41,8 +41,9 @@ export function describeDatabaseTarget(value: string | undefined): DatabaseTarge
     return { status: "missing", hostname: null, database: null };
   }
 
-  // No trimming: Prisma rejects surrounding whitespace, so report it.
-  const raw = value;
+  // Prisma trims trailing whitespace (a pasted newline is common) but
+  // rejects leading whitespace, so only the end is trimmed.
+  const raw = value.replace(/[ \t\r\n]+$/, "");
   const scheme = SCHEME.exec(raw);
   if (!scheme) {
     return UNPARSEABLE;

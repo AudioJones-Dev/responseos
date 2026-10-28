@@ -44,23 +44,23 @@ Tests: `tests/unit/database-target-diagnostic.test.ts` covers the rejection case
 
 ### Accepted URL format
 
-The parser is deliberately stricter than WHATWG `URL` and works on the raw string. WHATWG parsing resolves dot segments and lets an unencoded `/`, `?` or `#` in a password move the host boundary; an independent review showed both leaking credential fragments. A later review of the strict parser found no leak: 6M random and about 68M exhaustive short inputs, with an exact userinfo-marker oracle and a non-interference check.
+The parser is deliberately stricter than WHATWG `URL` and works on the raw string. WHATWG parsing resolves dot segments and lets an unencoded `/`, `?` or `#` in a password move the host boundary; an independent review showed both leaking credential fragments. Independent reviews of the strict parser at `3af6909`, `ac5b08c` and `d3ac6bf` each found no leak. Each ran several million random inputs and about 68 million exhaustive short inputs, with an exact userinfo-marker oracle and a non-interference check. The `d3ac6bf` review also compared 1,100 accepted URLs against what Prisma 6.19.3 actually sends to Postgres, with 0 mismatches.
 
 - **`missing`:** unset or the empty string.
 - **`unsupported_scheme`:** a value of the form `scheme://…` whose scheme is not `postgres`/`postgresql` in any case, e.g. `mysql://`. A value with no `://` is `unparseable`.
 - **`ok`:** exactly `postgres://` or `postgresql://` (lowercase, as Prisma requires), then `USERINFO@HOST[:PORT][/DATABASE][?…][#…]`. All of these must hold:
-  - **Characters:** printable non-space ASCII only (`0x21`–`0x7E`). No trimming is done.
+  - **Characters:** printable non-space ASCII only (`0x21`–`0x7E`). Trailing spaces, tabs, CR and LF are removed first, as Prisma does. Leading whitespace is rejected, as Prisma rejects it.
   - **The `@`:** exactly one `@` in the whole value. It comes before the first `/`, `?` or `#` after `//`.
   - **`USERINFO`:** non-empty and does not start with `:`. It is never decoded or returned.
   - **`HOST`:**
     - Either two or more dot-separated labels of letters, digits and `-`, returned as written.
     - Or a bracketed address that Node's `isIPv6` accepts, returned in normalised form (`[::0001]` becomes `[::1]`).
-  - **`PORT`:** 0–65535. It is not returned.
+  - **`PORT`:** 1–5 digits, value 0–65535. It is not returned.
   - **`DATABASE`:** one non-empty path segment, returned **as written, not decoded**, because Prisma sends it to Postgres raw. It must not contain `%`, `"`, `<`, `>`, `` ` ``, `{` or `}`, and must not be `.` or `..`. With no path at all, `database` is `null`, and Prisma connects to `postgres`.
   - **Query and fragment:** ignored and not returned.
 - **`unparseable`:** everything else. That includes:
   - An uppercase or mixed-case `postgres` scheme.
-  - Leading or trailing whitespace, a trailing newline, a BOM, or any Unicode space or control character.
+  - Leading whitespace, a BOM, whitespace or a control character inside the value, or any non-ASCII character.
   - No `@`, more than one `@`, an empty username, or an `@` after the first `/`, `?` or `#`. The last case covers an unencoded `/`, `?` or `#` in the password.
   - A single-label host such as `localhost` or `db`, a percent-encoded host, a comma-separated multi-host list, or an invalid IPv6 such as `[:]` or `[1.2.3.4]`.
   - A bare `/` (Prisma would send an empty database name, so Postgres uses the user name), more than one path segment, `.` or `..`, or a database containing `%`, `"`, `<`, `>`, `` ` ``, `{` or `}`.
@@ -69,6 +69,7 @@ The parser is deliberately stricter than WHATWG `URL` and works on the raw strin
   - `%40`, `%2F`, `%3F` and `%23` inside the password are accepted. They stay in the userinfo and are never decoded.
   - The database is never decoded. A `%` in it is rejected, because Prisma would send the encoded text unchanged and the name would be ambiguous to read.
   - The host is never decoded.
+- **Hosts are reported as written.** Non-canonical IPv4 text such as `127.1` or `0177.0.0.1` is returned unchanged, but the resolver normalises it (both connect to `127.0.0.1`). Neon hosts are names, so this does not affect the readout.
 - **Strictness fails closed.** Some URLs Prisma would accept come back `unparseable`, such as single-label hosts or a missing username. The check then returns nothing, which is safe.
 
 **Limitation:** a `?schema=` (or `?host=`) parameter can change where Prisma actually connects. A `P2021` could come from the schema rather than the database. This check does not report query parameters. Reporting them would be a scope change for the operator to decide.
