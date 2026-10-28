@@ -171,7 +171,6 @@ describe("GET /api/health/database-target authorized response", () => {
   test.each([
     [`postgresql://${USER}:${encodeURIComponent("p@ss/w?rd#1")}@${HOST}/${DATABASE}`, HOST],
     [`postgresql://${USER}:${PASSWORD}@[::1]:5432/${DATABASE}`, "[::1]"],
-    [`POSTGRES://${USER}:${PASSWORD}@${HOST}/${DATABASE}`, HOST],
   ])("still reads well-formed URLs (%#)", (value, hostname) => {
     expect(describeDatabaseTarget(value)).toEqual({ status: "ok", hostname, database: DATABASE });
   });
@@ -258,12 +257,38 @@ describe("describeDatabaseTarget strict parsing", () => {
     ).toEqual({ status: "ok", hostname: "db.example.com", database: "neondb" });
   });
 
-  test("trims surrounding whitespace but nothing inside", () => {
-    expect(describeDatabaseTarget(`  postgres://u:p@db.example.com/neondb\n`)).toEqual({
-      status: "ok",
-      hostname: "db.example.com",
-      database: "neondb",
-    });
+  test.each([
+    // Prisma rejects these, so the check must not call them ok
+    "POSTGRES://u:p@db.example.com/neondb",
+    "Postgresql://u:p@db.example.com/neondb",
+    " postgres://u:p@db.example.com/neondb",
+    "postgres://u:p@db.example.com/neondb\n",
+    "\uFEFFpostgres://u:p@db.example.com/neondb",
+    "postgres://u:p@[:]/neondb",
+    "postgres://u:p@[1.2.3.4]/neondb",
+    // remaining single-character guards
+    "postgres://@db.example.com/neondb",
+    "postgres://u:p\u007f@db.example.com/neondb",
+    "postgres://u:p w@db.example.com/neondb",
+    "postgres://u:p\u00a0w@db.example.com/neondb",
+    "postgres://u:p@db.example.com/%00",
+    "postgres://u:p@db.example.com/n%C2%85db",
+  ])("rejects %j", (value) => {
+    expect(describeDatabaseTarget(value)).toEqual(UNPARSEABLE);
+  });
+
+  test("treats an empty value as missing", () => {
+    expect(describeDatabaseTarget("")).toEqual({ status: "missing", hostname: null, database: null });
+  });
+
+  test.each([
+    ["postgres://u:p@db.example.com/neondb#frag", "db.example.com", "neondb"],
+    ["postgres://u:p@db.example.com/%2540", "db.example.com", "%40"],
+    ["postgres://u:p@db.example.com/", "db.example.com", null],
+    ["postgres://u:p@[::0001]:5432/neondb", "[::1]", "neondb"],
+    ["postgres://u:p@[::ffff:1.2.3.4]/neondb", "[::ffff:102:304]", "neondb"],
+  ])("reads %s", (value, hostname, database) => {
+    expect(describeDatabaseTarget(value)).toEqual({ status: "ok", hostname, database });
   });
 
   test("never returns a credential fragment for generated inputs", () => {

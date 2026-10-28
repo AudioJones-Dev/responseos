@@ -1,4 +1,5 @@
 import { createHash, timingSafeEqual } from "node:crypto";
+import { isIPv6 } from "node:net";
 
 // Temporary operator diagnostic: which database host does this deployment's
 // DATABASE_URL name? It parses the URL in memory only. It never opens a
@@ -25,11 +26,13 @@ const SHA256_HEX = /^[0-9a-f]{64}$/;
 // authority (before the first `/`, `?` or `#`). The host is read only from
 // after that `@` and the database only from one path segment after the host,
 // so no part of the userinfo can reach the output. Userinfo is never decoded.
-const SCHEME = /^([a-z][a-z0-9+.-]*):\/\//i;
+const SCHEME = /^([A-Za-z][A-Za-z0-9+.-]*):\/\//;
+// Prisma accepts only these exact lowercase prefixes.
 const POSTGRES_SCHEMES = new Set(["postgres", "postgresql"]);
 const HOST_PORT =
-  /^(?:([a-z0-9-]+(?:\.[a-z0-9-]+)+)|(\[[0-9a-f:.]+\]))(?::([0-9]{1,5}))?$/i;
-const FORBIDDEN_CHARACTERS = /[\x00-\x20\x7f]/;
+  /^(?:([a-z0-9-]+(?:\.[a-z0-9-]+)+)|\[([0-9a-f:.]+)\])(?::([0-9]{1,5}))?$/i;
+// Anything but printable, non-space ASCII, including Unicode spaces.
+const FORBIDDEN_CHARACTERS = /[^\x21-\x7e]/;
 
 const UNPARSEABLE: DatabaseTarget = { status: "unparseable", hostname: null, database: null };
 
@@ -38,13 +41,16 @@ export function describeDatabaseTarget(value: string | undefined): DatabaseTarge
     return { status: "missing", hostname: null, database: null };
   }
 
-  const raw = value.trim();
+  // No trimming: Prisma rejects surrounding whitespace, so report it.
+  const raw = value;
   const scheme = SCHEME.exec(raw);
   if (!scheme) {
     return UNPARSEABLE;
   }
-  if (!POSTGRES_SCHEMES.has(scheme[1].toLowerCase())) {
-    return { status: "unsupported_scheme", hostname: null, database: null };
+  if (!POSTGRES_SCHEMES.has(scheme[1])) {
+    return POSTGRES_SCHEMES.has(scheme[1].toLowerCase())
+      ? UNPARSEABLE
+      : { status: "unsupported_scheme", hostname: null, database: null };
   }
   if (FORBIDDEN_CHARACTERS.test(raw)) {
     return UNPARSEABLE;
@@ -69,7 +75,13 @@ export function describeDatabaseTarget(value: string | undefined): DatabaseTarge
   if (!hostPort || (hostPort[3] !== undefined && Number(hostPort[3]) > 65535)) {
     return UNPARSEABLE;
   }
-  const hostname = hostPort[1] ?? hostPort[2];
+  let hostname = hostPort[1];
+  if (hostname === undefined) {
+    if (!isIPv6(hostPort[2])) {
+      return UNPARSEABLE;
+    }
+    hostname = new URL(`http://[${hostPort[2]}]/`).hostname;
+  }
 
   let database: string | null = null;
   if (tail.startsWith("/")) {

@@ -44,27 +44,31 @@ Tests: `tests/unit/database-target-diagnostic.test.ts` covers the rejection case
 
 ### Accepted URL format
 
-The parser is deliberately stricter than WHATWG `URL`. That parser resolves dot segments and lets an unencoded `/`, `?` or `#` in a password move the host boundary; an independent review showed both leaking credential fragments.
+The parser is deliberately stricter than WHATWG `URL` and works on the raw string. WHATWG parsing resolves dot segments and lets an unencoded `/`, `?` or `#` in a password move the host boundary; an independent review showed both leaking credential fragments. A later review of the strict parser found no leak: 6M random and about 68M exhaustive short inputs, with an exact userinfo-marker oracle and a non-interference check.
 
-- **`missing`:** unset or empty.
-- **`unsupported_scheme`:** a scheme other than `postgres` or `postgresql` (any letter case).
-- **`ok`:** the value has this shape after trimming surrounding whitespace: `postgres[ql]://USERINFO@HOST[:PORT][/DATABASE][?…][#…]`. All of these must hold:
-  - It contains **exactly one** `@`, and that `@` comes before the first `/`, `?` or `#` after `//`.
-  - `USERINFO` is non-empty and does not start with `:`. It is never decoded or returned.
-  - `HOST` is dot-separated labels of letters, digits and `-` (at least two labels), or a bracketed IPv6 address. `PORT` is at most 65535 and is not returned.
-  - `DATABASE` is a single path segment, percent-decoded once. Query and fragment are ignored and not returned.
-- **`unparseable`:** anything else. That includes:
-  - No `@`, or more than one `@`.
-  - An `@` after the first `/`, `?` or `#`. This covers an unencoded `/`, `?` or `#` in the password.
-  - Any space or control character inside the value, including a tab or newline in a password.
-  - `.`, `..`, `%2e`, or more than one path segment as the database.
-  - Bare `localhost`, a percent-encoded host, or a comma-separated multi-host list.
-  - Invalid percent-encoding in the database name.
+- **`missing`:** unset or the empty string.
+- **`unsupported_scheme`:** a scheme other than `postgres`/`postgresql` in any case, e.g. `mysql://`.
+- **`ok`:** exactly `postgres://` or `postgresql://` (lowercase, as Prisma requires), then `USERINFO@HOST[:PORT][/DATABASE][?…][#…]`. All of these must hold:
+  - **Characters:** printable non-space ASCII only (`0x21`–`0x7E`). No trimming is done.
+  - **The `@`:** exactly one `@` in the whole value. It comes before the first `/`, `?` or `#` after `//`.
+  - **`USERINFO`:** non-empty and does not start with `:`. It is never decoded or returned.
+  - **`HOST`:**
+    - Either two or more dot-separated labels of letters, digits and `-`, returned as written.
+    - Or a bracketed address that Node's `isIPv6` accepts, returned in normalised form (`[::0001]` becomes `[::1]`).
+  - **`PORT`:** 0–65535. It is not returned.
+  - **`DATABASE`:** one path segment, percent-decoded once. After decoding it must still be printable non-space ASCII, and it must not be `.` or `..`. With no path, or a bare `/`, `database` is `null`; Prisma then uses its default database.
+  - **Query and fragment:** ignored and not returned.
+- **`unparseable`:** everything else. That includes:
+  - An uppercase or mixed-case `postgres` scheme.
+  - Leading or trailing whitespace, a trailing newline, a BOM, or any Unicode space or control character.
+  - No `@`, more than one `@`, an empty username, or an `@` after the first `/`, `?` or `#`. The last case covers an unencoded `/`, `?` or `#` in the password.
+  - A single-label host such as `localhost` or `db`, a percent-encoded host, a comma-separated multi-host list, or an invalid IPv6 such as `[:]` or `[1.2.3.4]`.
+  - More than one path segment, `.`, `..` or `%2e` as the database, invalid percent-encoding, or a decoded database containing a control or non-ASCII character.
 - **Encodings:**
-  - Percent-encoded `@`, `/`, `?` and `#` (`%40` `%2F` `%3F` `%23`) inside the password are accepted. They stay in the userinfo and are never decoded.
-  - The database name is decoded exactly once, so `%2540` becomes `%40`.
-  - A host is never decoded; a `%` in the host is rejected.
-- Neon connection strings fit the `ok` shape. The cost of strictness is that some URLs Prisma would accept are reported `unparseable`. That is safe, because the check then returns nothing.
+  - `%40`, `%2F`, `%3F` and `%23` inside the password are accepted. They stay in the userinfo and are never decoded.
+  - The database is decoded exactly once: `%2540` becomes `%40` and `%2F` becomes `/`.
+  - The host is never decoded.
+- **Strictness fails closed.** Some URLs Prisma would accept come back `unparseable`, such as single-label hosts or a missing username. The check then returns nothing, which is safe.
 
 **Limitation:** a `?schema=` (or `?host=`) parameter can change where Prisma actually connects. A `P2021` could come from the schema rather than the database. This check does not report query parameters. Reporting them would be a scope change for the operator to decide.
 
