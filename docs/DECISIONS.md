@@ -10,7 +10,7 @@ This file records the load-bearing decisions that constrain how ResponseOS is bu
 
 **Decision (if accepted).**
 
-1. One extra production surface is allowed temporarily: `GET /api/health/database-target`. It returns only the deployment ID and URL, the source SHA, and the hostname and database name parsed from `DATABASE_URL`.
+1. One extra production surface is allowed temporarily: `GET /api/health/database-target`. It returns only `deployment_id`, `deployment_url`, `environment`, `build_sha`, `runtime_git_sha`, and `database_url: {status, hostname, database}` parsed from `DATABASE_URL`, as specified in `docs/database/production-target-check.md`.
 2. It is off unless `RESPONSEOS_DB_TARGET_CHECK_TOKEN_SHA256` is set. It requires an operator bearer token, returns an identical 404 when off or unauthorized, never queries the database, never logs, and is not cacheable.
 3. ADR-0053's conditions still hold on the deployment that carries it: mock adapters, no provider credentials, and `RESPONSEOS_REQUIRE_AUTH` set.
 4. The route is removed within 7 days of the readout.
