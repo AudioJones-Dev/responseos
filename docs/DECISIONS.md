@@ -2,6 +2,21 @@
 
 This file records the load-bearing decisions that constrain how ResponseOS is built. Each ADR is short by design: context, decision, consequences. If a decision is reversed, mark the entry **Superseded by ADR-XXX** rather than deleting it.
 
+## ADR-0085 — A temporary, token-gated production check of the configured database host
+
+**Status.** Proposed · 2026-10-28 · **Not accepted; authorizes nothing yet.** Needs the operator's explicit acceptance before the route in PR #232 is deployed to production. Numbered past ADR-0084 because that number is taken on an open branch (PR #231).
+
+**Context.** ADR-0053 authorizes production deployment of the public read-only surfaces only and extends to no other surface. The Neon project and branch behind production `DATABASE_URL` cannot be identified from Vercel metadata, logs or integration records (`docs/database/production-target-check.md`). Reading the hostname at runtime is the remaining way to learn it without retrieving the secret.
+
+**Decision (if accepted).**
+
+1. One extra production surface is allowed temporarily: `GET /api/health/database-target`. It returns only `deployment_id`, `deployment_url`, `environment`, `build_sha`, `runtime_git_sha`, and `database_url: {status, hostname, database}` parsed from `DATABASE_URL`, as specified in `docs/database/production-target-check.md`.
+2. It is off unless `RESPONSEOS_DB_TARGET_CHECK_TOKEN_SHA256` is set. It requires an operator bearer token, returns an identical 404 when off or unauthorized, never queries the database, never logs, and is not cacheable.
+3. ADR-0053's conditions still hold on the deployment that carries it: mock adapters, no provider credentials, and `RESPONSEOS_REQUIRE_AUTH` set.
+4. The route is removed within 7 days of the readout.
+
+**Consequences.** The check proves only the new deployment's configured destination, not an earlier deployment's. It moves no v0.3 gate and authorizes no migration, credential or provider change.
+
 ## ADR-0083 — The Readiness & Revenue Leak Assessment is $1,500 flat
 
 **Status.** Accepted · 2026-10-26 · Operator-authorized. Sets one public price point. It does not reopen ADR-0028's tier model or ADR-0010's billing gate, and it authorizes no payment collection. Numbered past ADR-0082 because ADR-0071 to ADR-0082 are taken on open branches.
