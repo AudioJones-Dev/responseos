@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "skills": {
+    "telnyx-ai-assistants-javascript": {
+      "source": "team-telnyx/skills",
+      "sourceType": "github",
+      "skillPath": "skills/telnyx-ai-assistants-javascript/SKILL.md",
+      "computedHash": "8833865f7bff07a5456f58a4a774e826e64c346a9ea350386a8dfbfb001de630"
+    },
+    "telnyx-messaging-javascript": {
+      "source": "team-telnyx/skills",
+      "sourceType": "github",
+      "skillPath": "skills/telnyx-messaging-javascript/SKILL.md",
+      "computedHash": "85d66dbfa15bdccd2ad15e05b96a89b8c3032508926e7205a461bde6e1bca5b4"
+    },
+    "telnyx-voice-javascript": {
+      "source": "team-telnyx/skills",
+      "sourceType": "github",
+      "skillPath": "skills/telnyx-voice-javascript/SKILL.md",
+      "computedHash": "5adb6f86fe6f6c446972dd8616d21a5c1c364efcd09dc07422a302b34ca18fd4"
+    }
+  }
+}
