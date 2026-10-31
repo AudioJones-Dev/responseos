@@ -290,6 +290,12 @@ The v0.1 schema was forward-compatible with the shipped v0.2 expansion. Future s
 
 ---
 
+## Human follow-up (ADR-0086)
+
+- `FollowUpRouting` — one row per account naming the accountable operator (`owner_user_id`) and backup (`backup_user_id`). Live Telnyx ingest refuses an account without both.
+- `CallFollowUp` — one row per finalized call that is not `qualified` or `spam`, unique on `(account_id, call_id)`. Fields: `reason` (`unqualified` | `maybe` | `not_scored`), `status` (`open` | `resolved`), owner and backup copied from routing, `due_at` (24 hours), resolution fields. It holds no transcript or caller content. Creation and resolution are audited. A later re-score never closes an open record.
+- Migration `20261031_call_follow_up` is additive with no backfill. Its dated name keeps it clear of the FRL pilot stack's `00xx` names.
+
 ## Bounded prospect-bootstrap knowledge slice (ADR-0048)
 
 ADR-0048 implements a deliberately narrow subset for short-lived, operator-controlled `sandbox` accounts. `prospect_bootstraps`, `knowledge_ingestion_runs`, `knowledge_sources`, `knowledge_facts`, and `business_memory_snapshots` provide website provenance, cross-source references, fact-level review, immutable approved context, and expiry without embeddings, vector search, free-form retrieval, file uploads, client logins, or production activation. Each fact may persist bounded per-source evidence metadata (source URL/content hash, retrieval time, and evidence-excerpt hash); approved snapshots add reviewer identity/time and confidence without copying raw excerpts into agent context. `review_expires_at` owns the renewable seven-day pre-activation review window, while `expires_at` owns the ready/active/post-demo TTL and cleanup clock. `converted_at` records only an explicit promotion-import acknowledgment. `telephony_numbers` and temporal `telephony_number_assignments` bind a called number to one bootstrap; `bootstrap_promotions` records an allowlisted export manifest and its explicit import handshake. Every tenant-bearing row carries `account_id`, and source/caller content is purged independently on the 30-day demo schedule.

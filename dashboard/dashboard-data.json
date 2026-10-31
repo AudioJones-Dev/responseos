@@ -1695,6 +1695,19 @@
       "due": "2026-11-04",
       "blocked": true,
       "blockedReason": "Register prepared. Lineage (master first) and ADR-0086 (Option A) decided 2026-10-31. Open: PR dispositions, founding-pilot price, setup/retainer terms."
+    },
+    {
+      "id": "FOLLOWUP-01",
+      "phase": "Launch / Demo Deploy",
+      "title": "Human follow-up for finalized non-qualified calls (ADR-0086 Option A)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 85,
+      "priority": "High",
+      "start": "2026-10-31",
+      "due": "2026-11-07",
+      "blocked": true,
+      "blockedReason": "Implemented locally on feat/human-follow-up-queue. Independent review, CI and FollowUpRouting configuration for any live tenant remain."
     }
   ],
   "liveIssues": [

@@ -1,6 +1,7 @@
 import "@/lib/serverOnlyGuard";
 import { db } from "@/lib/db/client";
 import { setWebhookProcessStatus } from "@/lib/data/webhookEvents";
+import { recordCallFollowUp } from "@/lib/followUp/service";
 import { PURGED_CALLER_NUMBER } from "@/lib/retention/periods";
 import {
   getTelnyxCallId,
@@ -272,6 +273,21 @@ export async function normalizeTelnyxEvent(params: {
         qualification_status: status,
         disqualification_reason: stringValue(insight.qualification?.disqualification_reason),
       },
+    });
+  }
+
+  if (finalized) {
+    const lead = await db.leadEvent.findFirst({ where: { account_id: params.accountId, call_id: call.id }, select: { id: true } });
+    const scored = lead ? await db.leadQualification.findUnique({ where: { lead_event_id: lead.id }, select: { qualification_status: true } }) : null;
+    await db.$transaction(async (tx) => {
+      const outcome = await recordCallFollowUp(tx, { accountId: params.accountId, callId: call.id, status: scored?.qualification_status });
+      if (outcome === "routing_missing") {
+        await tx.auditLog.create({ data: {
+          account_id: params.accountId, actor_type: "system", action: "call_follow_up.routing_missing",
+          category: "workflow", target_type: "Call", target_id: call.id,
+          reason: "No accountable operator and backup are configured; the call has no follow-up record (ADR-0086).",
+        } });
+      }
     });
   }
 

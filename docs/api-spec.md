@@ -115,9 +115,12 @@ Mock-safe mutation routes may include a `mock: true` flag inside the success env
 - `POST /api/admin/bootstrap-promotions/import` → separately gated production-side import. Validates the manifest and source snapshot hashes, creates a new disabled `customer` account with a new ID, rebinds the imported snapshot's embedded tenant identity, and imports only the approved snapshot/policy package. Replays return the existing imported tenant.
 - `POST /api/admin/bootstrap-promotions/:correlationId/acknowledge` → source-side operator acknowledgment of the exact manifest hash and imported customer account reference. Only this explicit handshake marks the export imported and the sandbox bootstrap converted.
 
+### Human follow-up (operator only; ADR-0086)
+- `POST /api/admin/call-follow-ups/:id/resolve` → marks one open follow-up for the server-owned demo account resolved, with an audit record. Returns `422` if it is not open, `404` for another tenant's record, `403` for non-operators.
+
 ## Webhook routes
 
-- `POST /api/webhooks/telnyx/calls` → signed post-call ingest. Returns `202` for a newly ledgered event, `200` for a duplicate, `401` for missing/invalid/stale signatures, `422` for an invalid signed envelope, and `503` while the explicit live-ingest configuration or ledger is unavailable.
+- `POST /api/webhooks/telnyx/calls` → signed post-call ingest. A resolved account without a `FollowUpRouting` owner and backup gets `503 follow_up_routing_missing` before anything is stored (ADR-0086). Returns `202` for a newly ledgered event, `200` for a duplicate, `401` for missing/invalid/stale signatures, `422` for an invalid signed envelope, and `503` while the explicit live-ingest configuration or ledger is unavailable.
 - `POST /api/webhooks/telnyx/assistant-initialization` → signed, replay-safe initialization. Resolves `telnyx_agent_target` to one active temporal assignment and returns only the current approved snapshot's bounded dynamic variables. Missing or inactive assignments return a generic unavailable-demo context, never another tenant's context.
 
 Provider webhook endpoints accept POST only and reject other methods. Live provider webhooks remain mock-safe until v0.3 authorization: most provider routes parse safely and acknowledge with `{ ok: true, received: <provider>, mock: true }` while signature validation remains a TODO. Clerk is the exception: `/api/webhooks/clerk` verifies Svix headers before parsing or mutating identity records.
