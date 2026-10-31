@@ -593,7 +593,7 @@
       "ref": 14,
       "refType": "pull",
       "blocked": true,
-      "blockedReason": "Historical #14 closed; Path A staging scaffold in chore/v0.3-staging-hosting-prep — still blocked on Audio Neon/Clerk/Vercel secrets + Stage C auth; no staging URL live",
+      "blockedReason": "Historical #14 closed. Staging deployment exists (runbook run 32659300496; certification 32663419658). Remaining for Gate A: A9 auth re-certification, A10 Clerk signature evidence, A11 authenticated tenant smoke, A12 rollback drill. See RESPONSEOS_RELEASE_BASELINE_GAP_REGISTER_2026-10-31.md.",
       "refState": "closed",
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/14"
     },
@@ -1682,6 +1682,19 @@
       "due": "2026-10-13",
       "ref": 216,
       "refType": "pull"
+    },
+    {
+      "id": "BASELINE-01",
+      "phase": "Launch / Demo Deploy",
+      "title": "Release-baseline gap register for the first client launch",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 80,
+      "priority": "High",
+      "start": "2026-10-31",
+      "due": "2026-11-04",
+      "blocked": true,
+      "blockedReason": "Register prepared. Lineage (master first) and ADR-0086 (Option A) decided 2026-10-31. Open: PR dispositions, founding-pilot price, setup/retainer terms."
     }
   ],
   "liveIssues": [

@@ -92,7 +92,7 @@ This is the copy spec for every public marketing page. It defines goal, audience
 
 **Section blocks**
 
-1. **Phase 1 — Readiness & Revenue Leak Assessment** — $1,000 flat ($750–$1,500 by size/complexity). Deliverables list: Readiness Score, Revenue Leak Estimate, AI Fit/No-Fit Diagnosis, current + recommended workflow maps, implementation scope, projected ROI, Pricing Proposal. Note that the full fee applies toward implementation when the client signs within 30 days.
+1. **Phase 1 — Readiness & Revenue Leak Assessment** — $1,500 flat (ADR-0083). Deliverables list: Readiness Score, Revenue Leak Estimate, AI Fit/No-Fit Diagnosis, current + recommended workflow maps, implementation scope, projected ROI, Pricing Proposal. Note that the full fee applies toward implementation when the client signs within 30 days.
 2. **Phase 2 — Implementation + Monthly Recovery Retainer** — the three-tier table:
 
    | Tier | Setup | Monthly | Best for |
@@ -217,7 +217,7 @@ This is the copy spec for every public marketing page. It defines goal, audience
 
 **Section blocks**
 
-1. **What it is** — a paid diagnostic; $1,000 flat ($750–$1,500 by complexity). The full fee applies toward implementation if you sign within 30 days.
+1. **What it is** — a paid diagnostic; $1,500 flat (ADR-0083). The full fee applies toward implementation if you sign within 30 days.
 2. **What we evaluate** — missed-call volume, after-hours demand, average job value, close rate, current response time, lead sources, CRM/booking/quote/follow-up workflows, compliance risk, AI fit/no-fit.
 3. **What you walk away with** — Readiness Score, Revenue Leak Estimate, AI Fit/No-Fit Diagnosis, current + recommended workflow maps, implementation scope, projected ROI, Pricing Proposal.
 4. **The honest part** — "If the numbers don't justify implementation, we tell you. You keep the workflow map and the leak estimate either way."

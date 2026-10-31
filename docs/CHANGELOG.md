@@ -8,6 +8,14 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — docs: release-baseline gap register and ADR-0086 proposal
+
+- **Register:** `docs/ops/RESPONSEOS_RELEASE_BASELINE_GAP_REGISTER_2026-10-31.md` records the current baseline, the facts settled read-only (Vercel production branch, ignored build step, deployment controls, the diagnostic readout time) and every open gap with owner and blocker.
+- **ADR-0086 (accepted 2026-10-31, Option A):** a human follow-up path for finalized calls that are not qualified, without widening the ADR-0047 CRM export.
+- **Migration lineage (decided 2026-10-31):** the release follows master (`0001`–`0013`) first.
+- **Test:** characterizes today's behavior: unqualified and maybe calls get a contact and an activity but no follow-up task.
+- **Docs:** six planning docs now match ADR-0083 ($1,500 flat). The Founding Client Pilot bundle is flagged as an owner decision. The readiness gates doc and dashboard task 14 carry dated notes about the later staging runs.
+
 ## Unreleased — chore: add Telnyx agent skills for Claude Code
 
 - **What changed:** three agent skills from [`team-telnyx/skills`](https://github.com/team-telnyx/skills) are added under `.claude/skills/`: `telnyx-voice-javascript`, `telnyx-ai-assistants-javascript`, and `telnyx-messaging-javascript`. `skills-lock.json` records the source and a content hash for each one.

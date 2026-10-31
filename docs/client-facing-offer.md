@@ -57,8 +57,7 @@ ResponseOS is sold in two phases — a paid Readiness Assessment first, then imp
 
 | Item | Amount |
 |---|---|
-| Standard assessment | $1,000 flat |
-| Range by size and complexity | $750–$1,500 |
+| Standard assessment | $1,500 flat (ADR-0083) |
 | Full fee applied toward implementation | If client signs within 30 days |
 
 The assessment delivers a Readiness Score, Revenue Leak Estimate, AI Fit / No-Fit Diagnosis, current and recommended workflow maps, implementation scope, projected ROI, and a Pricing Proposal.
