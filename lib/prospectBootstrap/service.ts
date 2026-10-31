@@ -1,3 +1,4 @@
+import { accountRuntimeAllowed } from "@/lib/clientSetup/runtime";
 import "@/lib/serverOnlyGuard";
 import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db/client";
@@ -251,6 +252,7 @@ export async function ingestProspectBootstrap(params: {
   } catch {
     return err("invalid_transition", `Cannot ingest a bootstrap in ${bootstrap.status}.`);
   }
+  if (!(await accountRuntimeAllowed(bootstrap.account_id))) return err("account_inactive", "Account memory ingestion is disabled.");
   const run = await db.$transaction(async (tx) => {
     await tx.prospectBootstrap.update({ where: { id: bootstrap.id }, data: {
       status: "ingesting",
@@ -881,6 +883,7 @@ export async function resolveActiveProspectAgentContext(target: string, now = ne
   `;
   const resolved = rows[0];
   if (!resolved) return null;
+  if (!(await accountRuntimeAllowed(resolved.account_id))) return null;
   const memory = BusinessMemorySnapshotSchema.parse(resolved.memory_json);
   return {
     accountId: resolved.account_id,
@@ -951,7 +954,7 @@ export async function resolveTelnyxEventAssignment(params: { target: string; occ
 export async function shouldDispatchCrmForAccount(accountId: string): Promise<boolean> {
   if (!db) return false;
   const account = await db.account.findUnique({ where: { id: accountId }, select: { account_type: true } });
-  return account?.account_type === "customer";
+  return account?.account_type === "customer" && await accountRuntimeAllowed(accountId);
 }
 
 export async function expireDueProspectBootstraps(now = new Date(), options: { preview?: boolean } = {}) {

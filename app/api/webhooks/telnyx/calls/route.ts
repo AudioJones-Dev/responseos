@@ -1,3 +1,4 @@
+import { accountRuntimeAllowed } from "@/lib/clientSetup/runtime";
 import { after, NextResponse } from "next/server";
 import { runCrmSyncForCall } from "@/lib/crm/syncFinalizedCall";
 import {
@@ -73,6 +74,10 @@ export async function POST(req: Request) {
       demoNumber: legacyNumber,
     };
     personalized = false;
+  }
+
+  if (resolved && !(await accountRuntimeAllowed(resolved.accountId))) {
+    return errorResponse(403, { code: "account_inactive", message: "Account capture is disabled." });
   }
 
   const payloadExpiresAt = daysAfter(

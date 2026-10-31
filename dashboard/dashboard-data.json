@@ -1658,6 +1658,17 @@
       "due": "2026-10-29"
     },
     {
+      "id": "CLIENT-SETUP-01",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Inactive client setup and synthetic admin/customer review",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 95,
+      "priority": "High",
+      "blocked": true,
+      "blockedReason": "Production mapping confirmed; backup/restore rehearsal and release approval pending."
+    },
+    {
       "id": "DB-TARGET-01",
       "phase": "Launch / Demo Deploy",
       "title": "Identify the Neon database behind production DATABASE_URL (token-gated hostname check; not deployed)",

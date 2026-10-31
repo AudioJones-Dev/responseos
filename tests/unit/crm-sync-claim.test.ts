@@ -3,6 +3,7 @@ import { runCrmSyncForCall } from "@/lib/crm/syncFinalizedCall";
 import { MockCrmProvider } from "@/lib/providers/crm/mock";
 
 const database = vi.hoisted(() => ({
+  account: { findUnique: vi.fn() },
   crmSyncOperation: { upsert: vi.fn(), updateMany: vi.fn(), update: vi.fn(), findUniqueOrThrow: vi.fn() },
   call: { findFirst: vi.fn() },
   contact: { findFirst: vi.fn() },
@@ -15,6 +16,7 @@ vi.mock("@/lib/auth/session", () => ({ requireRole: vi.fn() }));
 let row: Record<string, unknown>;
 beforeEach(() => {
   vi.resetAllMocks();
+  database.account.findUnique.mockResolvedValue({ status: "active", setup_draft_json: null });
   row = {
     id: "op", account_id: "account", operation_key: "crm-call:account:call", provider: "mock",
     call_id: "call", status: "retryable_failed", attempt_count: 0,

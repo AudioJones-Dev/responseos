@@ -196,23 +196,24 @@ enum NotificationStatus {
 }
 
 model Account {
-  id            String        @id @default(cuid())
-  name          String
-  slug          String        @unique
-  industry      String
-  website_url   String?
-  primary_phone String?
-  timezone      String
-  status        AccountStatus @default(lead)
+  id               String        @id @default(cuid())
+  name             String
+  slug             String        @unique
+  industry         String
+  website_url      String?
+  primary_phone    String?
+  setup_draft_json Json?
+  timezone         String
+  status           AccountStatus @default(lead)
   // ADR-0046 — administrative classification. Defaults to `customer`
   // so every existing row stays valid without backfill.
-  account_type  AccountType   @default(customer)
+  account_type     AccountType   @default(customer)
   // 32A — Clerk integration substrate per ADR-0005 + step-2.4 plan §4.3.
   // Nullable so existing seeded accounts stay valid without backfill.
   // Wiring (session derivation, webhook sync) lands in 32B/32C.
-  clerk_org_id  String?       @unique
-  created_at    DateTime      @default(now())
-  updated_at    DateTime      @updatedAt
+  clerk_org_id     String?       @unique
+  created_at       DateTime      @default(now())
+  updated_at       DateTime      @updatedAt
 }
 
 model User {

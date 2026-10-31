@@ -21,6 +21,7 @@ export const ADMIN_NAV: NavItem[] = [
 
 /** Client portal nav — maps to existing /client routes. */
 export const CLIENT_NAV: NavItem[] = [
+  { label: "Account setup", href: "/client/setup", icon: "settings" },
   { label: "Dashboard", href: "/client/dashboard", icon: "overview" },
   { label: "Calls", href: "/client/calls", icon: "calls" },
   { label: "Leads", href: "/client/leads", icon: "leads" },
