@@ -1660,7 +1660,7 @@
     {
       "id": "DB-TARGET-01",
       "phase": "Launch / Demo Deploy",
-      "title": "Identify the Neon database behind production DATABASE_URL (token-gated hostname check; not deployed)",
+      "title": "Identify the Neon database behind production DATABASE_URL (token-gated hostname check)",
       "owner": "Claude Code",
       "status": "Review",
       "progress": 40,
@@ -1668,7 +1668,21 @@
       "start": "2026-10-28",
       "due": "2026-11-04",
       "ref": 232,
-      "refType": "pull"
+      "refType": "pull",
+      "blockedReason": "Deployed in dpl_12D5iWkrbt41f7Py53DQee3L4iJp; authorized readout 2026-10-29 02:43:09 UTC. Removal due 2026-11-05 02:43 UTC."
+    },
+    {
+      "id": "DB-TARGET-02",
+      "phase": "Launch / Demo Deploy",
+      "title": "Remove the database-target diagnostic, its digest variable and route-carrying deployments",
+      "owner": "Claude Code",
+      "status": "In Progress",
+      "progress": 40,
+      "priority": "High",
+      "start": "2026-10-31",
+      "due": "2026-11-04",
+      "blocked": true,
+      "blockedReason": "Removal commit prepared and validated locally. Push, deployment, digest removal and older-deployment containment need operator approval before 2026-11-05 02:43 UTC."
     },
     {
       "id": "G-20",
