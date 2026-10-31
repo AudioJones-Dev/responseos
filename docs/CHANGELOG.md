@@ -8,6 +8,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — chore: remove the database-target diagnostic (ADR-0085)
+
+- **Why:** ADR-0085 requires removal within 7 days of the readout. The authorized readout was at 2026-10-29 02:43:09 UTC, so the deadline is 2026-11-05 02:43 UTC.
+- **Change:** deletes `GET /api/health/database-target`, `lib/diagnostics/database-target.ts`, its test and the exact public-path exception; the path joins the protected-route regression cases.
+- **Not done here:** removing `RESPONSEOS_DB_TARGET_CHECK_TOKEN_SHA256` from production, deploying this change, and containing older deployments that carry the route. Each needs operator approval.
+
 ## Unreleased — chore: add Telnyx agent skills for Claude Code
 
 - **What changed:** three agent skills from [`team-telnyx/skills`](https://github.com/team-telnyx/skills) are added under `.claude/skills/`: `telnyx-voice-javascript`, `telnyx-ai-assistants-javascript`, and `telnyx-messaging-javascript`. `skills-lock.json` records the source and a content hash for each one.

@@ -1,6 +1,6 @@
 # Production database target: evidence and the token-gated check
 
-Status: **mapping unresolved.** The check below is `DOCUMENTED_ONLY` until the operator approves and runs a deployment. It is not deployed, its token digest is not set, and no environment variable has changed.
+Status: **historical.** The check below was deployed to production in `dpl_12D5iWkrbt41f7Py53DQee3L4iJp` (commit `523e179`, created 2026-10-29 02:04:46 UTC). Vercel request logs show one authorized readout (`200` on `responseos.pro`) at 2026-10-29 02:43:09 UTC, which sets the removal deadline at 2026-11-05 02:43 UTC (2026-11-04 22:43 EDT). The route is removed in the `chore/remove-database-target-diagnostic` change. Removing the code does not revoke the running deployment: the digest variable and the deployments that carry the route need separate, operator-approved containment (§5). The October 28 text below is the original record.
 
 ## 1. Evidence gathered 2026-10-28 (read-only)
 

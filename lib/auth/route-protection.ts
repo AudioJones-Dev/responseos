@@ -21,8 +21,6 @@ const PUBLIC_EXACT = new Set<string>([
   "/privacy",
   "/terms",
   "/api/health",
-  // Checks its own operator token and returns 404 without it.
-  "/api/health/database-target",
 ]);
 
 // Public path prefixes (the prefix itself and anything beneath it).
