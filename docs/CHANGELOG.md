@@ -12,6 +12,7 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 - **Register:** `docs/ops/RESPONSEOS_RELEASE_BASELINE_GAP_REGISTER_2026-10-31.md` records the current baseline, the facts settled read-only (Vercel production branch, ignored build step, deployment controls, the diagnostic readout time) and every open gap with owner and blocker.
 - **ADR-0086 (accepted 2026-10-31, Option A):** a human follow-up path for finalized calls that are not qualified, without widening the ADR-0047 CRM export.
+- **ADR-0087 (accepted 2026-10-31):** first-client default terms of $5,000 setup and $1,500 per month; the Founding Client Pilot assessment is $1,500.
 - **Migration lineage (decided 2026-10-31):** the release follows master (`0001`–`0013`) first.
 - **Test:** characterizes today's behavior: unqualified and maybe calls get a contact and an activity but no follow-up task.
 - **Docs:** six planning docs now match ADR-0083 ($1,500 flat). The Founding Client Pilot bundle is flagged as an owner decision. The readiness gates doc and dashboard task 14 carry dated notes about the later staging runs.

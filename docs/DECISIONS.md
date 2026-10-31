@@ -2,6 +2,23 @@
 
 This file records the load-bearing decisions that constrain how ResponseOS is built. Each ADR is short by design: context, decision, consequences. If a decision is reversed, mark the entry **Superseded by ADR-XXX** rather than deleting it.
 
+## ADR-0087 — First-client default terms: $5,000 setup and $1,500 per month
+
+**Status.** Accepted · 2026-10-31 · Operator-authorized. Sets the default quote for the first client. It authorizes no payment collection (ADR-0010's billing gate stands) and no new public copy.
+
+**Context.** ADR-0083 fixed the assessment at $1,500. ADR-0028 left implementation and retainer price points open, and `/pricing` shows one scoped engagement without tier names. `pricing-and-onboarding.md` already carried a recommended default quote that no decision had ratified.
+
+**Decision.**
+
+1. The first-client default is **$5,000 setup and $1,500 per month**, after the $1,500 assessment. The assessment credit terms of ADR-0083 apply.
+2. A signed agreement may adjust scope and price. The agreement, not this ADR, is the commercial record for that client.
+3. The Founding Client Pilot (90 days: $1,500 assessment, $3,500 implementation, $1,250 per month) remains an optional package.
+4. These numbers are internal defaults. Publishing them needs a separate decision.
+
+**Consequences.** Sales material and the first agreement template quote one default. ADR-0028's tier names stay retired from public copy. Outcome fees remain optional and unratified.
+
+---
+
 ## ADR-0086 — Every finalized non-qualified call reaches an accountable human (amends ADR-0047)
 
 **Status.** Accepted · 2026-10-31 · Operator-authorized, Option A. Repository implementation only; live activation, notifications and deployment remain separate gates.

@@ -45,7 +45,7 @@ Status values follow doctrine §2. "Owner" is who acts. Audio approves anything 
 |---|---|---|---|---|---|
 | B2-01 | PRD and five other docs said $1,000 with a $750–$1,500 range | Fixed in this change | ADR-0083; `PRD.md`, `product-spec.md`, `pricing-and-onboarding.md`, `client-facing-offer.md`, `brand/RESPONSEOS_WEBSITE_COPY_SPEC.md` | Merge this change | — |
 | B2-02 | Founding Client Pilot assessment price | **Decided 2026-10-31: $1,500, same as standalone.** Pilot bundle docs updated | `pricing-and-onboarding.md`, `client-facing-offer.md`, `brand/RESPONSEOS_WEBSITE_COPY_SPEC.md` | — | — |
-| B2-03 | Recovery Core/Pro/Performance tier tables persist in planning docs; `/pricing` shows one scoped engagement (#230); ADR-0028 leaves price points open; no setup or retainer number is ratified | OWNER_DECISION | `pricing-and-onboarding.md:90-107`, `client-facing-offer.md:70-74`, ADR-0028 | Audio ratifies implementation scope, setup, retainer and usage limits; one agreement template follows | Audio |
+| B2-03 | Setup and retainer terms | **Decided 2026-10-31 (ADR-0087): default $5,000 setup and $1,500 per month,** adjustable by signed agreement; internal, not public copy. Tier names stay retired from public copy. | ADR-0087, ADR-0028 | Reflect in the first agreement template | Codex |
 | B2-04 | Canon reconciliation says public pricing is unpublished; ADR-0083 published $1,500 | Open | `RESPONSEOS_CANON_RECONCILIATION.md:45`; readiness standard `:16` | Update both after B2-02/B2-03 | Codex |
 
 ### Step 3 — Gate A (secure staging)
