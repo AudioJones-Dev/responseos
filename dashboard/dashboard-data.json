@@ -1658,6 +1658,32 @@
       "due": "2026-10-29"
     },
     {
+      "id": "CLIENT-SETUP-01",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Inactive client setup and synthetic admin/customer review",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 95,
+      "priority": "High",
+      "blocked": true,
+      "blockedReason": "Local successor and synthetic preservation/restore prepared; owner industry/timezone, independent review, protected real recovery and explicit release approvals pending.",
+      "ref": 231,
+      "refType": "pull"
+    },
+    {
+      "id": "CLIENT-SETUP-02",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Successor: transaction locking, number reconciliation and exact-SHA validation for inactive FRL setup",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-10-31",
+      "due": "2026-11-04",
+      "blocked": true,
+      "blockedReason": "Local only. Independent re-review, CI on any published successor and release authorization are outstanding."
+    },
+    {
       "id": "DB-TARGET-01",
       "phase": "Launch / Demo Deploy",
       "title": "Identify the Neon database behind production DATABASE_URL (token-gated hostname check; not deployed)",
@@ -1682,6 +1708,19 @@
       "due": "2026-10-13",
       "ref": 216,
       "refType": "pull"
+    },
+    {
+      "id": "DB-TARGET-CLEANUP-01",
+      "phase": "Launch / Demo Deploy",
+      "title": "Review diagnostic removal diff, hash removal and old deployment containment",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 50,
+      "priority": "High",
+      "start": "2026-10-29",
+      "due": "2026-11-04",
+      "blocked": true,
+      "blockedReason": "Patch prepared only. Cleanup and deployment not authorized. Planning cutoff Nov 4 evening EDT (conservative, unverified) until the readout timestamp is established."
     }
   ],
   "liveIssues": [

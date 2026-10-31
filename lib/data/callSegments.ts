@@ -1,4 +1,5 @@
 import "@/lib/serverOnlyGuard";
+import { accountRuntimeAllowed } from "@/lib/clientSetup/runtime";
 import { db } from "@/lib/db/client";
 import { getMockCallSegments } from "@/lib/mock/callSegments";
 import type { CallSegment, CallSegmentSpeaker } from "@/types/callSegment";
@@ -90,6 +91,7 @@ export async function recordCallSegment(entry: {
   }
 
   try {
+    if (!(await accountRuntimeAllowed(entry.account_id))) return err("account_inactive", "Account capture is disabled.");
     const existing = await db.callSegment.findUnique({
       where: {
         call_id_sequence: { call_id: entry.call_id, sequence: entry.sequence },

@@ -1,0 +1,25 @@
+{
+  "status": "PROPOSED_ONLY_NOT_EXECUTABLE",
+  "account_id": "SUPPLIED_PRIVATELY_BY_OPERATOR",
+  "business_name": "Florida Ramp & Lift",
+  "slug": "florida-ramp-and-lift",
+  "founder_name": "SUPPLIED_PRIVATELY_BY_OPERATOR",
+  "contact_number": "SUPPLIED_PRIVATELY_BY_OPERATOR",
+  "contact_verification": "unverified draft information",
+  "industry": null,
+  "timezone": null,
+  "operator_id": null,
+  "expected_account_json": "REQUIRES_SEPARATELY_AUTHORIZED_CURRENT_READBACK",
+  "expected_phone_references": "REQUIRES_SEPARATELY_AUTHORIZED_CURRENT_READBACK",
+  "account_type": "customer",
+  "account_status": "paused",
+  "capabilities": {
+    "recording": false, "transcription": false, "aiAnswering": false,
+    "forwarding": false, "outboundCalls": false, "automatedFollowUp": false,
+    "memoryIngestion": false
+  },
+  "receptionistPublication": "not_published",
+  "consentApproval": "pending",
+  "historyImport": false,
+  "separate_demo_id": "SUPPLIED_PRIVATELY_BY_OPERATOR"
+}
