@@ -101,19 +101,19 @@ Status values follow doctrine §2. "Owner" is who acts. Audio approves anything 
 
 | PR | State | Suggested category | Why |
 |---|---|---|---|
-| #231 | draft | Supersede with local `work/frl-inactive-successor-20261031` after review | Successor fixes locking, number matching and evidence binding |
+| #231 | draft | Close after Codex reviews #236 (owner decision 2026-10-31) | Successor fixes locking, number matching and evidence binding |
 | #228 | draft | Review and merge or close | Cutover evidence record |
 | #224 | ready | Merge after dashboard conflict check | Automation sync |
 | #222, #221 | draft (stacked) | Decide with B1-04 | Carries migrations `0014`–`0028` |
 | #217 | ready | Review | Neon/Doppler authority reconciliation |
 | #210, #209, #195, #194, #193 | draft | Decide with B1-04 and ADR-0086 | FRL ledger, routing and follow-up preparation |
 | #197 | draft | Review for Gate A | Packaging and remediation gates |
-| #184 | ready | Reconcile with ADR-0083, then merge or close | Pricing canon predates ADR-0083 |
+| #184 | **Closed 2026-10-31** | Superseded | ADR-0083 and ADR-0087 |
 | #181, #180 | ready | Review | Qualification validation and scoring |
 | #177 | ready | Decide with ADR-0086 | Supervised review and follow-up |
 | #172 | draft | Review | Review and merge policy |
-| #146 | ready | Merge or close | Housekeeping |
-| #132, #123, #119, #118, #115, #107 | draft or ready, Aug–Sep | Close candidates unless the first signed scope needs them | Out of first-launch scope per the plan |
+| #146 | **Closed 2026-10-31** | Out of scope | Housekeeping |
+| #132, #123, #119, #118, #115, #107 | **Closed 2026-10-31** | Out of first-launch scope | Branches kept; reopen for a signed scope |
 
 ## Local branches prepared on 2026-10-31 (none pushed)
 
