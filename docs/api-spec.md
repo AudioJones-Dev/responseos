@@ -215,3 +215,7 @@ POST /api/appointments/availability
   { "start": "2026-05-08T13:00:00-04:00", "end": "2026-05-08T15:00:00-04:00" }
 ]}
 ```
+
+## Inactive client setup (local only)
+
+POST /api/admin/client-setups creates a paused account plus typed setup draft. PATCH /api/admin/client-setups/:id edits draft fields with a revision precondition. Both require operator role, explicit local opt-in and a dedicated loopback test database; hosted writes are blocked. GET /api/client/setup derives the account from the session. Duplicate/stale conflicts return 409, blocked writes 403, invalid input 422. No approval/publication endpoint. See [contract](product/inactive-client-setup.md).

@@ -1,3 +1,4 @@
+import { accountRuntimeAllowed } from "@/lib/clientSetup/runtime";
 import "@/lib/serverOnlyGuard";
 import { db } from "@/lib/db/client";
 import { setWebhookProcessStatus } from "@/lib/data/webhookEvents";
@@ -86,6 +87,7 @@ export async function normalizeTelnyxEvent(params: {
   transcriptExpiresAt?: Date;
 }): Promise<{ callId: string | null; finalized: boolean }> {
   if (db === null) throw new Error("database_unavailable");
+  if (!(await accountRuntimeAllowed(params.accountId))) return { callId: null, finalized: false };
   const payload = params.event.data.payload;
   const providerCallId = getTelnyxCallId(payload);
   if (!providerCallId) {

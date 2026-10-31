@@ -1,0 +1,64 @@
+{
+  "scope": "synthetic local only; not a production restore rehearsal",
+  "testedCommit": "292a5fe0866baaa6e1f02a0a4a072c968c545a68",
+  "testedTree": "fd171e8c9d295b721cd8b6bd07feeae603949bb9",
+  "sourceArchive": "git -c core.autocrlf=false archive --format=tar 292a5fe0866baaa6e1f02a0a4a072c968c545a68",
+  "sourceArchiveSha256": "327d61e5a7727f52a91a34f9182da4f21560e321e984aa5c09d97233f299d599",
+  "baseMaster": "329b6e38a7e00f75847e6856c3b4e6d339847af5",
+  "preservedPredecessor": "6a355c6036c8b785688b85ee4a6f27d4d1cab245",
+  "mergeCommit": "bc1a5c3308e0c2131106fba8f8325f715809b574",
+  "images": {
+    "node": "sha256:4e9cb555d708e0829c9d93e5eeae9dfab0617b832ca436a690680e0fca735ef5",
+    "postgres16": "sha256:ca0bd484cb98bf4b24eb1010e73fb3fcbd6714d240fbc1a10eea5b7dbecb641d",
+    "postgres17": "sha256:2d2b8998d31037bf721cfdf764d76ba74171b4fab3431b7f72c27c56ddbdf9e3",
+    "postgres18": "sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336"
+  },
+  "versions": {
+    "node": "24.18.0",
+    "npm": "11.16.0",
+    "postgres": [
+      "16.15",
+      "17.11",
+      "18.6"
+    ],
+    "prisma": "6.19.3"
+  },
+  "results": {
+    "unitTests": 877,
+    "integrationTests": {
+      "16.15": 202,
+      "17.11": 202,
+      "18.6": 202
+    },
+    "negativeControl": "8 of 9 new integration tests fail against the 6a355c6 setup service/contracts; 24 other tests pass"
+  },
+  "originalTemplateSha256": "64199b4ca01586cc3a1722d2791b91f6298479f580c0cf6a2682ebdc5a3be6b4",
+  "evidenceDirectory": "evidence/frl-inactive-20261031-successor/ (ignored by Git)",
+  "files": {
+    "source.tar": "327d61e5a7727f52a91a34f9182da4f21560e321e984aa5c09d97233f299d599",
+    "deps.log": "bda6223df37cf3505edb66e11cf2d3e0689f5daefba48b7926af967273e8b18e",
+    "validate-pg16/summary.txt": "786973d9042198ddc4f8b8dc37b15ea1b1175f13fda1ffcb9f18452d87973d7c",
+    "validate-pg16/lint.log": "d99443a18d48a28c67aaad2bf9dda7e64f029808ad25a4226776a805f60637cf",
+    "validate-pg16/typecheck.log": "6b815c41416e0e0bfe7e05c5c32a7e156f55170b83425c1cbeb31f767b81eb6f",
+    "validate-pg16/unit.log": "3207b4b3d3b0fdd7ecf6d90548613cfa0b50a23cb242f8a3b57325bd976a519b",
+    "validate-pg16/build-no-database.log": "db53e77f049bf3fd4bdcd4b96d2c2a8a9b5c839854eefc6491e0b1896e32903e",
+    "validate-pg16/migrate-diff.log": "d7c9882dbd1f2db597fa5f079208fe2bc1b9117ee2a4933970f9f481f4f818a1",
+    "validate-pg16/migrate-deploy.log": "609890bec724c1033e4415f61f3204b9bd79e889c64208d300c70b6cfd028fcc",
+    "validate-pg16/seed.log": "43269c17de54a130bc91731be4ef3aed204a31512f1d9ba755a239a5aa19dcc3",
+    "validate-pg16/integration.log": "3689464956d55ae5218c68a259dec4a7ad18fa3037ca28e93f44eed57b55e237",
+    "validate-pg16/build-database.log": "7a252187ec8becefdd606f742bc283babbc511a9216d9ac2ad0ee31837f978b9",
+    "validate-pg16/restore-check.log": "a2987b4b40f9f0890662f9722a790af280e849569ae70ef17f02ee3d56206aba",
+    "validate-pg17/summary.txt": "4d23fcbaa6e9a19c3a5ac66942ae5744dfaa7e6f00eb874b6bf0fd3ce572f4b6",
+    "validate-pg17/integration.log": "cd6231a60e2a10d59018a34a65ee39b39b45a129794fc70e9ecae16be867718b",
+    "validate-pg18/summary.txt": "c26382ceaa2c73028819ea5485bcaa3bb1892118edde4bfd4bb3917e8fdeb875",
+    "validate-pg18/integration.log": "9325dde1a38acb2b24d4a2d890103f7a9fd88f8f8598525a1d1cd635fba126e2",
+    "harness-pg16/harness-summary.txt": "7598e579ac9404b4eb94adfa244d36e9dfd89a9c8b1c5b6cf4c717ade6fffd9a",
+    "harness-pg16/synthetic-migrations.log": "2b60fa17a9a0cbd30273c18a37f9f26a0acf4fd7a9d72e0ed5f58db6feebb9e2",
+    "harness-pg16/synthetic-account.log": "24ff8defc729ef09bb9970b17953deca4f49baae52cc9ea89dcbf1f57cc5eb4b",
+    "harness-pg16/synthetic-concurrency.log": "0f07b76126254a8a272b7ed0d70caa7f93e82cf1d4e2cb9837c83164ba0172ca",
+    "harness-pg16/prisma-failure.log": "e6944a6b409b51213264646640043e90d835129903c79c255dffb9894674ddd7",
+    "control-pg16/control-summary.txt": "83d5dd63c5909352ef7ab3cf35276f8cf07a3665c018285b77a25f6ea64cd360",
+    "control-pg16/restore-schema-diff.log": "d7c9882dbd1f2db597fa5f079208fe2bc1b9117ee2a4933970f9f481f4f818a1",
+    "control-pg16/negative-control.log": "07d4bdc814b044ed4b9bcdf3db446f6256327bca78a8462746531470b534be17"
+  }
+}

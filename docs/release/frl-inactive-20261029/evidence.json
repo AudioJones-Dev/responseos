@@ -1,0 +1,41 @@
+{
+  "scope": "synthetic local only; not a production restore rehearsal",
+  "node": "24.18.0",
+  "npm": "11.16.0",
+  "postgres": "16.15",
+  "prisma": "6.19.3",
+  "unitTests": 876,
+  "integrationTests": 193,
+  "files": {
+    "lint.log": "d99443a18d48a28c67aaad2bf9dda7e64f029808ad25a4226776a805f60637cf",
+    "typecheck.log": "6b815c41416e0e0bfe7e05c5c32a7e156f55170b83425c1cbeb31f767b81eb6f",
+    "unit.log": "2bb71fe3c6d01e82760fd3726b434e65713e1b8ebe3a3387e1cff3b43e2752e9",
+    "integration-final.log": "522c485805f134091f4329599e0742dca556c162c09fac445e2dee3a467cb7a6",
+    "build-database.log": "dd93b4e9411e80d1ce3fd970ff76459f6e1e133cb77c1e54c8c5dd13bd85fc68",
+    "migrations.log": "34cd11d950a85ae86b4a83e0c2d81c81d1410ad3ada96eae6dec51808c9eb611",
+    "account-transaction.log": "fc1e14f38cd7f7f7e1189c2372aaaee62bdf7f7699d755d124052a3a4b2b61d1",
+    "prisma-failure.log": "16eb09ae513ee1f832233c2efee28b367e76d5da2abc8b6baf6184d290f6d76d",
+    "schema-diff.log": "d7c9882dbd1f2db597fa5f079208fe2bc1b9117ee2a4933970f9f481f4f818a1",
+    "restored-schema-diff.log": "d7c9882dbd1f2db597fa5f079208fe2bc1b9117ee2a4933970f9f481f4f818a1",
+    "full-before.txt": "f77969c103a9035a3286ff0e9d26b08e3359667c3d5926980e1209afcb049573",
+    "full-restored.txt": "f77969c103a9035a3286ff0e9d26b08e3359667c3d5926980e1209afcb049573",
+    "build-final-no-database.log": "5751c18c48a767191a1c92c25c55c0c5bc1d0549d741c3d7bd587fd43ccfa17b"
+  },
+  "migrations": {
+    "0001_v0_2_foundation": "4792db9a67b616e6bfbfbc1e2e5172b1a9d5d24e6037440fb5d9d854ff7a71e6",
+    "0002_organization_to_account_rename": "0583bda6092066ad5032590106b9d56f01204fccabc32c33834fc18a17bfe816",
+    "0003_booking_to_appointment_rename": "af5b60b409975ea72c939b3760d7a7de184d46e57b64a659488248a950946397",
+    "0004_communication_substrate": "babdeeaee4f69d36c2377c7df98574b2bbd58fc9cb18b26b5b173b2085aafa4a",
+    "0005_call_intelligence_substrate": "978249819d63f7d7c7e864d9c39648e68c65a0ad624e63112f33b6b6162c613c",
+    "0006_workflow_run_substrate": "d261d0a8ac41e9a87f08cb78eed36069f3e3021bebaa2e22cf4d28ae3af4a53d",
+    "0007_audit_logs_expansion": "9d0fd262c12988fdd40ac7ca4b4f0cdb2ee46b48dcfe602784a4fae885f390ea",
+    "0008_clerk_identity_columns": "4710517a75111dc49d71af73462c3d0638865e94cede6e89a482ad041c3dc59c",
+    "0009_internal_demo_professional_receptionist": "44150ac3144f78643782d69dbefe90de803e8257c701fd7b8c679c04f3d304a6",
+    "0010_v0_3_provider_enum_alignment": "34dbadaa3a98b760edb13450207041ce065dfc31db25d4d5e952ea1a9451e5a6",
+    "0011_gtm_demo_closure_foundation": "d872a8c22b1822ff7bc8373032586eca671c4b96fb403b59d6d1623f9330073c",
+    "0012_prospect_bootstrap_foundation": "5bc0af1ed5ce12073db1bdd5efc349c5c51bb4fbf2f1de456a90e3798832f53a",
+    "0013_prospect_bootstrap_review_controls": "bc3803a5fdb70a7bb5bfde83ef64345bf3a876d5d277e5ed018cf6ed9aacc6cb",
+    "20261028_inactive_client_setup": "f1fb3657868955f15e449b886d6a7127a591c6595d907c49ab6848fe4192ddd4"
+  },
+  "testedImplementationCommit": "8dd7e066d7de40a563b1d5060c9343ec2b909992"
+}

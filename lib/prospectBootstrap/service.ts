@@ -1,3 +1,4 @@
+import { accountRuntimeAllowed } from "@/lib/clientSetup/runtime";
 import "@/lib/serverOnlyGuard";
 import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db/client";
@@ -251,6 +252,7 @@ export async function ingestProspectBootstrap(params: {
   } catch {
     return err("invalid_transition", `Cannot ingest a bootstrap in ${bootstrap.status}.`);
   }
+  if (!(await accountRuntimeAllowed(bootstrap.account_id))) return err("account_inactive", "Account memory ingestion is disabled.");
   const run = await db.$transaction(async (tx) => {
     await tx.prospectBootstrap.update({ where: { id: bootstrap.id }, data: {
       status: "ingesting",
@@ -495,6 +497,7 @@ export async function createManualKnowledgeFact(params: {
   try {
     const bootstrap = await db.prospectBootstrap.findUnique({ where: { id: params.bootstrapId } });
     if (!bootstrap || bootstrap.status !== "review_required") return err("bootstrap_not_in_review", "Manual facts may only be added during review.");
+    if (!(await accountRuntimeAllowed(bootstrap.account_id))) return err("account_inactive", "Account memory ingestion is disabled.");
     const source = await db.knowledgeSource.findFirst({ where: {
       id: params.sourceId,
       account_id: bootstrap.account_id,
@@ -556,6 +559,7 @@ export async function createAndApproveMemorySnapshot(params: { bootstrapId: stri
     const bootstrap = await db.prospectBootstrap.findUnique({ where: { id: params.bootstrapId } });
     if (!bootstrap) return err("not_found", "Prospect bootstrap was not found.");
     if (bootstrap.status !== "review_required") return err("invalid_transition", "Bootstrap is not awaiting review.");
+    if (!(await accountRuntimeAllowed(bootstrap.account_id))) return err("account_inactive", "Account memory approval is disabled.");
     const [facts, sources, latest] = await Promise.all([
       db.knowledgeFact.findMany({ where: { account_id: bootstrap.account_id, bootstrap_id: bootstrap.id } }),
       db.knowledgeSource.findMany({ where: { account_id: bootstrap.account_id, bootstrap_id: bootstrap.id, status: "acquired" } }),
@@ -881,6 +885,7 @@ export async function resolveActiveProspectAgentContext(target: string, now = ne
   `;
   const resolved = rows[0];
   if (!resolved) return null;
+  if (!(await accountRuntimeAllowed(resolved.account_id))) return null;
   const memory = BusinessMemorySnapshotSchema.parse(resolved.memory_json);
   return {
     accountId: resolved.account_id,
@@ -951,7 +956,7 @@ export async function resolveTelnyxEventAssignment(params: { target: string; occ
 export async function shouldDispatchCrmForAccount(accountId: string): Promise<boolean> {
   if (!db) return false;
   const account = await db.account.findUnique({ where: { id: accountId }, select: { account_type: true } });
-  return account?.account_type === "customer";
+  return account?.account_type === "customer" && await accountRuntimeAllowed(accountId);
 }
 
 export async function expireDueProspectBootstraps(now = new Date(), options: { preview?: boolean } = {}) {
