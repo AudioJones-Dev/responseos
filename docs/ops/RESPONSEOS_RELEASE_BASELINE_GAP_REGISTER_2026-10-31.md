@@ -93,9 +93,9 @@ Status values follow doctrine §2. "Owner" is who acts. Audio approves anything 
 
 ## Time-boxed items
 
-| Deadline | Item | Prepared | Needs |
-|---|---|---|---|
-| **2026-11-05 02:43 UTC** | Remove the database-target diagnostic (ADR-0085) | Local branch `chore/remove-database-target-diagnostic` at `8b1ccef` | Review and merge; manual production deployment; confirm the digest variable is absent from production; contain route-carrying deployments and rollback candidates. Each is an Audio approval. |
+| Deadline | Item | Status |
+|---|---|---|
+| 2026-11-05 02:43 UTC | Remove the database-target diagnostic (ADR-0085) | **Done 2026-10-31.** #233 merged as `6f579cc`; the digest variable was deleted from production; production deployment `dpl_2xrGmpJedsLZGrS7xPwTK8dKoZKQ` at `6f579cc` serves every alias and `/api/health` reports that SHA; the only route-carrying deployment was deleted after its provenance was saved locally. Rollback candidates carry no route. |
 
 ## Open PR dispositions (Audio decides)
 
