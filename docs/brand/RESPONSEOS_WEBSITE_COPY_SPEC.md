@@ -92,7 +92,7 @@ This is the copy spec for every public marketing page. It defines goal, audience
 
 **Section blocks**
 
-1. **Phase 1 — Readiness & Revenue Leak Assessment** — $1,000 flat ($750–$1,500 by size/complexity). Deliverables list: Readiness Score, Revenue Leak Estimate, AI Fit/No-Fit Diagnosis, current + recommended workflow maps, implementation scope, projected ROI, Pricing Proposal. Note that the full fee applies toward implementation when the client signs within 30 days.
+1. **Phase 1 — Readiness & Revenue Leak Assessment** — $1,500 flat (ADR-0083). Deliverables list: Readiness Score, Revenue Leak Estimate, AI Fit/No-Fit Diagnosis, current + recommended workflow maps, implementation scope, projected ROI, Pricing Proposal. Note that the full fee applies toward implementation when the client signs within 30 days.
 2. **Phase 2 — Implementation + Monthly Recovery Retainer** — the three-tier table:
 
    | Tier | Setup | Monthly | Best for |
@@ -102,7 +102,7 @@ This is the copy spec for every public marketing page. It defines goal, audience
    | Recovery Performance | $8,500–$15,000+ | $2,500–$5,000+ | Higher-volume, obvious ROI |
 
 3. **Outcome fees** — explain plainly: optional, pick one structure, applies only to verified results above a baseline, layered on top of a base fee. State the hard rule: no performance-only pricing.
-4. **Founding Client Pilot** — 90 days: $1,000 assessment + $3,500 implementation + $1,250/mo (optional $50 per qualified booked appointment after the first 10/month).
+4. **Founding Client Pilot** — 90 days: $1,500 assessment + $3,500 implementation + $1,250/mo (optional $50 per qualified booked appointment after the first 10/month).
 5. **What's included by tier** — reuse the feature matrix from [`../client-facing-offer.md`](../client-facing-offer.md).
 6. **FAQ** — sourced from the objection table in [`./RESPONSEOS_SALES_NARRATIVE.md`](./RESPONSEOS_SALES_NARRATIVE.md) (CRM, "we don't miss that many," outcome fees, compliance).
 7. **CTA banner** — "Not sure it's worth it? That's what the assessment is for."
@@ -217,7 +217,7 @@ This is the copy spec for every public marketing page. It defines goal, audience
 
 **Section blocks**
 
-1. **What it is** — a paid diagnostic; $1,000 flat ($750–$1,500 by complexity). The full fee applies toward implementation if you sign within 30 days.
+1. **What it is** — a paid diagnostic; $1,500 flat (ADR-0083). The full fee applies toward implementation if you sign within 30 days.
 2. **What we evaluate** — missed-call volume, after-hours demand, average job value, close rate, current response time, lead sources, CRM/booking/quote/follow-up workflows, compliance risk, AI fit/no-fit.
 3. **What you walk away with** — Readiness Score, Revenue Leak Estimate, AI Fit/No-Fit Diagnosis, current + recommended workflow maps, implementation scope, projected ROI, Pricing Proposal.
 4. **The honest part** — "If the numbers don't justify implementation, we tell you. You keep the workflow map and the leak estimate either way."

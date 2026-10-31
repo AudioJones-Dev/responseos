@@ -36,7 +36,7 @@ It is **not** an AI receptionist clone. The receptionist is one input. ResponseO
 
 Sold in two phases:
 
-1. **Phase 1 — Readiness & Revenue Leak Assessment.** $1,000 flat ($750–$1,500 range). Paid diagnostic that determines AI-readiness, revenue leak size, and fit/no-fit before any implementation conversation.
+1. **Phase 1 — Readiness & Revenue Leak Assessment.** $1,500 flat (ADR-0083). Paid diagnostic that determines AI-readiness, revenue leak size, and fit/no-fit before any implementation conversation.
 2. **Phase 2 — Implementation + Monthly Revenue Recovery Retainer.** Setup fee + monthly retainer in one of three tiers (Recovery Core / Recovery Pro / Recovery Performance), with optional outcome fees layered on top.
 
 Qualification gates before Phase 2: ~$300+ average job value, ~20+ missed calls/month, clear booking or quote process, owner/staff buy-in, CRM/calendar access, low compliance risk, measurable ROI path. Full detail in [`pricing-and-onboarding.md`](./pricing-and-onboarding.md).
