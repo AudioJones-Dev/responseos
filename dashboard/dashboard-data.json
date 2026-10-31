@@ -1592,26 +1592,30 @@
       "phase": "Launch / Demo Deploy",
       "title": "SEO/AEO foundations: robots, sitemap, llms.txt, canonicals, JSON-LD",
       "owner": "Claude Code",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "Med",
       "start": "2026-10-21",
       "due": "2026-10-28",
       "ref": 220,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/220"
     },
     {
       "id": "SEC-DEPS-01",
       "phase": "Tech Debt & Hardening",
       "title": "Bump next 16.4.3 and zod 4.6.6+ past new production audit advisories",
       "owner": "Claude Code",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "High",
       "start": "2026-10-25",
       "due": "2026-10-27",
       "ref": 223,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/223"
     },
     {
       "id": "DOMAIN-01",
@@ -1662,14 +1666,16 @@
       "phase": "Launch / Demo Deploy",
       "title": "Identify the Neon database behind production DATABASE_URL (token-gated hostname check)",
       "owner": "Claude Code",
-      "status": "Review",
-      "progress": 40,
+      "status": "Done",
+      "progress": 100,
       "priority": "High",
       "start": "2026-10-28",
       "due": "2026-11-04",
       "ref": 232,
       "refType": "pull",
-      "blockedReason": "Deployed in dpl_12D5iWkrbt41f7Py53DQee3L4iJp; authorized readout 2026-10-29 02:43:09 UTC. Removal due 2026-11-05 02:43 UTC."
+      "blockedReason": "Deployed in dpl_12D5iWkrbt41f7Py53DQee3L4iJp; authorized readout 2026-10-29 02:43:09 UTC. Removal due 2026-11-05 02:43 UTC.",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/232"
     },
     {
       "id": "DB-TARGET-02",
@@ -1689,13 +1695,15 @@
       "phase": "Tech Debt & Hardening",
       "title": "Add Telnyx voice, AI assistant, and messaging agent skills for Claude Code",
       "owner": "Claude Code",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "Low",
       "start": "2026-10-13",
       "due": "2026-10-13",
       "ref": 216,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/216"
     }
   ],
   "liveIssues": [
@@ -1727,5 +1735,5 @@
       ]
     }
   ],
-  "generatedAt": "2026-10-12T13:31:06.263Z"
+  "generatedAt": "2026-10-31T18:50:02.663Z"
 }
