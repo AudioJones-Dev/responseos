@@ -65,3 +65,26 @@ export function CrmRetryAction(props: { id: string; retryable: boolean }) {
     </Button>
   );
 }
+
+export function FollowUpResolveAction(props: { id: string; open: boolean }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  if (!props.open) return null;
+
+  return (
+    <Button
+      disabled={busy}
+      onClick={async () => {
+        setBusy(true);
+        try {
+          await fetch(`/api/admin/call-follow-ups/${props.id}/resolve`, { method: "POST" });
+          router.refresh();
+        } finally {
+          setBusy(false);
+        }
+      }}
+    >
+      Mark followed up
+    </Button>
+  );
+}

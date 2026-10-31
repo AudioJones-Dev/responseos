@@ -1,4 +1,5 @@
-import { CrmRetryAction, ProspectActions } from "./DemoOperationActions";
+import { CrmRetryAction, FollowUpResolveAction, ProspectActions } from "./DemoOperationActions";
+import { listCallFollowUps } from "@/lib/followUp/service";
 import { listCrmSyncOperations } from "@/lib/crm/syncFinalizedCall";
 import { Calls } from "@/lib/data";
 import { listProspectIntakes } from "@/lib/data/prospectIntakes";
@@ -9,7 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function DemoOperationsPage() {
   const demoAccountId = process.env.RESPONSEOS_DEMO_ACCOUNT_ID;
   const inboundAccountId = process.env.RESPONSEOS_INBOUND_ACCOUNT_ID;
-  const [callResult, crmResult, intakeResult] = await Promise.all([
+  const [callResult, crmResult, intakeResult, followUpResult] = await Promise.all([
     Calls.listCalls({ accountId: demoAccountId }),
     demoAccountId
       ? listCrmSyncOperations({ accountId: demoAccountId })
@@ -17,17 +18,21 @@ export default async function DemoOperationsPage() {
     inboundAccountId
       ? listProspectIntakes({ accountId: inboundAccountId })
       : Promise.resolve({ ok: true as const, data: [] }),
+    demoAccountId
+      ? listCallFollowUps({ accountId: demoAccountId })
+      : Promise.resolve({ ok: true as const, data: [] }),
   ]);
   const calls = callResult.ok ? callResult.data.filter((call) => call.provider === "telnyx") : [];
   const operations = crmResult.ok ? crmResult.data : [];
   const intakes = intakeResult.ok ? intakeResult.data : [];
+  const followUps = followUpResult.ok ? followUpResult.data : [];
 
   return (
     <>
       <PageHeader
         eyebrow="Operator Console"
         title="Demo operations"
-        description="Canonical Telnyx evidence, durable CRM sync state, and the prospect-intake review queue. Full transcripts remain inside authenticated ResponseOS call views."
+        description="Canonical Telnyx evidence, human follow-up, durable CRM sync state, and the prospect-intake review queue. Full transcripts remain inside authenticated ResponseOS call views."
       />
 
       <h2 className="mb-3 mt-8 font-display text-xl font-semibold text-ink">Telnyx call evidence</h2>
@@ -40,6 +45,23 @@ export default async function DemoOperationsPage() {
               <TD mono>{call.from_number}</TD>
               <TD><StatusBadge label={call.status} tone={call.status === "completed" ? "success" : "neutral"} /></TD>
               <TD>{call.summary ?? "Awaiting summary"}</TD>
+            </TR>
+          ))}</TBody>
+        </Table>
+      )}
+
+      <h2 className="mb-3 mt-8 font-display text-xl font-semibold text-ink">Human follow-up</h2>
+      {followUps.length === 0 ? <EmptyState title="No follow-ups" description="Every finalized call that is not qualified or spam gets one record with an accountable operator and backup (ADR-0086)." /> : (
+        <Table>
+          <THead columns={["Call", "Reason", "Status", "Owner / backup", "Due", "Action"]} />
+          <TBody>{followUps.map((followUp) => (
+            <TR key={followUp.id}>
+              <TD mono>{followUp.call_id}</TD>
+              <TD>{followUp.reason.replaceAll("_", " ")}</TD>
+              <TD><StatusBadge label={followUp.status} tone={followUp.status === "resolved" ? "success" : "warning"} /></TD>
+              <TD mono>{followUp.owner_user_id} / {followUp.backup_user_id}</TD>
+              <TD mono>{followUp.due_at.slice(0, 16).replace("T", " ")}</TD>
+              <TD><FollowUpResolveAction id={followUp.id} open={followUp.status === "open"} /></TD>
             </TR>
           ))}</TBody>
         </Table>

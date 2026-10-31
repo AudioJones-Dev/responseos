@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   recordWebhookEvent: vi.fn(),
   setWebhookProcessStatus: vi.fn(),
   resolveTelnyxEventAssignment: vi.fn(),
+  followUpRoutingReady: vi.fn(),
 }));
 
 vi.mock("@/lib/data/webhookEvents", () => ({
@@ -15,6 +16,7 @@ vi.mock("@/lib/data/webhookEvents", () => ({
 vi.mock("@/lib/prospectBootstrap/service", () => ({
   resolveTelnyxEventAssignment: mocks.resolveTelnyxEventAssignment,
 }));
+vi.mock("@/lib/followUp/service", () => ({ followUpRoutingReady: mocks.followUpRoutingReady }));
 vi.mock("@/lib/crm/syncFinalizedCall", () => ({ runCrmSyncForCall: vi.fn() }));
 vi.mock("@/lib/providers/telnyx/normalize", () => ({ normalizeTelnyxEvent: vi.fn() }));
 vi.mock("next/server", async (importOriginal) => ({
@@ -59,6 +61,23 @@ describe("personalized Telnyx call retention", () => {
     delete process.env.RESPONSEOS_DEMO_PHONE_E164;
     mocks.recordWebhookEvent.mockResolvedValue({ ok: true, data: { id: "ledger-1", process_status: "received" } });
     mocks.setWebhookProcessStatus.mockResolvedValue(undefined);
+    mocks.followUpRoutingReady.mockResolvedValue(true);
+  });
+
+  test("refuses a resolved account without an accountable operator and backup (ADR-0086)", async () => {
+    process.env.RESPONSEOS_DEMO_ACCOUNT_ID = "demo-account";
+    process.env.RESPONSEOS_DEMO_PHONE_E164 = "+13055550199";
+    mocks.resolveTelnyxEventAssignment.mockResolvedValue(null);
+    mocks.followUpRoutingReady.mockResolvedValue(false);
+    const rawBody = JSON.stringify({ data: { id: "no-routing-event", event_type: "call.conversation.ended", occurred_at: new Date().toISOString(), payload: { telnyx_agent_target: "+13055550199", call_control_id: "call-9" } } });
+    const timestamp = String(Math.floor(Date.now() / 1000));
+    const signature = sign(null, Buffer.from(`${timestamp}|${rawBody}`), keys.privateKey).toString("base64");
+    const { POST } = await import("@/app/api/webhooks/telnyx/calls/route");
+    const response = await POST(new Request("https://responseos.example/api/webhooks/telnyx/calls", { method: "POST", headers: { "content-type": "application/json", "telnyx-timestamp": timestamp, "telnyx-signature-ed25519": signature }, body: rawBody }));
+    expect(response.status).toBe(503);
+    expect((await response.json()).error.code).toBe("follow_up_routing_missing");
+    expect(mocks.followUpRoutingReady).toHaveBeenCalledWith("demo-account");
+    expect(mocks.recordWebhookEvent).not.toHaveBeenCalled();
   });
   afterEach(() => { process.env = { ...originalEnv }; });
 

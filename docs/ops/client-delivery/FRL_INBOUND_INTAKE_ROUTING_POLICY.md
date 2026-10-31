@@ -294,7 +294,9 @@ is urgent; or agent confidence is below the approved threshold.
    `lib/notifications` holds no implementation. Until they ship and are verified end to end,
    withholding the CRM task leaves an unqualified escalation with **no automated fallback**,
    reaching a human only through whatever manual review the operator runs. This is a demo blocker
-   (§15), not a residual risk.
+   (§15), not a residual risk. *(2026-10-31: ADR-0086 Option A adds a `CallFollowUp` record with an
+   accountable operator and backup for every finalized non-qualified call. It closes this blocker only
+   once merged, reviewed and verified on the hosted lane.)*
 4. Persist the escalation in the ResponseOS ledger.
 5. Send the completed-interaction notification (§12).
 

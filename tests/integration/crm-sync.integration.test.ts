@@ -43,10 +43,8 @@ describe("durable CRM synchronization", () => {
     expect(operation.provider_task_id).toBeTruthy();
   });
 
-  // Characterizes the gap recorded in FRL_INBOUND_INTAKE_ROUTING_POLICY §16 and the
-  // proposed ADR-0086: ADR-0047 §4 exports a follow-up task only for qualified calls,
-  // and nothing else routes a non-qualified call to a human. Change this test only
-  // together with an accepted amendment.
+  // ADR-0047 §4 exports a follow-up task only for qualified calls; ADR-0086 keeps that
+  // and routes non-qualified calls to a human through CallFollowUp instead.
   test.each(["unqualified", "maybe"] as const)("a %s call gets contact and activity but no follow-up task", async (status) => {
     const lead = await prisma.leadEvent.findFirstOrThrow({ where: { account_id: "org_responseos_demo", call_id: "call_responseos_demo" } });
     await prisma.leadQualification.update({ where: { lead_event_id: lead.id }, data: { qualification_status: status } });

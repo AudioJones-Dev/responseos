@@ -8,6 +8,13 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: route every finalized non-qualified call to an accountable human (ADR-0086)
+
+- **Change:** a finalized Telnyx call that is not `qualified` or `spam` gets one `CallFollowUp` record with the account's accountable operator, backup and a 24-hour due time, audited. The demo-operations page lists them and an operator marks each followed up (audited).
+- **Gate:** live Telnyx ingest refuses (`503 follow_up_routing_missing`) an account without a `FollowUpRouting` owner and backup. Normalization without routing writes an audited `call_follow_up.routing_missing` entry instead of a silent absence.
+- **Unchanged:** the ADR-0047 CRM export, including the qualified-only follow-up task. No notification, scheduling or outbound contact.
+- **Migration:** `20261031_call_follow_up`, additive.
+
 ## Unreleased — docs: release-baseline gap register and ADR-0086 proposal
 
 - **Register:** `docs/ops/RESPONSEOS_RELEASE_BASELINE_GAP_REGISTER_2026-10-31.md` records the current baseline, the facts settled read-only (Vercel production branch, ignored build step, deployment controls, the diagnostic readout time) and every open gap with owner and blocker.
