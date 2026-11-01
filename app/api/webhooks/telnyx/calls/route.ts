@@ -1,5 +1,6 @@
 import { after, NextResponse } from "next/server";
 import { runCrmSyncForCall } from "@/lib/crm/syncFinalizedCall";
+import { followUpRoutingReady } from "@/lib/followUp/service";
 import {
   getWebhookProcessingState,
   recordWebhookEvent,
@@ -73,6 +74,13 @@ export async function POST(req: Request) {
       demoNumber: legacyNumber,
     };
     personalized = false;
+  }
+
+  if (resolved && !(await followUpRoutingReady(resolved.accountId))) {
+    return errorResponse(503, {
+      code: "follow_up_routing_missing",
+      message: "Live ingest requires an accountable operator and backup for this account.",
+    });
   }
 
   const payloadExpiresAt = daysAfter(

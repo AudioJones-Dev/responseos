@@ -744,6 +744,49 @@ model CrmSyncOperation {
   @@index([source_webhook_id])
 }
 
+// --- Human follow-up for non-qualified calls (ADR-0086) -------------------
+
+enum CallFollowUpReason {
+  unqualified
+  maybe
+  not_scored
+}
+
+enum CallFollowUpStatus {
+  open
+  resolved
+}
+
+// The accountable operator and backup for a tenant. Live Telnyx ingest
+// refuses a tenant without both.
+model FollowUpRouting {
+  account_id     String   @id
+  owner_user_id  String
+  backup_user_id String
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+}
+
+// One record per finalized call that is not qualified or spam. It carries
+// no transcript or caller content.
+model CallFollowUp {
+  id                  String             @id @default(cuid())
+  account_id          String
+  call_id             String
+  reason              CallFollowUpReason
+  status              CallFollowUpStatus @default(open)
+  owner_user_id       String
+  backup_user_id      String
+  due_at              DateTime
+  resolved_at         DateTime?
+  resolved_by_user_id String?
+  created_at          DateTime           @default(now())
+  updated_at          DateTime           @updatedAt
+
+  @@unique([account_id, call_id])
+  @@index([account_id, status, due_at])
+}
+
 // --- Personalized prospect bootstrap (ADR-0048) ---------------------------
 //
 // A prospect bootstrap is an operator-only, sandbox-tenant workflow. Public

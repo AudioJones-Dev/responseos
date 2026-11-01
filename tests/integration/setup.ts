@@ -14,6 +14,8 @@ const TABLES = [
   "KnowledgeSource",
   "KnowledgeIngestionRun",
   "ProspectBootstrap",
+  "CallFollowUp",
+  "FollowUpRouting",
   "CrmSyncOperation",
   "ProspectIntake",
   "ProfessionalOpportunity",
