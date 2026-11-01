@@ -1,4 +1,5 @@
 import "@/lib/serverOnlyGuard";
+import { accountRuntimeAllowed } from "@/lib/clientSetup/runtime";
 import { db } from "@/lib/db/client";
 import { getMockCallTranscripts } from "@/lib/mock/callTranscripts";
 import type {
@@ -129,6 +130,7 @@ export async function recordCallTranscript(entry: {
   }
 
   try {
+    if (!(await accountRuntimeAllowed(entry.account_id))) return err("account_inactive", "Account capture is disabled.");
     const created = await db.callTranscript.create({
       data: {
         account_id: entry.account_id,

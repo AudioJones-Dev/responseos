@@ -129,3 +129,7 @@ Architectural placement: [`architecture.md`](./architecture.md) § Future Knowle
 - No production deploys from this repo until v0.3 readiness gates clear, except the public read-only demo surface (ADR-0053): the marketing pages and `/demo/receptionist`, on mock adapters, operator-authorized and deployed by hand. Not v0.3 authorization.
 - Provider adapters fall back to mock when env vars are missing — the app must boot and run without live keys at every version.
 - ResponseOS is not HIPAA-certified or HIPAA-compliant out of the box. The HIPAA-ready lane is an architectural pattern, not a current product capability.
+
+## Inactive client setup — local review
+
+Operator creation/draft editing and tenant-scoped read-only customer review are prepared for isolated synthetic validation. Production destination is unresolved; schema migration and real account reconciliation remain blocked. No ownership grants, telephone activation, memory ingestion or receptionist publication. See [execution plan](product/inactive-client-setup.md).

@@ -2,11 +2,13 @@ import { generateKeyPairSync, sign } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+  accountRuntimeAllowed: vi.fn(),
   recordWebhookEvent: vi.fn(),
   setWebhookProcessStatus: vi.fn(),
   resolveTelnyxEventAssignment: vi.fn(),
 }));
 
+vi.mock("@/lib/clientSetup/runtime", () => ({ accountRuntimeAllowed: mocks.accountRuntimeAllowed }));
 vi.mock("@/lib/data/webhookEvents", () => ({
   recordWebhookEvent: mocks.recordWebhookEvent,
   setWebhookProcessStatus: mocks.setWebhookProcessStatus,
@@ -51,6 +53,7 @@ describe("personalized Telnyx call retention", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    mocks.accountRuntimeAllowed.mockResolvedValue(true);
     process.env = { ...originalEnv };
     process.env.TELNYX_PUBLIC_KEY = publicKey;
     process.env.RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED = "true";
@@ -172,4 +175,20 @@ describe("personalized Telnyx call retention", () => {
     expect(response.status).toBe(202);
     expect(mocks.setWebhookProcessStatus).not.toHaveBeenCalled();
   });
+});
+
+test("inactive legacy account is rejected before raw capture even with signed provider input", async () => {
+  vi.resetModules();
+  vi.clearAllMocks();
+  process.env.TELNYX_PUBLIC_KEY = publicKey;
+  process.env.RESPONSEOS_LIVE_TELNYX_INGEST_ENABLED = "true";
+  process.env.RESPONSEOS_DEMO_ACCOUNT_ID = "inactive-synthetic";
+  process.env.RESPONSEOS_DEMO_PHONE_E164 = "+13055550101";
+  mocks.accountRuntimeAllowed.mockResolvedValue(false);
+  mocks.recordWebhookEvent.mockClear();
+  try {
+    const { POST } = await import("@/app/api/webhooks/telnyx/calls/route");
+    expect((await POST(signedRequestWithoutOccurredAt())).status).toBe(403);
+    expect(mocks.recordWebhookEvent).not.toHaveBeenCalled();
+  } finally { process.env = { ...originalEnv }; }
 });
