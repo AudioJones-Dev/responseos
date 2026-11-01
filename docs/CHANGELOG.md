@@ -1,5 +1,7 @@
 # Changelog — ResponseOS
 
+- ci: add `verify-staging-clerk-invalid-signature.yml` for Gate A A10. It is manual and staging-gated. After the same deployment-identity checks as hosted verification, it sends one synthetic Clerk webhook with a wrong signature to the exact deployment. It requires `401 invalid_signature`. It compares read-only fingerprints of `User`, `Account`, `WebhookEvent` and `AuditLog` before, immediately after and 30 seconds after. It needs a SELECT-only `STAGING_READONLY_DATABASE_URL` staging secret, and refuses to run if that role can write.
+
 - PR #211: recover the application Prisma pool after connection loss without replaying failed operations; cover transaction rollback and concurrent failures.
 
 - PR #211 review follow-up: reject malformed lineage/binding evidence and inherited owner privileges; document automatic reconnect acceptance blocker.

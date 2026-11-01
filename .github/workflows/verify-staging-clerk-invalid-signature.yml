@@ -1,0 +1,253 @@
+# Gate A A10: an invalid Clerk webhook signature mutates nothing on governed staging.
+# Sends one synthetic POST with a deliberately wrong signature to the exact existing
+# deployment, and compares read-only database snapshots before and after. It never
+# migrates, deploys, aliases, promotes, or changes provider state.
+
+name: Verify Staging Clerk Invalid Signature
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "clerk-invalid-signature" to confirm the single A10 request'
+        required: true
+        type: string
+      control_sha:
+        description: "Exact 40-character current master workflow-control SHA"
+        required: true
+        type: string
+      application_sha:
+        description: "Exact reviewed 40-character application SHA"
+        required: true
+        type: string
+      deployment_id:
+        description: "Exact existing governed Vercel deployment ID"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: responseos-staging-exclusive
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    name: Bind certification controls to current master
+    runs-on: ubuntu-latest
+    env:
+      DISPATCH_CONFIRM: ${{ inputs.confirm }}
+      CONTROL_SHA: ${{ inputs.control_sha }}
+      APPLICATION_SHA: ${{ inputs.application_sha }}
+      DEPLOYMENT_ID: ${{ inputs.deployment_id }}
+      DISPATCH_REF: ${{ github.ref }}
+      DISPATCHED_WORKFLOW_SHA: ${{ github.sha }}
+    steps:
+      - name: Validate dispatch contract
+        run: |
+          if [ "$DISPATCH_CONFIRM" != "clerk-invalid-signature" ]; then
+            echo "::error::Confirmation must be exactly clerk-invalid-signature."
+            exit 1
+          fi
+          if [ "$DISPATCH_REF" != "refs/heads/master" ]; then
+            echo "::error::This check must be dispatched from master."
+            exit 1
+          fi
+          if [[ ! "$CONTROL_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::control_sha must be a full lowercase commit SHA."
+            exit 1
+          fi
+          if [[ ! "$APPLICATION_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::application_sha must be a full lowercase commit SHA."
+            exit 1
+          fi
+          if [[ ! "$DEPLOYMENT_ID" =~ ^dpl_[A-Za-z0-9]+$ ]]; then
+            echo "::error::deployment_id must be an exact Vercel deployment ID."
+            exit 1
+          fi
+          if [ "$CONTROL_SHA" != "$DISPATCHED_WORKFLOW_SHA" ]; then
+            echo "::error::control_sha must equal the workflow SHA dispatched from master."
+            exit 1
+          fi
+
+      - name: Check out exact workflow controls
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.control_sha }}
+
+      - name: Verify controls are still current master
+        run: |
+          if [ "$(git rev-parse HEAD)" != "$CONTROL_SHA" ]; then
+            echo "::error::Checked-out controls do not match control_sha."
+            exit 1
+          fi
+          remote_master=$(git ls-remote origin refs/heads/master | awk '{print $1}')
+          if [ "$remote_master" != "$CONTROL_SHA" ]; then
+            echo "::error::control_sha is no longer current master."
+            exit 1
+          fi
+
+  verify-hosted:
+    name: Invalid Clerk signature mutates nothing
+    needs: guard
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+    env:
+      EXPECTED_VERCEL_PROJECT_NAME: responseos-staging-mock
+      EXPECTED_VERCEL_PROJECT_ID: prj_pbzqdkzp322jcHWIsi19GhsnWXRm
+      EXPECTED_VERCEL_ORG_ID: team_BHxIkAGPW6qEKKQBAt9c0NGz
+      EXPECTED_VERCEL_CUSTOM_ENV_ID: env_uX6Qp8F6w9aBgx2ikH3BiREB8aHH
+      EXPECTED_VERCEL_CUSTOM_ENV_SLUG: staging
+      EXPECTED_VERCEL_MANAGED_ALIAS: responseos-staging-mock-env-staging-audiojones.vercel.app
+      CONTROL_SHA: ${{ inputs.control_sha }}
+      APPLICATION_SHA: ${{ inputs.application_sha }}
+      DEPLOYMENT_ID: ${{ inputs.deployment_id }}
+      VERCEL_ORG_ID: team_BHxIkAGPW6qEKKQBAt9c0NGz
+      VERCEL_PROJECT_ID: prj_pbzqdkzp322jcHWIsi19GhsnWXRm
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+      STAGING_READONLY_DATABASE_URL: ${{ secrets.STAGING_READONLY_DATABASE_URL }}
+    steps:
+      - name: Check out exact workflow controls
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.control_sha }}
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.18.0
+
+      - name: Verify exact checkout, current master, and required credentials
+        run: |
+          if [ "$(git rev-parse HEAD)" != "$CONTROL_SHA" ]; then
+            echo "::error::Workflow-control checkout does not match control_sha."
+            exit 1
+          fi
+          remote_master=$(git ls-remote origin refs/heads/master | awk '{print $1}')
+          if [ "$remote_master" != "$CONTROL_SHA" ]; then
+            echo "::error::Workflow controls changed while this protected job was waiting."
+            exit 1
+          fi
+          missing=0
+          for name in VERCEL_TOKEN VERCEL_AUTOMATION_BYPASS_SECRET STAGING_READONLY_DATABASE_URL; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing staging Environment secret: $name"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then exit 1; fi
+
+      - name: Verify protected non-production Vercel project
+        run: |
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-project.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects/$EXPECTED_VERCEL_PROJECT_ID?teamId=$VERCEL_ORG_ID"
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-project-domains.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects/$EXPECTED_VERCEL_PROJECT_ID/domains?teamId=$VERCEL_ORG_ID"
+          node scripts/validate-staging-vercel-project.mjs "$RUNNER_TEMP/vercel-project.json" "$RUNNER_TEMP/vercel-project-domains.json"
+
+      - name: Verify governed custom-environment posture
+        run: |
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-custom-environment.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects/$EXPECTED_VERCEL_PROJECT_ID/custom-environments/$EXPECTED_VERCEL_CUSTOM_ENV_ID?teamId=$VERCEL_ORG_ID"
+          node scripts/staging-vercel-custom-environment.mjs "$RUNNER_TEMP/vercel-custom-environment.json" post-ready
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-env-unfiltered.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v10/projects/$EXPECTED_VERCEL_PROJECT_ID/env?teamId=$VERCEL_ORG_ID"
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-custom-env.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v10/projects/$EXPECTED_VERCEL_PROJECT_ID/env?teamId=$VERCEL_ORG_ID&customEnvironmentId=$EXPECTED_VERCEL_CUSTOM_ENV_ID"
+          node scripts/fetch-staging-vercel-readable-env.mjs final custom-environment "$RUNNER_TEMP/vercel-custom-env.json" "$RUNNER_TEMP/vercel-custom-readable.json"
+          node scripts/validate-staging-vercel-posture.mjs custom-environment "$RUNNER_TEMP/vercel-custom-readable.json" "$RUNNER_TEMP/vercel-env-unfiltered.json"
+
+      - name: Certify exact existing deployment identity
+        id: identity
+        run: |
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-deployment.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v13/deployments/$DEPLOYMENT_ID?teamId=$VERCEL_ORG_ID&withGitRepoInfo=true"
+          node scripts/validate-staging-deployment-result.mjs existing "$RUNNER_TEMP/vercel-deployment.json" "$DEPLOYMENT_ID" "$APPLICATION_SHA"
+          deployment_host=$(jq -er '.url | select(type == "string" and test("^[a-z0-9][a-z0-9-]*[a-z0-9]\\.vercel\\.app$"))' "$RUNNER_TEMP/vercel-deployment.json")
+          echo "deployment_host=$deployment_host" >> "$GITHUB_OUTPUT"
+
+      - name: Reverify authoritative managed-alias routing
+        env:
+          DEPLOYMENT_HOST: ${{ steps.identity.outputs.deployment_host }}
+        run: |
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-managed-alias.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v4/aliases/$EXPECTED_VERCEL_MANAGED_ALIAS?teamId=$VERCEL_ORG_ID&projectId=$EXPECTED_VERCEL_PROJECT_ID"
+          node scripts/validate-staging-managed-alias.mjs poll "$RUNNER_TEMP/vercel-managed-alias.json" "$DEPLOYMENT_ID" "$DEPLOYMENT_HOST"
+
+      - name: Reverify final custom-environment posture
+        run: |
+          curl --fail --silent --show-error --max-time 30 --output "$RUNNER_TEMP/vercel-custom-environment-final.json" --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects/$EXPECTED_VERCEL_PROJECT_ID/custom-environments/$EXPECTED_VERCEL_CUSTOM_ENV_ID?teamId=$VERCEL_ORG_ID"
+          node scripts/staging-vercel-custom-environment.mjs "$RUNNER_TEMP/vercel-custom-environment-final.json" post-ready
+
+
+      - name: Confirm health SHA and a read-only database session
+        env:
+          DEPLOYMENT_HOST: ${{ steps.identity.outputs.deployment_host }}
+        run: |
+          health=$(curl --fail --silent --show-error --max-time 30 --header "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET" "https://$DEPLOYMENT_HOST/api/health")
+          if [ "$(printf '%s' "$health" | jq -r '.build_sha')" != "$APPLICATION_SHA" ]; then
+            echo "::error::Immutable health build SHA does not match application_sha."
+            exit 1
+          fi
+          command -v psql >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client; }
+          # The role must hold no write privilege on the observed tables, and the session runs read-only.
+          writable=$(PGOPTIONS='-c default_transaction_read_only=on' psql "$STAGING_READONLY_DATABASE_URL" -X -v ON_ERROR_STOP=1 -Atc "
+            SELECT count(*) FROM unnest(ARRAY['\"User\"','\"Account\"','\"WebhookEvent\"','\"AuditLog\"']) t
+            WHERE has_table_privilege(current_user, t, 'INSERT') OR has_table_privilege(current_user, t, 'UPDATE')
+               OR has_table_privilege(current_user, t, 'DELETE') OR has_table_privilege(current_user, t, 'TRUNCATE')")
+          if [ "$writable" != "0" ]; then
+            echo "::error::The A10 database role can write to an observed table; refusing to continue."
+            exit 1
+          fi
+
+      - name: Send one invalid-signature request and compare read-only snapshots
+        env:
+          DEPLOYMENT_HOST: ${{ steps.identity.outputs.deployment_host }}
+        run: |
+          nonce="a10-$(date -u +%Y%m%dT%H%M%SZ)-$(openssl rand -hex 6)"
+          svix_id="msg_$nonce"
+          email="$nonce@example.invalid"
+          snapshot() {
+            PGOPTIONS='-c default_transaction_read_only=on' psql "$STAGING_READONLY_DATABASE_URL" -X -v ON_ERROR_STOP=1 -At \
+              -v svix_id="$svix_id" -v email="$email" -v nonce="%$nonce%" <<'SQL'
+          BEGIN READ ONLY;
+          SELECT 'User', count(*), md5(coalesce(string_agg(t::text, '|' ORDER BY id), '')) FROM "User" t;
+          SELECT 'Account', count(*), md5(coalesce(string_agg(t::text, '|' ORDER BY id), '')) FROM "Account" t;
+          SELECT 'WebhookEvent', count(*), md5(coalesce(string_agg(t::text, '|' ORDER BY id), '')) FROM "WebhookEvent" t;
+          SELECT 'AuditLog', count(*), md5(coalesce(string_agg(t::text, '|' ORDER BY id), '')) FROM "AuditLog" t;
+          SELECT 'marker', (SELECT count(*) FROM "User" WHERE email = :'email')
+            + (SELECT count(*) FROM "WebhookEvent" WHERE provider_event_id = :'svix_id' OR raw_body LIKE :'nonce')
+            + (SELECT count(*) FROM "AuditLog" WHERE metadata_json::text LIKE :'nonce');
+          COMMIT;
+          SQL
+          }
+          snapshot > "$RUNNER_TEMP/a10-before.txt"
+          if ! grep -qx 'marker|0' "$RUNNER_TEMP/a10-before.txt"; then
+            echo "::error::Test marker already present before the request."
+            exit 1
+          fi
+
+          body=$(jq -cn --arg id "user_$nonce" --arg email "$email" \
+            '{type: "user.created", object: "event", data: {id: $id, object: "user", email_addresses: [{id: "idn_a10", email_address: $email}], primary_email_address_id: "idn_a10"}}')
+          signature="v1,$(openssl rand -base64 32)"
+          code=$(curl --silent --show-error --max-time 30 --output "$RUNNER_TEMP/a10-response.json" --write-out '%{http_code}' \
+            --header "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET" \
+            --header "content-type: application/json" \
+            --header "svix-id: $svix_id" \
+            --header "svix-timestamp: $(date +%s)" \
+            --header "svix-signature: $signature" \
+            --data "$body" "https://$DEPLOYMENT_HOST/api/webhooks/clerk")
+          error_code=$(jq -r '.error.code // empty' "$RUNNER_TEMP/a10-response.json" 2>/dev/null || true)
+          echo "A10 request: HTTP $code, error code '${error_code:-none}', svix-id $svix_id"
+          if [ "$code" != "401" ] || [ "$error_code" != "invalid_signature" ]; then
+            echo "::error::Inconclusive: expected HTTP 401 invalid_signature, got HTTP $code '${error_code:-none}'."
+            exit 1
+          fi
+
+          snapshot > "$RUNNER_TEMP/a10-after.txt"
+          sleep 30
+          snapshot > "$RUNNER_TEMP/a10-after-30s.txt"
+          for after in a10-after.txt a10-after-30s.txt; do
+            if ! cmp -s "$RUNNER_TEMP/a10-before.txt" "$RUNNER_TEMP/$after"; then
+              echo "::error::Staging data changed around the request ($after). Inconclusive or failed; see the table counts below."
+              cut -d'|' -f1,2 "$RUNNER_TEMP/a10-before.txt" "$RUNNER_TEMP/$after"
+              exit 1
+            fi
+          done
+          echo "A10 PASS: invalid signature rejected with 401; User, Account, WebhookEvent and AuditLog unchanged immediately and after 30 seconds; no test marker rows."
+          cut -d'|' -f1,2 "$RUNNER_TEMP/a10-before.txt"
