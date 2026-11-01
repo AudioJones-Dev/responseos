@@ -57,8 +57,7 @@ ResponseOS is sold in two phases — a paid Readiness Assessment first, then imp
 
 | Item | Amount |
 |---|---|
-| Standard assessment | $1,000 flat |
-| Range by size and complexity | $750–$1,500 |
+| Standard assessment | $1,500 flat (ADR-0083) |
 | Full fee applied toward implementation | If client signs within 30 days |
 
 The assessment delivers a Readiness Score, Revenue Leak Estimate, AI Fit / No-Fit Diagnosis, current and recommended workflow maps, implementation scope, projected ROI, and a Pricing Proposal.
@@ -71,7 +70,7 @@ The assessment delivers a Readiness Score, Revenue Leak Estimate, AI Fit / No-Fi
 | Recovery Pro | $5,000–$8,500 | $1,500–$2,500 | Usage pass-through or blended |
 | Recovery Performance | $8,500–$15,000+ | $2,500–$5,000+ | Per booked job, per qualified lead, or revenue-share kicker |
 
-**Founding Client Pilot (optional, 90 days):** $1,000 assessment + $3,500 implementation + $1,250/month, with an optional $50 per qualified booked appointment after the first 10 per month.
+**Founding Client Pilot (optional, 90 days):** $1,500 assessment + $3,500 implementation + $1,250/month, with an optional $50 per qualified booked appointment after the first 10 per month.
 
 **Outcome fee structure:**
 - **Fixed platform fee** covers setup, maintenance, monitoring, optimization.

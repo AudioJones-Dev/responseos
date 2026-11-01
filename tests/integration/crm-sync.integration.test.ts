@@ -43,6 +43,25 @@ describe("durable CRM synchronization", () => {
     expect(operation.provider_task_id).toBeTruthy();
   });
 
+  // Characterizes the gap recorded in FRL_INBOUND_INTAKE_ROUTING_POLICY §16 and the
+  // proposed ADR-0086: ADR-0047 §4 exports a follow-up task only for qualified calls,
+  // and nothing else routes a non-qualified call to a human. Change this test only
+  // together with an accepted amendment.
+  test.each(["unqualified", "maybe"] as const)("a %s call gets contact and activity but no follow-up task", async (status) => {
+    const lead = await prisma.leadEvent.findFirstOrThrow({ where: { account_id: "org_responseos_demo", call_id: "call_responseos_demo" } });
+    await prisma.leadQualification.update({ where: { lead_event_id: lead.id }, data: { qualification_status: status } });
+    const provider = new MockCrmProvider();
+    const contact = vi.spyOn(provider, "createContact");
+    const activity = vi.spyOn(provider, "createCallActivity");
+    const task = vi.spyOn(provider, "createFollowUpTask");
+    const result = await runCrmSyncForCall({ accountId: "org_responseos_demo", callId: "call_responseos_demo", providerOverride: provider });
+    expect(result.ok && result.data.status).toBe("succeeded");
+    expect(contact).toHaveBeenCalledOnce();
+    expect(activity).toHaveBeenCalledOnce();
+    expect(task).not.toHaveBeenCalled();
+    expect((await prisma.crmSyncOperation.findFirstOrThrow()).provider_task_id).toBeNull();
+  });
+
   test("redacts contact details from the next action sent to the CRM", async () => {
     const provider = new MockCrmProvider();
     const activity = vi.spyOn(provider, "createCallActivity");

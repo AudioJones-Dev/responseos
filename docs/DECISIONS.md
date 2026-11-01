@@ -2,6 +2,47 @@
 
 This file records the load-bearing decisions that constrain how ResponseOS is built. Each ADR is short by design: context, decision, consequences. If a decision is reversed, mark the entry **Superseded by ADR-XXX** rather than deleting it.
 
+## ADR-0087 — First-client default terms: $5,000 setup and $1,500 per month
+
+**Status.** Accepted · 2026-10-31 · Operator-authorized. Sets the default quote for the first client. It authorizes no payment collection (ADR-0010's billing gate stands) and no new public copy.
+
+**Context.** ADR-0083 fixed the assessment at $1,500. ADR-0028 left implementation and retainer price points open, and `/pricing` shows one scoped engagement without tier names. `pricing-and-onboarding.md` already carried a recommended default quote that no decision had ratified.
+
+**Decision.**
+
+1. The first-client default is **$5,000 setup and $1,500 per month**, after the $1,500 assessment. The assessment credit terms of ADR-0083 apply.
+2. A signed agreement may adjust scope and price. The agreement, not this ADR, is the commercial record for that client.
+3. The Founding Client Pilot (90 days: $1,500 assessment, $3,500 implementation, $1,250 per month) remains an optional package.
+4. These numbers are internal defaults. Publishing them needs a separate decision.
+
+**Consequences.** Sales material and the first agreement template quote one default. ADR-0028's tier names stay retired from public copy. Outcome fees remain optional and unratified.
+
+---
+
+## ADR-0086 — Every finalized non-qualified call reaches an accountable human (amends ADR-0047)
+
+**Status.** Accepted · 2026-10-31 · Operator-authorized, Option A. Repository implementation only; live activation, notifications and deployment remain separate gates.
+
+**Context.** ADR-0047 §4 limits the CRM export to a contact, a sanitized call activity and a follow-up task for qualified calls. `lib/crm/syncFinalizedCall.ts` creates the task only when `qualification_status === "qualified"`. Calls scored `unqualified` or `maybe`, or not scored, get a contact and an activity, and the operation still reports `succeeded`. No transfer or escalation outcome is modeled, and `lib/notifications` has no implementation. `FRL_INBOUND_INTAKE_ROUTING_POLICY.md` §16 records the result: an unqualified escalation has no automated fallback, which is a demo blocker. `tests/integration/crm-sync.integration.test.ts` now pins this behavior so any change is deliberate.
+
+**Options.**
+
+- **A. Internal follow-up queue (recommended).** Every finalized call that is not `qualified` or `spam` gets one durable, tenant-scoped ResponseOS follow-up record, audited, with a named owner and due time, on the operator review surface. The CRM export stays exactly as ADR-0047 §4 allows. External notification remains a separate decision.
+- **B. CRM task for every non-spam call.** Widens ADR-0047 §4, sends unqualified callers into the client CRM and changes what the client sees.
+- **C. Both A and B.**
+
+**Decision: Option A.**
+
+1. A finalized call that is not `qualified` or `spam` creates exactly one follow-up record, idempotent on account and call, before the CRM operation is reported complete.
+2. The record names the accountable operator and the backup from the tenant configuration. A tenant without both cannot enable live ingest.
+3. Unresolved inquiries and failed transfers use the same record once those outcomes are modeled. Until then, the record is the only automated path.
+4. Retention follows the call's retention class. The record carries no transcript.
+5. ADR-0047 §4's export limits are unchanged.
+
+**Consequences.** Closes the routing-policy blocker without sending new data to a client CRM. Needs a schema addition, an operator surface, tests for the unqualified, maybe and unscored paths, and a duplicate-effect check. A missed follow-up becomes a visible open record instead of an absence. It creates no notification, scheduling or outbound contact.
+
+---
+
 ## ADR-0085 — A temporary, token-gated production check of the configured database host
 
 **Status.** Proposed · 2026-10-28 · **Not accepted; authorizes nothing yet.** **Retirement (2026-10-31):** the route was deployed in `dpl_12D5iWkrbt41f7Py53DQee3L4iJp` and read once with a `200` at 2026-10-29 02:43:09 UTC. This record does not show operator acceptance; reconcile that separately. The removal change deletes the route; digest removal and older-deployment containment stay separate operator actions. Needs the operator's explicit acceptance before the route in PR #232 is deployed to production. Numbered past ADR-0084 because that number is taken on an open branch (PR #231).

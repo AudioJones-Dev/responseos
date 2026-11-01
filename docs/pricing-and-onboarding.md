@@ -41,8 +41,7 @@ If the answer to either question is no, the engagement stops here. The deliverab
 
 | Item | Amount |
 |---|---|
-| Standard assessment | **$1,000 flat** |
-| Range by size and complexity | $750 – $1,500 |
+| Standard assessment | **$1,500 flat** (ADR-0083) |
 | Credit policy | Apply 100% of the assessment fee toward implementation if client signs within 30 days |
 
 The credit is the standard term (owner decision, 2026-09-11): the full fee applies toward implementation when the client signs within 30 days, and `/pricing` states it publicly.
@@ -118,11 +117,13 @@ Pick **one** of the following structures per engagement, layered on top of setup
 
 ## Founding Client Pilot
 
+> **Owner decision (2026-10-31):** the pilot uses the same $1,500 assessment as ADR-0083.
+
 An optional early-client package designed for the first cohort of pilots. Use it to lock in case studies and reference accounts.
 
 | Item | Amount |
 |---|---|
-| Assessment | $1,000 |
+| Assessment | $1,500 |
 | Implementation | $3,500 |
 | Monthly | $1,250 / month |
 | Pilot length | 90 days |
@@ -202,7 +203,7 @@ When in doubt, this is the quote to send.
 
 | Phase | Item | Amount |
 |---|---|---|
-| Phase 1 | ResponseOS Readiness Assessment | $1,000 |
+| Phase 1 | ResponseOS Readiness Assessment | $1,500 |
 | Phase 2 | ResponseOS Recovery Pro Implementation | $5,000 setup |
 | Phase 2 | Monthly retainer | $1,500 / month |
 | Optional | Outcome fee | $50 per qualified booked appointment after the first 10 per month |
