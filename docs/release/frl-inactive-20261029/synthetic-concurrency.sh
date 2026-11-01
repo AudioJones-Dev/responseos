@@ -13,7 +13,7 @@ sql() { psql -X -v ON_ERROR_STOP=1 -d "$db" "$@"; }
 sql -c "INSERT INTO \"User\" (id,role,name,email,updated_at) VALUES ('synthetic-operator','operator','Synthetic Operator','operator@example.invalid',now());"
 args=(-v account_id=synthetic-candidate -v business_name='Synthetic Access Company' -v slug=synthetic-access
   -v industry=synthetic -v timezone=UTC -v founder_name='Synthetic Founder' -v contact_number=+12025550199
-  -v operator_id=synthetic-operator -v expected_account_json=null -v expected_phone_references=0 -v separate_demo_id=synthetic-demo)
+  -v operator_id=synthetic-operator -v expected_account_json=null -v separate_demo_id=synthetic-demo)
 out=/tmp/frl-evidence/concurrency
 mkdir -p "$out"
 

@@ -10,7 +10,7 @@ sql() { psql -X -v ON_ERROR_STOP=1 -d "$db" "$@"; }
 sql -c "INSERT INTO \"User\" (id,role,name,email,updated_at) VALUES ('synthetic-operator','operator','Synthetic Operator','operator@example.invalid',now());"
 args=(-v account_id=synthetic-candidate -v business_name='Synthetic Access Company' -v slug=synthetic-access
   -v industry=synthetic -v timezone=UTC -v founder_name='Synthetic Founder' -v contact_number=+12025550199
-  -v operator_id=synthetic-operator -v expected_account_json=null -v expected_phone_references=0 -v separate_demo_id=synthetic-demo)
+  -v operator_id=synthetic-operator -v expected_account_json=null -v separate_demo_id=synthetic-demo)
 template=/review/account-transaction.sql
 refuse() { if sql "${args[@]}" "$@" -f "$template" >/tmp/frl-evidence/transaction-last.log 2>&1; then echo 'Unexpected transaction success'; exit 1; fi; cat /tmp/frl-evidence/transaction-last.log; }
 sql "${args[@]}" -f "$template"
@@ -24,7 +24,6 @@ refuse -v account_id=synthetic-demo
 refuse -v separate_demo_id=
 refuse -v business_name=' Synthetic Access Company'
 refuse -v founder_name='   '
-refuse -v expected_phone_references=-1
 sql -c "INSERT INTO \"Account\" (id,name,slug,industry,timezone,status,updated_at,setup_draft_json) VALUES ('synthetic-collision','Other Example','other-example','synthetic','UTC','paused',now(),'{\"contactNumber\":\"+1 (202) 555-0199\"}');"
 refuse
 sql -c "DELETE FROM \"Account\" WHERE id='synthetic-collision'; INSERT INTO \"TelephonyNumber\" (id,provider,provider_number_id,e164,status,updated_at) VALUES ('synthetic-number','synthetic','synthetic-number','+12025550199','released',now());"
@@ -33,14 +32,12 @@ sql -c "UPDATE \"TelephonyNumber\" SET e164='(202) 555-0199' WHERE id='synthetic
 refuse
 sql -c "DELETE FROM \"TelephonyNumber\" WHERE id='synthetic-number'; INSERT INTO \"Account\" (id,name,slug,industry,timezone,status,updated_at,primary_phone) VALUES ('synthetic-collision','Other Example','other-example','synthetic','UTC','paused',now(),'202-555-0199');"
 refuse
-# History references must match the operator-reviewed count exactly.
+# Any history reference refuses, matching the app.
 sql -c "DELETE FROM \"Account\" WHERE id='synthetic-collision'; INSERT INTO \"Contact\" (id,account_id,phone,source,updated_at) VALUES ('synthetic-history','synthetic-legacy','202 555 0199','call',now());"
 refuse
-grep -q 'Number history references (1) differ from the reviewed count (0)' /tmp/frl-evidence/transaction-last.log
-sql "${args[@]}" -v expected_phone_references=1 -f "$template"
-refuse -v expected_phone_references=2
+grep -q 'Number has 1 history references; reconcile them first' /tmp/frl-evidence/transaction-last.log
 sql -c "DELETE FROM \"Contact\" WHERE id='synthetic-history';"
-echo 'PASS: national-format inventory/primary phone refuse; history references require the exact reviewed count'
+echo 'PASS: national-format inventory/primary phone refuse; any history reference refuses'
 sql -c "INSERT INTO \"Account\" (id,name,slug,industry,timezone,status,updated_at) VALUES ('synthetic-collision','SYNTHETIC ACCESS COMPANY!','other-example','synthetic','UTC','paused',now());"
 refuse
 sql -c "UPDATE \"Account\" SET name='Different',slug='synthetic-access' WHERE id='synthetic-collision';"

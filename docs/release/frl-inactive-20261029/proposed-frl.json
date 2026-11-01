@@ -10,7 +10,6 @@
   "timezone": null,
   "operator_id": null,
   "expected_account_json": "REQUIRES_SEPARATELY_AUTHORIZED_CURRENT_READBACK",
-  "expected_phone_references": "REQUIRES_SEPARATELY_AUTHORIZED_CURRENT_READBACK",
   "account_type": "customer",
   "account_status": "paused",
   "capabilities": {

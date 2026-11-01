@@ -26,7 +26,6 @@ CREATE TEMP TABLE release_input ON COMMIT DROP AS SELECT
   :'industry'::text AS industry, :'timezone'::text AS timezone,
   :'founder_name'::text AS founder, :'contact_number'::text AS phone,
   :'operator_id'::text AS operator_id, :'expected_account_json'::jsonb AS expected,
-  :'expected_phone_references'::int AS expected_phone_references,
   :'separate_demo_id'::text AS separate_demo_id;
 DO $review$
 DECLARE
@@ -42,7 +41,6 @@ BEGIN
      OR i.founder IS DISTINCT FROM btrim(i.founder) OR i.founder = '' OR length(i.founder) > 120
      OR i.phone !~ '^\+[1-9][0-9]{7,14}$'
      OR NOT EXISTS (SELECT 1 FROM pg_timezone_names WHERE name = i.timezone)
-     OR i.expected_phone_references < 0
   THEN RAISE EXCEPTION 'Owner decisions or identity invalid'; END IF;
   SELECT role INTO actor FROM "User" WHERE id = i.operator_id AND role IN ('aj_admin','operator');
   IF actor IS NULL THEN RAISE EXCEPTION 'Existing operator identity required'; END IF;
@@ -71,8 +69,8 @@ BEGIN
     )
   ) OR EXISTS (SELECT 1 FROM "TelephonyNumber" WHERE regexp_replace(e164, '[^0-9]', '', 'g') = ANY(forms))
   THEN RAISE EXCEPTION 'Identity or number collision requires reconciliation'; END IF;
-  -- History references are not ownership, but each must have been reviewed. The operator
-  -- supplies the exact count from a separately authorized readback; any drift aborts.
+  -- Same rule as the app (numberConflict): any user, contact, call, conversation or
+  -- message history on this number must be reconciled before setup.
   SELECT
     (SELECT count(*) FROM "User" WHERE regexp_replace(coalesce(phone, ''), '[^0-9]', '', 'g') = ANY(forms))
     + (SELECT count(*) FROM "Contact" WHERE regexp_replace(coalesce(phone, ''), '[^0-9]', '', 'g') = ANY(forms))
@@ -80,8 +78,8 @@ BEGIN
     + (SELECT count(*) FROM "Conversation" WHERE regexp_replace(business_number, '[^0-9]', '', 'g') = ANY(forms) OR regexp_replace(peer_number, '[^0-9]', '', 'g') = ANY(forms))
     + (SELECT count(*) FROM "SmsMessage" WHERE regexp_replace(from_number, '[^0-9]', '', 'g') = ANY(forms) OR regexp_replace(to_number, '[^0-9]', '', 'g') = ANY(forms))
   INTO phone_references;
-  IF phone_references <> i.expected_phone_references THEN
-    RAISE EXCEPTION 'Number history references (%) differ from the reviewed count (%)', phone_references, i.expected_phone_references;
+  IF phone_references > 0 THEN
+    RAISE EXCEPTION 'Number has % history references; reconcile them first', phone_references;
   END IF;
   FOR t IN SELECT DISTINCT c.table_name FROM information_schema.columns c
     JOIN information_schema.tables tb ON tb.table_schema = c.table_schema AND tb.table_name = c.table_name AND tb.table_type = 'BASE TABLE'
