@@ -4,7 +4,7 @@ This file records the load-bearing decisions that constrain how ResponseOS is bu
 
 ## ADR-0085 — A temporary, token-gated production check of the configured database host
 
-**Status.** Proposed · 2026-10-28 · **Not accepted; authorizes nothing yet.** Needs the operator's explicit acceptance before the route in PR #232 is deployed to production. Numbered past ADR-0084 because that number is taken on an open branch (PR #231).
+**Status.** Proposed · 2026-10-28 · **Not accepted; authorizes nothing yet.** **Retirement (2026-10-31):** the route was deployed in `dpl_12D5iWkrbt41f7Py53DQee3L4iJp` and read once with a `200` at 2026-10-29 02:43:09 UTC. This record does not show operator acceptance; reconcile that separately. The removal change deletes the route; digest removal and older-deployment containment stay separate operator actions. Needs the operator's explicit acceptance before the route in PR #232 is deployed to production. Numbered past ADR-0084 because that number is taken on an open branch (PR #231).
 
 **Context.** ADR-0053 authorizes production deployment of the public read-only surfaces only and extends to no other surface. The Neon project and branch behind production `DATABASE_URL` cannot be identified from Vercel metadata, logs or integration records (`docs/database/production-target-check.md`). Reading the hostname at runtime is the remaining way to learn it without retrieving the secret.
 
