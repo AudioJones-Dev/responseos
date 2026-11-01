@@ -10,7 +10,7 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 ## Unreleased — feat: route every finalized non-qualified call to an accountable human (ADR-0086)
 
-- **Change:** a finalized Telnyx call that is not `qualified` or `spam` gets one `CallFollowUp` record with the account's accountable operator, backup and a 24-hour due time, audited. The demo-operations page lists them and an operator marks each followed up (audited).
+- **Change:** a finalized Telnyx call that is not `qualified` or `spam` gets one `CallFollowUp` record with the account's accountable operator, backup and a 24-hour due time, audited. The operator page `/admin/follow-ups` lists them across all accounts, and an operator marks each followed up. The resolving account comes from the record, and concurrent attempts resolve it exactly once with one audit entry.
 - **Gate:** live Telnyx ingest refuses (`503 follow_up_routing_missing`) an account without a `FollowUpRouting` owner and backup. Normalization without routing writes an audited `call_follow_up.routing_missing` entry instead of a silent absence.
 - **Unchanged:** the ADR-0047 CRM export, including the qualified-only follow-up task. No notification, scheduling or outbound contact.
 - **Migration:** `20261031_call_follow_up`, additive.

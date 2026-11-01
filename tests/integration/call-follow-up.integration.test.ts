@@ -24,18 +24,18 @@ function finalized(id: string, qualification?: Record<string, unknown>): TelnyxW
   };
 }
 
-async function normalize(event: TelnyxWebhookEnvelope) {
+async function normalize(event: TelnyxWebhookEnvelope, account = accountId) {
   const ledger = await recordWebhookEvent({
-    account_id: accountId, provider: "telnyx", provider_event_id: event.data.id,
+    account_id: account, provider: "telnyx", provider_event_id: event.data.id,
     event_type: event.data.event_type, raw_body: JSON.stringify(event), signature_valid: true,
   });
   if (!ledger.ok) throw new Error(ledger.error.message);
-  return normalizeTelnyxEvent({ accountId, demoNumber, webhookEventId: ledger.data.id, event });
+  return normalizeTelnyxEvent({ accountId: account, demoNumber, webhookEventId: ledger.data.id, event });
 }
 
-async function followUpFor(callControlId: string) {
-  const call = await prisma.call.findFirstOrThrow({ where: { account_id: accountId, provider_call_id: callControlId } });
-  return prisma.callFollowUp.findMany({ where: { account_id: accountId, call_id: call.id } });
+async function followUpFor(callControlId: string, account = accountId) {
+  const call = await prisma.call.findFirstOrThrow({ where: { account_id: account, provider_call_id: callControlId } });
+  return prisma.callFollowUp.findMany({ where: { account_id: account, call_id: call.id } });
 }
 
 describe("human follow-up for non-qualified calls (ADR-0086)", () => {
@@ -94,5 +94,35 @@ describe("human follow-up for non-qualified calls (ADR-0086)", () => {
     expect(await resolveCallFollowUp({ id: row.id, accountId })).toMatchObject({ ok: false, error: { code: "invalid_transition" } });
     expect(await prisma.auditLog.count({ where: { account_id: accountId, action: "call_follow_up.resolved", target_id: row.id } })).toBe(1);
     expect(await listCallFollowUps({ accountId })).toMatchObject({ ok: true, data: [{ id: row.id, status: "resolved" }] });
+  });
+
+  test("operators see and resolve follow-ups in any account, not only the demo account", async () => {
+    const otherAccount = "org_mock_1";
+    await prisma.followUpRouting.create({ data: { account_id: otherAccount, owner_user_id: "synthetic-owner-2", backup_user_id: "synthetic-backup-2" } });
+    await normalize(finalized("demo-side", { status: "maybe" }));
+    await normalize(finalized("other-side", { status: "unqualified" }), otherAccount);
+    const [other] = await followUpFor("call-other-side", otherAccount);
+
+    setDevSession("operator");
+    const listed = await listCallFollowUps();
+    expect(listed.ok && listed.data.map((row) => row.account_id).sort()).toEqual([accountId, otherAccount].sort());
+    expect(listed.ok && listed.data.find((row) => row.id === other.id)).toMatchObject({ account_id: otherAccount, owner_user_id: "synthetic-owner-2" });
+
+    expect(await resolveCallFollowUp({ id: other.id })).toMatchObject({ ok: true, data: { account_id: otherAccount, status: "resolved" } });
+    expect(await prisma.auditLog.count({ where: { account_id: otherAccount, action: "call_follow_up.resolved", target_id: other.id } })).toBe(1);
+
+    setDevSession("client_admin@org_mock_1");
+    expect(await listCallFollowUps()).toMatchObject({ ok: false, error: { code: "role_denied" } });
+  });
+
+  test("concurrent resolutions resolve once and attribute one actor", async () => {
+    await normalize(finalized("race", { status: "unqualified" }));
+    const [row] = await followUpFor("call-race");
+    setDevSession("operator");
+    const results = await Promise.all([resolveCallFollowUp({ id: row.id }), resolveCallFollowUp({ id: row.id })]);
+    expect(results.filter((result) => result.ok)).toHaveLength(1);
+    expect(results.filter((result) => !result.ok && result.error.code === "invalid_transition")).toHaveLength(1);
+    expect(await prisma.auditLog.count({ where: { action: "call_follow_up.resolved", target_id: row.id } })).toBe(1);
+    expect(await prisma.callFollowUp.findUniqueOrThrow({ where: { id: row.id } })).toMatchObject({ status: "resolved", resolved_by_user_id: "user_aj_operator_1" });
   });
 });

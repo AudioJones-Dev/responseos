@@ -116,7 +116,7 @@ Mock-safe mutation routes may include a `mock: true` flag inside the success env
 - `POST /api/admin/bootstrap-promotions/:correlationId/acknowledge` → source-side operator acknowledgment of the exact manifest hash and imported customer account reference. Only this explicit handshake marks the export imported and the sandbox bootstrap converted.
 
 ### Human follow-up (operator only; ADR-0086)
-- `POST /api/admin/call-follow-ups/:id/resolve` → marks one open follow-up for the server-owned demo account resolved, with an audit record. Returns `422` if it is not open, `404` for another tenant's record, `403` for non-operators.
+- `POST /api/admin/call-follow-ups/:id/resolve` → operator-only. Marks one open follow-up resolved, in whatever account owns the record (the account is never taken from the request), with one audit record. Concurrent attempts resolve it exactly once. Returns `422` if it is no longer open, `404` if unknown, `403` for non-operators. The queue is at `/admin/follow-ups`.
 
 ## Webhook routes
 

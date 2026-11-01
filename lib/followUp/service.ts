@@ -8,6 +8,8 @@ export const FOLLOW_UP_DUE_HOURS = 24;
 
 export interface CallFollowUpView {
   id: string;
+  account_id: string;
+  account_name: string;
   call_id: string;
   reason: CallFollowUpReason;
   status: "open" | "resolved";
@@ -69,17 +71,19 @@ export async function recordCallFollowUp(
 }
 
 function toView(row: {
-  id: string; call_id: string; reason: CallFollowUpReason; status: "open" | "resolved";
+  id: string; account_id: string; call_id: string; reason: CallFollowUpReason; status: "open" | "resolved";
   owner_user_id: string; backup_user_id: string; due_at: Date; resolved_at: Date | null;
-}): CallFollowUpView {
+}, accountName: string): CallFollowUpView {
   return {
-    id: row.id, call_id: row.call_id, reason: row.reason, status: row.status,
+    id: row.id, account_id: row.account_id, account_name: accountName, call_id: row.call_id,
+    reason: row.reason, status: row.status,
     owner_user_id: row.owner_user_id, backup_user_id: row.backup_user_id,
     due_at: row.due_at.toISOString(), resolved_at: row.resolved_at?.toISOString() ?? null,
   };
 }
 
-export async function listCallFollowUps(params: { accountId: string }): Promise<Result<CallFollowUpView[]>> {
+// Operator surface: every tenant's follow-ups, unless narrowed to one account.
+export async function listCallFollowUps(params: { accountId?: string } = {}): Promise<Result<CallFollowUpView[]>> {
   try {
     await requireRole(["aj_admin", "operator"]);
   } catch (error) {
@@ -87,14 +91,21 @@ export async function listCallFollowUps(params: { accountId: string }): Promise<
   }
   if (db === null) return ok([]);
   const rows = await db.callFollowUp.findMany({
-    where: { account_id: params.accountId },
+    where: params.accountId ? { account_id: params.accountId } : {},
     orderBy: [{ status: "asc" }, { due_at: "asc" }],
-    take: 100,
+    take: 200,
   });
-  return ok(rows.map(toView));
+  const accounts = await db.account.findMany({
+    where: { id: { in: [...new Set(rows.map((row) => row.account_id))] } },
+    select: { id: true, name: true },
+  });
+  const names = new Map(accounts.map((account) => [account.id, account.name]));
+  return ok(rows.map((row) => toView(row, names.get(row.account_id) ?? "Unknown account")));
 }
 
-export async function resolveCallFollowUp(params: { id: string; accountId: string; now?: Date }): Promise<Result<CallFollowUpView>> {
+// The tenant comes from the record, never from the request. The conditional update
+// lets exactly one of several concurrent resolutions win and be attributed.
+export async function resolveCallFollowUp(params: { id: string; accountId?: string; now?: Date }): Promise<Result<CallFollowUpView>> {
   let session;
   try {
     session = await requireRole(["aj_admin", "operator"]);
@@ -104,16 +115,20 @@ export async function resolveCallFollowUp(params: { id: string; accountId: strin
   if (db === null) return err("no_database", "Follow-up resolution requires a database connection.");
   const now = params.now ?? new Date();
   return db.$transaction(async (tx) => {
-    const current = await tx.callFollowUp.findFirst({ where: { id: params.id, account_id: params.accountId } });
+    const current = await tx.callFollowUp.findFirst({
+      where: { id: params.id, ...(params.accountId ? { account_id: params.accountId } : {}) },
+    });
     if (!current) return err("not_found", "Follow-up not found.");
-    if (current.status !== "open") return err("invalid_transition", "Only open follow-ups can be resolved.");
-    const updated = await tx.callFollowUp.update({
-      where: { id: current.id },
+    const claimed = await tx.callFollowUp.updateMany({
+      where: { id: current.id, status: "open" },
       data: { status: "resolved", resolved_at: now, resolved_by_user_id: session.user.id },
     });
+    if (claimed.count !== 1) return err("invalid_transition", "Only open follow-ups can be resolved.");
+    const updated = await tx.callFollowUp.findUniqueOrThrow({ where: { id: current.id } });
+    const account = await tx.account.findUnique({ where: { id: current.account_id }, select: { name: true } });
     await tx.auditLog.create({
       data: {
-        account_id: params.accountId,
+        account_id: current.account_id,
         actor_user_id: session.user.id,
         actor_type: "user",
         actor_role: session.user.role,
@@ -121,10 +136,10 @@ export async function resolveCallFollowUp(params: { id: string; accountId: strin
         category: "workflow",
         target_type: "CallFollowUp",
         target_id: current.id,
-        before_ref: { status: current.status },
+        before_ref: { status: "open" },
         after_ref: { status: "resolved" },
       },
     });
-    return ok(toView(updated));
+    return ok(toView(updated, account?.name ?? "Unknown account"));
   });
 }
