@@ -63,7 +63,7 @@ run_case national-inventory "$git_template" "INSERT INTO \"TelephonyNumber\" (id
 sql -c "DELETE FROM \"TelephonyNumber\" WHERE id='synthetic-racer-number';"
 run_case orphan-evidence "$git_template" "INSERT INTO \"AuditLog\" (id,account_id,actor_type,action) VALUES ('synthetic-racer-audit','synthetic-candidate','system','synthetic.history');" refuse 'Candidate has dependent evidence in AuditLog'
 sql -c "DELETE FROM \"AuditLog\" WHERE id='synthetic-racer-audit';"
-run_case history-reference "$git_template" "INSERT INTO \"Contact\" (id,account_id,phone,source,updated_at) VALUES ('synthetic-racer-contact','synthetic-legacy','202-555-0199','call',now());" refuse 'Number history references (1) differ from the reviewed count (0)'
+run_case history-reference "$git_template" "INSERT INTO \"Contact\" (id,account_id,phone,source,updated_at) VALUES ('synthetic-racer-contact','synthetic-legacy','202-555-0199','call',now());" refuse 'Number has 1 history references; reconcile them first'
 sql -c "DELETE FROM \"Contact\" WHERE id='synthetic-racer-contact';"
 
 # Defect reproduction: the 6a355c6 template fixed its SERIALIZABLE snapshot before waiting
