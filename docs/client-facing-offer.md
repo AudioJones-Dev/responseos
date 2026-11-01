@@ -70,7 +70,7 @@ The assessment delivers a Readiness Score, Revenue Leak Estimate, AI Fit / No-Fi
 | Recovery Pro | $5,000–$8,500 | $1,500–$2,500 | Usage pass-through or blended |
 | Recovery Performance | $8,500–$15,000+ | $2,500–$5,000+ | Per booked job, per qualified lead, or revenue-share kicker |
 
-**Founding Client Pilot (optional, 90 days):** $1,000 assessment + $3,500 implementation + $1,250/month, with an optional $50 per qualified booked appointment after the first 10 per month.
+**Founding Client Pilot (optional, 90 days):** $1,500 assessment + $3,500 implementation + $1,250/month, with an optional $50 per qualified booked appointment after the first 10 per month.
 
 **Outcome fee structure:**
 - **Fixed platform fee** covers setup, maintenance, monitoring, optimization.

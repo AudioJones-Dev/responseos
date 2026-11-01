@@ -117,13 +117,13 @@ Pick **one** of the following structures per engagement, layered on top of setup
 
 ## Founding Client Pilot
 
-> **Owner decision pending (2026-10-31):** ADR-0083 sets the standalone assessment at $1,500. Whether this optional pilot package keeps its $1,000 assessment is not decided; it is not public copy.
+> **Owner decision (2026-10-31):** the pilot uses the same $1,500 assessment as ADR-0083.
 
 An optional early-client package designed for the first cohort of pilots. Use it to lock in case studies and reference accounts.
 
 | Item | Amount |
 |---|---|
-| Assessment | $1,000 |
+| Assessment | $1,500 |
 | Implementation | $3,500 |
 | Monthly | $1,250 / month |
 | Pilot length | 90 days |

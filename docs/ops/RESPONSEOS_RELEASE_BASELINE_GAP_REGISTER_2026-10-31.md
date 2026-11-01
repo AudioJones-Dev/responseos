@@ -21,7 +21,7 @@ Status: `DOCUMENTED_ONLY`. This is a current-state register for the first client
 | Git-triggered deployments | Blocked by repository `vercel.json` `git.deploymentEnabled: false` (#100, 2026-07-27). Every open PR branch carries it. | Vercel project API; `git cat-file` per open branch |
 | Deploy hooks | None on the three projects | Vercel project API |
 | Deployment protection | Vercel authentication on all deployments except custom domains, on all three projects (verified 2026-10-31) | Vercel project API `ssoProtection` |
-| Diagnostic readout | One authorized `200` at **2026-10-29 02:43:09 UTC** on `responseos.pro`, `dpl_12D5…`. Removal deadline **2026-11-05 02:43 UTC (2026-11-04 22:43 EDT)**. | Vercel request logs, `requestPath:*database-target*` |
+| Diagnostic readout | One authorized `200` at **2026-10-29 02:43:09 UTC** on `responseos.pro`, `dpl_12D5…`. Removal deadline was **2026-11-05 02:43 UTC (2026-11-04 21:43 EST)**; the route was removed in #233 (`6f579cc`) before then. | Vercel request logs, `requestPath:*database-target*` |
 | Assessment price | **$1,500 flat**, ADR-0083 (accepted 2026-10-26). Public pages and `tests/unit/assessment-price.test.ts` agree. Six planning docs were stale. | `git grep` |
 
 ## Gap register
@@ -44,8 +44,8 @@ Status values follow doctrine §2. "Owner" is who acts. Audio approves anything 
 | ID | Gap | Status | Evidence | Closes it | Owner |
 |---|---|---|---|---|---|
 | B2-01 | PRD and five other docs said $1,000 with a $750–$1,500 range | Fixed in this change | ADR-0083; `PRD.md`, `product-spec.md`, `pricing-and-onboarding.md`, `client-facing-offer.md`, `brand/RESPONSEOS_WEBSITE_COPY_SPEC.md` | Merge this change | — |
-| B2-02 | Founding Client Pilot still bundles a $1,000 assessment | OWNER_DECISION | `pricing-and-onboarding.md` (flagged), `client-facing-offer.md:74`, `brand/RESPONSEOS_WEBSITE_COPY_SPEC.md:105` | Audio sets the pilot bundle | Audio |
-| B2-03 | Recovery Core/Pro/Performance tier tables persist in planning docs; `/pricing` shows one scoped engagement (#230); ADR-0028 leaves price points open; no setup or retainer number is ratified | OWNER_DECISION | `pricing-and-onboarding.md:90-107`, `client-facing-offer.md:70-74`, ADR-0028 | Audio ratifies implementation scope, setup, retainer and usage limits; one agreement template follows | Audio |
+| B2-02 | Founding Client Pilot assessment price | **Decided 2026-10-31: $1,500, same as standalone.** Pilot bundle docs updated | `pricing-and-onboarding.md`, `client-facing-offer.md`, `brand/RESPONSEOS_WEBSITE_COPY_SPEC.md` | — | — |
+| B2-03 | Setup and retainer terms | **Decided 2026-10-31 (ADR-0087): default $5,000 setup and $1,500 per month,** adjustable by signed agreement; internal, not public copy. Tier names stay retired from public copy. | ADR-0087, ADR-0028 | Reflect in the first agreement template | Codex |
 | B2-04 | Canon reconciliation says public pricing is unpublished; ADR-0083 published $1,500 | Open | `RESPONSEOS_CANON_RECONCILIATION.md:45`; readiness standard `:16` | Update both after B2-02/B2-03 | Codex |
 
 ### Step 3 — Gate A (secure staging)
@@ -53,7 +53,7 @@ Status values follow doctrine §2. "Owner" is who acts. Audio approves anything 
 | ID | Gate | Status | Closes it | Owner |
 |---|---|---|---|---|
 | A1–A8 | Authorization, dedicated target, environment policy, auth flags, credential absence, Neon attestation, migrate deploy, exact SHA | Implemented with recorded hosted runs | Re-run on the release candidate SHA | Codex; Audio approves run |
-| A9 | Public `/demo` reachable, protected routes deny anonymous users | `UNVERIFIED_HOSTED` (demo passed; auth pending re-certification) | Authorized read-only `verify-staging-hosted.yml` run passing both 307 probes | Audio + Codex |
+| A9 | Public `/demo` reachable, protected routes deny anonymous users | `VERIFIED_HOSTED` on 2026-11-01. Deploy Staging run 41331205646 deployed `6f579cc` with no pending migrations. Read-only `verify-staging-hosted.yml` run 41331443713 then checked that deployment: `/admin` and `/client/dashboard` both returned 307 to the staging Clerk handshake | Done; re-run on the release candidate SHA | Audio + Codex |
 | A10 | Invalid Clerk signature mutates nothing | `UNVERIFIED_HOSTED` (unit tests exist) | Staging delivery evidence | Codex |
 | A11 | Tenant user sees only the mapped staging account | `UNVERIFIED_HOSTED` (17-case integration matrix) | Authenticated staging smoke | Audio + Codex |
 | A12 | Rollback exercised | `MISSING` | Written staging rollback procedure plus a recorded drill | Codex; Audio approves |
@@ -93,32 +93,35 @@ Status values follow doctrine §2. "Owner" is who acts. Audio approves anything 
 
 ## Time-boxed items
 
-| Deadline | Item | Prepared | Needs |
-|---|---|---|---|
-| **2026-11-05 02:43 UTC** | Remove the database-target diagnostic (ADR-0085) | Local branch `chore/remove-database-target-diagnostic` at `8b1ccef` | Review and merge; manual production deployment; confirm the digest variable is absent from production; contain route-carrying deployments and rollback candidates. Each is an Audio approval. |
+| Deadline | Item | Status |
+|---|---|---|
+| 2026-11-05 02:43 UTC | Remove the database-target diagnostic (ADR-0085) | **Done 2026-10-31.** #233 merged as `6f579cc`; the digest variable was deleted from production; production deployment `dpl_2xrGmpJedsLZGrS7xPwTK8dKoZKQ` at `6f579cc` serves every alias and `/api/health` reports that SHA; the only route-carrying deployment was deleted after its provenance was saved locally. Rollback candidates carry no route. |
 
 ## Open PR dispositions (Audio decides)
 
 | PR | State | Suggested category | Why |
 |---|---|---|---|
-| #231 | draft | Supersede with local `work/frl-inactive-successor-20261031` after review | Successor fixes locking, number matching and evidence binding |
+| #231 | draft | Close after Codex reviews #236 (owner decision 2026-10-31) | Successor fixes locking, number matching and evidence binding |
 | #228 | draft | Review and merge or close | Cutover evidence record |
 | #224 | ready | Merge after dashboard conflict check | Automation sync |
 | #222, #221 | draft (stacked) | Decide with B1-04 | Carries migrations `0014`–`0028` |
 | #217 | ready | Review | Neon/Doppler authority reconciliation |
 | #210, #209, #195, #194, #193 | draft | Decide with B1-04 and ADR-0086 | FRL ledger, routing and follow-up preparation |
 | #197 | draft | Review for Gate A | Packaging and remediation gates |
-| #184 | ready | Reconcile with ADR-0083, then merge or close | Pricing canon predates ADR-0083 |
+| #184 | **Closed 2026-10-31** | Superseded | ADR-0083 and ADR-0087 |
 | #181, #180 | ready | Review | Qualification validation and scoring |
 | #177 | ready | Decide with ADR-0086 | Supervised review and follow-up |
 | #172 | draft | Review | Review and merge policy |
-| #146 | ready | Merge or close | Housekeeping |
-| #132, #123, #119, #118, #115, #107 | draft or ready, Aug–Sep | Close candidates unless the first signed scope needs them | Out of first-launch scope per the plan |
+| #146 | **Closed 2026-10-31** | Out of scope | Housekeeping |
+| #132, #123, #119, #118, #115, #107 | **Closed 2026-10-31** | Out of first-launch scope | Branches kept; reopen for a signed scope |
 
-## Local branches prepared on 2026-10-31 (none pushed)
+## Branches prepared on 2026-10-31
 
-| Branch | Head | Content | Validation |
+The original local branches were never merged. Redacted, squashed `-r2` successors were published as these PRs:
+
+| PR | Branch | Content | State |
 |---|---|---|---|
-| `chore/remove-database-target-diagnostic` | `8b1ccef` | Route removal, retirement record, CHANGELOG, dashboard | Exact-SHA isolated run |
-| `docs/release-baseline-20261031` | this change | This register, ADR-0086 proposal, ADR-0083 doc alignment, stale-state notes, characterization test | Exact-SHA isolated run |
-| `work/frl-inactive-successor-20261031` | `b0f0c2c` (tested `292a5fe`) | Inactive FRL account preparation successor | Recorded in its own readout |
+| #233 | `chore/remove-database-target-diagnostic` | Route removal, retirement record, CHANGELOG, dashboard | Merged as `6f579cc` |
+| #234 | `docs/release-baseline-r2` | This register, ADR-0086 and ADR-0087, pricing doc alignment, stale-state notes, characterization test | Draft, in review |
+| #235 | `feat/human-follow-up-queue-r2` | ADR-0086 follow-up queue; stacked on #234 | Draft, in review |
+| #236 | `work/frl-inactive-successor-r2` | Inactive FRL account preparation successor | Draft, in review |

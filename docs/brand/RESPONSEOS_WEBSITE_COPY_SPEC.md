@@ -102,7 +102,7 @@ This is the copy spec for every public marketing page. It defines goal, audience
    | Recovery Performance | $8,500–$15,000+ | $2,500–$5,000+ | Higher-volume, obvious ROI |
 
 3. **Outcome fees** — explain plainly: optional, pick one structure, applies only to verified results above a baseline, layered on top of a base fee. State the hard rule: no performance-only pricing.
-4. **Founding Client Pilot** — 90 days: $1,000 assessment + $3,500 implementation + $1,250/mo (optional $50 per qualified booked appointment after the first 10/month).
+4. **Founding Client Pilot** — 90 days: $1,500 assessment + $3,500 implementation + $1,250/mo (optional $50 per qualified booked appointment after the first 10/month).
 5. **What's included by tier** — reuse the feature matrix from [`../client-facing-offer.md`](../client-facing-offer.md).
 6. **FAQ** — sourced from the objection table in [`./RESPONSEOS_SALES_NARRATIVE.md`](./RESPONSEOS_SALES_NARRATIVE.md) (CRM, "we don't miss that many," outcome fees, compliance).
 7. **CTA banner** — "Not sure it's worth it? That's what the assessment is for."
