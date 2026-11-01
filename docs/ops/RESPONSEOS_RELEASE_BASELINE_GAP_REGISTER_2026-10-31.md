@@ -21,7 +21,7 @@ Status: `DOCUMENTED_ONLY`. This is a current-state register for the first client
 | Git-triggered deployments | Blocked by repository `vercel.json` `git.deploymentEnabled: false` (#100, 2026-07-27). Every open PR branch carries it. | Vercel project API; `git cat-file` per open branch |
 | Deploy hooks | None on the three projects | Vercel project API |
 | Deployment protection | Vercel authentication on all deployments except custom domains, on all three projects (verified 2026-10-31) | Vercel project API `ssoProtection` |
-| Diagnostic readout | One authorized `200` at **2026-10-29 02:43:09 UTC** on `responseos.pro`, `dpl_12D5…`. Removal deadline **2026-11-05 02:43 UTC (2026-11-04 22:43 EDT)**. | Vercel request logs, `requestPath:*database-target*` |
+| Diagnostic readout | One authorized `200` at **2026-10-29 02:43:09 UTC** on `responseos.pro`, `dpl_12D5…`. Removal deadline was **2026-11-05 02:43 UTC (2026-11-04 21:43 EST)**; the route was removed in #233 (`6f579cc`) before then. | Vercel request logs, `requestPath:*database-target*` |
 | Assessment price | **$1,500 flat**, ADR-0083 (accepted 2026-10-26). Public pages and `tests/unit/assessment-price.test.ts` agree. Six planning docs were stale. | `git grep` |
 
 ## Gap register
@@ -115,10 +115,13 @@ Status values follow doctrine §2. "Owner" is who acts. Audio approves anything 
 | #146 | **Closed 2026-10-31** | Out of scope | Housekeeping |
 | #132, #123, #119, #118, #115, #107 | **Closed 2026-10-31** | Out of first-launch scope | Branches kept; reopen for a signed scope |
 
-## Local branches prepared on 2026-10-31 (none pushed)
+## Branches prepared on 2026-10-31
 
-| Branch | Head | Content | Validation |
+The original local branches were never merged. Redacted, squashed `-r2` successors were published as these PRs:
+
+| PR | Branch | Content | State |
 |---|---|---|---|
-| `chore/remove-database-target-diagnostic` | `8b1ccef` | Route removal, retirement record, CHANGELOG, dashboard | Exact-SHA isolated run |
-| `docs/release-baseline-20261031` | this change | This register, ADR-0086 proposal, ADR-0083 doc alignment, stale-state notes, characterization test | Exact-SHA isolated run |
-| `work/frl-inactive-successor-20261031` | `b0f0c2c` (tested `292a5fe`) | Inactive FRL account preparation successor | Recorded in its own readout |
+| #233 | `chore/remove-database-target-diagnostic` | Route removal, retirement record, CHANGELOG, dashboard | Merged as `6f579cc` |
+| #234 | `docs/release-baseline-r2` | This register, ADR-0086 and ADR-0087, pricing doc alignment, stale-state notes, characterization test | Draft, in review |
+| #235 | `feat/human-follow-up-queue-r2` | ADR-0086 follow-up queue; stacked on #234 | Draft, in review |
+| #236 | `work/frl-inactive-successor-r2` | Inactive FRL account preparation successor | Draft, in review |
