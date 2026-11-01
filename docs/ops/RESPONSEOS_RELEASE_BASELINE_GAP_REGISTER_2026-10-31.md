@@ -53,7 +53,7 @@ Status values follow doctrine §2. "Owner" is who acts. Audio approves anything 
 | ID | Gate | Status | Closes it | Owner |
 |---|---|---|---|---|
 | A1–A8 | Authorization, dedicated target, environment policy, auth flags, credential absence, Neon attestation, migrate deploy, exact SHA | Implemented with recorded hosted runs | Re-run on the release candidate SHA | Codex; Audio approves run |
-| A9 | Public `/demo` reachable, protected routes deny anonymous users | `UNVERIFIED_HOSTED` (demo passed; auth pending re-certification) | Authorized read-only `verify-staging-hosted.yml` run passing both 307 probes | Audio + Codex |
+| A9 | Public `/demo` reachable, protected routes deny anonymous users | `VERIFIED_HOSTED` on 2026-11-01. Deploy Staging run 41331205646 deployed `6f579cc` with no pending migrations. Read-only `verify-staging-hosted.yml` run 41331443713 then checked that deployment: `/admin` and `/client/dashboard` both returned 307 to the staging Clerk handshake | Done; re-run on the release candidate SHA | Audio + Codex |
 | A10 | Invalid Clerk signature mutates nothing | `UNVERIFIED_HOSTED` (unit tests exist) | Staging delivery evidence | Codex |
 | A11 | Tenant user sees only the mapped staging account | `UNVERIFIED_HOSTED` (17-case integration matrix) | Authenticated staging smoke | Audio + Codex |
 | A12 | Rollback exercised | `MISSING` | Written staging rollback procedure plus a recorded drill | Codex; Audio approves |
