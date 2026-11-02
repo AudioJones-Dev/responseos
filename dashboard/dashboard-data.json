@@ -1696,6 +1696,17 @@
       "due": "2026-10-13",
       "ref": 216,
       "refType": "pull"
+    },
+    {
+      "id": "GTM-DEMO-01",
+      "phase": "Launch / Demo Deploy",
+      "title": "Bring production database to 0013 and restore the /demo/receptionist answer path",
+      "owner": "Claude Code",
+      "status": "Done",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-11-02",
+      "due": "2026-11-02"
     }
   ],
   "liveIssues": [

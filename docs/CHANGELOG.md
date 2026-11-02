@@ -8,6 +8,24 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — ops: bring production's database to 0013 and restore the demo receptionist
+
+- **Problem:** `/demo/receptionist` on responseos.pro had logged `P2021` (table missing) since at least 2026-10-26. Production's database stopped at migration `0008`, so `AgentProfile` (`0009`) and `ProspectIntake` (`0011`) did not exist.
+- **Done (2026-11-02, operator-approved):**
+  - Rehearsed on a copy of production first.
+  - Applied `0009`–`0013` with `prisma migrate deploy`.
+  - Inserted only the internal-demo account and its four agent profiles from `prisma/seed.ts`, not the full seed.
+- **Verified:**
+  - The page answers again.
+  - Policy escalation works.
+  - No runtime errors after the change.
+  - History check `ok`, with no deployment involved.
+- **Docs:** [`database/production-migration-0009-0013.md`](./database/production-migration-0009-0013.md) is the record, and [`database/production-migration-status-check.md`](./database/production-migration-status-check.md) is the reusable read-only check.
+- **Not done here:**
+  - `/audit` intake stays off, still gated on J-05.
+  - The runtime role review (A-DB) is open.
+  - The pre-change snapshot cleanup needs separate approval.
+
 ## Unreleased — chore: remove the database-target diagnostic (ADR-0085)
 
 - **Why:** ADR-0085 requires removal within 7 days of the readout. The authorized readout was at 2026-10-29 02:43:09 UTC, so the deadline is 2026-11-05 02:43 UTC.
