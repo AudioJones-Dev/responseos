@@ -12,7 +12,8 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 - **Bug:** with `RESPONSEOS_PUBLIC_AUDIT_INTAKE_ENABLED` unset (ADR-0047 §6 keeps it off until the WAF gate is proven), `/api/audit-requests` is not a public path, so the proxy redirects a submission to sign-in. The form could not read that response and showed "Network error. Try again." Nothing was stored, and the prospect was not told where else to go.
 - **Change:** `isPublicAuditIntakeEnabled()` in `lib/auth/route-protection.ts` is now the one check, used by the route guard, the API and the page. `/audit` renders the form only when intake is on; otherwise it shows a `mailto:hello@responseos.pro` request path. `tests/unit/audit-intake-gate.test.ts` covers both states and fails against the previous page.
-- **Not done here:** deploying (an operator-approved ADR-0053 deploy), confirming that `hello@responseos.pro` receives mail, and closing the WAF gate (J-05) that would turn intake on.
+- **Mail:** `hello@responseos.pro` was confirmed receiving mail on 2026-11-02.
+- **Not done here:** deploying (an operator-approved ADR-0053 deploy) and closing the WAF gate (J-05) that would turn intake on.
 
 ## Unreleased — chore: remove the database-target diagnostic (ADR-0085)
 
