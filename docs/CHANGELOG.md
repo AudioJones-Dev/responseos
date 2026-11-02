@@ -8,6 +8,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — fix: stop the /audit form from losing leads while public intake is off
+
+- **Bug:** with `RESPONSEOS_PUBLIC_AUDIT_INTAKE_ENABLED` unset (ADR-0047 §6 keeps it off until the WAF gate is proven), `/api/audit-requests` is not a public path, so the proxy redirects a submission to sign-in. The form could not read that response and showed "Network error. Try again." Nothing was stored, and the prospect was not told where else to go.
+- **Change:** `isPublicAuditIntakeEnabled()` in `lib/auth/route-protection.ts` is now the one check, used by the route guard, the API and the page. `/audit` renders the form only when intake is on; otherwise it shows a `mailto:hello@responseos.pro` request path. `tests/unit/audit-intake-gate.test.ts` covers both states and fails against the previous page.
+- **Not done here:** deploying (an operator-approved ADR-0053 deploy), confirming that `hello@responseos.pro` receives mail, and closing the WAF gate (J-05) that would turn intake on.
+
 ## Unreleased — chore: remove the database-target diagnostic (ADR-0085)
 
 - **Why:** ADR-0085 requires removal within 7 days of the readout. The authorized readout was at 2026-10-29 02:43:09 UTC, so the deadline is 2026-11-05 02:43 UTC.
