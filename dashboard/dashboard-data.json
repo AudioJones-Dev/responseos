@@ -42,7 +42,10 @@
       "start": "2026-11-05",
       "due": "2026-11-05",
       "blocked": true,
-      "blockedReason": "Proposal only; legal, mobile routing, v0.3 and v0.4+ operator approval required before runtime development"
+      "blockedReason": "Proposal only; legal, mobile routing, v0.3 and v0.4+ operator approval required before runtime development",
+      "ref": 240,
+      "refType": "pull",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/240"
     },
     {
       "id": "G-14",
