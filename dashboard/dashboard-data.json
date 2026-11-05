@@ -32,6 +32,19 @@
   ],
   "tasks": [
     {
+      "id": "FRL-COMMS-PLAN-20261105",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Review FRL consent-gated mobile telephony and business-memory implementation plan",
+      "owner": "Audio",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-11-05",
+      "due": "2026-11-05",
+      "blocked": true,
+      "blockedReason": "Proposal only; legal, mobile routing, v0.3 and v0.4+ operator approval required before runtime development"
+    },
+    {
       "id": "G-14",
       "phase": "Tech Debt & Hardening",
       "title": "Apply owner-approved copy redlines (claims, naming, CTA)",
