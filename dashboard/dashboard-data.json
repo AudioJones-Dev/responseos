@@ -32,6 +32,17 @@
   ],
   "tasks": [
     {
+      "id": "FRL-CONSOLE-FEEDBACK-20261106",
+      "phase": "Testing & QA",
+      "title": "Preserve pilot approval results across status refreshes",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-11-06",
+      "blocked": false
+    },
+    {
       "id": "FRL-CAPTURE-OFF-CONFIG-20261106",
       "phase": "v0.3 · Demo Scope",
       "title": "Qualify capture-off admission: session refresh and nullable initial Telnyx state",

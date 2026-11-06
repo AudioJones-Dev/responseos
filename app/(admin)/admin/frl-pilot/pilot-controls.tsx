@@ -7,6 +7,8 @@ type Status = { exercise: string; deletionPending: number; runs: Run[] };
 export default function PilotControls() {
   const [status, setStatus] = useState<Status | null>(null);
   const [error, setError] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [actionResult, setActionResult] = useState("");
   const [busy, setBusy] = useState(false);
   const [now, setNow] = useState(0);
   useEffect(() => {
@@ -24,16 +26,22 @@ export default function PilotControls() {
   }, []);
   async function act(action?: "approve" | "reject", runId?: string) {
     setBusy(true);
+    setActionError("");
+    setActionResult("");
     try {
       const response = await fetch("/api/admin/frl-pilot", { method: "POST", headers: { "Content-Type": "application/json" }, body: action ? JSON.stringify({ action, runId }) : undefined });
       if (!response.ok) throw new Error();
-      setError("");
-    } catch { setError("Action was not confirmed. Refresh status before trying another call."); }
+      setActionResult(action === "approve"
+        ? "Approval accepted. Watch the call status for the answer and keypad events."
+        : action === "reject" ? "Rejection accepted. Watch for the call to end." : "Stop accepted. Watch for all calls to end.");
+    } catch { setActionError("Action was not confirmed. Check the call status before trying another call."); }
     finally { setBusy(false); }
   }
   return <section className="space-y-4">
     <button className="rounded bg-red-700 px-4 py-2 text-white" disabled={busy} onClick={() => void act()}>Stop window and end calls</button>
     <p role="alert">{error}</p>
+    <p role="alert">{actionError}</p>
+    <p role="status">{actionResult}</p>
     {status && <><p>Exercise: {status.exercise}. Overdue cleanup tasks: {status.deletionPending}.</p>
       {status.runs.map(run => <article className="space-y-2 rounded border p-4" key={run.id}>
         <p>{run.stage}{run.incident ? ` — ${run.incident}` : ""}</p>

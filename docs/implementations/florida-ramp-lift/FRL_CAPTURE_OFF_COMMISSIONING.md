@@ -26,6 +26,8 @@ Switching exercise alone produces an invalid config. Each mode must validate its
 
 ## First capture-off window
 
+Console action feedback is independent of status polling. An accepted approval confirms the server accepted that decision, not that the provider answered. Watch the run status and verified keypad events. A failed action remains visible across successful refreshes; a later action replaces the prior feedback. Polling failures are displayed separately and hide stale call controls. Synthetic component tests cover this feedback, expiry and ended-call behavior; they do not establish hosted browser visibility or live keypad qualification.
+
 1. Verify one tested commit across web, primary worker and watchdog; preserve authentication and signed/fresh callback enforcement.
 2. Agree on exact Eastern start/end and call budget. Plan exact-call approval, genuine 1/2/star evidence and terminal inbound evidence. Rejection/expiry and worker-failure cases have their own call budget; retries count.
 3. Owner is present with Telnyx manual stop controls. No operator dialing occurs. Keep recording defaults off and the dedicated outbound profile disabled; verify the inbound binding and first-command timeout before admission.
