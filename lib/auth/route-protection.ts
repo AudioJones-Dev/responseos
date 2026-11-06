@@ -33,14 +33,20 @@ const PUBLIC_PREFIXES: readonly string[] = [
   "/api/webhooks",
 ];
 
+// ADR-0047 §6 keeps public intake off until the WAF gate is proven. The API,
+// this route guard and the `/audit` page must agree, or the page offers a form
+// whose submissions are redirected to sign-in and lost.
+export function isPublicAuditIntakeEnabled(
+  env: Readonly<Record<string, string | undefined>> = process.env,
+): boolean {
+  return env.RESPONSEOS_PUBLIC_AUDIT_INTAKE_ENABLED === "true";
+}
+
 export function isPublicPath(
   pathname: string,
   env: Readonly<Record<string, string | undefined>> = process.env,
 ): boolean {
-  if (
-    pathname === "/api/audit-requests" &&
-    env.RESPONSEOS_PUBLIC_AUDIT_INTAKE_ENABLED === "true"
-  ) {
+  if (pathname === "/api/audit-requests" && isPublicAuditIntakeEnabled(env)) {
     return true;
   }
   if (PUBLIC_EXACT.has(pathname)) {
