@@ -8,6 +8,7 @@ import { testPilotConfig, testKeypadConfig, testAutomaticConfig, callerLeg, oper
 import { makeAccount } from "../factories";
 import { prisma, resetTestDb, disconnectTestDb } from "./setup";
 import { deletePilotArtifacts } from "@/lib/communications/pilot/deletion";
+import { claimTestCaller, testCaller } from "@/lib/communications/pilot/test-caller";
 
 let now: number, c: ReturnType<typeof testPilotConfig>;
 const enabled = { RESPONSEOS_FRL_PILOT_ENABLED: "true", RESPONSEOS_REQUIRE_AUTH: "true", RESPONSEOS_FRL_PILOT_DEPLOYMENT_ID: "synthetic-pilot", DATABASE_URL: process.env.DATABASE_URL };
@@ -51,6 +52,18 @@ describe("durable recorded pilot", () => {
     await prisma.account.create({ data: makeAccount({ id: c.accountId }) });
   });
   afterAll(disconnectTestDb);
+  test("scripted caller claim is single-use across concurrent attempts and rejects a killed window", async () => {
+    c = { ...testAutomaticConfig(now), number: testCaller.to };
+    const env = { ...enabled, RESPONSEOS_FRL_PILOT_WORKER_ENABLED: "true", RESPONSEOS_FRL_TEST_CALLER_WINDOW_ID: c.windowId };
+    await prisma.auditLog.create({ data: { account_id: c.accountId, actor_type: "system", action: "frl_pilot.arm", target_id: c.windowId } });
+    const claims = await Promise.allSettled([claimTestCaller(prisma, c, env), claimTestCaller(prisma, c, env)]);
+    expect(claims.filter(r => r.status === "fulfilled")).toHaveLength(1);
+    await expect(claimTestCaller(prisma, c, env)).rejects.toThrow();
+    c = { ...c, windowId: randomUUID() }; env.RESPONSEOS_FRL_TEST_CALLER_WINDOW_ID = c.windowId;
+    await prisma.auditLog.create({ data: { account_id: c.accountId, actor_type: "system", action: "frl_pilot.arm", target_id: c.windowId } });
+    await prisma.auditLog.create({ data: { account_id: c.accountId, actor_type: "system", action: "frl_pilot.kill", target_id: c.windowId } });
+    await expect(claimTestCaller(prisma, c, env)).rejects.toThrow("test_caller_state_denied");
+  });
   test("automatic admission consumes one slot atomically, survives replay, and never claims human approval", async () => {
     c = testAutomaticConfig(now);
     const first = event("call.initiated", { from: "+13055550999", to: c.number, direction: "incoming", client_state: null });

@@ -2,6 +2,10 @@
 
 This file records the load-bearing decisions that constrain how ResponseOS is built. Each ADR is short by design: context, decision, consequences. If a decision is reversed, mark the entry **Superseded by ADR-XXX** rather than deleting it.
 
+## FRL-PILOT-006 — Dedicated scripted commissioning caller
+
+Owner requested a Telnyx test bot, approved its dedicated number purchase, and authorized setup on 2026-11-06. EXPERIMENTAL. This scopes the earlier Grok-only prerequisite to allow a deterministic Telnyx caller for system commissioning. It cannot establish Grok keypad capability. [Test caller contract](implementations/florida-ramp-lift/FRL_SCRIPTED_TEST_CALLER.md). Calls remain subject to a fresh supervised window; recorded qualification gates are unchanged.
+
 ## FRL-PILOT-005 — One-call automatic capture-off commissioning
 
 **Status: Owner accepted 2026-11-06; EXPERIMENTAL implementation, live qualification pending.** The owner approved removing the ringing-time approval click for one supervised keypad call. `admission: automatic_once` requires `exercise: keypad`, `maxCalls: 1`, and a window of at most five minutes. Recorded mode retains manual exact-call approval. Agree a fresh exact window after disabled deployment verification; prior stopped windows never reopen.

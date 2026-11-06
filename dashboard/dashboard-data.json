@@ -32,6 +32,17 @@
   ],
   "tasks": [
     {
+      "id": "FRL-TEST-CALLER-20261106",
+      "phase": "Testing & QA",
+      "title": "Prepare dedicated one-shot Telnyx keypad test caller",
+      "owner": "Codex",
+      "status": "In Progress",
+      "progress": 60,
+      "priority": "High",
+      "ref": 246,
+      "refType": "pull"
+    },
+    {
       "id": "FRL-AUTO-ONCE-20261106",
       "phase": "Testing & QA",
       "title": "One-call capture-off automatic admission and safe watchdog diagnostics",

@@ -6,6 +6,8 @@
 
 FRL one-call commissioning: FRL-PILOT-005 adds owner-approved automatic admission for one capture-off keypad call within five minutes and bounded watchdog diagnostics. EXPERIMENTAL; live answer/DTMF and watchdog failure cause remain unverified. No production or recorded activation.
 
+FRL scripted caller: FRL-PILOT-006 prepares a separate Telnyx application and fixed-destination one-shot script for capture-off commissioning. No new worker, model, migration, production release or live qualification is implied.
+
 ## Version table
 
 FRL commissioning preparation: [operator pack](implementations/florida-ramp-lift/FRL_COMMISSIONING_PACK.md) records the owner-approved exact disclosures, configuration worksheet, stop procedure and separate-window test budget. Engineering response received; authenticated hosted operator access verified with admission disabled. Legal evidence for recording and live qualification remain pending.

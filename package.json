@@ -8,6 +8,7 @@
     "npm": "11.16.0"
   },
   "scripts": {
+    "pilot:test-caller": "tsx scripts/frl-pilot-test-caller.ts",
     "pilot:preflight": "tsx scripts/frl-pilot-preflight.ts",
     "pilot:worker": "tsx scripts/frl-pilot-worker.ts",
     "pilot:watchdog": "tsx scripts/frl-pilot-watchdog.ts",
