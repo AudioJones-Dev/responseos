@@ -32,6 +32,18 @@
   ],
   "tasks": [
     {
+      "id": "FRL-CONSENT-MOCK-20261105",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Review FRL founder/caller consent-state mock contracts and tests",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-11-05",
+      "blocked": true,
+      "blockedReason": "Mock code not integrated with existing Telnyx ingestion path; review and CI required before any live use"
+    },
+    {
       "id": "G-14",
       "phase": "Tech Debt & Hardening",
       "title": "Apply owner-approved copy redlines (claims, naming, CTA)",
