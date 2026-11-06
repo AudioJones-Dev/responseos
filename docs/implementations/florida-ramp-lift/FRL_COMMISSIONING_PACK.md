@@ -49,6 +49,8 @@ The worksheet above describes recorded-mode qualification. [FRL-PILOT-004](FRL_C
 
 ## Operator check and stop procedure
 
+The first capture-off window on 2026-11-06 was closed before any call was admitted: operator polling initially succeeded, then returned authentication 404s. The pilot page lacked Clerk's browser provider, so no frontend session refresh ran. The page-scoped ClerkProvider fix retains server role checks and the no-credential mock path. Before another window, observe protected polling across at least two session-token refresh periods without reloading; a successful initial page load is insufficient. No keypad or live-hangup qualification was obtained from the aborted window.
+
 1. Sign in at `/admin/frl-pilot`. Verify intended operator identity, not merely a successful public health check. With no valid config, unavailable status is expected; never seed synthetic pending calls into the hosted DB to imitate readiness.
 2. Before a future window: verify exact deployment/DB bindings, signed ingest, worker and cleanup health; no unresolved runs or deletion incidents; receiving mobile available; recording defaults off; US-only destinations, concurrency and spend controls unchanged.
 3. Approve only the exact pending call corresponding to the Grok attempt you initiated. Refuse other candidates. No operator destination or provider control token should appear in browser responses.

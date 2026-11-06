@@ -34,10 +34,10 @@
     {
       "id": "FRL-CAPTURE-OFF-CONFIG-20261106",
       "phase": "v0.3 · Demo Scope",
-      "title": "Separate capture-off commissioning prerequisites from recorded qualification",
+      "title": "Separate capture-off commissioning prerequisites and stabilize operator session refresh",
       "owner": "Codex",
-      "status": "Review",
-      "progress": 100,
+      "status": "In Progress",
+      "progress": 90,
       "priority": "High",
       "start": "2026-11-06",
       "ref": 246,
