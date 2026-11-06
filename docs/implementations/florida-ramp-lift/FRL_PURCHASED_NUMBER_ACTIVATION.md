@@ -1,6 +1,6 @@
 # FRL purchased-number pilot — implementation and activation contract
 
-Status: DOCUMENTED_ONLY / proposed, 2026-11-06. No runtime, deployment, migration, provider configuration or live capture is authorized by this document. The operator purchased one new local Telnyx number in the current chat; purchase does not open the live-provider gates. Exact number/resource identities belong in the protected operator setup record, not in runtime source.
+Status: policy amendment ACCEPTED by the operator on 2026-11-06; implementation DOCUMENTED_ONLY. No runtime, deployment, migration, provider configuration or live capture is authorized by this document. The operator purchased one new local Telnyx number in the current chat; purchase does not open the live-provider gates. Exact number/resource identities belong in the protected operator setup record, not in runtime source.
 
 ## Verified starting point
 
@@ -14,9 +14,9 @@ Status: DOCUMENTED_ONLY / proposed, 2026-11-06. No runtime, deployment, migratio
 - #243 plans commands only. Its simulator uses transfer, not independently originated operator dialing followed by explicit bridging. Native callback mapping is not mounted. Capture confirmation returns unknown. Durable command execution is absent.
 - #242 stores content-free Telnyx receipts and blocks Telnyx CRM exports. Its capture contract is transcription-only; bridge/topology change closes authorization. The new pilot must preserve these protections until reviewed replacements exist.
 
-## Proposed decision FRL-PILOT-001 — not ratified
+## Decision FRL-PILOT-001 — operator approved, 2026-11-06
 
-Request a narrow amendment to ADR-0051 and FRL G-11: allow recording to be explicitly configured only for the separately authorized, operator-supervised FRL test-number pilot. Default remains false for every tenant and mode. Do not change the prospect-demo policy object or enable recording on existing demo numbers. Approval of this proposal would not itself approve legal wording, deploy a handler, enable provider flags, or authorize a test call.
+The operator approved this narrow amendment to ADR-0051 and FRL G-11: allow recording to be explicitly configured only for the separately authorized, operator-supervised FRL test-number pilot. Default remains false for every tenant and mode. Do not change the prospect-demo policy object or enable recording on existing demo numbers. This approval does not approve legal wording, deploy a handler, enable provider flags, or authorize a test call.
 
 Recording and transcript permissions remain independent per artifact, per call, with immutable grant/withdrawal events as required by ADR-0055. No general contact-level consent, prior-call consent, synthetic observation or API HTTP success can authorize capture. Both participants need evidence for the specific call and disclosure. The operator playing Mike is not automatically consenting merely by owning the account.
 
@@ -24,7 +24,7 @@ Use Telnyx-originated operator leg plus explicit bridge; no SIP REFER or uninstr
 
 ## First deliverable: the full recorded flow
 
-Operator selection, 2026-11-06: **Keep the full recorded flow first.** Do not substitute a no-capture bridge release or require a separate no-capture-first live rollout. Build the routing and capture work below as one gated pilot deliverable. Decline/no-response branches still require non-capturing routing, and tests must verify those branches. The selection establishes product scope; it does not attest legal approval, ratify the policy amendment or authorize live calls.
+Operator selection, 2026-11-06: **Keep the full recorded flow first.** Do not substitute a no-capture bridge release or require a separate no-capture-first live rollout. Build the routing and capture work below as one gated pilot deliverable. Decline/no-response branches still require non-capturing routing, and tests must verify those branches. The selection establishes product scope. The operator subsequently approved FRL-PILOT-001 on 2026-11-06; neither decision attests legal approval or authorizes live calls.
 
 ### A. Controlled two-leg routing and durable execution
 
@@ -39,7 +39,7 @@ Operator selection, 2026-11-06: **Keep the full recorded flow first.** Do not su
 
 ### B. Consent-gated name, recording and bridged transcription
 
-Blocked pending FRL-PILOT-001, approved wording/retention and a reviewed evidence design. Preserve the exact requested greeting/consent/name/transfer/decline prompts from #241 as provisional copy only.
+FRL-PILOT-001 is approved. Activation still requires approved wording/retention, implementation and a verified evidence design. Preserve the exact requested greeting/consent/name/transfer/decline prompts from #241 as provisional copy only.
 
 The requested sequence collects the name before dialing the operator, but the current capture schema requires both caller and founder legs. Do not invent a founder leg or pre-grant founder consent to satisfy that schema. Design a caller-only name interval with caller consent, then a distinct two-party conversation interval after operator consent and verified bridge. This needs a reviewed roster/window model and migration; it cannot be solved by changing one boolean.
 
@@ -49,17 +49,17 @@ Native transcript timestamps do not establish a capture interval or complete par
 
 Do not promise continuous recording through the bridge: the design deliberately separates authorization windows. Prove coverage of both conversation legs in supervised tests before claiming the intended result.
 
-## Exact policy amendment proposed for operator approval
+## Exact approved policy amendment
 
-If accepted, amend ADR-0051 and FRL G-11 only as follows:
+Accepted by the operator on 2026-11-06 in direct response to the FRL-PILOT-001 approval request. Amend ADR-0051 and FRL G-11 only as follows:
 
 > Recording remains disabled by default. A separately commissioned SUPERVISED_PILOT may enable conditional recording and transcription solely for the newly purchased FRL pilot number, controlled test callers and the operator's independently reachable endpoint. Each artifact requires immutable call-specific consent for every participant in its capture interval. A caller-only name interval precedes a separately authorized two-party bridged interval. Refusal, timeout, withdrawal, unknown topology or uncertain physical capture state cannot authorize continued capture. No automatic recording, other tenant/demo-number activation, public traffic, CRM writes, email, autonomous memory, published-number forwarding or production release is permitted by this exception.
 
-Accepting this text approves the policy direction for implementation; it does not certify legal sufficiency or deploy/activate the integration. Record acceptance explicitly before changing the accepted policy or its runtime enforcement. The execution gate must still bind an approved target and time-bounded test window.
+The approval establishes the policy direction for implementation; it does not certify legal sufficiency or deploy/activate the integration. This document records acceptance; runtime enforcement remains unimplemented. The execution gate must still bind an approved target and time-bounded test window.
 
 ## Protected configuration and deployment requirements
 
-The operator supplies the independently reachable mobile destination directly into an approved server-side secret store, not chat, source, `.env.example`, commits, telemetry or screenshots. Existing `TenantCallRoute.founderDestination` is a data contract, not an installed secret loader. Implement and verify the binding before claiming configuration complete.
+The operator supplied the pilot destination privately in this chat and confirmed it has no forwarding configured. Do not reproduce the value in source, `.env.example`, commits, telemetry or screenshots. It must still be installed through an approved server-side secret configuration method; operator confirmation is not a carrier-tested reachability guarantee. Existing `TenantCallRoute.founderDestination` is a data contract, not an installed secret loader. Implement and verify the binding before claiming configuration complete.
 
 Bind exact deployment, database/tenant, Telnyx account/application, purchased number, approved caller allowlist and destination. Validate loop avoidance, separate caller/operator endpoints and E.164 normalization. No hosted database is selected by this brief.
 
@@ -80,8 +80,8 @@ Verify Ed25519 raw-body signatures, freshness, event dedupe, body/log limits and
 | Hosted target | Verified deployment/tenant/DB, migration and rollback approval | Pending |
 | Callback | Signed delivery to exact route without interactive SSO, no raw-content logs | Pending |
 | Provider setup | Application/profile readback, capture off, allowlists and caps | Pending separate configuration approval |
-| Operator endpoint | Secure value installed, independent reachability and loop checks | Not supplied |
-| Capture policy | Ratified scoped amendment, approved disclosure and retention | Pending |
+| Operator endpoint | Secure value installed, independent reachability and loop checks | Supplied in chat; operator confirms no forwarding. Secure installation and carrier tests pending |
+| Capture policy | Ratified scoped amendment, approved disclosure and retention | Amendment approved 2026-11-06; disclosure, retention and enforcement validation pending |
 | Live evidence | Explicit window; refusal, timeout, duplicate events, busy, voicemail, either-party hangup, outage and stop-failure cases | No live tests authorized by this document |
 
 Complete A and B, including the policy/evidence design, before presenting the first recorded-flow deliverable. After exact-head synthetic validation, separately approved deployment/configuration and legal/retention approval, authorize a bounded supervised window covering the full accepted path and all non-capturing refusal/failure paths. No separate no-capture-first rollout is required. No real FRL customer traffic, Mike invitation or public-number cutover is implied.
@@ -102,6 +102,6 @@ Emergency procedure to implement and rehearse: close the server dispatch gate; c
 10. Uses trusted server assignment and tenant filters for every read/write/queue claim.
 11. Keeps name unverified and requires independent leg/interval provenance.
 12. All new behavior is DOCUMENTED_ONLY until code and evidence exist.
-13. Requires scoped recording amendment plus existing deployment/configuration/test gates.
+13. Scoped recording amendment approved; existing deployment/configuration/test gates remain.
 14. Recording adds exposure; refusal, withdrawal, retention and counsel review remain blockers.
 15. Required to commission the purchased pilot number; excludes unrelated platform expansion.

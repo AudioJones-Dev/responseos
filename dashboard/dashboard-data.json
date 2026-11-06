@@ -34,7 +34,7 @@
     {
       "id": "FRL-PILOT-PLAN-01",
       "phase": "v0.3 · Demo Scope",
-      "title": "Review purchased-number pilot contract and scoped recording amendment (documentation only)",
+      "title": "Record approved FRL pilot recording amendment and activation contract (documentation only)",
       "owner": "Codex",
       "status": "Review",
       "progress": 100,
@@ -42,7 +42,7 @@
       "start": "2026-11-06",
       "due": "2026-11-06",
       "blocked": true,
-      "blockedReason": "Proposal complete; runtime and activation remain pending. Recording amendment is not ratified."
+      "blockedReason": "Recording amendment approved 2026-11-06; runtime, legal/retention review and activation remain pending."
     },
     {
       "id": "G-14",
