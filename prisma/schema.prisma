@@ -697,6 +697,21 @@ model WebhookEvent {
   @@index([payload_expires_at])
 }
 
+model CallCaptureConsent {
+  id               String   @id @default(cuid())
+  account_id       String
+  call_id          String
+  provider_call_id String
+  state_json       Json
+  revision         Int      @default(0)
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  @@unique([account_id, provider_call_id])
+  @@unique([account_id, call_id])
+  @@index([account_id])
+}
+
 model ProspectIntake {
   id                  String                     @id @default(cuid())
   account_id          String

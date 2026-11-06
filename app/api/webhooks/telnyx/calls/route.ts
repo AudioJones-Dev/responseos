@@ -1,5 +1,4 @@
 import { after, NextResponse } from "next/server";
-import { runCrmSyncForCall } from "@/lib/crm/syncFinalizedCall";
 import {
   getWebhookProcessingState,
   recordWebhookEvent,
@@ -53,9 +52,14 @@ export async function POST(req: Request) {
   const target = getTelnyxAgentTarget(event.data.payload);
   const occurredAt = getTelnyxOccurredAt(event);
   const receivedAt = new Date();
-  let resolved = process.env.RESPONSEOS_PROSPECT_BOOTSTRAP_ENABLED === "true" && target && occurredAt
-    ? await resolveTelnyxEventAssignment({ target, occurredAt, receivedAt })
-    : null;
+  let resolved: Awaited<ReturnType<typeof resolveTelnyxEventAssignment>> = null;
+  try {
+    resolved = process.env.RESPONSEOS_PROSPECT_BOOTSTRAP_ENABLED === "true" && target && occurredAt
+      ? await resolveTelnyxEventAssignment({ target, occurredAt, receivedAt })
+      : null;
+  } catch {
+    return errorResponse(503, { code: "telnyx_assignment_unavailable", message: "Telnyx assignment is unavailable." });
+  }
   let personalized = true;
   const legacyAccountId = process.env.RESPONSEOS_DEMO_ACCOUNT_ID;
   const legacyNumber = process.env.RESPONSEOS_DEMO_PHONE_E164;
@@ -122,7 +126,7 @@ export async function POST(req: Request) {
   const assignment = resolved;
   const normalizeAfterAck = () => after(async () => {
     try {
-      const normalized = await normalizeTelnyxEvent({
+      await normalizeTelnyxEvent({
         accountId: assignment.accountId,
         demoNumber: assignment.demoNumber,
         webhookEventId: ledger.data.id,
@@ -131,18 +135,11 @@ export async function POST(req: Request) {
           ? { transcriptExpiresAt: new Date(occurredAt.getTime() + PROSPECT_CONTENT_RETENTION_DAYS * 24 * 60 * 60 * 1000) }
           : {}),
       });
-      if (!personalized && normalized.finalized && normalized.callId) {
-        await runCrmSyncForCall({
-          accountId: assignment.accountId,
-          callId: normalized.callId,
-          sourceWebhookId: ledger.data.id,
-        });
-      }
-    } catch (error) {
+    } catch {
       await setWebhookProcessStatus({
         id: ledger.data.id,
         process_status: "error",
-        process_error: error instanceof Error ? error.message : "normalization_failed",
+        process_error: "normalization_failed",
       });
     }
   });

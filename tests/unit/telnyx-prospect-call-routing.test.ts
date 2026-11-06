@@ -47,6 +47,15 @@ function signedRequestWithoutOccurredAt() {
   });
 }
 
+function signedContentRequest() {
+  const body = JSON.stringify({ data: { id: "content", event_type: "call.conversation.ended", occurred_at: new Date().toISOString(),
+    payload: { to: "+13055550199", call_control_id: "call", transcript: "PRIVATE_SENTINEL", accountId: "untrusted-account" } } });
+  const timestamp = String(Math.floor(Date.now() / 1000));
+  return new Request("https://responseos.example/api/webhooks/telnyx/calls", { method: "POST", body, headers: {
+    "telnyx-timestamp": timestamp, "telnyx-signature-ed25519": sign(null, Buffer.from(`${timestamp}|${body}`), keys.privateKey).toString("base64"),
+  } });
+}
+
 describe("personalized Telnyx call retention", () => {
   beforeEach(() => {
     vi.resetModules();
@@ -71,6 +80,47 @@ describe("personalized Telnyx call retention", () => {
     expect(entry.payload_expires_at).toBeInstanceOf(Date);
     expect(entry.payload_expires_at.getTime()).toBeGreaterThanOrEqual(before + 30 * 24 * 60 * 60 * 1000);
     expect(mocks.setWebhookProcessStatus).toHaveBeenCalledWith(expect.objectContaining({ process_error: "missing_occurred_at" }));
+  });
+
+  test("invalid signature makes no assignment, ledger or downstream mutation", async () => {
+    const request = signedRequestWithoutOccurredAt();
+    request.headers.set("telnyx-signature-ed25519", "invalid");
+    const { POST } = await import("@/app/api/webhooks/telnyx/calls/route");
+    expect((await POST(request)).status).toBe(401);
+    expect(mocks.recordWebhookEvent).not.toHaveBeenCalled();
+    expect(mocks.resolveTelnyxEventAssignment).not.toHaveBeenCalled();
+  });
+
+  test("missing credentials fails closed before any mutation", async () => {
+    delete process.env.TELNYX_PUBLIC_KEY;
+    const { POST } = await import("@/app/api/webhooks/telnyx/calls/route");
+    expect((await POST(signedRequestWithoutOccurredAt())).status).toBe(503);
+    expect(mocks.recordWebhookEvent).not.toHaveBeenCalled();
+  });
+
+  test("assignment outage returns a fixed error without retaining content", async () => {
+    mocks.resolveTelnyxEventAssignment.mockRejectedValueOnce(new Error("PRIVATE_SENTINEL"));
+    const { POST } = await import("@/app/api/webhooks/telnyx/calls/route");
+    const response = await POST(signedContentRequest());
+    expect(response.status).toBe(503);
+    expect(await response.text()).not.toContain("PRIVATE_SENTINEL");
+    expect(mocks.recordWebhookEvent).not.toHaveBeenCalled();
+  });
+
+  test("normalization failures cannot copy content into persisted error fields or invoke CRM", async () => {
+    process.env.RESPONSEOS_DEMO_ACCOUNT_ID = "trusted-account";
+    process.env.RESPONSEOS_DEMO_PHONE_E164 = "+13055550199";
+    mocks.resolveTelnyxEventAssignment.mockResolvedValue(null);
+    const { normalizeTelnyxEvent } = await import("@/lib/providers/telnyx/normalize");
+    vi.mocked(normalizeTelnyxEvent).mockRejectedValueOnce(new Error("PRIVATE_SENTINEL"));
+    const { after } = await import("next/server");
+    const { runCrmSyncForCall } = await import("@/lib/crm/syncFinalizedCall");
+    const { POST } = await import("@/app/api/webhooks/telnyx/calls/route");
+    expect((await POST(signedContentRequest())).status).toBe(202);
+    expect(mocks.recordWebhookEvent.mock.calls[0][0].account_id).toBe("trusted-account");
+    await (vi.mocked(after).mock.calls[0][0] as () => Promise<void>)();
+    expect(mocks.setWebhookProcessStatus).toHaveBeenCalledWith({ id: "ledger-1", process_status: "error", process_error: "normalization_failed" });
+    expect(runCrmSyncForCall).not.toHaveBeenCalled();
   });
 
   test("assigns general demo payloads a 90-day expiry from occurred_at", async () => {

@@ -3,6 +3,8 @@
 **Status:** MOCK_ONLY / NOT LIVE. Feature-branch implementation target, subject to reviewed legal copy and explicit live-integration approval. No carrier routing or Telnyx configuration changes.
 **Architecture:** Draft PR #240. **Implementation:** draft PR #241.
 
+Phase 2 successor: [consent-before-persistence boundary](FRL_CONSENT_INGEST_BOUNDARY.md). Its synthetic implementation supersedes the ingestion-gap description below on the Phase 2 branch only; live capture and provider acknowledgment blockers remain.
+
 ## Required call experience
 
 1. Inbound call reaches the separately authorized Telnyx number and remains outside recording, transcription, streaming and agent listening.

@@ -32,6 +32,20 @@
   ],
   "tasks": [
     {
+      "id": "FRL-CONSENT-INGEST-20261106",
+      "ref": 242,
+      "refType": "pull",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Review durable consent boundary before Telnyx content persistence",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-11-06",
+      "blocked": true,
+      "blockedReason": "Synthetic only; review, exact-head integration CI, hosted migration approval and live controller/legal gates remain"
+    },
+    {
       "id": "FRL-CONSENT-MOCK-20261105",
       "phase": "v0.3 · Demo Scope",
       "title": "Review FRL consent mock flow and revocation transfer regressions",

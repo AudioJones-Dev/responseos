@@ -6,6 +6,8 @@
 
 ## Version table
 
+FRL Phase 2 consent hardening is under synthetic validation: [implementation boundary and live-test blockers](implementations/florida-ramp-lift/FRL_CONSENT_INGEST_BOUNDARY.md). No milestone promotion or live activation. The proposed change blocks legacy unproven Telnyx content and CRM exports as well as FRL until reviewed consent-aware mappings exist.
+
 Database hardening under review: [Neon standardization](database/README.md) reconciles existing environments and adds local configuration/history/restore gates plus a PostgreSQL 16/17/18 CI matrix. No milestone promotion, hosted migration or live activation is authorized; deployed connection identity, role/RLS acceptance and hosted recovery remain open.
 
 | Version | Theme | Status |

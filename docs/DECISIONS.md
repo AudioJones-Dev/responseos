@@ -2,6 +2,10 @@
 
 This file records the load-bearing decisions that constrain how ResponseOS is built. Each ADR is short by design: context, decision, consequences. If a decision is reversed, mark the entry **Superseded by ADR-XXX** rather than deleting it.
 
+## Proposed FRL Phase 2 consent boundary — not ratified
+
+The [FRL consent ingestion boundary](implementations/florida-ramp-lift/FRL_CONSENT_INGEST_BOUNDARY.md) proposes content-free Telnyx raw receipts, durable per-call consent, transactional transcript authorization and blocking Telnyx CRM exports pending a reviewed proposal executor. Synthetic implementation is explicitly requested; this does not ratify PR #240, amend live-provider authority, approve a hosted migration or reopen v0.3/v0.4 gates. Human review must assess the intentional narrowing of existing demo insight/CRM behavior before merge.
+
 ## ADR-0085 — A temporary, token-gated production check of the configured database host
 
 **Status.** Proposed · 2026-10-28 · **Not accepted; authorizes nothing yet.** **Retirement (2026-10-31):** the route was deployed in `dpl_12D5iWkrbt41f7Py53DQee3L4iJp` and read once with a `200` at 2026-10-29 02:43:09 UTC. This record does not show operator acceptance; reconcile that separately. The removal change deletes the route; digest removal and older-deployment containment stay separate operator actions. Needs the operator's explicit acceptance before the route in PR #232 is deployed to production. Numbered past ADR-0084 because that number is taken on an open branch (PR #231).
