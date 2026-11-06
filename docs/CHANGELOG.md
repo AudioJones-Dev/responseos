@@ -8,6 +8,11 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — chore: let CodeRabbit review draft PRs
+
+- **Why:** this repo opens PRs as drafts until CI is green, and CodeRabbit skipped drafts, so reviews only began once a PR was marked ready.
+- **Change:** `.coderabbit.yaml` sets `reviews.auto_review.drafts: true`. Incremental review and the pause after 5 reviewed commits stay as configured in the CodeRabbit UI.
+
 ## Unreleased — feat: marketing SEO/AEO quick wins
 
 - **Why:** a search for "ResponseOS" ranks three unrelated products above responseos.pro, and answer engines need a short, self-contained definition to quote.
