@@ -36,8 +36,8 @@
       "phase": "Testing & QA",
       "title": "Prepare dedicated one-shot Telnyx keypad test caller",
       "owner": "Codex",
-      "status": "In Progress",
-      "progress": 60,
+      "status": "Review",
+      "progress": 90,
       "priority": "High",
       "ref": 246,
       "refType": "pull"
