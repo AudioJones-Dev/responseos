@@ -121,7 +121,7 @@ function matchingCustomEnvironmentEntries(entries, name) {
   );
 }
 
-function parseNeonTarget(value) {
+export function parseNeonTarget(value) {
   if (!hasValue(value)) {
     return undefined;
   }
@@ -342,6 +342,13 @@ export function validateCanonicalStagingDatabaseSource(
     );
   }
 
+  errors.push(...canonicalNeonMetadataErrors(neonMetadata));
+  return errors;
+}
+
+// Neon API evidence that the canonical endpoint and database belong to the staging branch.
+export function canonicalNeonMetadataErrors(neonMetadata) {
+  const errors = [];
   const project = unwrapMetadata(neonMetadata, "project");
   const branch = unwrapMetadata(neonMetadata, "branch");
   const endpoints = neonMetadata?.endpoints?.endpoints;
