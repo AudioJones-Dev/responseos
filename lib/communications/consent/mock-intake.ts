@@ -85,7 +85,7 @@ export class MockFrlIntake {
     if (this.stage !== "name" || !isCaptureAllowed(this.call.getSession())) {
       throw new Error("name_capture_not_permitted");
     }
-    const cleaned = name?.trim().replace(/\\s+/g, " ") ?? "";
+    const cleaned = name?.trim().replace(/\s+/g, " ") ?? "";
     if (cleaned && cleaned.length > 120) throw new Error("name_too_long");
     if (cleaned) {
       this.callerName = cleaned;
