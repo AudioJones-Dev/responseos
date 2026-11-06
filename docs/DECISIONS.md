@@ -6,7 +6,7 @@ This file records the load-bearing decisions that constrain how ResponseOS is bu
 
 **Status:** Proposed, 2026-11-06. This is a scoped amendment proposal, not a new accepted numbered ADR. ADR-0051's recording prohibition and ADR-0055's per-call, per-artifact consent requirements remain in force.
 
-The [purchased-number activation contract](implementations/florida-ramp-lift/FRL_PURCHASED_NUMBER_ACTIVATION.md) proposes Telnyx-originated operator dialing plus explicit bridging, a capture-off first test, and a separately reviewed recording exception limited to the supervised FRL test-number pilot. It identifies the caller-name versus two-party-roster conflict, durable dispatch and capture-evidence requirements, and all fifteen doctrine review answers. Purchase is not live-provider authorization. No policy object, code, schema, provider setting or deployment changes with this proposal.
+The [purchased-number activation contract](implementations/florida-ramp-lift/FRL_PURCHASED_NUMBER_ACTIVATION.md) proposes Telnyx-originated operator dialing plus explicit bridging, the operator-selected full recorded flow as the first deliverable, and a separately reviewed recording exception limited to the supervised FRL test-number pilot. It identifies the caller-name versus two-party-roster conflict, durable dispatch and capture-evidence requirements, and all fifteen doctrine review answers. Purchase is not live-provider authorization. No policy object, code, schema, provider setting or deployment changes with this proposal.
 
 ## ADR-0085 — A temporary, token-gated production check of the configured database host
 

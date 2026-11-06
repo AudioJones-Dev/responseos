@@ -6,7 +6,7 @@
 
 ## Version table
 
-FRL purchased-number follow-up: [activation contract](implementations/florida-ramp-lift/FRL_PURCHASED_NUMBER_ACTIVATION.md), **DOCUMENTED_ONLY**. Proposed sequence is controlled two-leg bridging with capture off, then separately approved consent-gated capture. Number ownership advances no v0.3 gate; the recording-policy amendment, durable execution, hosted target and supervised-call approval remain pending.
+FRL purchased-number follow-up: [activation contract](implementations/florida-ramp-lift/FRL_PURCHASED_NUMBER_ACTIVATION.md), **DOCUMENTED_ONLY**. The operator selected the full consent-gated recorded flow with controlled two-leg bridging as the first deliverable; no separate no-capture-first rollout is planned. Number ownership advances no v0.3 gate; the recording-policy amendment, durable execution, hosted target and supervised-call approval remain pending.
 
 Database hardening under review: [Neon standardization](database/README.md) reconciles existing environments and adds local configuration/history/restore gates plus a PostgreSQL 16/17/18 CI matrix. No milestone promotion, hosted migration or live activation is authorized; deployed connection identity, role/RLS acceptance and hosted recovery remain open.
 

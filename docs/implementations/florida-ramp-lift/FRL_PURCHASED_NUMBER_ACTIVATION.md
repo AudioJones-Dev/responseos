@@ -22,11 +22,11 @@ Recording and transcript permissions remain independent per artifact, per call, 
 
 Use Telnyx-originated operator leg plus explicit bridge; no SIP REFER or uninstrumented forwarding. Only calls to the new number are in scope. Existing published numbers, carriers, SIMs and other Telnyx connections are unchanged. Grok is the controlled test caller, not an authority source or trusted consent bypass.
 
-## Two implementation increments
+## First deliverable: the full recorded flow
 
-### A. Controlled bridge with capture off
+Operator selection, 2026-11-06: **Keep the full recorded flow first.** Do not substitute a no-capture bridge release or require a separate no-capture-first live rollout. Build the routing and capture work below as one gated pilot deliverable. Decline/no-response branches still require non-capturing routing, and tests must verify those branches. The selection establishes product scope; it does not attest legal approval, ratify the policy amendment or authorize live calls.
 
-Build and test this increment first. It does not require changing the recording prohibition. Use a truthful provisional no-capture greeting, subject to operator approval: "Thank you for calling Florida Ramp & Lift. This test call will not be recorded or transcribed. Please hold while I connect your call." Do not use the recording-consent script or automatically collect the caller's name in this increment. It is an intermediate engineering test, not completion of the requested recorded pilot.
+### A. Controlled two-leg routing and durable execution
 
 1. Reconcile #241–#243 with default and overlapping #235/#236 before changing shared ingest, CRM or schema. Preserve inactive-tenant restrictions and the Telnyx CRM block. Recheck all heads and migration names before implementation.
 2. Extend the existing Call Control command boundary with dial request/response and trusted operator-leg binding. Reuse signed webhook ingest and content-free receipts. Bind tenant from protected server configuration; never use client-supplied account IDs or a phone number alone as authority.
@@ -37,7 +37,7 @@ Build and test this increment first. It does not require changing the recording 
 7. Busy/no answer: play unavailable message to caller, terminate outstanding legs, no fallback to the published number, voicemail capture or automatic redial. Operator answer requires an explicit keypad acceptance to avoid bridging voicemail. Caller or operator hangup terminates the counterpart. Do not assume disabling an application ends existing calls.
 8. Keep all automatic record, transcription-on-answer, streaming, AI assistant, answering-machine detection, HubSpot and business-memory options off.
 
-### B. Consent-gated name and bridged conversation
+### B. Consent-gated name, recording and bridged transcription
 
 Blocked pending FRL-PILOT-001, approved wording/retention and a reviewed evidence design. Preserve the exact requested greeting/consent/name/transfer/decline prompts from #241 as provisional copy only.
 
@@ -48,6 +48,14 @@ Bridge closes the name interval. A new conversation interval must cite fresh top
 Native transcript timestamps do not establish a capture interval or complete participant roster. Define and validate the trusted mapping before writing canonical transcripts. Recording references are accepted only for a proven authorized interval, with retrieval access and retention enforced. Unknown start/stop remains unknown. On withdrawal, immediately close local authorization, cancel queued capture starts, request capture stop and end both legs if physical stop cannot be verified. Do not claim that hangup request acceptance proves media stopped; reconcile terminal provider observations and retain only content-free incident evidence while unresolved.
 
 Do not promise continuous recording through the bridge: the design deliberately separates authorization windows. Prove coverage of both conversation legs in supervised tests before claiming the intended result.
+
+## Exact policy amendment proposed for operator approval
+
+If accepted, amend ADR-0051 and FRL G-11 only as follows:
+
+> Recording remains disabled by default. A separately commissioned SUPERVISED_PILOT may enable conditional recording and transcription solely for the newly purchased FRL pilot number, controlled test callers and the operator's independently reachable endpoint. Each artifact requires immutable call-specific consent for every participant in its capture interval. A caller-only name interval precedes a separately authorized two-party bridged interval. Refusal, timeout, withdrawal, unknown topology or uncertain physical capture state cannot authorize continued capture. No automatic recording, other tenant/demo-number activation, public traffic, CRM writes, email, autonomous memory, published-number forwarding or production release is permitted by this exception.
+
+Accepting this text approves the policy direction for implementation; it does not certify legal sufficiency or deploy/activate the integration. Record acceptance explicitly before changing the accepted policy or its runtime enforcement. The execution gate must still bind an approved target and time-bounded test window.
 
 ## Protected configuration and deployment requirements
 
@@ -76,7 +84,7 @@ Verify Ed25519 raw-body signatures, freshness, event dedupe, body/log limits and
 | Capture policy | Ratified scoped amendment, approved disclosure and retention | Pending |
 | Live evidence | Explicit window; refusal, timeout, duplicate events, busy, voicemail, either-party hangup, outage and stop-failure cases | No live tests authorized by this document |
 
-After A's synthetic checks and separately approved deployment/configuration, authorize one supervised no-capture call. Record two-way audio/leg cleanup evidence without recording or transcripts. Then resolve B, revalidate and separately authorize its recorded test window. No real FRL customer traffic, Mike invitation or public-number cutover is implied.
+Complete A and B, including the policy/evidence design, before presenting the first recorded-flow deliverable. After exact-head synthetic validation, separately approved deployment/configuration and legal/retention approval, authorize a bounded supervised window covering the full accepted path and all non-capturing refusal/failure paths. No separate no-capture-first rollout is required. No real FRL customer traffic, Mike invitation or public-number cutover is implied.
 
 Emergency procedure to implement and rehearse: close the server dispatch gate; cancel pending non-cleanup commands; issue hangup for every known active pilot leg; verify terminal observations; disable only the dedicated pilot application/outbound profile; preserve content-free metadata and report unresolved media state. Disabling ingest alone is not a kill switch and could prevent cleanup evidence. Retain the purchased number; do not delete/release it as rollback.
 
