@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 type Run = { id: string; stage: string; incident?: string; digits: string[]; terminalObserved: boolean; pending: null | { caller: string; arrivedAt: number; expiresAt: number } };
-type Status = { exercise: string; deletionPending: number; runs: Run[] };
+type Status = { exercise: string; admission: "manual" | "automatic_once"; windowOpen: boolean; opensAt: string; closesAt: string; deletionPending: number; runs: Run[] };
 
 export default function PilotControls() {
   const [status, setStatus] = useState<Status | null>(null);
@@ -42,10 +42,12 @@ export default function PilotControls() {
     <p role="alert">{error}</p>
     <p role="alert">{actionError}</p>
     <p role="status">{actionResult}</p>
-    {status && <><p>Exercise: {status.exercise}. Overdue cleanup tasks: {status.deletionPending}.</p>
+    {status && <><p>{status.admission === "automatic_once" ? "One automatic-answer keypad test. No recording, transcription or forwarding. No approval click is needed." : "Approve only the call you just initiated with Grok. Caller ID alone does not establish identity."}</p>
+      <p>Exercise: {status.exercise}. Overdue cleanup tasks: {status.deletionPending}.</p>
+      {status.admission === "automatic_once" && <p role="status">{status.runs.length ? "Test slot used. Do not redial." : status.windowOpen ? "Waiting for test call" : "Admission closed. Wait for GO."}</p>}
       {status.runs.map(run => <article className="space-y-2 rounded border p-4" key={run.id}>
-        <p>{run.stage}{run.incident ? ` — ${run.incident}` : ""}</p>
-        {run.pending && <><p>Caller: {run.pending.caller}. Arrived: {new Date(run.pending.arrivedAt).toLocaleTimeString()}. Approval expires: {new Date(run.pending.expiresAt).toLocaleTimeString()}.</p>
+        <p>{run.stage === "answer" ? "Answering" : run.stage === "keypad" ? "Keypad test" : run.stage === "ended" ? "Call ended" : run.stage}{run.incident ? ` — ${run.incident}` : ""}</p>
+        {status.admission !== "automatic_once" && run.pending && <><p>Caller: {run.pending.caller}. Arrived: {new Date(run.pending.arrivedAt).toLocaleTimeString()}. Approval expires: {new Date(run.pending.expiresAt).toLocaleTimeString()}.</p>
           <button className="mr-3 rounded border px-3 py-2" disabled={busy || now >= run.pending.expiresAt} onClick={() => void act("approve", run.id)}>This is my Grok test — approve</button>
           <button className="rounded border px-3 py-2" disabled={busy} onClick={() => void act("reject", run.id)}>Reject</button></>}
         <p>Verified keypad events: {run.digits.join(", ") || "none"}. Terminal callbacks: {run.terminalObserved ? "observed" : "not complete"}.</p>

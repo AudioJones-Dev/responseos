@@ -2,6 +2,14 @@
 
 Status: EXPERIMENTAL implementation. Owner authorized resolving the commissioning configuration gap on 2026-11-06. No live window is established by this document.
 
+## One-call automatic commissioning (FRL-PILOT-005)
+
+Owner approved on 2026-11-06: `admission: automatic_once`, `exercise: keypad`, `maxCalls: 1`, newly agreed window no longer than five minutes. Recorded mode remains manual. The first eligible signed caller consumes the slot even if it is not Grok or the call fails. No automatic retry, extra slot or old-window reopening. Console shows waiting, answering, keypad and ended states; no approval click. Thirty-minute/manual instructions below apply only to manual mode.
+
+Deploy one tested commit disabled to all runtimes; verify binding/auth/signed ingest/fresh apply-mode inventory; agree the exact five-minute window; open admission last. Owner sends Grok GO once. Reuse the no-capture prompt, fifteen-second answer and sixty-second keypad deadlines, star termination and independent watchdog policy. Success needs signed answer, genuine 1/2/star events, terminal callback, empty inventory and no capture artifacts. Close admission after the attempt, reconcile, then disable dedicated resources. Grok reports alone are not keypad proof.
+
+Watchdog diagnostics contain bounded category, operation, HTTP status and field/type metadata only. Missing/null/string/negative duration is not converted to zero. Inventory failure or a health gap over ten seconds closes admission; termination and cleanup remain available through reconciliation. If no offline reproduction exists, the next call is a supervised diagnostic. Never log raw responses/control tokens. Capture-off success does not enable recording; retain separate consent/retention and recorded qualification gates.
+
 ## Configuration boundary
 
 The strict configuration is discriminated by exercise. Common tenant, dedicated application/number, release/database binding, exact-call manual approval, retention policy, provider defaults/routing limits, concurrency, six-call maximum and thirty-minute maximum remain unchanged.

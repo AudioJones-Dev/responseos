@@ -1,9 +1,41 @@
 import { expect, test, vi } from "vitest";
-import { PilotWatchdog, telnyxWatchdogTransport, type WatchdogCall } from "@/lib/communications/pilot/watchdog";
+import { PilotWatchdog, telnyxWatchdogTransport, watchdogDiagnostic, type WatchdogCall } from "@/lib/communications/pilot/watchdog";
 import { pilotConfigSchema } from "@/lib/communications/pilot/config";
 import { testPilotConfig } from "../fixtures/frl-pilot";
 
 const call = (id = "a", session = "s", duration = 0): WatchdogCall => ({ call_control_id: id, call_leg_id: id, call_session_id: session, call_duration: duration });
+test.each([[undefined, "undefined"], [null, "null"], ["secret-duration", "string"], [-1, "negative_integer"], [1.5, "non_integer"]])("invalid duration %s remains a failure with content-free diagnostics", async (duration, received) => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ data: [{ ...call("secret-control"), call_duration: duration }] }))));
+  try {
+    const error = await telnyxWatchdogTransport("secret-key", "123").list().catch(e => e);
+    expect(watchdogDiagnostic(error)).toEqual({ category: "invalid_inventory", operation: "inventory", field: "data.item.call_duration", received });
+    expect(JSON.stringify(watchdogDiagnostic(error))).not.toContain("secret");
+  } finally { vi.unstubAllGlobals(); }
+});
+test.each([0, 50])("valid provider inventory duration %s is retained", async duration => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ data: [call("a", "s", duration)], meta: { cursors: { after: null } } }))));
+  try { expect(await telnyxWatchdogTransport("test", "123").list()).toEqual([call("a", "s", duration)]); }
+  finally { vi.unstubAllGlobals(); }
+});
+test.each([401, 429, 503])("HTTP %s diagnostic excludes response contents", async status => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("secret-provider-detail", { status })));
+  try { expect(watchdogDiagnostic(await telnyxWatchdogTransport("secret", "123").list().catch(e => e))).toEqual({ category: "http", operation: "inventory", status }); }
+  finally { vi.unstubAllGlobals(); }
+});
+test("transport, timeout and invalid JSON have distinct safe diagnostics", async () => {
+  const timeout = new Error("secret"); timeout.name = "TimeoutError";
+  const fetcher = vi.fn().mockRejectedValueOnce(timeout).mockRejectedValueOnce(new Error("secret-network"))
+    .mockResolvedValueOnce(new Response("secret-invalid-json"));
+  vi.stubGlobal("fetch", fetcher);
+  try {
+    for (const category of ["timeout", "transport", "invalid_json"]) expect(watchdogDiagnostic(await telnyxWatchdogTransport("secret", "123").list().catch(e => e))).toEqual({ category, operation: "inventory" });
+  } finally { vi.unstubAllGlobals(); }
+});
+test("pagination loops fail explicitly rather than returning partial inventory", async () => {
+  vi.stubGlobal("fetch", vi.fn().mockImplementation(async () => new Response(JSON.stringify({ data: [call()], meta: { cursors: { after: "secret-cursor" } } }))));
+  try { expect(watchdogDiagnostic(await telnyxWatchdogTransport("secret", "123").list().catch(e => e))).toEqual({ category: "incomplete_pagination", operation: "inventory" }); }
+  finally { vi.unstubAllGlobals(); }
+});
 test("observed session deadline survives absence and catches a late child leg", async () => {
   let calls: WatchdogCall[] = []; const hangup = vi.fn();
   const w = new PilotWatchdog({ list: async () => calls, hangup }, true, 999999);

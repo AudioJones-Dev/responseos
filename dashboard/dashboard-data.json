@@ -32,6 +32,19 @@
   ],
   "tasks": [
     {
+      "id": "FRL-AUTO-ONCE-20261106",
+      "phase": "Testing & QA",
+      "title": "One-call capture-off automatic admission and safe watchdog diagnostics",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-11-06",
+      "due": "2026-11-06",
+      "ref": 246,
+      "refType": "pull"
+    },
+    {
       "id": "FRL-CONSOLE-FEEDBACK-20261106",
       "phase": "Testing & QA",
       "title": "Preserve pilot approval results across status refreshes",

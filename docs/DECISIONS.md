@@ -2,6 +2,16 @@
 
 This file records the load-bearing decisions that constrain how ResponseOS is built. Each ADR is short by design: context, decision, consequences. If a decision is reversed, mark the entry **Superseded by ADR-XXX** rather than deleting it.
 
+## FRL-PILOT-005 — One-call automatic capture-off commissioning
+
+**Status: Owner accepted 2026-11-06; EXPERIMENTAL implementation, live qualification pending.** The owner approved removing the ringing-time approval click for one supervised keypad call. `admission: automatic_once` requires `exercise: keypad`, `maxCalls: 1`, and a window of at most five minutes. Recorded mode retains manual exact-call approval. Agree a fresh exact window after disabled deployment verification; prior stopped windows never reopen.
+
+The first eligible signed inbound event consumes the slot atomically under the account lock and queues answer. It is an unverified commissioning caller, not carrier-proven Grok or a human-approved individual call. Duplicates and competing arrivals cannot answer a second call, including after the first ends. Overdue cleanup blocks automatic admission. Application, number, tenant, signature, time, deployment, concurrency and stop guards remain. Capture/operator dialing remain denied. Operator watches and retains emergency stop; no ringing-time click is needed.
+
+Watchdog diagnostics distinguish HTTP status, timeout, transport, JSON, field/type, pagination and unconfirmed hangup failures without credentials, control tokens, phone numbers or raw payloads. Invalid inventory remains an error, never an empty list. The 21:51 UTC live failure correlated with an unanswered leg; its cause is NOT established. Diagnostics are not a proven live fix. Change response handling only with evidence; first live use is diagnostic if the original failure cannot be reproduced offline.
+
+Doctrine section 21: (1) communications/trust; (2) build bounded admission/diagnostics; (3) removes pilot coordination failure; (4) signed receipts and automatic-admission audit; (5) signed answer/digits/termination establish outcomes; (6) no learning; (7) buy telecom from Telnyx; (8) no CRM/FSM/platform duplication; (9) no new vendor; (10) tenant-scoped lock preserved; (11) caller explicitly unverified; (12) no readiness/carrier-cutoff claim; (13) owner-approved admission exception; (14) capture/dial remain off; (15) needed for current commissioning.
+
 ## FRL-PILOT-004 — Capture-off commissioning prerequisites
 
 Accepted for implementation on 2026-11-06 after the owner authorized resolving the configuration gap. [Capture-off commissioning](implementations/florida-ramp-lift/FRL_CAPTURE_OFF_COMMISSIONING.md) excludes recording/legal/retention qualification assertions and cannot dial, bridge or capture. It requires a separate window approval reference, operator presence, available manual provider stop and current independent watchdog inventory evidence. Recorded mode retains every existing qualification gate. Changing the exercise alone cannot promote a commissioning config. Preparation and disabled nonproduction deployment are authorized; no live window is open.

@@ -2,7 +2,15 @@ import { expect, test } from "vitest";
 import { configDigest, pilotConfigSchema, pilotOpen } from "@/lib/communications/pilot/config";
 import { pilotRequest } from "@/lib/providers/telnyx/pilot";
 import { type Intent } from "@/lib/communications/pilot/machine";
-import { machineHarness, pilotNow, testKeypadConfig, testPilotConfig } from "../fixtures/frl-pilot";
+import { machineHarness, pilotNow, testAutomaticConfig, testKeypadConfig, testPilotConfig } from "../fixtures/frl-pilot";
+
+test("automatic commissioning is one keypad call within five minutes only", () => {
+  const c = testAutomaticConfig();
+  expect(pilotConfigSchema.parse(c)).toEqual(c);
+  expect(pilotConfigSchema.safeParse({ ...c, maxCalls: 2 }).success).toBe(false);
+  expect(pilotConfigSchema.safeParse({ ...c, closesAt: new Date(Date.parse(c.opensAt) + 300001).toISOString() }).success).toBe(false);
+  expect(pilotConfigSchema.safeParse({ ...testPilotConfig(), admission: "automatic_once", maxCalls: 1 }).success).toBe(false);
+});
 
 test("keypad config requires commissioning evidence without claiming recorded qualification", () => {
   const c = testKeypadConfig();

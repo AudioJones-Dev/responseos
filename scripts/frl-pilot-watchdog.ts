@@ -1,6 +1,6 @@
 import { setTimeout } from "node:timers/promises";
 import { z } from "zod";
-import { PilotWatchdog, telnyxWatchdogTransport } from "../lib/communications/pilot/watchdog";
+import { PilotWatchdog, telnyxWatchdogTransport, watchdogDiagnostic } from "../lib/communications/pilot/watchdog";
 
 const configuration = z.object({
   applicationId: z.string().regex(/^\d+$/), deploymentId: z.string().min(1),
@@ -22,7 +22,7 @@ async function main() {
   const watchdog = new PilotWatchdog(telnyxWatchdogTransport(key, c.applicationId), process.env.RESPONSEOS_FRL_WATCHDOG_APPLY === "true", Date.parse(c.closesAt));
   do {
     try { console.log(JSON.stringify({ event: "pilot_watchdog_scan", ...await watchdog.scan(Date.now()) })); }
-    catch { console.error("pilot_watchdog_scan_failed"); if (process.argv.includes("--once")) process.exitCode = 1; }
+    catch (error) { console.error(JSON.stringify({ event: "pilot_watchdog_scan_failed", ...watchdogDiagnostic(error) })); if (process.argv.includes("--once")) process.exitCode = 1; }
     if (process.argv.includes("--once")) break;
     await setTimeout(1000);
   } while (!stopping);

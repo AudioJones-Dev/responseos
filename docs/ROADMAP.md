@@ -4,6 +4,8 @@
 
 > **Strategy vs. shipping.** This roadmap tracks version milestones. The *capability phases* behind them — Communications → Verified Revenue Loop → Business Memory → Operational Intelligence → Benchmark Intelligence → Founder Intelligence → Trust Infrastructure — and their evidence-based exit gates live in [`strategy/responseos-platform-doctrine-v1.md`](./strategy/responseos-platform-doctrine-v1.md) §17–§18, which also maps the two axes onto each other. Where they disagree, **this roadmap governs shipping status and the doctrine governs sequencing rationale**. Phase 0 (architecture + internal console) is complete; Phase 1 (live pilot communications) is gated on explicit v0.3 authorization, not on engineering work.
 
+FRL one-call commissioning: FRL-PILOT-005 adds owner-approved automatic admission for one capture-off keypad call within five minutes and bounded watchdog diagnostics. EXPERIMENTAL; live answer/DTMF and watchdog failure cause remain unverified. No production or recorded activation.
+
 ## Version table
 
 FRL commissioning preparation: [operator pack](implementations/florida-ramp-lift/FRL_COMMISSIONING_PACK.md) records the owner-approved exact disclosures, configuration worksheet, stop procedure and separate-window test budget. Engineering response received; authenticated hosted operator access verified with admission disabled. Legal evidence for recording and live qualification remain pending.

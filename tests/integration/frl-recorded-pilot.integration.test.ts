@@ -4,7 +4,7 @@ import { decidePilotAdmission, ingestPilot, dispatchPilot, purgePilotContent, ki
 import { latest, type PilotState, type Purpose, type Role } from "@/lib/communications/pilot/machine";
 import { stateToken, type PilotTransport } from "@/lib/providers/telnyx/pilot";
 import type { TelnyxWebhookEnvelope } from "@/lib/providers/telnyx/webhook";
-import { testPilotConfig, testKeypadConfig, callerLeg, operatorLeg } from "../fixtures/frl-pilot";
+import { testPilotConfig, testKeypadConfig, testAutomaticConfig, callerLeg, operatorLeg } from "../fixtures/frl-pilot";
 import { makeAccount } from "../factories";
 import { prisma, resetTestDb, disconnectTestDb } from "./setup";
 import { deletePilotArtifacts } from "@/lib/communications/pilot/deletion";
@@ -51,6 +51,60 @@ describe("durable recorded pilot", () => {
     await prisma.account.create({ data: makeAccount({ id: c.accountId }) });
   });
   afterAll(disconnectTestDb);
+  test("automatic admission consumes one slot atomically, survives replay, and never claims human approval", async () => {
+    c = testAutomaticConfig(now);
+    const first = event("call.initiated", { from: "+13055550999", to: c.number, direction: "incoming", client_state: null });
+    const competitor = event("call.initiated", { call_control_id: "other", call_leg_id: "other", from: "+13055550888", to: c.number, direction: "incoming" });
+    await Promise.all([ingest(first), ingest(first), ingest(competitor)]);
+    expect(await prisma.frlPilotRun.count()).toBe(1);
+    expect(await prisma.frlPilotCommand.count({ where: { purpose: "answer" } })).toBe(1);
+    expect((await state()).admission).toBeUndefined();
+    expect(await decidePilotAdmission(prisma, c, "op", (await state()).id, true, now, enabled)).toBe(false);
+    const audit = await prisma.auditLog.findFirstOrThrow({ where: { action: "frl_pilot.auto_admit" } });
+    expect(audit.actor_type).toBe("system");
+    expect(audit.metadata_json).toMatchObject({ approvalRef: "synthetic-only", identity: "unverified_commissioning_caller" });
+    await dispatch(); await dispatch(); expect(transport).toHaveBeenCalledTimes(1);
+    const s = await state();
+    await ingest(event("call.hangup", { call_control_id: s.caller.controlId, call_leg_id: s.caller.legId, call_session_id: s.caller.sessionId }));
+    await ingest(event("call.initiated", { call_control_id: "new", call_leg_id: "new", from: c.callers[0], to: c.number, direction: "incoming" }));
+    expect(await prisma.frlPilotRun.count()).toBe(1);
+  });
+  test("automatic keypad call answers, records signed digit observations and ends without capture or forwarding", async () => {
+    c = testAutomaticConfig(now);
+    await ingest(event("call.initiated", { from: c.callers[0], to: c.number, direction: "incoming" }));
+    await dispatch(); await callback("call.answered", "answer"); await dispatch();
+    for (const digit of ["1", "2", "*"]) await callback("call.dtmf.received", "keypad", "caller", { digit });
+    await dispatch(); await callback("call.hangup", "hangup");
+    expect(await state()).toMatchObject({ stage: "ended", captureDenied: true, digits: ["1", "2", "*"], grants: [], windows: [] });
+    expect(transport.mock.calls.map(([r]) => r.path.split("/").at(-1))).toEqual(["answer", "speak", "hangup"]);
+    expect(await prisma.frlPilotArtifact.count()).toBe(0);
+    expect(await prisma.auditLog.count({ where: { action: "frl_pilot.admit" } })).toBe(0);
+  });
+  test.each(["expired", "stopped", "foreign_application", "foreign_account", "wrong_number"])("automatic admission refuses %s", async reason => {
+    c = testAutomaticConfig(now);
+    if (reason === "expired") now = Date.parse(c.closesAt);
+    if (reason === "stopped") await killPilotWindow(prisma, c, "op", now);
+    if (reason === "foreign_account") c = { ...c, accountId: (await prisma.account.create({ data: makeAccount({ status: "paused" }) })).id };
+    await ingest(event("call.initiated", { from: c.callers[0], to: reason === "wrong_number" ? "+13055550999" : c.number, direction: "incoming", ...(reason === "foreign_application" ? { connection_id: "foreign" } : {}) }));
+    expect(await prisma.frlPilotRun.count()).toBe(0);
+    expect(await prisma.frlPilotCommand.count()).toBe(0);
+  });
+  test("automatic answer uncertainty is not retried and silent keypad test times out", async () => {
+    c = testAutomaticConfig(now);
+    await ingest(event("call.initiated", { from: c.callers[0], to: c.number, direction: "incoming" }));
+    transport.mockResolvedValueOnce({ kind: "uncertain" });
+    await dispatch(); now += 16000; await dispatch();
+    expect(transport.mock.calls.filter(([r]) => r.path.endsWith("/answer"))).toHaveLength(1);
+    expect((await state()).stage).toBe("ending");
+  });
+  test("automatic keypad silence expires without restarting admission", async () => {
+    c = testAutomaticConfig(now);
+    await ingest(event("call.initiated", { from: c.callers[0], to: c.number, direction: "incoming" }));
+    await dispatch(); await callback("call.answered", "answer"); await dispatch();
+    now = (await state()).deadline; await dispatch();
+    expect((await state()).stage).toBe("ending");
+    expect(transport.mock.calls.at(-1)![0].path).toContain("hangup");
+  });
   test("a rotating caller waits for exact-call approval and cannot replay approval", async () => {
     await ingest(event("call.initiated", { from: "+13055550999", to: c.number, direction: "incoming", client_state: null }));
     await dispatch(); expect(transport).not.toHaveBeenCalled();

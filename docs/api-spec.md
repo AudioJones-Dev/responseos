@@ -10,6 +10,8 @@ The activation increment adds `/admin/frl-pilot` and `POST /api/admin/frl-pilot`
 
 `GET /api/admin/frl-pilot` returns the protected configured window's statuses and unexpired consent-aware artifacts. `POST` permanently closes that window and queues cleanup (202, not terminal confirmation). Both require real hosted auth to be enabled and an operator/admin role; POST also requires same-origin. No request supplies a tenant or destination. See [implementation and activation gates](implementations/florida-ramp-lift/FRL_RECORDED_PILOT.md).
 
+GET `/api/admin/frl-pilot` additionally returns `admission`, `windowOpen`, `opensAt`, `closesAt`. `automatic_once` is protected keypad-only configuration, never a client request field. Manual approve/reject returns 409 in automatic mode; emergency stop remains available. `frl_pilot.auto_admit` records system execution with owner approval reference and unverified caller identity. No new endpoint or schema migration.
+
 ## Response envelope (canonical)
 
 Success:

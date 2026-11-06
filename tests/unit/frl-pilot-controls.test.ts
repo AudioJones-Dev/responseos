@@ -18,7 +18,7 @@ async function harness() {
   const requests: { method?: string; body?: string }[] = [];
   let cursor = 0, mounted = false;
   let poll = () => {};
-  const control = { postOk: false, getOk: true, pending: true, expired: false };
+  const control = { postOk: false, getOk: true, pending: true, expired: false, automatic: false, empty: false, windowOpen: true };
   const exports = {} as { default: () => unknown };
   const jsx = (type: string, props: Node["props"]) => ({ type, props });
   runInNewContext(code, {
@@ -39,7 +39,7 @@ async function harness() {
     async fetch(_url: string, options: { method?: string; body?: string }) {
       requests.push(options);
       if (options.method === "POST") return { ok: control.postOk };
-      return { ok: control.getOk, json: async () => ({ exercise: "keypad", deletionPending: 0, runs: [{
+      return { ok: control.getOk, json: async () => ({ exercise: "keypad", admission: control.automatic ? "automatic_once" : "manual", windowOpen: control.windowOpen, deletionPending: 0, runs: control.empty ? [] : [{
         id: "00000000-0000-4000-8000-000000000001", stage: control.pending ? "pending" : "ended", digits: [], terminalObserved: !control.pending,
         pending: control.pending ? { caller: "synthetic", arrivedAt: Date.now(), expiresAt: Date.now() + (control.expired ? -1000 : 20000) } : null,
       }] }) };
@@ -53,6 +53,14 @@ async function harness() {
 }
 
 describe("pilot control feedback (synthetic hook harness)", () => {
+  it("automatic mode shows waiting or closed status without an approval button", async () => {
+    const h = await harness(); h.control.automatic = true; await h.refresh();
+    expect(h.render().some(n => n.props.children === "This is my Grok test — approve")).toBe(false);
+    h.control.empty = true; await h.refresh();
+    expect(h.render().some(n => n.props.children === "Waiting for test call")).toBe(true);
+    h.control.windowOpen = false; await h.refresh();
+    expect(h.render().some(n => n.props.children === "Admission closed. Wait for GO.")).toBe(true);
+  });
   it("retains a failed exact-call approval across successful status polls", async () => {
     const h = await harness(); await h.click(); await h.refresh();
     expect(h.render().some(n => n.props.role === "alert" && String(n.props.children).includes("Action was not confirmed"))).toBe(true);

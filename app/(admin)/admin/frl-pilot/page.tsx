@@ -7,5 +7,5 @@ export default async function PilotPage() {
   const controls = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
     ? <ClerkProvider dynamic><PilotControls /></ClerkProvider>
     : <PilotControls />;
-  return <main className="mx-auto max-w-3xl space-y-6 p-6"><h1 className="text-2xl font-semibold">FRL supervised pilot</h1><p>Approve only the call you just initiated with Grok. Caller ID alone does not establish identity.</p>{controls}</main>;
+  return <main className="mx-auto max-w-3xl space-y-6 p-6"><h1 className="text-2xl font-semibold">FRL supervised pilot</h1>{controls}</main>;
 }

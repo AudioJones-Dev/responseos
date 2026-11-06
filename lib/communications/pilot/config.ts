@@ -25,11 +25,12 @@ export const pilotConfigSchema = z.discriminatedUnion("exercise", [
     durationPolicy: duration.extend({ independentWatchdogVerified: z.literal(true), manualStopVerified: z.literal(true) }).strict(),
   }).strict(),
   base.extend({
-    exercise: z.literal("keypad"), durationPolicy: duration,
+    exercise: z.literal("keypad"), admission: z.enum(["manual", "automatic_once"]), durationPolicy: duration,
     commissioning: z.object({ approvalRef: approval, operatorPresent: z.literal(true), manualProviderStopAvailable: z.literal(true), watchdogInventoryVerified: z.literal(true), capture: z.literal("off"), operatorDial: z.literal("off") }).strict(),
   }).strict(),
 ]).refine(c => c.number !== c.operator && !c.callers.includes(c.number) && !c.callers.includes(c.operator), "loop_or_shared_endpoint")
-  .refine(c => Date.parse(c.closesAt) > Date.parse(c.opensAt) && Date.parse(c.closesAt) - Date.parse(c.opensAt) <= 1800000, "window_max_thirty_minutes");
+  .refine(c => Date.parse(c.closesAt) > Date.parse(c.opensAt) && Date.parse(c.closesAt) - Date.parse(c.opensAt) <= 1800000, "window_max_thirty_minutes")
+  .refine(c => c.admission !== "automatic_once" || c.maxCalls === 1 && Date.parse(c.closesAt) - Date.parse(c.opensAt) <= 300000, "automatic_once_requires_one_call_and_five_minutes");
 export type PilotConfig = z.infer<typeof pilotConfigSchema>;
 
 export function loadPilotConfig(env: Record<string, string | undefined> = process.env): PilotConfig | null {

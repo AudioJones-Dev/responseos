@@ -23,6 +23,11 @@ export function testKeypadConfig(now = pilotNow): PilotConfig {
   return { ...base, exercise: "keypad", durationPolicy: { mode: "application_watchdog", riskApprovalRef: "synthetic-only" },
     commissioning: { approvalRef: "synthetic-only", operatorPresent: true, manualProviderStopAvailable: true, watchdogInventoryVerified: true, capture: "off", operatorDial: "off" } };
 }
+export function testAutomaticConfig(now = pilotNow): PilotConfig {
+  const c = testKeypadConfig(now);
+  if (c.exercise !== "keypad") throw new Error("keypad_fixture_required");
+  return { ...c, admission: "automatic_once", maxCalls: 1, closesAt: new Date(Date.parse(c.opensAt) + 300000).toISOString() };
+}
 export function machineHarness() {
   let now = pilotNow;
   let state = initialPilot(randomUUID(), callerLeg, now, now + 300000, "frl-recorded-v1");

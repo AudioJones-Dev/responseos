@@ -6,7 +6,7 @@ import type { TelnyxWebhookEnvelope } from "@/lib/providers/telnyx/webhook";
 import { contentFreeReceipt } from "@/lib/providers/telnyx/content-policy";
 import { decodeToken, legFromPayload, observation, pilotRequest, type PilotTransport } from "@/lib/providers/telnyx/pilot";
 import { configDigest, pilotOpen, type PilotConfig } from "./config";
-import { approvePilot, commandAllowed, endPilot, pendingPilot, latest, observePilot, tickPilot, type Intent, type PilotState } from "./machine";
+import { approvePilot, commandAllowed, endPilot, initialPilot, pendingPilot, latest, observePilot, tickPilot, type Intent, type PilotState } from "./machine";
 
 type Database = Pick<PrismaClient, "$transaction">;
 const digest = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -73,12 +73,17 @@ export async function ingestPilot(db: Database, c: PilotConfig, event: TelnyxWeb
       if (await tx.frlPilotRun.count({ where: { account_id: c.accountId, closed: false } }) ||
           await tx.frlPilotRun.count({ where: { account_id: c.accountId, window_id: c.windowId } }) >= c.maxCalls) return finish(false);
       const id = randomUUID();
-      const s = pendingPilot(id, leg, p.from, at, Date.parse(c.closesAt), c.disclosureVersion, c.exercise);
+      if (c.admission === "automatic_once" && await tx.frlPilotDeletion.count({ where: { account_id: c.accountId, state: { not: "verified" }, due_at: { lte: new Date(now) } } })) return finish(false);
+      const s = c.admission === "automatic_once"
+        ? { ...initialPilot(id, leg, at, Date.parse(c.closesAt), c.disclosureVersion), exercise: c.exercise, captureDenied: true }
+        : pendingPilot(id, leg, p.from, at, Date.parse(c.closesAt), c.disclosureVersion, c.exercise);
       const call = await tx.call.create({ data: { account_id: c.accountId, provider: "telnyx", provider_call_id: leg.controlId,
         direction: "inbound", status: "ringing", from_number: "<CONTROLLED_PILOT_CALLER>", to_number: c.number, started_at: new Date(at) } });
       await tx.frlPilotRun.create({ data: { id, account_id: c.accountId, call_id: call.id, window_id: c.windowId, config_digest: configDigest(c),
         state_json: s as unknown as Prisma.InputJsonValue, started_at: new Date(now), expires_at: new Date(now + c.retentionHours * 3600000) } });
       await persist(tx, c, s, { ...s, intents: [] }, now);
+      if (c.admission === "automatic_once") await tx.auditLog.create({ data: { account_id: c.accountId, actor_type: "system", action: "frl_pilot.auto_admit", category: "workflow", target_type: "FrlPilotRun", target_id: id,
+        metadata_json: { windowId: c.windowId, approvalRef: c.commissioning.approvalRef, identity: "unverified_commissioning_caller", admission: c.admission } } });
       return finish(true);
     }
     const previous = row.state_json as unknown as PilotState;
@@ -209,6 +214,7 @@ export async function killPilotWindow(db: Database, c: PilotConfig, actorId: str
 }
 
 export async function decidePilotAdmission(db: Database, c: PilotConfig, actorId: string, runId: string, approve: boolean, now = Date.now(), env: Record<string, string | undefined> = process.env) {
+  if (c.admission !== "manual") return false;
   return db.$transaction(async tx => {
     await lock(tx, c.accountId);
     const row = await tx.frlPilotRun.findFirst({ where: { account_id: c.accountId, window_id: c.windowId, id: runId, closed: false } });
