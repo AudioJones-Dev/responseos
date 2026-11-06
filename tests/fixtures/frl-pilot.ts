@@ -12,7 +12,8 @@ export function testPilotConfig(now = pilotNow): PilotConfig {
     number: "+13055550101", operator: "+13055550102", callers: ["+13055550103"], windowId: randomUUID(),
     opensAt: new Date(now - 1000).toISOString(), closesAt: new Date(now + 360000).toISOString(), disclosureVersion: "frl-recorded-v1",
     legalApprovalRef: "synthetic-only", retentionApprovalRef: "synthetic-only", retentionHours: 24,
-    independentEndpointVerified: true, providerCaptureDefaultsOff: true, providerCallLimitsVerified: true, providerRetentionVerified: true, maxCalls: 6 };
+    independentEndpointVerified: true, providerCaptureDefaultsOff: true, providerRoutingLimitsVerified: true,
+    durationPolicy: { mode: "application_watchdog", riskApprovalRef: "synthetic-only", independentWatchdogVerified: true, manualStopVerified: true }, providerRetentionVerified: true, maxCalls: 6 };
 }
 export function machineHarness() {
   let now = pilotNow;

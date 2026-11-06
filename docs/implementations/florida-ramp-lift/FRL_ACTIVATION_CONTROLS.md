@@ -23,13 +23,19 @@ Provider cleanup runs independently of call dispatch so slow deletion cannot del
 
 Live DB purging does not erase Neon backups. Before activation record the isolated branch's actual restore window and provider backup/deletion terms. Any restored backup must remain isolated with calling and review access disabled until expired content has been purged. Do not claim a verified 24-hour physical-erasure guarantee for provider/internal backups without evidence.
 
-## Provider duration blocker and proposed architecture amendment
+## Accepted duration policy
+
+The owner subsequently approved the accepted revision of [FRL-PILOT-003](FRL_INBOUND_DURATION_AMENDMENT.md): application deadline, separate watchdog and manual stop, with explicit residual risk of calls exceeding five minutes. This supersedes the historical carrier-enforcement gate below. Hosted watchdog qualification remains pending; calling stays disabled. Current schema uses `providerRoutingLimitsVerified` and `durationPolicy`, not the old `providerCallLimitsVerified`. Qualification flags must remain unset until supported by evidence.
+
+### Historical provider-duration investigation
+
+Follow-up: the owner supplied a negative Telnyx support response and requested [FRL-PILOT-003](FRL_INBOUND_DURATION_AMENDMENT.md). That proposed amendment compares provider controls and defines qualification gates; it does not authorize a provider switch or weaken the inbound limit. The inquiry below was subsequently sent with owner authorization; its original draft is retained for context.
 
 Current official Call Control OpenAPI inspection found `time_limit_secs` only on `CallRequest` (dial) and `TransferCallRequest`. `AnswerRequest` has no duration field; `CallControlApplicationInbound` exposes channel limit, SHAKEN/STIR and SIP subdomain settings, not an inbound duration cap. This establishes a documentation gap, not proof that Telnyx has no account-side capability. First-command timeout, record_max_length and the outbound leg's time limit do not satisfy the required independent inbound five-minute cap.
 
 **Activation remains blocked.** Never set providerCallLimitsVerified to true based on the controls above. Proposed amendment FRL-PILOT-003 remains DOCUMENTED_ONLY and unapproved: if Telnyx confirms the current architecture cannot enforce the inbound cap, evaluate a provider-enforced inbound execution boundary before any new architecture is implemented. Preserve the five-minute limit, consent intervals, operator approval and terminal evidence requirements; do not adopt a worker-only watchdog or silently switch to TeXML.
 
-Prepared support inquiry (not sent):
+Original support inquiry (subsequently sent with owner authorization):
 
 > For a Telnyx Voice API / Call Control application receiving PSTN inbound calls, can Telnyx enforce a maximum 300-second lifetime on the original inbound leg, including the interval before bridging, independently of our webhook and worker availability? AnswerRequest and the inbound application schema do not expose time_limit_secs. Please identify the supported account/application setting or API field, when its timer starts, and whether it remains effective across bridge and worker outages. We need a configuration/readback method and terminal event semantics. We are not requesting activation or changes to existing connections.
 

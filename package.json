@@ -10,6 +10,7 @@
   "scripts": {
     "pilot:preflight": "tsx scripts/frl-pilot-preflight.ts",
     "pilot:worker": "tsx scripts/frl-pilot-worker.ts",
+    "pilot:watchdog": "tsx scripts/frl-pilot-watchdog.ts",
     "postinstall": "node scripts/patch-minimatch-cjs-compat.mjs",
     "dev": "next dev",
     "build": "next build",

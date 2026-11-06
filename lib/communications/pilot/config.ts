@@ -13,7 +13,8 @@ export const pilotConfigSchema = z.object({
   disclosureVersion: z.literal("frl-recorded-v1"), legalApprovalRef: z.string().min(1).max(200),
   retentionApprovalRef: z.string().min(1).max(200), retentionHours: z.literal(24),
   independentEndpointVerified: z.literal(true), providerCaptureDefaultsOff: z.literal(true),
-  providerCallLimitsVerified: z.literal(true),
+  providerRoutingLimitsVerified: z.literal(true),
+  durationPolicy: z.object({ mode: z.literal("application_watchdog"), riskApprovalRef: z.string().min(1).max(200), independentWatchdogVerified: z.literal(true), manualStopVerified: z.literal(true) }).strict(),
   providerRetentionVerified: z.literal(true), maxCalls: z.number().int().min(1).max(6),
 }).strict().refine(c => c.number !== c.operator && !c.callers.includes(c.number) && !c.callers.includes(c.operator), "loop_or_shared_endpoint")
   .refine(c => Date.parse(c.closesAt) > Date.parse(c.opensAt) && Date.parse(c.closesAt) - Date.parse(c.opensAt) <= 1800000, "window_max_thirty_minutes");

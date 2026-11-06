@@ -31,12 +31,14 @@ Install values only through the separately approved nonproduction secret workflo
 | Fields | Meaning |
 | --- | --- |
 | `version`, `mode` | Exactly `FRL-PILOT-001`, `SUPERVISED_PILOT` |
+| `admission`, `exercise` | Exactly `manual`; separate `keypad` or `recorded` exercise (FRL-PILOT-002) |
 | `accountId`, `applicationId`, `number`, `operator`, `callers` | Verified server bindings, E.164 US/NANP numbers; no client-selected destinations |
 | `deploymentId`, `databaseTargetDigest` | Must match the protected `RESPONSEOS_FRL_PILOT_DEPLOYMENT_ID` and SHA-256 of JSON `[database hostname, port (default 5432), pathname]`; no credentials enter the digest. Vercel production and the existing evergreen demo number are denied |
-| `windowId`, `opensAt`, `closesAt`, `maxCalls` | New approved UUID/window, ISO UTC timestamps, one hour maximum, 1–10 calls |
+| `windowId`, `opensAt`, `closesAt`, `maxCalls` | New approved UUID/window, ISO UTC timestamps, thirty minutes maximum, 1–6 calls (FRL-PILOT-002) |
 | `disclosureVersion` | `frl-recorded-v1`; includes the provisional caller/operator and star-key prompts |
-| `legalApprovalRef`, `retentionApprovalRef`, `retentionHours` | Actual approved evidence references, local retention 1–168 hours |
-| `independentEndpointVerified`, `providerCaptureDefaultsOff`, `providerCallLimitsVerified`, `providerRetentionVerified` | All must be true after verification, not merely to satisfy validation; limits include provider-enforced duration, US destination, concurrency and spend controls |
+| `legalApprovalRef`, `retentionApprovalRef`, `retentionHours` | Actual approved evidence references; retention exactly 24 hours (FRL-PILOT-002). Owner wording approval is not legal review. |
+| `independentEndpointVerified`, `providerCaptureDefaultsOff`, `providerRoutingLimitsVerified`, `providerRetentionVerified` | True only after verification; routing limits cover US destination, concurrency and spend |
+| `durationPolicy` | FRL-PILOT-003 application_watchdog mode, actual riskApprovalRef, qualified independentWatchdogVerified and manualStopVerified; no carrier duration guarantee |
 
 Separate flags default off: `RESPONSEOS_FRL_PILOT_ENABLED`, `RESPONSEOS_FRL_PILOT_WORKER_ENABLED`. The transport reads only `RESPONSEOS_FRL_PILOT_TELNYX_API_KEY`. Existing signed-ingest and public-key configuration remain required. `RESPONSEOS_FRL_PILOT_KILL=true` denies new work and schedules cleanup. Credential absence makes the worker a no-op; the app still boots without secrets.
 

@@ -32,6 +32,29 @@
   ],
   "tasks": [
     {
+      "id": "FRL-COMMISSIONING-PREP-20261106",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Prepare Telnyx commissioning pack and record exact disclosure approval",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-11-06",
+      "blocked": false
+    },
+    {
+      "id": "FRL-INBOUND-DURATION-20261106",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Implement approved Telnyx-only application watchdog amendment",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-11-06",
+      "blocked": true,
+      "blockedReason": "Owner accepted residual risk; local watchdog implemented, separate hosting and supervised failure qualification pending."
+    },
+    {
       "id": "FRL-RECORDED-PILOT-20261106",
       "phase": "v0.3 · Demo Scope",
       "title": "Implement exact-call approval, keypad commissioning and provider retention for FRL pilot",
@@ -40,7 +63,8 @@
       "progress": 70,
       "priority": "High",
       "start": "2026-11-06",
-      "blocked": false,
+      "blocked": true,
+      "blockedReason": "FRL-PILOT-003 approved; hosted watchdog qualification, retention evidence and live windows remain pending.",
       "ref": 246,
       "refType": "pull"
     },

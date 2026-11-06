@@ -2,6 +2,10 @@
 
 This file records the load-bearing decisions that constrain how ResponseOS is built. Each ADR is short by design: context, decision, consequences. If a decision is reversed, mark the entry **Superseded by ADR-XXX** rather than deleting it.
 
+## FRL-PILOT-003 — Proposed provider-enforced inbound lifetime
+
+**Status: Accepted, 2026-11-06; EXPERIMENTAL local implementation, hosted qualification pending.** After the negative engineering answer, the owner approved [FRL-PILOT-003](implementations/florida-ramp-lift/FRL_INBOUND_DURATION_AMENDMENT.md): primary five-minute application deadline, independent early-stop watchdog and supervised manual stop. Simultaneous controller/provider failures can exceed five minutes. This explicitly replaces the carrier-guarantee gate for this isolated pilot only. Telnyx remains the provider. Exact-call approval, consent, child-leg reconciliation and 24-hour deletion remain required. No new live window, hosting charge or expanded credential recipient is authorized by this decision.
+
 ## Proposed FRL Phase 2 consent boundary — not ratified
 
 Phase 3 follow-on proposal: [synthetic Telnyx orchestration](implementations/florida-ramp-lift/FRL_PHASE3_ORCHESTRATION.md). Recording remains prohibited and bridge invalidation terminal; native capture acknowledgments and topology authorization are unresolved. Request planning and simulation do not ratify either proposal or grant live authority.

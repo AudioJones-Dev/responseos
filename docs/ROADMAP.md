@@ -6,6 +6,10 @@
 
 ## Version table
 
+FRL commissioning preparation: [operator pack](implementations/florida-ramp-lift/FRL_COMMISSIONING_PACK.md) records the owner-approved exact disclosures, configuration worksheet, stop procedure and separate-window test budget. Engineering response, legal evidence, hosted operator verification and live qualification remain pending.
+
+FRL inbound duration: [FRL-PILOT-003 architecture amendment](implementations/florida-ramp-lift/FRL_INBOUND_DURATION_AMENDMENT.md) is owner-accepted with explicit residual risk. The Telnyx-only application watchdog is locally implemented; separate hosting and failure qualification remain pending. No live window is open.
+
 FRL activation controls: [exact-call approval, keypad commissioning and provider deletion](implementations/florida-ramp-lift/FRL_ACTIVATION_CONTROLS.md) are under implementation/validation. Nonproduction infrastructure exists with calls disabled. Independent inbound duration enforcement remains unverified; no live window is open.
 
 FRL full recorded pilot: [experimental implementation](implementations/florida-ramp-lift/FRL_RECORDED_PILOT.md) under validation. Includes two consent windows, controlled dialing/bridging, durable dispatch and emergency stop. No live activation or milestone promotion.
