@@ -2,6 +2,12 @@
 
 All routes live under `app/api/*` as Next.js App Router Route Handlers. Responses use a consistent envelope. v0.2 routes now mix DB-backed reads, mock-safe mutation acknowledgements, and provider webhook stubs. v0.3 live-provider behavior remains gated by `AGENTS.md`, `ROADMAP.md`, and ADR-0001 / ADR-0009.
 
+## Experimental FRL recorded pilot
+
+`POST /api/webhooks/telnyx/calls` has a separately configured FRL-PILOT-001 branch after signature verification. It atomically records a content-free receipt, state and commands; unrelated demo routing retains its existing guards. Maximum body size is 256 KiB. Uncommitted or not-yet-proven transcript deliveries return 503 for retry. No dispatch runs in the webhook request.
+
+`GET /api/admin/frl-pilot` returns the protected configured window's statuses and unexpired consent-aware artifacts. `POST` permanently closes that window and queues cleanup (202, not terminal confirmation). Both require real hosted auth to be enabled and an operator/admin role; POST also requires same-origin. No request supplies a tenant or destination. See [implementation and activation gates](implementations/florida-ramp-lift/FRL_RECORDED_PILOT.md).
+
 ## Response envelope (canonical)
 
 Success:

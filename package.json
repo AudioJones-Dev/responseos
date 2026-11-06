@@ -8,6 +8,8 @@
     "npm": "11.16.0"
   },
   "scripts": {
+    "pilot:preflight": "tsx scripts/frl-pilot-preflight.ts",
+    "pilot:worker": "tsx scripts/frl-pilot-worker.ts",
     "postinstall": "node scripts/patch-minimatch-cjs-compat.mjs",
     "dev": "next dev",
     "build": "next build",

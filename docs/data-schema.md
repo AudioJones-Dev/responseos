@@ -329,3 +329,7 @@ Architectural placement and product framing are documented in `architecture.md` 
 - No file-upload schema is committed to. Uploads are gated on the `files` / `media` model already on the v0.2 roadmap above.
 - No third-party knowledge integrations (Obsidian, Notion, Confluence, etc.) are committed to.
 - No additional general-knowledge Prisma models, retrieval runtime, or provider integration ships from this roadmap entry.
+
+## Experimental FRL pilot (migration 0015)
+
+`FrlPilotRun` stores account/call/window binding, config digest, content-free state and expiry. `FrlPilotCommand` is the durable intent/claim/result outbox, scoped to account and run; uncertain sends are not retried. `FrlPilotArtifact` uniquely binds a recording ID and capture window, bounded start/end times and expiring transcript text. It stores no recording URL or destination. Consent grants and emergency-stop latches are append-only `AuditLog` entries. Existing `WebhookEvent` stores only payload hashes for this path. Canonical call readers and CRM never receive pilot transcript content. See [contract](implementations/florida-ramp-lift/FRL_RECORDED_PILOT.md).

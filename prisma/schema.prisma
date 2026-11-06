@@ -697,6 +697,56 @@ model WebhookEvent {
   @@index([payload_expires_at])
 }
 
+model FrlPilotRun {
+  id             String   @id
+  account_id     String
+  call_id        String
+  window_id      String
+  config_digest  String
+  state_json     Json
+  closed         Boolean  @default(false)
+  started_at     DateTime
+  expires_at     DateTime
+  updated_at     DateTime @updatedAt
+
+  @@unique([account_id, call_id])
+  @@index([account_id, window_id])
+  @@index([account_id, closed])
+}
+
+model FrlPilotCommand {
+  id            String   @id
+  account_id    String
+  run_id        String
+  purpose       String
+  state         String   @default("pending")
+  intent_json   Json
+  deadline      DateTime
+  dispatched_at DateTime?
+  finished_at   DateTime?
+
+  @@index([account_id, run_id])
+  @@index([account_id, state])
+}
+
+model FrlPilotArtifact {
+  id           String   @id @default(cuid())
+  account_id   String
+  run_id       String
+  window_id    String
+  recording_id String
+  purpose      String
+  started_at   DateTime
+  ended_at     DateTime
+  transcript   String?
+  expires_at   DateTime
+  purged_at    DateTime?
+
+  @@unique([account_id, recording_id])
+  @@unique([account_id, run_id, window_id])
+  @@index([account_id, expires_at])
+}
+
 model CallCaptureConsent {
   id               String   @id @default(cuid())
   account_id       String

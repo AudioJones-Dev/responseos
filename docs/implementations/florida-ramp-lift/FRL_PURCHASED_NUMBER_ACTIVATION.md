@@ -1,6 +1,6 @@
 # FRL purchased-number pilot — implementation and activation contract
 
-Status: policy amendment ACCEPTED by the operator on 2026-11-06; implementation DOCUMENTED_ONLY. No runtime, deployment, migration, provider configuration or live capture is authorized by this document. The operator purchased one new local Telnyx number in the current chat; purchase does not open the live-provider gates. Exact number/resource identities belong in the protected operator setup record, not in runtime source.
+Status: policy amendment ACCEPTED by the operator on 2026-11-06. This planning contract is preserved as the pre-implementation baseline; see [recorded pilot implementation](FRL_RECORDED_PILOT.md) for the subsequently authorized experimental code and current test evidence. No runtime, deployment, migration, provider configuration or live capture is authorized by this document. The operator purchased one new local Telnyx number in the current chat; purchase does not open the live-provider gates. Exact number/resource identities belong in the protected operator setup record, not in runtime source.
 
 ## Verified starting point
 

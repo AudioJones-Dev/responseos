@@ -6,6 +6,9 @@ import { resetFactoryCounters } from "../factories";
 export const prisma = new PrismaClient();
 
 const TABLES = [
+  "FrlPilotArtifact",
+  "FrlPilotCommand",
+  "FrlPilotRun",
   "CallCaptureConsent",
   "BootstrapPromotion",
   "TelephonyNumberAssignment",

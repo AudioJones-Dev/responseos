@@ -6,6 +6,8 @@
 
 ## Version table
 
+FRL full recorded pilot: [experimental implementation](implementations/florida-ramp-lift/FRL_RECORDED_PILOT.md) under validation. Includes two consent windows, controlled dialing/bridging, durable dispatch and emergency stop. No live activation or milestone promotion.
+
 FRL Phase 3 is a [partial synthetic orchestration increment](implementations/florida-ramp-lift/FRL_PHASE3_ORCHESTRATION.md): verified request plans, signed offline mapping and routing/capture tests. Recording policy, post-bridge authorization, physical acknowledgments and durable execution block full Phase 3 and live testing. No milestone promotion.
 
 FRL Phase 2 consent hardening is under synthetic validation: [implementation boundary and live-test blockers](implementations/florida-ramp-lift/FRL_CONSENT_INGEST_BOUNDARY.md). No milestone promotion or live activation. The proposed change blocks legacy unproven Telnyx content and CRM exports as well as FRL until reviewed consent-aware mappings exist.

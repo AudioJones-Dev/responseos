@@ -8,6 +8,10 @@ Phase 3 follow-on proposal: [synthetic Telnyx orchestration](implementations/flo
 
 The [FRL consent ingestion boundary](implementations/florida-ramp-lift/FRL_CONSENT_INGEST_BOUNDARY.md) proposes content-free Telnyx raw receipts, durable per-call consent, transactional transcript authorization and blocking Telnyx CRM exports pending a reviewed proposal executor. Synthetic implementation is explicitly requested; this does not ratify PR #240, amend live-provider authority, approve a hosted migration or reopen v0.3/v0.4 gates. Human review must assess the intentional narrowing of existing demo insight/CRM behavior before merge.
 
+## FRL-PILOT-002 — Recorded pilot implementation under review
+
+Operator-authorized implementation, 2026-11-06; technical review and live gates remain open. The [implementation contract](implementations/florida-ramp-lift/FRL_RECORDED_PILOT.md) uses bounded name and bridged recording windows with post-recording transcription keyed to recording evidence, durable command claims, a permanent per-window emergency-stop latch and separate consent-aware artifacts. It retains global default-off recording and the existing Telnyx CRM block. No real-time stream, provider activation, hosted migration or deployment is authorized by this record.
+
 ## FRL-PILOT-001 — Approved purchased-number pilot recording amendment
 
 **Status:** Accepted by the operator, 2026-11-06, in direct response to the scoped FRL-PILOT-001 approval request. Amends ADR-0051 and FRL G-11 only for the newly purchased, operator-supervised FRL pilot number. ADR-0055 remains fully applicable. Policy approval is not implementation, legal approval, deployment or live-call authorization.
