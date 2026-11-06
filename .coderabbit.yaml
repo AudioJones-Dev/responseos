@@ -3,6 +3,10 @@
 # Repository-level CodeRabbit settings. Organization UI settings apply to
 # anything not set here.
 reviews:
+  auto_review:
+    # PRs open as drafts until CI is green (AGENTS.md), so a review that
+    # waits for "ready" arrives after the work is meant to be done.
+    drafts: true
   pre_merge_checks:
     # AGENTS.md: "Default to writing no comments. Only add one when the WHY
     # is non-obvious." A coverage threshold measures the opposite property —
