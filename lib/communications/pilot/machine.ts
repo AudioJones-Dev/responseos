@@ -13,7 +13,7 @@ export type PilotState = {
   version: 1; id: string; stage: "answer" | "caller_consent" | "name_prompt" | "name" | "hold" | "dial" | "operator_consent" | "bridge" | "conversation" | "unavailable" | "ending" | "ended";
   startedAt: number; deadline: number; endsAt: number; disclosure: string;
   caller: Leg; operator?: Leg; grants: Grant[]; captureDenied: boolean; revokedAt?: number;
-  windows: Window[]; intents: Intent[]; bridges: Role[]; incident?: string; dialUnknown?: boolean;
+  windows: Window[]; intents: Intent[]; bridges: Role[]; incident?: string; dialUnknown?: boolean; topologyUnknown?: boolean;
 };
 export type Observation = { id: string; at: number; role: Role; token?: string } & (
   { kind: "answered" | "prompt_done" | "bridged" | "hangup" | "withdraw" | "failure" } |
@@ -46,7 +46,7 @@ export function endPilot(s: PilotState, now: number, reason?: string, revoke = f
   for (const role of ["caller", "operator"] as const) {
     if (s[role] && !s[role]?.endedAt && !s.intents.some(i => i.purpose === "hangup" && i.role === role)) enqueue(s, "hangup", role, now);
   }
-  if (s.caller.endedAt && (!s.operator || s.operator.endedAt) && !s.dialUnknown) s.stage = "ended";
+  if (s.caller.endedAt && (!s.operator || s.operator.endedAt) && !s.dialUnknown && !s.topologyUnknown) s.stage = "ended";
 }
 function unavailable(s: PilotState, now: number) {
   advance(s, "unavailable", "caller", now);
@@ -94,6 +94,7 @@ export function observePilot(state: PilotState, e: Observation, receivedAt: numb
     // The opposite leg retains its own client state; both independently bound legs must report the bridge.
     const token = e.role === "caller" ? latest(s, "bridge")?.id : latest(s, "operator_consent")?.id;
     if (s.stage !== "bridge" || e.token !== token || e.at < (latest(s, "bridge")?.createdAt ?? Infinity)) {
+      s.topologyUnknown = true;
       endPilot(s, receivedAt, "unexpected_topology", true); return s;
     }
     if (!s.bridges.includes(e.role)) s.bridges.push(e.role);

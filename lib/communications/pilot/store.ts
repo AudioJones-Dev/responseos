@@ -87,7 +87,7 @@ export async function ingestPilot(db: Database, c: PilotConfig, event: TelnyxWeb
       if (dial && event.data.payload.from === c.number && event.data.payload.to === c.operator && leg.sessionId === s.caller.sessionId && leg.controlId !== s.caller.controlId && leg.legId !== s.caller.legId) { s.operator = leg; s.dialUnknown = false; }
     }
     const observed = observation(event, s);
-    if (!observed && event.data.event_type === "call.bridged" && leg.sessionId === s.caller.sessionId) endPilot(s, now, "unknown_bridge_participant", true);
+    if (!observed && event.data.event_type === "call.bridged" && leg.sessionId === s.caller.sessionId) { s.topologyUnknown = true; endPilot(s, now, "unknown_bridge_participant", true); }
     if (observed && !["hangup", "withdraw", "failure"].includes(observed.kind)) {
       const command = observed.token ? await tx.frlPilotCommand.findFirst({ where: { id: observed.token, account_id: c.accountId, run_id: s.id, state: { in: ["dispatched", "accepted", "uncertain"] } } }) : null;
       if (!command) return finish(false);

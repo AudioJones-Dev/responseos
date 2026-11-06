@@ -40,7 +40,9 @@
       "progress": 90,
       "priority": "High",
       "start": "2026-11-06",
-      "blocked": false
+      "blocked": false,
+      "ref": 246,
+      "refType": "pull"
     },
     {
       "id": "FRL-ORCHESTRATION-20261106",

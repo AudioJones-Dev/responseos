@@ -78,6 +78,9 @@ describe("FRL recorded pilot", () => {
   test("a new bridge event during the conversation cannot reuse the old roster", () => {
     const h = machineHarness(); h.callerConsent(); h.nameSaved(); h.operatorConsent(); h.bridge();
     h.send("bridged"); expect(h.state.incident).toBe("unexpected_topology");
+    h.send("hangup"); h.send("hangup", "operator");
+    expect(h.state.stage).toBe("ending");
+    expect(h.state.topologyUnknown).toBe(true);
   });
   test("expired stop watchdog retains uncertain physical status", () => {
     const h = machineHarness(); h.callerConsent(); h.send("prompt_done");
