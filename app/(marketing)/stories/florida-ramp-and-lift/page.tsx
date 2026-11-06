@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { ButtonLink, Card } from "@/components/ui";
 import { pageMetadata } from "@/lib/seo";
+import { MICHAEL_QUOTE } from "./quote";
 
 export const metadata = pageMetadata({
   title: "Florida Ramp & Lift customer story",
@@ -66,6 +67,14 @@ export default function FloridaRampAndLiftStory() {
             pilot. This page tells that story as it stands today, including
             what isn&apos;t finished.
           </p>
+          <figure className="border-l-2 border-accent pl-5 pt-2">
+            <blockquote className="font-display text-xl text-ink">
+              &ldquo;{MICHAEL_QUOTE}&rdquo;
+            </blockquote>
+            <figcaption className="mt-2 text-sm text-ink-muted">
+              Michael Keegan, founder, Florida Ramp &amp; Lift
+            </figcaption>
+          </figure>
         </div>
         <figure className="w-full max-w-[280px]">
           <Image
@@ -91,28 +100,43 @@ export default function FloridaRampAndLiftStory() {
         </figure>
       </div>
 
-      <section className="mt-16">
-        <h2 className="font-display text-2xl font-semibold text-ink">
-          The call that can&apos;t wait
-        </h2>
-        <Card className="mt-6 max-w-2xl">
-          <blockquote className="text-lg text-ink">
-            &ldquo;My father comes home from the hospital tomorrow, and we
-            can&apos;t get him through the front door.&rdquo;
-          </blockquote>
-          <p className="mt-3 text-xs text-ink-muted">
-            Illustrative. This is the kind of request Florida Ramp &amp; Lift
-            receives, not a recording of a real caller.
-          </p>
-        </Card>
-        <div className="mt-8 grid gap-4 sm:grid-cols-3">
-          {WHY.map((w) => (
-            <div key={w.title} className="border-l-2 border-line-strong pl-4">
-              <h3 className="text-sm font-semibold text-ink">{w.title}</h3>
-              <p className="mt-1.5 text-sm text-ink-secondary">{w.body}</p>
-            </div>
-          ))}
+      <section className="mt-16 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div>
+          <h2 className="font-display text-2xl font-semibold text-ink">
+            The call that can&apos;t wait
+          </h2>
+          <Card className="mt-6">
+            <blockquote className="text-lg text-ink">
+              &ldquo;My father comes home from the hospital tomorrow, and we
+              can&apos;t get him through the front door.&rdquo;
+            </blockquote>
+            <p className="mt-3 text-xs text-ink-muted">
+              Illustrative. This is the kind of request Florida Ramp &amp; Lift
+              receives, not a recording of a real caller.
+            </p>
+          </Card>
+          <div className="mt-8 grid gap-6">
+            {WHY.map((w) => (
+              <div key={w.title} className="border-l-2 border-line-strong pl-4">
+                <h3 className="text-sm font-semibold text-ink">{w.title}</h3>
+                <p className="mt-1.5 text-sm text-ink-secondary">{w.body}</p>
+              </div>
+            ))}
+          </div>
         </div>
+        <figure className="w-full max-w-[320px]">
+          <Image
+            src="/stories/frl-stair-lift.webp"
+            alt="A man seated on a stair lift at the top of a carpeted staircase, beside a mirrored wall."
+            width={720}
+            height={1080}
+            sizes="320px"
+            className="rounded-lg border border-line"
+          />
+          <figcaption className="mt-2 text-xs text-ink-muted">
+            Photo: Florida Ramp &amp; Lift
+          </figcaption>
+        </figure>
       </section>
 
       <section className="mt-20">

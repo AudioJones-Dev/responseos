@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ButtonLink, Card } from "@/components/ui";
 import { AtmosphereBackground } from "@/components/layout/AtmosphereBackground";
 import { RecoveryRecord } from "./_components/RecoveryRecord";
+import { MICHAEL_QUOTE } from "./stories/florida-ramp-and-lift/quote";
 import { SITE_OPEN_GRAPH } from "@/lib/seo";
 
 export const metadata = {
@@ -172,6 +173,14 @@ export default function MarketingHome() {
               ResponseOS is being built and tested with Michael in a
               supervised pilot, where a person reviews every call.
             </p>
+            <figure className="mt-4 border-l-2 border-accent pl-4">
+              <blockquote className="text-base text-ink">
+                &ldquo;{MICHAEL_QUOTE}&rdquo;
+              </blockquote>
+              <figcaption className="mt-1 text-xs text-ink-muted">
+                Michael Keegan, founder, Florida Ramp &amp; Lift
+              </figcaption>
+            </figure>
             <div className="mt-5">
               <ButtonLink href="/stories/florida-ramp-and-lift" variant="secondary">
                 Read the story

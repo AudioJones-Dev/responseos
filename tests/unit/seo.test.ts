@@ -9,6 +9,7 @@ import ContractorsPage from "@/app/(marketing)/industries/contractors/page";
 import HomeServicesPage from "@/app/(marketing)/industries/home-services/page";
 import MarketingHome from "@/app/(marketing)/page";
 import FrlStoryPage from "@/app/(marketing)/stories/florida-ramp-and-lift/page";
+import { MICHAEL_QUOTE } from "@/app/(marketing)/stories/florida-ramp-and-lift/quote";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { OG_IMAGE, assessmentJsonLd, pageMetadata } from "@/lib/seo";
 
@@ -141,6 +142,7 @@ describe("customer story", () => {
     expect(html).toContain("supervised pilot");
     expect(html).toContain("no results to report yet");
     expect(html).toContain("Illustrative.");
+    expect(html).toContain(escapeText(MICHAEL_QUOTE));
     for (const claim of PROHIBITED) expect(html).not.toMatch(claim);
   });
 
@@ -148,6 +150,7 @@ describe("customer story", () => {
     const html = renderToStaticMarkup(createElement(MarketingHome));
     expect(html).toContain('href="/stories/florida-ramp-and-lift"');
     expect(html).toContain("supervised pilot, where a person reviews every call");
+    expect(html).toContain(escapeText(MICHAEL_QUOTE));
   });
 });
 
