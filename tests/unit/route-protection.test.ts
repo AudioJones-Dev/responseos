@@ -24,6 +24,7 @@ describe("isPublicPath", () => {
     "/api/webhooks",
     "/api/webhooks/clerk",
     "/api/webhooks/stripe",
+    "/stories/florida-ramp-and-lift",
   ])("treats %s as public", (path) => {
     expect(isPublicPath(path)).toBe(true);
   });
@@ -48,6 +49,9 @@ describe("isPublicPath", () => {
     "/audit/internal",
     "/trust/internal",
     "/audit-evil",
+    // only the one published story is public, not a `/stories` prefix
+    "/stories",
+    "/stories/florida-ramp-and-lift/internal",
     "/trust-evil",
   ])("treats %s as protected", (path) => {
     expect(isPublicPath(path)).toBe(false);

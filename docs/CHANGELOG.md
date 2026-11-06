@@ -8,6 +8,13 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: Florida Ramp & Lift customer story
+
+- **Why:** the marketing site had no proof from a real business. ADR-0035 names Florida Ramp & Lift the anchor case study, and the owner reported Michael Keegan's approval (2026-11-06) to use his name, business and photo.
+- **Change:** adds `/stories/florida-ramp-and-lift` (public, indexed, listed in `llms.txt`) and a homepage section linking to it. The homepage demo record now says it is modeled on the kind of call FRL receives. The photo is a 37 KB WebP resized from FRL's own founder image.
+- **Status language:** the story describes a supervised pilot where a person reviews every call and reports no results. A test blocks outcome, percentage, dollar and 24/7 claims on the page.
+- **Not done here:** Michael's quote (drafted for his approval, not published), his sign-off on the final page text, and deployment.
+
 ## Unreleased — fix: stop the /audit form from losing leads while public intake is off
 
 - **Bug:** with `RESPONSEOS_PUBLIC_AUDIT_INTAKE_ENABLED` unset (ADR-0047 §6 keeps it off until the WAF gate is proven), `/api/audit-requests` is not a public path, so the proxy redirects a submission to sign-in. The form could not read that response and showed "Network error. Try again." Nothing was stored, and the prospect was not told where else to go.

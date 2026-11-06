@@ -7,6 +7,8 @@ import sitemap from "@/app/sitemap";
 import { GET as llms } from "@/app/llms.txt/route";
 import ContractorsPage from "@/app/(marketing)/industries/contractors/page";
 import HomeServicesPage from "@/app/(marketing)/industries/home-services/page";
+import MarketingHome from "@/app/(marketing)/page";
+import FrlStoryPage from "@/app/(marketing)/stories/florida-ramp-and-lift/page";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { OG_IMAGE, assessmentJsonLd, pageMetadata } from "@/lib/seo";
 
@@ -121,8 +123,36 @@ describe("structured data rendering", () => {
   });
 });
 
+describe("customer story", () => {
+  // Doctrine §20: the story describes a supervised pilot, never outcomes.
+  const PROHIBITED = [
+    /recover(s|ed) revenue/i,
+    /production-ready/i,
+    /provider-independent/i,
+    /HIPAA-(ready|certified|compliant)/i,
+    /\b24\/7\b/,
+    /\d+\s?%/,
+    /\$\s?\d/,
+  ];
+
+  test("story page names the approved subject and stays within pilot status", () => {
+    const html = renderToStaticMarkup(createElement(FrlStoryPage));
+    expect(html).toContain("Michael Keegan");
+    expect(html).toContain("supervised pilot");
+    expect(html).toContain("no results to report yet");
+    expect(html).toContain("Illustrative.");
+    for (const claim of PROHIBITED) expect(html).not.toMatch(claim);
+  });
+
+  test("homepage links the story with the same status language", () => {
+    const html = renderToStaticMarkup(createElement(MarketingHome));
+    expect(html).toContain('href="/stories/florida-ramp-and-lift"');
+    expect(html).toContain("supervised pilot, where a person reviews every call");
+  });
+});
+
 describe("sitemap", () => {
-  test("lists exactly the nine public marketing routes", () => {
+  test("lists exactly the ten public marketing routes", () => {
     process.env.NEXT_PUBLIC_APP_URL = "https://seo-test.invalid";
     expect(sitemap().map((e) => e.url)).toEqual([
       "https://seo-test.invalid/",
@@ -131,6 +161,7 @@ describe("sitemap", () => {
       "https://seo-test.invalid/demo",
       "https://seo-test.invalid/industries/home-services",
       "https://seo-test.invalid/industries/contractors",
+      "https://seo-test.invalid/stories/florida-ramp-and-lift",
       "https://seo-test.invalid/trust",
       "https://seo-test.invalid/privacy",
       "https://seo-test.invalid/terms",

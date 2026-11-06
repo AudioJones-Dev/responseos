@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ButtonLink, Card } from "@/components/ui";
 import { AtmosphereBackground } from "@/components/layout/AtmosphereBackground";
@@ -132,9 +133,10 @@ export default function MarketingHome() {
           The call ends. The opportunity shouldn&apos;t.
         </h2>
         <p className="mt-2 max-w-2xl text-sm text-ink-secondary">
-          One fictional record from the demo sandbox, followed from an
-          after-hours call to where it stands now — including the steps that
-          are still open.
+          One fictional record from the demo sandbox, modeled on the kind of
+          call Florida Ramp &amp; Lift receives, followed from an after-hours
+          call to where it stands now — including the steps that are still
+          open.
         </p>
         <div className="mt-8">
           <RecoveryRecord />
@@ -144,6 +146,39 @@ export default function MarketingHome() {
             Walk through this record
           </ButtonLink>
         </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6">
+        <Card className="grid items-center gap-8 p-8 md:grid-cols-[160px_minmax(0,1fr)]">
+          <Image
+            src="/stories/michael-keegan.webp"
+            alt="Michael Keegan, founder of Florida Ramp & Lift."
+            width={560}
+            height={700}
+            sizes="160px"
+            className="w-32 rounded-lg border border-line md:w-40"
+          />
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-ink-muted">
+              Customer story
+            </p>
+            <h2 className="mt-2 font-display text-2xl font-semibold text-ink">
+              Built with a real business, one call at a time
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm text-ink-secondary">
+              Michael Keegan&apos;s company, Florida Ramp &amp; Lift, installs
+              wheelchair ramps and lifts for families whose needs just
+              changed. Their calls can&apos;t wait for a callback tomorrow.
+              ResponseOS is being built and tested with Michael in a
+              supervised pilot, where a person reviews every call.
+            </p>
+            <div className="mt-5">
+              <ButtonLink href="/stories/florida-ramp-and-lift" variant="secondary">
+                Read the story
+              </ButtonLink>
+            </div>
+          </div>
+        </Card>
       </section>
 
       <section className="relative isolate mx-auto w-full max-w-6xl overflow-hidden px-4 py-16 sm:px-6">
