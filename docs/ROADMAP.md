@@ -10,6 +10,8 @@ FRL Phase 3 is a [partial synthetic orchestration increment](implementations/flo
 
 FRL Phase 2 consent hardening is under synthetic validation: [implementation boundary and live-test blockers](implementations/florida-ramp-lift/FRL_CONSENT_INGEST_BOUNDARY.md). No milestone promotion or live activation. The proposed change blocks legacy unproven Telnyx content and CRM exports as well as FRL until reviewed consent-aware mappings exist.
 
+FRL purchased-number follow-up: [activation contract](implementations/florida-ramp-lift/FRL_PURCHASED_NUMBER_ACTIVATION.md), **DOCUMENTED_ONLY**. The operator selected the full consent-gated recorded flow with controlled two-leg bridging as the first deliverable; no separate no-capture-first rollout is planned. Number ownership advances no v0.3 gate; the recording-policy amendment was approved on 2026-11-06; durable execution, legal/retention review, hosted target and supervised-call approval remain pending.
+
 Database hardening under review: [Neon standardization](database/README.md) reconciles existing environments and adds local configuration/history/restore gates plus a PostgreSQL 16/17/18 CI matrix. No milestone promotion, hosted migration or live activation is authorized; deployed connection identity, role/RLS acceptance and hosted recovery remain open.
 
 | Version | Theme | Status |

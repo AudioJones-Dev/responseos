@@ -75,6 +75,19 @@
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/241"
     },
     {
+      "id": "FRL-PILOT-PLAN-01",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Record approved FRL pilot recording amendment and activation contract (documentation only)",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-11-06",
+      "due": "2026-11-06",
+      "blocked": true,
+      "blockedReason": "Recording amendment approved 2026-11-06; runtime, legal/retention review and activation remain pending."
+    },
+    {
       "id": "G-14",
       "phase": "Tech Debt & Hardening",
       "title": "Apply owner-approved copy redlines (claims, naming, CTA)",
