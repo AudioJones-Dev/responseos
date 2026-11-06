@@ -52,9 +52,14 @@ export async function POST(req: Request) {
   const target = getTelnyxAgentTarget(event.data.payload);
   const occurredAt = getTelnyxOccurredAt(event);
   const receivedAt = new Date();
-  let resolved = process.env.RESPONSEOS_PROSPECT_BOOTSTRAP_ENABLED === "true" && target && occurredAt
-    ? await resolveTelnyxEventAssignment({ target, occurredAt, receivedAt })
-    : null;
+  let resolved: Awaited<ReturnType<typeof resolveTelnyxEventAssignment>> = null;
+  try {
+    resolved = process.env.RESPONSEOS_PROSPECT_BOOTSTRAP_ENABLED === "true" && target && occurredAt
+      ? await resolveTelnyxEventAssignment({ target, occurredAt, receivedAt })
+      : null;
+  } catch {
+    return errorResponse(503, { code: "telnyx_assignment_unavailable", message: "Telnyx assignment is unavailable." });
+  }
   let personalized = true;
   const legacyAccountId = process.env.RESPONSEOS_DEMO_ACCOUNT_ID;
   const legacyNumber = process.env.RESPONSEOS_DEMO_PHONE_E164;

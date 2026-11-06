@@ -14,8 +14,10 @@ export const captureStateSchema = z.object({
   expiresAt: time,
   startedAt: time.nullable(), stoppedAt: time.nullable(), revokedAt: time.nullable(),
   stopAcknowledged: z.boolean(),
-  events: z.array(z.object({ id, kind: id, at: time, legId: id.optional(), choice: z.enum(["accept", "decline", "timeout", "revoke"]).optional() }).strict()).max(256),
-}).strict();
+  events: z.array(z.object({ id, kind: id, at: time, legId: id.optional(), choice: z.enum(["accept", "decline", "timeout", "revoke"]).optional() }).strict()),
+}).strict().refine(state => new Set(state.participants.map(p => p.legId)).size === state.participants.length &&
+  state.participants.filter(p => p.role === "caller").length === 1 && state.participants.filter(p => p.role === "founder").length === 1,
+  "invalid_capture_roster");
 export type CaptureState = z.infer<typeof captureStateSchema>;
 export const captureEventSchema = z.discriminatedUnion("kind", [
   z.object({ id, at: time, kind: z.literal("decision"), legId: id, choice: z.enum(["accept", "decline", "timeout", "revoke"]) }).strict(),
@@ -39,9 +41,9 @@ export function transitionCapture(state: CaptureState, event: CaptureEvent): Cap
         (event.kind === "decision" && (previous.legId !== event.legId || previous.choice !== event.choice))) throw new Error("conflicting_capture_event");
     return state;
   }
-  if (state.events.length >= 256) throw new Error("capture_event_limit");
   const next: CaptureState = structuredClone(state);
   next.events.push({ id: event.id, kind: event.kind, at: event.at, ...(event.kind === "decision" ? { legId: event.legId, choice: event.choice } : {}) });
+  if (next.events.length >= 256) next.revokedAt ??= event.at;
   if (event.kind === "decision") {
     const p = next.participants.find(p => p.legId === event.legId);
     if (!p) throw new Error("unknown_capture_participant");

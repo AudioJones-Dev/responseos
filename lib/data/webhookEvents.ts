@@ -101,9 +101,10 @@ export async function recordWebhookEvent(entry: {
   payload_expires_at?: Date;
   payload_purged_at?: Date;
 }): Promise<Result<{ id: string; process_status: WebhookProcessStatus }>> {
+  const dedupe_hash = computeDedupeHash(entry.provider, entry.provider_event_id);
   if (entry.provider === "telnyx") {
     entry = { ...entry, raw_body: entry.payload_purged_at ? "<PURGED_WEBHOOK_PAYLOAD>" : contentFreeReceipt(entry.raw_body),
-      signature_header: undefined, event_type: safeEventType(entry.event_type) };
+      signature_header: undefined, provider_event_id: dedupe_hash, event_type: safeEventType(entry.event_type) };
   }
   if (db === null) {
     return err(
@@ -111,8 +112,6 @@ export async function recordWebhookEvent(entry: {
       "Webhook ingest requires DATABASE_URL to be set.",
     );
   }
-
-  const dedupe_hash = computeDedupeHash(entry.provider, entry.provider_event_id);
 
   try {
     const existing = await db.webhookEvent.findUnique({

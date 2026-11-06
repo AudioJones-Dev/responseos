@@ -1,7 +1,7 @@
 import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
 import { createCaptureSession, recordCaptureEvent } from "@/lib/communications/consent/store";
 import { normalizeTelnyxEvent } from "@/lib/providers/telnyx/normalize";
-import { recordWebhookEvent } from "@/lib/data/webhookEvents";
+import { recordWebhookEvent, computeDedupeHash } from "@/lib/data/webhookEvents";
 import { runCrmSyncForCall } from "@/lib/crm/syncFinalizedCall";
 import { MockCrmProvider } from "@/lib/providers/crm/mock";
 import type { TelnyxWebhookEnvelope } from "@/lib/providers/telnyx/webhook";
@@ -57,6 +57,10 @@ describe("consent before durable Telnyx content", () => {
   test("signed content without durable consent cannot enter any content table or raw ledger", async () => {
     expect((await ingest()).callId).toBeNull(); await assertNoContent();
   });
+  test("content disguised as event identifiers or unsupported event types is not retained", async () => {
+    const e = event(secret); e.data.event_type = secret;
+    await ingest(e); await assertNoContent();
+  });
   test("an unsigned receipt cannot authorize normalization", async () => {
     await prepare(); const e = event();
     expect((await normalizeTelnyxEvent({ accountId, demoNumber, event: e, webhookEventId: await ledger(e, accountId, false) })).callId).toBeNull();
@@ -64,7 +68,7 @@ describe("consent before durable Telnyx content", () => {
   });
   test("authorized transcript keeps tenant, canonical call, leg, consent revision and interval evidence", async () => {
     await prepare(); expect((await ingest()).callId).toBe(callId);
-    const receipt = await prisma.webhookEvent.findFirstOrThrow({ where: { provider_event_id: "content-event" } });
+    const receipt = await prisma.webhookEvent.findFirstOrThrow({ where: { dedupe_hash: computeDedupeHash("telnyx", "content-event") } });
     expect(JSON.parse(receipt.raw_body)).toMatchObject({ call_id: callId, leg_id: "caller-leg", scope: "transcription", start: at(10), end: at(50), crm: "blocked", speaker_verified: false });
     expect(receipt.raw_body).not.toContain(secret);
     expect(await prisma.callTranscript.findUnique({ where: { call_id: callId } })).toMatchObject({ account_id: accountId, inline_text: secret });
@@ -96,6 +100,17 @@ describe("consent before durable Telnyx content", () => {
     await Promise.all([normalizeTelnyxEvent(input), normalizeTelnyxEvent(input)]);
     expect(await ledger(e)).toBe(webhookEventId);
     expect(await prisma.callSegment.count({ where: { call_id: callId } })).toBe(1);
+  });
+  test("concurrent revocation serializes with writes and rejects every subsequent delivery", async () => {
+    await prepare();
+    await Promise.all([
+      recordCaptureEvent(accountId, providerCallId, { id: "race-revoke", kind: "decision", at: at(55), legId: "caller-leg", choice: "revoke" }),
+      ingest(),
+    ]);
+    const count = await prisma.callSegment.count({ where: { call_id: callId } });
+    expect(count).toBeLessThanOrEqual(1);
+    expect((await ingest(event("after-revoke"))).callId).toBeNull();
+    expect(await prisma.callSegment.count({ where: { call_id: callId } })).toBe(count);
   });
   test("out-of-order authorized segments retain evidence in capture-time order", async () => {
     await prepare(); await ingest(event("later", { start_time: at(30), end_time: at(40), transcript: "Later" }));

@@ -44,6 +44,15 @@ describe("durable capture policy", () => {
     expect(transitionCapture(state, event)).toBe(state);
     expect(() => transitionCapture(state, { ...event, choice: "revoke" })).toThrow("conflicting_capture_event");
   });
+  it("closes capture at the event budget and still accepts revocation", () => {
+    let state = accepted();
+    for (let i = state.events.length; i < 256; i++) state = transitionCapture(state, {
+      id: `repeat-${i}`, at, kind: "decision", legId: "caller-leg", choice: "accept",
+    });
+    expect(permitted(state)).toBe(false);
+    state = transitionCapture(state, { id: "late-revoke", at, kind: "decision", legId: "caller-leg", choice: "revoke" });
+    expect(state.participants[0].choice).toBe("revoke");
+  });
   it("rejects new legs, missing participants and unknown participants", () => {
     expect(permitted(accepted(), "new-leg")).toBe(false);
     expect(permitted(accepted(), "caller-leg", ["caller-leg"])).toBe(false);

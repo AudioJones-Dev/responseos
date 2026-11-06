@@ -1,5 +1,6 @@
 import "@/lib/serverOnlyGuard";
 import { db } from "@/lib/db/client";
+import { computeDedupeHash } from "@/lib/data/webhookEvents";
 import { PURGED_CALLER_NUMBER } from "@/lib/retention/periods";
 import { captureStateSchema, permitsTranscript, transitionCapture } from "@/lib/communications/consent/capture";
 import { lockCapture } from "@/lib/communications/consent/store";
@@ -19,7 +20,7 @@ export async function normalizeTelnyxEvent(params: NormalizeInput): Promise<{ ca
     await lockCapture(tx, params.accountId, providerCallId);
     const receipt = await tx.webhookEvent.findFirst({ where: {
       id: params.webhookEventId, account_id: params.accountId, provider: "telnyx",
-      provider_event_id: params.event.data.id, signature_valid: true,
+      provider_event_id: computeDedupeHash("telnyx", params.event.data.id), signature_valid: true,
     } });
     const reject = async (code: string) => {
       if (receipt && receipt.process_status !== "processed") await tx.webhookEvent.update({
