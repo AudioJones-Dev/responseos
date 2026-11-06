@@ -1,4 +1,5 @@
 import { after, NextResponse } from "next/server";
+import { isPublicAuditIntakeEnabled } from "@/lib/auth/route-protection";
 import {
   createProspectIntake,
   isValidIdempotencyKey,
@@ -12,7 +13,7 @@ import {
 import { AuditRequestSchema } from "@/lib/validation/audit-request";
 
 export async function POST(req: Request) {
-  if (process.env.RESPONSEOS_PUBLIC_AUDIT_INTAKE_ENABLED !== "true") {
+  if (!isPublicAuditIntakeEnabled()) {
     return errorResponse(503, {
       code: "intake_disabled",
       message: "Prospect intake is not available.",

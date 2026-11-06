@@ -14,6 +14,13 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - **Change:** the site-wide JSON-LD adds a founder `Person` (`Audio Jones`) linked to the `AJ Digital LLC` organization, with `sameAs` set to the footer's social profiles. The footer and the markup now read from one `FOUNDER_PROFILES` constant. The homepage adds a "What is ResponseOS?" paragraph in status-accurate language (designed to, in active development, fictional demo data).
 - **Not changed:** the site title, the "Revenue Recovery Infrastructure" category line and the demo-environment banner, which are set by the brand copy spec and the demo deploy gate. Structured data still carries no assessment price or `Offer`.
 
+## Unreleased — fix: stop the /audit form from losing leads while public intake is off
+
+- **Bug:** with `RESPONSEOS_PUBLIC_AUDIT_INTAKE_ENABLED` unset (ADR-0047 §6 keeps it off until the WAF gate is proven), `/api/audit-requests` is not a public path, so the proxy redirects a submission to sign-in. The form could not read that response and showed "Network error. Try again." Nothing was stored, and the prospect was not told where else to go.
+- **Change:** `isPublicAuditIntakeEnabled()` in `lib/auth/route-protection.ts` is now the one check, used by the route guard, the API and the page. `/audit` renders the form only when intake is on; otherwise it shows a `mailto:hello@responseos.pro` request path. `tests/unit/audit-intake-gate.test.ts` covers both states and fails against the previous page.
+- **Mail:** `hello@responseos.pro` was confirmed receiving mail on 2026-11-02.
+- **Not done here:** deploying (an operator-approved ADR-0053 deploy) and closing the WAF gate (J-05) that would turn intake on.
+
 ## Unreleased — chore: remove the database-target diagnostic (ADR-0085)
 
 - **Why:** ADR-0085 requires removal within 7 days of the readout. The authorized readout was at 2026-10-29 02:43:09 UTC, so the deadline is 2026-11-05 02:43 UTC.
