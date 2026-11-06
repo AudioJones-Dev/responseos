@@ -2,7 +2,11 @@
 
 This file records the load-bearing decisions that constrain how ResponseOS is built. Each ADR is short by design: context, decision, consequences. If a decision is reversed, mark the entry **Superseded by ADR-XXX** rather than deleting it.
 
-## FRL-PILOT-003 — Proposed provider-enforced inbound lifetime
+## FRL-PILOT-004 — Capture-off commissioning prerequisites
+
+Accepted for implementation on 2026-11-06 after the owner authorized resolving the configuration gap. [Capture-off commissioning](implementations/florida-ramp-lift/FRL_CAPTURE_OFF_COMMISSIONING.md) excludes recording/legal/retention qualification assertions and cannot dial, bridge or capture. It requires a separate window approval reference, operator presence, available manual provider stop and current independent watchdog inventory evidence. Recorded mode retains every existing qualification gate. Changing the exercise alone cannot promote a commissioning config. Preparation and disabled nonproduction deployment are authorized; no live window is open.
+
+## FRL-PILOT-003 — Application deadline and independent watchdog
 
 **Status: Accepted, 2026-11-06; EXPERIMENTAL local implementation, hosted qualification pending.** After the negative engineering answer, the owner approved [FRL-PILOT-003](implementations/florida-ramp-lift/FRL_INBOUND_DURATION_AMENDMENT.md): primary five-minute application deadline, independent early-stop watchdog and supervised manual stop. Simultaneous controller/provider failures can exceed five minutes. This explicitly replaces the carrier-guarantee gate for this isolated pilot only. Telnyx remains the provider. Exact-call approval, consent, child-leg reconciliation and 24-hour deletion remain required. No new live window, hosting charge or expanded credential recipient is authorized by this decision.
 

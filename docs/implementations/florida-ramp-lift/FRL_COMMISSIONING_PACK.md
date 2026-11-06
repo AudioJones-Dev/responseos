@@ -45,7 +45,7 @@ Other existing spoken text, listed for rehearsal (not included in the two-prompt
 | providerRetentionVerified | FALSE / uncommissioned; synthetic deletion tests are insufficient |
 | Credential | Runtime authentication verified previously; expires November 13 at 22:00 UTC / 5 PM Eastern; recheck before testing |
 
-Current schema requires true verification literals and a legal approval reference even for keypad mode. Do not install a dummy configuration to make the status page or preflight green. Authenticated UI access can be verified without a config; API 503 is expected until valid configuration exists. Changing that schema would be a separate reviewed implementation change.
+The worksheet above describes recorded-mode qualification. [FRL-PILOT-004](FRL_CAPTURE_OFF_COMMISSIONING.md) separates capture-off prerequisites from those outcomes: keypad mode requires an approved window, operator presence, accessible provider stop controls and fresh apply-mode watchdog inventory, without legal/retention/endpoint qualification assertions. Recorded mode retains all its gates. Do not install dummy evidence to make status or preflight green. Authenticated UI access can be verified without a config; API 503 is expected until valid configuration exists.
 
 ## Operator check and stop procedure
 

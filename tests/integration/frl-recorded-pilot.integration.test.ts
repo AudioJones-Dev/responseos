@@ -4,7 +4,7 @@ import { decidePilotAdmission, ingestPilot, dispatchPilot, purgePilotContent, ki
 import { latest, type PilotState, type Purpose, type Role } from "@/lib/communications/pilot/machine";
 import { stateToken, type PilotTransport } from "@/lib/providers/telnyx/pilot";
 import type { TelnyxWebhookEnvelope } from "@/lib/providers/telnyx/webhook";
-import { testPilotConfig, callerLeg, operatorLeg } from "../fixtures/frl-pilot";
+import { testPilotConfig, testKeypadConfig, callerLeg, operatorLeg } from "../fixtures/frl-pilot";
 import { makeAccount } from "../factories";
 import { prisma, resetTestDb, disconnectTestDb } from "./setup";
 import { deletePilotArtifacts } from "@/lib/communications/pilot/deletion";
@@ -71,7 +71,7 @@ describe("durable recorded pilot", () => {
     await dispatch(); expect(transport.mock.calls[0][0].path).toContain("hangup");
   });
   test("keypad commissioning observes digits without grants, recordings or operator dialing", async () => {
-    c.exercise = "keypad"; await start();
+    c = testKeypadConfig(now); await start();
     for (const digit of ["1", "2", "*"]) await callback("call.dtmf.received", "keypad", "caller", { digit });
     await dispatch();
     expect((await state()).digits).toEqual(["1", "2", "*"]);

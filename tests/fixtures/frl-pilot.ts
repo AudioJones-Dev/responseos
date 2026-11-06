@@ -15,6 +15,14 @@ export function testPilotConfig(now = pilotNow): PilotConfig {
     independentEndpointVerified: true, providerCaptureDefaultsOff: true, providerRoutingLimitsVerified: true,
     durationPolicy: { mode: "application_watchdog", riskApprovalRef: "synthetic-only", independentWatchdogVerified: true, manualStopVerified: true }, providerRetentionVerified: true, maxCalls: 6 };
 }
+export function testKeypadConfig(now = pilotNow): PilotConfig {
+  const c = testPilotConfig(now);
+  if (c.exercise !== "recorded") throw new Error("recorded_fixture_required");
+  const { legalApprovalRef: _legal, independentEndpointVerified: _endpoint, providerRetentionVerified: _retention, ...base } = c;
+  void _legal; void _endpoint; void _retention;
+  return { ...base, exercise: "keypad", durationPolicy: { mode: "application_watchdog", riskApprovalRef: "synthetic-only" },
+    commissioning: { approvalRef: "synthetic-only", operatorPresent: true, manualProviderStopAvailable: true, watchdogInventoryVerified: true, capture: "off", operatorDial: "off" } };
+}
 export function machineHarness() {
   let now = pilotNow;
   let state = initialPilot(randomUUID(), callerLeg, now, now + 300000, "frl-recorded-v1");

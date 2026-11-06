@@ -16,6 +16,7 @@ The pending caller number is visible only to authenticated staff while approval 
 - `POST /api/admin/frl-pilot` with `{action: "approve" | "reject", runId}` returns 202 when queued or 409 when stale/invalid. An empty body retains the existing irreversible window-stop action. No response proves physical call completion.
 - Config now requires `admission: "manual"` and `exercise: "keypad" | "recorded"`, retentionHours 24, maxCalls at most 6 and a window at most 30 minutes. The historical callers array is not an admission grant. Old configs fail closed.
 - Keypad exercise permits only answer, spoken keypad instructions and cleanup. It collects signed 1, 2 and star events, never consent grants, dialing, bridging, recording or transcription. Star ends the exercise. Spoken assent cannot substitute for keypad evidence.
+- [FRL-PILOT-004](FRL_CAPTURE_OFF_COMMISSIONING.md) defines strict capture-off commissioning prerequisites separately from recorded qualification. Both the machine and provider request builder reject capture and dialing in keypad mode.
 - Migration `0016_frl_pilot_deletion` adds `ringing` call status and tenant-scoped durable deletion jobs. Runtime roles require table DML privileges after migration; no migration-owner credentials belong in Vercel or Render.
 - `RESPONSEOS_FRL_PILOT_CLEANUP_ENABLED=true` separately enables provider deletion. Keep it, the dedicated credential, DB and immutable pilot config available after admission closes. Do not rotate the window/config until unresolved legs and artifacts are reconciled.
 

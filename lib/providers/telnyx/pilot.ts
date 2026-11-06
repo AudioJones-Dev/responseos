@@ -45,6 +45,7 @@ export function observation(event: TelnyxWebhookEnvelope, s: PilotState): Observ
   }
 }
 export function pilotRequest(s: PilotState, i: Intent, c: PilotConfig, now: number) {
+  if (c.exercise === "keypad" && !["answer", "keypad", "stop", "hangup"].includes(i.purpose)) throw new Error("keypad_command_denied");
   const body: Record<string, unknown> = { command_id: i.id, client_state: stateToken(s.id, i.id) };
   if (i.purpose === "dial") return { path: "/v2/calls", body: { ...body, connection_id: c.applicationId,
     to: c.operator, from: c.number, link_to: s.caller.controlId, bridge_on_answer: false,
