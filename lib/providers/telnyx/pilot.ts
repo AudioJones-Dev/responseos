@@ -54,7 +54,7 @@ export function pilotRequest(s: PilotState, i: Intent, c: PilotConfig, now: numb
   let action: string;
   switch (i.purpose) {
     case "answer": action = "answer"; break;
-    case "hangup": action = "hangup"; break;
+    case "hangup": action = "hangup"; delete body.client_state; break;
     case "stop": {
       action = "record_stop";
       const w = s.windows.findLast(w => !w.endedAt);

@@ -102,6 +102,9 @@ describe("FRL recorded pilot", () => {
     expect(record.body).toMatchObject({ channels: "dual", recording_track: "both", transcription: true });
     expect(Number(record.body.max_length)).toBeLessThanOrEqual(300);
     expect(decodeToken(record.body.client_state)?.runId).toBe(h.state.id);
+    endPilot(h.state, h.now);
+    const hangup = pilotRequest(h.state, latest(h.state, "hangup")!, c, h.now);
+    expect(hangup.body).not.toHaveProperty("client_state");
   });
   test("native mapping requires all three leg identifiers", () => {
     const h = machineHarness(); const event = { data: { id: "e", event_type: "call.answered", occurred_at: new Date(h.now + 1).toISOString(), payload: { call_control_id: h.state.caller.controlId, call_leg_id: "wrong", call_session_id: "session", connection_id: "app" } } };
