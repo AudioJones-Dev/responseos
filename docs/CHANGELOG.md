@@ -8,6 +8,11 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — chore: let CodeRabbit review draft PRs
+
+- **Why:** this repo opens PRs as drafts until CI is green, and CodeRabbit skipped drafts, so reviews only began once a PR was marked ready.
+- **Change:** `.coderabbit.yaml` sets `reviews.auto_review.drafts: true`. Incremental review and the pause after 5 reviewed commits stay as configured in the CodeRabbit UI.
+
 ## Unreleased — fix: stop the /audit form from losing leads while public intake is off
 
 - **Bug:** with `RESPONSEOS_PUBLIC_AUDIT_INTAKE_ENABLED` unset (ADR-0047 §6 keeps it off until the WAF gate is proven), `/api/audit-requests` is not a public path, so the proxy redirects a submission to sign-in. The form could not read that response and showed "Network error. Try again." Nothing was stored, and the prospect was not told where else to go.
