@@ -1,5 +1,8 @@
 import { ButtonLink, Card } from "@/components/ui";
+import { isPublicAuditIntakeEnabled } from "@/lib/auth/route-protection";
 import { AuditRequestForm } from "./AuditRequestForm";
+
+const ASSESSMENT_CONTACT_EMAIL = "hello@responseos.pro";
 import { assessmentJsonLd, pageMetadata } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/JsonLd";
 
@@ -267,7 +270,28 @@ export default function AuditPage() {
           your assessment.
         </p>
         <Card className="mt-8" as="section">
-          <AuditRequestForm />
+          {isPublicAuditIntakeEnabled() ? (
+            <AuditRequestForm />
+          ) : (
+            <div>
+              <h3 className="font-display text-xl font-semibold text-ink">
+                Email us to request your assessment
+              </h3>
+              <p className="mt-2 text-sm text-ink-secondary">
+                Online requests are not open yet. Send your name, business
+                name, and roughly how many calls you miss each month, and
+                we&apos;ll reply to schedule your assessment.
+              </p>
+              <div className="mt-6">
+                <ButtonLink
+                  href={`mailto:${ASSESSMENT_CONTACT_EMAIL}?subject=${encodeURIComponent("Readiness & Revenue Leak Assessment request")}`}
+                  glow
+                >
+                  Email {ASSESSMENT_CONTACT_EMAIL}
+                </ButtonLink>
+              </div>
+            </div>
+          )}
         </Card>
       </section>
     </main>

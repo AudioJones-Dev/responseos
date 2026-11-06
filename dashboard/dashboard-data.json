@@ -1696,6 +1696,21 @@
       "due": "2026-10-13",
       "ref": 216,
       "refType": "pull"
+    },
+    {
+      "id": "GTM-AUDIT-01",
+      "phase": "Launch / Demo Deploy",
+      "title": "Show an email path on /audit while public intake is off, so submitted leads are not lost",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-11-02",
+      "due": "2026-11-04",
+      "blocked": true,
+      "blockedReason": "Validated locally; hello@responseos.pro confirmed receiving mail (2026-11-02). Needs independent review and an operator-approved ADR-0053 deploy.",
+      "ref": 238,
+      "refType": "pull"
     }
   ],
   "liveIssues": [
