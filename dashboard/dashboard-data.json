@@ -32,6 +32,19 @@
   ],
   "tasks": [
     {
+      "id": "FRL-PILOT-PLAN-01",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Review purchased-number pilot contract and scoped recording amendment (documentation only)",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-11-06",
+      "due": "2026-11-06",
+      "blocked": true,
+      "blockedReason": "Proposal complete; runtime and activation remain pending. Recording amendment is not ratified."
+    },
+    {
       "id": "G-14",
       "phase": "Tech Debt & Hardening",
       "title": "Apply owner-approved copy redlines (claims, naming, CTA)",
