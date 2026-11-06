@@ -1713,6 +1713,17 @@
       "refType": "pull"
     },
     {
+      "id": "GTM-DEMO-01",
+      "phase": "Launch / Demo Deploy",
+      "title": "Bring production database to 0013 and restore the /demo/receptionist answer path",
+      "owner": "Claude Code",
+      "status": "Done",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-11-02",
+      "due": "2026-11-02"
+    },
+    {
       "id": "SEO-01",
       "phase": "Launch / Demo Deploy",
       "title": "Marketing SEO/AEO quick wins: founder entity markup and a quotable 'What is ResponseOS?' definition",
