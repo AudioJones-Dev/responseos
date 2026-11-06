@@ -15,7 +15,8 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - **Status language:** the story describes a supervised pilot where a person reviews every call and reports no results. A test blocks outcome, percentage, dollar and 24/7 claims on the page.
 - **Quote:** Michael's quote appears on the story page and the homepage card in the exact wording he approved by text on 2026-11-06. It lives in one `quote.ts` so both places stay identical.
 - **Photo:** a stair-lift photo Michael approved (2026-11-06) is added to the story page as a 117 KB WebP, credited to Florida Ramp & Lift.
-- **Not done here:** Michael's sign-off on the final page text, and deployment.
+- **Approval:** Michael approved the final page text on 2026-11-06, as reported by the owner.
+- **Not done here:** independent review and deployment.
 
 ## Unreleased — fix: stop the /audit form from losing leads while public intake is off
 

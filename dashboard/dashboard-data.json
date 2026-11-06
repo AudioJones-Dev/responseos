@@ -1723,7 +1723,7 @@
       "start": "2026-11-06",
       "due": "2026-11-13",
       "blocked": true,
-      "blockedReason": "Built and validated locally; Mike approved his quote (2026-11-06). Needs Mike to approve the final page text, plus an operator-approved ADR-0053 deploy."
+      "blockedReason": "Built and validated locally; Michael approved the quote, photos and page text (2026-11-06). Needs independent review and an operator-approved ADR-0053 deploy."
     }
   ],
   "liveIssues": [
