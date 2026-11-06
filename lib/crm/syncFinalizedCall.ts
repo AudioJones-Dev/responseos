@@ -1,3 +1,4 @@
+import { accountRuntimeAllowed } from "@/lib/clientSetup/runtime";
 import "@/lib/serverOnlyGuard";
 import { requireRole } from "@/lib/auth/session";
 import { db } from "@/lib/db/client";
@@ -74,6 +75,7 @@ export async function runCrmSyncForCall(params: {
 }): Promise<Result<CrmSyncOperationView>> {
   if (db === null) return err("no_database", "CRM synchronization requires a database connection.");
 
+  if (!(await accountRuntimeAllowed(params.accountId))) return err("account_inactive", "Account automation is disabled.");
   const provider = params.providerOverride ?? getCrmProvider();
   const operationKey = `crm-call:${params.accountId}:${params.callId}`;
   let claimed = false;

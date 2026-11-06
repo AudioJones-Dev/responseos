@@ -122,6 +122,19 @@ describe("personalized prospect bootstrap persistence and isolation", () => {
     process.env.RESPONSEOS_PROSPECT_BOOTSTRAP_ENABLED = "true";
     process.env.RESPONSEOS_PROVIDER_ATTESTATION_PUBLIC_KEY = providerAttestationPublicKey;
   });
+  test("inactive account blocks existing approved context and ingestion", async () => {
+    const created = await prepareActiveProspect({ businessName: "Synthetic Guard", website: "https://guard.example/", phone: "+12025550128", providerNumberId: "synthetic-guard", assistantId: "synthetic-guard" });
+    await prisma.account.update({ where: { id: created.account.id }, data: { status: "paused" } });
+    expect(await resolveActiveProspectAgentContext(created.number.e164, new Date("2026-08-21T16:00:00.000Z"))).toBeNull();
+    await prisma.account.update({ where: { id: created.account.id }, data: { status: "active", setup_draft_json: { malformed: true } } });
+    expect(await resolveActiveProspectAgentContext(created.number.e164, new Date("2026-08-21T16:00:00.000Z"))).toBeNull();
+    await prisma.prospectBootstrap.update({ where: { id: created.bootstrap.id }, data: { status: "draft" } });
+    const before = await prisma.knowledgeIngestionRun.count();
+    let fetched = false;
+    expect(await ingestProspectBootstrap({ bootstrapId: created.bootstrap.id, fetchFn: async () => { fetched = true; throw new Error("must not fetch"); }, lookupFn: publicLookup })).toMatchObject({ ok: false, error: { code: "account_inactive" } });
+    expect(fetched).toBe(false);
+    expect(await prisma.knowledgeIngestionRun.count()).toBe(before);
+  });
   afterAll(async () => {
     delete process.env.RESPONSEOS_PROSPECT_BOOTSTRAP_ENABLED;
     delete process.env.RESPONSEOS_PROMOTION_IMPORT_ENABLED;

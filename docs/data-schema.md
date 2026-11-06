@@ -329,3 +329,7 @@ Architectural placement and product framing are documented in `architecture.md` 
 - No file-upload schema is committed to. Uploads are gated on the `files` / `media` model already on the v0.2 roadmap above.
 - No third-party knowledge integrations (Obsidian, Notion, Confluence, etc.) are committed to.
 - No additional general-knowledge Prisma models, retrieval runtime, or provider integration ships from this roadmap entry.
+
+## Inactive setup draft (review only)
+
+Account.setup_draft_json is an optional JSONB document validated as inactive-client-setup.v1. Existing rows stay null. Founder name and unverified contact number are descriptive data, never User ownership or provider inventory. No new tables/enums. Review-only migration: 20261028_inactive_client_setup. See [plan](product/inactive-client-setup.md).
