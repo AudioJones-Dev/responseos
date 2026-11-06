@@ -34,7 +34,7 @@
     {
       "id": "FRL-CAPTURE-OFF-CONFIG-20261106",
       "phase": "v0.3 · Demo Scope",
-      "title": "Separate capture-off commissioning prerequisites and stabilize operator session refresh",
+      "title": "Qualify capture-off admission: session refresh and nullable initial Telnyx state",
       "owner": "Codex",
       "status": "In Progress",
       "progress": 90,

@@ -4,6 +4,16 @@ import { approvePilot, commandAllowed, latest, observePilot, pendingPilot, tickP
 import { telnyxDeletionTransport } from "@/lib/communications/pilot/deletion";
 import { callerLeg, pilotNow } from "../fixtures/frl-pilot";
 import type { FrlPilotDeletion } from "@prisma/client";
+import { legFromPayload } from "@/lib/providers/telnyx/pilot";
+
+test("initial Telnyx null client state preserves leg identity without accepting malformed state", () => {
+  const payload = { call_control_id: callerLeg.controlId, call_leg_id: callerLeg.legId, call_session_id: callerLeg.sessionId, connection_id: "pilot-app" };
+  expect(legFromPayload({ ...payload, client_state: null })).toEqual(callerLeg);
+  expect(legFromPayload(payload)).toEqual(callerLeg);
+  expect(legFromPayload({ ...payload, client_state: {} })).toBeNull();
+  expect(legFromPayload({ ...payload, client_state: "x".repeat(1025) })).toBeNull();
+  expect(legFromPayload({ ...payload, call_leg_id: null, client_state: null })).toBeNull();
+});
 
 afterEach(() => vi.unstubAllGlobals());
 const pending = () => pendingPilot(randomUUID(), callerLeg, "+13055550103", pilotNow, pilotNow + 300000, "frl-recorded-v1", "keypad");

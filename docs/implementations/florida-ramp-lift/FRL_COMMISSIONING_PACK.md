@@ -1,5 +1,7 @@
 # FRL commissioning pack — 2026-11-06
 
+Capture-off incident: the 19:50–20:20 UTC window was stopped after the owner reported unanswered ringing. Telnyx showed two sequential inbound legs at 19:51:22–19:52:21 UTC and a signed `call.initiated` delivery acknowledged with HTTP 202 / `accepted:false`. Its initial `client_state:null` failed the adapter's optional-string parser before pending admission. Accept null as absent state while retaining identifier validation and command-token requirements. Regression coverage must include null initial state reaching pending admission without answering before exact-call approval. Zero pilot runs or artifacts were created; this attempt establishes no keypad capability. Do not reopen the stopped window.
+
 Status: PREPARATION ONLY. Telnyx-only; admission and capture remain disabled. The owner supplied a negative engineering response and approved FRL-PILOT-003 application enforcement with explicit residual risk. Independent hosted qualification remains pending.
 
 ## Disclosure approval record

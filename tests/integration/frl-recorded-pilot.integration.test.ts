@@ -52,7 +52,7 @@ describe("durable recorded pilot", () => {
   });
   afterAll(disconnectTestDb);
   test("a rotating caller waits for exact-call approval and cannot replay approval", async () => {
-    await ingest(event("call.initiated", { from: "+13055550999", to: c.number, direction: "incoming" }));
+    await ingest(event("call.initiated", { from: "+13055550999", to: c.number, direction: "incoming", client_state: null }));
     await dispatch(); expect(transport).not.toHaveBeenCalled();
     const s = await state(); expect(s.stage).toBe("pending");
     expect(await decidePilotAdmission(prisma, { ...c, accountId: "foreign" }, "op", s.id, true, now, enabled)).toBe(false);

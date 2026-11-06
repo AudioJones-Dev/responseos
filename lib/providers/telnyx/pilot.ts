@@ -7,7 +7,7 @@ import { FRL_GREETING, FRL_CONSENT_PROMPT, FRL_NAME_PROMPT, FRL_TRANSFER_PROMPT,
 import type { TelnyxWebhookEnvelope } from "./webhook";
 
 const identifier = z.string().min(1).max(256);
-const basePayload = z.object({ call_control_id: identifier, call_leg_id: identifier, call_session_id: identifier, connection_id: identifier, client_state: z.string().max(1024).optional() });
+const basePayload = z.object({ call_control_id: identifier, call_leg_id: identifier, call_session_id: identifier, connection_id: identifier, client_state: z.string().max(1024).nullish() });
 export function legFromPayload(payload: unknown): Leg | null {
   const p = basePayload.safeParse(payload);
   return p.success ? { controlId: p.data.call_control_id, legId: p.data.call_leg_id, sessionId: p.data.call_session_id } : null;
