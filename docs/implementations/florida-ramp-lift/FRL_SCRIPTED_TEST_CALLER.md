@@ -1,6 +1,14 @@
 # FRL-PILOT-006 — scripted test caller
 
-EXPERIMENTAL; setup authorized November 6, 2026. No live test completed by this change.
+EXPERIMENTAL; setup authorized November 6, 2026. One supervised capture-off attempt failed; DTMF remains unverified.
+
+## First scripted attempt
+
+Owner approved November 6, 18:50–18:55 Eastern, one call. Window `9c8a1544-5188-480e-8511-fedb50bcdbe5` is permanently stopped. Telnyx accepted the single dial. Receiving answer command was accepted at 23:51:40.291Z; the keypad command was cancelled without dispatch at 23:51:42Z. No digits, operator leg or capture windows.
+
+The watchdog received null `call_control_id` at 23:51:39.008Z and null `call_duration` at 23:51:40.196Z. Strict inventory parsing set its uncertainty state. On the next valid scan at 23:51:41.596Z it targeted two legs and reported zero hangup failures; inventory was empty by 23:51:42.690Z. This identifies watchdog recovery shutdown as the cause for this attempt, without proving the cause of earlier Grok failures. Published ActiveCall OpenAPI fields are string/integer, not nullable. Bounded setup-time inventory handling requires engineering review before another window; do not silently coerce null to zero, drop unidentifiable calls or disable the watchdog.
+
+Emergency stop accepted; kill audit count1. Reconciliation found run closed, zero unresolved runs/artifacts/deletion jobs, both provider call inventories empty, and zero provider recordings by application-filtered metadata. Both applications and test profile were disabled, account paused, cleanup retained. Shutdown code `304f42d` differs from `134150a` only in documentation/dashboard; web `dpl_EEmN7y2yji8VWvDVfm3gkLriDNLD`, primary `dep-dbn6gkui0phs7386181g`, watchdog `dep-dbn6gl61egvs73cp22ag` verified ready/live. No redial or recorded activation.
 
 Local validation: lint, typecheck, build, 931 unit tests and 218 PostgreSQL 16 integration tests passed. Dedicated outbound profile: 3087533551797667158. Hosted release and live qualification remain separate checks.
 

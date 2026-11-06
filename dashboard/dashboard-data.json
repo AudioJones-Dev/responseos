@@ -34,10 +34,10 @@
     {
       "id": "FRL-TEST-CALLER-20261106",
       "phase": "Testing & QA",
-      "title": "Prepare dedicated one-shot Telnyx keypad test caller",
+      "title": "Qualify scripted Telnyx caller; resolve setup inventory failure",
       "owner": "Codex",
-      "status": "Review",
-      "progress": 90,
+      "status": "In Progress",
+      "progress": 80,
       "priority": "High",
       "ref": 246,
       "refType": "pull"
