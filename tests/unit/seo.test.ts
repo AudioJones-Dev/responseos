@@ -8,7 +8,9 @@ import { GET as llms } from "@/app/llms.txt/route";
 import ContractorsPage from "@/app/(marketing)/industries/contractors/page";
 import HomeServicesPage from "@/app/(marketing)/industries/home-services/page";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { OG_IMAGE, assessmentJsonLd, pageMetadata } from "@/lib/seo";
+import MarketingHome from "@/app/(marketing)/page";
+import { SocialLinks } from "@/components/layout/SocialLinks";
+import { FOUNDER_PROFILES, OG_IMAGE, assessmentJsonLd, organizationJsonLd, pageMetadata } from "@/lib/seo";
 
 const ORIGINAL_ENV = { ...process.env };
 
@@ -117,6 +119,30 @@ describe("structured data rendering", () => {
     for (const q of faq!.mainEntity) {
       expect(html).toContain(`>${escapeText(q.name)}</h3>`);
       expect(html).toContain(`>${escapeText(q.acceptedAnswer.text)}</p>`);
+    }
+  });
+});
+
+describe("entity and definition", () => {
+  test("organization links a founder whose sameAs matches the footer social links", () => {
+    process.env.NEXT_PUBLIC_APP_URL = "https://example.com";
+    const [org, founder] = organizationJsonLd() as Record<string, unknown>[];
+    expect(org.founder).toEqual({ "@id": "https://example.com/#founder" });
+    expect(founder["@type"]).toBe("Person");
+    expect(founder.worksFor).toEqual({ "@id": "https://example.com/#organization" });
+
+    const footer = renderToStaticMarkup(createElement(SocialLinks));
+    const hrefs = [...footer.matchAll(/href="([^"]+)"/g)].map((m) => m[1]);
+    expect(founder.sameAs).toEqual(hrefs);
+    expect(hrefs).toEqual(Object.values(FOUNDER_PROFILES));
+  });
+
+  test("homepage definition is quotable and avoids prohibited claims", () => {
+    const html = renderToStaticMarkup(createElement(MarketingHome));
+    expect(html).toContain(">What is ResponseOS?</h2>");
+    expect(html).toContain("in active development");
+    for (const claim of [/recovers revenue/i, /production-ready/i, /provider-independent/i, /HIPAA-(ready|certified|compliant)/i]) {
+      expect(html).not.toMatch(claim);
     }
   });
 });

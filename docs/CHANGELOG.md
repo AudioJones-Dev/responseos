@@ -8,6 +8,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: marketing SEO/AEO quick wins
+
+- **Why:** a search for "ResponseOS" ranks three unrelated products above responseos.pro, and answer engines need a short, self-contained definition to quote.
+- **Change:** the site-wide JSON-LD adds a founder `Person` (`Audio Jones`) linked to the `AJ Digital LLC` organization, with `sameAs` set to the footer's social profiles. The footer and the markup now read from one `FOUNDER_PROFILES` constant. The homepage adds a "What is ResponseOS?" paragraph in status-accurate language (designed to, in active development, fictional demo data).
+- **Not changed:** the site title, the "Revenue Recovery Infrastructure" category line and the demo-environment banner, which are set by the brand copy spec and the demo deploy gate. Structured data still carries no assessment price or `Offer`.
+
 ## Unreleased — ops: bring production's database to 0013 and restore the demo receptionist
 
 - **Problem:** `/demo/receptionist` on responseos.pro had logged `P2021` (table missing) since at least 2026-10-26. Production's database stopped at migration `0008`, so `AgentProfile` (`0009`) and `ProspectIntake` (`0011`) did not exist.
