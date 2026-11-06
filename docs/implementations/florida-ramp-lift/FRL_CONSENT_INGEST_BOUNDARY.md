@@ -1,5 +1,7 @@
 # FRL Phase 2 — consent before persistence
 
+Phase 3 successor: [synthetic orchestration and unresolved capture/topology gates](FRL_PHASE3_ORCHESTRATION.md). It preserves this ingestion boundary and does not grant durable authority from simulated events.
+
 **Status: EXPERIMENTAL, synthetic validation only. Not safe for real FRL calls.** Builds on PR #241 at `1d6c7aa0dba99d4d467c0f7728de0e0529449843`; architecture PR #240 remains proposed. No provider command, hosted migration, CRM write or deployment is authorized by this document.
 
 ## Addressed path

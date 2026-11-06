@@ -19,3 +19,11 @@ export interface ConsentedCallProposal {
   reviewStatus: "required";
   crmOutcome: "not_authorized";
 }
+
+export interface RoutedCallProposal extends ConsentedCallProposal {
+  direction: "inbound" | "outbound";
+  startedAt: string;
+  endedAt: string;
+  transferOutcome: "connected" | "failed" | "not_attempted";
+  sourceRoutingEventIds: readonly string[];
+}

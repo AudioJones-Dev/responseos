@@ -4,6 +4,7 @@ import { normalizeTelnyxEvent } from "@/lib/providers/telnyx/normalize";
 import { recordWebhookEvent, computeDedupeHash } from "@/lib/data/webhookEvents";
 import { runCrmSyncForCall } from "@/lib/crm/syncFinalizedCall";
 import { MockCrmProvider } from "@/lib/providers/crm/mock";
+import { MockCallOrchestrator, type CallInput } from "@/lib/communications/orchestration/mock-call";
 import type { TelnyxWebhookEnvelope } from "@/lib/providers/telnyx/webhook";
 import { prisma, resetAndSeedTestDb, disconnectTestDb, setDevSession } from "./setup";
 
@@ -53,6 +54,26 @@ describe("consent before durable Telnyx content", () => {
       direction: "inbound", status: "answered", from_number: "+15555550101", to_number: demoNumber, started_at: new Date(base) } });
   });
   afterAll(disconnectTestDb);
+
+  test("synthetic call orchestration cannot grant durable ingestion authority", async () => {
+    const simulation = new MockCallOrchestrator({ accountId, callId, callControlId: providerCallId,
+      callerLegId: "caller-leg", founderLegId: "founder-leg", route: { accountId,
+        founderDestination: "+12025550102", forwardedNumbers: ["+12025550101"], verifiedIndependentEndpoint: true } },
+      "synthetic-v1", at(0), at(3600));
+    let sequence = 0;
+    const send = (input: CallInput, legId = "caller-leg") => simulation.dispatch({ ...input,
+      accountId, callId, legId, id: `synthetic-${++sequence}`, at: at(sequence) });
+    send({ kind: "inbound" });
+    const greeting = send({ kind: "answered" }).commands[0];
+    send({ kind: "prompt_finished", commandId: greeting.id });
+    send({ kind: "decision", choice: "accept" }, "founder-leg");
+    const start = send({ kind: "dtmf", digit: "1" }).commands[0];
+    send({ kind: "synthetic_capture_observation", commandId: start.id, state: "started" });
+    expect(simulation.snapshot().capture).toBe("confirmed_synthetic");
+    expect(await prisma.callCaptureConsent.count()).toBe(0);
+    await ingest();
+    await assertNoContent();
+  });
 
   test("signed content without durable consent cannot enter any content table or raw ledger", async () => {
     expect((await ingest()).callId).toBeNull(); await assertNoContent();

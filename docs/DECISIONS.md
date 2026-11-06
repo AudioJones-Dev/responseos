@@ -4,6 +4,8 @@ This file records the load-bearing decisions that constrain how ResponseOS is bu
 
 ## Proposed FRL Phase 2 consent boundary — not ratified
 
+Phase 3 follow-on proposal: [synthetic Telnyx orchestration](implementations/florida-ramp-lift/FRL_PHASE3_ORCHESTRATION.md). Recording remains prohibited and bridge invalidation terminal; native capture acknowledgments and topology authorization are unresolved. Request planning and simulation do not ratify either proposal or grant live authority.
+
 The [FRL consent ingestion boundary](implementations/florida-ramp-lift/FRL_CONSENT_INGEST_BOUNDARY.md) proposes content-free Telnyx raw receipts, durable per-call consent, transactional transcript authorization and blocking Telnyx CRM exports pending a reviewed proposal executor. Synthetic implementation is explicitly requested; this does not ratify PR #240, amend live-provider authority, approve a hosted migration or reopen v0.3/v0.4 gates. Human review must assess the intentional narrowing of existing demo insight/CRM behavior before merge.
 
 ## ADR-0085 — A temporary, token-gated production check of the configured database host
