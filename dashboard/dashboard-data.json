@@ -1713,6 +1713,19 @@
       "refType": "pull"
     },
     {
+      "id": "SEO-01",
+      "phase": "Launch / Demo Deploy",
+      "title": "Marketing SEO/AEO quick wins: founder entity markup and a quotable 'What is ResponseOS?' definition",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 90,
+      "priority": "Medium",
+      "start": "2026-11-06",
+      "due": "2026-11-06",
+      "ref": 245,
+      "refType": "pull"
+    },
+    {
       "id": "CI-CODERABBIT-01",
       "phase": "Tech Debt & Hardening",
       "title": "Let CodeRabbit review draft PRs, since PRs stay drafts until CI is green",
