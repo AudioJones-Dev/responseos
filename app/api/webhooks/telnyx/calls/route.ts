@@ -1,5 +1,4 @@
 import { after, NextResponse } from "next/server";
-import { runCrmSyncForCall } from "@/lib/crm/syncFinalizedCall";
 import {
   getWebhookProcessingState,
   recordWebhookEvent,
@@ -122,7 +121,7 @@ export async function POST(req: Request) {
   const assignment = resolved;
   const normalizeAfterAck = () => after(async () => {
     try {
-      const normalized = await normalizeTelnyxEvent({
+      await normalizeTelnyxEvent({
         accountId: assignment.accountId,
         demoNumber: assignment.demoNumber,
         webhookEventId: ledger.data.id,
@@ -131,18 +130,11 @@ export async function POST(req: Request) {
           ? { transcriptExpiresAt: new Date(occurredAt.getTime() + PROSPECT_CONTENT_RETENTION_DAYS * 24 * 60 * 60 * 1000) }
           : {}),
       });
-      if (!personalized && normalized.finalized && normalized.callId) {
-        await runCrmSyncForCall({
-          accountId: assignment.accountId,
-          callId: normalized.callId,
-          sourceWebhookId: ledger.data.id,
-        });
-      }
-    } catch (error) {
+    } catch {
       await setWebhookProcessStatus({
         id: ledger.data.id,
         process_status: "error",
-        process_error: error instanceof Error ? error.message : "normalization_failed",
+        process_error: "normalization_failed",
       });
     }
   });

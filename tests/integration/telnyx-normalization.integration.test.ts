@@ -5,7 +5,7 @@ import type { TelnyxWebhookEnvelope } from "@/lib/providers/telnyx/webhook";
 import { disconnectTestDb, prisma, resetAndSeedTestDb } from "./setup";
 
 const accountId = "org_responseos_demo";
-const demoNumber = "+17867560897";
+const demoNumber = "+15555550100";
 
 async function ledger(event: TelnyxWebhookEnvelope) {
   const result = await recordWebhookEvent({
@@ -24,7 +24,7 @@ describe("Telnyx canonical normalization", () => {
   beforeEach(resetAndSeedTestDb);
   afterAll(disconnectTestDb);
 
-  test("handles insights before lifecycle events without duplicate calls", async () => {
+  test("rejects unproven legacy insights while retaining routing lifecycle metadata", async () => {
     const insights: TelnyxWebhookEnvelope = {
       data: {
         id: "telnyx-event-insights",
@@ -51,7 +51,7 @@ describe("Telnyx canonical normalization", () => {
       webhookEventId: await ledger(insights),
       event: insights,
     });
-    expect(normalized.finalized).toBe(true);
+    expect(normalized).toEqual({ callId: null, finalized: false });
 
     const started: TelnyxWebhookEnvelope = {
       data: {
@@ -60,6 +60,7 @@ describe("Telnyx canonical normalization", () => {
         occurred_at: "2026-08-18T15:00:00.000Z",
         payload: {
           call_control_id: "telnyx-call-001",
+          call_leg_id: "caller-leg",
           from: "+17865550101",
           to: demoNumber,
           start_time: "2026-08-18T15:00:00.000Z",
@@ -77,10 +78,10 @@ describe("Telnyx canonical normalization", () => {
       where: { account_id: accountId, provider: "telnyx", provider_call_id: "telnyx-call-001" },
     });
     expect(calls).toHaveLength(1);
-    expect(calls[0]).toMatchObject({ status: "completed", summary: expect.stringContaining("callback") });
-    expect(await prisma.callTranscript.count({ where: { call_id: calls[0].id } })).toBe(1);
+    expect(calls[0]).toMatchObject({ status: "answered", summary: null, transcript: null });
+    expect(await prisma.callTranscript.count({ where: { call_id: calls[0].id } })).toBe(0);
     const lead = await prisma.leadEvent.findFirst({ where: { call_id: calls[0].id } });
-    expect(lead?.status).toBe("qualified");
+    expect(lead).toBeNull();
   });
 
   test("rejects a signed event for another destination without a call mutation", async () => {

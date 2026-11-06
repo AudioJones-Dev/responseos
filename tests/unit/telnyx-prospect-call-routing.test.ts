@@ -73,6 +73,22 @@ describe("personalized Telnyx call retention", () => {
     expect(mocks.setWebhookProcessStatus).toHaveBeenCalledWith(expect.objectContaining({ process_error: "missing_occurred_at" }));
   });
 
+  test("invalid signature makes no assignment, ledger or downstream mutation", async () => {
+    const request = signedRequestWithoutOccurredAt();
+    request.headers.set("telnyx-signature-ed25519", "invalid");
+    const { POST } = await import("@/app/api/webhooks/telnyx/calls/route");
+    expect((await POST(request)).status).toBe(401);
+    expect(mocks.recordWebhookEvent).not.toHaveBeenCalled();
+    expect(mocks.resolveTelnyxEventAssignment).not.toHaveBeenCalled();
+  });
+
+  test("missing credentials fails closed before any mutation", async () => {
+    delete process.env.TELNYX_PUBLIC_KEY;
+    const { POST } = await import("@/app/api/webhooks/telnyx/calls/route");
+    expect((await POST(signedRequestWithoutOccurredAt())).status).toBe(503);
+    expect(mocks.recordWebhookEvent).not.toHaveBeenCalled();
+  });
+
   test("assigns general demo payloads a 90-day expiry from occurred_at", async () => {
     process.env.RESPONSEOS_DEMO_ACCOUNT_ID = "demo-account";
     process.env.RESPONSEOS_DEMO_PHONE_E164 = "+13055550199";

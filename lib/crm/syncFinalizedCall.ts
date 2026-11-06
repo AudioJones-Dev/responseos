@@ -138,6 +138,14 @@ export async function runCrmSyncForCall(params: {
       return ok(toView(operation));
     }
     if (!call || call.status !== "completed") throw new Error("canonical_call_not_finalized");
+    if (call.provider === "telnyx") {
+      operation = await db.crmSyncOperation.update({
+        where: { id: operation.id, account_id: params.accountId },
+        data: { status: "review_required", last_error_code: "telnyx_consent_export_blocked",
+          last_error_redacted: "telnyx_consent_export_blocked", next_attempt_at: null },
+      });
+      return ok(toView(operation));
+    }
     const contact = call.contact_id
       ? await db.contact.findFirst({
           where: { id: call.contact_id, account_id: params.accountId },
