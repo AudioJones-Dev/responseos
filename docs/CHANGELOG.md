@@ -8,6 +8,16 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: Florida Ramp & Lift customer story
+
+- **Why:** the marketing site had no proof from a real business. ADR-0035 names Florida Ramp & Lift the anchor case study, and the owner reported Michael Keegan's approval (2026-11-06) to use his name, business and photo.
+- **Change:** adds `/stories/florida-ramp-and-lift` (public, indexed, listed in `llms.txt`) and a homepage section linking to it. The homepage demo record now says it is modeled on the kind of call FRL receives. The photo is a 37 KB WebP resized from FRL's own founder image.
+- **Status language:** the story describes a supervised pilot where a person reviews every call and reports no results. A test blocks outcome, percentage, dollar and 24/7 claims on the page.
+- **Quote:** Michael's quote appears on the story page and the homepage card in the exact wording he approved by text on 2026-11-06. It lives in one `quote.ts` so both places stay identical.
+- **Photo:** a stair-lift photo Michael approved (2026-11-06) is added to the story page as a 117 KB WebP, credited to Florida Ramp & Lift.
+- **Approval:** Michael approved the final page text on 2026-11-06, as reported by the owner.
+- **Not done here:** independent review and deployment.
+
 ## Unreleased — chore: let CodeRabbit review draft PRs
 
 - **Why:** this repo opens PRs as drafts until CI is green, and CodeRabbit skipped drafts, so reviews only began once a PR was marked ready.

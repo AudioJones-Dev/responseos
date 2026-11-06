@@ -20,6 +20,7 @@ const PUBLIC_EXACT = new Set<string>([
   "/trust",
   "/privacy",
   "/terms",
+  "/stories/florida-ramp-and-lift",
   "/api/health",
 ]);
 

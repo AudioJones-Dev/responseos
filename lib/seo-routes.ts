@@ -7,6 +7,7 @@ export const INDEXABLE_ROUTES = [
   { path: "/demo", priority: 0.8 },
   { path: "/industries/home-services", priority: 0.7 },
   { path: "/industries/contractors", priority: 0.7 },
+  { path: "/stories/florida-ramp-and-lift", priority: 0.7 },
   { path: "/trust", priority: 0.6 },
   { path: "/privacy", priority: 0.3 },
   { path: "/terms", priority: 0.3 },

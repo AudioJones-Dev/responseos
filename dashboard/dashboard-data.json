@@ -1737,6 +1737,21 @@
       "due": "2026-11-06",
       "ref": 247,
       "refType": "pull"
+    },
+    {
+      "id": "GTM-STORY-01",
+      "phase": "Launch / Demo Deploy",
+      "title": "Publish the Florida Ramp & Lift customer story (homepage section and /stories page)",
+      "owner": "Claude Code",
+      "status": "Review",
+      "progress": 80,
+      "priority": "High",
+      "start": "2026-11-06",
+      "due": "2026-11-13",
+      "blocked": true,
+      "blockedReason": "Built and validated locally; Michael approved the quote, photos and page text (2026-11-06). Needs independent review and an operator-approved ADR-0053 deploy.",
+      "ref": 244,
+      "refType": "pull"
     }
   ],
   "liveIssues": [

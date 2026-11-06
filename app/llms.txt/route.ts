@@ -22,6 +22,10 @@ Current status: ResponseOS is an internal-first product in active development. T
 - [Home services](${link("/industries/home-services")}): HVAC, roofing, plumbing, electrical, and landscaping.
 - [Contractors](${link("/industries/contractors")}): Designed around estimator routing, scope capture, and quote-to-job tracking.
 
+## Customer story
+
+- [Florida Ramp & Lift](${link("/stories/florida-ramp-and-lift")}): How ResponseOS is being built and tested with Michael Keegan's accessibility-equipment business in a supervised pilot, where a person reviews every call. No results are reported yet.
+
 ## Trust
 
 - [Trust & security](${link("/trust")}): Each control labeled implemented, partial, planned, or not claimed.
