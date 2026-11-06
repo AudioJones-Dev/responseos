@@ -68,6 +68,7 @@ export class MockFrlIntake {
     }
     if (state.status.caller === "revoked" || state.status.founder === "revoked") {
       this.events.push("capture_revoked");
+      this.requestTransfer("without_capture");
       return;
     }
     if (isCaptureAllowed(state) && this.stage === "consent") {

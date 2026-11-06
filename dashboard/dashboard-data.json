@@ -34,14 +34,14 @@
     {
       "id": "FRL-CONSENT-MOCK-20261105",
       "phase": "v0.3 · Demo Scope",
-      "title": "Review FRL founder/caller consent-state mock contracts and tests",
+      "title": "Review FRL consent mock flow and revocation transfer regressions",
       "owner": "Codex",
       "status": "Review",
       "progress": 90,
       "priority": "High",
       "start": "2026-11-05",
       "blocked": true,
-      "blockedReason": "Mock code not integrated with existing Telnyx ingestion path; review and CI required before any live use",
+      "blockedReason": "Mock only; FRL pre-persistence consent guard, provider stop acknowledgments, legal review and explicit live authorization remain required",
       "ref": 241,
       "refType": "pull",
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/241"

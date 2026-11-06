@@ -76,4 +76,48 @@ describe("FRL greeting, name collection and transfer (mock only)", () => {
     expect(flow.snapshot().events).toEqual([]);
     expect(flow.snapshot().transferRequested).toBe(false);
   });
+
+  describe.each(["founder", "caller"] as const)("%s revocation", (participant) => {
+    it.each(["consent", "name"] as const)("continues from %s to a no-capture transfer", (stage) => {
+      const flow = new MockFrlIntake("synthetic-early-revocation");
+      flow.greet();
+      if (stage === "name") {
+        flow.decide("founder", "accept");
+        flow.decide("caller", "accept");
+      }
+      flow.decide(participant, "revoke");
+      expect(flow.snapshot()).toMatchObject({
+        stage: "transfer", recordingPermitted: false, callerName: null, transcript: [],
+      });
+      expect(flow.transferPrompt()).toContain("without recording or transcription");
+      expect(() => flow.namePrompt()).toThrow("name_not_permitted");
+      expect(() => flow.submitName("Must not persist")).toThrow("name_capture_not_permitted");
+      flow.decide(participant, "accept");
+      flow.decide(participant, "revoke");
+      flow.connected();
+      expect(() => flow.ingestConversationSegment("Must not persist")).toThrow("consent_required");
+      expect(flow.snapshot().events.filter((event) => event.startsWith("transfer_requested_"))).toEqual([
+        "transfer_requested_no_capture",
+      ]);
+      expect(flow.snapshot().events.filter((event) => event === "capture_stopped")).toHaveLength(stage === "name" ? 1 : 0);
+      expect(flow.snapshot().transcript).toEqual([]);
+    });
+
+    it.each(["transfer", "connected"] as const)("preserves %s without requesting another transfer", (stage) => {
+      const flow = new MockFrlIntake("synthetic-late-revocation");
+      flow.greet();
+      flow.decide("founder", "accept");
+      flow.decide("caller", "accept");
+      flow.submitName(null);
+      if (stage === "connected") flow.connected();
+      flow.decide(participant, "revoke");
+      flow.decide(participant, "revoke");
+      expect(flow.snapshot().stage).toBe(stage);
+      expect(flow.snapshot().recordingPermitted).toBe(false);
+      expect(flow.snapshot().events.filter((event) => event.startsWith("transfer_requested_"))).toHaveLength(1);
+      expect(flow.snapshot().events.filter((event) => event === "capture_stopped")).toHaveLength(1);
+      if (stage === "transfer") flow.connected();
+      expect(() => flow.ingestConversationSegment("Must not persist")).toThrow("consent_required");
+    });
+  });
 });

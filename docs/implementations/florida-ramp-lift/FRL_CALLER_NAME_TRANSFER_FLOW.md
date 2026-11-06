@@ -51,4 +51,32 @@ In a declined call, `caller_display_name` must be null unless independently sour
 ## Required validation before live usage
 
 Mock test matrix: accept/accept, caller refusal, timeout, missing name, post-accept revocation, premature transcript blocked, no provider side effects.
+
+Revocation during consent or name collection requests the no-capture transfer instead of leaving the caller waiting at an unusable prompt. Revocation during transfer or after connection preserves that stage and does not request a second transfer. Regression tests cover both participants and repeated revocation; capture cannot restart on the same mock call. This is a synchronous in-memory simulation, not evidence of a provider stop acknowledgment. Previously accepted synthetic content remains in memory; no retention policy is implemented by this fix.
 Additional future integration tests: first audio capture event must follow validated full consent; consent for both bridged legs; no audio recording or STT for decline; name recognizer cannot run before consent; no transcript on rejection; masked logs; no forwarding loop; transfer on STT failure; duplicate/out-of-order events; failed recording stop; separate founder consent; caller-ID and contact resolution; CRM writes require proven source.
+
+## 2026-11-06 mock completion audit
+
+Inspected architecture PR #240 at `bfe950c35b95c29822f923df51a23f1e670d2251` and implementation PR #241 at `9e6af57c6f9c2acc8ce0dd75cec3f9804848847d`. Both were drafts with successful validation and PostgreSQL 16/17/18 integration checks; Vercel status was pending and CodeRabbit review skipped. The architecture proposal remains unratified. Implementation is based on current `master` `6f579cc4bca303c195a2f9ba833a3b389f52d850`, with no schema changes; migrations remain `0001` through `0013`. The unrelated occupied checkout was preserved.
+
+Reused the existing consent transition contract, mock capture facade, greeting/name/transfer flow, and their tests. The increment fixes only early revocation trapping callers and adds eight regression cases. No runtime webhook, CRM, provider, schema, outbound dialer or memory implementation changes.
+
+Local validation: four new regression cases failed before the fix; afterward lint, typecheck, all 779 unit tests across 64 files, and the mock build passed. Local Node/npm were 24.21.0/11.19.0 versus repository pins 24.18.0/11.16.0; CI uses the pinned Node version. Local PostgreSQL integration execution is blocked by the unresolved host Docker hold and absence of an assigned synthetic database. CI results for the final commit must be checked separately; prior-head CI is not evidence for the fix.
+
+| Acceptance area | Evidence and remaining boundary |
+| --- | --- |
+| Two-party consent, refusal, timeout, skipped name, revocation | Mock unit coverage only; no audio or call control |
+| Duplicate consent decision | Existing mock test; webhook persistence dedupe is a separate existing seam |
+| Invalid webhook signature | Existing route verifies before ledger writes; this change adds no signed-ingest behavior |
+| Delayed transcript / consent interval | Unimplemented: mock segments are untimed strings and check current consent only |
+| Additional participants / call legs | Unimplemented: mock permits exactly founder and caller roles |
+| Transfer failure / emergency fallback | Unimplemented: mock connection is synchronous; fallback and loop prevention need approved endpoints and tests |
+| CRM ambiguity | Existing finalized-call sync marks multiple matches review_required; FRL mock is not connected to CRM |
+| Missing credentials | Mock flow uses no credentials or provider commands |
+| Cross-tenant rejection | No tenant-aware persistence in this mock; existing tenant controls do not prove future FRL leg mapping |
+
+The existing HubSpot finalized-call sync already supplies account-scoped operation claims, phone/verified-email lookup, ambiguous-match review, evidence references and retry handling. Reuse that seam after consent and identity authority are established; the mock caller name is never sent to it. No claim of completed FRL CRM sync or business-memory retrieval is supported.
+
+Before a separately approved test-number call: implement the FRL consent barrier before raw payload persistence and normalization; bind tenant, call and participant legs to auditable consent intervals; verify current Telnyx command capabilities and capture start/stop acknowledgments; reject late/out-of-scope content; test invalid signatures, duplicates, tenant spoofing, added participants and failed stops. Current provider command capabilities were not verified in this mock-only increment.
+
+Production additionally requires approved legal disclosure, founder consent and retention/revocation policy; verified carrier forwarding mode and a distinct founder endpoint; caller-ID, voicemail, failure and rollback tests; explicit v0.3/provider, CRM-write, routing and deployment authorizations; reviewed mappings and field authority; monitoring, spending limits and a cutover owner. Outbound calling needs an authenticated controlled dialer and verified caller ID. Knowledge retrieval requires separate v0.4+ approval. No main-line routing, carrier changes, email access/sends or production activation occurred.
