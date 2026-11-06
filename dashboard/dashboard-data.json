@@ -41,7 +41,10 @@
       "priority": "High",
       "start": "2026-11-05",
       "blocked": true,
-      "blockedReason": "Mock code not integrated with existing Telnyx ingestion path; review and CI required before any live use"
+      "blockedReason": "Mock code not integrated with existing Telnyx ingestion path; review and CI required before any live use",
+      "ref": 241,
+      "refType": "pull",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/241"
     },
     {
       "id": "G-14",
