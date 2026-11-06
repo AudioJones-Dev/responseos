@@ -126,6 +126,28 @@ export default function MarketingHome() {
         </div>
       </section>
 
+      {/* A self-contained definition that search and answer engines can quote as-is. */}
+      <section
+        aria-labelledby="what-is-responseos"
+        className="mx-auto w-full max-w-6xl px-4 pt-4 sm:px-6"
+      >
+        <h2
+          id="what-is-responseos"
+          className="font-display text-2xl font-semibold text-ink"
+        >
+          What is ResponseOS?
+        </h2>
+        <p className="mt-3 max-w-3xl text-base text-ink-secondary">
+          ResponseOS is a missed-call follow-up system for founder-led
+          home-service and contractor businesses, built by AJ Digital LLC. It
+          is designed to capture the calls, texts, and web forms your team
+          can&apos;t answer, qualify each lead, hand it to a named person, and
+          track whether it became booked work, with estimated value kept
+          separate from verified results. It is in active development, and the
+          public demo runs on fictional data.
+        </p>
+      </section>
+
       <section className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6">
         <p className="text-xs font-semibold uppercase tracking-widest text-ink-muted">
           What happens after the call

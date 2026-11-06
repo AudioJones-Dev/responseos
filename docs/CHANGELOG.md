@@ -18,6 +18,12 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 - **Approval:** Michael approved the final page text on 2026-11-06, as reported by the owner.
 - **Not done here:** independent review and deployment.
 
+## Unreleased — feat: marketing SEO/AEO quick wins
+
+- **Why:** a search for "ResponseOS" ranks three unrelated products above responseos.pro, and answer engines need a short, self-contained definition to quote.
+- **Change:** the site-wide JSON-LD adds a founder `Person` (`Audio Jones`) linked to the `AJ Digital LLC` organization, with `sameAs` set to the footer's social profiles. The footer and the markup now read from one `FOUNDER_PROFILES` constant. The homepage adds a "What is ResponseOS?" paragraph in status-accurate language (designed to, in active development, fictional demo data).
+- **Not changed:** the site title, the "Revenue Recovery Infrastructure" category line and the demo-environment banner, which are set by the brand copy spec and the demo deploy gate. Structured data still carries no assessment price or `Offer`.
+
 ## Unreleased — fix: stop the /audit form from losing leads while public intake is off
 
 - **Bug:** with `RESPONSEOS_PUBLIC_AUDIT_INTAKE_ENABLED` unset (ADR-0047 §6 keeps it off until the WAF gate is proven), `/api/audit-requests` is not a public path, so the proxy redirects a submission to sign-in. The form could not read that response and showed "Network error. Try again." Nothing was stored, and the prospect was not told where else to go.

@@ -32,6 +32,15 @@ export function absoluteUrl(path: string): string {
 
 export const SITE_NAME = "ResponseOS";
 export const PUBLISHER_NAME = "AJ Digital LLC";
+export const FOUNDER_NAME = "Audio Jones";
+
+// Shared with the footer's SocialLinks so the visible links and the
+// structured-data sameAs list cannot drift apart.
+export const FOUNDER_PROFILES = {
+  linkedin: "https://www.linkedin.com/in/audiojones/",
+  youtube: "https://www.youtube.com/@audiojones",
+  facebook: "https://www.facebook.com/AudioJonesTheAIConsultant",
+} as const;
 
 // Social-card copy — Variant A (Revenue Recovery), per
 // docs/product/responseos-og-social-preview-spec.md §3/§5.
@@ -92,6 +101,15 @@ export function organizationJsonLd() {
       url,
       logo: absoluteUrl("/brand/responseos-mark.png"),
       brand: { "@type": "Brand", name: SITE_NAME },
+      founder: { "@id": `${url}#founder` },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "@id": `${url}#founder`,
+      name: FOUNDER_NAME,
+      worksFor: { "@id": `${url}#organization` },
+      sameAs: Object.values(FOUNDER_PROFILES),
     },
     {
       "@context": "https://schema.org",
