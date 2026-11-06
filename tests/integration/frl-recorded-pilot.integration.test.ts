@@ -1,12 +1,13 @@
 import { randomUUID, generateKeyPairSync, sign } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
-import { ingestPilot, dispatchPilot, purgePilotContent, killPilotWindow } from "@/lib/communications/pilot/store";
+import { decidePilotAdmission, ingestPilot, dispatchPilot, purgePilotContent, killPilotWindow } from "@/lib/communications/pilot/store";
 import { latest, type PilotState, type Purpose, type Role } from "@/lib/communications/pilot/machine";
 import { stateToken, type PilotTransport } from "@/lib/providers/telnyx/pilot";
 import type { TelnyxWebhookEnvelope } from "@/lib/providers/telnyx/webhook";
 import { testPilotConfig, callerLeg, operatorLeg } from "../fixtures/frl-pilot";
 import { makeAccount } from "../factories";
 import { prisma, resetTestDb, disconnectTestDb } from "./setup";
+import { deletePilotArtifacts } from "@/lib/communications/pilot/deletion";
 
 let now: number, c: ReturnType<typeof testPilotConfig>;
 const enabled = { RESPONSEOS_FRL_PILOT_ENABLED: "true", RESPONSEOS_REQUIRE_AUTH: "true", RESPONSEOS_FRL_PILOT_DEPLOYMENT_ID: "synthetic-pilot", DATABASE_URL: process.env.DATABASE_URL };
@@ -26,6 +27,7 @@ async function callback(type: string, purpose: Purpose, role: Role = "caller", p
 }
 async function start() {
   await ingest(event("call.initiated", { from: c.callers[0], to: c.number, direction: "incoming" }));
+  await decidePilotAdmission(prisma, c, "synthetic-operator", (await state()).id, true, now, enabled);
   await dispatch(); await callback("call.answered", "answer"); await dispatch();
 }
 async function fullBridge(callerDigit = "1", operatorDigit = "1") {
@@ -49,6 +51,50 @@ describe("durable recorded pilot", () => {
     await prisma.account.create({ data: makeAccount({ id: c.accountId }) });
   });
   afterAll(disconnectTestDb);
+  test("a rotating caller waits for exact-call approval and cannot replay approval", async () => {
+    await ingest(event("call.initiated", { from: "+13055550999", to: c.number, direction: "incoming" }));
+    await dispatch(); expect(transport).not.toHaveBeenCalled();
+    const s = await state(); expect(s.stage).toBe("pending");
+    expect(await decidePilotAdmission(prisma, { ...c, accountId: "foreign" }, "op", s.id, true, now, enabled)).toBe(false);
+    expect(await decidePilotAdmission(prisma, c, "op", s.id, true, now, enabled)).toBe(true);
+    expect(await decidePilotAdmission(prisma, c, "op", s.id, true, now, enabled)).toBe(false);
+    await dispatch(); expect(transport).toHaveBeenCalledTimes(1);
+    expect((await state()).admission?.caller).toBe("<PURGED>");
+  });
+  test("expired and rejected candidates never answer; competing calls cannot enter", async () => {
+    await ingest(event("call.initiated", { from: c.callers[0], to: c.number, direction: "incoming" }));
+    const s = await state();
+    await ingest(event("call.initiated", { call_control_id: "other", call_leg_id: "other", from: "+13055550999", to: c.number, direction: "incoming" }));
+    expect(await prisma.frlPilotRun.count()).toBe(1);
+    now = s.deadline;
+    expect(await decidePilotAdmission(prisma, c, "op", s.id, true, now, enabled)).toBe(false);
+    await dispatch(); expect(transport.mock.calls[0][0].path).toContain("hangup");
+  });
+  test("keypad commissioning observes digits without grants, recordings or operator dialing", async () => {
+    c.exercise = "keypad"; await start();
+    for (const digit of ["1", "2", "*"]) await callback("call.dtmf.received", "keypad", "caller", { digit });
+    await dispatch();
+    expect((await state()).digits).toEqual(["1", "2", "*"]);
+    expect((await state()).grants).toEqual([]);
+    expect(transport.mock.calls.every(([r]) => /\/(answer|speak|hangup)$/.test(r.path))).toBe(true);
+    expect(await prisma.frlPilotArtifact.count()).toBe(0);
+  });
+  test("late revoked recording and transcript still get durable deletion without content", async () => {
+    await fullBridge(); const s = await state(); const w = s.windows[1]; const recordingId = randomUUID();
+    await ingest(event("call.dtmf.received", { digit: "*" }));
+    now += 5000;
+    await callback("call.recording.saved", "conversation", "caller", { recording_id: recordingId, recording_started_at: new Date(w.authorizedAt + 100).toISOString(), recording_ended_at: new Date(now - 10).toISOString(), channels: "dual" });
+    await callback("call.recording.transcription.saved", "conversation", "caller", { recording_id: recordingId, recording_transcription_id: randomUUID(), status: "completed", transcription_text: "DO_NOT_RETAIN" });
+    expect(await prisma.frlPilotDeletion.count({ where: { recording_id: recordingId } })).toBe(2);
+    expect(JSON.stringify(await prisma.frlPilotArtifact.findMany())).not.toContain("DO_NOT_RETAIN");
+    const failing = vi.fn(async () => "retry" as const);
+    await deletePilotArtifacts(prisma, c.accountId, failing, now);
+    expect(await prisma.frlPilotDeletion.count({ where: { state: "retry" } })).toBe(1);
+    const success = vi.fn(async () => "verified" as const);
+    for (let i = 0; i < 3; i++) await deletePilotArtifacts(prisma, c.accountId, success, now + 10000);
+    expect(await prisma.frlPilotDeletion.count({ where: { state: { not: "verified" } } })).toBe(0);
+    expect(await deletePilotArtifacts(prisma, "foreign", success, now + 10000)).toBe(false);
+  });
   test("complete recorded flow stores only authorized interval artifacts, never ledger content or CRM", async () => {
     await fullBridge();
     const s = await state(); expect(s.stage).toBe("conversation"); expect(s.windows).toHaveLength(2);
@@ -75,15 +121,16 @@ describe("durable recorded pilot", () => {
   test("concurrent webhook deliveries commit one call and one intent", async () => {
     const e = event("call.initiated", { from: c.callers[0], to: c.number, direction: "incoming" });
     await Promise.all([ingest(e), ingest(e)]);
-    expect(await prisma.frlPilotRun.count()).toBe(1); expect(await prisma.frlPilotCommand.count()).toBe(1);
+    expect(await prisma.frlPilotRun.count()).toBe(1); expect(await prisma.frlPilotCommand.count()).toBe(0);
     expect(await prisma.webhookEvent.count()).toBe(1);
   });
   test("concurrent workers dispatch a command once", async () => {
     await ingest(event("call.initiated", { from: c.callers[0], to: c.number, direction: "incoming" }));
+    await decidePilotAdmission(prisma, c, "synthetic-operator", (await state()).id, true, now, enabled);
     await Promise.all([dispatch(), dispatch(), dispatch()]); expect(transport).toHaveBeenCalledTimes(1);
   });
-  test("paused tenant and unallowlisted callers cannot create runs", async () => {
-    await ingest(event("call.initiated", { from: "+13055550999", to: c.number, direction: "incoming" }));
+  test("paused tenant and looped callers cannot create runs", async () => {
+    await ingest(event("call.initiated", { from: c.operator, to: c.number, direction: "incoming" }));
     await prisma.account.update({ where: { id: c.accountId }, data: { status: "paused" } });
     await ingest(event("call.initiated", { from: c.callers[0], to: c.number, direction: "incoming" }));
     expect(await prisma.frlPilotRun.count()).toBe(0);

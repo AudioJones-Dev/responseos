@@ -1,5 +1,7 @@
 # FRL recorded pilot implementation
 
+**Current increment:** [activation controls](FRL_ACTIVATION_CONTROLS.md) supersede the baseline below where they specify manual admission, keypad exercise, 24-hour retention, provider deletion and six-call/thirty-minute windows. The earlier no-hosted-deployment statements below describe the initial implementation validation; nonproduction infrastructure was subsequently deployed with calls disabled. No live recorded test has occurred.
+
 Status: EXPERIMENTAL, implementation under review. The operator authorized implementation on 2026-11-06 after accepting FRL-PILOT-001. No hosted migration, deployment, provider configuration or live call has occurred. The first deliverable includes the full consent-gated recorded path; there is no separate capture-off-first release.
 
 ## Call behavior

@@ -1,0 +1,7 @@
+import { requireRole } from "@/lib/auth/session";
+import PilotControls from "./pilot-controls";
+
+export default async function PilotPage() {
+  await requireRole(["aj_admin", "operator"]);
+  return <main className="mx-auto max-w-3xl space-y-6 p-6"><h1 className="text-2xl font-semibold">FRL supervised pilot</h1><p>Approve only the call you just initiated with Grok. Caller ID alone does not establish identity.</p><PilotControls /></main>;
+}

@@ -35,7 +35,7 @@ export function observation(event: TelnyxWebhookEnvelope, s: PilotState): Observ
     case "call.bridged": return { ...common, kind: "bridged" };
     case "call.speak.ended": return payload.status === "completed" ? { ...common, kind: "prompt_done" } : { ...common, kind: "failure" };
     case "call.gather.ended": return { ...common, kind: "consent", digit: typeof payload.digits === "string" ? payload.digits : "", valid: payload.status === "valid" };
-    case "call.dtmf.received": return payload.digit === "*" ? { ...common, kind: "withdraw" } : null;
+    case "call.dtmf.received": return s.exercise === "keypad" && typeof payload.digit === "string" ? { ...common, kind: "digit", digit: payload.digit } : payload.digit === "*" ? { ...common, kind: "withdraw" } : null;
     case "call.recording.error": return { ...common, kind: "failure" };
     case "call.recording.saved": {
       const r = z.object({ recording_id: z.string().uuid(), recording_started_at: z.iso.datetime({ offset: true }), recording_ended_at: z.iso.datetime({ offset: true }), channels: z.enum(["single", "dual"]) }).safeParse(payload);
@@ -73,6 +73,7 @@ export function pilotRequest(s: PilotState, i: Intent, c: PilotConfig, now: numb
     default: {
       action = ["caller_consent", "operator_consent"].includes(i.purpose) ? "gather_using_speak" : "speak";
       const prompts = {
+        keypad: "Supervised keypad test. No recording or transcription is active. Please press 1, then 2, then star to end this test.",
         caller_consent: `${FRL_GREETING} ${FRL_CONSENT_PROMPT} To withdraw permission and end the call at any time, press star.`,
         operator_consent: s.captureDenied
           ? "Florida Ramp and Lift pilot call. This call will not be recorded or transcribed. Press 1 to accept the call, or press 2 to accept without recording. Otherwise hang up."

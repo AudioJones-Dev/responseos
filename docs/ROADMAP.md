@@ -6,6 +6,8 @@
 
 ## Version table
 
+FRL activation controls: [exact-call approval, keypad commissioning and provider deletion](implementations/florida-ramp-lift/FRL_ACTIVATION_CONTROLS.md) are under implementation/validation. Nonproduction infrastructure exists with calls disabled. Independent inbound duration enforcement remains unverified; no live window is open.
+
 FRL full recorded pilot: [experimental implementation](implementations/florida-ramp-lift/FRL_RECORDED_PILOT.md) under validation. Includes two consent windows, controlled dialing/bridging, durable dispatch and emergency stop. No live activation or milestone promotion.
 
 FRL Phase 3 is a [partial synthetic orchestration increment](implementations/florida-ramp-lift/FRL_PHASE3_ORCHESTRATION.md): verified request plans, signed offline mapping and routing/capture tests. Recording policy, post-bridge authorization, physical acknowledgments and durable execution block full Phase 3 and live testing. No milestone promotion.

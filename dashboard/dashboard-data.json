@@ -34,10 +34,10 @@
     {
       "id": "FRL-RECORDED-PILOT-20261106",
       "phase": "v0.3 · Demo Scope",
-      "title": "Review full consent-gated recorded FRL pilot and durable dispatch",
+      "title": "Implement exact-call approval, keypad commissioning and provider retention for FRL pilot",
       "owner": "Codex",
-      "status": "Review",
-      "progress": 90,
+      "status": "In Progress",
+      "progress": 70,
       "priority": "High",
       "start": "2026-11-06",
       "blocked": false,

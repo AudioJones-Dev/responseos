@@ -1834,6 +1834,10 @@ The cost is real and is not softened here: **capability authoring remains an eng
 
 ---
 
+## FRL-PILOT-002 — Exact-call admission and bounded pilot deletion
+
+Accepted for the isolated FRL test-number implementation by the operator on 2026-11-06. [Activation controls](implementations/florida-ramp-lift/FRL_ACTIVATION_CONTROLS.md) supersede caller-ID allowlisting with authenticated, single-use approval of the signed incoming call. Keypad-only commissioning cannot capture or dial. The approved 24-hour pilot content lifecycle includes automatic provider/local deletion and content-free audits, a narrow exception to ADR-0064's operator-run-only default. Other tenants and existing demos retain that default. Disclosure approval, independently verified inbound duration, retention/backup evidence and an exact supervised window remain activation gates. No milestone promotion or production authorization.
+
 ## ADR-0064 — Expired data is purged by one guarded, previewed, audited operator command
 
 **Status.** Accepted · 2026-10-08 · Owner-authorized (run model and the two new retention periods). Adds one operator command. No scheduler, no API route, no provider call, no deploy change. Does not authorize running it against a production database, which stays gated by v0.3/v0.4 readiness (doctrine D-1).

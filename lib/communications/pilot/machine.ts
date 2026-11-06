@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 export type Role = "caller" | "operator";
-export type Purpose = "answer" | "caller_consent" | "name_prompt" | "name" | "hold" | "dial" | "operator_consent" | "bridge" | "conversation" | "stop" | "hangup" | "unavailable";
+export type Purpose = "answer" | "keypad" | "caller_consent" | "name_prompt" | "name" | "hold" | "dial" | "operator_consent" | "bridge" | "conversation" | "stop" | "hangup" | "unavailable";
 export type Leg = { controlId: string; legId: string; sessionId: string; endedAt?: number };
 export type Intent = { id: string; purpose: Purpose; role: Role; createdAt: number; deadline: number };
 export type Grant = { role: Role; at: number; evidence: string; recording: boolean; transcription: boolean; disclosure: string };
@@ -10,14 +10,16 @@ export type Window = {
   limitAt: number; commandId: string; recordingId?: string; startedAt?: number; endedAt?: number;
 };
 export type PilotState = {
-  version: 1; id: string; stage: "answer" | "caller_consent" | "name_prompt" | "name" | "hold" | "dial" | "operator_consent" | "bridge" | "conversation" | "unavailable" | "ending" | "ended";
+  version: 1; id: string; stage: "pending" | "keypad" | "answer" | "caller_consent" | "name_prompt" | "name" | "hold" | "dial" | "operator_consent" | "bridge" | "conversation" | "unavailable" | "ending" | "ended";
+  admission?: { caller: string; expiresAt: number; approvedAt?: number; actorId?: string };
+  exercise?: "keypad" | "recorded"; digits?: string[];
   startedAt: number; deadline: number; endsAt: number; disclosure: string;
   caller: Leg; operator?: Leg; grants: Grant[]; captureDenied: boolean; revokedAt?: number;
   windows: Window[]; intents: Intent[]; bridges: Role[]; incident?: string; dialUnknown?: boolean; topologyUnknown?: boolean;
 };
 export type Observation = { id: string; at: number; role: Role; token?: string } & (
   { kind: "answered" | "prompt_done" | "bridged" | "hangup" | "withdraw" | "failure" } |
-  { kind: "consent"; digit: string; valid: boolean } |
+  { kind: "consent"; digit: string; valid: boolean } | { kind: "digit"; digit: string } |
   { kind: "recording"; recordingId: string; start: number; end: number; channels: string }
 );
 export function enqueue(s: PilotState, purpose: Purpose, role: Role, now: number): Intent {
@@ -30,6 +32,21 @@ export function initialPilot(id: string, caller: Leg, now: number, closesAt: num
   enqueue(s, "answer", "caller", now); return s;
 }
 export function latest(s: PilotState, purpose: Purpose): Intent | undefined { return s.intents.findLast(i => i.purpose === purpose); }
+export function pendingPilot(id: string, caller: Leg, from: string, at: number, closesAt: number, disclosure: string, exercise: "keypad" | "recorded"): PilotState {
+  const s = initialPilot(id, caller, at, closesAt, disclosure);
+  s.stage = "pending"; s.intents = []; s.exercise = exercise;
+  s.deadline = Math.min(at + 20000, closesAt);
+  s.admission = { caller: from, expiresAt: s.deadline };
+  return s;
+}
+export function approvePilot(s: PilotState, actorId: string, now: number): boolean {
+  if (s.stage !== "pending" || !s.admission || s.admission.approvedAt || s.caller.endedAt || now >= s.deadline) return false;
+  s.admission.approvedAt = now; s.admission.actorId = actorId;
+  advance(s, "answer", "caller", now);
+  s.deadline = Math.min(s.deadline, s.startedAt + 25000);
+  latest(s, "answer")!.deadline = s.deadline;
+  return true;
+}
 function advance(s: PilotState, purpose: Exclude<Purpose, "stop" | "hangup">, role: Role, now: number, timeout = 15000) {
   s.stage = purpose;
   s.deadline = Math.min(now + timeout, s.endsAt);
@@ -65,6 +82,12 @@ function beginCapture(s: PilotState, purpose: "name" | "conversation", now: numb
 export function observePilot(state: PilotState, e: Observation, receivedAt: number): PilotState {
   const s = structuredClone(state);
   if (!s[e.role] || e.at < s.startedAt || e.at > receivedAt + 2000) return s;
+  if (s.exercise === "keypad" && s.stage === "keypad" && e.kind === "digit" && e.role === "caller" && e.token === latest(s, "keypad")?.id) {
+    s.digits ??= [];
+    if (["1", "2", "*"].includes(e.digit) && !s.digits.includes(e.digit)) s.digits.push(e.digit);
+    if (e.digit === "*") endPilot(s, receivedAt);
+    return s;
+  }
   if (e.kind === "withdraw") { endPilot(s, receivedAt, "consent_withdrawn", true); return s; }
   if (e.kind === "hangup") {
     s[e.role]!.endedAt = e.at;
@@ -85,6 +108,7 @@ export function observePilot(state: PilotState, e: Observation, receivedAt: numb
     return s;
   }
   if (s.stage === "ending" || s.stage === "ended" || receivedAt >= s.endsAt) return s;
+  if (s.stage === "pending") return s;
   const expected = latest(s, s.stage);
   if (e.kind === "answered" && s.stage === "dial" && e.role === "operator") {
     if (e.token === latest(s, "dial")?.id) advance(s, "operator_consent", "operator", receivedAt, 60000);
@@ -105,7 +129,7 @@ export function observePilot(state: PilotState, e: Observation, receivedAt: numb
     return s;
   }
   if (!expected || expected.id !== e.token || e.at < expected.createdAt) return s;
-  if (s.stage === "answer" && e.kind === "answered" && e.role === "caller") advance(s, "caller_consent", "caller", receivedAt, 60000);
+  if (s.stage === "answer" && e.kind === "answered" && e.role === "caller") advance(s, s.exercise === "keypad" ? "keypad" : "caller_consent", "caller", receivedAt, 60000);
   else if (e.kind === "consent" && ((s.stage === "caller_consent" && e.role === "caller") || (s.stage === "operator_consent" && e.role === "operator"))) {
     const grant = e.valid && e.digit === "1";
     s.grants.push({ role: e.role, at: e.at, evidence: e.id, recording: grant, transcription: grant, disclosure: s.disclosure });
@@ -136,6 +160,8 @@ export function tickPilot(state: PilotState, now: number, enabled: boolean): Pil
 }
 export function commandAllowed(s: PilotState, i: Intent, now: number): boolean {
   if (i.purpose === "hangup" || i.purpose === "stop") return !s[i.role]?.endedAt;
+  if (s.admission && !s.admission.approvedAt) return false;
+  if (s.exercise === "keypad" && !["answer", "keypad"].includes(i.purpose)) return false;
   if (now >= i.deadline || now >= s.endsAt || s.stage !== i.purpose || latest(s, i.purpose)?.id !== i.id) return false;
   if (i.purpose === "name" || i.purpose === "conversation") return !s.captureDenied && !s.revokedAt && s.windows.some(w => w.commandId === i.id && now + 1000 < w.limitAt);
   return true;

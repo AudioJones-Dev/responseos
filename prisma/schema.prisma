@@ -69,6 +69,7 @@ enum CallDirection {
 }
 
 enum CallStatus {
+  ringing
   answered
   missed
   voicemail
@@ -727,6 +728,24 @@ model FrlPilotCommand {
 
   @@index([account_id, run_id])
   @@index([account_id, state])
+}
+
+model FrlPilotDeletion {
+  id             String   @id @default(cuid())
+  account_id     String
+  run_id         String
+  recording_id   String
+  resource_id    String
+  kind           String
+  due_at         DateTime
+  next_attempt_at DateTime
+  state          String   @default("pending")
+  attempts       Int      @default(0)
+  verified_at    DateTime?
+  last_error     String?
+
+  @@unique([account_id, kind, resource_id])
+  @@index([account_id, state, next_attempt_at])
 }
 
 model FrlPilotArtifact {

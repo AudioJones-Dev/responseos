@@ -7,18 +7,19 @@ export const callerLeg = { controlId: "caller-control", legId: "caller-leg", ses
 export const operatorLeg = { controlId: "operator-control", legId: "operator-leg", sessionId: "session" };
 export function testPilotConfig(now = pilotNow): PilotConfig {
   return { version: "FRL-PILOT-001", mode: "SUPERVISED_PILOT", accountId: "pilot-account", applicationId: "pilot-application",
+    admission: "manual", exercise: "recorded",
     deploymentId: "synthetic-pilot", databaseTargetDigest: databaseTargetDigest(process.env.DATABASE_URL ?? "postgresql://localhost/pilot")!,
     number: "+13055550101", operator: "+13055550102", callers: ["+13055550103"], windowId: randomUUID(),
     opensAt: new Date(now - 1000).toISOString(), closesAt: new Date(now + 360000).toISOString(), disclosureVersion: "frl-recorded-v1",
-    legalApprovalRef: "synthetic-only", retentionApprovalRef: "synthetic-only", retentionHours: 1,
-    independentEndpointVerified: true, providerCaptureDefaultsOff: true, providerCallLimitsVerified: true, providerRetentionVerified: true, maxCalls: 10 };
+    legalApprovalRef: "synthetic-only", retentionApprovalRef: "synthetic-only", retentionHours: 24,
+    independentEndpointVerified: true, providerCaptureDefaultsOff: true, providerCallLimitsVerified: true, providerRetentionVerified: true, maxCalls: 6 };
 }
 export function machineHarness() {
   let now = pilotNow;
   let state = initialPilot(randomUUID(), callerLeg, now, now + 300000, "frl-recorded-v1");
   const send = (kind: Observation["kind"], role: Role = "caller", extra: Partial<Observation> = {}) => {
     now += 100;
-    const token = kind === "bridged" && role === "operator" ? latest(state, "operator_consent")?.id : latest(state, state.stage === "ending" || state.stage === "ended" ? "conversation" : state.stage)?.id;
+    const token = kind === "bridged" && role === "operator" ? latest(state, "operator_consent")?.id : latest(state, state.stage === "ending" || state.stage === "ended" || state.stage === "pending" ? "conversation" : state.stage)?.id;
     state = observePilot(state, { id: randomUUID(), at: now, role, token, kind, ...extra } as Observation, now);
     return state;
   };
