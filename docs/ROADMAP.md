@@ -10,7 +10,7 @@ FRL scripted caller: FRL-PILOT-006 prepares a separate Telnyx application and fi
 
 FRL recorded commissioning: [FRL-PILOT-008](implementations/florida-ramp-lift/FRL_RECORDED_COMMISSIONING_PREP.md) is a DOCUMENTED_ONLY proposal to resolve first-artifact deletion qualification and specify a stage-aware scripted caller. Acceptance, implementation, legal evidence and hosted qualification remain pending.
 
-FRL spoken consent: [FRL-PILOT-009](implementations/florida-ramp-lift/FRL_SPOKEN_CONSENT.md) records the owner-authorized direction, draft prompts and implementation contract. DOCUMENTED_ONLY; recognition, real-time withdrawal and AI-conversation cleanup are not implemented in the pilot.
+FRL spoken consent: [FRL-PILOT-009](implementations/florida-ramp-lift/FRL_SPOKEN_CONSENT.md) records the owner-authorized direction, draft prompts and implementation contract. EXPERIMENTAL local implementation includes consent-event binding, real-time withdrawal monitoring and durable AI-conversation cleanup. Hosted deployment and qualification remain pending.
 
 ## Version table
 

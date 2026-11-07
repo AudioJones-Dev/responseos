@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { PilotConfig } from "@/lib/communications/pilot/config";
 import type { Intent, Leg, Observation, PilotState } from "@/lib/communications/pilot/machine";
 import { FRL_GREETING, FRL_CONSENT_PROMPT, FRL_NAME_PROMPT, FRL_TRANSFER_PROMPT, FRL_NO_CONSENT_PROMPT } from "@/lib/communications/consent/mock-intake";
+import { consumeSpeechConsent, speechGatherRequest, SPOKEN_CALLER_PROMPT, SPOKEN_OPERATOR_PROMPT, SPOKEN_UNRECORDED_OPERATOR_PROMPT } from "@/lib/communications/pilot/speech";
 import type { TelnyxWebhookEnvelope } from "./webhook";
 
 const identifier = z.string().min(1).max(256);
@@ -19,7 +20,7 @@ export function decodeToken(input: unknown): { runId: string; commandId: string 
     return z.object({ v: z.literal(1), runId: z.string().uuid(), commandId: z.string().uuid() }).strict().parse(JSON.parse(Buffer.from(input, "base64").toString()));
   } catch { return null; }
 }
-export function observation(event: TelnyxWebhookEnvelope, s: PilotState): Observation | null {
+export function observation(event: TelnyxWebhookEnvelope, s: PilotState, receivedAt = Date.now()): Observation | null {
   const p = basePayload.safeParse(event.data.payload);
   const at = Date.parse(event.data.occurred_at ?? "");
   if (!p.success || !Number.isFinite(at)) return null;
@@ -30,6 +31,17 @@ export function observation(event: TelnyxWebhookEnvelope, s: PilotState): Observ
   const common = { id: createHash("sha256").update(`telnyx:${event.data.id}`).digest("hex"), at, role, token: token?.commandId };
   const payload = event.data.payload;
   switch (event.data.event_type) {
+    case "call.ai_gather.ended": {
+      const binding = s.speech?.bindings.find(b => b.commandId === common.token && b.role === role);
+      if (!binding) return null;
+      const result = consumeSpeechConsent(event, binding, binding.accountId, receivedAt);
+      return result ? { ...common, kind: "speech_consent", decision: result.evidence.decision } : null;
+    }
+    case "call.transcription": {
+      if (!s.speech?.monitors[role]) return null;
+      const t = z.object({ transcript: z.string().max(4000), transcription_track: z.literal("inbound"), is_final: z.boolean() }).safeParse(payload.transcription_data);
+      return t.success ? { ...common, kind: "monitor_signal", withdraw: /\bstop recording\b|\bwithdraw (?:my )?consent\b/i.test(t.data.transcript) } : { ...common, kind: "failure" };
+    }
     case "call.answered": return { ...common, kind: "answered" };
     case "call.hangup": return { ...common, kind: "hangup" };
     case "call.bridged": return { ...common, kind: "bridged" };
@@ -44,8 +56,13 @@ export function observation(event: TelnyxWebhookEnvelope, s: PilotState): Observ
     default: return null;
   }
 }
-export function pilotRequest(s: PilotState, i: Intent, c: PilotConfig, now: number) {
+export function pilotRequest(s: PilotState, i: Intent, c: PilotConfig, now: number): { path: string; body: Record<string, unknown> } {
   if (c.exercise === "keypad" && !["answer", "keypad", "stop", "hangup"].includes(i.purpose)) throw new Error("keypad_command_denied");
+  if (s.speech && ["caller_consent", "operator_consent"].includes(i.purpose)) {
+    const binding = s.speech.bindings.find(b => b.commandId === i.id && b.role === i.role);
+    if (!binding) throw new Error("speech_binding_missing");
+    return speechGatherRequest(binding, i.role === "caller" ? SPOKEN_CALLER_PROMPT : s.captureDenied ? SPOKEN_UNRECORDED_OPERATOR_PROMPT : SPOKEN_OPERATOR_PROMPT, now);
+  }
   const body: Record<string, unknown> = { command_id: i.id, client_state: stateToken(s.id, i.id) };
   if (i.purpose === "dial") return { path: "/v2/calls", body: { ...body, connection_id: c.applicationId,
     to: c.operator, from: c.number, link_to: s.caller.controlId, bridge_on_answer: false,
@@ -54,6 +71,12 @@ export function pilotRequest(s: PilotState, i: Intent, c: PilotConfig, now: numb
   if (!leg) throw new Error("pilot_leg_missing");
   let action: string;
   switch (i.purpose) {
+    case "monitor_name":
+    case "monitor_conversation":
+      action = "transcription_start";
+      delete body.client_state;
+      Object.assign(body, { transcription_engine: "B", transcription_tracks: "inbound" }); break;
+    case "monitor_stop": action = "transcription_stop"; delete body.client_state; break;
     case "answer": action = "answer"; break;
     case "hangup": action = "hangup"; delete body.client_state; break;
     case "stop": {

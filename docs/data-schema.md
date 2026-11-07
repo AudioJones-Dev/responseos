@@ -10,6 +10,8 @@ The schema mirrors `types/*.ts` and `prisma/schema.prisma`. Conventions:
 
 ## Current implementation snapshot
 
+The spoken FRL branch adds `0017_frl_spoken_consent`: nullable recording parent plus exact call control/leg/session identity on `FrlPilotDeletion` for tenant-bound AI-conversation cleanup. No conversation text is persisted by the pilot. Local migration validation is not hosted migration evidence.
+
 The FRL activation branch adds migration `0016_frl_pilot_deletion`: `CallStatus.ringing` for unanswered candidates and `FrlPilotDeletion` for account/run-bound recording/transcription deletion intent, deadlines, retries and verified-absence evidence. It stores no media URL or transcript text. See [activation controls](implementations/florida-ramp-lift/FRL_ACTIVATION_CONTROLS.md); this is not a claim of production migration.
 
 The source of truth for exact fields, enum values, relations, and indexes is `prisma/schema.prisma`. The current migration chain runs from `0001_v0_2_foundation` through `0010_v0_3_provider_enum_alignment`.

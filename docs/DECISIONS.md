@@ -2,7 +2,7 @@
 
 ## FRL-PILOT-009 — Spoken consent
 
-**Status: DOCUMENTED_ONLY, 2026-11-07.** Owner authorized the spoken-consent direction. [Detailed design and draft disclosures](implementations/florida-ramp-lift/FRL_SPOKEN_CONSENT.md) cover explicit speech grants, real-time withdrawal and separate AI-conversation deletion. Detailed disclosure review and implementation remain pending; no deployed gate, legal-evidence requirement or live window changed.
+**Status: EXPERIMENTAL local implementation, 2026-11-07.** Owner authorized fully spoken consent and withdrawal. [Detailed design and draft disclosures](implementations/florida-ramp-lift/FRL_SPOKEN_CONSENT.md) cover explicit speech grants, real-time withdrawal and separate AI-conversation deletion. Speech consent binding, monitoring and conversation cleanup are implemented locally. Detailed disclosure review, hosted deployment and qualification remain pending; no legal-evidence requirement or live window changed.
 
 ## FRL-PILOT-008 — First recorded-artifact qualification
 

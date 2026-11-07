@@ -2,6 +2,8 @@ import "@/lib/serverOnlyGuard";
 import type { FrlPilotDeletion, PrismaClient } from "@prisma/client";
 import { z } from "zod";
 
+import { deleteSpeechConversation } from "./speech";
+
 export type DeletionResult = "verified" | "retry" | "identity_mismatch";
 export type DeletionTransport = (task: FrlPilotDeletion) => Promise<DeletionResult>;
 
@@ -16,6 +18,13 @@ export function telnyxDeletionTransport(key: string, applicationId: string): Del
   };
   return async task => {
     try {
+      if (task.kind === "conversation") {
+        if (!task.call_control_id || !task.call_leg_id || !task.call_session_id || task.recording_id !== null) return "identity_mismatch";
+        return deleteSpeechConversation({ accountId: task.account_id, applicationId, runId: task.run_id, commandId: task.id,
+          role: "caller", leg: { controlId: task.call_control_id, legId: task.call_leg_id, sessionId: task.call_session_id },
+          disclosure: "frl-spoken-v1", issuedAt: 0, expiresAt: 0, conversationId: task.resource_id }, task.account_id, key);
+      }
+      if (!task.recording_id) return "identity_mismatch";
       if (task.kind === "transcription") {
         const path = `/recording_transcriptions/${encodeURIComponent(task.resource_id)}`;
         const found = await request(path);

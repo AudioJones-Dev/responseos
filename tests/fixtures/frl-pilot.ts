@@ -20,7 +20,7 @@ export function testKeypadConfig(now = pilotNow): PilotConfig {
   if (c.exercise !== "recorded") throw new Error("recorded_fixture_required");
   const { legalApprovalRef: _legal, independentEndpointVerified: _endpoint, providerRetentionVerified: _retention, ...base } = c;
   void _legal; void _endpoint; void _retention;
-  return { ...base, exercise: "keypad", durationPolicy: { mode: "application_watchdog", riskApprovalRef: "synthetic-only" },
+  return { ...base, disclosureVersion: "frl-recorded-v1", exercise: "keypad", durationPolicy: { mode: "application_watchdog", riskApprovalRef: "synthetic-only" },
     commissioning: { approvalRef: "synthetic-only", operatorPresent: true, manualProviderStopAvailable: true, watchdogInventoryVerified: true, capture: "off", operatorDial: "off" } };
 }
 export function testAutomaticConfig(now = pilotNow): PilotConfig {

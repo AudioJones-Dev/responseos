@@ -6,7 +6,9 @@ import type { TelnyxWebhookEnvelope } from "@/lib/providers/telnyx/webhook";
 import { contentFreeReceipt } from "@/lib/providers/telnyx/content-policy";
 import { decodeToken, legFromPayload, observation, pilotRequest, type PilotTransport } from "@/lib/providers/telnyx/pilot";
 import { configDigest, pilotOpen, type PilotConfig } from "./config";
-import { approvePilot, commandAllowed, endPilot, initialPilot, pendingPilot, latest, observePilot, tickPilot, type Intent, type PilotState } from "./machine";
+import { acceptPilotCommand, approvePilot, commandAllowed, endPilot, initialPilot, pendingPilot, latest, observePilot, tickPilot, type Intent, type PilotState } from "./machine";
+
+import { bindSpeechConversation } from "./speech";
 
 type Database = Pick<PrismaClient, "$transaction">;
 const digest = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -34,9 +36,10 @@ async function persist(tx: Prisma.TransactionClient, c: PilotConfig, s: PilotSta
     await tx.auditLog.create({ data: { account_id: c.accountId, actor_type: "system", action: "frl_pilot.safety", category: "workflow", target_type: "FrlPilotRun", target_id: s.id, metadata_json: { reason: s.incident ?? "withdrawn", revoked: !!s.revokedAt, at: now } } });
   }
   if (s.revokedAt) await tx.frlPilotArtifact.updateMany({ where: { account_id: c.accountId, run_id: s.id }, data: { transcript: null, purged_at: new Date(now) } });
+  if (s.stage === "ending" || s.stage === "ended") await tx.frlPilotDeletion.updateMany({ where: { account_id: c.accountId, run_id: s.id, kind: "conversation", state: { not: "verified" } }, data: { due_at: new Date(now), next_attempt_at: new Date(now) } });
   if (s.revokedAt) await tx.frlPilotDeletion.updateMany({ where: { account_id: c.accountId, run_id: s.id, state: { not: "verified" } }, data: { due_at: new Date(now), next_attempt_at: new Date(now) } });
   if (s.stage === "ending" || s.stage === "ended") {
-    await tx.frlPilotCommand.updateMany({ where: { account_id: c.accountId, run_id: s.id, state: "pending", purpose: { notIn: ["stop", "hangup"] } }, data: { state: "cancelled", finished_at: new Date(now) } });
+    await tx.frlPilotCommand.updateMany({ where: { account_id: c.accountId, run_id: s.id, state: "pending", purpose: { notIn: ["stop", "hangup", "monitor_stop"] } }, data: { state: "cancelled", finished_at: new Date(now) } });
   }
   if (s.stage === "ended") {
     const run = await tx.frlPilotRun.findFirstOrThrow({ where: { account_id: c.accountId, id: s.id } });
@@ -77,6 +80,7 @@ export async function ingestPilot(db: Database, c: PilotConfig, event: TelnyxWeb
       const s = c.admission === "automatic_once"
         ? { ...initialPilot(id, leg, at, Date.parse(c.closesAt), c.disclosureVersion), exercise: c.exercise, captureDenied: true }
         : pendingPilot(id, leg, p.from, at, Date.parse(c.closesAt), c.disclosureVersion, c.exercise);
+      if (c.exercise === "recorded" && c.speech) (s as PilotState).speech = { bindings: [], monitors: {} };
       const call = await tx.call.create({ data: { account_id: c.accountId, provider: "telnyx", provider_call_id: leg.controlId,
         direction: "inbound", status: "ringing", from_number: "<CONTROLLED_PILOT_CALLER>", to_number: c.number, started_at: new Date(at) } });
       await tx.frlPilotRun.create({ data: { id, account_id: c.accountId, call_id: call.id, window_id: c.windowId, config_digest: configDigest(c),
@@ -93,13 +97,44 @@ export async function ingestPilot(db: Database, c: PilotConfig, event: TelnyxWeb
       const dial = await tx.frlPilotCommand.findFirst({ where: { id: token.commandId, account_id: c.accountId, run_id: s.id, state: { in: ["dispatched", "accepted", "uncertain"] } } });
       if (dial && event.data.payload.from === c.number && event.data.payload.to === c.operator && leg.sessionId === s.caller.sessionId && leg.controlId !== s.caller.controlId && leg.legId !== s.caller.legId) { s.operator = leg; s.dialUnknown = false; }
     }
-    const observed = observation(event, s);
+    if (s.speech && event.data.event_type === "call.conversation.created") {
+      const index = s.speech.bindings.findIndex(b => b.commandId === token?.commandId);
+      const existing = index >= 0 ? s.speech.bindings[index] : undefined;
+      const conflicting = existing?.conversationId && existing.conversationId !== event.data.payload.conversation_id;
+      const bound = existing ? bindSpeechConversation(event, conflicting ? { ...existing, conversationId: undefined } : existing, c.accountId, now) : null;
+      const sent = bound && await tx.frlPilotCommand.findFirst({ where: { account_id: c.accountId, run_id: s.id, id: bound.commandId, state: { in: ["dispatched", "accepted", "uncertain"] } } });
+      if (!bound || !sent) return finish(false);
+      if (conflicting) {
+        s.speech.bindings.push(bound);
+        endPilot(s, now, "speech_conversation_identity_changed", true);
+      } else s.speech.bindings[index] = bound;
+      const due = new Date(s.revokedAt || bound.consumedAt || ["ending", "ended"].includes(s.stage) ? now : bound.issuedAt + 86400000);
+      await tx.frlPilotDeletion.upsert({ where: { account_id_kind_resource_id: { account_id: c.accountId, kind: "conversation", resource_id: bound.conversationId! } },
+        update: { state: "pending", verified_at: null, due_at: due, next_attempt_at: due },
+        create: { account_id: c.accountId, run_id: s.id, kind: "conversation", resource_id: bound.conversationId!, recording_id: null,
+          call_control_id: bound.leg.controlId, call_leg_id: bound.leg.legId, call_session_id: bound.leg.sessionId, due_at: due, next_attempt_at: due } });
+    }
+    if (s.speech && event.data.event_type === "call.conversation.ended") {
+      const b = s.speech.bindings.find(b => b.conversationId === event.data.payload.conversation_id && b.leg.controlId === leg.controlId && b.leg.legId === leg.legId && b.leg.sessionId === leg.sessionId);
+      if (!b) return finish(false);
+      await tx.frlPilotDeletion.updateMany({ where: { account_id: c.accountId, run_id: s.id, kind: "conversation", resource_id: b.conversationId }, data: { state: "pending", verified_at: null, due_at: new Date(now), next_attempt_at: new Date(now) } });
+    }
+    if (s.speech && event.data.event_type === "call.ai_gather.ended") {
+      const binding = s.speech.bindings.find(b => b.commandId === token?.commandId);
+      if (binding && !binding.conversationId) throw new Error("pilot_speech_conversation_evidence_pending");
+    }
+    const observed = observation(event, s, now);
     if (!observed && event.data.event_type === "call.bridged" && leg.sessionId === s.caller.sessionId) { s.topologyUnknown = true; endPilot(s, now, "unknown_bridge_participant", true); }
-    if (observed && !["hangup", "withdraw", "failure"].includes(observed.kind)) {
+    if (observed && !["hangup", "withdraw", "failure", "monitor_signal"].includes(observed.kind)) {
       const command = observed.token ? await tx.frlPilotCommand.findFirst({ where: { id: observed.token, account_id: c.accountId, run_id: s.id, state: { in: ["dispatched", "accepted", "uncertain"] } } }) : null;
       if (!command) return finish(false);
     }
     if (observed) s = observePilot(s, observed, now);
+    if (observed?.kind === "speech_consent") {
+      const b = s.speech!.bindings.find(b => b.commandId === observed.token)!;
+      b.consumedAt = now;
+      await tx.frlPilotDeletion.updateMany({ where: { account_id: c.accountId, run_id: s.id, kind: "conversation", resource_id: b.conversationId }, data: { state: "pending", verified_at: null, due_at: new Date(now), next_attempt_at: new Date(now) } });
+    }
     if (observed?.kind === "answered" && observed.role === "caller") await tx.call.updateMany({ where: { account_id: c.accountId, id: row.call_id }, data: { status: "answered" } });
     if (s.stage !== "ended" && !pilotOpen(c, now, env) || env.RESPONSEOS_FRL_PILOT_KILL === "true" || await windowKilled(tx, c) || !(await activeAccount(tx, c.accountId))) endPilot(s, now, "dispatch_closed", true);
     if (s.stage === "ending") endPilot(s, now);
@@ -137,7 +172,7 @@ export async function ingestPilot(db: Database, c: PilotConfig, event: TelnyxWeb
       else if (t.success && !w) throw new Error("pilot_recording_evidence_pending");
     }
     await persist(tx, c, s, previous, now);
-    return finish(!!observed || event.data.event_type === "call.recording.transcription.saved");
+    return finish(!!observed || ["call.recording.transcription.saved", "call.conversation.created", "call.conversation.ended"].includes(event.data.event_type));
   });
 }
 
@@ -177,17 +212,22 @@ export async function dispatchPilot(db: Database, c: PilotConfig, transport: Pil
     const row = await tx.frlPilotRun.findFirstOrThrow({ where: { id: claimed.runId, account_id: c.accountId } });
     const previous = row.state_json as unknown as PilotState;
     const s = structuredClone(previous);
-    const cleanup = ["stop", "hangup"].includes(claimed.intent.purpose);
+    const cleanup = ["stop", "hangup", "monitor_stop"].includes(claimed.intent.purpose);
     if ((!cleanup && (!pilotOpen(c, dispatchNow, env) || await windowKilled(tx, c) || !await activeAccount(tx, c.accountId) || row.config_digest !== configDigest(c))) || !commandAllowed(s, claimed.intent, dispatchNow)) {
       await tx.frlPilotCommand.update({ where: { id: claimed.intent.id, account_id: c.accountId }, data: { state: "cancelled", finished_at: new Date(now) } });
       if (claimed.intent.purpose === "dial") s.dialUnknown = false;
       endPilot(s, now, "dispatch_closed", true); await persist(tx, c, s, previous, now); return;
+    }
+    if (s.speech && ["caller_consent", "operator_consent"].includes(claimed.intent.purpose) && !s.speech.bindings.some(b => b.commandId === claimed.intent.id)) {
+      s.speech.bindings.push({ accountId: c.accountId, applicationId: c.applicationId, runId: s.id, commandId: claimed.intent.id,
+        role: claimed.intent.role, leg: s[claimed.intent.role]!, disclosure: "frl-spoken-v1", issuedAt: dispatchNow, expiresAt: s.deadline });
     }
     const result = await transport(pilotRequest(s, claimed.intent, c, dispatchNow), claimed.intent.purpose === "dial");
     if (result.kind === "accepted" && result.leg) {
       if (result.leg.sessionId !== s.caller.sessionId || result.leg.controlId === s.caller.controlId || result.leg.legId === s.caller.legId || s.operator && JSON.stringify(s.operator) !== JSON.stringify(result.leg)) endPilot(s, now, "dial_identity_mismatch", true);
       else { s.operator = result.leg; s.dialUnknown = false; }
     }
+    if (result.kind === "accepted") acceptPilotCommand(s, claimed.intent, dispatchNow);
     if (result.kind === "failed" && claimed.intent.purpose === "dial") s.dialUnknown = false;
     if (result.kind !== "accepted") endPilot(s, now, `command_${result.kind}`, true);
     await tx.frlPilotCommand.update({ where: { id: claimed.intent.id, account_id: c.accountId }, data: { state: result.kind, finished_at: new Date(now) } });

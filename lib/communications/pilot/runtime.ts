@@ -8,7 +8,13 @@ import { deletePilotArtifacts, telnyxDeletionTransport } from "./deletion";
 
 export async function handlePilotEvent(event: TelnyxWebhookEnvelope, rawBody: string) {
   const c = loadPilotConfig();
-  if (!c || event.data.payload.connection_id !== c.applicationId) return { handled: false };
+  if (!c) {
+    let applicationId: unknown;
+    try { applicationId = JSON.parse(process.env.RESPONSEOS_FRL_PILOT_CONFIG ?? "null")?.applicationId; } catch { /* Invalid configuration cannot identify its application. */ }
+    if (typeof applicationId === "string" && event.data.payload.connection_id === applicationId) throw new Error("pilot_configuration_unavailable");
+    return { handled: false };
+  }
+  if (event.data.payload.connection_id !== c.applicationId) return { handled: false };
   if (!db) throw new Error("pilot_database_unavailable");
   return ingestPilot(db, c, event, rawBody);
 }

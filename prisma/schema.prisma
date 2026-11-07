@@ -734,7 +734,10 @@ model FrlPilotDeletion {
   id             String   @id @default(cuid())
   account_id     String
   run_id         String
-  recording_id   String
+  recording_id   String?
+  call_control_id String?
+  call_leg_id String?
+  call_session_id String?
   resource_id    String
   kind           String
   due_at         DateTime

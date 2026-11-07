@@ -52,6 +52,97 @@ describe("durable recorded pilot", () => {
     await prisma.account.create({ data: makeAccount({ id: c.accountId }) });
   });
   afterAll(disconnectTestDb);
+  function speechConfig() {
+    if (c.exercise !== "recorded") throw new Error("recorded config required");
+    c = { ...c, disclosureVersion: "frl-spoken-v1", speech: { wordingApprovalRef: "synthetic", processingApprovalRef: "synthetic", retentionVerified: true, withdrawalVerified: true } };
+  }
+  async function spoken(role: Role, text = "yes", decision = "agree") {
+    const purpose = role === "caller" ? "caller_consent" : "operator_consent";
+    const conversation_id = randomUUID();
+    await callback("call.conversation.created", purpose, role, { conversation_id });
+    await callback("call.ai_gather.ended", purpose, role, { status: "valid", result: { decision }, message_history: [{ role: "user", content: text }] });
+    return conversation_id;
+  }
+  test("spoken caller grant starts monitoring before name capture and spoken withdrawal purges", async () => {
+    speechConfig(); await start();
+    expect(transport.mock.calls.at(-1)![0].path).toContain("gather_using_ai");
+    const conversationId = await spoken("caller");
+    expect((await state()).grants[0]).toMatchObject({ method: "speech", recording: true });
+    expect(await prisma.frlPilotDeletion.count({ where: { account_id: c.accountId, kind: "conversation", resource_id: conversationId, due_at: { lte: new Date(now) } } })).toBe(1);
+    await dispatch(); await callback("call.speak.ended", "name_prompt", "caller", { status: "completed" });
+    expect((await state()).windows).toEqual([]);
+    await dispatch(); expect(transport.mock.calls.at(-1)![0].path).toContain("transcription_start");
+    await dispatch(); expect(transport.mock.calls.at(-1)![0].path).toContain("record_start");
+    now += 100;
+    await ingest(event("call.transcription", { transcription_data: { transcript: "please stop recording", is_final: false, transcription_track: "inbound" } }));
+    expect(await state()).toMatchObject({ stage: "ending", incident: "consent_withdrawn" });
+    expect((await state()).revokedAt).toBeTruthy();
+    expect(JSON.stringify(await prisma.webhookEvent.findMany())).not.toContain("please stop recording");
+    await deletePilotArtifacts(prisma, c.accountId, async () => "verified", now);
+    await callback("call.conversation.ended", "caller_consent", "caller", { conversation_id: conversationId });
+    expect(await prisma.frlPilotDeletion.findFirst({ where: { account_id: c.accountId, resource_id: conversationId } })).toMatchObject({ state: "pending", verified_at: null });
+  });
+  test("full spoken bridge starts both monitors before conversation recording", async () => {
+    speechConfig(); await start(); await spoken("caller"); await dispatch();
+    await callback("call.speak.ended", "name_prompt", "caller", { status: "completed" });
+    await dispatch(); await dispatch();
+    const w = (await state()).windows[0]; now += 8100;
+    await callback("call.recording.saved", "name", "caller", { recording_id: randomUUID(), recording_started_at: new Date(w.authorizedAt + 10).toISOString(), recording_ended_at: new Date(w.authorizedAt + 8000).toISOString(), channels: "single" });
+    await dispatch(); await dispatch();
+    expect((await state()).speech!.monitors.caller).toBeDefined();
+    await callback("call.speak.ended", "hold", "caller", { status: "completed" }); await dispatch();
+    await callback("call.answered", "dial", "operator"); await dispatch(); await spoken("operator"); await dispatch();
+    await callback("call.bridged", "bridge"); await callback("call.bridged", "operator_consent", "operator");
+    expect((await state()).windows).toHaveLength(1);
+    await dispatch(); expect((await state()).windows).toHaveLength(2);
+    await dispatch();
+    expect(transport.mock.calls.at(-1)![0].body.channels).toBe("dual");
+    now += 100;
+    await ingest(event("call.transcription", { transcription_data: { transcript: "stop recording", is_final: true, transcription_track: "inbound" } }, "operator"));
+    expect(await state()).toMatchObject({ stage: "ending", incident: "consent_withdrawn" });
+    expect((await state()).intents.filter(i => i.purpose === "hangup")).toHaveLength(2);
+  });
+  test("unexpected second AI conversation is queued for deletion and fails closed", async () => {
+    speechConfig(); await start();
+    await callback("call.conversation.created", "caller_consent", "caller", { conversation_id: randomUUID() });
+    await callback("call.conversation.created", "caller_consent", "caller", { conversation_id: randomUUID() });
+    expect((await state()).incident).toBe("speech_conversation_identity_changed");
+    expect(await prisma.frlPilotDeletion.count({ where: { account_id: c.accountId, kind: "conversation" } })).toBe(2);
+  });
+  test("consenting caller can withdraw verbally while waiting for the operator", async () => {
+    speechConfig(); await start(); await spoken("caller"); await dispatch();
+    await callback("call.speak.ended", "name_prompt", "caller", { status: "completed" }); await dispatch(); await dispatch();
+    const w = (await state()).windows[0]; now += 8100;
+    await callback("call.recording.saved", "name", "caller", { recording_id: randomUUID(), recording_started_at: new Date(w.authorizedAt + 10).toISOString(), recording_ended_at: new Date(w.authorizedAt + 8000).toISOString(), channels: "single" });
+    await dispatch(); expect((await state()).stage).toBe("hold");
+    now += 100;
+    await ingest(event("call.transcription", { transcription_data: { transcript: "stop recording", is_final: true, transcription_track: "inbound" } }));
+    expect((await state()).revokedAt).toBeTruthy();
+    expect(transport.mock.calls.some(([r]) => r.path === "/v2/calls")).toBe(false);
+  });
+  test("spoken refusal never starts a recording or continuous transcript", async () => {
+    speechConfig(); await start(); await spoken("caller", "no", "decline_capture"); await dispatch();
+    expect(await state()).toMatchObject({ stage: "hold", captureDenied: true, windows: [] });
+    expect(transport.mock.calls.some(([r]) => /record_start|transcription_start/.test(r.path))).toBe(false);
+  });
+  test("speech gather completion before conversation identity retries without granting consent", async () => {
+    speechConfig(); await start();
+    await expect(callback("call.ai_gather.ended", "caller_consent", "caller", { status: "valid", result: { decision: "agree" }, message_history: [{ role: "user", content: "yes" }] })).rejects.toThrow("pilot_speech_conversation_evidence_pending");
+    expect((await state()).grants).toEqual([]);
+  });
+  test("speech monitor uncertainty ends the call without capture and is not retried", async () => {
+    speechConfig(); await start(); await spoken("caller"); await dispatch();
+    await callback("call.speak.ended", "name_prompt", "caller", { status: "completed" });
+    transport.mockResolvedValueOnce({ kind: "uncertain" }); await dispatch(); await dispatch();
+    expect((await state()).windows).toEqual([]);
+    expect(transport.mock.calls.filter(([r]) => r.path.endsWith("transcription_start"))).toHaveLength(1);
+  });
+  test("missing speech monitor signals terminate capture rather than silently disabling withdrawal", async () => {
+    speechConfig(); await start(); await spoken("caller"); await dispatch();
+    await callback("call.speak.ended", "name_prompt", "caller", { status: "completed" });
+    await dispatch(); await dispatch(); now += 15001; await dispatch();
+    expect(await state()).toMatchObject({ stage: "ending", incident: "speech_monitor_silent_or_failed" });
+  });
   test("scripted caller claim is single-use across concurrent attempts and rejects a killed window", async () => {
     c = { ...testAutomaticConfig(now), number: testCaller.to };
     const env = { ...enabled, RESPONSEOS_FRL_PILOT_WORKER_ENABLED: "true", RESPONSEOS_FRL_TEST_CALLER_WINDOW_ID: c.windowId };

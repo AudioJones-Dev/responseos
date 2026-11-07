@@ -35,7 +35,7 @@ test("approval is single use and keypad mode cannot dial or capture", () => {
 });
 function task(kind = "recording"): FrlPilotDeletion {
   const id = randomUUID();
-  return { id, account_id: "a", run_id: "r", recording_id: id, resource_id: id, kind, due_at: new Date(), next_attempt_at: new Date(), state: "pending", attempts: 0, last_error: null, verified_at: null };
+  return { call_control_id: null, call_leg_id: null, call_session_id: null, id, account_id: "a", run_id: "r", recording_id: id, resource_id: id, kind, due_at: new Date(), next_attempt_at: new Date(), state: "pending", attempts: 0, last_error: null, verified_at: null };
 }
 test("recording deletion validates application, deletes audio and verifies absence", async () => {
   const t = task();

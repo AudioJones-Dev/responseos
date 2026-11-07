@@ -1,6 +1,6 @@
 # FRL-PILOT-009 — Spoken consent
 
-Status: DOCUMENTED_ONLY. Owner authorized moving toward spoken consent on November 7, 2026. Detailed disclosure review and implementation remain pending. No runtime, provider setting or live window changed.
+Status: EXPERIMENTAL local implementation, November 7, 2026. Owner requested fully spoken consent and withdrawal. Runtime code and synthetic tests are implemented; hosted deployment, detailed disclosure review and live qualification remain pending. No provider setting or live window changed.
 
 ## Intended experience
 
@@ -79,3 +79,23 @@ Existing legal evidence, retention, endpoint, duration/watchdog and supervised-w
 - [Conversation deletion](https://developers.telnyx.com/api-reference/conversations/delete-a-conversation)
 
 Provider support for gathering speech is verified. End-to-end consent accuracy, live withdrawal and deletion in this pilot are not yet verified.
+
+## Implemented increment — November 7
+
+Local code includes explicit speech configuration tied to `frl-spoken-v1`, final-result/utterance agreement checks, account/application/leg/command/conversation binding, content-free consent evidence, durable AI conversation deletion tasks and separate real-time inbound transcription monitors per consenting leg. Capture starts only after monitor commands are accepted. Refusal does not start continuous transcription. Consenting-caller monitoring continues through hold and operator dialing; operator monitoring starts after both bridge confirmations. Any capture refusal stops continuous monitoring before an unrecorded bridge. Both participants can revoke through a recognized “stop recording” phrase, including an interim transcription event. Existing star withdrawal remains available.
+
+The monitor is deliberately conservative: 15 seconds without a transcription event terminates the run and revokes capture. This detects missing observations, not the cause; ordinary silence can therefore end a test. Command acceptance is not proof that recognition is accurate. Provider callback latency, loss, silence behavior and withdrawal latency must be measured in supervised qualification before claiming the interaction is client-ready.
+
+Migration `0017_frl_spoken_consent` adds exact call identity fields to conversation deletion tasks and makes recording parent ID nullable for that resource kind. Existing recording tasks are unchanged. Synthetic local database only so far. Conversations are queued for early deletion after the consent decision or termination; late conversation completion reopens cleanup. Unexpected additional conversations fail closed and are queued separately. Cleanup continues independently of admission.
+
+The request planner sends no prior message history and disables partial-result/history-update callbacks. Final gather history is processed transiently and reduced to a decision; raw words do not enter state, audit or webhook receipts. Actual provider recognition/history/backup retention still requires verification. `retentionVerified` and `withdrawalVerified` must not be set from synthetic tests alone. The first-artifact commissioning exception remains a separate unresolved prerequisite.
+
+No Grok handoff or client-readiness claim is made. The old keypad-only scripted caller remains restricted to its original exercise. Detailed prompt review and legal-review evidence remain distinct from approval of the fully spoken design.
+
+### Remaining interaction boundary
+
+The local implementation detects spoken withdrawal during authorized capture and while an already-consenting caller waits. It deliberately stops continuous recognition when capture is refused. It therefore does not yet promise voice-command handling throughout an unrecorded/refused conversation. Prior name content can still exist when the operator refuses conversation capture. Extending speech processing into that refused conversation requires an explicit disclosure/policy distinction between transient call-control recognition and conversation transcription; it must not be silently inferred from “fully spoken.” This gap blocks the advertised fully spoken experience and any deployment for live speech testing. Keep exact wording approval pending until this boundary is resolved.
+
+## Local validation evidence
+
+November 7: lint, typecheck, build and 975 unit tests passed. The full PostgreSQL integration run passed 225 tests; after extending hold-phase withdrawal, the affected pilot suite passed all 38 tests. Migration 0017 was applied only to the retained synthetic PostgreSQL 16 database. Provider requests were mocked in these tests; no hosted speech or deletion claim follows from them.

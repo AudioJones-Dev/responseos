@@ -4,6 +4,8 @@ All routes live under `app/api/*` as Next.js App Router Route Handlers. Response
 
 ## Experimental FRL recorded pilot
 
+The spoken increment handles signed AI conversation creation/final gather/completion and real-time transcription inside the isolated pilot branch. Final spoken consent must match the dispatched command, bound call and conversation; partial gather results never grant permission. Raw speech is reduced to content-free evidence. Separate speech qualification fields and disclosure `frl-spoken-v1` are required; this is not live activation.
+
 The activation increment adds `/admin/frl-pilot` and `POST /api/admin/frl-pilot` with `{action: "approve" | "reject", runId}`. Approval applies once to an unexpired signed candidate in the server-configured tenant/window; 202 means queued, 409 means stale/denied. Empty-body POST retains emergency stop. GET additionally returns pending caller/arrival/expiry, keypad evidence and overdue deletion count. It never returns provider control tokens. See [activation controls](implementations/florida-ramp-lift/FRL_ACTIVATION_CONTROLS.md).
 
 `POST /api/webhooks/telnyx/calls` has a separately configured FRL-PILOT-001 branch after signature verification. It atomically records a content-free receipt, state and commands; unrelated demo routing retains its existing guards. Maximum body size is 256 KiB. Uncommitted or not-yet-proven transcript deliveries return 503 for retry. No dispatch runs in the webhook request.
