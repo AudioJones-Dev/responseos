@@ -98,3 +98,7 @@ The subsequent FRL-PILOT-003 local implementation is tracked in its amendment. N
 ## First recorded-artifact dependency
 
 [FRL-PILOT-008 proposal](FRL_RECORDED_COMMISSIONING_PREP.md) documents the live-deletion bootstrap gate and a bounded qualification path. It is not accepted or implemented. No readiness flag may be fabricated. The additional owner reply “Approved” supplies no legal reviewer/date/reference; legal evidence remains pending.
+
+## Spoken v2 owner approval — November 7
+
+[FRL-PILOT-009](FRL_SPOKEN_CONSENT.md) records owner approval of transient call-control recognition after recording refusal and the exact revised disclosure. Use the separately versioned `frl-spoken-v2` contract for future spoken commissioning; do not reuse keypad wording or a stopped window. Policy/wording approval does not supply legal-review evidence or prove provider-side retention. No live spoken window is assigned.

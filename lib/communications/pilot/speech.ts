@@ -7,13 +7,13 @@ import { decodeToken, stateToken } from "@/lib/providers/telnyx/pilot";
 export type SpeechDecision = "agree" | "decline_capture" | "withdraw" | "unclear";
 export type SpeechBinding = {
   accountId: string; applicationId: string; runId: string; commandId: string;
-  role: Role; leg: Leg; disclosure: "frl-spoken-v1";
+  role: Role; leg: Leg; disclosure: "frl-spoken-v2";
   issuedAt: number; expiresAt: number; consumedAt?: number;
   conversationId?: string;
 };
 export type SpeechEvidence = {
   method: "speech"; decision: SpeechDecision; eventId: string; at: number;
-  role: Role; disclosure: "frl-spoken-v1";
+  role: Role; disclosure: "frl-spoken-v2";
 };
 
 export function classifyConsentSpeech(value: unknown): SpeechDecision {
@@ -55,8 +55,10 @@ export function consumeSpeechConsent(event: TelnyxWebhookEnvelope, binding: Spee
     result: z.object({ decision: z.enum(["agree", "decline_capture", "withdraw", "unclear"]) }).strict(),
     message_history: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(4000) })).max(8),
   }).safeParse(payload);
-  let decision: SpeechDecision = "unclear";
-  if (parsed.success) {
+  const history = z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(4000) })).max(8).safeParse(payload.message_history);
+  const withdrawal = history.success && history.data.some(m => m.role === "user" && classifyConsentSpeech(m.content) === "withdraw");
+  let decision: SpeechDecision = withdrawal ? "withdraw" : "unclear";
+  if (parsed.success && !withdrawal) {
     const turns = parsed.data.message_history.filter(m => m.role === "user");
     // Multiple answers or model-only agreement cannot establish unambiguous consent.
     if (turns.length === 1) {
@@ -105,6 +107,6 @@ export async function deleteSpeechConversation(binding: SpeechBinding, accountId
   } catch { return "retry"; }
 }
 
-export const SPOKEN_CALLER_PROMPT = "Thank you for calling Florida Ramp and Lift. This automated system uses speech recognition to understand your answer. May we record and transcribe your name and this call to document your request and coordinate follow-up? Say yes to agree, or no to continue without recording the conversation. If you agree, you can later say stop recording to withdraw permission and end the call.";
-export const SPOKEN_OPERATOR_PROMPT = "Florida Ramp and Lift pilot call. This automated system uses speech recognition to understand your answer. To accept the call and agree to recording and transcription, say yes. To accept without recording the conversation, say no. To decline the call, hang up. If you agree, you can later say stop recording to withdraw permission and end the call.";
-export const SPOKEN_UNRECORDED_OPERATOR_PROMPT = "Florida Ramp and Lift pilot call. This automated system uses speech recognition to understand your answer. The caller declined recording. Say yes or no to accept this call without recording the conversation, or hang up to decline the call.";
+export const SPOKEN_CALLER_PROMPT = "This automated system processes your speech for call controls, including requests to stop. May we also save a recording and transcript of your name and this call to document your request and coordinate follow-up? Say yes to agree, or no to continue without saving a recording or transcript. Say stop recording to withdraw permission and end the call.";
+export const SPOKEN_OPERATOR_PROMPT = SPOKEN_CALLER_PROMPT;
+export const SPOKEN_UNRECORDED_OPERATOR_PROMPT = SPOKEN_CALLER_PROMPT;

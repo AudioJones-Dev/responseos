@@ -71,6 +71,7 @@ export function pilotRequest(s: PilotState, i: Intent, c: PilotConfig, now: numb
   if (!leg) throw new Error("pilot_leg_missing");
   let action: string;
   switch (i.purpose) {
+    case "monitor_consent":
     case "monitor_name":
     case "monitor_conversation":
       action = "transcription_start";
@@ -102,7 +103,7 @@ export function pilotRequest(s: PilotState, i: Intent, c: PilotConfig, now: numb
         operator_consent: s.captureDenied
           ? "Florida Ramp and Lift pilot call. This call will not be recorded or transcribed. Press 1 to accept the call, or press 2 to accept without recording. Otherwise hang up."
           : "Florida Ramp and Lift pilot call. With your permission, the bridged conversation will be recorded and transcribed to document the request and coordinate follow-up. Press 1 to accept and consent, or press 2 to accept without recording or transcription. To withdraw permission and end the call at any time, press star.",
-        name_prompt: FRL_NAME_PROMPT, hold: s.captureDenied ? FRL_NO_CONSENT_PROMPT : FRL_TRANSFER_PROMPT,
+        name_prompt: FRL_NAME_PROMPT, hold: s.captureDenied ? s.speech ? "We will connect you without saving a recording or transcript. Please hold." : FRL_NO_CONSENT_PROMPT : FRL_TRANSFER_PROMPT,
         unavailable: "We are unable to connect your call. Please try again later.",
       };
       Object.assign(body, { payload: prompts[i.purpose], payload_type: "text", voice: "female", language: "en-US", service_level: "basic" });

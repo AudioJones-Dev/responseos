@@ -37,7 +37,7 @@
       "title": "Implement spoken consent, withdrawal and AI conversation cleanup",
       "owner": "Codex",
       "status": "In Progress",
-      "progress": 65,
+      "progress": 75,
       "priority": "High",
       "ref": 246,
       "refType": "pull"

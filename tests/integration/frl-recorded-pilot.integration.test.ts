@@ -54,13 +54,14 @@ describe("durable recorded pilot", () => {
   afterAll(disconnectTestDb);
   function speechConfig() {
     if (c.exercise !== "recorded") throw new Error("recorded config required");
-    c = { ...c, disclosureVersion: "frl-spoken-v1", speech: { wordingApprovalRef: "synthetic", processingApprovalRef: "synthetic", retentionVerified: true, withdrawalVerified: true } };
+    c = { ...c, disclosureVersion: "frl-spoken-v2", speech: { transientControlsApprovalRef: "synthetic", wordingApprovalRef: "synthetic", processingApprovalRef: "synthetic", retentionVerified: true, withdrawalVerified: true } };
   }
-  async function spoken(role: Role, text = "yes", decision = "agree") {
+  async function spoken(role: Role, text = "yes", decision = "agree", startMonitor = true) {
     const purpose = role === "caller" ? "caller_consent" : "operator_consent";
     const conversation_id = randomUUID();
     await callback("call.conversation.created", purpose, role, { conversation_id });
     await callback("call.ai_gather.ended", purpose, role, { status: "valid", result: { decision }, message_history: [{ role: "user", content: text }] });
+    if (startMonitor) await dispatch();
     return conversation_id;
   }
   test("spoken caller grant starts monitoring before name capture and spoken withdrawal purges", async () => {
@@ -69,9 +70,9 @@ describe("durable recorded pilot", () => {
     const conversationId = await spoken("caller");
     expect((await state()).grants[0]).toMatchObject({ method: "speech", recording: true });
     expect(await prisma.frlPilotDeletion.count({ where: { account_id: c.accountId, kind: "conversation", resource_id: conversationId, due_at: { lte: new Date(now) } } })).toBe(1);
-    await dispatch(); await callback("call.speak.ended", "name_prompt", "caller", { status: "completed" });
+    expect(transport.mock.calls.at(-1)![0].path).toContain("transcription_start");
     expect((await state()).windows).toEqual([]);
-    await dispatch(); expect(transport.mock.calls.at(-1)![0].path).toContain("transcription_start");
+    await dispatch(); await callback("call.speak.ended", "name_prompt", "caller", { status: "completed" });
     await dispatch(); expect(transport.mock.calls.at(-1)![0].path).toContain("record_start");
     now += 100;
     await ingest(event("call.transcription", { transcription_data: { transcript: "please stop recording", is_final: false, transcription_track: "inbound" } }));
@@ -93,8 +94,7 @@ describe("durable recorded pilot", () => {
     await callback("call.speak.ended", "hold", "caller", { status: "completed" }); await dispatch();
     await callback("call.answered", "dial", "operator"); await dispatch(); await spoken("operator"); await dispatch();
     await callback("call.bridged", "bridge"); await callback("call.bridged", "operator_consent", "operator");
-    expect((await state()).windows).toHaveLength(1);
-    await dispatch(); expect((await state()).windows).toHaveLength(2);
+    expect((await state()).windows).toHaveLength(2);
     await dispatch();
     expect(transport.mock.calls.at(-1)![0].body.channels).toBe("dual");
     now += 100;
@@ -120,10 +120,31 @@ describe("durable recorded pilot", () => {
     expect((await state()).revokedAt).toBeTruthy();
     expect(transport.mock.calls.some(([r]) => r.path === "/v2/calls")).toBe(false);
   });
-  test("spoken refusal never starts a recording or continuous transcript", async () => {
+  test("spoken refusal preserves transient controls without saving content", async () => {
     speechConfig(); await start(); await spoken("caller", "no", "decline_capture"); await dispatch();
     expect(await state()).toMatchObject({ stage: "hold", captureDenied: true, windows: [] });
-    expect(transport.mock.calls.some(([r]) => /record_start|transcription_start/.test(r.path))).toBe(false);
+    expect(transport.mock.calls.some(([r]) => /record_start/.test(r.path))).toBe(false);
+    expect(transport.mock.calls.some(([r]) => /transcription_start/.test(r.path))).toBe(true);
+    now += 100;
+    await ingest(event("call.transcription", { transcription_data: { transcript: "stop recording", is_final: true, transcription_track: "inbound" } }));
+    expect((await state()).incident).toBe("consent_withdrawn");
+    expect(await prisma.frlPilotArtifact.count()).toBe(0);
+    expect(JSON.stringify(await prisma.webhookEvent.findMany())).not.toContain("stop recording");
+  });
+  test.each(["caller", "operator"] as const)("both refusal paths preserve spoken withdrawal on %s leg without recording", async role => {
+    speechConfig(); await start(); await spoken("caller", "no", "decline_capture"); await dispatch();
+    await callback("call.speak.ended", "hold", "caller", { status: "completed" }); await dispatch();
+    await callback("call.answered", "dial", "operator"); await dispatch(); await spoken("operator", "no", "decline_capture"); await dispatch();
+    await callback("call.bridged", "bridge"); await callback("call.bridged", "operator_consent", "operator");
+    expect((await state()).speech!.monitors.caller).toBeDefined();
+    expect((await state()).speech!.monitors.operator).toBeDefined();
+    expect((await state()).windows).toEqual([]);
+    expect(transport.mock.calls.some(([r]) => r.path.endsWith("record_start"))).toBe(false);
+    now += 100;
+    await ingest(event("call.transcription", { transcription_data: { transcript: "stop recording", is_final: false, transcription_track: "inbound" } }, role));
+    expect((await state()).intents.filter(i => i.purpose === "hangup")).toHaveLength(2);
+    expect((await state()).revokedAt).toBeTruthy();
+    expect(await prisma.frlPilotArtifact.count()).toBe(0);
   });
   test("speech gather completion before conversation identity retries without granting consent", async () => {
     speechConfig(); await start();
@@ -131,8 +152,7 @@ describe("durable recorded pilot", () => {
     expect((await state()).grants).toEqual([]);
   });
   test("speech monitor uncertainty ends the call without capture and is not retried", async () => {
-    speechConfig(); await start(); await spoken("caller"); await dispatch();
-    await callback("call.speak.ended", "name_prompt", "caller", { status: "completed" });
+    speechConfig(); await start(); await spoken("caller", "yes", "agree", false);
     transport.mockResolvedValueOnce({ kind: "uncertain" }); await dispatch(); await dispatch();
     expect((await state()).windows).toEqual([]);
     expect(transport.mock.calls.filter(([r]) => r.path.endsWith("transcription_start"))).toHaveLength(1);

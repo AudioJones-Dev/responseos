@@ -80,7 +80,7 @@ export async function ingestPilot(db: Database, c: PilotConfig, event: TelnyxWeb
       const s = c.admission === "automatic_once"
         ? { ...initialPilot(id, leg, at, Date.parse(c.closesAt), c.disclosureVersion), exercise: c.exercise, captureDenied: true }
         : pendingPilot(id, leg, p.from, at, Date.parse(c.closesAt), c.disclosureVersion, c.exercise);
-      if (c.exercise === "recorded" && c.speech) (s as PilotState).speech = { bindings: [], monitors: {} };
+      if (c.exercise === "recorded" && c.speech) (s as PilotState).speech = { transientControlsAuthorized: true, bindings: [], monitors: {} };
       const call = await tx.call.create({ data: { account_id: c.accountId, provider: "telnyx", provider_call_id: leg.controlId,
         direction: "inbound", status: "ringing", from_number: "<CONTROLLED_PILOT_CALLER>", to_number: c.number, started_at: new Date(at) } });
       await tx.frlPilotRun.create({ data: { id, account_id: c.accountId, call_id: call.id, window_id: c.windowId, config_digest: configDigest(c),
@@ -220,7 +220,7 @@ export async function dispatchPilot(db: Database, c: PilotConfig, transport: Pil
     }
     if (s.speech && ["caller_consent", "operator_consent"].includes(claimed.intent.purpose) && !s.speech.bindings.some(b => b.commandId === claimed.intent.id)) {
       s.speech.bindings.push({ accountId: c.accountId, applicationId: c.applicationId, runId: s.id, commandId: claimed.intent.id,
-        role: claimed.intent.role, leg: s[claimed.intent.role]!, disclosure: "frl-spoken-v1", issuedAt: dispatchNow, expiresAt: s.deadline });
+        role: claimed.intent.role, leg: s[claimed.intent.role]!, disclosure: "frl-spoken-v2", issuedAt: dispatchNow, expiresAt: s.deadline });
     }
     const result = await transport(pilotRequest(s, claimed.intent, c, dispatchNow), claimed.intent.purpose === "dial");
     if (result.kind === "accepted" && result.leg) {

@@ -1,6 +1,6 @@
 # FRL-PILOT-009 — Spoken consent
 
-Status: EXPERIMENTAL local implementation, November 7, 2026. Owner requested fully spoken consent and withdrawal. Runtime code and synthetic tests are implemented; hosted deployment, detailed disclosure review and live qualification remain pending. No provider setting or live window changed.
+Status: EXPERIMENTAL local implementation, November 7, 2026. Owner requested fully spoken consent and withdrawal. Runtime code and synthetic tests are implemented; hosted deployment, legal-review evidence and live qualification remain pending. No provider setting or live window changed.
 
 ## Intended experience
 
@@ -8,7 +8,7 @@ The caller hears a disclosure and says “yes” or “no.” The receiving oper
 
 Conversation capture still requires both participants' affirmative grants and both bridge confirmations. Caller name capture still requires the caller's affirmative grant and remains bounded to eight seconds. Caller refusal permits forwarding without name or conversation capture. Operator refusal forbids conversation capture. Declining the operator connection must remain distinct from accepting it without recording.
 
-## Draft disclosure text — not approved wording
+## Superseded first disclosure draft — not deployed
 
 Caller: “Thank you for calling Florida Ramp and Lift. This automated system uses speech recognition to understand your answer. May we record and transcribe your name and this call to document your request and coordinate follow-up? Say yes to agree, or no to continue without recording the conversation. If you agree, you can later say stop recording to withdraw permission and end the call.”
 
@@ -34,7 +34,7 @@ Add durable correlation for `call.conversation.created` before accepting AI gath
 
 During the initial gather, a clear request to stop ends the call and denies capture. After consent, implement a separately verified real-time speech path for the explicit phrase “stop recording,” on each authorized participant's audio. Do not use delayed post-call transcription for withdrawal. End both legs and invoke existing revocation/local purge/provider deletion on a recognized withdrawal. If the required speech monitor fails, stop capture and end the run; do not silently leave only keypad withdrawal available.
 
-When capture is refused, stop speech processing beyond what the separately reviewed consent interaction permits. No continuous conversation transcription may run merely to detect a later refusal on an already unrecorded call. A party can hang up normally; ordinary hangup and withdrawal remain distinct audit outcomes.
+The November 7 accepted transient-control amendment below supersedes the initial refusal rule: transient recognition may continue solely for call controls after capture refusal, with no saved conversation recording or transcript. Ordinary hangup and withdrawal remain distinct audit outcomes.
 
 ## Additional retention work
 
@@ -82,7 +82,7 @@ Provider support for gathering speech is verified. End-to-end consent accuracy, 
 
 ## Implemented increment — November 7
 
-Local code includes explicit speech configuration tied to `frl-spoken-v1`, final-result/utterance agreement checks, account/application/leg/command/conversation binding, content-free consent evidence, durable AI conversation deletion tasks and separate real-time inbound transcription monitors per consenting leg. Capture starts only after monitor commands are accepted. Refusal does not start continuous transcription. Consenting-caller monitoring continues through hold and operator dialing; operator monitoring starts after both bridge confirmations. Any capture refusal stops continuous monitoring before an unrecorded bridge. Both participants can revoke through a recognized “stop recording” phrase, including an interim transcription event. Existing star withdrawal remains available.
+Local code includes explicit speech configuration tied to `frl-spoken-v2`, final-result/utterance agreement checks, account/application/leg/command/conversation binding, content-free consent evidence, durable AI conversation deletion tasks and separate real-time inbound transcription monitors per consenting leg. Capture starts only after monitor commands are accepted. Refusal prohibits saved capture; transient call-control recognition remains authorized under the owner-approved amendment below. Caller monitoring starts after the disclosure response and continues through hold and operator dialing. Operator monitoring starts after its disclosure response, before bridging. Both monitors remain available on an unrecorded bridge. Both participants can revoke through a recognized “stop recording” phrase, including an interim transcription event. Existing star withdrawal remains available.
 
 The monitor is deliberately conservative: 15 seconds without a transcription event terminates the run and revokes capture. This detects missing observations, not the cause; ordinary silence can therefore end a test. Command acceptance is not proof that recognition is accurate. Provider callback latency, loss, silence behavior and withdrawal latency must be measured in supervised qualification before claiming the interaction is client-ready.
 
@@ -90,12 +90,22 @@ Migration `0017_frl_spoken_consent` adds exact call identity fields to conversat
 
 The request planner sends no prior message history and disables partial-result/history-update callbacks. Final gather history is processed transiently and reduced to a decision; raw words do not enter state, audit or webhook receipts. Actual provider recognition/history/backup retention still requires verification. `retentionVerified` and `withdrawalVerified` must not be set from synthetic tests alone. The first-artifact commissioning exception remains a separate unresolved prerequisite.
 
-No Grok handoff or client-readiness claim is made. The old keypad-only scripted caller remains restricted to its original exercise. Detailed prompt review and legal-review evidence remain distinct from approval of the fully spoken design.
+No Grok handoff or client-readiness claim is made. The old keypad-only scripted caller remains restricted to its original exercise. The revised exact prompt is owner-approved below; legal-review evidence remains a separate gate.
 
-### Remaining interaction boundary
+### Accepted transient-control amendment — November 7
 
-The local implementation detects spoken withdrawal during authorized capture and while an already-consenting caller waits. It deliberately stops continuous recognition when capture is refused. It therefore does not yet promise voice-command handling throughout an unrecorded/refused conversation. Prior name content can still exist when the operator refuses conversation capture. Extending speech processing into that refused conversation requires an explicit disclosure/policy distinction between transient call-control recognition and conversation transcription; it must not be silently inferred from “fully spoken.” This gap blocks the advertised fully spoken experience and any deployment for live speech testing. Keep exact wording approval pending until this boundary is resolved.
+Owner explicitly approved transient speech recognition solely for call controls after recording refusal, and the following exact disclosure. Reference: `owner-transient-controls-20261107-c364b8dd`. This is policy and wording approval, not legal-review evidence, provider retention verification or live-call authorization.
+
+“This automated system processes your speech for call controls, including requests to stop. May we also save a recording and transcript of your name and this call to document your request and coordinate follow-up? Say yes to agree, or no to continue without saving a recording or transcript. Say stop recording to withdraw permission and end the call.”
+
+The same approved disclosure is used for caller and operator. A caller refusal remains binding even if the operator subsequently agrees; no saved conversation capture occurs. Operator yes/no both accept connection with their respective capture choice; hangup declines connection. Disclosure `frl-spoken-v2` requires a separate `transientControlsApprovalRef`. The superseded v1 configuration is rejected rather than silently reinterpreted.
+
+After each response, a dedicated transient monitor must start successfully before the caller proceeds or the operator bridges. Recognition text is reduced to a control event and not stored as conversation content. Both legs retain spoken withdrawal after refusal; saved recording/transcription still require the original capture grants. Missing or uncertain monitor commands end the call without retrying or recording. The 15-second missing-observation cutoff remains experimental.
+
+Provider-side retention of recognition input/output is not established by our decision not to persist text locally. That verification and legal review remain activation requirements.
 
 ## Local validation evidence
 
 November 7: lint, typecheck, build and 975 unit tests passed. The full PostgreSQL integration run passed 225 tests; after extending hold-phase withdrawal, the affected pilot suite passed all 38 tests. Migration 0017 was applied only to the retained synthetic PostgreSQL 16 database. Provider requests were mocked in these tests; no hosted speech or deletion claim follows from them.
+
+V2 follow-up validation: 976 unit tests and all 40 affected PostgreSQL pilot integration tests passed, including caller/operator refusal followed by spoken withdrawal without saved capture. Typecheck, lint and build passed. The broader database suite passed before this follow-up; CI reruns it on the new commit. No hosted migration or activation was performed for this increment.

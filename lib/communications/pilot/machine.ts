@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { SpeechBinding, SpeechDecision } from "./speech";
 
 export type Role = "caller" | "operator";
-export type Purpose = "monitor_name" | "monitor_conversation" | "monitor_stop" | "answer" | "keypad" | "caller_consent" | "name_prompt" | "name" | "hold" | "dial" | "operator_consent" | "bridge" | "conversation" | "stop" | "hangup" | "unavailable";
+export type Purpose = "monitor_consent" | "monitor_name" | "monitor_conversation" | "monitor_stop" | "answer" | "keypad" | "caller_consent" | "name_prompt" | "name" | "hold" | "dial" | "operator_consent" | "bridge" | "conversation" | "stop" | "hangup" | "unavailable";
 export type Leg = { controlId: string; legId: string; sessionId: string; endedAt?: number };
 export type Intent = { id: string; purpose: Purpose; role: Role; createdAt: number; deadline: number };
 export type Grant = { method?: "speech" | "dtmf"; role: Role; at: number; evidence: string; recording: boolean; transcription: boolean; disclosure: string };
@@ -11,10 +11,10 @@ export type Window = {
   limitAt: number; commandId: string; recordingId?: string; startedAt?: number; endedAt?: number;
 };
 export type PilotState = {
-  version: 1; id: string; stage: "monitor_name" | "monitor_conversation" | "pending" | "keypad" | "answer" | "caller_consent" | "name_prompt" | "name" | "hold" | "dial" | "operator_consent" | "bridge" | "conversation" | "unavailable" | "ending" | "ended";
+  version: 1; id: string; stage: "monitor_consent" | "monitor_name" | "monitor_conversation" | "pending" | "keypad" | "answer" | "caller_consent" | "name_prompt" | "name" | "hold" | "dial" | "operator_consent" | "bridge" | "conversation" | "unavailable" | "ending" | "ended";
   admission?: { caller: string; expiresAt: number; approvedAt?: number; actorId?: string };
   exercise?: "keypad" | "recorded"; digits?: string[];
-  speech?: { bindings: SpeechBinding[]; monitors: Partial<Record<Role, { startedAt: number; lastAt: number }>> };
+  speech?: { transientControlsAuthorized?: true; bindings: SpeechBinding[]; monitors: Partial<Record<Role, { startedAt: number; lastAt: number }>> };
   startedAt: number; deadline: number; endsAt: number; disclosure: string;
   caller: Leg; operator?: Leg; grants: Grant[]; captureDenied: boolean; revokedAt?: number;
   windows: Window[]; intents: Intent[]; bridges: Role[]; incident?: string; dialUnknown?: boolean; topologyUnknown?: boolean;
@@ -72,6 +72,9 @@ function unavailable(s: PilotState, now: number) {
   advance(s, "unavailable", "caller", now);
   if (s.operator && !s.operator.endedAt && !s.intents.some(i => i.role === "operator" && i.purpose === "hangup")) enqueue(s, "hangup", "operator", now);
 }
+function monitorAuthorized(s: PilotState, role: Role) {
+  return s.speech?.transientControlsAuthorized === true && s.grants.some(g => g.role === role && g.method === "speech");
+}
 function prepareCapture(s: PilotState, purpose: "name" | "conversation", now: number) {
   if (!s.speech) return beginCapture(s, purpose, now);
   const stage = purpose === "name" ? "monitor_name" : "monitor_conversation";
@@ -79,15 +82,22 @@ function prepareCapture(s: PilotState, purpose: "name" | "conversation", now: nu
   for (const role of (purpose === "name" ? ["caller"] : ["caller", "operator"]) as Role[]) {
     if (!s.speech.monitors[role]) enqueue(s, stage, role, now);
   }
+  if (s.speech.monitors.caller && (purpose === "name" || s.speech.monitors.operator)) beginCapture(s, purpose, now);
 }
 export function acceptPilotCommand(s: PilotState, i: Intent, now: number) {
   if (!s.speech) return;
   if (i.purpose === "monitor_stop") { delete s.speech.monitors[i.role]; return; }
-  if (i.purpose !== "monitor_name" && i.purpose !== "monitor_conversation") return;
-  if (s.stage !== i.purpose || !s.grants.some(g => g.role === i.role && g.recording && g.transcription) || s.captureDenied || s.revokedAt) {
+  if (!["monitor_consent", "monitor_name", "monitor_conversation"].includes(i.purpose)) return;
+  if (s.stage !== i.purpose || !monitorAuthorized(s, i.role) || s.revokedAt) {
     endPilot(s, now, "speech_monitor_authority_missing", true); return;
   }
   s.speech.monitors[i.role] = { startedAt: now, lastAt: now };
+  if (i.purpose === "monitor_consent") {
+    const grant = s.grants.findLast(g => g.role === i.role)!;
+    if (i.role === "caller") advance(s, grant.recording ? "name_prompt" : "hold", "caller", now);
+    else advance(s, "bridge", "caller", now);
+    return;
+  }
   if (i.purpose === "monitor_name" || s.speech.monitors.caller && s.speech.monitors.operator) beginCapture(s, i.purpose === "monitor_name" ? "name" : "conversation", now);
 }
 function beginCapture(s: PilotState, purpose: "name" | "conversation", now: number) {
@@ -111,7 +121,7 @@ export function observePilot(state: PilotState, e: Observation, receivedAt: numb
   }
   if (e.kind === "monitor_signal") {
     const monitor = s.speech?.monitors[e.role];
-    if (!monitor || e.at < monitor.startedAt || !s.grants.some(g => g.role === e.role && g.recording && g.transcription)) return s;
+    if (!monitor || e.at < monitor.startedAt || !monitorAuthorized(s, e.role)) return s;
     monitor.lastAt = Math.max(monitor.lastAt, e.at);
     if (e.withdraw) endPilot(s, receivedAt, "consent_withdrawn", true);
     return s;
@@ -166,11 +176,9 @@ export function observePilot(state: PilotState, e: Observation, receivedAt: numb
     s.grants.push({ method: e.kind === "speech_consent" ? "speech" : "dtmf", role: e.role, at: e.at, evidence: e.id, recording: grant, transcription: grant, disclosure: s.disclosure });
     if (!grant) {
       s.captureDenied = true;
-      if (s.speech) for (const role of ["caller", "operator"] as const) {
-        if (s.speech.monitors[role]) enqueue(s, "monitor_stop", role, receivedAt);
-      }
     }
-    if (e.role === "caller") advance(s, grant ? "name_prompt" : "hold", "caller", receivedAt);
+    if (e.kind === "speech_consent" && (e.role === "caller" || ["agree", "decline_capture"].includes(e.decision))) advance(s, "monitor_consent", e.role, receivedAt);
+    else if (e.role === "caller") advance(s, grant ? "name_prompt" : "hold", "caller", receivedAt);
     else if (e.kind === "speech_consent" ? ["agree", "decline_capture"].includes(e.decision) : e.kind === "consent" && e.valid && ["1", "2"].includes(e.digit)) advance(s, "bridge", "caller", receivedAt);
     else unavailable(s, receivedAt);
   } else if (e.kind === "prompt_done" && e.role === "caller") {
@@ -190,7 +198,7 @@ export function tickPilot(state: PilotState, now: number, enabled: boolean): Pil
   if (now < s.deadline) return s;
   if (s.stage === "caller_consent") {
     s.grants.push({ method: s.speech ? "speech" : "dtmf", role: "caller", at: now, evidence: "controller:consent_timeout", recording: false, transcription: false, disclosure: s.disclosure });
-    s.captureDenied = true; advance(s, "hold", "caller", now);
+    s.captureDenied = true; advance(s, s.speech ? "monitor_consent" : "hold", "caller", now);
   } else if (s.stage === "dial" || s.stage === "operator_consent") {
     unavailable(s, now);
   } else if (s.stage === "ending") s.incident ??= "termination_unconfirmed";
@@ -202,7 +210,7 @@ export function commandAllowed(s: PilotState, i: Intent, now: number): boolean {
   if (s.admission && !s.admission.approvedAt) return false;
   if (s.exercise === "keypad" && !["answer", "keypad"].includes(i.purpose)) return false;
   if (now >= i.deadline || now >= s.endsAt || s.stage !== i.purpose || latest(s, i.purpose, i.role)?.id !== i.id) return false;
-  if (i.purpose === "monitor_name" || i.purpose === "monitor_conversation") return !!s.speech && !s.captureDenied && !s.revokedAt && s.grants.some(g => g.role === i.role && g.recording && g.transcription);
+  if (["monitor_consent", "monitor_name", "monitor_conversation"].includes(i.purpose)) return !s.revokedAt && monitorAuthorized(s, i.role);
   if (i.purpose === "name" || i.purpose === "conversation") return !s.captureDenied && !s.revokedAt && s.windows.some(w => w.commandId === i.id && now + 1000 < w.limitAt);
   return true;
 }

@@ -21,8 +21,8 @@ const base = z.object({
 export const pilotConfigSchema = z.discriminatedUnion("exercise", [
   base.extend({
     exercise: z.literal("recorded"), legalApprovalRef: approval,
-    disclosureVersion: z.enum(["frl-recorded-v1", "frl-spoken-v1"]),
-    speech: z.object({ wordingApprovalRef: approval, processingApprovalRef: approval, retentionVerified: z.literal(true), withdrawalVerified: z.literal(true) }).strict().optional(),
+    disclosureVersion: z.enum(["frl-recorded-v1", "frl-spoken-v2"]),
+    speech: z.object({ transientControlsApprovalRef: approval, wordingApprovalRef: approval, processingApprovalRef: approval, retentionVerified: z.literal(true), withdrawalVerified: z.literal(true) }).strict().optional(),
     independentEndpointVerified: z.literal(true), providerRetentionVerified: z.literal(true),
     durationPolicy: duration.extend({ independentWatchdogVerified: z.literal(true), manualStopVerified: z.literal(true) }).strict(),
   }).strict(),
@@ -30,7 +30,7 @@ export const pilotConfigSchema = z.discriminatedUnion("exercise", [
     exercise: z.literal("keypad"), admission: z.enum(["manual", "automatic_once"]), durationPolicy: duration,
     commissioning: z.object({ approvalRef: approval, operatorPresent: z.literal(true), manualProviderStopAvailable: z.literal(true), watchdogInventoryVerified: z.literal(true), capture: z.literal("off"), operatorDial: z.literal("off") }).strict(),
   }).strict(),
-]).refine(c => c.exercise !== "recorded" || (c.disclosureVersion === "frl-spoken-v1") === !!c.speech, "speech_disclosure_and_evidence_required")
+]).refine(c => c.exercise !== "recorded" || (c.disclosureVersion === "frl-spoken-v2") === !!c.speech, "speech_disclosure_and_evidence_required")
   .refine(c => c.number !== c.operator && !c.callers.includes(c.number) && !c.callers.includes(c.operator), "loop_or_shared_endpoint")
   .refine(c => Date.parse(c.closesAt) > Date.parse(c.opensAt) && Date.parse(c.closesAt) - Date.parse(c.opensAt) <= 1800000, "window_max_thirty_minutes")
   .refine(c => c.admission !== "automatic_once" || c.maxCalls === 1 && Date.parse(c.closesAt) - Date.parse(c.opensAt) <= 300000, "automatic_once_requires_one_call_and_five_minutes");

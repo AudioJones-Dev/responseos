@@ -9,7 +9,7 @@ import { pilotConfigSchema } from "@/lib/communications/pilot/config";
 afterEach(() => vi.unstubAllGlobals());
 function binding(): SpeechBinding {
   return { accountId: "pilot", applicationId: "app", runId: randomUUID(), commandId: randomUUID(), role: "caller", leg: callerLeg,
-    disclosure: "frl-spoken-v1", issuedAt: pilotNow, expiresAt: pilotNow + 15000, conversationId: randomUUID() };
+    disclosure: "frl-spoken-v2", issuedAt: pilotNow, expiresAt: pilotNow + 15000, conversationId: randomUUID() };
 }
 function event(b: SpeechBinding, text = "yes", decision = "agree"): TelnyxWebhookEnvelope {
   return { data: { id: randomUUID(), event_type: "call.ai_gather.ended", occurred_at: new Date(pilotNow + 100).toISOString(), payload: {
@@ -79,7 +79,7 @@ test("request plan is bounded and has no capture, dialing or message-history emi
   expect(() => speechGatherRequest(b, "Synthetic prompt", b.expiresAt)).toThrow();
 });
 test("speech config rejects missing processing, retention and withdrawal evidence", () => {
-  expect(pilotConfigSchema.safeParse({ ...testPilotConfig(), consentMethod: "speech", disclosureVersion: "frl-spoken-v1" }).success).toBe(false);
+  expect(pilotConfigSchema.safeParse({ ...testPilotConfig(), consentMethod: "speech", disclosureVersion: "frl-spoken-v2" }).success).toBe(false);
 });
 function metadata(b: SpeechBinding) {
   return { data: { id: b.conversationId, metadata: { call_control_id: b.leg.controlId, call_leg_id: b.leg.legId, call_session_id: b.leg.sessionId, telnyx_conversation_channel: "phone_call" } } };
@@ -109,12 +109,19 @@ test("successful delete with still-readable metadata requires retry", async () =
 });
 
 test("speech configuration requires its own disclosure and all qualification evidence", () => {
-  const speech = { wordingApprovalRef: "synthetic", processingApprovalRef: "synthetic", retentionVerified: true, withdrawalVerified: true };
-  const c = { ...testPilotConfig(), disclosureVersion: "frl-spoken-v1", speech };
+  const speech = { transientControlsApprovalRef: "synthetic", wordingApprovalRef: "synthetic", processingApprovalRef: "synthetic", retentionVerified: true, withdrawalVerified: true };
+  const c = { ...testPilotConfig(), disclosureVersion: "frl-spoken-v2", speech };
   expect(pilotConfigSchema.safeParse(c).success).toBe(true);
   expect(pilotConfigSchema.safeParse({ ...c, disclosureVersion: "frl-recorded-v1" }).success).toBe(false);
   for (const key of Object.keys(speech)) {
     const missing: Record<string, unknown> = { ...speech }; delete missing[key];
     expect(pilotConfigSchema.safeParse({ ...c, speech: missing }).success).toBe(false);
   }
+});
+
+test("withdrawal survives multiple turns and an invalid model result", () => {
+  const b = binding(); const e = event(b);
+  e.data.payload.status = "invalid";
+  e.data.payload.message_history = [{ role: "user", content: "no" }, { role: "user", content: "stop recording" }];
+  expect(consumeSpeechConsent(e, b, b.accountId, pilotNow + 200)?.evidence.decision).toBe("withdraw");
 });
