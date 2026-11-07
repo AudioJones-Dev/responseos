@@ -29,9 +29,11 @@ Neon reports six hours of restore history; this is not proof of immediate physic
 
 Owner stated “Legal is approved” after approving spoken-v2 wording/transient controls. Reference `owner-attested-legal-20261107-chat-01a1b18a`, chat `01a1b18a-d1a7-7570-84a9-ed27ec286624`. This is owner-attested legal approval, not independent legal review; no call window follows from it.
 
-Before live testing: resolve provider retention questions; explicitly settle first-artifact/first-speech qualification without inventing readiness evidence; qualify manual stop, watchdog failure and spoken withdrawal; agree a fresh supervised window. FRL-PILOT-008 remains proposed. Ordinary silence can trigger the experimental 15-second monitor cutoff.
+Subsequent owner approval accepted the bounded one-call qualification in FRL-PILOT-010, described in [commissioning preparation](FRL_RECORDED_COMMISSIONING_PREP.md). Provider retention and backup erasure remain unverified; the exception permits observable testing without inventing evidence. Before that recorded call, qualify manual stop and watchdog failure in capture-off operation, verify the receiving endpoint and agree a fresh supervised window. Spoken withdrawal is an outcome to establish during qualification. Ordinary silence can trigger the experimental 15-second monitor cutoff.
 
-## Engineering inquiry — prepared, not sent
+## Engineering inquiry — sent with owner authorization
+
+Sent November 7 to Telnyx support; Gmail message/thread reference `1a1b680afc0b72b9`. No engineering guarantee or ticket confirmation is claimed. The following preserves the inquiry wording.
 
 We use Call Control `gather_using_ai` for yes/no consent and `transcription_start` engine B for transient stop-recording controls, including after refusal. No control text is persisted locally. Please confirm:
 
@@ -40,4 +42,4 @@ We use Call Control `gather_using_ai` for yes/no consent and `transcription_star
 3. After DELETE `/v2/recordings/{id}` and `/v2/recording_transcriptions/{id}`, when is content inaccessible and permanently removed, including backups? Can pending transcription recreate it, and what reconciliation sequence is supported?
 4. Which authenticated metadata checks prove absence without downloading content, with what consistency delays? Can all retained test content be bounded to 24 hours, with earlier deletion after withdrawal?
 
-Please provide documented settings and guarantees. Information only, no account changes or credentials. Sending requires scoped authorization under the owner's plan.
+Please provide documented settings and guarantees. Information only, no account changes or credentials. The owner separately authorized sending this inquiry.

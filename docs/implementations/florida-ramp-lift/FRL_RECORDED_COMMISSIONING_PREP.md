@@ -1,6 +1,6 @@
 # FRL-PILOT-008 — First recorded-artifact qualification
 
-Status: scoped qualification variant accepted November 7, 2026, after the owner requested testing and instructed Proceed. Local validation passed; hosted release verification pending. No live window authorized. The historical proposal below is superseded only by the following bounded variant.
+Status: scoped qualification variant accepted November 7, 2026, after the owner requested testing and instructed Proceed. Local/CI validation passed and matching releases deployed with calls disabled; see [release evidence](FRL_QUALIFICATION_RELEASE_20261107.md). No live window authorized. The historical proposal below is superseded only by the following bounded variant.
 
 ## Accepted one-call spoken qualification
 
@@ -52,16 +52,18 @@ Send caller consent only after the receiving consent prompt is ready; speak the 
 
 Tests must establish exact-leg correlation, single-use/replay rejection, refusal without capture, no operator dial before required admission/consent stages, bounded name capture, two bridge confirmations, late transcript deletion, cleanup after admission closes and restart with uncertain commands. Hosted evidence remains distinct from unit/integration results.
 
-## Remaining commissioning sequence
+## Current remaining commissioning sequence
 
 1. Verify active manual stop and controlled primary-worker interruption in a separately agreed capture-off window; retain the shared Render outage limitation.
-2. Obtain legal reviewer/date or approval reference. The owner's additional “Approved” reply on November 6 supplies no reviewer/date/reference and is recorded only as owner approval.
-3. Resolve provider retention questions below and ratify or reject the first-artifact exception above.
-4. Implement and validate the stage-aware caller and explicit commissioning schema; pass repository checks and deploy matching guarded releases with calls disabled.
+2. Preserve the November 7 owner-attested legal approval recorded in FRL_SPOKEN_RELEASE_VERIFICATION.md; do not request it again or describe it as independently reviewed evidence.
+3. Keep provider retention and backup uncertainty explicit under the accepted FRL-PILOT-010 exception. The separately authorized engineering inquiry has been sent; its unanswered questions remain open.
+4. Verify the matching guarded qualification release with calls disabled. Use a supervised human or separately prepared speech-capable bot; no stage-aware spoken bot is claimed implemented.
 5. Verify receiving endpoint, defaults-off, destination/spend limits, healthy cleanup and no unresolved calls/incidents. Agree on a fresh window only after these checks.
 6. Run the single qualification call and deletion reconciliation; then the remaining success/refusal/no-answer/withdrawal cases in the approved budget. Publish content-free outcomes and deployment IDs.
 
-## Telnyx engineering follow-up — prepared, not sent
+## Historical recording-only inquiry draft
+
+The broader spoken-retention inquiry was sent with owner authorization; see FRL_SPOKEN_RELEASE_VERIFICATION.md. This older draft is retained as background and was not sent separately.
 
 For Voice API `record_start` with post-recording transcription:
 
