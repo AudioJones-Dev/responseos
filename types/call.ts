@@ -11,6 +11,7 @@ export type CallProvider =
 export type CallDirection = "inbound" | "outbound";
 
 export type CallStatus =
+  | "ringing"
   | "answered"
   | "missed"
   | "voicemail"

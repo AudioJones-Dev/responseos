@@ -1,12 +1,52 @@
 # Decisions — ResponseOS Architecture Decision Log
 
+## FRL-PILOT-008 — First recorded-artifact qualification
+
+**Status: PROPOSED / DOCUMENTED_ONLY, 2026-11-06.** [Preparation and proposed exception](implementations/florida-ramp-lift/FRL_RECORDED_COMMISSIONING_PREP.md) separates cleanup prerequisites from the first live deletion result. No schema gate is relaxed, no legal approval inferred, and no recorded call authorized. Normal recorded mode remains unchanged pending scoped acceptance and implementation.
+
 This file records the load-bearing decisions that constrain how ResponseOS is built. Each ADR is short by design: context, decision, consequences. If a decision is reversed, mark the entry **Superseded by ADR-XXX** rather than deleting it.
+
+## FRL-PILOT-007 — Bounded setup inventory compatibility
+
+**Status: EXPERIMENTAL, 2026-11-06.** Owner authorized correction after the failed scripted test. The [duration amendment](implementations/florida-ramp-lift/FRL_INBOUND_DURATION_AMENDMENT.md#setup-inventory-correction--november-6-2026) defines a ten-second metadata grace with unchanged session deadlines and fail-closed recovery. Disabled deployment only; fresh supervised qualification remains required.
+
+## FRL-PILOT-006 — Dedicated scripted commissioning caller
+
+Owner requested a Telnyx test bot, approved its dedicated number purchase, and authorized setup on 2026-11-06. EXPERIMENTAL. This scopes the earlier Grok-only prerequisite to allow a deterministic Telnyx caller for system commissioning. It cannot establish Grok keypad capability. [Test caller contract](implementations/florida-ramp-lift/FRL_SCRIPTED_TEST_CALLER.md). Calls remain subject to a fresh supervised window; recorded qualification gates are unchanged.
+
+## FRL-PILOT-005 — One-call automatic capture-off commissioning
+
+**Status: Owner accepted 2026-11-06; EXPERIMENTAL implementation, live qualification pending.** The owner approved removing the ringing-time approval click for one supervised keypad call. `admission: automatic_once` requires `exercise: keypad`, `maxCalls: 1`, and a window of at most five minutes. Recorded mode retains manual exact-call approval. Agree a fresh exact window after disabled deployment verification; prior stopped windows never reopen.
+
+The first eligible signed inbound event consumes the slot atomically under the account lock and queues answer. It is an unverified commissioning caller, not carrier-proven Grok or a human-approved individual call. Duplicates and competing arrivals cannot answer a second call, including after the first ends. Overdue cleanup blocks automatic admission. Application, number, tenant, signature, time, deployment, concurrency and stop guards remain. Capture/operator dialing remain denied. Operator watches and retains emergency stop; no ringing-time click is needed.
+
+Watchdog diagnostics distinguish HTTP status, timeout, transport, JSON, field/type, pagination and unconfirmed hangup failures without credentials, control tokens, phone numbers or raw payloads. Invalid inventory remains an error, never an empty list. The 21:51 UTC live failure correlated with an unanswered leg; its cause is NOT established. Diagnostics are not a proven live fix. Change response handling only with evidence; first live use is diagnostic if the original failure cannot be reproduced offline.
+
+Doctrine section 21: (1) communications/trust; (2) build bounded admission/diagnostics; (3) removes pilot coordination failure; (4) signed receipts and automatic-admission audit; (5) signed answer/digits/termination establish outcomes; (6) no learning; (7) buy telecom from Telnyx; (8) no CRM/FSM/platform duplication; (9) no new vendor; (10) tenant-scoped lock preserved; (11) caller explicitly unverified; (12) no readiness/carrier-cutoff claim; (13) owner-approved admission exception; (14) capture/dial remain off; (15) needed for current commissioning.
+
+## FRL-PILOT-004 — Capture-off commissioning prerequisites
+
+Accepted for implementation on 2026-11-06 after the owner authorized resolving the configuration gap. [Capture-off commissioning](implementations/florida-ramp-lift/FRL_CAPTURE_OFF_COMMISSIONING.md) excludes recording/legal/retention qualification assertions and cannot dial, bridge or capture. It requires a separate window approval reference, operator presence, available manual provider stop and current independent watchdog inventory evidence. Recorded mode retains every existing qualification gate. Changing the exercise alone cannot promote a commissioning config. Preparation and disabled nonproduction deployment are authorized; no live window is open.
+
+## FRL-PILOT-003 — Application deadline and independent watchdog
+
+**Status: Accepted, 2026-11-06; EXPERIMENTAL local implementation, hosted qualification pending.** After the negative engineering answer, the owner approved [FRL-PILOT-003](implementations/florida-ramp-lift/FRL_INBOUND_DURATION_AMENDMENT.md): primary five-minute application deadline, independent early-stop watchdog and supervised manual stop. Simultaneous controller/provider failures can exceed five minutes. This explicitly replaces the carrier-guarantee gate for this isolated pilot only. Telnyx remains the provider. Exact-call approval, consent, child-leg reconciliation and 24-hour deletion remain required. No new live window, hosting charge or expanded credential recipient is authorized by this decision.
 
 ## Proposed FRL Phase 2 consent boundary — not ratified
 
 Phase 3 follow-on proposal: [synthetic Telnyx orchestration](implementations/florida-ramp-lift/FRL_PHASE3_ORCHESTRATION.md). Recording remains prohibited and bridge invalidation terminal; native capture acknowledgments and topology authorization are unresolved. Request planning and simulation do not ratify either proposal or grant live authority.
 
 The [FRL consent ingestion boundary](implementations/florida-ramp-lift/FRL_CONSENT_INGEST_BOUNDARY.md) proposes content-free Telnyx raw receipts, durable per-call consent, transactional transcript authorization and blocking Telnyx CRM exports pending a reviewed proposal executor. Synthetic implementation is explicitly requested; this does not ratify PR #240, amend live-provider authority, approve a hosted migration or reopen v0.3/v0.4 gates. Human review must assess the intentional narrowing of existing demo insight/CRM behavior before merge.
+
+## FRL-PILOT-002 — Recorded pilot implementation under review
+
+Operator-authorized implementation, 2026-11-06; technical review and live gates remain open. The [implementation contract](implementations/florida-ramp-lift/FRL_RECORDED_PILOT.md) uses bounded name and bridged recording windows with post-recording transcription keyed to recording evidence, durable command claims, a permanent per-window emergency-stop latch and separate consent-aware artifacts. It retains global default-off recording and the existing Telnyx CRM block. No real-time stream, provider activation, hosted migration or deployment is authorized by this record.
+
+## FRL-PILOT-001 — Approved purchased-number pilot recording amendment
+
+**Status:** Accepted by the operator, 2026-11-06, in direct response to the scoped FRL-PILOT-001 approval request. Amends ADR-0051 and FRL G-11 only for the newly purchased, operator-supervised FRL pilot number. ADR-0055 remains fully applicable. Policy approval is not implementation, legal approval, deployment or live-call authorization.
+
+The [purchased-number activation contract](implementations/florida-ramp-lift/FRL_PURCHASED_NUMBER_ACTIVATION.md) proposes Telnyx-originated operator dialing plus explicit bridging, the operator-selected full recorded flow as the first deliverable, and the approved recording exception limited to the supervised FRL test-number pilot. It identifies the caller-name versus two-party-roster conflict, durable dispatch and capture-evidence requirements, and all fifteen doctrine review answers. Purchase is not live-provider authorization. The exact approved amendment is recorded in that contract. Default recording remains false; conditional capture requires immutable consent per call, artifact and participant interval. No automatic recording, other tenant/demo-number activation, public traffic, CRM/email writes, autonomous memory, published-number forwarding or production release is authorized. No runtime policy object, code, schema, provider setting or deployment changes with this decision.
 
 ## ADR-0085 — A temporary, token-gated production check of the configured database host
 
@@ -1550,7 +1590,7 @@ This language states accepted architecture intent. Generalized provider interope
    - `PROSPECT_DEMO` is re-exported **byte-identically** from `lib/prospectBootstrap/policy.ts`, because `lib/prospectBootstrap/service.ts` compares a stored `AgentProfile.system_policy_json` against that frozen object.
    - `resolveExecutionPolicy()` **fails closed**, and authorisation is **bound to the specific gate** the mode requires. A caller passes the set of open gates, not a single boolean, so an approval issued for `v0.3-live-communications` cannot unlock `MANAGED_AUTONOMY`, whose gate is `post-pilot-operator-authorization`. An unrecognised mode, or a gated mode whose gate is not authorised, resolves to the most restrictive policy rather than throwing.
    - A mode is **policy intent, never activation.** Activation gates remain the existing environment flags and the v0.3/v0.4 roadmap gates. `EXECUTION_MODE_ACTIVATION_GATES` records the gate each mode still requires and is held *outside* the policy objects so that adding it cannot break the stored-policy comparison.
-   - Payment, provider memory, and recording stay `false` at **every** tier; no ratified decision authorises any of them.
+   - Payment and provider memory stay `false` at **every** tier. Recording remains false by default; FRL-PILOT-001 (accepted 2026-11-06) adds only a conditional policy exception for the separately commissioned FRL supervised test-number pilot. Runtime implementation and activation remain gated; other tenants and demo numbers are unchanged.
 2. **Promotion preserves tenant identity.** A client profile advances in place through its lifecycle; the originating `Account.id` is retained across the sandbox → pilot → production boundary so that calls, transcripts, and evidence remain attached to one tenant. The current dispose-and-recreate behaviour of `BootstrapPromotion` is superseded as the *target*; the change is not implemented by this ADR.
 3. **Per-tenant operating configuration lives on the memory snapshot.** `BusinessMemorySnapshotSchema` is the tenant operating-configuration document. This respects ADR-0046 §9, inherits the existing versioning, content-hash, approval, and provenance machinery, and keeps a single artifact for the agent to read at runtime. No parallel `ClientConfig` or `TenantSettings` model is introduced.
 
@@ -1645,7 +1685,7 @@ But a *deployment* is not a page. Vercel serves the whole app, and with `RESPONS
 
 ## ADR-0055 — Consent evidence is an immutable event carrying its source channel; per-contact state is a derived summary, not the record of authority
 
-**Status:** Accepted (2026-09-13) for the *contract*. Documentation only — this ADR authorises no schema, no migration, no runtime, and no recording. Recording stays `false` at every supervision tier per ADR-0051, and G-11 of the FRL policy still requires a separate ratified amendment before any FRL recording at all.
+**Status:** Accepted (2026-09-13) for the *contract*. Documentation only — this ADR authorises no schema, no migration, no runtime, and no recording. Recording remains false by default under ADR-0051. FRL-PILOT-001 (accepted 2026-11-06) satisfies the policy-amendment portion of FRL G-11 only for its scoped supervised test-number pilot; it does not enable recording or relax this ADR's consent requirements.
 
 **Context.** `docs/data-schema.md` specifies `consent_records` as "per-contact consent state (recording, AI handling, marketing) with jurisdiction + timestamp", and `docs/readiness/CRITICAL_PATH_AMENDMENT.md` describes the semantics as "per-call grant → per-contact state". Neither exists: the model is absent from all Prisma models. Separately, the FRL inbound policy's G-12 was strengthened on 2026-09-13 to require affirmative consent before either a recording or a persisted transcript.
 
@@ -1823,6 +1863,10 @@ The cost is real and is not softened here: **capability authoring remains an eng
 **Consequences.** A high dev-only advisory no longer blocks merges; it shows up as a failed non-blocking step that reviewers must read. That is a real loosening and is bounded by decision 4. The parallel audit-policy work in #197 can supersede this ADR.
 
 ---
+
+## FRL-PILOT-002 — Exact-call admission and bounded pilot deletion
+
+Accepted for the isolated FRL test-number implementation by the operator on 2026-11-06. [Activation controls](implementations/florida-ramp-lift/FRL_ACTIVATION_CONTROLS.md) supersede caller-ID allowlisting with authenticated, single-use approval of the signed incoming call. Keypad-only commissioning cannot capture or dial. The approved 24-hour pilot content lifecycle includes automatic provider/local deletion and content-free audits, a narrow exception to ADR-0064's operator-run-only default. Other tenants and existing demos retain that default. Disclosure approval, independently verified inbound duration, retention/backup evidence and an exact supervised window remain activation gates. No milestone promotion or production authorization.
 
 ## ADR-0064 — Expired data is purged by one guarded, previewed, audited operator command
 
