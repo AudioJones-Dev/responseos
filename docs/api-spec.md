@@ -2,6 +2,18 @@
 
 All routes live under `app/api/*` as Next.js App Router Route Handlers. Responses use a consistent envelope. v0.2 routes now mix DB-backed reads, mock-safe mutation acknowledgements, and provider webhook stubs. v0.3 live-provider behavior remains gated by `AGENTS.md`, `ROADMAP.md`, and ADR-0001 / ADR-0009.
 
+## Experimental FRL recorded pilot
+
+The spoken increment handles signed AI conversation creation/final gather/completion and real-time transcription inside the isolated pilot branch. Final spoken consent must match the dispatched command, bound call and conversation; partial gather results never grant permission. Raw speech is reduced to content-free evidence. A separate transient-control approval reference and speech qualification fields and disclosure `frl-spoken-v2` are required; this is not live activation.
+
+The activation increment adds `/admin/frl-pilot` and `POST /api/admin/frl-pilot` with `{action: "approve" | "reject", runId}`. Approval applies once to an unexpired signed candidate in the server-configured tenant/window; 202 means queued, 409 means stale/denied. Empty-body POST retains emergency stop. GET additionally returns pending caller/arrival/expiry, keypad evidence and overdue deletion count. It never returns provider control tokens. See [activation controls](implementations/florida-ramp-lift/FRL_ACTIVATION_CONTROLS.md).
+
+`POST /api/webhooks/telnyx/calls` has a separately configured FRL-PILOT-001 branch after signature verification. It atomically records a content-free receipt, state and commands; unrelated demo routing retains its existing guards. Maximum body size is 256 KiB. Uncommitted or not-yet-proven transcript deliveries return 503 for retry. No dispatch runs in the webhook request.
+
+`GET /api/admin/frl-pilot` returns the protected configured window's statuses and unexpired consent-aware artifacts. `POST` permanently closes that window and queues cleanup (202, not terminal confirmation). Both require real hosted auth to be enabled and an operator/admin role; POST also requires same-origin. No request supplies a tenant or destination. See [implementation and activation gates](implementations/florida-ramp-lift/FRL_RECORDED_PILOT.md).
+
+GET `/api/admin/frl-pilot` additionally returns `admission`, `windowOpen`, `opensAt`, `closesAt`. `automatic_once` is protected keypad-only configuration, never a client request field. Manual approve/reject returns 409 in automatic mode; emergency stop remains available. `frl_pilot.auto_admit` records system execution with owner approval reference and unverified caller identity. No new endpoint or schema migration.
+
 ## Response envelope (canonical)
 
 Success:
@@ -215,3 +227,6 @@ POST /api/appointments/availability
   { "start": "2026-05-08T13:00:00-04:00", "end": "2026-05-08T15:00:00-04:00" }
 ]}
 ```
+
+
+FRL qualification adds read-only admin status fields qualification, qualificationClaimed and cleanupObserving. The approval action remains exact-call and manual; no client field selects qualification or clears its durable claim. Normal recorded gates remain verified-only.

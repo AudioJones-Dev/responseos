@@ -32,6 +32,113 @@
   ],
   "tasks": [
     {
+      "id": "FRL-SPOKEN-CONSENT-20261107",
+      "phase": "Testing & QA",
+      "title": "Implement spoken consent, withdrawal and AI conversation cleanup",
+      "owner": "Codex",
+      "status": "In Progress",
+      "progress": 80,
+      "priority": "High",
+      "ref": 246,
+      "refType": "pull"
+    },
+    {
+      "id": "FRL-RECORDED-QUALIFICATION-20261106",
+      "phase": "Testing & QA",
+      "title": "One-call spoken qualification deployed disabled; live safety and retention tests pending",
+      "owner": "Codex",
+      "status": "In Progress",
+      "progress": 85,
+      "priority": "High",
+      "ref": 246,
+      "refType": "pull"
+    },
+    {
+      "id": "FRL-TEST-CALLER-20261106",
+      "phase": "Testing & QA",
+      "title": "Scripted Telnyx capture-off keypad call passed; setup watchdog fix qualified",
+      "owner": "Codex",
+      "status": "Done",
+      "progress": 100,
+      "priority": "High",
+      "ref": 246,
+      "refType": "pull"
+    },
+    {
+      "id": "FRL-AUTO-ONCE-20261106",
+      "phase": "Testing & QA",
+      "title": "One-call capture-off automatic admission and safe watchdog diagnostics",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-11-06",
+      "due": "2026-11-06",
+      "ref": 246,
+      "refType": "pull"
+    },
+    {
+      "id": "FRL-CONSOLE-FEEDBACK-20261106",
+      "phase": "Testing & QA",
+      "title": "Preserve pilot approval results across status refreshes",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-11-06",
+      "blocked": false
+    },
+    {
+      "id": "FRL-CAPTURE-OFF-CONFIG-20261106",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Qualify capture-off admission: session refresh and nullable initial Telnyx state",
+      "owner": "Codex",
+      "status": "In Progress",
+      "progress": 90,
+      "priority": "High",
+      "start": "2026-11-06",
+      "ref": 246,
+      "refType": "pull",
+      "blocked": false
+    },
+    {
+      "id": "FRL-COMMISSIONING-PREP-20261106",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Prepare Telnyx commissioning pack and record exact disclosure approval",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-11-06",
+      "blocked": false
+    },
+    {
+      "id": "FRL-INBOUND-DURATION-20261106",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Implement approved Telnyx-only application watchdog amendment",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-11-06",
+      "blocked": true,
+      "blockedReason": "Owner accepted residual risk; local watchdog implemented, separate hosting and supervised failure qualification pending."
+    },
+    {
+      "id": "FRL-RECORDED-PILOT-20261106",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Implement exact-call approval, keypad commissioning and provider retention for FRL pilot",
+      "owner": "Codex",
+      "status": "In Progress",
+      "progress": 70,
+      "priority": "High",
+      "start": "2026-11-06",
+      "blocked": true,
+      "blockedReason": "FRL-PILOT-003 approved; hosted watchdog qualification, retention evidence and live windows remain pending.",
+      "ref": 246,
+      "refType": "pull"
+    },
+    {
       "id": "FRL-ORCHESTRATION-20261106",
       "ref": 243,
       "refType": "pull",
@@ -73,6 +180,19 @@
       "ref": 241,
       "refType": "pull",
       "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/241"
+    },
+    {
+      "id": "FRL-PILOT-PLAN-01",
+      "phase": "v0.3 · Demo Scope",
+      "title": "Record approved FRL pilot recording amendment and activation contract (documentation only)",
+      "owner": "Codex",
+      "status": "Review",
+      "progress": 100,
+      "priority": "High",
+      "start": "2026-11-06",
+      "due": "2026-11-06",
+      "blocked": true,
+      "blockedReason": "Recording amendment approved 2026-11-06; runtime, legal/retention review and activation remain pending."
     },
     {
       "id": "G-14",

@@ -15,6 +15,7 @@ import type { CallStatus } from "@/types/call";
 const FALLBACK_ACCOUNT_ID = "org_mock_1";
 
 const statusLabel: Record<CallStatus, string> = {
+  ringing: "Ringing",
   answered: "Answered",
   missed: "Missed",
   voicemail: "Voicemail",
@@ -24,6 +25,7 @@ const statusLabel: Record<CallStatus, string> = {
 };
 
 const statusTone: Record<CallStatus, "success" | "warning" | "danger" | "neutral"> = {
+  ringing: "neutral",
   answered: "success",
   completed: "success",
   voicemail: "warning",

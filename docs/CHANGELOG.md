@@ -8,6 +8,11 @@ All notable changes to this repo. Newest first. Format is a lightweight take on 
 
 > Project versioning is **internal milestone** (v0.1, v0.2 Phase A–D, …) rather than semver. See [`ROADMAP.md`](./ROADMAP.md) for the version table and what each milestone means.
 
+## Unreleased — feat: implement the full recorded FRL pilot behind separate gates
+
+- Adds caller-only name and two-party conversation capture windows, controlled operator dial/bridge, durable command dispatch, consent-aware recording/transcript artifacts and a per-window emergency stop.
+- Migration 0015 and synthetic tests cover replay, concurrency, uncertain dialing, withdrawal, tenant isolation and retention. Default flags remain off; live configuration, legal/retention approval, deployment and supervised calls remain separate gates.
+
 ## Unreleased — chore: remove the database-target diagnostic (ADR-0085)
 
 - **Why:** ADR-0085 requires removal within 7 days of the readout. The authorized readout was at 2026-10-29 02:43:09 UTC, so the deadline is 2026-11-05 02:43 UTC.

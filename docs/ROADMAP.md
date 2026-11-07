@@ -4,11 +4,29 @@
 
 > **Strategy vs. shipping.** This roadmap tracks version milestones. The *capability phases* behind them — Communications → Verified Revenue Loop → Business Memory → Operational Intelligence → Benchmark Intelligence → Founder Intelligence → Trust Infrastructure — and their evidence-based exit gates live in [`strategy/responseos-platform-doctrine-v1.md`](./strategy/responseos-platform-doctrine-v1.md) §17–§18, which also maps the two axes onto each other. Where they disagree, **this roadmap governs shipping status and the doctrine governs sequencing rationale**. Phase 0 (architecture + internal console) is complete; Phase 1 (live pilot communications) is gated on explicit v0.3 authorization, not on engineering work.
 
+FRL one-call commissioning: FRL-PILOT-005 adds owner-approved automatic admission for one capture-off keypad call within five minutes and bounded watchdog diagnostics. EXPERIMENTAL; one scripted Telnyx call verified answer, 1/2/star and terminal callbacks on November 6. The setup-null watchdog failure was reproduced and corrected; outage and recorded-flow qualification remain pending. No production or recorded activation.
+
+FRL scripted caller: FRL-PILOT-006 prepares a separate Telnyx application and fixed-destination one-shot script for capture-off commissioning. No new worker, model, migration, production release or live qualification is implied.
+
+FRL recorded commissioning: [FRL-PILOT-008](implementations/florida-ramp-lift/FRL_RECORDED_COMMISSIONING_PREP.md) is a DOCUMENTED_ONLY proposal to resolve first-artifact deletion qualification and specify a stage-aware scripted caller. Acceptance, implementation, legal evidence and hosted qualification remain pending.
+
+FRL spoken consent: [FRL-PILOT-009](implementations/florida-ramp-lift/FRL_SPOKEN_CONSENT.md) records the owner-authorized direction, draft prompts and implementation contract. EXPERIMENTAL local implementation includes consent-event binding, real-time withdrawal monitoring and durable AI-conversation cleanup. Owner-approved v2 transient control recognition preserves spoken withdrawal after recording refusal without saving conversation content. Hosted deployment and qualification remain pending.
+
 ## Version table
+
+FRL commissioning preparation: [operator pack](implementations/florida-ramp-lift/FRL_COMMISSIONING_PACK.md) records the owner-approved exact disclosures, configuration worksheet, stop procedure and separate-window test budget. Engineering response received; authenticated hosted operator access verified with admission disabled. Legal evidence for recording and live qualification remain pending.
+
+FRL inbound duration: [FRL-PILOT-003 architecture amendment](implementations/florida-ramp-lift/FRL_INBOUND_DURATION_AMENDMENT.md) is owner-accepted with explicit residual risk. The Telnyx-only application watchdog is deployed disabled on a separate Render worker; live failure qualification remains pending. Both workers share Render outage exposure. No live window is open.
+
+FRL activation controls: [exact-call approval, keypad commissioning and provider deletion](implementations/florida-ramp-lift/FRL_ACTIVATION_CONTROLS.md) are under implementation/validation. [FRL-PILOT-004](implementations/florida-ramp-lift/FRL_CAPTURE_OFF_COMMISSIONING.md) separates capture-off prerequisites from recorded qualification. Nonproduction infrastructure exists with calls disabled; hosted termination qualification remains outstanding.
+
+FRL full recorded pilot: [experimental implementation](implementations/florida-ramp-lift/FRL_RECORDED_PILOT.md) under validation. Includes two consent windows, controlled dialing/bridging, durable dispatch and emergency stop. No live activation or milestone promotion.
 
 FRL Phase 3 is a [partial synthetic orchestration increment](implementations/florida-ramp-lift/FRL_PHASE3_ORCHESTRATION.md): verified request plans, signed offline mapping and routing/capture tests. Recording policy, post-bridge authorization, physical acknowledgments and durable execution block full Phase 3 and live testing. No milestone promotion.
 
 FRL Phase 2 consent hardening is under synthetic validation: [implementation boundary and live-test blockers](implementations/florida-ramp-lift/FRL_CONSENT_INGEST_BOUNDARY.md). No milestone promotion or live activation. The proposed change blocks legacy unproven Telnyx content and CRM exports as well as FRL until reviewed consent-aware mappings exist.
+
+FRL purchased-number follow-up: [activation contract](implementations/florida-ramp-lift/FRL_PURCHASED_NUMBER_ACTIVATION.md), **DOCUMENTED_ONLY**. The operator selected the full consent-gated recorded flow with controlled two-leg bridging as the first deliverable; no separate no-capture-first rollout is planned. Number ownership advances no v0.3 gate; the recording-policy amendment was approved on 2026-11-06; durable execution, legal/retention review, hosted target and supervised-call approval remain pending.
 
 Database hardening under review: [Neon standardization](database/README.md) reconciles existing environments and adds local configuration/history/restore gates plus a PostgreSQL 16/17/18 CI matrix. No milestone promotion, hosted migration or live activation is authorized; deployed connection identity, role/RLS acceptance and hosted recovery remain open.
 
@@ -133,3 +151,6 @@ Architectural placement: [`architecture.md`](./architecture.md) § Future Knowle
 - No production deploys from this repo until v0.3 readiness gates clear, except the public read-only demo surface (ADR-0053): the marketing pages and `/demo/receptionist`, on mock adapters, operator-authorized and deployed by hand. Not v0.3 authorization.
 - Provider adapters fall back to mock when env vars are missing — the app must boot and run without live keys at every version.
 - ResponseOS is not HIPAA-certified or HIPAA-compliant out of the box. The HIPAA-ready lane is an architectural pattern, not a current product capability.
+
+
+FRL one-call spoken qualification: [accepted bounded variant](implementations/florida-ramp-lift/FRL_RECORDED_COMMISSIONING_PREP.md) implemented under validation with durable single-candidate lock, explicitly unverified retention/withdrawal and repeated deletion reconciliation. No live window or milestone promotion.

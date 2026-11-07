@@ -1,4 +1,5 @@
 import { after, NextResponse } from "next/server";
+import { handlePilotEvent } from "@/lib/communications/pilot/runtime";
 import {
   getWebhookProcessingState,
   recordWebhookEvent,
@@ -30,7 +31,9 @@ export async function POST(req: Request) {
     });
   }
 
+  if (Number(req.headers.get("content-length")) > 262144) return new Response(null, { status: 413 });
   const rawBody = await req.text();
+  if (Buffer.byteLength(rawBody) > 262144) return new Response(null, { status: 413 });
   const signature = req.headers.get("telnyx-signature-ed25519");
   const timestamp = req.headers.get("telnyx-timestamp");
   const verified = verifyTelnyxWebhook({ rawBody, signature, timestamp, publicKey });
@@ -47,6 +50,13 @@ export async function POST(req: Request) {
       code: "invalid_telnyx_event",
       message: "Telnyx webhook payload is invalid.",
     });
+  }
+
+  try {
+    const pilot = await handlePilotEvent(event, rawBody);
+    if (pilot.handled) return NextResponse.json({ ok: true, data: pilot }, { status: 202 });
+  } catch {
+    return errorResponse(503, { code: "pilot_ingest_unavailable", message: "Pilot evidence could not be committed. Retry delivery." });
   }
 
   const target = getTelnyxAgentTarget(event.data.payload);

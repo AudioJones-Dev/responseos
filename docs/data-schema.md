@@ -10,6 +10,10 @@ The schema mirrors `types/*.ts` and `prisma/schema.prisma`. Conventions:
 
 ## Current implementation snapshot
 
+The spoken FRL branch adds `0017_frl_spoken_consent`: nullable recording parent plus exact call control/leg/session identity on `FrlPilotDeletion` for tenant-bound AI-conversation cleanup. No conversation text is persisted by the pilot. Local migration validation is not hosted migration evidence.
+
+The FRL activation branch adds migration `0016_frl_pilot_deletion`: `CallStatus.ringing` for unanswered candidates and `FrlPilotDeletion` for account/run-bound recording/transcription deletion intent, deadlines, retries and verified-absence evidence. It stores no media URL or transcript text. See [activation controls](implementations/florida-ramp-lift/FRL_ACTIVATION_CONTROLS.md); this is not a claim of production migration.
+
 The source of truth for exact fields, enum values, relations, and indexes is `prisma/schema.prisma`. The current migration chain runs from `0001_v0_2_foundation` through `0010_v0_3_provider_enum_alignment`.
 
 Current Prisma models:
@@ -329,3 +333,10 @@ Architectural placement and product framing are documented in `architecture.md` 
 - No file-upload schema is committed to. Uploads are gated on the `files` / `media` model already on the v0.2 roadmap above.
 - No third-party knowledge integrations (Obsidian, Notion, Confluence, etc.) are committed to.
 - No additional general-knowledge Prisma models, retrieval runtime, or provider integration ships from this roadmap entry.
+
+## Experimental FRL pilot (migration 0015)
+
+`FrlPilotRun` stores account/call/window binding, config digest, content-free state and expiry. `FrlPilotCommand` is the durable intent/claim/result outbox, scoped to account and run; uncertain sends are not retried. `FrlPilotArtifact` uniquely binds a recording ID and capture window, bounded start/end times and expiring transcript text. It stores no recording URL or destination. Consent grants and emergency-stop latches are append-only `AuditLog` entries. Existing `WebhookEvent` stores only payload hashes for this path. Canonical call readers and CRM never receive pilot transcript content. See [contract](implementations/florida-ramp-lift/FRL_RECORDED_PILOT.md).
+
+
+FRL qualification uses existing storage: state_json.qualification=true, a tenant-bound frl_pilot.qualification_claimed audit marker and FrlPilotDeletion state observing. verified_at records the latest absence observation; observing tasks recheck every five minutes through run expires_at before becoming verified. No schema migration. The claim does not clear automatically after successful deletion.
