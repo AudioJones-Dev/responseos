@@ -32,6 +32,17 @@
   ],
   "tasks": [
     {
+      "id": "FRL-RECORDED-QUALIFICATION-20261106",
+      "phase": "Testing & QA",
+      "title": "Prepare first recorded-artifact qualification and stage-aware caller",
+      "owner": "Codex",
+      "status": "In Progress",
+      "progress": 15,
+      "priority": "High",
+      "ref": 246,
+      "refType": "pull"
+    },
+    {
       "id": "FRL-TEST-CALLER-20261106",
       "phase": "Testing & QA",
       "title": "Scripted Telnyx capture-off keypad call passed; setup watchdog fix qualified",

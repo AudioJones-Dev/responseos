@@ -1,5 +1,9 @@
 # Decisions — ResponseOS Architecture Decision Log
 
+## FRL-PILOT-008 — First recorded-artifact qualification
+
+**Status: PROPOSED / DOCUMENTED_ONLY, 2026-11-06.** [Preparation and proposed exception](implementations/florida-ramp-lift/FRL_RECORDED_COMMISSIONING_PREP.md) separates cleanup prerequisites from the first live deletion result. No schema gate is relaxed, no legal approval inferred, and no recorded call authorized. Normal recorded mode remains unchanged pending scoped acceptance and implementation.
+
 This file records the load-bearing decisions that constrain how ResponseOS is built. Each ADR is short by design: context, decision, consequences. If a decision is reversed, mark the entry **Superseded by ADR-XXX** rather than deleting it.
 
 ## FRL-PILOT-007 — Bounded setup inventory compatibility

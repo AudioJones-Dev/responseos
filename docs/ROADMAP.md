@@ -8,6 +8,8 @@ FRL one-call commissioning: FRL-PILOT-005 adds owner-approved automatic admissio
 
 FRL scripted caller: FRL-PILOT-006 prepares a separate Telnyx application and fixed-destination one-shot script for capture-off commissioning. No new worker, model, migration, production release or live qualification is implied.
 
+FRL recorded commissioning: [FRL-PILOT-008](implementations/florida-ramp-lift/FRL_RECORDED_COMMISSIONING_PREP.md) is a DOCUMENTED_ONLY proposal to resolve first-artifact deletion qualification and specify a stage-aware scripted caller. Acceptance, implementation, legal evidence and hosted qualification remain pending.
+
 ## Version table
 
 FRL commissioning preparation: [operator pack](implementations/florida-ramp-lift/FRL_COMMISSIONING_PACK.md) records the owner-approved exact disclosures, configuration worksheet, stop procedure and separate-window test budget. Engineering response received; authenticated hosted operator access verified with admission disabled. Legal evidence for recording and live qualification remain pending.

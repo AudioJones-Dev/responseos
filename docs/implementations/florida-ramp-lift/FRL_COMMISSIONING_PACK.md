@@ -29,7 +29,7 @@ Other existing spoken text, listed for rehearsal (not included in the two-prompt
 | Provider | Telnyx only |
 | Account | Existing isolated `acct_frl_recorded_pilot`; keep paused until activation gates pass |
 | Application | Existing dedicated `3050271554165278354`; retain inactive |
-| Deployment | Last verified runtime commit `11ded84072f586482881af9c5cb7e552e7af6c7c`; recheck before activation |
+| Deployment | Last verified runtime commit `ecfca4bea164677577cf70e84bc12cf56a365a47`; recheck before activation |
 | Admission | manual; one unresolved run; historical caller IDs do not authorize admission |
 | Exercise | separate keypad and recorded windows; never silently change a live window/config |
 | Retention | 24 hours maximum from capture; earlier on withdrawal |
@@ -55,13 +55,13 @@ The first capture-off window on 2026-11-06 was closed before any call was admitt
 
 1. Sign in at `/admin/frl-pilot`. Verify intended operator identity, not merely a successful public health check. With no valid config, unavailable status is expected; never seed synthetic pending calls into the hosted DB to imitate readiness.
 2. Before a future window: verify exact deployment/DB bindings, signed ingest, worker and cleanup health; no unresolved runs or deletion incidents; receiving mobile available; recording defaults off; US-only destinations, concurrency and spend controls unchanged.
-3. Approve only the exact pending call corresponding to the Grok attempt you initiated. Refuse other candidates. No operator destination or provider control token should appear in browser responses.
+3. Approve only the exact pending call corresponding to the supervised test attempt you initiated. Refuse other candidates. No operator destination or provider control token should appear in browser responses.
 4. On unexpected behavior, close admission first and press emergency stop. A 202 is a queued stop request, not proof of termination. Check both legs in provider metadata and the controller. If either remains active, use authenticated Telnyx controls to hang up the exact pilot leg; do not modify unrelated calls.
 5. Keep signed ingest, credentials, worker and cleanup running until terminal events and late artifacts reconcile. Do not clear the permanent per-window stop latch, reuse its UUID or rotate config to reopen it.
 
 ## Staged case sheet
 
-All live cases below remain NOT RUN. Use synthetic names such as “Pilot Alpha.” No media downloads or repository copies. Each attempt, including retries, consumes the applicable approved window budget.
+Recorded cases below remain NOT RUN. The separate scripted Telnyx keypad test passed in the 19:20–19:25 Eastern window; see [test report](FRL_SCRIPTED_TEST_CALLER.md). Grok DTMF remains unverified. Use synthetic names such as “Pilot Alpha.” No media downloads or repository copies. Each attempt, including retries, consumes the applicable approved window budget.
 
 | Order | Exercise | Expected evidence |
 |---|---|---|
@@ -91,6 +91,10 @@ Prepared retention follow-up (not sent): For Voice API record_start with post-re
 
 - Implemented and previously validated: manual admission, keypad-only command restrictions, consent controller, durable dispatch/cleanup and unit/integration checks.
 - Prepared now: exact wording approval, configuration worksheet, separate-window case allocation, stop checklist, retention follow-up and corrected runbook values.
-- Pending: independent watchdog hosting/qualification, receiving endpoint check, legal review evidence, provider deletion/backup verification, actual keypad proof, fresh test windows and live cases. Authenticated operator page access was observed; unavailable API state is expected without final configuration.
+- Pending: controlled watchdog failure/manual-stop qualification, receiving endpoint check, legal review evidence, provider deletion/backup verification, fresh recorded test windows and live cases. The watchdog is hosted; scripted Telnyx keypad proof passed, while Grok remains unverified. Authenticated operator page access was observed; unavailable API state is expected without final configuration.
 
 The subsequent FRL-PILOT-003 local implementation is tracked in its amendment. No live-test-ready claim is made.
+
+## First recorded-artifact dependency
+
+[FRL-PILOT-008 proposal](FRL_RECORDED_COMMISSIONING_PREP.md) documents the live-deletion bootstrap gate and a bounded qualification path. It is not accepted or implemented. No readiness flag may be fabricated. The additional owner reply “Approved” supplies no legal reviewer/date/reference; legal evidence remains pending.
