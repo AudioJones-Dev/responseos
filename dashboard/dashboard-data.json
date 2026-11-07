@@ -32,6 +32,17 @@
   ],
   "tasks": [
     {
+      "id": "FRL-SPOKEN-CONSENT-20261107",
+      "phase": "Testing & QA",
+      "title": "Implement spoken consent, withdrawal and AI conversation cleanup",
+      "owner": "Codex",
+      "status": "In Progress",
+      "progress": 10,
+      "priority": "High",
+      "ref": 246,
+      "refType": "pull"
+    },
+    {
       "id": "FRL-RECORDED-QUALIFICATION-20261106",
       "phase": "Testing & QA",
       "title": "Prepare first recorded-artifact qualification and stage-aware caller",

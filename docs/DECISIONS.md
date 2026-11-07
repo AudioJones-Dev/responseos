@@ -1,5 +1,9 @@
 # Decisions — ResponseOS Architecture Decision Log
 
+## FRL-PILOT-009 — Spoken consent
+
+**Status: DOCUMENTED_ONLY, 2026-11-07.** Owner authorized the spoken-consent direction. [Detailed design and draft disclosures](implementations/florida-ramp-lift/FRL_SPOKEN_CONSENT.md) cover explicit speech grants, real-time withdrawal and separate AI-conversation deletion. Detailed disclosure review and implementation remain pending; no deployed gate, legal-evidence requirement or live window changed.
+
 ## FRL-PILOT-008 — First recorded-artifact qualification
 
 **Status: PROPOSED / DOCUMENTED_ONLY, 2026-11-06.** [Preparation and proposed exception](implementations/florida-ramp-lift/FRL_RECORDED_COMMISSIONING_PREP.md) separates cleanup prerequisites from the first live deletion result. No schema gate is relaxed, no legal approval inferred, and no recorded call authorized. Normal recorded mode remains unchanged pending scoped acceptance and implementation.
