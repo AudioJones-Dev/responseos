@@ -102,3 +102,7 @@ The subsequent FRL-PILOT-003 local implementation is tracked in its amendment. N
 ## Spoken v2 owner approval — November 7
 
 [FRL-PILOT-009](FRL_SPOKEN_CONSENT.md) records owner approval of transient call-control recognition after recording refusal and the exact revised disclosure. Use the separately versioned `frl-spoken-v2` contract for future spoken commissioning; do not reuse keypad wording or a stopped window. Policy/wording approval does not supply legal-review evidence or prove provider-side retention. No live spoken window is assigned.
+
+## November 7 approval update
+
+The owner subsequently stated "Legal is approved." Reference `owner-attested-legal-20261107-chat-01a1b18a` supersedes earlier pending-legal statements in this pack. No independent reviewer identity or legal opinion is asserted. See [disabled release verification](FRL_SPOKEN_RELEASE_VERIFICATION.md). No new call window is open.
