@@ -1,6 +1,7 @@
 import "@/lib/serverOnlyGuard";
 import type { FrlPilotDeletion, PrismaClient } from "@prisma/client";
 import { z } from "zod";
+import type { PilotState } from "./machine";
 
 import { deleteSpeechConversation } from "./speech";
 
@@ -64,14 +65,16 @@ export async function deletePilotArtifacts(db: Pick<PrismaClient, "$transaction"
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`frl-pilot-deletion:${accountId}`}, 0))`;
     const task = await tx.frlPilotDeletion.findFirst({ where: { account_id: accountId, state: { not: "verified" }, due_at: { lte: new Date(now) }, next_attempt_at: { lte: new Date(now) } }, orderBy: { due_at: "asc" } });
     if (!task) return false;
+    const run = await tx.frlPilotRun.findFirst({ where: { id: task.run_id, account_id: accountId }, select: { state_json: true, expires_at: true } });
+    const observing = (run?.state_json as unknown as PilotState | undefined)?.qualification === true && now < run!.expires_at.getTime();
     const result = await transport(task);
     const attempts = task.attempts + 1;
     await tx.frlPilotDeletion.update({ where: { account_id: accountId, id: task.id }, data: {
-      attempts, state: result === "verified" ? "verified" : "retry", last_error: result === "verified" ? null : result,
+      attempts, state: result === "verified" ? observing ? "observing" : "verified" : "retry", last_error: result === "verified" ? null : result,
       verified_at: result === "verified" ? new Date(now) : null,
-      next_attempt_at: new Date(now + Math.min(300000, 1000 * 2 ** Math.min(attempts, 8))),
+      next_attempt_at: new Date(result === "verified" && observing ? Math.min(now + 300000, run!.expires_at.getTime()) : now + Math.min(300000, 1000 * 2 ** Math.min(attempts, 8))),
     } });
-    await tx.auditLog.create({ data: { account_id: accountId, actor_type: "system", category: "workflow", action: `frl_pilot.deletion_${result}`, target_type: "FrlPilotDeletion", target_id: task.id, metadata_json: { kind: task.kind, attempts } } });
+    await tx.auditLog.create({ data: { account_id: accountId, actor_type: "system", category: "workflow", action: `frl_pilot.deletion_${result}`, target_type: "FrlPilotDeletion", target_id: task.id, metadata_json: { kind: task.kind, attempts, observationContinues: result === "verified" && observing } } });
     return true;
   }, { timeout: 120000, maxWait: 1000 });
 }

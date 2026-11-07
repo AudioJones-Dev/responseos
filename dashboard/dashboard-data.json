@@ -45,10 +45,10 @@
     {
       "id": "FRL-RECORDED-QUALIFICATION-20261106",
       "phase": "Testing & QA",
-      "title": "Prepare first recorded-artifact qualification and stage-aware caller",
+      "title": "Implement one-call spoken qualification and repeated artifact cleanup",
       "owner": "Codex",
       "status": "In Progress",
-      "progress": 15,
+      "progress": 75,
       "priority": "High",
       "ref": 246,
       "refType": "pull"

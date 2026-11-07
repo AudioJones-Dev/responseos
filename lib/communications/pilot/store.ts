@@ -35,9 +35,10 @@ async function persist(tx: Prisma.TransactionClient, c: PilotConfig, s: PilotSta
   if (s.revokedAt && !previous.revokedAt || s.incident && s.incident !== previous.incident) {
     await tx.auditLog.create({ data: { account_id: c.accountId, actor_type: "system", action: "frl_pilot.safety", category: "workflow", target_type: "FrlPilotRun", target_id: s.id, metadata_json: { reason: s.incident ?? "withdrawn", revoked: !!s.revokedAt, at: now } } });
   }
-  if (s.revokedAt) await tx.frlPilotArtifact.updateMany({ where: { account_id: c.accountId, run_id: s.id }, data: { transcript: null, purged_at: new Date(now) } });
-  if (s.stage === "ending" || s.stage === "ended") await tx.frlPilotDeletion.updateMany({ where: { account_id: c.accountId, run_id: s.id, kind: "conversation", state: { not: "verified" } }, data: { due_at: new Date(now), next_attempt_at: new Date(now) } });
-  if (s.revokedAt) await tx.frlPilotDeletion.updateMany({ where: { account_id: c.accountId, run_id: s.id, state: { not: "verified" } }, data: { due_at: new Date(now), next_attempt_at: new Date(now) } });
+  const purge = !!s.revokedAt || s.qualification && ["ending", "ended"].includes(s.stage);
+  if (purge) await tx.frlPilotArtifact.updateMany({ where: { account_id: c.accountId, run_id: s.id }, data: { transcript: null, purged_at: new Date(now) } });
+  if (s.stage === "ending" || s.stage === "ended") await tx.frlPilotDeletion.updateMany({ where: { account_id: c.accountId, run_id: s.id, kind: "conversation", state: { not: "verified" }, due_at: { gt: new Date(now) } }, data: { due_at: new Date(now), next_attempt_at: new Date(now) } });
+  if (purge) await tx.frlPilotDeletion.updateMany({ where: { account_id: c.accountId, run_id: s.id, state: { not: "verified" }, due_at: { gt: new Date(now) } }, data: { due_at: new Date(now), next_attempt_at: new Date(now) } });
   if (s.stage === "ending" || s.stage === "ended") {
     await tx.frlPilotCommand.updateMany({ where: { account_id: c.accountId, run_id: s.id, state: "pending", purpose: { notIn: ["stop", "hangup", "monitor_stop"] } }, data: { state: "cancelled", finished_at: new Date(now) } });
   }
@@ -75,12 +76,20 @@ export async function ingestPilot(db: Database, c: PilotConfig, event: TelnyxWeb
           !pilotOpen(c, now, env) || await windowKilled(tx, c) || !(await activeAccount(tx, c.accountId))) return finish(false);
       if (await tx.frlPilotRun.count({ where: { account_id: c.accountId, closed: false } }) ||
           await tx.frlPilotRun.count({ where: { account_id: c.accountId, window_id: c.windowId } }) >= c.maxCalls) return finish(false);
+      if (await tx.auditLog.findFirst({ where: { account_id: c.accountId, action: "frl_pilot.qualification_claimed" }, select: { id: true } })) return finish(false);
+      const qualification = c.exercise === "recorded" && c.qualification;
+      if (qualification && await tx.frlPilotDeletion.count({ where: { account_id: c.accountId, state: { not: "verified" } } })) return finish(false);
       const id = randomUUID();
       if (c.admission === "automatic_once" && await tx.frlPilotDeletion.count({ where: { account_id: c.accountId, state: { not: "verified" }, due_at: { lte: new Date(now) } } })) return finish(false);
       const s = c.admission === "automatic_once"
         ? { ...initialPilot(id, leg, at, Date.parse(c.closesAt), c.disclosureVersion), exercise: c.exercise, captureDenied: true }
         : pendingPilot(id, leg, p.from, at, Date.parse(c.closesAt), c.disclosureVersion, c.exercise);
       if (c.exercise === "recorded" && c.speech) (s as PilotState).speech = { transientControlsAuthorized: true, bindings: [], monitors: {} };
+      if (qualification) {
+        (s as PilotState).qualification = true;
+        await tx.auditLog.create({ data: { account_id: c.accountId, actor_type: "system", action: "frl_pilot.qualification_claimed", category: "workflow", target_type: "FrlPilotRun", target_id: id,
+          metadata_json: { windowId: c.windowId, approvalRef: qualification.approvalRef, retention: "unverified", withdrawal: "unverified", backups: "unverified", syntheticOnly: true } } });
+      }
       const call = await tx.call.create({ data: { account_id: c.accountId, provider: "telnyx", provider_call_id: leg.controlId,
         direction: "inbound", status: "ringing", from_number: "<CONTROLLED_PILOT_CALLER>", to_number: c.number, started_at: new Date(at) } });
       await tx.frlPilotRun.create({ data: { id, account_id: c.accountId, call_id: call.id, window_id: c.windowId, config_digest: configDigest(c),
@@ -138,14 +147,16 @@ export async function ingestPilot(db: Database, c: PilotConfig, event: TelnyxWeb
     if (observed?.kind === "answered" && observed.role === "caller") await tx.call.updateMany({ where: { account_id: c.accountId, id: row.call_id }, data: { status: "answered" } });
     if (s.stage !== "ended" && !pilotOpen(c, now, env) || env.RESPONSEOS_FRL_PILOT_KILL === "true" || await windowKilled(tx, c) || !(await activeAccount(tx, c.accountId))) endPilot(s, now, "dispatch_closed", true);
     if (s.stage === "ending") endPilot(s, now);
+    const qualificationEnded = s.qualification && ["ending", "ended"].includes(s.stage);
     const recordingId = z.string().uuid().safeParse(event.data.payload.recording_id);
     if (event.data.event_type === "call.recording.saved" && recordingId.success && leg.controlId === s.caller.controlId && leg.legId === s.caller.legId && leg.sessionId === s.caller.sessionId) {
       const window = previous.windows.find(w => w.commandId === token?.commandId);
       const sent = window && await tx.frlPilotCommand.findFirst({ where: { account_id: c.accountId, run_id: s.id, id: window.commandId, state: { in: ["dispatched", "accepted", "uncertain"] } } });
       if (window && sent) {
-        const due = new Date(s.revokedAt ? now : Math.min(row.expires_at.getTime(), window.authorizedAt + c.retentionHours * 3600000));
+        const due = new Date(s.revokedAt || qualificationEnded ? now : Math.min(row.expires_at.getTime(), window.authorizedAt + c.retentionHours * 3600000));
         await tx.frlPilotDeletion.upsert({ where: { account_id_kind_resource_id: { account_id: c.accountId, kind: "recording", resource_id: recordingId.data } }, update: {},
           create: { account_id: c.accountId, run_id: s.id, recording_id: recordingId.data, resource_id: recordingId.data, kind: "recording", due_at: due, next_attempt_at: due } });
+        if (s.revokedAt || qualificationEnded) await tx.frlPilotDeletion.updateMany({ where: { account_id: c.accountId, run_id: s.id, kind: "recording", resource_id: recordingId.data }, data: { state: "pending", verified_at: null, due_at: due, next_attempt_at: due } });
       }
     }
     if (event.data.event_type === "call.recording.transcription.saved" && leg.controlId === s.caller.controlId && leg.legId === s.caller.legId && leg.sessionId === s.caller.sessionId) {
@@ -153,18 +164,19 @@ export async function ingestPilot(db: Database, c: PilotConfig, event: TelnyxWeb
       if (ids.success) {
         const owner = await tx.frlPilotDeletion.findFirst({ where: { account_id: c.accountId, run_id: s.id, kind: "recording", resource_id: ids.data.recording_id } });
         if (!owner) throw new Error("pilot_recording_evidence_pending");
-        const due = s.revokedAt ? new Date(now) : owner.due_at;
+        const due = s.revokedAt || qualificationEnded ? new Date(now) : owner.due_at;
         await tx.frlPilotDeletion.upsert({ where: { account_id_kind_resource_id: { account_id: c.accountId, kind: "transcription", resource_id: ids.data.recording_transcription_id } }, update: {},
           create: { account_id: c.accountId, run_id: s.id, recording_id: ids.data.recording_id, resource_id: ids.data.recording_transcription_id, kind: "transcription", due_at: due, next_attempt_at: due } });
+        if (s.revokedAt || qualificationEnded) await tx.frlPilotDeletion.updateMany({ where: { account_id: c.accountId, run_id: s.id, kind: "transcription", resource_id: ids.data.recording_transcription_id }, data: { state: "pending", verified_at: null, due_at: due, next_attempt_at: due } });
       }
     }
     const recording = observed?.kind === "recording" ? s.windows.find(w => w.recordingId === observed.recordingId) : undefined;
-    if (recording && !s.revokedAt && row.expires_at.getTime() > now) {
+    if (recording && !s.revokedAt && !qualificationEnded && row.expires_at.getTime() > now) {
       await tx.frlPilotArtifact.upsert({ where: { account_id_recording_id: { account_id: c.accountId, recording_id: recording.recordingId! } }, update: {},
         create: { account_id: c.accountId, run_id: s.id, window_id: recording.id, recording_id: recording.recordingId!, purpose: recording.purpose,
           started_at: new Date(recording.startedAt!), ended_at: new Date(recording.endedAt!), expires_at: row.expires_at } });
     }
-    if (event.data.event_type === "call.recording.transcription.saved" && !s.revokedAt && row.expires_at.getTime() > now && leg.controlId === s.caller.controlId && leg.legId === s.caller.legId && leg.sessionId === s.caller.sessionId) {
+    if (event.data.event_type === "call.recording.transcription.saved" && !s.revokedAt && !qualificationEnded && row.expires_at.getTime() > now && leg.controlId === s.caller.controlId && leg.legId === s.caller.legId && leg.sessionId === s.caller.sessionId) {
       const t = z.object({ recording_id: z.string().uuid(), status: z.literal("completed"), transcription_text: z.string().min(1).max(30000) }).safeParse(event.data.payload);
       const w = t.success ? s.windows.find(w => w.recordingId === t.data.recording_id && w.endedAt) : undefined;
       if (t.success && w) await tx.frlPilotArtifact.updateMany({ where: { account_id: c.accountId, run_id: s.id, recording_id: t.data.recording_id, purged_at: null, transcript: null, expires_at: { gt: new Date(now) } }, data: { transcript: t.data.transcription_text } });

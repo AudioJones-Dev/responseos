@@ -22,15 +22,21 @@ export const pilotConfigSchema = z.discriminatedUnion("exercise", [
   base.extend({
     exercise: z.literal("recorded"), legalApprovalRef: approval,
     disclosureVersion: z.enum(["frl-recorded-v1", "frl-spoken-v2"]),
-    speech: z.object({ transientControlsApprovalRef: approval, wordingApprovalRef: approval, processingApprovalRef: approval, retentionVerified: z.literal(true), withdrawalVerified: z.literal(true) }).strict().optional(),
-    independentEndpointVerified: z.literal(true), providerRetentionVerified: z.literal(true),
+    speech: z.object({ transientControlsApprovalRef: approval, wordingApprovalRef: approval, processingApprovalRef: approval, retentionVerified: z.boolean(), withdrawalVerified: z.boolean() }).strict().optional(),
+    independentEndpointVerified: z.literal(true), providerRetentionVerified: z.boolean(),
+    qualification: z.object({ approvalRef: approval, operatorPresent: z.literal(true), syntheticOnly: z.literal(true),
+      providerRetention: z.literal("unverified"), backupErasure: z.literal("unverified"), cleanupReady: z.literal(true), manualProviderStopAvailable: z.literal(true) }).strict().optional(),
     durationPolicy: duration.extend({ independentWatchdogVerified: z.literal(true), manualStopVerified: z.literal(true) }).strict(),
   }).strict(),
   base.extend({
     exercise: z.literal("keypad"), admission: z.enum(["manual", "automatic_once"]), durationPolicy: duration,
     commissioning: z.object({ approvalRef: approval, operatorPresent: z.literal(true), manualProviderStopAvailable: z.literal(true), watchdogInventoryVerified: z.literal(true), capture: z.literal("off"), operatorDial: z.literal("off") }).strict(),
   }).strict(),
-]).refine(c => c.exercise !== "recorded" || (c.disclosureVersion === "frl-spoken-v2") === !!c.speech, "speech_disclosure_and_evidence_required")
+]).refine(c => c.exercise !== "recorded" || (c.qualification
+  ? c.maxCalls === 1 && Date.parse(c.closesAt) - Date.parse(c.opensAt) <= 300000 &&
+    c.providerRetentionVerified === false && !!c.speech && c.speech.retentionVerified === false && c.speech.withdrawalVerified === false
+  : c.providerRetentionVerified && (!c.speech || c.speech.retentionVerified && c.speech.withdrawalVerified)), "qualification_requires_one_synthetic_call_and_unverified_evidence")
+  .refine(c => c.exercise !== "recorded" || (c.disclosureVersion === "frl-spoken-v2") === !!c.speech, "speech_disclosure_and_evidence_required")
   .refine(c => c.number !== c.operator && !c.callers.includes(c.number) && !c.callers.includes(c.operator), "loop_or_shared_endpoint")
   .refine(c => Date.parse(c.closesAt) > Date.parse(c.opensAt) && Date.parse(c.closesAt) - Date.parse(c.opensAt) <= 1800000, "window_max_thirty_minutes")
   .refine(c => c.admission !== "automatic_once" || c.maxCalls === 1 && Date.parse(c.closesAt) - Date.parse(c.opensAt) <= 300000, "automatic_once_requires_one_call_and_five_minutes");

@@ -1,6 +1,22 @@
 # FRL-PILOT-008 — First recorded-artifact qualification
 
-Status: PROPOSED / DOCUMENTED_ONLY, November 6, 2026. No runtime gates changed, no deployment and no live window authorized by this document.
+Status: scoped qualification variant accepted November 7, 2026, after the owner requested testing and instructed Proceed. Local validation passed; hosted release verification pending. No live window authorized. The historical proposal below is superseded only by the following bounded variant.
+
+## Accepted one-call spoken qualification
+
+- Five-minute window, one synthetic test candidate, manual exact-call approval. Rotating caller IDs remain supported; identity requires operator attestation rather than caller-ID trust. Caller can be a supervised human or a separately prepared spoken bot; the old keypad script is not repurposed.
+- Set providerRetentionVerified, speech retentionVerified and speech withdrawalVerified to false. The strict qualification object requires operator presence, synthetic-only content, cleanup readiness and a manual provider stop; provider retention and backup erasure explicitly remain unverified. Normal recorded mode still requires verified evidence.
+- Account-wide durable qualification claim is consumed by the first matching pending candidate, including a rejected/expired attempt. Every subsequent admission is blocked across new windows, modes and restarts. No automatic release or reset endpoint exists; evidence review and separately authorized follow-up are required.
+- Preserve legal approval, endpoint verification, signed callbacks, consent, concurrency, duration watchdog and manual-stop gates. Owner acceptance permits testing observable retention before provider confirmation; it does not claim hidden processing or backup erasure is proven.
+- Purge local content and queue all provider artifacts immediately on withdrawal or normal termination. Late content cannot restore local text; known late artifacts reopen deletion.
+- After successful provider absence checks, qualification tasks remain observing and repeat every five minutes through the run's 24-hour observation deadline, then receive a final check. Transient failures retry; later callbacks reopen even verified tasks. Absence evidence is content-free and does not prove backup erasure. Keep signed ingest, configuration and cleanup running throughout reconciliation.
+- One test does not establish client readiness or the full refusal/no-answer/outage suite. The 15-second missing-speech cutoff remains experimental. No new hosted schema migration is needed.
+
+Approval: owner test-based qualification instructions in chat 01a1b18a-d1a7-7570-84a9-ed27ec286624; AgentOps reference 082e4edb-4813-4b78-8fef-0fa1987daa8c. Legal wording approval is owner-attested as recorded in FRL_SPOKEN_RELEASE_VERIFICATION.md.
+
+Local validation November 7: lint, typecheck, 977 unit tests, production build and all 231 database integration tests passed on isolated PostgreSQL without Docker. After the final rotating-caller and console-count adjustments, the 43 pilot integration tests, 37 affected unit tests, lint, typecheck and build passed again. These synthetic checks cover admission lockout, account isolation, local purge, retry scheduling and late-artifact reconciliation; they do not establish live speech, provider deletion or backup behavior.
+
+## Historical proposal (superseded where specified above)
 
 ## Verified starting point
 

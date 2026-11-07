@@ -13,11 +13,13 @@ export async function GET() {
   if (!c || !db) return new Response(null, { status: 503 });
   const runs = await db.frlPilotRun.findMany({ where: { account_id: c.accountId, window_id: c.windowId }, orderBy: { started_at: "desc" }, take: 10 });
   const artifacts = await db.frlPilotArtifact.findMany({ where: { account_id: c.accountId, run_id: { in: runs.map(r => r.id) }, purged_at: null, expires_at: { gt: new Date() } }, select: { run_id: true, recording_id: true, purpose: true, transcript: true, started_at: true, ended_at: true, expires_at: true } });
-  const deletionPending = await db.frlPilotDeletion.count({ where: { account_id: c.accountId, state: { not: "verified" }, due_at: { lte: new Date() } } });
+  const deletionPending = await db.frlPilotDeletion.count({ where: { account_id: c.accountId, state: { notIn: ["verified", "observing"] }, due_at: { lte: new Date() } } });
   const killed = await db.auditLog.count({ where: { account_id: c.accountId, action: "frl_pilot.kill", target_type: "FrlPilotWindow", target_id: c.windowId } });
   const account = await db.account.findUnique({ where: { id: c.accountId }, select: { status: true } });
-  const windowOpen = pilotOpen(c, Date.now()) && !killed && account?.status === "active" && deletionPending === 0;
-  return NextResponse.json({ exercise: c.exercise, admission: c.admission, windowOpen, opensAt: c.opensAt, closesAt: c.closesAt, deletionPending, runs: runs.map(r => {
+  const qualificationClaimed = !!await db.auditLog.findFirst({ where: { account_id: c.accountId, action: "frl_pilot.qualification_claimed" }, select: { id: true } });
+  const cleanupObserving = await db.frlPilotDeletion.count({ where: { account_id: c.accountId, state: "observing" } });
+  const windowOpen = pilotOpen(c, Date.now()) && !killed && account?.status === "active" && deletionPending === 0 && !qualificationClaimed && runs.length < c.maxCalls;
+  return NextResponse.json({ qualification: c.exercise === "recorded" && !!c.qualification, qualificationClaimed, cleanupObserving, exercise: c.exercise, admission: c.admission, windowOpen, opensAt: c.opensAt, closesAt: c.closesAt, deletionPending, runs: runs.map(r => {
     const s = r.state_json as unknown as PilotState;
     return { id: r.id, stage: s.stage, incident: s.incident, captureDenied: s.captureDenied, revoked: !!s.revokedAt,
       pending: s.stage === "pending" && s.admission && s.deadline > Date.now() ? { caller: s.admission.caller, arrivedAt: s.startedAt, expiresAt: s.deadline } : null,

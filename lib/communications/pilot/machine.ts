@@ -13,6 +13,7 @@ export type Window = {
 export type PilotState = {
   version: 1; id: string; stage: "monitor_consent" | "monitor_name" | "monitor_conversation" | "pending" | "keypad" | "answer" | "caller_consent" | "name_prompt" | "name" | "hold" | "dial" | "operator_consent" | "bridge" | "conversation" | "unavailable" | "ending" | "ended";
   admission?: { caller: string; expiresAt: number; approvedAt?: number; actorId?: string };
+  qualification?: true;
   exercise?: "keypad" | "recorded"; digits?: string[];
   speech?: { transientControlsAuthorized?: true; bindings: SpeechBinding[]; monitors: Partial<Record<Role, { startedAt: number; lastAt: number }>> };
   startedAt: number; deadline: number; endsAt: number; disclosure: string;

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 type Run = { id: string; stage: string; incident?: string; digits: string[]; terminalObserved: boolean; pending: null | { caller: string; arrivedAt: number; expiresAt: number } };
-type Status = { exercise: string; admission: "manual" | "automatic_once"; windowOpen: boolean; opensAt: string; closesAt: string; deletionPending: number; runs: Run[] };
+type Status = { qualification?: boolean; qualificationClaimed?: boolean; cleanupObserving?: number; exercise: string; admission: "manual" | "automatic_once"; windowOpen: boolean; opensAt: string; closesAt: string; deletionPending: number; runs: Run[] };
 
 export default function PilotControls() {
   const [status, setStatus] = useState<Status | null>(null);
@@ -32,7 +32,7 @@ export default function PilotControls() {
       const response = await fetch("/api/admin/frl-pilot", { method: "POST", headers: { "Content-Type": "application/json" }, body: action ? JSON.stringify({ action, runId }) : undefined });
       if (!response.ok) throw new Error();
       setActionResult(action === "approve"
-        ? "Approval accepted. Watch the call status for the answer and keypad events."
+        ? "Approval accepted. Watch the call status for the answer and consent events."
         : action === "reject" ? "Rejection accepted. Watch for the call to end." : "Stop accepted. Watch for all calls to end.");
     } catch { setActionError("Action was not confirmed. Check the call status before trying another call."); }
     finally { setBusy(false); }
@@ -42,13 +42,16 @@ export default function PilotControls() {
     <p role="alert">{error}</p>
     <p role="alert">{actionError}</p>
     <p role="status">{actionResult}</p>
-    {status && <><p>{status.admission === "automatic_once" ? "One automatic-answer keypad test. No recording, transcription or forwarding. No approval click is needed." : "Approve only the call you just initiated with Grok. Caller ID alone does not establish identity."}</p>
+    {status && <><p>{status.admission === "automatic_once" ? "One automatic-answer keypad test. No recording, transcription or forwarding. No approval click is needed." : "Approve only the test call you just initiated. Caller ID alone does not establish identity."}</p>
+      {status.qualification && <p role="status">One synthetic spoken test. Retention and withdrawal are under qualification; backup erasure is unverified.</p>}
+      {status.qualificationClaimed && <p role="status">Qualification slot used. No further calls are admitted, including after restart or a new window.</p>}
+      {!!status.cleanupObserving && <p>Cleanup absence observed; continuing checks for late artifacts: {status.cleanupObserving}.</p>}
       <p>Exercise: {status.exercise}. Overdue cleanup tasks: {status.deletionPending}.</p>
       {status.admission === "automatic_once" && <p role="status">{status.runs.length ? "Test slot used. Do not redial." : status.windowOpen ? "Waiting for test call" : "Admission closed. Wait for GO."}</p>}
       {status.runs.map(run => <article className="space-y-2 rounded border p-4" key={run.id}>
         <p>{run.stage === "answer" ? "Answering" : run.stage === "keypad" ? "Keypad test" : run.stage === "ended" ? "Call ended" : run.stage}{run.incident ? ` — ${run.incident}` : ""}</p>
         {status.admission !== "automatic_once" && run.pending && <><p>Caller: {run.pending.caller}. Arrived: {new Date(run.pending.arrivedAt).toLocaleTimeString()}. Approval expires: {new Date(run.pending.expiresAt).toLocaleTimeString()}.</p>
-          <button className="mr-3 rounded border px-3 py-2" disabled={busy || now >= run.pending.expiresAt} onClick={() => void act("approve", run.id)}>This is my Grok test — approve</button>
+          <button className="mr-3 rounded border px-3 py-2" disabled={busy || now >= run.pending.expiresAt} onClick={() => void act("approve", run.id)}>This is my test call — approve</button>
           <button className="rounded border px-3 py-2" disabled={busy} onClick={() => void act("reject", run.id)}>Reject</button></>}
         <p>Verified keypad events: {run.digits.join(", ") || "none"}. Terminal callbacks: {run.terminalObserved ? "observed" : "not complete"}.</p>
       </article>)}</>}

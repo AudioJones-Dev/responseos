@@ -337,3 +337,6 @@ Architectural placement and product framing are documented in `architecture.md` 
 ## Experimental FRL pilot (migration 0015)
 
 `FrlPilotRun` stores account/call/window binding, config digest, content-free state and expiry. `FrlPilotCommand` is the durable intent/claim/result outbox, scoped to account and run; uncertain sends are not retried. `FrlPilotArtifact` uniquely binds a recording ID and capture window, bounded start/end times and expiring transcript text. It stores no recording URL or destination. Consent grants and emergency-stop latches are append-only `AuditLog` entries. Existing `WebhookEvent` stores only payload hashes for this path. Canonical call readers and CRM never receive pilot transcript content. See [contract](implementations/florida-ramp-lift/FRL_RECORDED_PILOT.md).
+
+
+FRL qualification uses existing storage: state_json.qualification=true, a tenant-bound frl_pilot.qualification_claimed audit marker and FrlPilotDeletion state observing. verified_at records the latest absence observation; observing tasks recheck every five minutes through run expires_at before becoming verified. No schema migration. The claim does not clear automatically after successful deletion.

@@ -49,13 +49,13 @@ async function harness() {
   const flush = async () => { for (let i = 0; i < 10; i++) await Promise.resolve(); };
   render(); mounted = true; effects.forEach(fn => fn()); await flush();
   return { control, requests, render, flush, refresh: async () => { poll(); await flush(); },
-    click: async () => { render().find(n => n.type === "button" && n.props.children === "This is my Grok test — approve")!.props.onClick!(); await flush(); } };
+    click: async () => { render().find(n => n.type === "button" && n.props.children === "This is my test call — approve")!.props.onClick!(); await flush(); } };
 }
 
 describe("pilot control feedback (synthetic hook harness)", () => {
   it("automatic mode shows waiting or closed status without an approval button", async () => {
     const h = await harness(); h.control.automatic = true; await h.refresh();
-    expect(h.render().some(n => n.props.children === "This is my Grok test — approve")).toBe(false);
+    expect(h.render().some(n => n.props.children === "This is my test call — approve")).toBe(false);
     h.control.empty = true; await h.refresh();
     expect(h.render().some(n => n.props.children === "Waiting for test call")).toBe(true);
     h.control.windowOpen = false; await h.refresh();
@@ -76,8 +76,8 @@ describe("pilot control feedback (synthetic hook harness)", () => {
   });
   it("disables expired approval and removes approval for ended calls", async () => {
     const h = await harness(); h.control.expired = true; await h.refresh();
-    expect(h.render().find(n => n.props.children === "This is my Grok test — approve")!.props.disabled).toBe(true);
+    expect(h.render().find(n => n.props.children === "This is my test call — approve")!.props.disabled).toBe(true);
     h.control.pending = false; await h.refresh();
-    expect(h.render().some(n => n.props.children === "This is my Grok test — approve")).toBe(false);
+    expect(h.render().some(n => n.props.children === "This is my test call — approve")).toBe(false);
   });
 });

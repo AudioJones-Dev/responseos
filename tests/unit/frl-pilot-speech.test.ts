@@ -3,7 +3,7 @@ import { afterEach, expect, test, vi } from "vitest";
 import { bindSpeechConversation, classifyConsentSpeech, consumeSpeechConsent, deleteSpeechConversation, speechGatherRequest, type SpeechBinding } from "@/lib/communications/pilot/speech";
 import { stateToken } from "@/lib/providers/telnyx/pilot";
 import type { TelnyxWebhookEnvelope } from "@/lib/providers/telnyx/webhook";
-import { callerLeg, pilotNow, testPilotConfig } from "../fixtures/frl-pilot";
+import { callerLeg, pilotNow, testPilotConfig, testQualificationConfig } from "../fixtures/frl-pilot";
 import { pilotConfigSchema } from "@/lib/communications/pilot/config";
 
 afterEach(() => vi.unstubAllGlobals());
@@ -124,4 +124,18 @@ test("withdrawal survives multiple turns and an invalid model result", () => {
   e.data.payload.status = "invalid";
   e.data.payload.message_history = [{ role: "user", content: "no" }, { role: "user", content: "stop recording" }];
   expect(consumeSpeechConsent(e, b, b.accountId, pilotNow + 200)?.evidence.decision).toBe("withdraw");
+});
+
+test("qualification is explicit and cannot weaken normal recorded gates", () => {
+  const c = testQualificationConfig();
+  expect(pilotConfigSchema.safeParse(c).success).toBe(true);
+  if (c.exercise !== "recorded") throw new Error("fixture");
+  for (const change of [
+    { qualification: undefined }, { maxCalls: 2 },
+    { providerRetentionVerified: true }, { speech: { ...c.speech, retentionVerified: true } },
+    { speech: { ...c.speech, withdrawalVerified: true } }, { admission: "automatic_once" },
+    { closesAt: new Date(Date.parse(c.opensAt) + 300001).toISOString() },
+    { qualification: { ...c.qualification, syntheticOnly: false } },
+  ]) expect(pilotConfigSchema.safeParse({ ...c, ...change }).success).toBe(false);
+  expect(pilotConfigSchema.safeParse({ ...testPilotConfig(), providerRetentionVerified: false }).success).toBe(false);
 });

@@ -4,7 +4,7 @@ import { decidePilotAdmission, ingestPilot, dispatchPilot, purgePilotContent, ki
 import { latest, type PilotState, type Purpose, type Role } from "@/lib/communications/pilot/machine";
 import { stateToken, type PilotTransport } from "@/lib/providers/telnyx/pilot";
 import type { TelnyxWebhookEnvelope } from "@/lib/providers/telnyx/webhook";
-import { testPilotConfig, testKeypadConfig, testAutomaticConfig, callerLeg, operatorLeg } from "../fixtures/frl-pilot";
+import { testPilotConfig, testKeypadConfig, testAutomaticConfig, testQualificationConfig, callerLeg, operatorLeg } from "../fixtures/frl-pilot";
 import { makeAccount } from "../factories";
 import { prisma, resetTestDb, disconnectTestDb } from "./setup";
 import { deletePilotArtifacts } from "@/lib/communications/pilot/deletion";
@@ -64,6 +64,57 @@ describe("durable recorded pilot", () => {
     if (startMonitor) await dispatch();
     return conversation_id;
   }
+  test("qualification consumes one candidate durably and blocks new windows and normal-mode escape", async () => {
+    c = testQualificationConfig(now);
+    const incoming = (id: string, from = c.callers[0]) => event("call.initiated", { call_control_id: id, call_leg_id: id, from, to: c.number, direction: "incoming" });
+    expect(await ingest(incoming("operator-loop", c.operator))).toMatchObject({ accepted: false });
+    await Promise.all([ingest(incoming("first")), ingest(incoming("second", "+13055550109"))]);
+    expect(await prisma.frlPilotRun.count()).toBe(1);
+    expect(await prisma.auditLog.count({ where: { account_id: c.accountId, action: "frl_pilot.qualification_claimed" } })).toBe(1);
+    expect((await state()).intents).toEqual([]);
+    expect(await decidePilotAdmission(prisma, { ...c, accountId: "foreign" }, "actor", (await state()).id, true, now, enabled)).toBe(false);
+    expect(await decidePilotAdmission(prisma, c, "actor", (await state()).id, false, now, enabled)).toBe(true);
+    await ingest(event("call.hangup", { call_control_id: (await state()).caller.controlId, call_leg_id: (await state()).caller.legId }));
+    expect((await state()).stage).toBe("ended");
+    c = { ...c, windowId: randomUUID() };
+    expect(await ingest(incoming("new-window"))).toMatchObject({ accepted: false });
+    c = testPilotConfig(now);
+    expect(await ingest(incoming("normal-escape"))).toMatchObject({ accepted: false });
+    expect(await prisma.frlPilotRun.count()).toBe(1);
+  });
+  test("qualification refuses admission while another cleanup task remains unresolved", async () => {
+    c = testQualificationConfig(now);
+    await prisma.frlPilotDeletion.create({ data: { account_id: c.accountId, run_id: "earlier", recording_id: randomUUID(), resource_id: randomUUID(), kind: "recording", due_at: new Date(now + 99999), next_attempt_at: new Date(now + 99999) } });
+    expect(await ingest(event("call.initiated", { from: c.callers[0], to: c.number, direction: "incoming" }))).toMatchObject({ accepted: false });
+    expect(await prisma.frlPilotRun.count()).toBe(0);
+  });
+  test("qualification purges on normal end, observes absence repeatedly and reconciles late content", async () => {
+    c = testQualificationConfig(now); await start(); await spoken("caller"); await dispatch();
+    await callback("call.speak.ended", "name_prompt", "caller", { status: "completed" }); await dispatch();
+    const w = (await state()).windows[0], recording_id = randomUUID(); now += 8100;
+    await callback("call.recording.saved", "name", "caller", { recording_id, recording_started_at: new Date(w.authorizedAt + 10).toISOString(), recording_ended_at: new Date(w.authorizedAt + 8000).toISOString(), channels: "single" });
+    expect(await prisma.frlPilotArtifact.count()).toBe(1);
+    await callback("call.hangup", "name");
+    expect((await state()).stage).toBe("ended");
+    expect((await prisma.frlPilotArtifact.findFirstOrThrow()).purged_at).not.toBeNull();
+    for (let i = 0; i < 2; i++) await deletePilotArtifacts(prisma, c.accountId, async () => "verified", now);
+    expect(await prisma.frlPilotDeletion.count({ where: { state: "observing" } })).toBe(2);
+    expect(await deletePilotArtifacts(prisma, c.accountId, async () => "verified", now + 1000)).toBe(false);
+    now += 300000;
+    const retry = vi.fn(async () => "retry" as const);
+    expect(await deletePilotArtifacts(prisma, c.accountId, retry, now)).toBe(true);
+    expect(await prisma.frlPilotDeletion.count({ where: { state: "retry" } })).toBe(1);
+    const recording_transcription_id = randomUUID();
+    await callback("call.recording.transcription.saved", "name", "caller", { recording_id, recording_transcription_id, status: "completed", transcription_text: "SYNTHETIC LATE TEXT" });
+    expect((await prisma.frlPilotArtifact.findFirstOrThrow()).transcript).toBeNull();
+    expect(JSON.stringify(await prisma.webhookEvent.findMany())).not.toContain("SYNTHETIC LATE TEXT");
+    now = (await prisma.frlPilotRun.findFirstOrThrow()).expires_at.getTime() + 1;
+    for (let i = 0; i < 3; i++) await deletePilotArtifacts(prisma, c.accountId, async () => "verified", now);
+    expect(await prisma.frlPilotDeletion.count({ where: { state: "verified" } })).toBe(3);
+    await callback("call.recording.transcription.saved", "name", "caller", { recording_id, recording_transcription_id, status: "completed", transcription_text: "SYNTHETIC RECREATED TEXT" });
+    expect(await prisma.frlPilotDeletion.findFirst({ where: { resource_id: recording_transcription_id } })).toMatchObject({ state: "pending", verified_at: null });
+    expect(await deletePilotArtifacts(prisma, "foreign", retry, now)).toBe(false);
+  });
   test("spoken caller grant starts monitoring before name capture and spoken withdrawal purges", async () => {
     speechConfig(); await start();
     expect(transport.mock.calls.at(-1)![0].path).toContain("gather_using_ai");

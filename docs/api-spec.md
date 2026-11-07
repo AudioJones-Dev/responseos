@@ -227,3 +227,6 @@ POST /api/appointments/availability
   { "start": "2026-05-08T13:00:00-04:00", "end": "2026-05-08T15:00:00-04:00" }
 ]}
 ```
+
+
+FRL qualification adds read-only admin status fields qualification, qualificationClaimed and cleanupObserving. The approval action remains exact-call and manual; no client field selects qualification or clears its durable claim. Normal recorded gates remain verified-only.

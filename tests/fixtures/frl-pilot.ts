@@ -44,3 +44,11 @@ export function machineHarness() {
     bridge() { send("bridged"); send("bridged", "operator"); },
   };
 }
+
+export function testQualificationConfig(now = pilotNow): PilotConfig {
+  const c = testPilotConfig(now);
+  if (c.exercise !== "recorded") throw new Error("recorded_fixture_required");
+  return { ...c, maxCalls: 1, closesAt: new Date(Date.parse(c.opensAt) + 300000).toISOString(), disclosureVersion: "frl-spoken-v2", providerRetentionVerified: false,
+    speech: { transientControlsApprovalRef: "synthetic", wordingApprovalRef: "synthetic", processingApprovalRef: "synthetic", retentionVerified: false, withdrawalVerified: false },
+    qualification: { approvalRef: "synthetic-first-call", operatorPresent: true, syntheticOnly: true, providerRetention: "unverified", backupErasure: "unverified", cleanupReady: true, manualProviderStopAvailable: true } };
+}
