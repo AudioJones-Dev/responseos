@@ -1,6 +1,14 @@
 # FRL-PILOT-006 — scripted test caller
 
-EXPERIMENTAL; setup authorized November 6, 2026. One supervised capture-off attempt failed; DTMF remains unverified.
+EXPERIMENTAL; scripted capture-off keypad qualification passed November 6, 2026. Recorded-flow and outage qualification remain pending.
+
+## Successful scripted qualification — 19:20–19:25 Eastern
+
+Owner-approved window `5f8652b8-4f25-4139-aff1-955abde8dac7`, approval `addab137-6484-45a4-b33d-ccbbe33d133c`. One call dispatched around 19:22:33 on code `ecfca4bea164677577cf70e84bc12cf56a365a47`. Signed receiving events verified **1, 2 and star**, followed by terminal callback. Run closed/ended; no operator leg, zero capture windows. The watchdog observed transient null metadata for two scans, then complete metadata, without targeting or failing any hangup. This demonstrates the bounded setup fix for this call only.
+
+Window permanently stopped after completion; kill count1. Both provider application inventories and recording counts zero, local artifacts and unresolved/deletion incidents zero. Account paused; both dedicated applications and test profile disabled. Capture/transcription/forwarding stayed off. This qualifies the scripted Telnyx path, not Grok or cross-carrier keypad capability, recorded consent/bridge/transcription/deletion, or controller-outage behavior. No automatic redial.
+
+Activated releases: Vercel `dpl_2dt8ecJymwaa16PLAakdJnyGoGtF`, primary `dep-dbn6tkjrjlhs739m3hc0`, watchdog `dep-dbn6tl3m8hqs73c2et40`. Code checks: 942 unit tests, 218 local PostgreSQL 16 integration tests, lint/typecheck/build and CI PostgreSQL 16/17/18 passed. Subsequent documentation commits do not change deployed runtime code.
 
 ## First scripted attempt
 
@@ -31,3 +39,5 @@ This replaces dependence on Grok for system tests, not the full recorded deliver
 1. Communications/test evidence. 2. Integrate native Telnyx digits, build only the bounded launcher. 3. Removes Grok's call-budget dependency. 4. Existing signed receiving receipts plus content-free dispatch audit. 5. Received digits and termination, never HTTP acceptance, prove outcomes. 6. No proprietary learning. 7. Buy carrier functionality. 8. No CRM/FSM/telecom duplication. 9. No additional vendor. 10. Server-owned account/config and account-scoped claims. 11. Explicit scripted caller, no Grok identity assertion. 12. No live/readiness claim before evidence. 13. Existing fresh-window approval and one-shot cap. 14. Capture/forwarding remain off. 15. Required for repeatable commissioning now.
 
 References: [Telnyx Dial](https://developers.telnyx.com/api-reference/call-commands/dial), [received DTMF](https://developers.telnyx.com/api-reference/callbacks/call-dtmf-received).
+
+Shutdown verified: Vercel dpl_G5ePBn52G6QCqPf1xyuszWhVnFYW READY; primary dep-dbn6v9t6e07s73dqkqo0 LIVE (nl7dq), watchdog dep-dbn6va3ncjis73dv3j10 LIVE (pnzfj), disabled log at 00:25:08Z. Primary runtime admission/dispatch false, cleanup true, exact SHA ecfca4b. All dedicated provider resources disabled and account paused.

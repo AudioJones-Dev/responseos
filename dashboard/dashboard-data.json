@@ -34,10 +34,10 @@
     {
       "id": "FRL-TEST-CALLER-20261106",
       "phase": "Testing & QA",
-      "title": "Qualify scripted Telnyx caller; validate bounded setup inventory fix",
+      "title": "Scripted Telnyx capture-off keypad call passed; setup watchdog fix qualified",
       "owner": "Codex",
-      "status": "In Progress",
-      "progress": 80,
+      "status": "Done",
+      "progress": 100,
       "priority": "High",
       "ref": 246,
       "refType": "pull"
