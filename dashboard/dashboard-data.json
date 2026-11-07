@@ -34,7 +34,7 @@
     {
       "id": "FRL-TEST-CALLER-20261106",
       "phase": "Testing & QA",
-      "title": "Qualify scripted Telnyx caller; resolve setup inventory failure",
+      "title": "Qualify scripted Telnyx caller; validate bounded setup inventory fix",
       "owner": "Codex",
       "status": "In Progress",
       "progress": 80,

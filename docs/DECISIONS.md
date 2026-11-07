@@ -2,6 +2,10 @@
 
 This file records the load-bearing decisions that constrain how ResponseOS is built. Each ADR is short by design: context, decision, consequences. If a decision is reversed, mark the entry **Superseded by ADR-XXX** rather than deleting it.
 
+## FRL-PILOT-007 — Bounded setup inventory compatibility
+
+**Status: EXPERIMENTAL, 2026-11-06.** Owner authorized correction after the failed scripted test. The [duration amendment](implementations/florida-ramp-lift/FRL_INBOUND_DURATION_AMENDMENT.md#setup-inventory-correction--november-6-2026) defines a ten-second metadata grace with unchanged session deadlines and fail-closed recovery. Disabled deployment only; fresh supervised qualification remains required.
+
 ## FRL-PILOT-006 — Dedicated scripted commissioning caller
 
 Owner requested a Telnyx test bot, approved its dedicated number purchase, and authorized setup on 2026-11-06. EXPERIMENTAL. This scopes the earlier Grok-only prerequisite to allow a deterministic Telnyx caller for system commissioning. It cannot establish Grok keypad capability. [Test caller contract](implementations/florida-ramp-lift/FRL_SCRIPTED_TEST_CALLER.md). Calls remain subject to a fresh supervised window; recorded qualification gates are unchanged.
