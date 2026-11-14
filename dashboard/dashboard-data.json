@@ -1592,26 +1592,30 @@
       "phase": "Launch / Demo Deploy",
       "title": "SEO/AEO foundations: robots, sitemap, llms.txt, canonicals, JSON-LD",
       "owner": "Claude Code",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "Med",
       "start": "2026-10-21",
       "due": "2026-10-28",
       "ref": 220,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/220"
     },
     {
       "id": "SEC-DEPS-01",
       "phase": "Tech Debt & Hardening",
       "title": "Bump next 16.4.3 and zod 4.6.6+ past new production audit advisories",
       "owner": "Claude Code",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "High",
       "start": "2026-10-25",
       "due": "2026-10-27",
       "ref": 223,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/223"
     },
     {
       "id": "DOMAIN-01",
@@ -1662,14 +1666,16 @@
       "phase": "Launch / Demo Deploy",
       "title": "Identify the Neon database behind production DATABASE_URL (token-gated hostname check)",
       "owner": "Claude Code",
-      "status": "Review",
-      "progress": 40,
+      "status": "Done",
+      "progress": 100,
       "priority": "High",
       "start": "2026-10-28",
       "due": "2026-11-04",
       "ref": 232,
       "refType": "pull",
-      "blockedReason": "Deployed in dpl_12D5iWkrbt41f7Py53DQee3L4iJp; authorized readout 2026-10-29 02:43:09 UTC. Removal due 2026-11-05 02:43 UTC."
+      "blockedReason": "Deployed in dpl_12D5iWkrbt41f7Py53DQee3L4iJp; authorized readout 2026-10-29 02:43:09 UTC. Removal due 2026-11-05 02:43 UTC.",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/232"
     },
     {
       "id": "DB-TARGET-02",
@@ -1689,69 +1695,79 @@
       "phase": "Tech Debt & Hardening",
       "title": "Add Telnyx voice, AI assistant, and messaging agent skills for Claude Code",
       "owner": "Claude Code",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "Low",
       "start": "2026-10-13",
       "due": "2026-10-13",
       "ref": 216,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/216"
     },
     {
       "id": "GTM-AUDIT-01",
       "phase": "Launch / Demo Deploy",
       "title": "Show an email path on /audit while public intake is off, so submitted leads are not lost",
       "owner": "Claude Code",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "High",
       "start": "2026-11-02",
       "due": "2026-11-04",
       "blocked": true,
       "blockedReason": "Validated locally; hello@responseos.pro confirmed receiving mail (2026-11-02). Needs independent review and an operator-approved ADR-0053 deploy.",
       "ref": 238,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/238"
     },
     {
       "id": "SEO-01",
       "phase": "Launch / Demo Deploy",
       "title": "Marketing SEO/AEO quick wins: founder entity markup and a quotable 'What is ResponseOS?' definition",
       "owner": "Claude Code",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "Medium",
       "start": "2026-11-06",
       "due": "2026-11-06",
       "ref": 245,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/245"
     },
     {
       "id": "CI-CODERABBIT-01",
       "phase": "Tech Debt & Hardening",
       "title": "Let CodeRabbit review draft PRs, since PRs stay drafts until CI is green",
       "owner": "Claude Code",
-      "status": "Review",
-      "progress": 90,
+      "status": "Done",
+      "progress": 100,
       "priority": "Low",
       "start": "2026-11-06",
       "due": "2026-11-06",
       "ref": 247,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/247"
     },
     {
       "id": "GTM-STORY-01",
       "phase": "Launch / Demo Deploy",
       "title": "Publish the Florida Ramp & Lift customer story (homepage section and /stories page)",
       "owner": "Claude Code",
-      "status": "Review",
-      "progress": 80,
+      "status": "Done",
+      "progress": 100,
       "priority": "High",
       "start": "2026-11-06",
       "due": "2026-11-13",
       "blocked": true,
       "blockedReason": "Built and validated locally; Michael approved the quote, photos and page text (2026-11-06). Needs independent review and an operator-approved ADR-0053 deploy.",
       "ref": 244,
-      "refType": "pull"
+      "refType": "pull",
+      "refState": "merged",
+      "refUrl": "https://github.com/AudioJones-Dev/responseos/pull/244"
     }
   ],
   "liveIssues": [
@@ -1783,5 +1799,5 @@
       ]
     }
   ],
-  "generatedAt": "2026-10-12T13:31:06.263Z"
+  "generatedAt": "2026-11-14T13:03:55.297Z"
 }
